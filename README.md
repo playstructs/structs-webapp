@@ -15,7 +15,7 @@ The webapp for the front-end, back-end and API for Structs. It's a PHP 8.2 proje
 
 ### 3. Run the container
 
-`docker compose -up -d`
+`docker compose up -d`
 
 
 ## Connecting to the container
