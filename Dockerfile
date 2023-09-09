@@ -41,4 +41,4 @@ COPY ./src /src
 WORKDIR /src
 
 # Install project dependencies
-RUN bash -c "composer update"
+#RUN bash -c "composer update"
