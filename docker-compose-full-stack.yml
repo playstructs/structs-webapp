@@ -1,0 +1,40 @@
+services:
+  app:
+    image: structs-webapp
+    environment:
+      DATABASE_URL: 'postgres://structs_webapp@structs-pg:5432/structs?serverVersion=14'
+    build: .
+    ports:
+      - 8080:80
+    volumes:
+      - type: bind
+        source: ./src
+        target: /src
+  structsd:
+    image: 'structs/structsd:latest'
+    hostname: 'structsd'
+    restart: on-failure
+    ports:
+      - 26656:26656
+      - 26657:26657
+      - 1317:1317
+    environment:
+      MONIKER: 'UnknownGuild'
+      NETWORK_VERSION: '74b'
+      NETWORK_TYPE: 'testnet'
+      NETWORK_CHAIN_ID: 'structstestnet-74'
+      NODE_TYPE: 'NONVALIDATING'
+      NODE_INDEXER: 'PSQL'
+      NODE_INDEXER_PG_CONNECTION: 'postgres://structs_indexer@structs-pg:5432/structs'
+  structs-pg:
+    image: 'structs/structs-pg:0.0.3'
+    hostname: 'structs-pg'
+    ports:
+      - 5432:5432
+    restart: on-failure
+  structs-proxy:
+    image: 'structs/structs-proxy:latest'
+    hostname: 'structs-proxy'
+    restart: on-failure
+    ports:
+     - 80:80  

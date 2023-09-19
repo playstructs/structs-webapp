@@ -9,7 +9,9 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y \
         git \
-        p7zip-full
+        p7zip-full \
+        libpq-dev && \
+    docker-php-ext-install pdo pdo_pgsql
 
 # Install symfony php extension dependences
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/

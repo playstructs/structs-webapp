@@ -17,6 +17,8 @@ The webapp for the front-end, back-end and API for Structs. It's a PHP 8.2 proje
 
 `docker compose up -d`
 
+To run the full stack (including Structs Consensus Engine), use `docker compose -f docker-compose-full-stack.yml up -d` or `docker compose -f docker-compose-full-stack-arm64.yml up -d` depending on your architecture. 
+
 
 ## Connecting to the container
 
