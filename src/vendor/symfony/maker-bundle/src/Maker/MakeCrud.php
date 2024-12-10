@@ -16,8 +16,6 @@ use Doctrine\Inflector\Inflector;
 use Doctrine\Inflector\InflectorFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Symfony\Bridge\Doctrine\ArgumentResolver\EntityValueResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -38,7 +36,6 @@ use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use Symfony\Component\Validator\Validation;
@@ -64,7 +61,7 @@ final class MakeCrud extends AbstractMaker
 
     public static function getCommandDescription(): string
     {
-        return 'Creates CRUD for Doctrine entity class';
+        return 'Create CRUD for Doctrine entity class';
     }
 
     public function configureCommand(Command $command, InputConfiguration $inputConfig): void
@@ -184,8 +181,6 @@ final class MakeCrud extends AbstractMaker
                     'entity_var_singular' => $entityVarSingular,
                     'entity_twig_var_singular' => $entityTwigVarSingular,
                     'entity_identifier' => $entityDoctrineDetails->getIdentifier(),
-                    // @legacy - Remove when support for Symfony <6 is dropped
-                    'use_render_form' => Kernel::VERSION_ID < 60200,
                 ],
                 $repositoryVars
             )
@@ -256,11 +251,7 @@ final class MakeCrud extends AbstractMaker
                 $repositoryClassName,
             ]);
 
-            $usesEntityManager = EntityManagerInterface::class === $repositoryClassName;
-
-            if ($usesEntityManager) {
-                $useStatements->addUseStatement(EntityRepository::class);
-            }
+            $useStatements->addUseStatement(EntityRepository::class);
 
             if (EntityManagerInterface::class !== $repositoryClassName) {
                 $useStatements->addUseStatement(EntityManagerInterface::class);
@@ -268,7 +259,7 @@ final class MakeCrud extends AbstractMaker
 
             $generator->generateFile(
                 'tests/Controller/'.$testClassDetails->getShortName().'.php',
-                $usesEntityManager ? 'crud/test/Test.EntityManager.tpl.php' : 'crud/test/Test.tpl.php',
+                'crud/test/Test.EntityManager.tpl.php',
                 [
                     'use_statements' => $useStatements,
                     'entity_full_class_name' => $entityClassDetails->getFullName(),
@@ -279,7 +270,7 @@ final class MakeCrud extends AbstractMaker
                     'class_name' => Str::getShortClassName($testClassDetails->getFullName()),
                     'namespace' => Str::getNamespace($testClassDetails->getFullName()),
                     'form_fields' => $entityDoctrineDetails->getFormFields(),
-                    'repository_class_name' => $usesEntityManager ? EntityManagerInterface::class : $repositoryVars['repository_class_name'],
+                    'repository_class_name' => EntityManagerInterface::class,
                     'form_field_prefix' => strtolower(Str::asSnakeCase($entityTwigVarSingular)),
                 ]
             );
@@ -326,13 +317,6 @@ final class MakeCrud extends AbstractMaker
         $dependencies->addClassDependency(
             CsrfTokenManager::class,
             'security-csrf'
-        );
-
-        // @legacy - Remove dependency when support for Symfony <6.2 is dropped
-        $dependencies->addClassDependency(
-            ParamConverter::class,
-            'annotations',
-            !class_exists(EntityValueResolver::class) // sensio/framework-extra-bundle dependency is not required when using symfony 6.2+
         );
     }
 }

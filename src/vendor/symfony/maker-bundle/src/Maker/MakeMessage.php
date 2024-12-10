@@ -21,7 +21,7 @@ use Symfony\Bundle\MakerBundle\Util\YamlSourceManipulator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
@@ -43,7 +43,7 @@ final class MakeMessage extends AbstractMaker
 
     public static function getCommandDescription(): string
     {
-        return 'Creates a new message and handler';
+        return 'Create a new message and handler';
     }
 
     public function configureCommand(Command $command, InputConfiguration $inputConfig): void
@@ -103,7 +103,7 @@ final class MakeMessage extends AbstractMaker
         );
 
         $useStatements = new UseStatementGenerator([
-            MessageHandlerInterface::class,
+            AsMessageHandler::class,
             $messageClassNameDetails->getFullName(),
         ]);
 

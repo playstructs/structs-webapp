@@ -182,6 +182,7 @@
     <parameter key="doctrine.orm.naming_strategy.underscore.class">Doctrine\ORM\Mapping\UnderscoreNamingStrategy</parameter>
     <parameter key="doctrine.orm.quote_strategy.default.class">Doctrine\ORM\Mapping\DefaultQuoteStrategy</parameter>
     <parameter key="doctrine.orm.quote_strategy.ansi.class">Doctrine\ORM\Mapping\AnsiQuoteStrategy</parameter>
+    <parameter key="doctrine.orm.typed_field_mapper.default.class">Doctrine\ORM\Mapping\DefaultTypedFieldMapper</parameter>
     <parameter key="doctrine.orm.entity_listener_resolver.class">Doctrine\Bundle\DoctrineBundle\Mapping\ContainerEntityListenerResolver</parameter>
     <parameter key="doctrine.orm.second_level_cache.default_cache_factory.class">Doctrine\ORM\Cache\DefaultCacheFactory</parameter>
     <parameter key="doctrine.orm.second_level_cache.default_region.class">Doctrine\ORM\Cache\Region\DefaultRegion</parameter>
@@ -489,11 +490,14 @@
         <argument key="profiler" type="service" id="profiler" on-invalid="ignore_uninitialized"/>
         <argument key="debug.validator" type="service" id="debug.validator" on-invalid="ignore_uninitialized"/>
         <argument key="doctrine" type="service" id="doctrine" on-invalid="ignore_uninitialized"/>
+        <argument key="doctrine.debug_data_holder" type="service" id="doctrine.debug_data_holder" on-invalid="ignore_uninitialized"/>
         <argument key="form.type.entity" type="service" id="form.type.entity" on-invalid="ignore_uninitialized"/>
         <argument key="twig.form.engine" type="service" id="twig.form.engine" on-invalid="ignore_uninitialized"/>
         <argument key="security.token_storage" type="service" id="security.token_storage" on-invalid="ignore_uninitialized"/>
         <argument key="cache.security_expression_language" type="service" id="cache.security_expression_language" on-invalid="ignore_uninitialized"/>
         <argument key="cache.security_is_granted_attribute_expression_language" type="service" id="cache.security_is_granted_attribute_expression_language" on-invalid="ignore_uninitialized"/>
+        <argument key="debug.security.firewall" type="service" id="debug.security.firewall" on-invalid="ignore_uninitialized"/>
+        <argument key="debug.security.firewall.authenticator.main" type="service" id="debug.security.firewall.authenticator.main" on-invalid="ignore_uninitialized"/>
         <argument key="monolog.handler.main" type="service" id="monolog.handler.main" on-invalid="ignore_uninitialized"/>
         <argument key="monolog.handler.console" type="service" id="monolog.handler.console" on-invalid="ignore_uninitialized"/>
         <argument key=".debug.http_client" type="service" id=".debug.http_client" on-invalid="ignore_uninitialized"/>
@@ -556,6 +560,9 @@
         <argument key="doctrine" type="collection">
           <argument>reset</argument>
         </argument>
+        <argument key="doctrine.debug_data_holder" type="collection">
+          <argument>reset</argument>
+        </argument>
         <argument key="form.type.entity" type="collection">
           <argument>reset</argument>
         </argument>
@@ -570,6 +577,12 @@
           <argument>reset</argument>
         </argument>
         <argument key="cache.security_is_granted_attribute_expression_language" type="collection">
+          <argument>reset</argument>
+        </argument>
+        <argument key="debug.security.firewall" type="collection">
+          <argument>reset</argument>
+        </argument>
+        <argument key="debug.security.firewall.authenticator.main" type="collection">
           <argument>reset</argument>
         </argument>
         <argument key="monolog.handler.main" type="collection">
@@ -924,6 +937,7 @@
         <argument>messenger.bus.default</argument>
       </argument>
       <argument>null</argument>
+      <argument>null</argument>
       <call method="setName">
         <argument>messenger:consume</argument>
       </call>
@@ -1011,6 +1025,7 @@
       <argument type="service" id="debug.event_dispatcher"/>
       <argument type="service" id="monolog.logger.messenger" on-invalid="null"/>
       <argument type="service" id="messenger.transport.native_php_serializer" on-invalid="null"/>
+      <argument>null</argument>
       <call method="setName">
         <argument>messenger:failed:retry</argument>
       </call>
@@ -1747,6 +1762,8 @@
           </argument>
           <argument key="cy" type="collection">
             <argument>/src/vendor/symfony/validator/Resources/translations/validators.cy.xlf</argument>
+            <argument>/src/vendor/symfony/form/Resources/translations/validators.cy.xlf</argument>
+            <argument>/src/vendor/symfony/security-core/Resources/translations/security.cy.xlf</argument>
           </argument>
           <argument key="da" type="collection">
             <argument>/src/vendor/symfony/validator/Resources/translations/validators.da.xlf</argument>
@@ -1852,6 +1869,11 @@
             <argument>/src/vendor/symfony/validator/Resources/translations/validators.lv.xlf</argument>
             <argument>/src/vendor/symfony/form/Resources/translations/validators.lv.xlf</argument>
             <argument>/src/vendor/symfony/security-core/Resources/translations/security.lv.xlf</argument>
+          </argument>
+          <argument key="mk" type="collection">
+            <argument>/src/vendor/symfony/validator/Resources/translations/validators.mk.xlf</argument>
+            <argument>/src/vendor/symfony/form/Resources/translations/validators.mk.xlf</argument>
+            <argument>/src/vendor/symfony/security-core/Resources/translations/security.mk.xlf</argument>
           </argument>
           <argument key="mn" type="collection">
             <argument>/src/vendor/symfony/validator/Resources/translations/validators.mn.xlf</argument>
@@ -2330,12 +2352,12 @@
     </service>
     <service id="debug.error_handler_configurator" class="Symfony\Component\HttpKernel\Debug\ErrorHandlerConfigurator" public="true">
       <tag name="monolog.logger" channel="php"/>
-      <argument type="service" id="monolog.logger.php" on-invalid="null"/>
+      <argument type="service" id="monolog.logger.php"/>
       <argument>null</argument>
       <argument>-1</argument>
       <argument>true</argument>
       <argument>true</argument>
-      <argument type="service" id="monolog.logger.deprecation" on-invalid="null"/>
+      <argument type="service" id="monolog.logger.deprecation"/>
     </service>
     <service id="debug.debug_handlers_listener" class="Symfony\Component\HttpKernel\EventListener\DebugHandlersListener">
       <tag name="kernel.event_subscriber"/>
@@ -3913,7 +3935,6 @@
     </service>
     <service id="messenger.listener.stop_worker_signals_listener" class="Symfony\Component\Messenger\EventListener\StopWorkerOnSignalsListener">
       <tag name="monolog.logger" channel="messenger"/>
-      <tag name="kernel.event_subscriber"/>
       <argument>null</argument>
       <argument type="service" id="monolog.logger.messenger" on-invalid="ignore"/>
     </service>
@@ -4428,20 +4449,8 @@
       </call>
       <call method="setMiddlewares">
         <argument type="collection">
-          <argument type="service">
-            <service class="Doctrine\DBAL\Logging\Middleware">
-              <argument type="service" id="monolog.logger.doctrine"/>
-            </service>
-          </argument>
-          <argument type="service">
-            <service class="Doctrine\Bundle\DoctrineBundle\Middleware\DebugMiddleware">
-              <argument type="service" id="doctrine.debug_data_holder"/>
-              <argument type="service" id="debug.stopwatch" on-invalid="null"/>
-              <call method="setConnectionName">
-                <argument>default</argument>
-              </call>
-            </service>
-          </argument>
+          <argument type="service" id="doctrine.dbal.logging_middleware.default"/>
+          <argument type="service" id="doctrine.dbal.debug_middleware.default"/>
         </argument>
       </call>
     </service>
@@ -4496,6 +4505,7 @@
       <argument type="collection">
         <argument key="url">%env(resolve:DATABASE_URL)%</argument>
         <argument key="driver">pdo_mysql</argument>
+        <argument key="idle_connection_ttl">600</argument>
         <argument key="host">localhost</argument>
         <argument key="port">null</argument>
         <argument key="user">root</argument>
@@ -4520,18 +4530,20 @@
         </service>
       </argument>
     </service>
+    <service id="doctrine.dbal.connection_expiries" class="ArrayObject"/>
     <service id="doctrine.dbal.logging_middleware" class="Doctrine\DBAL\Logging\Middleware" abstract="true">
       <tag name="monolog.logger" channel="doctrine"/>
-      <tag name="doctrine.middleware" connection="default"/>
+      <tag name="doctrine.middleware" connection="default" priority="10"/>
       <argument type="service" id="monolog.logger.doctrine"/>
     </service>
     <service id="doctrine.debug_data_holder" class="Doctrine\Bundle\DoctrineBundle\Middleware\BacktraceDebugDataHolder">
+      <tag name="kernel.reset" method="reset"/>
       <argument type="collection">
         <argument>default</argument>
       </argument>
     </service>
     <service id="doctrine.dbal.debug_middleware" class="Doctrine\Bundle\DoctrineBundle\Middleware\DebugMiddleware" abstract="true">
-      <tag name="doctrine.middleware" connection="default"/>
+      <tag name="doctrine.middleware" connection="default" priority="10"/>
       <argument type="service" id="doctrine.debug_data_holder"/>
       <argument type="service" id="debug.stopwatch" on-invalid="null"/>
     </service>
@@ -4549,12 +4561,12 @@
       <argument>null</argument>
       <argument type="service" id="monolog.logger"/>
     </service>
-    <service id="messenger.transport.doctrine.factory" class="Symfony\Component\Messenger\Bridge\Doctrine\Transport\DoctrineTransportFactory">
-      <tag name="messenger.transport_factory"/>
-      <argument type="service" id="doctrine"/>
-    </service>
     <service id="doctrine.orm.messenger.event_subscriber.doctrine_clear_entity_manager" class="Symfony\Bridge\Doctrine\Messenger\DoctrineClearEntityManagerWorkerSubscriber">
       <tag name="kernel.event_subscriber"/>
+      <argument type="service" id="doctrine"/>
+    </service>
+    <service id="messenger.transport.doctrine.factory" class="Symfony\Component\Messenger\Bridge\Doctrine\Transport\DoctrineTransportFactory">
+      <tag name="messenger.transport_factory"/>
       <argument type="service" id="doctrine"/>
     </service>
     <service id="doctrine.orm.messenger.doctrine_schema_listener" class="Symfony\Bridge\Doctrine\SchemaListener\MessengerTransportDoctrineSchemaListener">
@@ -4562,7 +4574,7 @@
       <tag name="doctrine.event_listener" event="onSchemaCreateTable"/>
       <argument type="tagged_iterator" tag="messenger.receiver"/>
     </service>
-    <service id=".1_ServiceLocator~QIZA8LE" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".1_ServiceLocator~zzSUV_8" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <argument type="collection"/>
     </service>
     <service id="doctrine.orm.proxy_cache_warmer" class="Symfony\Bridge\Doctrine\CacheWarmer\ProxyCacheWarmer">
@@ -4623,6 +4635,7 @@
     </service>
     <service id="doctrine.orm.quote_strategy.default" class="Doctrine\ORM\Mapping\DefaultQuoteStrategy"/>
     <service id="doctrine.orm.quote_strategy.ansi" class="Doctrine\ORM\Mapping\AnsiQuoteStrategy"/>
+    <service id="doctrine.orm.typed_field_mapper.default" class="Doctrine\ORM\Mapping\DefaultTypedFieldMapper"/>
     <service id="doctrine.ulid_generator" class="Symfony\Bridge\Doctrine\IdGenerator\UlidGenerator">
       <tag name="doctrine.id_generator"/>
       <argument>null</argument>
@@ -4804,11 +4817,17 @@
       <call method="setQuoteStrategy">
         <argument type="service" id="doctrine.orm.quote_strategy.default"/>
       </call>
+      <call method="setTypedFieldMapper">
+        <argument type="service" id="doctrine.orm.typed_field_mapper.default"/>
+      </call>
       <call method="setEntityListenerResolver">
         <argument type="service" id="doctrine.orm.default_entity_listener_resolver"/>
       </call>
       <call method="setLazyGhostObjectEnabled">
         <argument>true</argument>
+      </call>
+      <call method="setIdentityGenerationPreferences">
+        <argument type="collection"/>
       </call>
       <call method="setRepositoryFactory">
         <argument type="service" id="doctrine.orm.container_repository_factory"/>
@@ -4908,6 +4927,9 @@
       <call method="setName">
         <argument>doctrine:migrations:diff</argument>
       </call>
+      <call method="setDescription">
+        <argument>Generate a migration by comparing your current database to your mapping information.</argument>
+      </call>
     </service>
     <service id="doctrine_migrations.sync_metadata_command" class="Doctrine\Migrations\Tools\Console\Command\SyncMetadataCommand">
       <tag name="console.command" command="doctrine:migrations:sync-metadata-storage"/>
@@ -4916,6 +4938,9 @@
       <argument>doctrine:migrations:sync-metadata-storage</argument>
       <call method="setName">
         <argument>doctrine:migrations:sync-metadata-storage</argument>
+      </call>
+      <call method="setDescription">
+        <argument>Ensures that the metadata storage is at the latest version.</argument>
       </call>
     </service>
     <service id="doctrine_migrations.versions_command" class="Doctrine\Migrations\Tools\Console\Command\ListCommand">
@@ -4926,6 +4951,9 @@
       <call method="setName">
         <argument>doctrine:migrations:list</argument>
       </call>
+      <call method="setDescription">
+        <argument>Display a list of all available migrations and their status.</argument>
+      </call>
     </service>
     <service id="doctrine_migrations.current_command" class="Doctrine\Migrations\Tools\Console\Command\CurrentCommand">
       <tag name="console.command" command="doctrine:migrations:current"/>
@@ -4934,6 +4962,9 @@
       <argument>doctrine:migrations:current</argument>
       <call method="setName">
         <argument>doctrine:migrations:current</argument>
+      </call>
+      <call method="setDescription">
+        <argument>Outputs the current version</argument>
       </call>
     </service>
     <service id="doctrine_migrations.dump_schema_command" class="Doctrine\Migrations\Tools\Console\Command\DumpSchemaCommand">
@@ -4944,6 +4975,9 @@
       <call method="setName">
         <argument>doctrine:migrations:dump-schema</argument>
       </call>
+      <call method="setDescription">
+        <argument>Dump the schema for your database to a migration.</argument>
+      </call>
     </service>
     <service id="doctrine_migrations.execute_command" class="Doctrine\Migrations\Tools\Console\Command\ExecuteCommand">
       <tag name="console.command" command="doctrine:migrations:execute"/>
@@ -4952,6 +4986,9 @@
       <argument>doctrine:migrations:execute</argument>
       <call method="setName">
         <argument>doctrine:migrations:execute</argument>
+      </call>
+      <call method="setDescription">
+        <argument>Execute one or more migration versions up or down manually.</argument>
       </call>
     </service>
     <service id="doctrine_migrations.generate_command" class="Doctrine\Migrations\Tools\Console\Command\GenerateCommand">
@@ -4962,6 +4999,9 @@
       <call method="setName">
         <argument>doctrine:migrations:generate</argument>
       </call>
+      <call method="setDescription">
+        <argument>Generate a blank migration class.</argument>
+      </call>
     </service>
     <service id="doctrine_migrations.latest_command" class="Doctrine\Migrations\Tools\Console\Command\LatestCommand">
       <tag name="console.command" command="doctrine:migrations:latest"/>
@@ -4970,6 +5010,9 @@
       <argument>doctrine:migrations:latest</argument>
       <call method="setName">
         <argument>doctrine:migrations:latest</argument>
+      </call>
+      <call method="setDescription">
+        <argument>Outputs the latest version</argument>
       </call>
     </service>
     <service id="doctrine_migrations.migrate_command" class="Doctrine\Migrations\Tools\Console\Command\MigrateCommand">
@@ -4980,6 +5023,9 @@
       <call method="setName">
         <argument>doctrine:migrations:migrate</argument>
       </call>
+      <call method="setDescription">
+        <argument>Execute a migration to a specified version or the latest available version.</argument>
+      </call>
     </service>
     <service id="doctrine_migrations.rollup_command" class="Doctrine\Migrations\Tools\Console\Command\RollupCommand">
       <tag name="console.command" command="doctrine:migrations:rollup"/>
@@ -4988,6 +5034,9 @@
       <argument>doctrine:migrations:rollup</argument>
       <call method="setName">
         <argument>doctrine:migrations:rollup</argument>
+      </call>
+      <call method="setDescription">
+        <argument>Rollup migrations by deleting all tracked versions and insert the one version that exists.</argument>
       </call>
     </service>
     <service id="doctrine_migrations.status_command" class="Doctrine\Migrations\Tools\Console\Command\StatusCommand">
@@ -4998,6 +5047,9 @@
       <call method="setName">
         <argument>doctrine:migrations:status</argument>
       </call>
+      <call method="setDescription">
+        <argument>View the status of a set of migrations.</argument>
+      </call>
     </service>
     <service id="doctrine_migrations.up_to_date_command" class="Doctrine\Migrations\Tools\Console\Command\UpToDateCommand">
       <tag name="console.command" command="doctrine:migrations:up-to-date"/>
@@ -5007,6 +5059,9 @@
       <call method="setName">
         <argument>doctrine:migrations:up-to-date</argument>
       </call>
+      <call method="setDescription">
+        <argument>Tells you if your schema is up-to-date.</argument>
+      </call>
     </service>
     <service id="doctrine_migrations.version_command" class="Doctrine\Migrations\Tools\Console\Command\VersionCommand">
       <tag name="console.command" command="doctrine:migrations:version"/>
@@ -5015,6 +5070,9 @@
       <argument>doctrine:migrations:version</argument>
       <call method="setName">
         <argument>doctrine:migrations:version</argument>
+      </call>
+      <call method="setDescription">
+        <argument>Manually add and delete migration versions from the version table.</argument>
       </call>
     </service>
     <service id="doctrine.migrations.storage.table_storage" class="Doctrine\Migrations\Metadata\Storage\TableMetadataStorageConfiguration"/>
@@ -5273,11 +5331,11 @@
       <argument type="collection"/>
       <argument>/src</argument>
       <call method="addPath">
-        <argument>/src/vendor/doctrine/doctrine-bundle/Resources/views</argument>
+        <argument>/src/vendor/doctrine/doctrine-bundle/templates</argument>
         <argument>Doctrine</argument>
       </call>
       <call method="addPath">
-        <argument>/src/vendor/doctrine/doctrine-bundle/Resources/views</argument>
+        <argument>/src/vendor/doctrine/doctrine-bundle/templates</argument>
         <argument>!Doctrine</argument>
       </call>
       <call method="addPath">
@@ -6002,6 +6060,7 @@
       <argument type="service" id="debug.security.access.decision_manager"/>
     </service>
     <service id="debug.security.firewall" class="Symfony\Bundle\SecurityBundle\Debug\TraceableFirewallListener">
+      <tag name="kernel.reset" method="reset"/>
       <tag name="kernel.event_subscriber"/>
       <tag name="container.hot_path"/>
       <tag name="container.hot_path"/>
@@ -6113,6 +6172,7 @@
       <argument type="collection"/>
     </service>
     <service id="debug.security.firewall.authenticator.main" class="Symfony\Component\Security\Http\Authenticator\Debug\TraceableAuthenticatorManagerListener">
+      <tag name="kernel.reset" method="reset"/>
       <tag name="container.decorator" id="security.firewall.authenticator.main" inner="debug.security.firewall.authenticator.main.inner"/>
       <argument type="service" id="debug.security.firewall.authenticator.main.inner"/>
     </service>
@@ -6208,7 +6268,7 @@
     <service id="monolog.handler.main" class="Monolog\Handler\StreamHandler">
       <tag name="kernel.reset" method="reset"/>
       <argument>/src/var/log/dev.log</argument>
-      <argument>100</argument>
+      <argument>debug</argument>
       <argument>true</argument>
       <argument>null</argument>
       <argument>false</argument>
@@ -6339,6 +6399,10 @@
       <tag name="maker.command"/>
       <deprecated package="symfony/maker-bundle" version="1.29">The "%service_id%" service is deprecated, use "maker.maker.make_test" instead.</deprecated>
     </service>
+    <service id="maker.maker.make_listener" class="Symfony\Bundle\MakerBundle\Maker\MakeListener">
+      <tag name="maker.command"/>
+      <argument type="service" id="maker.event_registry"/>
+    </service>
     <service id="maker.maker.make_message" class="Symfony\Bundle\MakerBundle\Maker\MakeMessage">
       <tag name="maker.command"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6368,6 +6432,7 @@
     <service id="maker.maker.make_subscriber" class="Symfony\Bundle\MakerBundle\Maker\MakeSubscriber">
       <tag name="maker.command"/>
       <argument type="service" id="maker.event_registry"/>
+      <deprecated package="symfony/maker-bundle" version="1.51">The "%service_id%" service is deprecated, use "maker.maker.make_listener" instead.</deprecated>
     </service>
     <service id="maker.maker.make_twig_extension" class="Symfony\Bundle\MakerBundle\Maker\MakeTwigExtension">
       <tag name="maker.command"/>
@@ -6432,7 +6497,7 @@
       </argument>
     </service>
     <service id="maker.auto_command.make_auth" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:auth" description="Creates a Guard authenticator of different flavors"/>
+      <tag name="console.command" command="make:auth" description="Create a Guard authenticator of different flavors"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_authenticator"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6442,11 +6507,11 @@
         <argument>make:auth</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a Guard authenticator of different flavors</argument>
+        <argument>Create a Guard authenticator of different flavors</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_command" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:command" description="Creates a new console command class"/>
+      <tag name="console.command" command="make:command" description="Create a new console command class"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_command"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6456,11 +6521,11 @@
         <argument>make:command</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new console command class</argument>
+        <argument>Create a new console command class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_twig_component" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:twig-component" description="Creates a twig (or live) component"/>
+      <tag name="console.command" command="make:twig-component" description="Create a twig (or live) component"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_twig_component"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6470,11 +6535,11 @@
         <argument>make:twig-component</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a twig (or live) component</argument>
+        <argument>Create a twig (or live) component</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_controller" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:controller" description="Creates a new controller class"/>
+      <tag name="console.command" command="make:controller" description="Create a new controller class"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_controller"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6484,11 +6549,11 @@
         <argument>make:controller</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new controller class</argument>
+        <argument>Create a new controller class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_crud" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:crud" description="Creates CRUD for Doctrine entity class"/>
+      <tag name="console.command" command="make:crud" description="Create CRUD for Doctrine entity class"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_crud"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6498,11 +6563,11 @@
         <argument>make:crud</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates CRUD for Doctrine entity class</argument>
+        <argument>Create CRUD for Doctrine entity class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_docker_database" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:docker:database" description="Adds a database container to your docker-compose.yaml file"/>
+      <tag name="console.command" command="make:docker:database" description="Add a database container to your compose.yaml file"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_docker_database"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6512,11 +6577,11 @@
         <argument>make:docker:database</argument>
       </call>
       <call method="setDescription">
-        <argument>Adds a database container to your docker-compose.yaml file</argument>
+        <argument>Add a database container to your compose.yaml file</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_entity" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:entity" description="Creates or updates a Doctrine entity class, and optionally an API Platform resource"/>
+      <tag name="console.command" command="make:entity" description="Create or update a Doctrine entity class, and optionally an API Platform resource"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_entity"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6526,11 +6591,11 @@
         <argument>make:entity</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates or updates a Doctrine entity class, and optionally an API Platform resource</argument>
+        <argument>Create or update a Doctrine entity class, and optionally an API Platform resource</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_fixtures" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:fixtures" description="Creates a new class to load Doctrine fixtures"/>
+      <tag name="console.command" command="make:fixtures" description="Create a new class to load Doctrine fixtures"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_fixtures"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6540,11 +6605,11 @@
         <argument>make:fixtures</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new class to load Doctrine fixtures</argument>
+        <argument>Create a new class to load Doctrine fixtures</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_form" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:form" description="Creates a new form class"/>
+      <tag name="console.command" command="make:form" description="Create a new form class"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_form"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6554,11 +6619,31 @@
         <argument>make:form</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new form class</argument>
+        <argument>Create a new form class</argument>
+      </call>
+    </service>
+    <service id="maker.auto_command.make_listener" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
+      <tag name="console.command" command="make:listener" description="Creates a new event subscriber class or a new event listener class"/>
+      <tag name="console.command" command="make:subscriber" description="Deprecated alias of &quot;make:listener&quot;"/>
+      <tag name="container.no_preload"/>
+      <argument type="service" id="maker.maker.make_listener"/>
+      <argument type="service" id="maker.file_manager"/>
+      <argument type="service" id="maker.generator"/>
+      <argument type="service" id="maker.template_linter"/>
+      <call method="setName">
+        <argument>make:listener</argument>
+      </call>
+      <call method="setAliases">
+        <argument type="collection">
+          <argument>make:subscriber</argument>
+        </argument>
+      </call>
+      <call method="setDescription">
+        <argument>Creates a new event subscriber class or a new event listener class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_message" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:message" description="Creates a new message and handler"/>
+      <tag name="console.command" command="make:message" description="Create a new message and handler"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_message"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6568,11 +6653,11 @@
         <argument>make:message</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new message and handler</argument>
+        <argument>Create a new message and handler</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_messenger_middleware" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:messenger-middleware" description="Creates a new messenger middleware"/>
+      <tag name="console.command" command="make:messenger-middleware" description="Create a new messenger middleware"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_messenger_middleware"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6582,11 +6667,11 @@
         <argument>make:messenger-middleware</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new messenger middleware</argument>
+        <argument>Create a new messenger middleware</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_registration_form" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:registration-form" description="Creates a new registration form system"/>
+      <tag name="console.command" command="make:registration-form" description="Create a new registration form system"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_registration_form"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6596,7 +6681,7 @@
         <argument>make:registration-form</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new registration form system</argument>
+        <argument>Create a new registration form system</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_reset_password" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
@@ -6614,7 +6699,7 @@
       </call>
     </service>
     <service id="maker.auto_command.make_serializer_encoder" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:serializer:encoder" description="Creates a new serializer encoder class"/>
+      <tag name="console.command" command="make:serializer:encoder" description="Create a new serializer encoder class"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_serializer_encoder"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6624,11 +6709,11 @@
         <argument>make:serializer:encoder</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new serializer encoder class</argument>
+        <argument>Create a new serializer encoder class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_serializer_normalizer" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:serializer:normalizer" description="Creates a new serializer normalizer class"/>
+      <tag name="console.command" command="make:serializer:normalizer" description="Create a new serializer normalizer class"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_serializer_normalizer"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6638,25 +6723,11 @@
         <argument>make:serializer:normalizer</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new serializer normalizer class</argument>
-      </call>
-    </service>
-    <service id="maker.auto_command.make_subscriber" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:subscriber" description="Creates a new event subscriber class"/>
-      <tag name="container.no_preload"/>
-      <argument type="service" id="maker.maker.make_subscriber"/>
-      <argument type="service" id="maker.file_manager"/>
-      <argument type="service" id="maker.generator"/>
-      <argument type="service" id="maker.template_linter"/>
-      <call method="setName">
-        <argument>make:subscriber</argument>
-      </call>
-      <call method="setDescription">
-        <argument>Creates a new event subscriber class</argument>
+        <argument>Create a new serializer normalizer class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_twig_extension" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:twig-extension" description="Creates a new Twig extension with its runtime class"/>
+      <tag name="console.command" command="make:twig-extension" description="Create a new Twig extension with its runtime class"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_twig_extension"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6666,11 +6737,11 @@
         <argument>make:twig-extension</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new Twig extension with its runtime class</argument>
+        <argument>Create a new Twig extension with its runtime class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_test" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:test" description="Creates a new test class"/>
+      <tag name="console.command" command="make:test" description="Create a new test class"/>
       <tag name="console.command" command="make:unit-test" description="Deprecated alias of &quot;make:test&quot;"/>
       <tag name="console.command" command="make:functional-test" description="Deprecated alias of &quot;make:test&quot;"/>
       <tag name="container.no_preload"/>
@@ -6688,11 +6759,11 @@
         </argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new test class</argument>
+        <argument>Create a new test class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_validator" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:validator" description="Creates a new validator and constraint class"/>
+      <tag name="console.command" command="make:validator" description="Create a new validator and constraint class"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_validator"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6702,11 +6773,11 @@
         <argument>make:validator</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new validator and constraint class</argument>
+        <argument>Create a new validator and constraint class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_voter" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:voter" description="Creates a new security voter class"/>
+      <tag name="console.command" command="make:voter" description="Create a new security voter class"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_voter"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6716,11 +6787,11 @@
         <argument>make:voter</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new security voter class</argument>
+        <argument>Create a new security voter class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_user" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:user" description="Creates a new security user class"/>
+      <tag name="console.command" command="make:user" description="Create a new security user class"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_user"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6730,11 +6801,11 @@
         <argument>make:user</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new security user class</argument>
+        <argument>Create a new security user class</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_migration" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:migration" description="Creates a new migration based on database changes"/>
+      <tag name="console.command" command="make:migration" description="Create a new migration based on database changes"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_migration"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6744,11 +6815,11 @@
         <argument>make:migration</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new migration based on database changes</argument>
+        <argument>Create a new migration based on database changes</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_stimulus_controller" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
-      <tag name="console.command" command="make:stimulus-controller" description="Creates a new Stimulus controller"/>
+      <tag name="console.command" command="make:stimulus-controller" description="Create a new Stimulus controller"/>
       <tag name="container.no_preload"/>
       <argument type="service" id="maker.maker.make_stimulus_controller"/>
       <argument type="service" id="maker.file_manager"/>
@@ -6758,7 +6829,7 @@
         <argument>make:stimulus-controller</argument>
       </call>
       <call method="setDescription">
-        <argument>Creates a new Stimulus controller</argument>
+        <argument>Create a new Stimulus controller</argument>
       </call>
     </service>
     <service id="maker.auto_command.make_security_form_login" class="Symfony\Bundle\MakerBundle\Command\MakerCommand">
@@ -7068,6 +7139,7 @@
       <argument type="service" id=".service_locator.KLVvNIq"/>
     </service>
     <service id="doctrine.dbal.logging_middleware.default" class="Doctrine\DBAL\Logging\Middleware">
+      <tag name="monolog.logger" channel="doctrine"/>
       <argument type="service" id="monolog.logger.doctrine"/>
     </service>
     <service id="doctrine.dbal.debug_middleware.default" class="Doctrine\Bundle\DoctrineBundle\Middleware\DebugMiddleware">
@@ -8014,6 +8086,97 @@
       <argument>false</argument>
       <argument type="service_closure" id="console.command.mailer_test"/>
     </service>
+    <service id=".doctrine_migrations.diff_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:diff</argument>
+      <argument type="collection"/>
+      <argument>Generate a migration by comparing your current database to your mapping information.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.diff_command"/>
+    </service>
+    <service id=".doctrine_migrations.sync_metadata_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:sync-metadata-storage</argument>
+      <argument type="collection"/>
+      <argument>Ensures that the metadata storage is at the latest version.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.sync_metadata_command"/>
+    </service>
+    <service id=".doctrine_migrations.versions_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:list</argument>
+      <argument type="collection"/>
+      <argument>Display a list of all available migrations and their status.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.versions_command"/>
+    </service>
+    <service id=".doctrine_migrations.current_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:current</argument>
+      <argument type="collection"/>
+      <argument>Outputs the current version</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.current_command"/>
+    </service>
+    <service id=".doctrine_migrations.dump_schema_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:dump-schema</argument>
+      <argument type="collection"/>
+      <argument>Dump the schema for your database to a migration.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.dump_schema_command"/>
+    </service>
+    <service id=".doctrine_migrations.execute_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:execute</argument>
+      <argument type="collection"/>
+      <argument>Execute one or more migration versions up or down manually.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.execute_command"/>
+    </service>
+    <service id=".doctrine_migrations.generate_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:generate</argument>
+      <argument type="collection"/>
+      <argument>Generate a blank migration class.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.generate_command"/>
+    </service>
+    <service id=".doctrine_migrations.latest_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:latest</argument>
+      <argument type="collection"/>
+      <argument>Outputs the latest version</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.latest_command"/>
+    </service>
+    <service id=".doctrine_migrations.migrate_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:migrate</argument>
+      <argument type="collection"/>
+      <argument>Execute a migration to a specified version or the latest available version.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.migrate_command"/>
+    </service>
+    <service id=".doctrine_migrations.rollup_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:rollup</argument>
+      <argument type="collection"/>
+      <argument>Rollup migrations by deleting all tracked versions and insert the one version that exists.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.rollup_command"/>
+    </service>
+    <service id=".doctrine_migrations.status_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:status</argument>
+      <argument type="collection"/>
+      <argument>View the status of a set of migrations.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.status_command"/>
+    </service>
+    <service id=".doctrine_migrations.up_to_date_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:up-to-date</argument>
+      <argument type="collection"/>
+      <argument>Tells you if your schema is up-to-date.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.up_to_date_command"/>
+    </service>
+    <service id=".doctrine_migrations.version_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>doctrine:migrations:version</argument>
+      <argument type="collection"/>
+      <argument>Manually add and delete migration versions from the version table.</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="doctrine_migrations.version_command"/>
+    </service>
     <service id=".var_dumper.command.server_dump.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>server:dump</argument>
       <argument type="collection"/>
@@ -8059,84 +8222,93 @@
     <service id=".maker.auto_command.make_auth.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:auth</argument>
       <argument type="collection"/>
-      <argument>Creates a Guard authenticator of different flavors</argument>
+      <argument>Create a Guard authenticator of different flavors</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_auth"/>
     </service>
     <service id=".maker.auto_command.make_command.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:command</argument>
       <argument type="collection"/>
-      <argument>Creates a new console command class</argument>
+      <argument>Create a new console command class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_command"/>
     </service>
     <service id=".maker.auto_command.make_twig_component.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:twig-component</argument>
       <argument type="collection"/>
-      <argument>Creates a twig (or live) component</argument>
+      <argument>Create a twig (or live) component</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_twig_component"/>
     </service>
     <service id=".maker.auto_command.make_controller.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:controller</argument>
       <argument type="collection"/>
-      <argument>Creates a new controller class</argument>
+      <argument>Create a new controller class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_controller"/>
     </service>
     <service id=".maker.auto_command.make_crud.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:crud</argument>
       <argument type="collection"/>
-      <argument>Creates CRUD for Doctrine entity class</argument>
+      <argument>Create CRUD for Doctrine entity class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_crud"/>
     </service>
     <service id=".maker.auto_command.make_docker_database.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:docker:database</argument>
       <argument type="collection"/>
-      <argument>Adds a database container to your docker-compose.yaml file</argument>
+      <argument>Add a database container to your compose.yaml file</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_docker_database"/>
     </service>
     <service id=".maker.auto_command.make_entity.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:entity</argument>
       <argument type="collection"/>
-      <argument>Creates or updates a Doctrine entity class, and optionally an API Platform resource</argument>
+      <argument>Create or update a Doctrine entity class, and optionally an API Platform resource</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_entity"/>
     </service>
     <service id=".maker.auto_command.make_fixtures.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:fixtures</argument>
       <argument type="collection"/>
-      <argument>Creates a new class to load Doctrine fixtures</argument>
+      <argument>Create a new class to load Doctrine fixtures</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_fixtures"/>
     </service>
     <service id=".maker.auto_command.make_form.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:form</argument>
       <argument type="collection"/>
-      <argument>Creates a new form class</argument>
+      <argument>Create a new form class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_form"/>
+    </service>
+    <service id=".maker.auto_command.make_listener.lazy" class="Symfony\Component\Console\Command\LazyCommand">
+      <argument>make:listener</argument>
+      <argument type="collection">
+        <argument>make:subscriber</argument>
+      </argument>
+      <argument>Creates a new event subscriber class or a new event listener class</argument>
+      <argument>false</argument>
+      <argument type="service_closure" id="maker.auto_command.make_listener"/>
     </service>
     <service id=".maker.auto_command.make_message.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:message</argument>
       <argument type="collection"/>
-      <argument>Creates a new message and handler</argument>
+      <argument>Create a new message and handler</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_message"/>
     </service>
     <service id=".maker.auto_command.make_messenger_middleware.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:messenger-middleware</argument>
       <argument type="collection"/>
-      <argument>Creates a new messenger middleware</argument>
+      <argument>Create a new messenger middleware</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_messenger_middleware"/>
     </service>
     <service id=".maker.auto_command.make_registration_form.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:registration-form</argument>
       <argument type="collection"/>
-      <argument>Creates a new registration form system</argument>
+      <argument>Create a new registration form system</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_registration_form"/>
     </service>
@@ -8150,28 +8322,21 @@
     <service id=".maker.auto_command.make_serializer_encoder.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:serializer:encoder</argument>
       <argument type="collection"/>
-      <argument>Creates a new serializer encoder class</argument>
+      <argument>Create a new serializer encoder class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_serializer_encoder"/>
     </service>
     <service id=".maker.auto_command.make_serializer_normalizer.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:serializer:normalizer</argument>
       <argument type="collection"/>
-      <argument>Creates a new serializer normalizer class</argument>
+      <argument>Create a new serializer normalizer class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_serializer_normalizer"/>
-    </service>
-    <service id=".maker.auto_command.make_subscriber.lazy" class="Symfony\Component\Console\Command\LazyCommand">
-      <argument>make:subscriber</argument>
-      <argument type="collection"/>
-      <argument>Creates a new event subscriber class</argument>
-      <argument>false</argument>
-      <argument type="service_closure" id="maker.auto_command.make_subscriber"/>
     </service>
     <service id=".maker.auto_command.make_twig_extension.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:twig-extension</argument>
       <argument type="collection"/>
-      <argument>Creates a new Twig extension with its runtime class</argument>
+      <argument>Create a new Twig extension with its runtime class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_twig_extension"/>
     </service>
@@ -8181,42 +8346,42 @@
         <argument>make:unit-test</argument>
         <argument>make:functional-test</argument>
       </argument>
-      <argument>Creates a new test class</argument>
+      <argument>Create a new test class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_test"/>
     </service>
     <service id=".maker.auto_command.make_validator.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:validator</argument>
       <argument type="collection"/>
-      <argument>Creates a new validator and constraint class</argument>
+      <argument>Create a new validator and constraint class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_validator"/>
     </service>
     <service id=".maker.auto_command.make_voter.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:voter</argument>
       <argument type="collection"/>
-      <argument>Creates a new security voter class</argument>
+      <argument>Create a new security voter class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_voter"/>
     </service>
     <service id=".maker.auto_command.make_user.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:user</argument>
       <argument type="collection"/>
-      <argument>Creates a new security user class</argument>
+      <argument>Create a new security user class</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_user"/>
     </service>
     <service id=".maker.auto_command.make_migration.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:migration</argument>
       <argument type="collection"/>
-      <argument>Creates a new migration based on database changes</argument>
+      <argument>Create a new migration based on database changes</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_migration"/>
     </service>
     <service id=".maker.auto_command.make_stimulus_controller.lazy" class="Symfony\Component\Console\Command\LazyCommand">
       <argument>make:stimulus-controller</argument>
       <argument type="collection"/>
-      <argument>Creates a new Stimulus controller</argument>
+      <argument>Create a new Stimulus controller</argument>
       <argument>false</argument>
       <argument type="service_closure" id="maker.auto_command.make_stimulus_controller"/>
     </service>
@@ -8229,7 +8394,7 @@
     </service>
     <service id="console.command_loader" class="Symfony\Component\Console\CommandLoader\ContainerCommandLoader" public="true">
       <tag name="container.no_preload"/>
-      <argument type="service" id=".service_locator.J_0PK.8"/>
+      <argument type="service" id=".service_locator.YHr_pey"/>
       <argument type="collection">
         <argument key="about">console.command.about</argument>
         <argument key="assets:install">console.command.assets_install</argument>
@@ -8320,13 +8485,14 @@
         <argument key="make:entity">maker.auto_command.make_entity</argument>
         <argument key="make:fixtures">maker.auto_command.make_fixtures</argument>
         <argument key="make:form">maker.auto_command.make_form</argument>
+        <argument key="make:listener">maker.auto_command.make_listener</argument>
+        <argument key="make:subscriber">maker.auto_command.make_listener</argument>
         <argument key="make:message">maker.auto_command.make_message</argument>
         <argument key="make:messenger-middleware">maker.auto_command.make_messenger_middleware</argument>
         <argument key="make:registration-form">maker.auto_command.make_registration_form</argument>
         <argument key="make:reset-password">maker.auto_command.make_reset_password</argument>
         <argument key="make:serializer:encoder">maker.auto_command.make_serializer_encoder</argument>
         <argument key="make:serializer:normalizer">maker.auto_command.make_serializer_normalizer</argument>
-        <argument key="make:subscriber">maker.auto_command.make_subscriber</argument>
         <argument key="make:twig-extension">maker.auto_command.make_twig_extension</argument>
         <argument key="make:test">maker.auto_command.make_test</argument>
         <argument key="make:unit-test">maker.auto_command.make_test</argument>
@@ -8339,7 +8505,7 @@
         <argument key="make:security:form-login">maker.auto_command.make_security_form_login</argument>
       </argument>
     </service>
-    <service id=".service_locator.J_0PK.8" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.YHr_pey" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
         <argument key="console.command.about" type="service_closure" id=".console.command.about.lazy"/>
@@ -8403,19 +8569,19 @@
         <argument key="doctrine.schema_update_command" type="service_closure" id="doctrine.schema_update_command"/>
         <argument key="doctrine.schema_validate_command" type="service_closure" id="doctrine.schema_validate_command"/>
         <argument key="doctrine.mapping_import_command" type="service_closure" id="doctrine.mapping_import_command"/>
-        <argument key="doctrine_migrations.diff_command" type="service_closure" id="doctrine_migrations.diff_command"/>
-        <argument key="doctrine_migrations.sync_metadata_command" type="service_closure" id="doctrine_migrations.sync_metadata_command"/>
-        <argument key="doctrine_migrations.versions_command" type="service_closure" id="doctrine_migrations.versions_command"/>
-        <argument key="doctrine_migrations.current_command" type="service_closure" id="doctrine_migrations.current_command"/>
-        <argument key="doctrine_migrations.dump_schema_command" type="service_closure" id="doctrine_migrations.dump_schema_command"/>
-        <argument key="doctrine_migrations.execute_command" type="service_closure" id="doctrine_migrations.execute_command"/>
-        <argument key="doctrine_migrations.generate_command" type="service_closure" id="doctrine_migrations.generate_command"/>
-        <argument key="doctrine_migrations.latest_command" type="service_closure" id="doctrine_migrations.latest_command"/>
-        <argument key="doctrine_migrations.migrate_command" type="service_closure" id="doctrine_migrations.migrate_command"/>
-        <argument key="doctrine_migrations.rollup_command" type="service_closure" id="doctrine_migrations.rollup_command"/>
-        <argument key="doctrine_migrations.status_command" type="service_closure" id="doctrine_migrations.status_command"/>
-        <argument key="doctrine_migrations.up_to_date_command" type="service_closure" id="doctrine_migrations.up_to_date_command"/>
-        <argument key="doctrine_migrations.version_command" type="service_closure" id="doctrine_migrations.version_command"/>
+        <argument key="doctrine_migrations.diff_command" type="service_closure" id=".doctrine_migrations.diff_command.lazy"/>
+        <argument key="doctrine_migrations.sync_metadata_command" type="service_closure" id=".doctrine_migrations.sync_metadata_command.lazy"/>
+        <argument key="doctrine_migrations.versions_command" type="service_closure" id=".doctrine_migrations.versions_command.lazy"/>
+        <argument key="doctrine_migrations.current_command" type="service_closure" id=".doctrine_migrations.current_command.lazy"/>
+        <argument key="doctrine_migrations.dump_schema_command" type="service_closure" id=".doctrine_migrations.dump_schema_command.lazy"/>
+        <argument key="doctrine_migrations.execute_command" type="service_closure" id=".doctrine_migrations.execute_command.lazy"/>
+        <argument key="doctrine_migrations.generate_command" type="service_closure" id=".doctrine_migrations.generate_command.lazy"/>
+        <argument key="doctrine_migrations.latest_command" type="service_closure" id=".doctrine_migrations.latest_command.lazy"/>
+        <argument key="doctrine_migrations.migrate_command" type="service_closure" id=".doctrine_migrations.migrate_command.lazy"/>
+        <argument key="doctrine_migrations.rollup_command" type="service_closure" id=".doctrine_migrations.rollup_command.lazy"/>
+        <argument key="doctrine_migrations.status_command" type="service_closure" id=".doctrine_migrations.status_command.lazy"/>
+        <argument key="doctrine_migrations.up_to_date_command" type="service_closure" id=".doctrine_migrations.up_to_date_command.lazy"/>
+        <argument key="doctrine_migrations.version_command" type="service_closure" id=".doctrine_migrations.version_command.lazy"/>
         <argument key="var_dumper.command.server_dump" type="service_closure" id=".var_dumper.command.server_dump.lazy"/>
         <argument key="monolog.command.server_log" type="service_closure" id=".monolog.command.server_log.lazy"/>
         <argument key="twig.command.debug" type="service_closure" id=".twig.command.debug.lazy"/>
@@ -8431,13 +8597,13 @@
         <argument key="maker.auto_command.make_entity" type="service_closure" id=".maker.auto_command.make_entity.lazy"/>
         <argument key="maker.auto_command.make_fixtures" type="service_closure" id=".maker.auto_command.make_fixtures.lazy"/>
         <argument key="maker.auto_command.make_form" type="service_closure" id=".maker.auto_command.make_form.lazy"/>
+        <argument key="maker.auto_command.make_listener" type="service_closure" id=".maker.auto_command.make_listener.lazy"/>
         <argument key="maker.auto_command.make_message" type="service_closure" id=".maker.auto_command.make_message.lazy"/>
         <argument key="maker.auto_command.make_messenger_middleware" type="service_closure" id=".maker.auto_command.make_messenger_middleware.lazy"/>
         <argument key="maker.auto_command.make_registration_form" type="service_closure" id=".maker.auto_command.make_registration_form.lazy"/>
         <argument key="maker.auto_command.make_reset_password" type="service_closure" id=".maker.auto_command.make_reset_password.lazy"/>
         <argument key="maker.auto_command.make_serializer_encoder" type="service_closure" id=".maker.auto_command.make_serializer_encoder.lazy"/>
         <argument key="maker.auto_command.make_serializer_normalizer" type="service_closure" id=".maker.auto_command.make_serializer_normalizer.lazy"/>
-        <argument key="maker.auto_command.make_subscriber" type="service_closure" id=".maker.auto_command.make_subscriber.lazy"/>
         <argument key="maker.auto_command.make_twig_extension" type="service_closure" id=".maker.auto_command.make_twig_extension.lazy"/>
         <argument key="maker.auto_command.make_test" type="service_closure" id=".maker.auto_command.make_test.lazy"/>
         <argument key="maker.auto_command.make_validator" type="service_closure" id=".maker.auto_command.make_validator.lazy"/>

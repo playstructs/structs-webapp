@@ -157,7 +157,7 @@ class MakerTestRunner
     {
         $this->replaceInFile(
             '.env',
-            'postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=15&charset=utf8',
+            'postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8',
             getenv('TEST_DATABASE_DSN')
         );
 
@@ -170,14 +170,6 @@ class MakerTestRunner
 
             return $config;
         });
-
-        // @legacy DoctrineBundle 2.4 recipe uses when@test instead of a test/doctrine.yaml config
-        if ($this->filesystem->exists('config/packages/test/doctrine.yaml')) {
-            $this->removeFromFile(
-                'config/packages/test/doctrine.yaml',
-                "dbname_suffix: '_test%env(default::TEST_TOKEN)%'"
-            );
-        }
 
         // this looks silly, but it's the only way to drop the database *for sure*,
         // as doctrine:database:drop will error if there is no database

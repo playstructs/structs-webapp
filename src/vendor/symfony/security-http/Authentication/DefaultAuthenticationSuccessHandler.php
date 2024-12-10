@@ -45,7 +45,7 @@ class DefaultAuthenticationSuccessHandler implements AuthenticationSuccessHandle
     /**
      * @param array $options Options for processing a successful authentication attempt
      */
-    public function __construct(HttpUtils $httpUtils, array $options = [], LoggerInterface $logger = null)
+    public function __construct(HttpUtils $httpUtils, array $options = [], ?LoggerInterface $logger = null)
     {
         $this->httpUtils = $httpUtils;
         $this->logger = $logger;
@@ -103,7 +103,7 @@ class DefaultAuthenticationSuccessHandler implements AuthenticationSuccessHandle
         }
 
         $firewallName = $this->getFirewallName();
-        if (null !== $firewallName && $targetUrl = $this->getTargetPath($request->getSession(), $firewallName)) {
+        if (null !== $firewallName && !$request->attributes->getBoolean('_stateless') && $targetUrl = $this->getTargetPath($request->getSession(), $firewallName)) {
             $this->removeTargetPath($request->getSession(), $firewallName);
 
             return $targetUrl;

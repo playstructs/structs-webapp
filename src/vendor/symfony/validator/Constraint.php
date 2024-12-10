@@ -46,6 +46,8 @@ abstract class Constraint
 
     /**
      * Maps error codes to the names of their constants.
+     *
+     * @var array<string, string>
      */
     protected const ERROR_NAMES = [];
 
@@ -117,7 +119,7 @@ abstract class Constraint
      *                                       array, but getDefaultOption() returns
      *                                       null
      */
-    public function __construct(mixed $options = null, array $groups = null, mixed $payload = null)
+    public function __construct(mixed $options = null, ?array $groups = null, mixed $payload = null)
     {
         unset($this->groups); // enable lazy initialization
 

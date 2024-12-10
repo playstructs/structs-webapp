@@ -49,6 +49,7 @@
         </xsd:choice>
 
         <xsd:attribute name="http-method-override" type="xsd:boolean" />
+        <xsd:attribute name="handle-all-throwables" type="xsd:boolean" />
         <xsd:attribute name="trust-x-sendfile-type-header" type="xsd:boolean" />
         <xsd:attribute name="ide" type="xsd:string" />
         <xsd:attribute name="secret" type="xsd:string" />
@@ -236,6 +237,7 @@
         <xsd:attribute name="logging" type="xsd:boolean" />
         <xsd:attribute name="formatter" type="xsd:string" />
         <xsd:attribute name="cache-dir" type="xsd:string" />
+        <xsd:attribute name="default-path" type="xsd:string" />
     </xsd:complexType>
 
     <xsd:complexType name="pseudo_localization">
@@ -350,6 +352,7 @@
         <xsd:attribute name="default-redis-provider" type="xsd:string" />
         <xsd:attribute name="default-memcached-provider" type="xsd:string" />
         <xsd:attribute name="default-pdo-provider" type="xsd:string" />
+        <xsd:attribute name="default-doctrine-dbal-provider" type="xsd:string" />
         <xsd:attribute name="prefix-seed" type="xsd:string" />
     </xsd:complexType>
 
@@ -973,6 +976,7 @@
             <xsd:element name="service" type="xsd:string" minOccurs="0" maxOccurs="1" />
             <xsd:element name="secret" type="xsd:string" minOccurs="0" maxOccurs="1" />
         </xsd:sequence>
+        <xsd:attribute name="type" type="xsd:string" use="required" />
     </xsd:complexType>
 
     <xsd:complexType name="remote-event">

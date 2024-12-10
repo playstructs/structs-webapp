@@ -37,7 +37,7 @@ final class MakeStimulusController extends AbstractMaker
 
     public static function getCommandDescription(): string
     {
-        return 'Creates a new Stimulus controller';
+        return 'Create a new Stimulus controller';
     }
 
     public function configureCommand(Command $command, InputConfiguration $inputConfig): void
@@ -175,7 +175,7 @@ final class MakeStimulusController extends AbstractMaker
         // convert to snake case for simplicity
         $snakeCasedField = Str::asSnakeCase($valueName);
 
-        if ('_id' === $suffix = substr($snakeCasedField, -3)) {
+        if ('_id' === substr($snakeCasedField, -3)) {
             $defaultType = 'Number';
         } elseif (str_starts_with($snakeCasedField, 'is_')) {
             $defaultType = 'Boolean';

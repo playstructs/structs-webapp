@@ -31,7 +31,7 @@ class ConfigBuilderCacheWarmer implements CacheWarmerInterface
     private KernelInterface $kernel;
     private ?LoggerInterface $logger;
 
-    public function __construct(KernelInterface $kernel, LoggerInterface $logger = null)
+    public function __construct(KernelInterface $kernel, ?LoggerInterface $logger = null)
     {
         $this->kernel = $kernel;
         $this->logger = $logger;
@@ -42,7 +42,7 @@ class ConfigBuilderCacheWarmer implements CacheWarmerInterface
      */
     public function warmUp(string $cacheDir): array
     {
-        $generator = new ConfigBuilderGenerator($cacheDir);
+        $generator = new ConfigBuilderGenerator($this->kernel->getBuildDir());
 
         foreach ($this->kernel->getBundles() as $bundle) {
             $extension = $bundle->getContainerExtension();

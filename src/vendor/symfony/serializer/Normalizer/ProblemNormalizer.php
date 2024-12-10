@@ -50,7 +50,7 @@ class ProblemNormalizer implements NormalizerInterface, SerializerAwareInterface
         ];
     }
 
-    public function normalize(mixed $object, string $format = null, array $context = []): array
+    public function normalize(mixed $object, ?string $format = null, array $context = []): array
     {
         if (!$object instanceof FlattenException) {
             throw new InvalidArgumentException(sprintf('The object must implement "%s".', FlattenException::class));
@@ -109,7 +109,7 @@ class ProblemNormalizer implements NormalizerInterface, SerializerAwareInterface
     /**
      * @param array $context
      */
-    public function supportsNormalization(mixed $data, string $format = null /* , array $context = [] */): bool
+    public function supportsNormalization(mixed $data, ?string $format = null /* , array $context = [] */): bool
     {
         return $data instanceof FlattenException;
     }
@@ -119,7 +119,7 @@ class ProblemNormalizer implements NormalizerInterface, SerializerAwareInterface
      */
     public function hasCacheableSupportsMethod(): bool
     {
-        trigger_deprecation('symfony/serializer', '6.3', 'The "%s()" method is deprecated, use "getSupportedTypes()" instead.', __METHOD__);
+        trigger_deprecation('symfony/serializer', '6.3', 'The "%s()" method is deprecated, implement "%s::getSupportedTypes()" instead.', __METHOD__, get_debug_type($this));
 
         return true;
     }

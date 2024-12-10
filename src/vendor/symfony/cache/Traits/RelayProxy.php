@@ -237,12 +237,12 @@ class RelayProxy extends Relay implements ResetInterface, LazyObjectInterface
         return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->info(...\func_get_args());
     }
 
-    public function flushdb($async = false): \Relay\Relay|bool
+    public function flushdb($sync = null): \Relay\Relay|bool
     {
         return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->flushdb(...\func_get_args());
     }
 
-    public function flushall($async = false): \Relay\Relay|bool
+    public function flushall($sync = null): \Relay\Relay|bool
     {
         return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->flushall(...\func_get_args());
     }
@@ -325,6 +325,11 @@ class RelayProxy extends Relay implements ResetInterface, LazyObjectInterface
     public function lastsave(): \Relay\Relay|false|int
     {
         return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->lastsave(...\func_get_args());
+    }
+
+    public function lcs($key1, $key2, $options = null): mixed
+    {
+        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->lcs(...\func_get_args());
     }
 
     public function bgsave($schedule = false): \Relay\Relay|bool
@@ -457,6 +462,11 @@ class RelayProxy extends Relay implements ResetInterface, LazyObjectInterface
         return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->bitcount(...\func_get_args());
     }
 
+    public function bitfield($key, ...$args): \Relay\Relay|array|false
+    {
+        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->bitfield(...\func_get_args());
+    }
+
     public function config($operation, $key = null, $value = null): \Relay\Relay|array|bool
     {
         return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->config(...\func_get_args());
@@ -535,6 +545,11 @@ class RelayProxy extends Relay implements ResetInterface, LazyObjectInterface
     public function publish($channel, $message): \Relay\Relay|false|int
     {
         return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->publish(...\func_get_args());
+    }
+
+    public function pubsub($operation, ...$args): mixed
+    {
+        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->pubsub(...\func_get_args());
     }
 
     public function spublish($channel, $message): \Relay\Relay|false|int
@@ -974,22 +989,22 @@ class RelayProxy extends Relay implements ResetInterface, LazyObjectInterface
 
     public function scan(&$iterator, $match = null, $count = 0, $type = null): array|false
     {
-        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->scan($iterator, $match, $count, $type, ...\array_slice(\func_get_args(), 4));
+        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->scan($iterator, ...\array_slice(\func_get_args(), 1));
     }
 
     public function hscan($key, &$iterator, $match = null, $count = 0): array|false
     {
-        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->hscan($key, $iterator, $match, $count, ...\array_slice(\func_get_args(), 4));
+        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->hscan($key, $iterator, ...\array_slice(\func_get_args(), 2));
     }
 
     public function sscan($key, &$iterator, $match = null, $count = 0): array|false
     {
-        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->sscan($key, $iterator, $match, $count, ...\array_slice(\func_get_args(), 4));
+        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->sscan($key, $iterator, ...\array_slice(\func_get_args(), 2));
     }
 
     public function zscan($key, &$iterator, $match = null, $count = 0): array|false
     {
-        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->zscan($key, $iterator, $match, $count, ...\array_slice(\func_get_args(), 4));
+        return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->zscan($key, $iterator, ...\array_slice(\func_get_args(), 2));
     }
 
     public function keys($pattern): \Relay\Relay|array|false

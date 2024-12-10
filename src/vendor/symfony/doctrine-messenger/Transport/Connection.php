@@ -67,7 +67,7 @@ class Connection implements ResetInterface
     private ?SchemaSynchronizer $schemaSynchronizer;
     private bool $autoSetup;
 
-    public function __construct(array $configuration, DBALConnection $driverConnection, SchemaSynchronizer $schemaSynchronizer = null)
+    public function __construct(array $configuration, DBALConnection $driverConnection, ?SchemaSynchronizer $schemaSynchronizer = null)
     {
         $this->configuration = array_replace_recursive(static::DEFAULT_OPTIONS, $configuration);
         $this->driverConnection = $driverConnection;
@@ -87,16 +87,16 @@ class Connection implements ResetInterface
 
     public static function buildConfiguration(#[\SensitiveParameter] string $dsn, array $options = []): array
     {
-        if (false === $components = parse_url($dsn)) {
+        if (false === $params = parse_url($dsn)) {
             throw new InvalidArgumentException('The given Doctrine Messenger DSN is invalid.');
         }
 
         $query = [];
-        if (isset($components['query'])) {
-            parse_str($components['query'], $query);
+        if (isset($params['query'])) {
+            parse_str($params['query'], $query);
         }
 
-        $configuration = ['connection' => $components['host']];
+        $configuration = ['connection' => $params['host']];
         $configuration += $query + $options + static::DEFAULT_OPTIONS;
 
         $configuration['auto_setup'] = filter_var($configuration['auto_setup'], \FILTER_VALIDATE_BOOL);
@@ -126,7 +126,7 @@ class Connection implements ResetInterface
     public function send(string $body, array $headers, int $delay = 0): string
     {
         $now = new \DateTimeImmutable('UTC');
-        $availableAt = $now->modify(sprintf('+%d seconds', $delay / 1000));
+        $availableAt = $now->modify(sprintf('%+d seconds', $delay / 1000));
 
         $queryBuilder = $this->driverConnection->createQueryBuilder()
             ->insert($this->configuration['table_name'])
@@ -178,11 +178,26 @@ class Connection implements ResetInterface
 
             // Append pessimistic write lock to FROM clause if db platform supports it
             $sql = $query->getSQL();
-            if (($fromPart = $query->getQueryPart('from'))
-                && ($table = $fromPart[0]['table'] ?? null)
-                && ($alias = $fromPart[0]['alias'] ?? null)
-            ) {
-                $fromClause = sprintf('%s %s', $table, $alias);
+
+            // Wrap the rownum query in a sub-query to allow writelocks without ORA-02014 error
+            if ($this->driverConnection->getDatabasePlatform() instanceof OraclePlatform) {
+                $query = $this->createQueryBuilder('w')
+                    ->where('w.id IN ('.str_replace('SELECT a.* FROM', 'SELECT a.id FROM', $sql).')')
+                    ->setParameters($query->getParameters(), $query->getParameterTypes());
+
+                if (method_exists(QueryBuilder::class, 'forUpdate')) {
+                    $query->forUpdate();
+                }
+
+                $sql = $query->getSQL();
+            } elseif (method_exists(QueryBuilder::class, 'forUpdate')) {
+                $query->forUpdate();
+                try {
+                    $sql = $query->getSQL();
+                } catch (DBALException $e) {
+                }
+            } elseif (preg_match('/FROM (.+) WHERE/', (string) $sql, $matches)) {
+                $fromClause = $matches[1];
                 $sql = str_replace(
                     sprintf('FROM %s WHERE', $fromClause),
                     sprintf('FROM %s WHERE', $this->driverConnection->getDatabasePlatform()->appendLockHint($fromClause, LockMode::PESSIMISTIC_WRITE)),
@@ -190,16 +205,13 @@ class Connection implements ResetInterface
                 );
             }
 
-            // Wrap the rownum query in a sub-query to allow writelocks without ORA-02014 error
-            if ($this->driverConnection->getDatabasePlatform() instanceof OraclePlatform) {
-                $sql = $this->createQueryBuilder('w')
-                    ->where('w.id IN ('.str_replace('SELECT a.* FROM', 'SELECT a.id FROM', $sql).')')
-                    ->getSQL();
+            // use SELECT ... FOR UPDATE to lock table
+            if (!method_exists(QueryBuilder::class, 'forUpdate')) {
+                $sql .= ' '.$this->driverConnection->getDatabasePlatform()->getWriteLockSQL();
             }
 
-            // use SELECT ... FOR UPDATE to lock table
             $stmt = $this->executeQuery(
-                $sql.' '.$this->driverConnection->getDatabasePlatform()->getWriteLockSQL(),
+                $sql,
                 $query->getParameters(),
                 $query->getParameterTypes()
             );
@@ -291,7 +303,7 @@ class Connection implements ResetInterface
         return $stmt instanceof Result ? $stmt->fetchOne() : $stmt->fetchColumn();
     }
 
-    public function findAll(int $limit = null): array
+    public function findAll(?int $limit = null): array
     {
         $queryBuilder = $this->createAvailableMessagesQueryBuilder();
 
@@ -346,14 +358,15 @@ class Connection implements ResetInterface
         $redeliverLimit = $now->modify(sprintf('-%d seconds', $this->configuration['redeliver_timeout']));
 
         return $this->createQueryBuilder()
-            ->where('m.delivered_at is null OR m.delivered_at < ?')
+            ->where('m.queue_name = ?')
+            ->andWhere('m.delivered_at is null OR m.delivered_at < ?')
             ->andWhere('m.available_at <= ?')
-            ->andWhere('m.queue_name = ?')
             ->setParameters([
+                $this->configuration['queue_name'],
                 $redeliverLimit,
                 $now,
-                $this->configuration['queue_name'],
             ], [
+                Types::STRING,
                 Types::DATETIME_IMMUTABLE,
                 Types::DATETIME_IMMUTABLE,
             ]);
