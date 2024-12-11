@@ -14,7 +14,7 @@ class PropertyInfoConfig
     private $_usedProperties = [];
 
     /**
-     * @default true
+     * @default false
      * @param ParamConfigurator|bool $value
      * @return $this
      */

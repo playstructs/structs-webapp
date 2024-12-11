@@ -11,16 +11,17 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\Persistence\Mapping\ClassMetadata as PersistenceClassMetadata;
 use Doctrine\Persistence\Mapping\Driver\FileDriver;
+use Doctrine\Persistence\Mapping\Driver\FileLocator;
 use DOMDocument;
 use InvalidArgumentException;
 use LogicException;
 use SimpleXMLElement;
 
 use function assert;
-use function class_exists;
 use function constant;
 use function count;
 use function defined;
+use function enum_exists;
 use function explode;
 use function extension_loaded;
 use function file_get_contents;
@@ -44,28 +45,26 @@ class XmlDriver extends FileDriver
 {
     public const DEFAULT_FILE_EXTENSION = '.dcm.xml';
 
-    /** @var bool */
-    private $isXsdValidationEnabled;
-
     /**
      * {@inheritDoc}
      */
-    public function __construct($locator, $fileExtension = self::DEFAULT_FILE_EXTENSION, bool $isXsdValidationEnabled = false)
-    {
+    public function __construct(
+        string|array|FileLocator $locator,
+        string $fileExtension = self::DEFAULT_FILE_EXTENSION,
+        private readonly bool $isXsdValidationEnabled = true,
+    ) {
         if (! extension_loaded('simplexml')) {
             throw new LogicException(
                 'The XML metadata driver cannot be enabled because the SimpleXML PHP extension is missing.'
-                . ' Please configure PHP with SimpleXML or choose a different metadata driver.'
+                . ' Please configure PHP with SimpleXML or choose a different metadata driver.',
             );
         }
 
         if ($isXsdValidationEnabled && ! extension_loaded('dom')) {
             throw new LogicException(
-                'XSD validation cannot be enabled because the DOM extension is missing.'
+                'XSD validation cannot be enabled because the DOM extension is missing.',
             );
         }
-
-        $this->isXsdValidationEnabled = $isXsdValidationEnabled;
 
         parent::__construct($locator, $fileExtension);
     }
@@ -78,7 +77,7 @@ class XmlDriver extends FileDriver
      *
      * @template T of object
      */
-    public function loadMetadataForClass($className, PersistenceClassMetadata $metadata)
+    public function loadMetadataForClass($className, PersistenceClassMetadata $metadata): void
     {
         $xmlRoot = $this->getElement($className);
 
@@ -92,7 +91,7 @@ class XmlDriver extends FileDriver
             }
         } elseif ($xmlRoot->getName() === 'mapped-superclass') {
             $metadata->setCustomRepositoryClass(
-                isset($xmlRoot['repository-class']) ? (string) $xmlRoot['repository-class'] : null
+                isset($xmlRoot['repository-class']) ? (string) $xmlRoot['repository-class'] : null,
             );
             $metadata->isMappedSuperclass = true;
         } elseif ($xmlRoot->getName() === 'embeddable') {
@@ -117,76 +116,6 @@ class XmlDriver extends FileDriver
         // Evaluate second level cache
         if (isset($xmlRoot->cache)) {
             $metadata->enableCache($this->cacheToArray($xmlRoot->cache));
-        }
-
-        // Evaluate named queries
-        if (isset($xmlRoot->{'named-queries'})) {
-            foreach ($xmlRoot->{'named-queries'}->{'named-query'} ?? [] as $namedQueryElement) {
-                // @phpstan-ignore method.deprecated
-                $metadata->addNamedQuery(
-                    [
-                        'name'  => (string) $namedQueryElement['name'],
-                        'query' => (string) $namedQueryElement['query'],
-                    ]
-                );
-            }
-        }
-
-        // Evaluate native named queries
-        if (isset($xmlRoot->{'named-native-queries'})) {
-            foreach ($xmlRoot->{'named-native-queries'}->{'named-native-query'} ?? [] as $nativeQueryElement) {
-                // @phpstan-ignore method.deprecated
-                $metadata->addNamedNativeQuery(
-                    [
-                        'name'              => isset($nativeQueryElement['name']) ? (string) $nativeQueryElement['name'] : null,
-                        'query'             => isset($nativeQueryElement->query) ? (string) $nativeQueryElement->query : null,
-                        'resultClass'       => isset($nativeQueryElement['result-class']) ? (string) $nativeQueryElement['result-class'] : null,
-                        'resultSetMapping'  => isset($nativeQueryElement['result-set-mapping']) ? (string) $nativeQueryElement['result-set-mapping'] : null,
-                    ]
-                );
-            }
-        }
-
-        // Evaluate sql result set mapping
-        if (isset($xmlRoot->{'sql-result-set-mappings'})) {
-            foreach ($xmlRoot->{'sql-result-set-mappings'}->{'sql-result-set-mapping'} ?? [] as $rsmElement) {
-                $entities = [];
-                $columns  = [];
-                foreach ($rsmElement as $entityElement) {
-                    //<entity-result/>
-                    if (isset($entityElement['entity-class'])) {
-                        $entityResult = [
-                            'fields'                => [],
-                            'entityClass'           => (string) $entityElement['entity-class'],
-                            'discriminatorColumn'   => isset($entityElement['discriminator-column']) ? (string) $entityElement['discriminator-column'] : null,
-                        ];
-
-                        foreach ($entityElement as $fieldElement) {
-                            $entityResult['fields'][] = [
-                                'name'      => isset($fieldElement['name']) ? (string) $fieldElement['name'] : null,
-                                'column'    => isset($fieldElement['column']) ? (string) $fieldElement['column'] : null,
-                            ];
-                        }
-
-                        $entities[] = $entityResult;
-                    }
-
-                    //<column-result/>
-                    if (isset($entityElement['name'])) {
-                        $columns[] = [
-                            'name' => (string) $entityElement['name'],
-                        ];
-                    }
-                }
-
-                $metadata->addSqlResultSetMapping(
-                    [
-                        'name'          => (string) $rsmElement['name'],
-                        'entities'      => $entities,
-                        'columns'       => $columns,
-                    ]
-                );
-            }
         }
 
         if (isset($xmlRoot['inheritance-type'])) {
@@ -257,7 +186,7 @@ class XmlDriver extends FileDriver
                 ) {
                     throw MappingException::invalidIndexConfiguration(
                         $className,
-                        (string) ($indexXml['name'] ?? count($metadata->table['indexes']))
+                        (string) ($indexXml['name'] ?? count($metadata->table['indexes'])),
                     );
                 }
 
@@ -300,7 +229,7 @@ class XmlDriver extends FileDriver
                 ) {
                     throw MappingException::invalidUniqueConstraintConfiguration(
                         $className,
-                        (string) ($uniqueXml['name'] ?? count($metadata->table['uniqueConstraints']))
+                        (string) ($uniqueXml['name'] ?? count($metadata->table['uniqueConstraints'])),
                     );
                 }
 
@@ -322,7 +251,6 @@ class XmlDriver extends FileDriver
 
         // The mapping assignment is done in 2 times as a bug might occurs on some php/xml lib versions
         // The internal SimpleXmlIterator get resetted, to this generate a duplicate field exception
-        $mappings = [];
         // Evaluate <field ...> mappings
         if (isset($xmlRoot->field)) {
             foreach ($xmlRoot->field as $fieldMapping) {
@@ -357,14 +285,6 @@ class XmlDriver extends FileDriver
             }
         }
 
-        foreach ($mappings as $mapping) {
-            if (isset($mapping['version'])) {
-                $metadata->setVersionMapping($mapping);
-            }
-
-            $metadata->mapField($mapping);
-        }
-
         // Evaluate <id ...> mappings
         $associationIds = [];
         foreach ($xmlRoot->id ?? [] as $idElement) {
@@ -393,14 +313,14 @@ class XmlDriver extends FileDriver
                         'sequenceName' => (string) $seqGenerator['sequence-name'],
                         'allocationSize' => (string) $seqGenerator['allocation-size'],
                         'initialValue' => (string) $seqGenerator['initial-value'],
-                    ]
+                    ],
                 );
             } elseif (isset($idElement->{'custom-id-generator'})) {
                 $customGenerator = $idElement->{'custom-id-generator'};
                 $metadata->setCustomGeneratorDefinition(
                     [
                         'class' => (string) $customGenerator['class'],
-                    ]
+                    ],
                 );
             }
         }
@@ -492,7 +412,7 @@ class XmlDriver extends FileDriver
                         $orderBy[(string) $orderByField['name']] = isset($orderByField['direction'])
                             ? (string) $orderByField['direction']
                             // @phpstan-ignore classConstant.deprecated
-                            : (class_exists(Order::class) ? (Order::Ascending)->value : Criteria::ASC);
+                            : (enum_exists(Order::class) ? Order::Ascending->value : Criteria::ASC);
                     }
 
                     $mapping['orderBy'] = $orderBy;
@@ -622,7 +542,7 @@ class XmlDriver extends FileDriver
                         $orderBy[(string) $orderByField['name']] = isset($orderByField['direction'])
                             ? (string) $orderByField['direction']
                             // @phpstan-ignore classConstant.deprecated
-                            : (class_exists(Order::class) ? (Order::Ascending)->value : Criteria::ASC);
+                            : (enum_exists(Order::class) ? Order::Ascending->value : Criteria::ASC);
                     }
 
                     $mapping['orderBy'] = $orderBy;
@@ -748,7 +668,7 @@ class XmlDriver extends FileDriver
      * @return mixed[] The options array.
      * @psalm-return array<int|string, array<int|string, mixed|string>|bool|string>
      */
-    private function parseOptions(?SimpleXMLElement $options): array
+    private function parseOptions(SimpleXMLElement|null $options): array
     {
         $array = [];
 
@@ -949,7 +869,7 @@ class XmlDriver extends FileDriver
         foreach ($children as $action) {
             // According to the JPA specifications, XML uses "cascade-persist"
             // instead of "persist". Here, both variations
-            // are supported because YAML, Annotation and Attribute use "persist"
+            // are supported because Attribute uses "persist"
             // and we want to make sure that this driver doesn't need to know
             // anything about the supported cascading actions
             $cascades[] = str_replace('cascade-', '', $action->getName());
@@ -1013,12 +933,7 @@ class XmlDriver extends FileDriver
         }
     }
 
-    /**
-     * @param mixed $element
-     *
-     * @return bool
-     */
-    protected function evaluateBoolean($element)
+    protected function evaluateBoolean(mixed $element): bool
     {
         $flag = (string) $element;
 

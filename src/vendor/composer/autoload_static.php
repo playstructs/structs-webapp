@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit89305ecc6aa7de01411f227341db5744
+class ComposerStaticInit74ab73114a599f4a2997b6a284f9e273
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -43,6 +43,8 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
         ),
         'S' => 
         array (
+            'Symfony\\UX\\Turbo\\' => 17,
+            'Symfony\\UX\\StimulusBundle\\' => 26,
             'Symfony\\Runtime\\Symfony\\Component\\' => 34,
             'Symfony\\Polyfill\\Php83\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
@@ -101,6 +103,7 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
             'Symfony\\Component\\Cache\\' => 24,
             'Symfony\\Component\\BrowserKit\\' => 29,
             'Symfony\\Component\\Asset\\' => 24,
+            'Symfony\\Component\\AssetMapper\\' => 30,
             'Symfony\\Bundle\\WebProfilerBundle\\' => 33,
             'Symfony\\Bundle\\TwigBundle\\' => 26,
             'Symfony\\Bundle\\SecurityBundle\\' => 30,
@@ -151,6 +154,10 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
             'Doctrine\\Bundle\\DoctrineBundle\\' => 31,
             'DeepCopy\\' => 9,
         ),
+        'C' => 
+        array (
+            'Composer\\Semver\\' => 16,
+        ),
         'A' => 
         array (
             'App\\Tests\\' => 10,
@@ -176,6 +183,14 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
         'Twig\\' => 
         array (
             0 => __DIR__ . '/..' . '/twig/twig/src',
+        ),
+        'Symfony\\UX\\Turbo\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/ux-turbo/src',
+        ),
+        'Symfony\\UX\\StimulusBundle\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/stimulus-bundle/src',
         ),
         'Symfony\\Runtime\\Symfony\\Component\\' => 
         array (
@@ -409,6 +424,10 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
         array (
             0 => __DIR__ . '/..' . '/symfony/asset',
         ),
+        'Symfony\\Component\\AssetMapper\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/asset-mapper',
+        ),
         'Symfony\\Bundle\\WebProfilerBundle\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/web-profiler-bundle',
@@ -543,8 +562,7 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
         ),
         'Doctrine\\Common\\' => 
         array (
-            0 => __DIR__ . '/..' . '/doctrine/common/src',
-            1 => __DIR__ . '/..' . '/doctrine/event-manager/src',
+            0 => __DIR__ . '/..' . '/doctrine/event-manager/src',
         ),
         'Doctrine\\Bundle\\MigrationsBundle\\' => 
         array (
@@ -557,6 +575,10 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
         'DeepCopy\\' => 
         array (
             0 => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy',
+        ),
+        'Composer\\Semver\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/composer/semver/src',
         ),
         'App\\Tests\\' => 
         array (
@@ -1221,9 +1243,9 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit89305ecc6aa7de01411f227341db5744::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit89305ecc6aa7de01411f227341db5744::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit89305ecc6aa7de01411f227341db5744::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit74ab73114a599f4a2997b6a284f9e273::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit74ab73114a599f4a2997b6a284f9e273::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit74ab73114a599f4a2997b6a284f9e273::$classMap;
 
         }, null, ClassLoader::class);
     }
