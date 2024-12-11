@@ -46,7 +46,7 @@ class MakerTestRunner
         $path = __DIR__.'/../../tests/fixtures/'.$source;
 
         if (!file_exists($path)) {
-            throw new \Exception(sprintf('Cannot find file "%s"', $path));
+            throw new \Exception(\sprintf('Cannot find file "%s"', $path));
         }
 
         if (is_file($path)) {
@@ -173,13 +173,18 @@ class MakerTestRunner
 
         // this looks silly, but it's the only way to drop the database *for sure*,
         // as doctrine:database:drop will error if there is no database
-        // also, skip for SQLITE, as it does not support --if-not-exists
-        if (!str_starts_with(getenv('TEST_DATABASE_DSN'), 'sqlite://')) {
+        if (!$usingSqlite = str_starts_with(getenv('TEST_DATABASE_DSN'), 'sqlite')) {
+            // --if-not-exists not supported on SQLite
             $this->runConsole('doctrine:database:create', [], '--env=test --if-not-exists');
         }
+
         $this->runConsole('doctrine:database:drop', [], '--env=test --force');
 
-        $this->runConsole('doctrine:database:create', [], '--env=test');
+        if (!$usingSqlite) {
+            // d:d:create not supported on SQLite
+            $this->runConsole('doctrine:database:create', [], '--env=test');
+        }
+
         if ($createSchema) {
             $this->runConsole('doctrine:schema:create', [], '--env=test');
         }
@@ -193,7 +198,7 @@ class MakerTestRunner
     public function runTests(): void
     {
         $internalTestProcess = MakerTestProcess::create(
-            sprintf('php %s', $this->getPath('/bin/phpunit')),
+            \sprintf('php %s', $this->getPath('/bin/phpunit')),
             $this->environment->getPath())
             ->run(true)
         ;
@@ -202,7 +207,7 @@ class MakerTestRunner
             return;
         }
 
-        throw new ExpectationFailedException(sprintf("Error while running the PHPUnit tests *in* the project: \n\n %s \n\n Command Output: %s", $internalTestProcess->getErrorOutput()."\n".$internalTestProcess->getOutput(), $this->getExecutedMakerProcess()->getErrorOutput()."\n".$this->getExecutedMakerProcess()->getOutput()));
+        throw new ExpectationFailedException(\sprintf("Error while running the PHPUnit tests *in* the project: \n\n %s \n\n Command Output: %s", $internalTestProcess->getErrorOutput()."\n".$internalTestProcess->getOutput(), $this->getExecutedMakerProcess()->getErrorOutput()."\n".$this->getExecutedMakerProcess()->getOutput()));
     }
 
     public function writeFile(string $filename, string $contents): void

@@ -29,13 +29,8 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
     use CommonResponseTrait;
     use TransportResponseTrait;
 
-    /**
-     * @var resource
-     */
-    private $context;
-    private string $url;
-    private $resolver;
-    private $onProgress;
+    private \Closure $resolver;
+    private ?\Closure $onProgress;
     private ?int $remaining = null;
 
     /**
@@ -43,23 +38,29 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
      */
     private $buffer;
 
-    private NativeClientState $multi;
     private float $pauseExpiry = 0.0;
 
     /**
      * @internal
+     *
+     * @param $context resource
      */
-    public function __construct(NativeClientState $multi, $context, string $url, array $options, array &$info, callable $resolver, ?callable $onProgress, ?LoggerInterface $logger)
-    {
-        $this->multi = $multi;
+    public function __construct(
+        private NativeClientState $multi,
+        private $context,
+        private string $url,
+        array $options,
+        array &$info,
+        callable $resolver,
+        ?callable $onProgress,
+        ?LoggerInterface $logger,
+    ) {
         $this->id = $id = (int) $context;
-        $this->context = $context;
-        $this->url = $url;
         $this->logger = $logger;
         $this->timeout = $options['timeout'];
         $this->info = &$info;
-        $this->resolver = $resolver;
-        $this->onProgress = $onProgress;
+        $this->resolver = $resolver(...);
+        $this->onProgress = $onProgress ? $onProgress(...) : null;
         $this->inflate = !isset($options['normalized_headers']['accept-encoding']);
         $this->shouldBuffer = $options['buffer'] ?? true;
 
@@ -75,7 +76,7 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
 
         $pauseExpiry = &$this->pauseExpiry;
         $info['pause_handler'] = static function (float $duration) use (&$pauseExpiry) {
-            $pauseExpiry = 0 < $duration ? microtime(true) + $duration : 0;
+            $pauseExpiry = 0 < $duration ? hrtime(true) / 1E9 + $duration : 0;
         };
 
         $this->canary = new Canary(static function () use ($multi, $id) {
@@ -123,7 +124,7 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
                 throw new TransportException($msg);
             }
 
-            $this->logger?->info(sprintf('%s for "%s".', $msg, $url ?? $this->url));
+            $this->logger?->info(\sprintf('%s for "%s".', $msg, $url ?? $this->url));
         });
 
         try {
@@ -142,7 +143,7 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
                     $this->info['request_header'] = $this->info['url']['path'].$this->info['url']['query'];
                 }
 
-                $this->info['request_header'] = sprintf("> %s %s HTTP/%s \r\n", $context['http']['method'], $this->info['request_header'], $context['http']['protocol_version']);
+                $this->info['request_header'] = \sprintf("> %s %s HTTP/%s \r\n", $context['http']['method'], $this->info['request_header'], $context['http']['protocol_version']);
                 $this->info['request_header'] .= implode("\r\n", $context['http']['header'])."\r\n\r\n";
 
                 if (\array_key_exists('peer_name', $context['ssl']) && null === $context['ssl']['peer_name']) {
@@ -159,7 +160,7 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
                     break;
                 }
 
-                $this->logger?->info(sprintf('Redirecting: "%s %s"', $this->info['http_code'], $url ?? $this->url));
+                $this->logger?->info(\sprintf('Redirecting: "%s %s"', $this->info['http_code'], $url ?? $this->url));
             }
         } catch (\Throwable $e) {
             $this->close();
@@ -177,7 +178,7 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
         }
 
         stream_set_blocking($h, false);
-        $this->context = $this->resolver = null;
+        unset($this->context, $this->resolver);
 
         // Create dechunk buffers
         if (isset($this->headers['content-length'])) {
@@ -232,7 +233,7 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
     {
         foreach ($multi->openHandles as $i => [$pauseExpiry, $h, $buffer, $onProgress]) {
             if ($pauseExpiry) {
-                if (microtime(true) < $pauseExpiry) {
+                if (hrtime(true) / 1E9 < $pauseExpiry) {
                     continue;
                 }
 
@@ -294,7 +295,7 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
 
                 if (null === $e) {
                     if (0 < $remaining) {
-                        $e = new TransportException(sprintf('Transfer closed with %s bytes remaining to read.', $remaining));
+                        $e = new TransportException(\sprintf('Transfer closed with %s bytes remaining to read.', $remaining));
                     } elseif (-1 === $remaining && fwrite($buffer, '-') && '' !== stream_get_contents($buffer, -1, 0)) {
                         $e = new TransportException('Transfer closed with outstanding data remaining from chunked response.');
                     }
@@ -321,7 +322,7 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
                 continue;
             }
 
-            if ($response->pauseExpiry && microtime(true) < $response->pauseExpiry) {
+            if ($response->pauseExpiry && hrtime(true) / 1E9 < $response->pauseExpiry) {
                 // Create empty open handles to tell we still have pending requests
                 $multi->openHandles[$i] = [\INF, null, null, null];
             } elseif ($maxHosts && $maxHosts > ($multi->hosts[parse_url($response->url, \PHP_URL_HOST)] ?? 0)) {
@@ -351,7 +352,7 @@ final class NativeResponse implements ResponseInterface, StreamableInterface
                 continue;
             }
 
-            if ($pauseExpiry && ($now ??= microtime(true)) < $pauseExpiry) {
+            if ($pauseExpiry && ($now ??= hrtime(true) / 1E9) < $pauseExpiry) {
                 $timeout = min($timeout, $pauseExpiry - $now);
                 continue;
             }

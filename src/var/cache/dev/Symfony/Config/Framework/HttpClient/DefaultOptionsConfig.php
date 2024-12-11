@@ -34,6 +34,7 @@ class DefaultOptionsConfig
     private $peerFingerprint;
     private $cryptoMethod;
     private $extra;
+    private $rateLimiter;
     private $retryFailed;
     private $_usedProperties = [];
 
@@ -325,6 +326,20 @@ class DefaultOptionsConfig
     }
 
     /**
+     * Rate limiter name to use for throttling requests.
+     * @default null
+     * @param ParamConfigurator|mixed $value
+     * @return $this
+     */
+    public function rateLimiter($value): static
+    {
+        $this->_usedProperties['rateLimiter'] = true;
+        $this->rateLimiter = $value;
+
+        return $this;
+    }
+
+    /**
      * @template TValue
      * @param TValue $value
      * @default {"enabled":false,"retry_strategy":null,"http_codes":[],"max_retries":3,"delay":1000,"multiplier":2,"max_delay":0,"jitter":0.1}
@@ -478,6 +493,12 @@ class DefaultOptionsConfig
             unset($value['extra']);
         }
 
+        if (array_key_exists('rate_limiter', $value)) {
+            $this->_usedProperties['rateLimiter'] = true;
+            $this->rateLimiter = $value['rate_limiter'];
+            unset($value['rate_limiter']);
+        }
+
         if (array_key_exists('retry_failed', $value)) {
             $this->_usedProperties['retryFailed'] = true;
             $this->retryFailed = \is_array($value['retry_failed']) ? new \Symfony\Config\Framework\HttpClient\DefaultOptions\RetryFailedConfig($value['retry_failed']) : $value['retry_failed'];
@@ -554,6 +575,9 @@ class DefaultOptionsConfig
         }
         if (isset($this->_usedProperties['extra'])) {
             $output['extra'] = $this->extra;
+        }
+        if (isset($this->_usedProperties['rateLimiter'])) {
+            $output['rate_limiter'] = $this->rateLimiter;
         }
         if (isset($this->_usedProperties['retryFailed'])) {
             $output['retry_failed'] = $this->retryFailed instanceof \Symfony\Config\Framework\HttpClient\DefaultOptions\RetryFailedConfig ? $this->retryFailed->toArray() : $this->retryFailed;

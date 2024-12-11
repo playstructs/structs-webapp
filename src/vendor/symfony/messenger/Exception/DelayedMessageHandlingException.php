@@ -19,13 +19,15 @@ use Symfony\Component\Messenger\Envelope;
  *
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
  */
-class DelayedMessageHandlingException extends RuntimeException
+class DelayedMessageHandlingException extends RuntimeException implements WrappedExceptionsInterface, EnvelopeAwareExceptionInterface
 {
-    private array $exceptions;
-    private ?Envelope $envelope;
+    use EnvelopeAwareExceptionTrait;
+    use WrappedExceptionsTrait;
 
-    public function __construct(array $exceptions, ?Envelope $envelope = null)
-    {
+    public function __construct(
+        private array $exceptions,
+        ?Envelope $envelope = null,
+    ) {
         $this->envelope = $envelope;
 
         $exceptionMessages = implode(", \n", array_map(
@@ -34,23 +36,11 @@ class DelayedMessageHandlingException extends RuntimeException
         ));
 
         if (1 === \count($exceptions)) {
-            $message = sprintf("A delayed message handler threw an exception: \n\n%s", $exceptionMessages);
+            $message = \sprintf("A delayed message handler threw an exception: \n\n%s", $exceptionMessages);
         } else {
-            $message = sprintf("Some delayed message handlers threw an exception: \n\n%s", $exceptionMessages);
+            $message = \sprintf("Some delayed message handlers threw an exception: \n\n%s", $exceptionMessages);
         }
 
-        $this->exceptions = $exceptions;
-
-        parent::__construct($message, 0, $exceptions[0]);
-    }
-
-    public function getExceptions(): array
-    {
-        return $this->exceptions;
-    }
-
-    public function getEnvelope(): ?Envelope
-    {
-        return $this->envelope;
+        parent::__construct($message, 0, $exceptions[array_key_first($exceptions)]);
     }
 }

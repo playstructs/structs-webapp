@@ -25,7 +25,7 @@ class CacheConfig
     private $_usedProperties = [];
 
     /**
-     * Used to namespace cache keys when using several apps with the same shared backend
+     * Used to namespace cache keys when using several apps with the same shared backend.
      * @example my-application-name/%kernel.environment%
      * @default '_%kernel.project_dir%.%kernel.container_class%'
      * @param ParamConfigurator|mixed $value
@@ -40,7 +40,7 @@ class CacheConfig
     }
 
     /**
-     * App related cache pools configuration
+     * App related cache pools configuration.
      * @default 'cache.adapter.filesystem'
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -54,7 +54,7 @@ class CacheConfig
     }
 
     /**
-     * System related cache pools configuration
+     * System related cache pools configuration.
      * @default 'cache.adapter.system'
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -228,7 +228,7 @@ class CacheConfig
 
         if (array_key_exists('pools', $value)) {
             $this->_usedProperties['pools'] = true;
-            $this->pools = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\Cache\PoolConfig($v) : $v; }, $value['pools']);
+            $this->pools = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Framework\Cache\PoolConfig($v) : $v, $value['pools']);
             unset($value['pools']);
         }
 
@@ -268,7 +268,7 @@ class CacheConfig
             $output['default_pdo_provider'] = $this->defaultPdoProvider;
         }
         if (isset($this->_usedProperties['pools'])) {
-            $output['pools'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\Cache\PoolConfig ? $v->toArray() : $v; }, $this->pools);
+            $output['pools'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Framework\Cache\PoolConfig ? $v->toArray() : $v, $this->pools);
         }
 
         return $output;

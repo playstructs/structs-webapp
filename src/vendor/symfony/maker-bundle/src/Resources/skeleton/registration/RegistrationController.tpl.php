@@ -7,29 +7,24 @@ namespace <?= $namespace; ?>;
 class <?= $class_name; ?> extends AbstractController
 {
 <?php if ($will_verify_email): ?>
-    private <?= $generator->getPropertyType($email_verifier_class_details) ?>$emailVerifier;
-
-    public function __construct(<?= $email_verifier_class_details->getShortName() ?> $emailVerifier)
+    public function __construct(private <?= $generator->getPropertyType($email_verifier_class_details) ?>$emailVerifier)
     {
-        $this->emailVerifier = $emailVerifier;
     }
 
 <?php endif; ?>
 <?= $generator->generateRouteForControllerMethod($route_path, $route_name) ?>
-    public function register(Request $request, <?= $password_hasher_class_details->getShortName() ?> $userPasswordHasher<?= $authenticator_full_class_name ? sprintf(', UserAuthenticatorInterface $userAuthenticator, %s $authenticator', $authenticator_class_name) : '' ?>, EntityManagerInterface $entityManager): Response
+    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher<?= $login_after_registration ? ', Security $security': '' ?>, EntityManagerInterface $entityManager): Response
     {
         $user = new <?= $user_class_name ?>();
         $form = $this->createForm(<?= $form_class_name ?>::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            /** @var string $plainPassword */
+            $plainPassword = $form->get('plainPassword')->getData();
+
             // encode the plain password
-            $user->set<?= ucfirst($password_field) ?>(
-                $userPasswordHasher->hashPassword(
-                    $user,
-                    $form->get('plainPassword')->getData()
-                )
-            );
+            $user->set<?= ucfirst($password_field) ?>($userPasswordHasher->hashPassword($user, $plainPassword));
 
             $entityManager->persist($user);
             $entityManager->flush();
@@ -39,26 +34,23 @@ class <?= $class_name; ?> extends AbstractController
             $this->emailVerifier->sendEmailConfirmation('app_verify_email', $user,
                 (new TemplatedEmail())
                     ->from(new Address('<?= $from_email ?>', '<?= $from_email_name ?>'))
-                    ->to($user-><?= $email_getter ?>())
+                    ->to((string) $user-><?= $email_getter ?>())
                     ->subject('Please Confirm your Email')
                     ->htmlTemplate('registration/confirmation_email.html.twig')
             );
 <?php endif; ?>
+
             // do anything else you need here, like send an email
 
-<?php if ($authenticator_full_class_name): ?>
-            return $userAuthenticator->authenticateUser(
-                $user,
-                $authenticator,
-                $request
-            );
+<?php if ($login_after_registration): ?>
+            return $security->login($user, <?= $authenticator ?>, '<?= $firewall ?>');
 <?php else: ?>
             return $this->redirectToRoute('<?= $redirect_route_name ?>');
 <?php endif; ?>
         }
 
         return $this->render('registration/register.html.twig', [
-            'registrationForm' => $form->createView(),
+            'registrationForm' => $form,
         ]);
     }
 <?php if ($will_verify_email): ?>
@@ -90,7 +82,11 @@ class <?= $class_name; ?> extends AbstractController
 
         // validate email confirmation link, sets User::isVerified=true and persists
         try {
-            $this->emailVerifier->handleEmailConfirmation($request, <?= $verify_email_anonymously ? '$user' : '$this->getUser()' ?>);
+<?php if (!$verify_email_anonymously): ?>
+            /** @var <?= $user_class_name ?> $user */
+            $user = $this->getUser();
+<?php endif; ?>
+            $this->emailVerifier->handleEmailConfirmation($request, $user);
         } catch (VerifyEmailExceptionInterface $exception) {
             $this->addFlash('verify_email_error', <?php if ($translator_available): ?>$translator->trans($exception->getReason(), [], 'VerifyEmailBundle')<?php else: ?>$exception->getReason()<?php endif ?>);
 

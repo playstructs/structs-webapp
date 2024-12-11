@@ -14,7 +14,7 @@ class MailerConfig
     private $_usedProperties = [];
 
     /**
-     * A service implementing the "Symfony\Component\Mime\HtmlToTextConverter\HtmlToTextConverterInterface"
+     * A service implementing the "Symfony\Component\Mime\HtmlToTextConverter\HtmlToTextConverterInterface".
      * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this

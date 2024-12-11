@@ -96,6 +96,7 @@ class HandlerConfig
     private $disableNotification;
     private $splitLongMessages;
     private $delayBetweenMessages;
+    private $factor;
     private $tags;
     private $consoleFormaterOptions;
     private $consoleFormatterOptions;
@@ -1116,6 +1117,19 @@ class HandlerConfig
     }
 
     /**
+     * @default 1
+     * @param ParamConfigurator|int $value
+     * @return $this
+     */
+    public function factor($value): static
+    {
+        $this->_usedProperties['factor'] = true;
+        $this->factor = $value;
+
+        return $this;
+    }
+
+    /**
      * @param ParamConfigurator|list<ParamConfigurator|mixed>|string $value
      *
      * @return $this
@@ -1657,7 +1671,7 @@ class HandlerConfig
 
         if (array_key_exists('excluded_http_codes', $value)) {
             $this->_usedProperties['excludedHttpCodes'] = true;
-            $this->excludedHttpCodes = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Monolog\HandlerConfig\ExcludedHttpCodeConfig($v) : $v; }, $value['excluded_http_codes']);
+            $this->excludedHttpCodes = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Monolog\HandlerConfig\ExcludedHttpCodeConfig($v) : $v, $value['excluded_http_codes']);
             unset($value['excluded_http_codes']);
         }
 
@@ -1967,6 +1981,12 @@ class HandlerConfig
             unset($value['delay_between_messages']);
         }
 
+        if (array_key_exists('factor', $value)) {
+            $this->_usedProperties['factor'] = true;
+            $this->factor = $value['factor'];
+            unset($value['factor']);
+        }
+
         if (array_key_exists('tags', $value)) {
             $this->_usedProperties['tags'] = true;
             $this->tags = $value['tags'];
@@ -2183,7 +2203,7 @@ class HandlerConfig
             $output['excluded_404s'] = $this->excluded404s;
         }
         if (isset($this->_usedProperties['excludedHttpCodes'])) {
-            $output['excluded_http_codes'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Monolog\HandlerConfig\ExcludedHttpCodeConfig ? $v->toArray() : $v; }, $this->excludedHttpCodes);
+            $output['excluded_http_codes'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Monolog\HandlerConfig\ExcludedHttpCodeConfig ? $v->toArray() : $v, $this->excludedHttpCodes);
         }
         if (isset($this->_usedProperties['acceptedLevels'])) {
             $output['accepted_levels'] = $this->acceptedLevels;
@@ -2337,6 +2357,9 @@ class HandlerConfig
         }
         if (isset($this->_usedProperties['delayBetweenMessages'])) {
             $output['delay_between_messages'] = $this->delayBetweenMessages;
+        }
+        if (isset($this->_usedProperties['factor'])) {
+            $output['factor'] = $this->factor;
         }
         if (isset($this->_usedProperties['tags'])) {
             $output['tags'] = $this->tags;

@@ -39,6 +39,7 @@ final class MakeFixtures extends AbstractMaker
         return 'Create a new class to load Doctrine fixtures';
     }
 
+    /** @return void */
     public function configureCommand(Command $command, InputConfiguration $inputConf)
     {
         $command
@@ -47,6 +48,7 @@ final class MakeFixtures extends AbstractMaker
         ;
     }
 
+    /** @return void */
     public function generate(InputInterface $input, ConsoleStyle $io, Generator $generator)
     {
         $fixturesClassNameDetails = $generator->createClassNameDetails(
@@ -73,11 +75,12 @@ final class MakeFixtures extends AbstractMaker
 
         $io->text([
             'Next: Open your new fixtures class and start customizing it.',
-            sprintf('Load your fixtures by running: <comment>php %s doctrine:fixtures:load</comment>', $_SERVER['PHP_SELF']),
+            \sprintf('Load your fixtures by running: <comment>php %s doctrine:fixtures:load</comment>', $_SERVER['PHP_SELF']),
             'Docs: <fg=yellow>https://symfony.com/doc/current/bundles/DoctrineFixturesBundle/index.html</>',
         ]);
     }
 
+    /** @return void */
     public function configureDependencies(DependencyBuilder $dependencies)
     {
         $dependencies->addClassDependency(

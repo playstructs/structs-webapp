@@ -20,6 +20,7 @@ require_once __DIR__.\DIRECTORY_SEPARATOR.'Framework'.\DIRECTORY_SEPARATOR.'Vali
 require_once __DIR__.\DIRECTORY_SEPARATOR.'Framework'.\DIRECTORY_SEPARATOR.'AnnotationsConfig.php';
 require_once __DIR__.\DIRECTORY_SEPARATOR.'Framework'.\DIRECTORY_SEPARATOR.'SerializerConfig.php';
 require_once __DIR__.\DIRECTORY_SEPARATOR.'Framework'.\DIRECTORY_SEPARATOR.'PropertyAccessConfig.php';
+require_once __DIR__.\DIRECTORY_SEPARATOR.'Framework'.\DIRECTORY_SEPARATOR.'TypeInfoConfig.php';
 require_once __DIR__.\DIRECTORY_SEPARATOR.'Framework'.\DIRECTORY_SEPARATOR.'PropertyInfoConfig.php';
 require_once __DIR__.\DIRECTORY_SEPARATOR.'Framework'.\DIRECTORY_SEPARATOR.'CacheConfig.php';
 require_once __DIR__.\DIRECTORY_SEPARATOR.'Framework'.\DIRECTORY_SEPARATOR.'PhpErrorsConfig.php';
@@ -79,6 +80,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     private $annotations;
     private $serializer;
     private $propertyAccess;
+    private $typeInfo;
     private $propertyInfo;
     private $cache;
     private $phpErrors;
@@ -114,8 +116,8 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * Set true to enable support for the '_method' request parameter to determine the intended HTTP method on POST requests. Note: When using the HttpCache, you need to call the method in your front controller instead
-     * @default null
+     * Set true to enable support for the '_method' request parameter to determine the intended HTTP method on POST requests. Note: When using the HttpCache, you need to call the method in your front controller instead.
+     * @default false
      * @param ParamConfigurator|bool $value
      * @return $this
      */
@@ -129,7 +131,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
 
     /**
      * Set true to enable support for xsendfile in binary file responses.
-     * @default false
+     * @default '%env(bool:default::SYMFONY_TRUST_X_SENDFILE_TYPE_HEADER)%'
      * @param ParamConfigurator|mixed $value
      * @return $this
      */
@@ -235,11 +237,16 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * @default null
+     * @default array (
+      0 => '%env(default::SYMFONY_TRUSTED_PROXIES)%',
+    )
      * @param ParamConfigurator|mixed $value
+     *
      * @return $this
      */
-    public function trustedProxies($value): static
+    public function trustedProxies(mixed $value = array (
+      0 => '%env(default::SYMFONY_TRUSTED_PROXIES)%',
+    )): static
     {
         $this->_usedProperties['trustedProxies'] = true;
         $this->trustedProxies = $value;
@@ -274,8 +281,8 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * HttpKernel will handle all kinds of \Throwable
-     * @default null
+     * HttpKernel will handle all kinds of \Throwable.
+     * @default true
      * @param ParamConfigurator|bool $value
      * @return $this
      */
@@ -288,7 +295,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * @default {"enabled":null}
+     * @default {"enabled":null,"stateless_token_ids":[],"check_header":false,"cookie_name":"csrf-token"}
     */
     public function csrfProtection(array $value = []): \Symfony\Config\Framework\CsrfProtectionConfig
     {
@@ -303,8 +310,8 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * form configuration
-     * @default {"enabled":true,"csrf_protection":{"enabled":null,"field_name":"_token"}}
+     * Form configuration
+     * @default {"enabled":true,"csrf_protection":{"enabled":null,"token_id":null,"field_name":"_token","field_attr":{"data-controller":"csrf-protection"}}}
     */
     public function form(array $value = []): \Symfony\Config\Framework\FormConfig
     {
@@ -348,7 +355,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     /**
      * @template TValue
      * @param TValue $value
-     * esi configuration
+     * ESI configuration
      * @default {"enabled":false}
      * @return \Symfony\Config\Framework\EsiConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\EsiConfig : static)
@@ -375,7 +382,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     /**
      * @template TValue
      * @param TValue $value
-     * ssi configuration
+     * SSI configuration
      * @default {"enabled":false}
      * @return \Symfony\Config\Framework\SsiConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\SsiConfig : static)
@@ -402,7 +409,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     /**
      * @template TValue
      * @param TValue $value
-     * fragments configuration
+     * Fragments configuration
      * @default {"enabled":false,"hinclude_default_template":null,"path":"\/_fragment"}
      * @return \Symfony\Config\Framework\FragmentsConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\FragmentsConfig : static)
@@ -429,7 +436,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     /**
      * @template TValue
      * @param TValue $value
-     * profiler configuration
+     * Profiler configuration
      * @default {"enabled":false,"collect":true,"collect_parameter":null,"only_exceptions":false,"only_main_requests":false,"dsn":"file:%kernel.cache_dir%\/profiler","collect_serializer_data":false}
      * @return \Symfony\Config\Framework\ProfilerConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\ProfilerConfig : static)
@@ -482,8 +489,8 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     /**
      * @template TValue
      * @param TValue $value
-     * router configuration
-     * @default {"enabled":false,"cache_dir":"%kernel.cache_dir%","default_uri":null,"http_port":80,"https_port":443,"strict_requirements":true,"utf8":true}
+     * Router configuration
+     * @default {"enabled":false,"cache_dir":"%kernel.build_dir%","default_uri":null,"http_port":80,"https_port":443,"strict_requirements":true,"utf8":true}
      * @return \Symfony\Config\Framework\RouterConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\RouterConfig : static)
      */
@@ -509,8 +516,8 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     /**
      * @template TValue
      * @param TValue $value
-     * session configuration
-     * @default {"enabled":false,"storage_factory_id":"session.storage.factory.native","handler_id":"session.handler.native_file","cookie_httponly":true,"cookie_samesite":null,"gc_probability":1,"save_path":"%kernel.cache_dir%\/sessions","metadata_update_threshold":0}
+     * Session configuration
+     * @default {"enabled":false,"storage_factory_id":"session.storage.factory.native","cookie_secure":"auto","cookie_httponly":true,"cookie_samesite":"lax","metadata_update_threshold":0}
      * @return \Symfony\Config\Framework\SessionConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\SessionConfig : static)
      */
@@ -536,7 +543,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     /**
      * @template TValue
      * @param TValue $value
-     * request configuration
+     * Request configuration
      * @default {"enabled":false,"formats":[]}
      * @return \Symfony\Config\Framework\RequestConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\RequestConfig : static)
@@ -561,7 +568,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * assets configuration
+     * Assets configuration
      * @default {"enabled":true,"strict_mode":false,"version_strategy":null,"version":null,"version_format":"%%s?%%s","json_manifest_path":null,"base_path":"","base_urls":[],"packages":[]}
     */
     public function assets(array $value = []): \Symfony\Config\Framework\AssetsConfig
@@ -580,7 +587,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
      * @template TValue
      * @param TValue $value
      * Asset Mapper configuration
-     * @default {"enabled":false,"paths":[],"excluded_patterns":[],"server":true,"public_prefix":"\/assets\/","missing_import_mode":"warn","extensions":[],"importmap_path":"%kernel.project_dir%\/importmap.php","importmap_polyfill":null,"importmap_script_attributes":[],"vendor_dir":"%kernel.project_dir%\/assets\/vendor","provider":"jsdelivr.esm"}
+     * @default {"enabled":false,"paths":[],"excluded_patterns":[],"exclude_dotfiles":true,"server":true,"public_prefix":"\/assets\/","missing_import_mode":"warn","extensions":[],"importmap_path":"%kernel.project_dir%\/importmap.php","importmap_polyfill":"es-module-shims","importmap_script_attributes":[],"vendor_dir":"%kernel.project_dir%\/assets\/vendor"}
      * @return \Symfony\Config\Framework\AssetMapperConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\AssetMapperConfig : static)
      */
@@ -604,7 +611,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * translator configuration
+     * Translator configuration
      * @default {"enabled":true,"fallbacks":[],"logging":false,"formatter":"translator.formatter.default","cache_dir":"%kernel.cache_dir%\/translations","default_path":"%kernel.project_dir%\/translations","paths":[],"pseudo_localization":{"enabled":false,"accents":true,"expansion_factor":1,"brackets":true,"parse_html":false,"localizable_html_attributes":[]},"providers":[]}
     */
     public function translator(array $value = []): \Symfony\Config\Framework\TranslatorConfig
@@ -620,8 +627,8 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * validation configuration
-     * @default {"enabled":true,"enable_annotations":true,"static_method":["loadValidatorMetadata"],"translation_domain":"validators","mapping":{"paths":[]},"not_compromised_password":{"enabled":true,"endpoint":null},"auto_mapping":[]}
+     * Validation configuration
+     * @default {"enabled":true,"enable_attributes":true,"static_method":["loadValidatorMetadata"],"translation_domain":"validators","email_validation_mode":"html5","mapping":{"paths":[]},"not_compromised_password":{"enabled":true,"endpoint":null},"auto_mapping":[]}
     */
     public function validation(array $value = []): \Symfony\Config\Framework\ValidationConfig
     {
@@ -638,8 +645,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     /**
      * @template TValue
      * @param TValue $value
-     * annotation configuration
-     * @default {"enabled":false,"cache":"php_array","file_cache_dir":"%kernel.cache_dir%\/annotations","debug":true}
+     * @default {"enabled":false}
      * @return \Symfony\Config\Framework\AnnotationsConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\AnnotationsConfig : static)
      */
@@ -663,8 +669,8 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * serializer configuration
-     * @default {"enabled":true,"enable_annotations":true,"mapping":{"paths":[]},"default_context":[]}
+     * Serializer configuration
+     * @default {"enabled":true,"enable_attributes":true,"mapping":{"paths":[]},"default_context":[],"named_serializers":[]}
     */
     public function serializer(array $value = []): \Symfony\Config\Framework\SerializerConfig
     {
@@ -692,6 +698,22 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
         }
 
         return $this->propertyAccess;
+    }
+
+    /**
+     * Type info configuration
+     * @default {"enabled":true}
+    */
+    public function typeInfo(array $value = []): \Symfony\Config\Framework\TypeInfoConfig
+    {
+        if (null === $this->typeInfo) {
+            $this->_usedProperties['typeInfo'] = true;
+            $this->typeInfo = new \Symfony\Config\Framework\TypeInfoConfig($value);
+        } elseif (0 < \func_num_args()) {
+            throw new InvalidConfigurationException('The node created by "typeInfo()" has already been initialized. You cannot pass values the second time you call typeInfo().');
+        }
+
+        return $this->typeInfo;
     }
 
     /**
@@ -743,22 +765,11 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * @template TValue
-     * @param TValue $value
      * Exception handling configuration
-     * @return \Symfony\Config\Framework\ExceptionConfig|$this
-     * @psalm-return (TValue is array ? \Symfony\Config\Framework\ExceptionConfig : static)
-     */
-    public function exception(string $class, array $value = []): \Symfony\Config\Framework\ExceptionConfig|static
+    */
+    public function exception(string $class, array $value = []): \Symfony\Config\Framework\ExceptionConfig
     {
-        if (!\is_array($value)) {
-            $this->_usedProperties['exceptions'] = true;
-            $this->exceptions[$class] = $value;
-
-            return $this;
-        }
-
-        if (!isset($this->exceptions[$class]) || !$this->exceptions[$class] instanceof \Symfony\Config\Framework\ExceptionConfig) {
+        if (!isset($this->exceptions[$class])) {
             $this->_usedProperties['exceptions'] = true;
             $this->exceptions[$class] = new \Symfony\Config\Framework\ExceptionConfig($value);
         } elseif (1 < \func_num_args()) {
@@ -769,7 +780,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
     }
 
     /**
-     * web links configuration
+     * Web links configuration
      * @default {"enabled":true}
     */
     public function webLink(array $value = []): \Symfony\Config\Framework\WebLinkConfig
@@ -840,7 +851,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
 
     /**
      * Messenger configuration
-     * @default {"enabled":true,"routing":[],"serializer":{"default_serializer":"messenger.transport.native_php_serializer","symfony_serializer":{"format":"json","context":[]}},"transports":[],"failure_transport":null,"reset_on_message":true,"stop_worker_on_signals":[],"default_bus":null,"buses":{"messenger.bus.default":{"default_middleware":{"enabled":true,"allow_no_handlers":false,"allow_no_senders":true},"middleware":[]}}}
+     * @default {"enabled":true,"routing":[],"serializer":{"default_serializer":"messenger.transport.native_php_serializer","symfony_serializer":{"format":"json","context":[]}},"transports":[],"failure_transport":null,"stop_worker_on_signals":[],"default_bus":null,"buses":{"messenger.bus.default":{"default_middleware":{"enabled":true,"allow_no_handlers":false,"allow_no_senders":true},"middleware":[]}}}
     */
     public function messenger(array $value = []): \Symfony\Config\Framework\MessengerConfig
     {
@@ -1000,7 +1011,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
      * @template TValue
      * @param TValue $value
      * Uid configuration
-     * @default {"enabled":false,"default_uuid_version":6,"name_based_uuid_version":5,"time_based_uuid_version":6}
+     * @default {"enabled":false,"default_uuid_version":7,"name_based_uuid_version":5,"time_based_uuid_version":7}
      * @return \Symfony\Config\Framework\UidConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\UidConfig : static)
      */
@@ -1303,6 +1314,12 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
             unset($value['property_access']);
         }
 
+        if (array_key_exists('type_info', $value)) {
+            $this->_usedProperties['typeInfo'] = true;
+            $this->typeInfo = new \Symfony\Config\Framework\TypeInfoConfig($value['type_info']);
+            unset($value['type_info']);
+        }
+
         if (array_key_exists('property_info', $value)) {
             $this->_usedProperties['propertyInfo'] = true;
             $this->propertyInfo = new \Symfony\Config\Framework\PropertyInfoConfig($value['property_info']);
@@ -1323,7 +1340,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
 
         if (array_key_exists('exceptions', $value)) {
             $this->_usedProperties['exceptions'] = true;
-            $this->exceptions = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\ExceptionConfig($v) : $v; }, $value['exceptions']);
+            $this->exceptions = array_map(fn ($v) => new \Symfony\Config\Framework\ExceptionConfig($v), $value['exceptions']);
             unset($value['exceptions']);
         }
 
@@ -1521,6 +1538,9 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
         if (isset($this->_usedProperties['propertyAccess'])) {
             $output['property_access'] = $this->propertyAccess->toArray();
         }
+        if (isset($this->_usedProperties['typeInfo'])) {
+            $output['type_info'] = $this->typeInfo->toArray();
+        }
         if (isset($this->_usedProperties['propertyInfo'])) {
             $output['property_info'] = $this->propertyInfo->toArray();
         }
@@ -1531,7 +1551,7 @@ class FrameworkConfig implements \Symfony\Component\Config\Builder\ConfigBuilder
             $output['php_errors'] = $this->phpErrors->toArray();
         }
         if (isset($this->_usedProperties['exceptions'])) {
-            $output['exceptions'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\ExceptionConfig ? $v->toArray() : $v; }, $this->exceptions);
+            $output['exceptions'] = array_map(fn ($v) => $v->toArray(), $this->exceptions);
         }
         if (isset($this->_usedProperties['webLink'])) {
             $output['web_link'] = $this->webLink->toArray();

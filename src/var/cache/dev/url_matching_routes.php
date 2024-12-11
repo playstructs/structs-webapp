@@ -8,6 +8,7 @@
 return [
     false, // $matchHost
     [ // $staticRoutes
+        '/_wdt/styles.css' => [[['_route' => '_wdt_stylesheet', '_controller' => 'web_profiler.controller.profiler::toolbarStylesheetAction'], null, null, null, false, false, null]],
         '/_profiler' => [[['_route' => '_profiler_home', '_controller' => 'web_profiler.controller.profiler::homeAction'], null, null, null, true, false, null]],
         '/_profiler/search' => [[['_route' => '_profiler_search', '_controller' => 'web_profiler.controller.profiler::searchAction'], null, null, null, false, false, null]],
         '/_profiler/search_bar' => [[['_route' => '_profiler_search_bar', '_controller' => 'web_profiler.controller.profiler::searchBarAction'], null, null, null, false, false, null]],
@@ -20,16 +21,19 @@ return [
                 .'|/_(?'
                     .'|error/(\\d+)(?:\\.([^/]++))?(*:38)'
                     .'|wdt/([^/]++)(*:57)'
-                    .'|profiler/([^/]++)(?'
-                        .'|/(?'
-                            .'|search/results(*:102)'
-                            .'|router(*:116)'
-                            .'|exception(?'
-                                .'|(*:136)'
-                                .'|\\.css(*:149)'
+                    .'|profiler/(?'
+                        .'|font/([^/\\.]++)\\.woff2(*:98)'
+                        .'|([^/]++)(?'
+                            .'|/(?'
+                                .'|search/results(*:134)'
+                                .'|router(*:148)'
+                                .'|exception(?'
+                                    .'|(*:168)'
+                                    .'|\\.css(*:181)'
+                                .')'
                             .')'
+                            .'|(*:191)'
                         .')'
-                        .'|(*:159)'
                     .')'
                 .')'
             .')/?$}sDu',
@@ -37,11 +41,12 @@ return [
     [ // $dynamicRoutes
         38 => [[['_route' => '_preview_error', '_controller' => 'error_controller::preview', '_format' => 'html'], ['code', '_format'], null, null, false, true, null]],
         57 => [[['_route' => '_wdt', '_controller' => 'web_profiler.controller.profiler::toolbarAction'], ['token'], null, null, false, true, null]],
-        102 => [[['_route' => '_profiler_search_results', '_controller' => 'web_profiler.controller.profiler::searchResultsAction'], ['token'], null, null, false, false, null]],
-        116 => [[['_route' => '_profiler_router', '_controller' => 'web_profiler.controller.router::panelAction'], ['token'], null, null, false, false, null]],
-        136 => [[['_route' => '_profiler_exception', '_controller' => 'web_profiler.controller.exception_panel::body'], ['token'], null, null, false, false, null]],
-        149 => [[['_route' => '_profiler_exception_css', '_controller' => 'web_profiler.controller.exception_panel::stylesheet'], ['token'], null, null, false, false, null]],
-        159 => [
+        98 => [[['_route' => '_profiler_font', '_controller' => 'web_profiler.controller.profiler::fontAction'], ['fontName'], null, null, false, false, null]],
+        134 => [[['_route' => '_profiler_search_results', '_controller' => 'web_profiler.controller.profiler::searchResultsAction'], ['token'], null, null, false, false, null]],
+        148 => [[['_route' => '_profiler_router', '_controller' => 'web_profiler.controller.router::panelAction'], ['token'], null, null, false, false, null]],
+        168 => [[['_route' => '_profiler_exception', '_controller' => 'web_profiler.controller.exception_panel::body'], ['token'], null, null, false, false, null]],
+        181 => [[['_route' => '_profiler_exception_css', '_controller' => 'web_profiler.controller.exception_panel::stylesheet'], ['token'], null, null, false, false, null]],
+        191 => [
             [['_route' => '_profiler', '_controller' => 'web_profiler.controller.profiler::panelAction'], ['token'], null, null, false, true, null],
             [null, null, null, null, false, false, 0],
         ],

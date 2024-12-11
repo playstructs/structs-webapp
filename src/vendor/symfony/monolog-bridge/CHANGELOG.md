@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+7.0
+---
+
+ * Drop support for monolog < 3.0
+ * Remove class `Logger`, use HttpKernel's `DebugLoggerConfigurator` instead
+
+6.4
+---
+
+ * Add native return type to `Logger::clear()` and to `DebugProcessor::clear()`
+ * Deprecate class `Logger`, use HttpKernel's `DebugLoggerConfigurator` instead
+
 6.1
 ---
 

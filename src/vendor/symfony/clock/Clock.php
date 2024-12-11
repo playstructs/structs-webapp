@@ -44,9 +44,13 @@ final class Clock implements ClockInterface
         self::$globalClock = $clock instanceof ClockInterface ? $clock : new self($clock);
     }
 
-    public function now(): \DateTimeImmutable
+    public function now(): DatePoint
     {
         $now = ($this->clock ?? self::get())->now();
+
+        if (!$now instanceof DatePoint) {
+            $now = DatePoint::createFromInterface($now);
+        }
 
         return isset($this->timezone) ? $now->setTimezone($this->timezone) : $now;
     }
@@ -62,10 +66,23 @@ final class Clock implements ClockInterface
         }
     }
 
+    /**
+     * @throws \DateInvalidTimeZoneException When $timezone is invalid
+     */
     public function withTimeZone(\DateTimeZone|string $timezone): static
     {
+        if (\PHP_VERSION_ID >= 80300 && \is_string($timezone)) {
+            $timezone = new \DateTimeZone($timezone);
+        } elseif (\is_string($timezone)) {
+            try {
+                $timezone = new \DateTimeZone($timezone);
+            } catch (\Exception $e) {
+                throw new \DateInvalidTimeZoneException($e->getMessage(), $e->getCode(), $e);
+            }
+        }
+
         $clone = clone $this;
-        $clone->timezone = \is_string($timezone) ? new \DateTimeZone($timezone) : $timezone;
+        $clone->timezone = $timezone;
 
         return $clone;
     }

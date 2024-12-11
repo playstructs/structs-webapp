@@ -58,7 +58,6 @@
       <path value="$PROJECT_DIR$/src/vendor/sebastian/version" />
       <path value="$PROJECT_DIR$/src/vendor/sebastian/complexity" />
       <path value="$PROJECT_DIR$/src/vendor/sebastian/recursion-context" />
-      <path value="$PROJECT_DIR$/src/vendor/sebastian/resource-operations" />
       <path value="$PROJECT_DIR$/src/vendor/sebastian/code-unit-reverse-lookup" />
       <path value="$PROJECT_DIR$/src/vendor/sebastian/global-state" />
       <path value="$PROJECT_DIR$/src/vendor/sebastian/environment" />
@@ -139,9 +138,11 @@
       <path value="$PROJECT_DIR$/src/vendor/symfony/process" />
       <path value="$PROJECT_DIR$/src/vendor/symfony/polyfill-mbstring" />
       <path value="$PROJECT_DIR$/src/vendor/phpstan/phpdoc-parser" />
+      <path value="$PROJECT_DIR$/src/vendor/symfony/type-info" />
+      <path value="$PROJECT_DIR$/src/vendor/sebastian/resource-operations" />
     </include_path>
   </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.1">
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.2">
     <option name="suggestChangeDefaultLanguageLevel" value="false" />
   </component>
   <component name="PhpStanOptionsConfiguration">

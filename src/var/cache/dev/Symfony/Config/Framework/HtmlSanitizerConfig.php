@@ -51,7 +51,7 @@ class HtmlSanitizerConfig
 
         if (array_key_exists('sanitizers', $value)) {
             $this->_usedProperties['sanitizers'] = true;
-            $this->sanitizers = array_map(function ($v) { return new \Symfony\Config\Framework\HtmlSanitizer\SanitizerConfig($v); }, $value['sanitizers']);
+            $this->sanitizers = array_map(fn ($v) => new \Symfony\Config\Framework\HtmlSanitizer\SanitizerConfig($v), $value['sanitizers']);
             unset($value['sanitizers']);
         }
 
@@ -67,7 +67,7 @@ class HtmlSanitizerConfig
             $output['enabled'] = $this->enabled;
         }
         if (isset($this->_usedProperties['sanitizers'])) {
-            $output['sanitizers'] = array_map(function ($v) { return $v->toArray(); }, $this->sanitizers);
+            $output['sanitizers'] = array_map(fn ($v) => $v->toArray(), $this->sanitizers);
         }
 
         return $output;

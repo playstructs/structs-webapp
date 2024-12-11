@@ -68,7 +68,11 @@
             {% set render_preferred_choices = true %}
             {{- block('choice_widget_options') -}}
             {%- if choices|length > 0 and separator is not none -%}
-                <option disabled="disabled">{{ separator }}</option>
+                {%- if separator_html is not defined or separator_html is same as(false) -%}
+                    <option disabled="disabled">{{ separator }}</option>
+                {% else %}
+                    {{ separator|raw }}
+                {% endif %}
             {%- endif -%}
         {%- endif -%}
         {%- set options = choices -%}
@@ -329,9 +333,9 @@
 {% block form_help -%}
     {%- if help is not empty -%}
         {%- set help_attr = help_attr|merge({class: (help_attr.class|default('') ~ ' help-text')|trim}) -%}
-        <div id="{{ id }}_help"{% with { attr: help_attr } %}{{ block('attributes') }}{% endwith %}>
+        <{{ element|default('div') }} id="{{ id }}_help"{% with { attr: help_attr } %}{{ block('attributes') }}{% endwith %}>
             {{- block('form_help_content') -}}
-        </div>
+        </{{ element|default('div') }}>
     {%- endif -%}
 {%- endblock form_help %}
 

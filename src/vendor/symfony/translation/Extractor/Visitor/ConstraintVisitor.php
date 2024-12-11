@@ -22,7 +22,7 @@ use PhpParser\NodeVisitor;
 final class ConstraintVisitor extends AbstractVisitor implements NodeVisitor
 {
     public function __construct(
-        private readonly array $constraintClassNames = []
+        private readonly array $constraintClassNames = [],
     ) {
     }
 
@@ -32,6 +32,11 @@ final class ConstraintVisitor extends AbstractVisitor implements NodeVisitor
     }
 
     public function enterNode(Node $node): ?Node
+    {
+        return null;
+    }
+
+    public function leaveNode(Node $node): ?Node
     {
         if (!$node instanceof Node\Expr\New_ && !$node instanceof Node\Attribute) {
             return null;
@@ -97,11 +102,6 @@ final class ConstraintVisitor extends AbstractVisitor implements NodeVisitor
             $this->addMessageToCatalogue($message, 'validators', $node->getStartLine());
         }
 
-        return null;
-    }
-
-    public function leaveNode(Node $node): ?Node
-    {
         return null;
     }
 

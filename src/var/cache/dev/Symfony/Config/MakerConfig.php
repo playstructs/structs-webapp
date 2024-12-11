@@ -11,6 +11,8 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 class MakerConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInterface
 {
     private $rootNamespace;
+    private $generateFinalClasses;
+    private $generateFinalEntities;
     private $_usedProperties = [];
 
     /**
@@ -22,6 +24,32 @@ class MakerConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInte
     {
         $this->_usedProperties['rootNamespace'] = true;
         $this->rootNamespace = $value;
+
+        return $this;
+    }
+
+    /**
+     * @default true
+     * @param ParamConfigurator|bool $value
+     * @return $this
+     */
+    public function generateFinalClasses($value): static
+    {
+        $this->_usedProperties['generateFinalClasses'] = true;
+        $this->generateFinalClasses = $value;
+
+        return $this;
+    }
+
+    /**
+     * @default false
+     * @param ParamConfigurator|bool $value
+     * @return $this
+     */
+    public function generateFinalEntities($value): static
+    {
+        $this->_usedProperties['generateFinalEntities'] = true;
+        $this->generateFinalEntities = $value;
 
         return $this;
     }
@@ -39,6 +67,18 @@ class MakerConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInte
             unset($value['root_namespace']);
         }
 
+        if (array_key_exists('generate_final_classes', $value)) {
+            $this->_usedProperties['generateFinalClasses'] = true;
+            $this->generateFinalClasses = $value['generate_final_classes'];
+            unset($value['generate_final_classes']);
+        }
+
+        if (array_key_exists('generate_final_entities', $value)) {
+            $this->_usedProperties['generateFinalEntities'] = true;
+            $this->generateFinalEntities = $value['generate_final_entities'];
+            unset($value['generate_final_entities']);
+        }
+
         if ([] !== $value) {
             throw new InvalidConfigurationException(sprintf('The following keys are not supported by "%s": ', __CLASS__).implode(', ', array_keys($value)));
         }
@@ -49,6 +89,12 @@ class MakerConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInte
         $output = [];
         if (isset($this->_usedProperties['rootNamespace'])) {
             $output['root_namespace'] = $this->rootNamespace;
+        }
+        if (isset($this->_usedProperties['generateFinalClasses'])) {
+            $output['generate_final_classes'] = $this->generateFinalClasses;
+        }
+        if (isset($this->_usedProperties['generateFinalEntities'])) {
+            $output['generate_final_entities'] = $this->generateFinalEntities;
         }
 
         return $output;

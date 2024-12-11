@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+7.2
+---
+
+ * Allow reinitializing lazy objects with a new initializer
+
+6.4
+---
+
+ * Deprecate per-property lazy-initializers
+
 6.2
 ---
 

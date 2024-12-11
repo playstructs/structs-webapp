@@ -11,8 +11,8 @@
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
+use Symfony\Component\ErrorHandler\ErrorRenderer\FileLinkFormatter;
 use Symfony\Component\HttpKernel\Debug\ErrorHandlerConfigurator;
-use Symfony\Component\HttpKernel\Debug\FileLinkFormatter;
 use Symfony\Component\HttpKernel\EventListener\DebugHandlersListener;
 
 return static function (ContainerConfigurator $container) {
@@ -32,6 +32,7 @@ return static function (ContainerConfigurator $container) {
             ->tag('monolog.logger', ['channel' => 'php'])
 
         ->set('debug.debug_handlers_listener', DebugHandlersListener::class)
+            ->args([null, param('kernel.runtime_mode.web')])
             ->tag('kernel.event_subscriber')
 
         ->set('debug.file_link_formatter', FileLinkFormatter::class)

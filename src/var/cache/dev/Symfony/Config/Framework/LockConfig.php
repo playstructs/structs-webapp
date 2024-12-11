@@ -30,7 +30,7 @@ class LockConfig
     /**
      * @return $this
      */
-    public function resource(string $name, ParamConfigurator|string|array $value): static
+    public function resource(string $name, mixed $value): static
     {
         $this->_usedProperties['resources'] = true;
         $this->resources[$name] = $value;

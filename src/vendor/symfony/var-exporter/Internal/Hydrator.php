@@ -20,23 +20,17 @@ use Symfony\Component\VarExporter\Exception\ClassNotFoundException;
  */
 class Hydrator
 {
-    public static $hydrators = [];
-    public static $simpleHydrators = [];
-    public static $propertyScopes = [];
+    public static array $hydrators = [];
+    public static array $simpleHydrators = [];
+    public static array $propertyScopes = [];
 
-    public $registry;
-    public $values;
-    public $properties;
-    public $value;
-    public $wakeups;
-
-    public function __construct(?Registry $registry, ?Values $values, array $properties, $value, array $wakeups)
-    {
-        $this->registry = $registry;
-        $this->values = $values;
-        $this->properties = $properties;
-        $this->value = $value;
-        $this->wakeups = $wakeups;
+    public function __construct(
+        public readonly Registry $registry,
+        public readonly ?Values $values,
+        public readonly array $properties,
+        public readonly mixed $value,
+        public readonly array $wakeups,
+    ) {
     }
 
     public static function hydrate($objects, $values, $properties, $value, $wakeups)
@@ -70,11 +64,11 @@ class Hydrator
                 return $baseHydrator;
 
             case 'ErrorException':
-                return $baseHydrator->bindTo(null, new class() extends \ErrorException {
+                return $baseHydrator->bindTo(null, new class extends \ErrorException {
                 });
 
             case 'TypeError':
-                return $baseHydrator->bindTo(null, new class() extends \Error {
+                return $baseHydrator->bindTo(null, new class extends \Error {
                 });
 
             case 'SplObjectStorage':
@@ -172,11 +166,11 @@ class Hydrator
                 return $baseHydrator;
 
             case 'ErrorException':
-                return $baseHydrator->bindTo(new \stdClass(), new class() extends \ErrorException {
+                return $baseHydrator->bindTo(new \stdClass(), new class extends \ErrorException {
                 });
 
             case 'TypeError':
-                return $baseHydrator->bindTo(new \stdClass(), new class() extends \Error {
+                return $baseHydrator->bindTo(new \stdClass(), new class extends \Error {
                 });
 
             case 'SplObjectStorage':
@@ -254,10 +248,7 @@ class Hydrator
         };
     }
 
-    /**
-     * @return array
-     */
-    public static function getPropertyScopes($class)
+    public static function getPropertyScopes($class): array
     {
         $propertyScopes = [];
         $r = new \ReflectionClass($class);
@@ -269,12 +260,20 @@ class Hydrator
                 continue;
             }
             $name = $property->name;
+            $readonlyScope = null;
 
             if (\ReflectionProperty::IS_PRIVATE & $flags) {
-                $propertyScopes["\0$class\0$name"] = $propertyScopes[$name] = [$class, $name, $flags & \ReflectionProperty::IS_READONLY ? $class : null, $property];
+                if ($flags & \ReflectionProperty::IS_READONLY) {
+                    $readonlyScope = $class;
+                }
+                $propertyScopes["\0$class\0$name"] = $propertyScopes[$name] = [$class, $name, $readonlyScope, $property];
+
                 continue;
             }
-            $propertyScopes[$name] = [$class, $name, $flags & \ReflectionProperty::IS_READONLY ? $property->class : null, $property];
+            if ($flags & \ReflectionProperty::IS_READONLY) {
+                $readonlyScope = $property->class;
+            }
+            $propertyScopes[$name] = [$class, $name, $readonlyScope, $property];
 
             if (\ReflectionProperty::IS_PROTECTED & $flags) {
                 $propertyScopes["\0*\0$name"] = $propertyScopes[$name];

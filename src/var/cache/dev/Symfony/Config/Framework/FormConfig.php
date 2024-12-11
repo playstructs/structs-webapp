@@ -14,7 +14,6 @@ class FormConfig
 {
     private $enabled;
     private $csrfProtection;
-    private $legacyErrorMessages;
     private $_usedProperties = [];
 
     /**
@@ -31,7 +30,7 @@ class FormConfig
     }
 
     /**
-     * @default {"enabled":null,"field_name":"_token"}
+     * @default {"enabled":null,"token_id":null,"field_name":"_token","field_attr":{"data-controller":"csrf-protection"}}
     */
     public function csrfProtection(array $value = []): \Symfony\Config\Framework\Form\CsrfProtectionConfig
     {
@@ -43,20 +42,6 @@ class FormConfig
         }
 
         return $this->csrfProtection;
-    }
-
-    /**
-     * @default null
-     * @param ParamConfigurator|bool $value
-     * @deprecated The child node "legacy_error_messages" at path "form" is deprecated.
-     * @return $this
-     */
-    public function legacyErrorMessages($value): static
-    {
-        $this->_usedProperties['legacyErrorMessages'] = true;
-        $this->legacyErrorMessages = $value;
-
-        return $this;
     }
 
     public function __construct(array $value = [])
@@ -73,12 +58,6 @@ class FormConfig
             unset($value['csrf_protection']);
         }
 
-        if (array_key_exists('legacy_error_messages', $value)) {
-            $this->_usedProperties['legacyErrorMessages'] = true;
-            $this->legacyErrorMessages = $value['legacy_error_messages'];
-            unset($value['legacy_error_messages']);
-        }
-
         if ([] !== $value) {
             throw new InvalidConfigurationException(sprintf('The following keys are not supported by "%s": ', __CLASS__).implode(', ', array_keys($value)));
         }
@@ -92,9 +71,6 @@ class FormConfig
         }
         if (isset($this->_usedProperties['csrfProtection'])) {
             $output['csrf_protection'] = $this->csrfProtection->toArray();
-        }
-        if (isset($this->_usedProperties['legacyErrorMessages'])) {
-            $output['legacy_error_messages'] = $this->legacyErrorMessages;
         }
 
         return $output;

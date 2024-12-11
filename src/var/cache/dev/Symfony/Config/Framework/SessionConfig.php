@@ -57,7 +57,8 @@ class SessionConfig
     }
 
     /**
-     * @default 'session.handler.native_file'
+     * Defaults to using the native session handler, or to the native *file* session handler if "save_path" is not null.
+     * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this
      */
@@ -122,7 +123,7 @@ class SessionConfig
     }
 
     /**
-     * @default null
+     * @default 'auto'
      * @param ParamConfigurator|true|false|'auto' $value
      * @return $this
      */
@@ -148,7 +149,7 @@ class SessionConfig
     }
 
     /**
-     * @default null
+     * @default 'lax'
      * @param ParamConfigurator|NULL|'lax'|'strict'|'none' $value
      * @return $this
      */
@@ -187,7 +188,7 @@ class SessionConfig
     }
 
     /**
-     * @default 1
+     * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this
      */
@@ -213,7 +214,8 @@ class SessionConfig
     }
 
     /**
-     * @default '%kernel.cache_dir%/sessions'
+     * Defaults to "%kernel.cache_dir%/sessions" if the "handler_id" option is not null.
+     * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this
      */
@@ -226,7 +228,7 @@ class SessionConfig
     }
 
     /**
-     * seconds to wait between 2 session metadata updates
+     * Seconds to wait between 2 session metadata updates.
      * @default 0
      * @param ParamConfigurator|int $value
      * @return $this
@@ -242,6 +244,7 @@ class SessionConfig
     /**
      * @default null
      * @param ParamConfigurator|int $value
+     * @deprecated Setting the "session.sid_length" configuration option is deprecated. It will be removed in version 8.0. No alternative is provided as PHP 8.4 has deprecated the related option.
      * @return $this
      */
     public function sidLength($value): static
@@ -255,6 +258,7 @@ class SessionConfig
     /**
      * @default null
      * @param ParamConfigurator|int $value
+     * @deprecated Setting the "session.sid_bits_per_character" configuration option is deprecated. It will be removed in version 8.0. No alternative is provided as PHP 8.4 has deprecated the related option.
      * @return $this
      */
     public function sidBitsPerCharacter($value): static

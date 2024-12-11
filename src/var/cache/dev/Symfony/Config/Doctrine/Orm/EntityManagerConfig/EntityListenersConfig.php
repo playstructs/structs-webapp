@@ -30,7 +30,7 @@ class EntityListenersConfig
     {
         if (array_key_exists('entities', $value)) {
             $this->_usedProperties['entities'] = true;
-            $this->entities = array_map(function ($v) { return new \Symfony\Config\Doctrine\Orm\EntityManagerConfig\EntityListeners\EntityConfig($v); }, $value['entities']);
+            $this->entities = array_map(fn ($v) => new \Symfony\Config\Doctrine\Orm\EntityManagerConfig\EntityListeners\EntityConfig($v), $value['entities']);
             unset($value['entities']);
         }
 
@@ -43,7 +43,7 @@ class EntityListenersConfig
     {
         $output = [];
         if (isset($this->_usedProperties['entities'])) {
-            $output['entities'] = array_map(function ($v) { return $v->toArray(); }, $this->entities);
+            $output['entities'] = array_map(fn ($v) => $v->toArray(), $this->entities);
         }
 
         return $output;

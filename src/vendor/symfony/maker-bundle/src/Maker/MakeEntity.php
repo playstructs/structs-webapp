@@ -20,16 +20,19 @@ use Symfony\Bundle\MakerBundle\Doctrine\EntityClassGenerator;
 use Symfony\Bundle\MakerBundle\Doctrine\EntityRegenerator;
 use Symfony\Bundle\MakerBundle\Doctrine\EntityRelation;
 use Symfony\Bundle\MakerBundle\Doctrine\ORMDependencyBuilder;
+use Symfony\Bundle\MakerBundle\Exception\RuntimeCommandException;
 use Symfony\Bundle\MakerBundle\FileManager;
 use Symfony\Bundle\MakerBundle\Generator;
 use Symfony\Bundle\MakerBundle\InputAwareMakerInterface;
 use Symfony\Bundle\MakerBundle\InputConfiguration;
+use Symfony\Bundle\MakerBundle\Maker\Common\UidTrait;
 use Symfony\Bundle\MakerBundle\Str;
 use Symfony\Bundle\MakerBundle\Util\ClassDetails;
+use Symfony\Bundle\MakerBundle\Util\ClassSource\Model\ClassProperty;
 use Symfony\Bundle\MakerBundle\Util\ClassSourceManipulator;
 use Symfony\Bundle\MakerBundle\Util\CliOutputHelper;
-use Symfony\Bundle\MakerBundle\Util\PhpCompatUtil;
 use Symfony\Bundle\MakerBundle\Validator;
+use Symfony\Bundle\MercureBundle\DependencyInjection\MercureExtension;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -45,41 +48,34 @@ use Symfony\UX\Turbo\Attribute\Broadcast;
  */
 final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
 {
+    use UidTrait;
+
     private Generator $generator;
     private EntityClassGenerator $entityClassGenerator;
-    private PhpCompatUtil $phpCompatUtil;
 
     public function __construct(
         private FileManager $fileManager,
         private DoctrineHelper $doctrineHelper,
-        string $projectDirectory = null,
-        Generator $generator = null,
-        EntityClassGenerator $entityClassGenerator = null,
-        PhpCompatUtil $phpCompatUtil = null,
+        ?string $projectDirectory = null,
+        ?Generator $generator = null,
+        ?EntityClassGenerator $entityClassGenerator = null,
     ) {
         if (null !== $projectDirectory) {
             @trigger_error('The $projectDirectory constructor argument is no longer used since 1.41.0', \E_USER_DEPRECATED);
         }
 
         if (null === $generator) {
-            @trigger_error(sprintf('Passing a "%s" instance as 4th argument is mandatory since version 1.5.', Generator::class), \E_USER_DEPRECATED);
+            @trigger_error(\sprintf('Passing a "%s" instance as 4th argument is mandatory since version 1.5.', Generator::class), \E_USER_DEPRECATED);
             $this->generator = new Generator($fileManager, 'App\\');
         } else {
             $this->generator = $generator;
         }
 
         if (null === $entityClassGenerator) {
-            @trigger_error(sprintf('Passing a "%s" instance as 5th argument is mandatory since version 1.15.1', EntityClassGenerator::class), \E_USER_DEPRECATED);
+            @trigger_error(\sprintf('Passing a "%s" instance as 5th argument is mandatory since version 1.15.1', EntityClassGenerator::class), \E_USER_DEPRECATED);
             $this->entityClassGenerator = new EntityClassGenerator($generator, $this->doctrineHelper);
         } else {
             $this->entityClassGenerator = $entityClassGenerator;
-        }
-
-        if (null === $phpCompatUtil) {
-            @trigger_error(sprintf('Passing a "%s" instance as 6th argument is mandatory since version 1.41.0', PhpCompatUtil::class), \E_USER_DEPRECATED);
-            $this->phpCompatUtil = new PhpCompatUtil($this->fileManager);
-        } else {
-            $this->phpCompatUtil = $phpCompatUtil;
         }
     }
 
@@ -96,7 +92,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
     public function configureCommand(Command $command, InputConfiguration $inputConfig): void
     {
         $command
-            ->addArgument('name', InputArgument::OPTIONAL, sprintf('Class name of the entity to create or update (e.g. <fg=yellow>%s</>)', Str::asClassName(Str::getRandomTerm())))
+            ->addArgument('name', InputArgument::OPTIONAL, \sprintf('Class name of the entity to create or update (e.g. <fg=yellow>%s</>)', Str::asClassName(Str::getRandomTerm())))
             ->addOption('api-resource', 'a', InputOption::VALUE_NONE, 'Mark this class as an API Platform resource (expose a CRUD API for it)')
             ->addOption('broadcast', 'b', InputOption::VALUE_NONE, 'Add the ability to broadcast entity updates using Symfony UX Turbo?')
             ->addOption('regenerate', null, InputOption::VALUE_NONE, 'Instead of adding new fields, simply generate the methods (e.g. getter/setter) for existing fields')
@@ -104,12 +100,14 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
             ->setHelp(file_get_contents(__DIR__.'/../Resources/help/MakeEntity.txt'))
         ;
 
+        $this->addWithUuidOption($command);
+
         $inputConfig->setArgumentAsNonInteractive('name');
     }
 
     public function interact(InputInterface $input, ConsoleStyle $io, Command $command): void
     {
-        if ($input->getArgument('name')) {
+        if (($entityClassName = $input->getArgument('name')) && empty($this->verifyEntityName($entityClassName))) {
             return;
         }
 
@@ -118,16 +116,26 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
                 'This command will generate any missing methods (e.g. getters & setters) for a class or all classes in a namespace.',
                 'To overwrite any existing methods, re-run this command with the --overwrite flag',
             ], null, 'fg=yellow');
-            $classOrNamespace = $io->ask('Enter a class or namespace to regenerate', $this->getEntityNamespace(), [Validator::class, 'notBlank']);
+            $classOrNamespace = $io->ask('Enter a class or namespace to regenerate', $this->getEntityNamespace(), Validator::notBlank(...));
 
             $input->setArgument('name', $classOrNamespace);
 
             return;
         }
 
+        $this->checkIsUsingUid($input);
+
         $argument = $command->getDefinition()->getArgument('name');
         $question = $this->createEntityClassQuestion($argument->getDescription());
-        $entityClassName = $io->askQuestion($question);
+        $entityClassName ??= $io->askQuestion($question);
+
+        while ($dangerous = $this->verifyEntityName($entityClassName)) {
+            if ($io->confirm(\sprintf('"%s" contains one or more non-ASCII characters, which are potentially problematic with some database. It is recommended to use only ASCII characters for entity names. Continue anyway?', $entityClassName), false)) {
+                break;
+            }
+
+            $entityClassName = $io->askQuestion($question);
+        }
 
         $input->setArgument('name', $entityClassName);
 
@@ -151,6 +159,11 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
             $description = $command->getDefinition()->getOption('broadcast')->getDescription();
             $question = new ConfirmationQuestion($description, false);
             $isBroadcast = $io->askQuestion($question);
+
+            // Mercure is needed
+            if ($isBroadcast && !class_exists(MercureExtension::class)) {
+                throw new RuntimeCommandException('Please run "composer require symfony/mercure-bundle". It is needed to broadcast entities.');
+            }
 
             $input->setOption('broadcast', $isBroadcast);
         }
@@ -177,17 +190,16 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         if (!$classExists) {
             $broadcast = $input->getOption('broadcast');
             $entityPath = $this->entityClassGenerator->generateEntityClass(
-                $entityClassDetails,
-                $input->getOption('api-resource'),
-                false,
-                true,
-                $broadcast
+                entityClassDetails: $entityClassDetails,
+                apiResource: $input->getOption('api-resource'),
+                broadcast: $broadcast,
+                useUuidIdentifier: $this->getIdType(),
             );
 
             if ($broadcast) {
                 $shortName = $entityClassDetails->getShortName();
                 $generator->generateTemplate(
-                    sprintf('broadcast/%s.stream.html.twig', $shortName),
+                    \sprintf('broadcast/%s.stream.html.twig', $shortName),
                     'doctrine/broadcast_twig_template.tpl.php',
                     [
                         'class_name' => Str::asSnakeCase($shortName),
@@ -227,12 +239,10 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
             $fileManagerOperations = [];
             $fileManagerOperations[$entityPath] = $manipulator;
 
-            if (\is_array($newField)) {
-                $annotationOptions = $newField;
-                unset($annotationOptions['fieldName']);
-                $manipulator->addEntityField($newField['fieldName'], $annotationOptions);
+            if ($newField instanceof ClassProperty) {
+                $manipulator->addEntityField($newField);
 
-                $currentFields[] = $newField['fieldName'];
+                $currentFields[] = $newField->propertyName;
             } elseif ($newField instanceof EntityRelation) {
                 // both overridden below for OneToMany
                 $newFieldName = $newField->getOwningProperty();
@@ -295,7 +305,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
             }
 
             foreach ($fileManagerOperations as $path => $manipulatorOrMessage) {
-                if (\is_string($manipulatorOrMessage)) {
+                if (\is_string($manipulatorOrMessage)) {     /* @phpstan-ignore-line - https://github.com/symfony/maker-bundle/issues/1509 */
                     $io->comment($manipulatorOrMessage);
                 } else {
                     $this->fileManager->dumpFile($path, $manipulatorOrMessage->getSourceCode());
@@ -305,12 +315,12 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
 
         $this->writeSuccessMessage($io);
         $io->text([
-            sprintf('Next: When you\'re ready, create a migration with <info>%s make:migration</info>', CliOutputHelper::getCommandPrefix()),
+            \sprintf('Next: When you\'re ready, create a migration with <info>%s make:migration</info>', CliOutputHelper::getCommandPrefix()),
             '',
         ]);
     }
 
-    public function configureDependencies(DependencyBuilder $dependencies, InputInterface $input = null): void
+    public function configureDependencies(DependencyBuilder $dependencies, ?InputInterface $input = null): void
     {
         if (null !== $input && $input->getOption('api-resource')) {
             $dependencies->addClassDependency(
@@ -322,14 +332,15 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         if (null !== $input && $input->getOption('broadcast')) {
             $dependencies->addClassDependency(
                 Broadcast::class,
-                'ux-turbo-mercure'
+                'symfony/ux-turbo'
             );
         }
 
         ORMDependencyBuilder::buildDependencies($dependencies);
     }
 
-    private function askForNextField(ConsoleStyle $io, array $fields, string $entityClass, bool $isFirstField): EntityRelation|array|null
+    /** @param string[] $fields */
+    private function askForNextField(ConsoleStyle $io, array $fields, string $entityClass, bool $isFirstField): EntityRelation|ClassProperty|null
     {
         $io->writeln('');
 
@@ -346,7 +357,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
             }
 
             if (\in_array($name, $fields)) {
-                throw new \InvalidArgumentException(sprintf('The "%s" property already exists.', $name));
+                throw new \InvalidArgumentException(\sprintf('The "%s" property already exists.', $name));
             }
 
             return Validator::validateDoctrineFieldName($name, $this->doctrineHelper->getRegistry());
@@ -381,7 +392,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         $allValidTypes = array_merge(
             array_keys($types),
             EntityRelation::getValidRelationTypes(),
-            ['relation']
+            ['relation', 'enum']
         );
         while (null === $type) {
             $question = new Question('Field type (enter <comment>?</comment> to see all types)', $defaultType);
@@ -395,7 +406,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
                 $type = null;
             } elseif (!\in_array($type, $allValidTypes)) {
                 $this->printAvailableTypes($io);
-                $io->error(sprintf('Invalid type "%s".', $type));
+                $io->error(\sprintf('Invalid type "%s".', $type));
                 $io->writeln('');
 
                 $type = null;
@@ -407,49 +418,43 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         }
 
         // this is a normal field
-        $data = ['fieldName' => $fieldName, 'type' => $type];
+        $classProperty = new ClassProperty(propertyName: $fieldName, type: $type);
+
         if ('string' === $type) {
             // default to 255, avoid the question
-            $data['length'] = $io->ask('Field length', 255, [Validator::class, 'validateLength']);
+            $classProperty->length = $io->ask('Field length', '255', Validator::validateLength(...));
         } elseif ('decimal' === $type) {
             // 10 is the default value given in \Doctrine\DBAL\Schema\Column::$_precision
-            $data['precision'] = $io->ask('Precision (total number of digits stored: 100.00 would be 5)', 10, [Validator::class, 'validatePrecision']);
+            $classProperty->precision = $io->ask('Precision (total number of digits stored: 100.00 would be 5)', '10', Validator::validatePrecision(...));
 
             // 0 is the default value given in \Doctrine\DBAL\Schema\Column::$_scale
-            $data['scale'] = $io->ask('Scale (number of decimals to store: 100.00 would be 2)', 0, [Validator::class, 'validateScale']);
+            $classProperty->scale = $io->ask('Scale (number of decimals to store: 100.00 would be 2)', '0', Validator::validateScale(...));
+        } elseif ('enum' === $type) {
+            // ask for valid backed enum class
+            $classProperty->enumType = $io->ask('Enum class', null, Validator::classIsBackedEnum(...));
+
+            // set type according to user decision
+            $classProperty->type = $io->confirm('Can this field store multiple enum values', false) ? 'simple_array' : 'string';
         }
 
         if ($io->confirm('Can this field be null in the database (nullable)', false)) {
-            $data['nullable'] = true;
+            $classProperty->nullable = true;
         }
 
-        return $data;
+        return $classProperty;
     }
 
     private function printAvailableTypes(ConsoleStyle $io): void
     {
         $allTypes = $this->getTypesMap();
 
-        if ('Hyper' === getenv('TERM_PROGRAM')) {
-            $wizard = 'wizard 🧙';
-        } else {
-            $wizard = '\\' === \DIRECTORY_SEPARATOR ? 'wizard' : 'wizard 🧙';
-        }
-
         $typesTable = [
             'main' => [
-                'string' => [],
+                'string' => ['ascii_string'],
                 'text' => [],
                 'boolean' => [],
                 'integer' => ['smallint', 'bigint'],
                 'float' => [],
-            ],
-            'relation' => [
-                'relation' => 'a '.$wizard.' will help you build the relation',
-                EntityRelation::MANY_TO_ONE => [],
-                EntityRelation::ONE_TO_MANY => [],
-                EntityRelation::MANY_TO_MANY => [],
-                EntityRelation::ONE_TO_ONE => [],
             ],
             'array_object' => [
                 'array' => ['simple_array'],
@@ -465,24 +470,57 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
                 'time' => ['time_immutable'],
                 'dateinterval' => [],
             ],
+            'other' => [
+                'enum' => [],
+            ],
         ];
 
         $printSection = static function (array $sectionTypes) use ($io, &$allTypes) {
             foreach ($sectionTypes as $mainType => $subTypes) {
-                unset($allTypes[$mainType]);
-                $line = sprintf('  * <comment>%s</comment>', $mainType);
-
-                if (\is_string($subTypes) && $subTypes) {
-                    $line .= sprintf(' or %s', $subTypes);
-                } elseif (\is_array($subTypes) && !empty($subTypes)) {
-                    $line .= sprintf(' or %s', implode(' or ', array_map(
-                        static fn ($subType) => sprintf('<comment>%s</comment>', $subType), $subTypes))
-                    );
-
-                    foreach ($subTypes as $subType) {
-                        unset($allTypes[$subType]);
-                    }
+                if (!\array_key_exists($mainType, $allTypes)) {
+                    // The type is not a valid DBAL Type - don't show it as an option
+                    continue;
                 }
+
+                foreach ($subTypes as $key => $potentialType) {
+                    if (!\array_key_exists($potentialType, $allTypes)) {
+                        // The type is not a valid DBAL Type - don't show it as an "or" option
+                        unset($subTypes[$key]);
+                    }
+
+                    // Remove type as not to show it again in "Other Types"
+                    unset($allTypes[$potentialType]);
+                }
+
+                // Remove type as not to show it again in "Other Types"
+                unset($allTypes[$mainType]);
+
+                $line = \sprintf('  * <comment>%s</comment>', $mainType);
+
+                if (!empty($subTypes)) {
+                    $line .= \sprintf(' or %s', implode(' or ', array_map(
+                        static fn ($subType) => \sprintf('<comment>%s</comment>', $subType), $subTypes))
+                    );
+                }
+
+                $io->writeln($line);
+            }
+
+            $io->writeln('');
+        };
+
+        $printRelationsSection = static function () use ($io) {
+            if ('Hyper' === getenv('TERM_PROGRAM')) {
+                $wizard = 'wizard 🧙';
+            } else {
+                $wizard = '\\' === \DIRECTORY_SEPARATOR ? 'wizard' : 'wizard 🧙';
+            }
+
+            $io->writeln(\sprintf('  * <comment>relation</comment> a %s will help you build the relation', $wizard));
+
+            $relations = [EntityRelation::MANY_TO_ONE, EntityRelation::ONE_TO_MANY, EntityRelation::MANY_TO_MANY, EntityRelation::ONE_TO_ONE];
+            foreach ($relations as $relation) {
+                $line = \sprintf('  * <comment>%s</comment>', $relation);
 
                 $io->writeln($line);
             }
@@ -494,7 +532,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         $printSection($typesTable['main']);
 
         $io->writeln('<info>Relationships/Associations</info>');
-        $printSection($typesTable['relation']);
+        $printRelationsSection();
 
         $io->writeln('<info>Array/Object Types</info>');
         $printSection($typesTable['array_object']);
@@ -505,13 +543,14 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         $io->writeln('<info>Other Types</info>');
         // empty the values
         $allTypes = array_map(static fn () => [], $allTypes);
+        $allTypes = [...$typesTable['other'], ...$allTypes];
         $printSection($allTypes);
     }
 
     private function createEntityClassQuestion(string $questionText): Question
     {
         $question = new Question($questionText);
-        $question->setValidator([Validator::class, 'notBlank']);
+        $question->setValidator(Validator::notBlank(...));
         $question->setAutocompleterValues($this->doctrineHelper->getEntitiesForAutocomplete());
 
         return $question;
@@ -535,7 +574,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
             } elseif (class_exists($answeredEntityClass)) {
                 $targetEntityClass = $answeredEntityClass;
             } else {
-                $io->error(sprintf('Unknown class "%s"', $answeredEntityClass));
+                $io->error(\sprintf('Unknown class "%s"', $answeredEntityClass));
             }
         }
 
@@ -545,7 +584,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         }
 
         $askFieldName = fn (string $targetClass, string $defaultValue) => $io->ask(
-            sprintf('New field name inside %s', Str::getShortClassName($targetClass)),
+            \sprintf('New field name inside %s', Str::getShortClassName($targetClass)),
             $defaultValue,
             function ($name) use ($targetClass) {
                 // it's still *possible* to create duplicate properties - by
@@ -553,14 +592,14 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
                 // same make:entity run. property_exists() only knows about
                 // properties that *originally* existed on this class.
                 if (property_exists($targetClass, $name)) {
-                    throw new \InvalidArgumentException(sprintf('The "%s" class already has a "%s" property.', $targetClass, $name));
+                    throw new \InvalidArgumentException(\sprintf('The "%s" class already has a "%s" property.', $targetClass, $name));
                 }
 
                 return Validator::validateDoctrineFieldName($name, $this->doctrineHelper->getRegistry());
             }
         );
 
-        $askIsNullable = static fn (string $propertyName, string $targetClass) => $io->confirm(sprintf(
+        $askIsNullable = static fn (string $propertyName, string $targetClass) => $io->confirm(\sprintf(
             'Is the <comment>%s</comment>.<comment>%s</comment> property allowed to be null (nullable)?',
             Str::getShortClassName($targetClass),
             $propertyName
@@ -569,26 +608,26 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         $askOrphanRemoval = static function (string $owningClass, string $inverseClass) use ($io) {
             $io->text([
                 'Do you want to activate <comment>orphanRemoval</comment> on your relationship?',
-                sprintf(
+                \sprintf(
                     'A <comment>%s</comment> is "orphaned" when it is removed from its related <comment>%s</comment>.',
                     Str::getShortClassName($owningClass),
                     Str::getShortClassName($inverseClass)
                 ),
-                sprintf(
+                \sprintf(
                     'e.g. <comment>$%s->remove%s($%s)</comment>',
                     Str::asLowerCamelCase(Str::getShortClassName($inverseClass)),
                     Str::asCamelCase(Str::getShortClassName($owningClass)),
                     Str::asLowerCamelCase(Str::getShortClassName($owningClass))
                 ),
                 '',
-                sprintf(
+                \sprintf(
                     'NOTE: If a <comment>%s</comment> may *change* from one <comment>%s</comment> to another, answer "no".',
                     Str::getShortClassName($owningClass),
                     Str::getShortClassName($inverseClass)
                 ),
             ]);
 
-            return $io->confirm(sprintf('Do you want to automatically delete orphaned <comment>%s</comment> objects (orphanRemoval)?', $owningClass), false);
+            return $io->confirm(\sprintf('Do you want to automatically delete orphaned <comment>%s</comment> objects (orphanRemoval)?', $owningClass), false);
         };
 
         $askInverseSide = function (EntityRelation $relation) use ($io) {
@@ -607,7 +646,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
                 $getterMethodName = Str::singularCamelCaseToPluralCamelCase($getterMethodName);
             }
             $mapInverse = $io->confirm(
-                sprintf(
+                \sprintf(
                     'Do you want to add a new property to <comment>%s</comment> so that you can access/update <comment>%s</comment> objects from it - e.g. <comment>$%s->%s()</comment>?',
                     Str::getShortClassName($relation->getInverseClass()),
                     Str::getShortClassName($relation->getOwningClass()),
@@ -635,7 +674,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
 
                 $askInverseSide($relation);
                 if ($relation->getMapInverseRelation()) {
-                    $io->comment(sprintf(
+                    $io->comment(\sprintf(
                         'A new property will also be added to the <comment>%s</comment> class so that you can access the related <comment>%s</comment> objects from it.',
                         Str::getShortClassName($relation->getInverseClass()),
                         Str::getShortClassName($relation->getOwningClass())
@@ -664,7 +703,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
                 );
                 $relation->setInverseProperty($newFieldName);
 
-                $io->comment(sprintf(
+                $io->comment(\sprintf(
                     'A new property will also be added to the <comment>%s</comment> class so that you can access and set the related <comment>%s</comment> object from it.',
                     Str::getShortClassName($relation->getOwningClass()),
                     Str::getShortClassName($relation->getInverseClass())
@@ -697,7 +736,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
 
                 $askInverseSide($relation);
                 if ($relation->getMapInverseRelation()) {
-                    $io->comment(sprintf(
+                    $io->comment(\sprintf(
                         'A new property will also be added to the <comment>%s</comment> class so that you can access the related <comment>%s</comment> objects from it.',
                         Str::getShortClassName($relation->getInverseClass()),
                         Str::getShortClassName($relation->getOwningClass())
@@ -724,7 +763,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
 
                 $askInverseSide($relation);
                 if ($relation->getMapInverseRelation()) {
-                    $io->comment(sprintf(
+                    $io->comment(\sprintf(
                         'A new property will also be added to the <comment>%s</comment> class so that you can access the related <comment>%s</comment> object from it.',
                         Str::getShortClassName($relation->getInverseClass()),
                         Str::getShortClassName($relation->getOwningClass())
@@ -743,31 +782,37 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         return $relation;
     }
 
-    private function askRelationType(ConsoleStyle $io, string $entityClass, string $targetEntityClass)
+    private function askRelationType(ConsoleStyle $io, string $entityClass, string $targetEntityClass): string
     {
         $io->writeln('What type of relationship is this?');
 
         $originalEntityShort = Str::getShortClassName($entityClass);
         $targetEntityShort = Str::getShortClassName($targetEntityClass);
+        if ($originalEntityShort === $targetEntityShort) {
+            [$originalDiscriminator, $targetDiscriminator] = Str::getHumanDiscriminatorBetweenTwoClasses($entityClass, $targetEntityClass);
+            $originalEntityShort = trim($originalDiscriminator.'\\'.$originalEntityShort, '\\');
+            $targetEntityShort = trim($targetDiscriminator.'\\'.$targetEntityShort, '\\');
+        }
+
         $rows = [];
         $rows[] = [
             EntityRelation::MANY_TO_ONE,
-            sprintf("Each <comment>%s</comment> relates to (has) <info>one</info> <comment>%s</comment>.\nEach <comment>%s</comment> can relate to (can have) <info>many</info> <comment>%s</comment> objects.", $originalEntityShort, $targetEntityShort, $targetEntityShort, $originalEntityShort),
+            \sprintf("Each <comment>%s</comment> relates to (has) <info>one</info> <comment>%s</comment>.\nEach <comment>%s</comment> can relate to (can have) <info>many</info> <comment>%s</comment> objects.", $originalEntityShort, $targetEntityShort, $targetEntityShort, $originalEntityShort),
         ];
         $rows[] = ['', ''];
         $rows[] = [
             EntityRelation::ONE_TO_MANY,
-            sprintf("Each <comment>%s</comment> can relate to (can have) <info>many</info> <comment>%s</comment> objects.\nEach <comment>%s</comment> relates to (has) <info>one</info> <comment>%s</comment>.", $originalEntityShort, $targetEntityShort, $targetEntityShort, $originalEntityShort),
+            \sprintf("Each <comment>%s</comment> can relate to (can have) <info>many</info> <comment>%s</comment> objects.\nEach <comment>%s</comment> relates to (has) <info>one</info> <comment>%s</comment>.", $originalEntityShort, $targetEntityShort, $targetEntityShort, $originalEntityShort),
         ];
         $rows[] = ['', ''];
         $rows[] = [
             EntityRelation::MANY_TO_MANY,
-            sprintf("Each <comment>%s</comment> can relate to (can have) <info>many</info> <comment>%s</comment> objects.\nEach <comment>%s</comment> can also relate to (can also have) <info>many</info> <comment>%s</comment> objects.", $originalEntityShort, $targetEntityShort, $targetEntityShort, $originalEntityShort),
+            \sprintf("Each <comment>%s</comment> can relate to (can have) <info>many</info> <comment>%s</comment> objects.\nEach <comment>%s</comment> can also relate to (can also have) <info>many</info> <comment>%s</comment> objects.", $originalEntityShort, $targetEntityShort, $targetEntityShort, $originalEntityShort),
         ];
         $rows[] = ['', ''];
         $rows[] = [
             EntityRelation::ONE_TO_ONE,
-            sprintf("Each <comment>%s</comment> relates to (has) exactly <info>one</info> <comment>%s</comment>.\nEach <comment>%s</comment> also relates to (has) exactly <info>one</info> <comment>%s</comment>.", $originalEntityShort, $targetEntityShort, $targetEntityShort, $originalEntityShort),
+            \sprintf("Each <comment>%s</comment> relates to (has) exactly <info>one</info> <comment>%s</comment>.\nEach <comment>%s</comment> also relates to (has) exactly <info>one</info> <comment>%s</comment>.", $originalEntityShort, $targetEntityShort, $targetEntityShort, $originalEntityShort),
         ];
 
         $io->table([
@@ -775,20 +820,28 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
             'Description',
         ], $rows);
 
-        $question = new Question(sprintf(
+        $question = new Question(\sprintf(
             'Relation type? [%s]',
             implode(', ', EntityRelation::getValidRelationTypes())
         ));
         $question->setAutocompleterValues(EntityRelation::getValidRelationTypes());
         $question->setValidator(function ($type) {
             if (!\in_array($type, EntityRelation::getValidRelationTypes())) {
-                throw new \InvalidArgumentException(sprintf('Invalid type: use one of: %s', implode(', ', EntityRelation::getValidRelationTypes())));
+                throw new \InvalidArgumentException(\sprintf('Invalid type: use one of: %s', implode(', ', EntityRelation::getValidRelationTypes())));
             }
 
             return $type;
         });
 
         return $io->askQuestion($question);
+    }
+
+    /** @return string[] */
+    private function verifyEntityName(string $entityName): array
+    {
+        preg_match('/([^\x00-\x7F]+)/u', $entityName, $matches);
+
+        return $matches;
     }
 
     private function createClassManipulator(string $path, ConsoleStyle $io, bool $overwrite): ClassSourceManipulator
@@ -821,6 +874,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         $regenerator->regenerateEntities($classOrNamespace);
     }
 
+    /** @return string[] */
     private function getPropertyNames(string $class): array
     {
         if (!class_exists($class)) {
@@ -837,6 +891,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         return $this->doctrineHelper->getEntityNamespace();
     }
 
+    /** @return string[] */
     private function getTypesMap(): array
     {
         return Type::getTypesMap();

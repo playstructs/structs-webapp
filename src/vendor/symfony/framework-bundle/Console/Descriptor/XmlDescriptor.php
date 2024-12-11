@@ -35,7 +35,7 @@ class XmlDescriptor extends Descriptor
 {
     protected function describeRouteCollection(RouteCollection $routes, array $options = []): void
     {
-        $this->writeDocument($this->getRouteCollectionDocument($routes));
+        $this->writeDocument($this->getRouteCollectionDocument($routes, $options));
     }
 
     protected function describeRoute(Route $route, array $options = []): void
@@ -64,7 +64,7 @@ class XmlDescriptor extends Descriptor
 
     protected function describeContainerServices(ContainerBuilder $container, array $options = []): void
     {
-        $this->writeDocument($this->getContainerServicesDocument($container, $options['tag'] ?? null, isset($options['show_hidden']) && $options['show_hidden'], isset($options['show_arguments']) && $options['show_arguments'], $options['filter'] ?? null, $options['id'] ?? null));
+        $this->writeDocument($this->getContainerServicesDocument($container, $options['tag'] ?? null, isset($options['show_hidden']) && $options['show_hidden'], isset($options['show_arguments']) && $options['show_arguments'], $options['filter'] ?? null));
     }
 
     protected function describeContainerDefinition(Definition $definition, array $options = [], ?ContainerBuilder $container = null): void
@@ -98,9 +98,9 @@ class XmlDescriptor extends Descriptor
         $this->writeDocument($this->getCallableDocument($callable));
     }
 
-    protected function describeContainerParameter(mixed $parameter, array $options = []): void
+    protected function describeContainerParameter(mixed $parameter, ?array $deprecation, array $options = []): void
     {
-        $this->writeDocument($this->getContainerParameterDocument($parameter, $options));
+        $this->writeDocument($this->getContainerParameterDocument($parameter, $deprecation, $options));
     }
 
     protected function describeContainerEnvVars(array $envs, array $options = []): void
@@ -110,7 +110,7 @@ class XmlDescriptor extends Descriptor
 
     protected function describeContainerDeprecations(ContainerBuilder $container, array $options = []): void
     {
-        $containerDeprecationFilePath = sprintf('%s/%sDeprecations.log', $container->getParameter('kernel.build_dir'), $container->getParameter('kernel.container_class'));
+        $containerDeprecationFilePath = \sprintf('%s/%sDeprecations.log', $container->getParameter('kernel.build_dir'), $container->getParameter('kernel.container_class'));
         if (!file_exists($containerDeprecationFilePath)) {
             throw new RuntimeException('The deprecation file does not exist, please try warming the cache first.');
         }
@@ -141,13 +141,21 @@ class XmlDescriptor extends Descriptor
         $this->write($dom->saveXML());
     }
 
-    private function getRouteCollectionDocument(RouteCollection $routes): \DOMDocument
+    private function getRouteCollectionDocument(RouteCollection $routes, array $options): \DOMDocument
     {
         $dom = new \DOMDocument('1.0', 'UTF-8');
         $dom->appendChild($routesXML = $dom->createElement('routes'));
 
         foreach ($routes->all() as $name => $route) {
             $routeXML = $this->getRouteDocument($route, $name);
+            if (($showAliases ??= $options['show_aliases'] ?? false) && $aliases = ($reverseAliases ??= $this->getReverseAliases($routes))[$name] ?? []) {
+                $routeXML->firstChild->appendChild($aliasesXML = $routeXML->createElement('aliases'));
+                foreach ($aliases as $alias) {
+                    $aliasesXML->appendChild($aliasXML = $routeXML->createElement('alias'));
+                    $aliasXML->appendChild(new \DOMText($alias));
+                }
+            }
+
             $routesXML->appendChild($routesXML->ownerDocument->importNode($routeXML->childNodes->item(0), true));
         }
 
@@ -227,10 +235,16 @@ class XmlDescriptor extends Descriptor
         $dom = new \DOMDocument('1.0', 'UTF-8');
         $dom->appendChild($parametersXML = $dom->createElement('parameters'));
 
+        $deprecatedParameters = $parameters->allDeprecated();
+
         foreach ($this->sortParameters($parameters) as $key => $value) {
             $parametersXML->appendChild($parameterXML = $dom->createElement('parameter'));
             $parameterXML->setAttribute('key', $key);
             $parameterXML->appendChild(new \DOMText($this->formatParameter($value)));
+
+            if (isset($deprecatedParameters[$key])) {
+                $parameterXML->setAttribute('deprecated', \sprintf('Since %s %s: %s', $deprecatedParameters[$key][0], $deprecatedParameters[$key][1], \sprintf(...\array_slice($deprecatedParameters[$key], 2))));
+            }
         }
 
         return $dom;
@@ -274,7 +288,7 @@ class XmlDescriptor extends Descriptor
         return $dom;
     }
 
-    private function getContainerServicesDocument(ContainerBuilder $container, ?string $tag = null, bool $showHidden = false, bool $showArguments = false, ?callable $filter = null, ?string $id = null): \DOMDocument
+    private function getContainerServicesDocument(ContainerBuilder $container, ?string $tag = null, bool $showHidden = false, bool $showArguments = false, ?callable $filter = null): \DOMDocument
     {
         $dom = new \DOMDocument('1.0', 'UTF-8');
         $dom->appendChild($containerXML = $dom->createElement('container'));
@@ -327,7 +341,7 @@ class XmlDescriptor extends Descriptor
                 if ($factory[0] instanceof Reference) {
                     $factoryXML->setAttribute('service', (string) $factory[0]);
                 } elseif ($factory[0] instanceof Definition) {
-                    $factoryXML->setAttribute('service', sprintf('inline factory service (%s)', $factory[0]->getClass() ?? 'not configured'));
+                    $factoryXML->setAttribute('service', \sprintf('inline factory service (%s)', $factory[0]->getClass() ?? 'not configured'));
                 } else {
                     $factoryXML->setAttribute('class', $factory[0]);
                 }
@@ -467,13 +481,17 @@ class XmlDescriptor extends Descriptor
         return $dom;
     }
 
-    private function getContainerParameterDocument(mixed $parameter, array $options = []): \DOMDocument
+    private function getContainerParameterDocument(mixed $parameter, ?array $deprecation, array $options = []): \DOMDocument
     {
         $dom = new \DOMDocument('1.0', 'UTF-8');
         $dom->appendChild($parameterXML = $dom->createElement('parameter'));
 
         if (isset($options['parameter'])) {
             $parameterXML->setAttribute('key', $options['parameter']);
+
+            if ($deprecation) {
+                $parameterXML->setAttribute('deprecated', \sprintf('Since %s %s: %s', $deprecation[0], $deprecation[1], \sprintf(...\array_slice($deprecation, 2))));
+            }
         }
 
         $parameterXML->appendChild(new \DOMText($this->formatParameter($parameter)));
@@ -483,7 +501,7 @@ class XmlDescriptor extends Descriptor
 
     private function getEventDispatcherListenersDocument(EventDispatcherInterface $eventDispatcher, array $options): \DOMDocument
     {
-        $event = \array_key_exists('event', $options) ? $options['event'] : null;
+        $event = $options['event'] ?? null;
         $dom = new \DOMDocument('1.0', 'UTF-8');
         $dom->appendChild($eventDispatcherXML = $dom->createElement('event-dispatcher'));
 
@@ -563,12 +581,12 @@ class XmlDescriptor extends Descriptor
             $callableXML->setAttribute('type', 'closure');
 
             $r = new \ReflectionFunction($callable);
-            if (str_contains($r->name, '{closure}')) {
+            if ($r->isAnonymous()) {
                 return $dom;
             }
             $callableXML->setAttribute('name', $r->name);
 
-            if ($class = \PHP_VERSION_ID >= 80111 ? $r->getClosureCalledClass() : $r->getClosureScopeClass()) {
+            if ($class = $r->getClosureCalledClass()) {
                 $callableXML->setAttribute('class', $class->name);
                 if (!$r->getClosureThis()) {
                     $callableXML->setAttribute('static', 'true');

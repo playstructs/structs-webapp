@@ -61,6 +61,7 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
             'Symfony\\Component\\VarExporter\\' => 30,
             'Symfony\\Component\\VarDumper\\' => 28,
             'Symfony\\Component\\Validator\\' => 28,
+            'Symfony\\Component\\TypeInfo\\' => 27,
             'Symfony\\Component\\Translation\\' => 30,
             'Symfony\\Component\\String\\' => 25,
             'Symfony\\Component\\Stopwatch\\' => 28,
@@ -161,8 +162,8 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
         'phpDocumentor\\Reflection\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpdocumentor/reflection-common/src',
-            1 => __DIR__ . '/..' . '/phpdocumentor/type-resolver/src',
-            2 => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src',
+            1 => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src',
+            2 => __DIR__ . '/..' . '/phpdocumentor/type-resolver/src',
         ),
         'Webmozart\\Assert\\' => 
         array (
@@ -247,6 +248,10 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
         'Symfony\\Component\\Validator\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/validator',
+        ),
+        'Symfony\\Component\\TypeInfo\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/type-info',
         ),
         'Symfony\\Component\\Translation\\' => 
         array (
@@ -538,8 +543,8 @@ class ComposerStaticInit89305ecc6aa7de01411f227341db5744
         ),
         'Doctrine\\Common\\' => 
         array (
-            0 => __DIR__ . '/..' . '/doctrine/event-manager/src',
-            1 => __DIR__ . '/..' . '/doctrine/common/src',
+            0 => __DIR__ . '/..' . '/doctrine/common/src',
+            1 => __DIR__ . '/..' . '/doctrine/event-manager/src',
         ),
         'Doctrine\\Bundle\\MigrationsBundle\\' => 
         array (

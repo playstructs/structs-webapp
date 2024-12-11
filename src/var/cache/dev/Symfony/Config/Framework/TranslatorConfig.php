@@ -38,11 +38,11 @@ class TranslatorConfig
     }
 
     /**
-     * @param ParamConfigurator|list<ParamConfigurator|mixed>|string $value
+     * @param ParamConfigurator|list<ParamConfigurator|mixed>|mixed $value
      *
      * @return $this
      */
-    public function fallbacks(ParamConfigurator|string|array $value): static
+    public function fallbacks(mixed $value): static
     {
         $this->_usedProperties['fallbacks'] = true;
         $this->fallbacks = $value;
@@ -90,7 +90,7 @@ class TranslatorConfig
     }
 
     /**
-     * The default path used to load translations
+     * The default path used to load translations.
      * @default '%kernel.project_dir%/translations'
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -143,7 +143,7 @@ class TranslatorConfig
     }
 
     /**
-     * Translation providers you can read/write your translations from
+     * Translation providers you can read/write your translations from.
     */
     public function provider(string $name, array $value = []): \Symfony\Config\Framework\Translator\ProviderConfig
     {
@@ -209,7 +209,7 @@ class TranslatorConfig
 
         if (array_key_exists('providers', $value)) {
             $this->_usedProperties['providers'] = true;
-            $this->providers = array_map(function ($v) { return new \Symfony\Config\Framework\Translator\ProviderConfig($v); }, $value['providers']);
+            $this->providers = array_map(fn ($v) => new \Symfony\Config\Framework\Translator\ProviderConfig($v), $value['providers']);
             unset($value['providers']);
         }
 
@@ -246,7 +246,7 @@ class TranslatorConfig
             $output['pseudo_localization'] = $this->pseudoLocalization instanceof \Symfony\Config\Framework\Translator\PseudoLocalizationConfig ? $this->pseudoLocalization->toArray() : $this->pseudoLocalization;
         }
         if (isset($this->_usedProperties['providers'])) {
-            $output['providers'] = array_map(function ($v) { return $v->toArray(); }, $this->providers);
+            $output['providers'] = array_map(fn ($v) => $v->toArray(), $this->providers);
         }
 
         return $output;

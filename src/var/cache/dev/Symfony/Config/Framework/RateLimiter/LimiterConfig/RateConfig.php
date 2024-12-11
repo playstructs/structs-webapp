@@ -29,7 +29,7 @@ class RateConfig
     }
 
     /**
-     * Amount of tokens to add each interval
+     * Amount of tokens to add each interval.
      * @default 1
      * @param ParamConfigurator|int $value
      * @return $this

@@ -86,7 +86,7 @@ class NotifierConfig
     /**
      * @return $this
      */
-    public function channelPolicy(string $name, ParamConfigurator|string|array $value): static
+    public function channelPolicy(string $name, mixed $value): static
     {
         $this->_usedProperties['channelPolicy'] = true;
         $this->channelPolicy[$name] = $value;
@@ -141,7 +141,7 @@ class NotifierConfig
 
         if (array_key_exists('admin_recipients', $value)) {
             $this->_usedProperties['adminRecipients'] = true;
-            $this->adminRecipients = array_map(function ($v) { return new \Symfony\Config\Framework\Notifier\AdminRecipientConfig($v); }, $value['admin_recipients']);
+            $this->adminRecipients = array_map(fn ($v) => new \Symfony\Config\Framework\Notifier\AdminRecipientConfig($v), $value['admin_recipients']);
             unset($value['admin_recipients']);
         }
 
@@ -172,7 +172,7 @@ class NotifierConfig
             $output['channel_policy'] = $this->channelPolicy;
         }
         if (isset($this->_usedProperties['adminRecipients'])) {
-            $output['admin_recipients'] = array_map(function ($v) { return $v->toArray(); }, $this->adminRecipients);
+            $output['admin_recipients'] = array_map(fn ($v) => $v->toArray(), $this->adminRecipients);
         }
 
         return $output;

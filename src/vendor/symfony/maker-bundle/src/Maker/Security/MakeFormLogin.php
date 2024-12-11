@@ -12,7 +12,10 @@
 namespace Symfony\Bundle\MakerBundle\Maker\Security;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Bundle\MakerBundle\ConsoleStyle;
 use Symfony\Bundle\MakerBundle\DependencyBuilder;
 use Symfony\Bundle\MakerBundle\Exception\RuntimeCommandException;
@@ -20,6 +23,7 @@ use Symfony\Bundle\MakerBundle\FileManager;
 use Symfony\Bundle\MakerBundle\Generator;
 use Symfony\Bundle\MakerBundle\InputConfiguration;
 use Symfony\Bundle\MakerBundle\Maker\AbstractMaker;
+use Symfony\Bundle\MakerBundle\Maker\Common\CanGenerateTestsTrait;
 use Symfony\Bundle\MakerBundle\Security\InteractiveSecurityHelper;
 use Symfony\Bundle\MakerBundle\Security\SecurityConfigUpdater;
 use Symfony\Bundle\MakerBundle\Security\SecurityControllerBuilder;
@@ -33,7 +37,8 @@ use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\Yaml\Yaml;
 
@@ -48,10 +53,13 @@ use Symfony\Component\Yaml\Yaml;
  */
 final class MakeFormLogin extends AbstractMaker
 {
+    use CanGenerateTestsTrait;
+
     private const SECURITY_CONFIG_PATH = 'config/packages/security.yaml';
     private YamlSourceManipulator $ysm;
     private string $controllerName;
     private string $firewallToUpdate;
+    private string $userClass;
     private string $userNameField;
     private bool $willLogout;
 
@@ -70,6 +78,8 @@ final class MakeFormLogin extends AbstractMaker
     public function configureCommand(Command $command, InputConfiguration $inputConfig): void
     {
         $command->setHelp(file_get_contents(\dirname(__DIR__, 2).'/Resources/help/security/MakeFormLogin.txt'));
+
+        $this->configureCommandWithTestsOption($command);
     }
 
     public static function getCommandDescription(): string
@@ -98,7 +108,7 @@ final class MakeFormLogin extends AbstractMaker
     public function interact(InputInterface $input, ConsoleStyle $io, Command $command): void
     {
         if (!$this->fileManager->fileExists(self::SECURITY_CONFIG_PATH)) {
-            throw new RuntimeCommandException(sprintf('The file "%s" does not exist. PHP & XML configuration formats are currently not supported.', self::SECURITY_CONFIG_PATH));
+            throw new RuntimeCommandException(\sprintf('The file "%s" does not exist. PHP & XML configuration formats are currently not supported.', self::SECURITY_CONFIG_PATH));
         }
 
         $this->ysm = new YamlSourceManipulator($this->fileManager->getFileContents(self::SECURITY_CONFIG_PATH));
@@ -111,14 +121,16 @@ final class MakeFormLogin extends AbstractMaker
         $this->controllerName = $io->ask(
             'Choose a name for the controller class (e.g. <fg=yellow>SecurityController</>)',
             'SecurityController',
-            [Validator::class, 'validateClassName']
+            Validator::validateClassName(...)
         );
 
         $securityHelper = new InteractiveSecurityHelper();
         $this->firewallToUpdate = $securityHelper->guessFirewallName($io, $securityData);
-        $userClass = $securityHelper->guessUserClass($io, $securityData['security']['providers']);
-        $this->userNameField = $securityHelper->guessUserNameField($io, $userClass, $securityData['security']['providers']);
+        $this->userClass = $securityHelper->guessUserClass($io, $securityData['security']['providers']);
+        $this->userNameField = $securityHelper->guessUserNameField($io, $this->userClass, $securityData['security']['providers']);
         $this->willLogout = $io->confirm('Do you want to generate a \'/logout\' URL?');
+
+        $this->interactSetGenerateTests($input, $io);
     }
 
     public function generate(InputInterface $input, ConsoleStyle $io, Generator $generator): void
@@ -152,7 +164,7 @@ final class MakeFormLogin extends AbstractMaker
         }
 
         $generator->generateTemplate(
-            sprintf('%s/login.html.twig', $templatePath),
+            \sprintf('%s/login.html.twig', $templatePath),
             'security/formLogin/login_form.tpl.php',
             [
                 'logout_setup' => $this->willLogout,
@@ -167,6 +179,40 @@ final class MakeFormLogin extends AbstractMaker
             $securityData = $this->securityConfigUpdater->updateForLogout($securityData, $this->firewallToUpdate);
         }
 
+        if ($this->shouldGenerateTests()) {
+            $userClassNameDetails = $generator->createClassNameDetails(
+                '\\'.$this->userClass,
+                'Entity\\'
+            );
+
+            $testClassDetails = $generator->createClassNameDetails(
+                'LoginControllerTest',
+                'Test\\',
+            );
+
+            $useStatements = new UseStatementGenerator([
+                $userClassNameDetails->getFullName(),
+                KernelBrowser::class,
+                EntityManager::class,
+                WebTestCase::class,
+                UserPasswordHasherInterface::class,
+            ]);
+
+            $generator->generateFile(
+                targetPath: \sprintf('tests/%s.php', $testClassDetails->getShortName()),
+                templateName: 'security/formLogin/Test.LoginController.tpl.php',
+                variables: [
+                    'use_statements' => $useStatements,
+                    'user_class' => $this->userClass,
+                    'user_short_name' => $userClassNameDetails->getShortName(),
+                ],
+            );
+
+            if (!class_exists(WebTestCase::class)) {
+                $io->caution('You\'ll need to install the `symfony/test-pack` to execute the tests for your new controller.');
+            }
+        }
+
         $generator->dumpFile(self::SECURITY_CONFIG_PATH, $securityData);
 
         $generator->writeChanges();
@@ -174,7 +220,7 @@ final class MakeFormLogin extends AbstractMaker
         $this->writeSuccessMessage($io);
 
         $io->text([
-            sprintf('Next: Review and adapt the login template: <info>%s/login.html.twig</info> to suit your needs.', $templatePath),
+            \sprintf('Next: Review and adapt the login template: <info>%s/login.html.twig</info> to suit your needs.', $templatePath),
         ]);
     }
 }

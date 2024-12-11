@@ -11,7 +11,6 @@
 
 namespace Symfony\Bridge\Doctrine\DataCollector;
 
-use Doctrine\DBAL\Logging\DebugStack;
 use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\Persistence\ManagerRegistry;
@@ -32,33 +31,15 @@ class DoctrineDataCollector extends DataCollector
     private array $connections;
     private array $managers;
 
-    /**
-     * @var array<string, DebugStack>
-     */
-    private array $loggers = [];
-
     public function __construct(
         private ManagerRegistry $registry,
-        private ?DebugDataHolder $debugDataHolder = null,
+        private DebugDataHolder $debugDataHolder,
     ) {
         $this->connections = $registry->getConnectionNames();
         $this->managers = $registry->getManagerNames();
     }
 
-    /**
-     * Adds the stack logger for a connection.
-     *
-     * @return void
-     */
-    public function addLogger(string $name, DebugStack $logger)
-    {
-        $this->loggers[$name] = $logger;
-    }
-
-    /**
-     * @return void
-     */
-    public function collect(Request $request, Response $response, ?\Throwable $exception = null)
+    public function collect(Request $request, Response $response, ?\Throwable $exception = null): void
     {
         $this->data = [
             'queries' => $this->collectQueries(),
@@ -71,64 +52,40 @@ class DoctrineDataCollector extends DataCollector
     {
         $queries = [];
 
-        if (null !== $this->debugDataHolder) {
-            foreach ($this->debugDataHolder->getData() as $name => $data) {
-                $queries[$name] = $this->sanitizeQueries($name, $data);
-            }
-
-            return $queries;
-        }
-
-        foreach ($this->loggers as $name => $logger) {
-            $queries[$name] = $this->sanitizeQueries($name, $logger->queries);
+        foreach ($this->debugDataHolder->getData() as $name => $data) {
+            $queries[$name] = $this->sanitizeQueries($name, $data);
         }
 
         return $queries;
     }
 
-    /**
-     * @return void
-     */
-    public function reset()
+    public function reset(): void
     {
         $this->data = [];
-
-        if (null !== $this->debugDataHolder) {
-            $this->debugDataHolder->reset();
-
-            return;
-        }
-
-        foreach ($this->loggers as $logger) {
-            $logger->queries = [];
-            $logger->currentQuery = 0;
-        }
+        $this->debugDataHolder->reset();
     }
 
-    public function getManagers()
+    public function getManagers(): array
     {
         return $this->data['managers'];
     }
 
-    public function getConnections()
+    public function getConnections(): array
     {
         return $this->data['connections'];
     }
 
-    /**
-     * @return int
-     */
-    public function getQueryCount()
+    public function getQueryCount(): int
     {
         return array_sum(array_map('count', $this->data['queries']));
     }
 
-    public function getQueries()
+    public function getQueries(): array
     {
         return $this->data['queries'];
     }
 
-    public function getTime()
+    public function getTime(): float
     {
         $time = 0;
         foreach ($this->data['queries'] as $queries) {
@@ -169,7 +126,7 @@ class DoctrineDataCollector extends DataCollector
                     return [Caster::PREFIX_VIRTUAL.'__toString()' => (string) $o->getObject()];
                 }
 
-                return [Caster::PREFIX_VIRTUAL.'⚠' => sprintf('Object of class "%s" could not be converted to string.', $o->getClass())];
+                return [Caster::PREFIX_VIRTUAL.'⚠' => \sprintf('Object of class "%s" could not be converted to string.', $o->getClass())];
             },
         ];
     }
@@ -206,8 +163,7 @@ class DoctrineDataCollector extends DataCollector
                     $query['types'][$j] = $type->getBindingType();
                     try {
                         $param = $type->convertToDatabaseValue($param, $this->registry->getConnection($connectionName)->getDatabasePlatform());
-                    } catch (\TypeError $e) {
-                    } catch (ConversionException $e) {
+                    } catch (\TypeError|ConversionException) {
                     }
                 }
             }
@@ -258,7 +214,7 @@ class DoctrineDataCollector extends DataCollector
         }
 
         if (\is_resource($var)) {
-            return [sprintf('/* Resource(%s) */', get_resource_type($var)), false, false];
+            return [\sprintf('/* Resource(%s) */', get_resource_type($var)), false, false];
         }
 
         return [$var, true, true];

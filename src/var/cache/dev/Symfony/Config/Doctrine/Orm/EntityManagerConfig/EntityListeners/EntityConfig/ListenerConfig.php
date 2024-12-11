@@ -25,7 +25,7 @@ class ListenerConfig
     {
         if (array_key_exists('events', $value)) {
             $this->_usedProperties['events'] = true;
-            $this->events = array_map(function ($v) { return new \Symfony\Config\Doctrine\Orm\EntityManagerConfig\EntityListeners\EntityConfig\ListenerConfig\EventConfig($v); }, $value['events']);
+            $this->events = array_map(fn ($v) => new \Symfony\Config\Doctrine\Orm\EntityManagerConfig\EntityListeners\EntityConfig\ListenerConfig\EventConfig($v), $value['events']);
             unset($value['events']);
         }
 
@@ -38,7 +38,7 @@ class ListenerConfig
     {
         $output = [];
         if (isset($this->_usedProperties['events'])) {
-            $output['events'] = array_map(function ($v) { return $v->toArray(); }, $this->events);
+            $output['events'] = array_map(fn ($v) => $v->toArray(), $this->events);
         }
 
         return $output;

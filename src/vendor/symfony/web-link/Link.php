@@ -117,7 +117,7 @@ class Link implements EvolvableLinkInterface
     public const REL_SERVICE_DESC = 'service-desc';
     public const REL_SERVICE_DOC = 'service-doc';
     public const REL_SERVICE_META = 'service-meta';
-    public const REL_SIPTRUNKINGCAPABILITY= 'siptrunkingcapability';
+    public const REL_SIPTRUNKINGCAPABILITY = 'siptrunkingcapability';
     public const REL_SPONSORED = 'sponsored';
     public const REL_START = 'start';
     public const REL_STATUS = 'status';
@@ -141,8 +141,6 @@ class Link implements EvolvableLinkInterface
     // Extra relations
     public const REL_MERCURE = 'mercure';
 
-    private string $href = '';
-
     /**
      * @var string[]
      */
@@ -153,12 +151,13 @@ class Link implements EvolvableLinkInterface
      */
     private array $attributes = [];
 
-    public function __construct(?string $rel = null, string $href = '')
-    {
+    public function __construct(
+        ?string $rel = null,
+        private string $href = '',
+    ) {
         if (null !== $rel) {
             $this->rel[$rel] = $rel;
         }
-        $this->href = $href;
     }
 
     public function getHref(): string

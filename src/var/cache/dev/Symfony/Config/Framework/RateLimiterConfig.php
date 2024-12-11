@@ -51,7 +51,7 @@ class RateLimiterConfig
 
         if (array_key_exists('limiters', $value)) {
             $this->_usedProperties['limiters'] = true;
-            $this->limiters = array_map(function ($v) { return new \Symfony\Config\Framework\RateLimiter\LimiterConfig($v); }, $value['limiters']);
+            $this->limiters = array_map(fn ($v) => new \Symfony\Config\Framework\RateLimiter\LimiterConfig($v), $value['limiters']);
             unset($value['limiters']);
         }
 
@@ -67,7 +67,7 @@ class RateLimiterConfig
             $output['enabled'] = $this->enabled;
         }
         if (isset($this->_usedProperties['limiters'])) {
-            $output['limiters'] = array_map(function ($v) { return $v->toArray(); }, $this->limiters);
+            $output['limiters'] = array_map(fn ($v) => $v->toArray(), $this->limiters);
         }
 
         return $output;

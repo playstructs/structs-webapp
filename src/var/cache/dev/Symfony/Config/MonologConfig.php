@@ -92,7 +92,7 @@ class MonologConfig implements \Symfony\Component\Config\Builder\ConfigBuilderIn
 
         if (array_key_exists('handlers', $value)) {
             $this->_usedProperties['handlers'] = true;
-            $this->handlers = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Monolog\HandlerConfig($v) : $v; }, $value['handlers']);
+            $this->handlers = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Monolog\HandlerConfig($v) : $v, $value['handlers']);
             unset($value['handlers']);
         }
 
@@ -111,7 +111,7 @@ class MonologConfig implements \Symfony\Component\Config\Builder\ConfigBuilderIn
             $output['channels'] = $this->channels;
         }
         if (isset($this->_usedProperties['handlers'])) {
-            $output['handlers'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Monolog\HandlerConfig ? $v->toArray() : $v; }, $this->handlers);
+            $output['handlers'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Monolog\HandlerConfig ? $v->toArray() : $v, $this->handlers);
         }
 
         return $output;

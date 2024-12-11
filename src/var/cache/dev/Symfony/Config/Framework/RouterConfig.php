@@ -61,8 +61,9 @@ class RouterConfig
     }
 
     /**
-     * @default '%kernel.cache_dir%'
+     * @default '%kernel.build_dir%'
      * @param ParamConfigurator|mixed $value
+     * @deprecated Setting the "router.cache_dir" configuration option is deprecated. It will be removed in version 8.0.
      * @return $this
      */
     public function cacheDir($value): static
@@ -74,7 +75,7 @@ class RouterConfig
     }
 
     /**
-     * The default URI used to generate URLs in a non-HTTP context
+     * The default URI used to generate URLs in a non-HTTP context.
      * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this

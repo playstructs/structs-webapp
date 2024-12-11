@@ -30,7 +30,7 @@ class MemoryConfig
     {
         if (array_key_exists('users', $value)) {
             $this->_usedProperties['users'] = true;
-            $this->users = array_map(function ($v) { return new \Symfony\Config\Security\ProviderConfig\Memory\UserConfig($v); }, $value['users']);
+            $this->users = array_map(fn ($v) => new \Symfony\Config\Security\ProviderConfig\Memory\UserConfig($v), $value['users']);
             unset($value['users']);
         }
 
@@ -43,7 +43,7 @@ class MemoryConfig
     {
         $output = [];
         if (isset($this->_usedProperties['users'])) {
-            $output['users'] = array_map(function ($v) { return $v->toArray(); }, $this->users);
+            $output['users'] = array_map(fn ($v) => $v->toArray(), $this->users);
         }
 
         return $output;

@@ -85,10 +85,7 @@ class DateTimeToStringTransformer extends BaseDateTimeTransformer
             throw new TransformationFailedException('Expected a \DateTimeInterface.');
         }
 
-        if (!$dateTime instanceof \DateTimeImmutable) {
-            $dateTime = clone $dateTime;
-        }
-
+        $dateTime = \DateTimeImmutable::createFromInterface($dateTime);
         $dateTime = $dateTime->setTimezone(new \DateTimeZone($this->outputTimezone));
 
         return $dateTime->format($this->generateFormat);
@@ -104,12 +101,16 @@ class DateTimeToStringTransformer extends BaseDateTimeTransformer
      */
     public function reverseTransform(mixed $value): ?\DateTime
     {
-        if (empty($value)) {
+        if (!$value) {
             return null;
         }
 
         if (!\is_string($value)) {
             throw new TransformationFailedException('Expected a string.');
+        }
+
+        if (str_contains($value, "\0")) {
+            throw new TransformationFailedException('Null bytes not allowed');
         }
 
         $outputTz = new \DateTimeZone($this->outputTimezone);

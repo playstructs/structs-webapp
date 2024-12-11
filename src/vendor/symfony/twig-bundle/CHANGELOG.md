@@ -1,6 +1,25 @@
 CHANGELOG
 =========
 
+7.1
+---
+
+ * Mark class `TemplateCacheWarmer` as `final`
+
+7.0
+---
+
+ * Remove the `Twig_Environment` autowiring alias, use `Twig\Environment` instead
+ * Remove option `twig.autoescape`; create a class that implements your escaping strategy
+   (check `FileExtensionEscapingStrategy::guess()` for inspiration) and reference it using
+   the `twig.autoescape_service` option instead
+ * Drop support for Twig 2
+
+6.4
+---
+
+ * Allow omitting the `autoescape_service_method` option when `autoescape_service` is set to an invokable service id
+
 6.3
 ---
 

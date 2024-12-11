@@ -126,7 +126,7 @@ class HttpClientConfig
 
         if (array_key_exists('scoped_clients', $value)) {
             $this->_usedProperties['scopedClients'] = true;
-            $this->scopedClients = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\HttpClient\ScopedClientConfig($v) : $v; }, $value['scoped_clients']);
+            $this->scopedClients = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Framework\HttpClient\ScopedClientConfig($v) : $v, $value['scoped_clients']);
             unset($value['scoped_clients']);
         }
 
@@ -151,7 +151,7 @@ class HttpClientConfig
             $output['mock_response_factory'] = $this->mockResponseFactory;
         }
         if (isset($this->_usedProperties['scopedClients'])) {
-            $output['scoped_clients'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\HttpClient\ScopedClientConfig ? $v->toArray() : $v; }, $this->scopedClients);
+            $output['scoped_clients'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Framework\HttpClient\ScopedClientConfig ? $v->toArray() : $v, $this->scopedClients);
         }
 
         return $output;

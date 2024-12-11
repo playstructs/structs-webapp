@@ -30,7 +30,9 @@ trait CommonResponseTrait
      * @var callable|null A callback that tells whether we're waiting for response headers
      */
     private $initializer;
+    /** @var bool|\Closure|resource|null */
     private $shouldBuffer;
+    /** @var resource|null */
     private $content;
     private int $offset = 0;
     private ?array $jsonData = null;
@@ -85,11 +87,11 @@ trait CommonResponseTrait
         try {
             $content = json_decode($content, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw new JsonException($e->getMessage().sprintf(' for "%s".', $this->getInfo('url')), $e->getCode());
+            throw new JsonException($e->getMessage().\sprintf(' for "%s".', $this->getInfo('url')), $e->getCode());
         }
 
         if (!\is_array($content)) {
-            throw new JsonException(sprintf('JSON content was expected to decode to an array, "%s" returned for "%s".', get_debug_type($content), $this->getInfo('url')));
+            throw new JsonException(\sprintf('JSON content was expected to decode to an array, "%s" returned for "%s".', get_debug_type($content), $this->getInfo('url')));
         }
 
         if (null !== $this->content) {
@@ -122,7 +124,7 @@ trait CommonResponseTrait
         throw new \BadMethodCallException('Cannot serialize '.__CLASS__);
     }
 
-    public function __wakeup()
+    public function __wakeup(): void
     {
         throw new \BadMethodCallException('Cannot unserialize '.__CLASS__);
     }

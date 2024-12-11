@@ -16,7 +16,6 @@ class JsonLoginLdapConfig
     private $failureHandler;
     private $checkPath;
     private $useForward;
-    private $requirePreviousSession;
     private $loginPath;
     private $usernamePath;
     private $passwordPath;
@@ -106,19 +105,6 @@ class JsonLoginLdapConfig
     }
 
     /**
-     * @default false
-     * @param ParamConfigurator|bool $value
-     * @return $this
-     */
-    public function requirePreviousSession($value): static
-    {
-        $this->_usedProperties['requirePreviousSession'] = true;
-        $this->requirePreviousSession = $value;
-
-        return $this;
-    }
-
-    /**
      * @default '/login'
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -171,7 +157,7 @@ class JsonLoginLdapConfig
     }
 
     /**
-     * @default '{username}'
+     * @default '{user_identifier}'
      * @param ParamConfigurator|mixed $value
      * @return $this
      */
@@ -258,12 +244,6 @@ class JsonLoginLdapConfig
             unset($value['use_forward']);
         }
 
-        if (array_key_exists('require_previous_session', $value)) {
-            $this->_usedProperties['requirePreviousSession'] = true;
-            $this->requirePreviousSession = $value['require_previous_session'];
-            unset($value['require_previous_session']);
-        }
-
         if (array_key_exists('login_path', $value)) {
             $this->_usedProperties['loginPath'] = true;
             $this->loginPath = $value['login_path'];
@@ -337,9 +317,6 @@ class JsonLoginLdapConfig
         }
         if (isset($this->_usedProperties['useForward'])) {
             $output['use_forward'] = $this->useForward;
-        }
-        if (isset($this->_usedProperties['requirePreviousSession'])) {
-            $output['require_previous_session'] = $this->requirePreviousSession;
         }
         if (isset($this->_usedProperties['loginPath'])) {
             $output['login_path'] = $this->loginPath;

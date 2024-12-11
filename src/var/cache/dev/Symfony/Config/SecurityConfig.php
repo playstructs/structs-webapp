@@ -20,7 +20,6 @@ class SecurityConfig implements \Symfony\Component\Config\Builder\ConfigBuilderI
     private $sessionFixationStrategy;
     private $hideUserNotFound;
     private $eraseCredentials;
-    private $enableAuthenticatorManager;
     private $accessDecisionManager;
     private $passwordHashers;
     private $providers;
@@ -78,20 +77,6 @@ class SecurityConfig implements \Symfony\Component\Config\Builder\ConfigBuilderI
     {
         $this->_usedProperties['eraseCredentials'] = true;
         $this->eraseCredentials = $value;
-
-        return $this;
-    }
-
-    /**
-     * @default true
-     * @param ParamConfigurator|bool $value
-     * @deprecated The "enable_authenticator_manager" option at "security" is deprecated.
-     * @return $this
-     */
-    public function enableAuthenticatorManager($value): static
-    {
-        $this->_usedProperties['enableAuthenticatorManager'] = true;
-        $this->enableAuthenticatorManager = $value;
 
         return $this;
     }
@@ -215,12 +200,6 @@ class SecurityConfig implements \Symfony\Component\Config\Builder\ConfigBuilderI
             unset($value['erase_credentials']);
         }
 
-        if (array_key_exists('enable_authenticator_manager', $value)) {
-            $this->_usedProperties['enableAuthenticatorManager'] = true;
-            $this->enableAuthenticatorManager = $value['enable_authenticator_manager'];
-            unset($value['enable_authenticator_manager']);
-        }
-
         if (array_key_exists('access_decision_manager', $value)) {
             $this->_usedProperties['accessDecisionManager'] = true;
             $this->accessDecisionManager = new \Symfony\Config\Security\AccessDecisionManagerConfig($value['access_decision_manager']);
@@ -229,25 +208,25 @@ class SecurityConfig implements \Symfony\Component\Config\Builder\ConfigBuilderI
 
         if (array_key_exists('password_hashers', $value)) {
             $this->_usedProperties['passwordHashers'] = true;
-            $this->passwordHashers = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Security\PasswordHasherConfig($v) : $v; }, $value['password_hashers']);
+            $this->passwordHashers = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Security\PasswordHasherConfig($v) : $v, $value['password_hashers']);
             unset($value['password_hashers']);
         }
 
         if (array_key_exists('providers', $value)) {
             $this->_usedProperties['providers'] = true;
-            $this->providers = array_map(function ($v) { return new \Symfony\Config\Security\ProviderConfig($v); }, $value['providers']);
+            $this->providers = array_map(fn ($v) => new \Symfony\Config\Security\ProviderConfig($v), $value['providers']);
             unset($value['providers']);
         }
 
         if (array_key_exists('firewalls', $value)) {
             $this->_usedProperties['firewalls'] = true;
-            $this->firewalls = array_map(function ($v) { return new \Symfony\Config\Security\FirewallConfig($v); }, $value['firewalls']);
+            $this->firewalls = array_map(fn ($v) => new \Symfony\Config\Security\FirewallConfig($v), $value['firewalls']);
             unset($value['firewalls']);
         }
 
         if (array_key_exists('access_control', $value)) {
             $this->_usedProperties['accessControl'] = true;
-            $this->accessControl = array_map(function ($v) { return new \Symfony\Config\Security\AccessControlConfig($v); }, $value['access_control']);
+            $this->accessControl = array_map(fn ($v) => new \Symfony\Config\Security\AccessControlConfig($v), $value['access_control']);
             unset($value['access_control']);
         }
 
@@ -277,23 +256,20 @@ class SecurityConfig implements \Symfony\Component\Config\Builder\ConfigBuilderI
         if (isset($this->_usedProperties['eraseCredentials'])) {
             $output['erase_credentials'] = $this->eraseCredentials;
         }
-        if (isset($this->_usedProperties['enableAuthenticatorManager'])) {
-            $output['enable_authenticator_manager'] = $this->enableAuthenticatorManager;
-        }
         if (isset($this->_usedProperties['accessDecisionManager'])) {
             $output['access_decision_manager'] = $this->accessDecisionManager->toArray();
         }
         if (isset($this->_usedProperties['passwordHashers'])) {
-            $output['password_hashers'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Security\PasswordHasherConfig ? $v->toArray() : $v; }, $this->passwordHashers);
+            $output['password_hashers'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Security\PasswordHasherConfig ? $v->toArray() : $v, $this->passwordHashers);
         }
         if (isset($this->_usedProperties['providers'])) {
-            $output['providers'] = array_map(function ($v) { return $v->toArray(); }, $this->providers);
+            $output['providers'] = array_map(fn ($v) => $v->toArray(), $this->providers);
         }
         if (isset($this->_usedProperties['firewalls'])) {
-            $output['firewalls'] = array_map(function ($v) { return $v->toArray(); }, $this->firewalls);
+            $output['firewalls'] = array_map(fn ($v) => $v->toArray(), $this->firewalls);
         }
         if (isset($this->_usedProperties['accessControl'])) {
-            $output['access_control'] = array_map(function ($v) { return $v->toArray(); }, $this->accessControl);
+            $output['access_control'] = array_map(fn ($v) => $v->toArray(), $this->accessControl);
         }
         if (isset($this->_usedProperties['roleHierarchy'])) {
             $output['role_hierarchy'] = $this->roleHierarchy;

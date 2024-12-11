@@ -51,6 +51,7 @@ class OrmConfig
     }
 
     /**
+     * Enables the new implementation of proxies based on lazy ghosts instead of using the legacy implementation
      * @default false
      * @param ParamConfigurator|bool $value
      * @return $this
@@ -90,7 +91,7 @@ class OrmConfig
     }
 
     /**
-     * @default {"enabled":true,"auto_mapping":true,"evict_cache":false}
+     * @default {"enabled":true,"auto_mapping":null,"evict_cache":false}
     */
     public function controllerResolver(array $value = []): \Symfony\Config\Doctrine\Orm\ControllerResolverConfig
     {
@@ -167,7 +168,7 @@ class OrmConfig
 
         if (array_key_exists('entity_managers', $value)) {
             $this->_usedProperties['entityManagers'] = true;
-            $this->entityManagers = array_map(function ($v) { return new \Symfony\Config\Doctrine\Orm\EntityManagerConfig($v); }, $value['entity_managers']);
+            $this->entityManagers = array_map(fn ($v) => new \Symfony\Config\Doctrine\Orm\EntityManagerConfig($v), $value['entity_managers']);
             unset($value['entity_managers']);
         }
 
@@ -204,7 +205,7 @@ class OrmConfig
             $output['controller_resolver'] = $this->controllerResolver->toArray();
         }
         if (isset($this->_usedProperties['entityManagers'])) {
-            $output['entity_managers'] = array_map(function ($v) { return $v->toArray(); }, $this->entityManagers);
+            $output['entity_managers'] = array_map(fn ($v) => $v->toArray(), $this->entityManagers);
         }
         if (isset($this->_usedProperties['resolveTargetEntities'])) {
             $output['resolve_target_entities'] = $this->resolveTargetEntities;

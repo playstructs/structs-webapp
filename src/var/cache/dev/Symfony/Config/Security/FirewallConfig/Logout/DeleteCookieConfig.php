@@ -14,6 +14,7 @@ class DeleteCookieConfig
     private $domain;
     private $secure;
     private $samesite;
+    private $partitioned;
     private $_usedProperties = [];
 
     /**
@@ -68,6 +69,19 @@ class DeleteCookieConfig
         return $this;
     }
 
+    /**
+     * @default false
+     * @param ParamConfigurator|mixed $value
+     * @return $this
+     */
+    public function partitioned($value): static
+    {
+        $this->_usedProperties['partitioned'] = true;
+        $this->partitioned = $value;
+
+        return $this;
+    }
+
     public function __construct(array $value = [])
     {
         if (array_key_exists('path', $value)) {
@@ -94,6 +108,12 @@ class DeleteCookieConfig
             unset($value['samesite']);
         }
 
+        if (array_key_exists('partitioned', $value)) {
+            $this->_usedProperties['partitioned'] = true;
+            $this->partitioned = $value['partitioned'];
+            unset($value['partitioned']);
+        }
+
         if ([] !== $value) {
             throw new InvalidConfigurationException(sprintf('The following keys are not supported by "%s": ', __CLASS__).implode(', ', array_keys($value)));
         }
@@ -113,6 +133,9 @@ class DeleteCookieConfig
         }
         if (isset($this->_usedProperties['samesite'])) {
             $output['samesite'] = $this->samesite;
+        }
+        if (isset($this->_usedProperties['partitioned'])) {
+            $output['partitioned'] = $this->partitioned;
         }
 
         return $output;

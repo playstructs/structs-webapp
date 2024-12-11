@@ -29,7 +29,7 @@ class MarkingStoreConfig
     }
 
     /**
-     * @default 'marking'
+     * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this
      */

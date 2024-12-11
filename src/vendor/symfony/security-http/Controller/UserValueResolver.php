@@ -12,7 +12,6 @@
 namespace Symfony\Component\Security\Http\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Controller\ArgumentValueResolverInterface;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -25,29 +24,11 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
  *
  * @author Iltar van der Berg <kjarli@gmail.com>
  */
-final class UserValueResolver implements ArgumentValueResolverInterface, ValueResolverInterface
+final class UserValueResolver implements ValueResolverInterface
 {
-    private TokenStorageInterface $tokenStorage;
-
-    public function __construct(TokenStorageInterface $tokenStorage)
-    {
-        $this->tokenStorage = $tokenStorage;
-    }
-
-    /**
-     * @deprecated since Symfony 6.2, use resolve() instead
-     */
-    public function supports(Request $request, ArgumentMetadata $argument): bool
-    {
-        @trigger_deprecation('symfony/http-kernel', '6.2', 'The "%s()" method is deprecated, use "resolve()" instead.', __METHOD__);
-
-        // with the attribute, the type can be any UserInterface implementation
-        // otherwise, the type must be UserInterface
-        if (UserInterface::class !== $argument->getType() && !$argument->getAttributesOfType(CurrentUser::class, ArgumentMetadata::IS_INSTANCEOF)) {
-            return false;
-        }
-
-        return true;
+    public function __construct(
+        private TokenStorageInterface $tokenStorage,
+    ) {
     }
 
     public function resolve(Request $request, ArgumentMetadata $argument): array
@@ -66,7 +47,7 @@ final class UserValueResolver implements ArgumentValueResolverInterface, ValueRe
             }
 
             if (!$argument->isNullable()) {
-                throw new AccessDeniedException(sprintf('There is no logged-in user to pass to $%s, make the argument nullable if you want to allow anonymous access to the action.', $argument->getName()));
+                throw new AccessDeniedException(\sprintf('There is no logged-in user to pass to $%s, make the argument nullable if you want to allow anonymous access to the action.', $argument->getName()));
             }
 
             return [null];
@@ -76,6 +57,6 @@ final class UserValueResolver implements ArgumentValueResolverInterface, ValueRe
             return [$user];
         }
 
-        throw new AccessDeniedException(sprintf('The logged-in user is an instance of "%s" but a user of type "%s" is expected.', $user::class, $argument->getType()));
+        throw new AccessDeniedException(\sprintf('The logged-in user is an instance of "%s" but a user of type "%s" is expected.', $user::class, $argument->getType()));
     }
 }

@@ -66,10 +66,10 @@ class_exists(MissingDotenv::class, false) || class_exists(Dotenv::class) || clas
  */
 class SymfonyRuntime extends GenericRuntime
 {
-    private $input;
-    private $output;
-    private $console;
-    private $command;
+    private readonly ArgvInput $input;
+    private readonly ConsoleOutput $output;
+    private readonly Application $console;
+    private readonly Command $command;
 
     /**
      * @param array {
@@ -93,9 +93,15 @@ class SymfonyRuntime extends GenericRuntime
         $envKey = $options['env_var_name'] ??= 'APP_ENV';
         $debugKey = $options['debug_var_name'] ??= 'APP_DEBUG';
 
+        if (isset($_SERVER['argv']) && !empty($_GET)) {
+            // register_argc_argv=On is too risky in web servers
+            $_SERVER['argv'] = [];
+            $_SERVER['argc'] = 0;
+        }
+
         if (isset($options['env'])) {
             $_SERVER[$envKey] = $options['env'];
-        } elseif (isset($_SERVER['argv']) && class_exists(ArgvInput::class)) {
+        } elseif (empty($_GET) && isset($_SERVER['argv']) && class_exists(ArgvInput::class)) {
             $this->options = $options;
             $this->getInput();
         }
@@ -106,9 +112,9 @@ class SymfonyRuntime extends GenericRuntime
                 ->usePutenv($options['use_putenv'] ?? false)
                 ->bootEnv($options['project_dir'].'/'.($options['dotenv_path'] ?? '.env'), 'dev', (array) ($options['test_envs'] ?? ['test']), $options['dotenv_overload'] ?? false);
 
-            if ($this->input && ($options['dotenv_overload'] ?? false)) {
+            if (isset($this->input) && ($options['dotenv_overload'] ?? false)) {
                 if ($this->input->getParameterOption(['--env', '-e'], $_SERVER[$envKey], true) !== $_SERVER[$envKey]) {
-                    throw new \LogicException(sprintf('Cannot use "--env" or "-e" when the "%s" file defines "%s" and the "dotenv_overload" runtime option is true.', $options['dotenv_path'] ?? '.env', $envKey));
+                    throw new \LogicException(\sprintf('Cannot use "--env" or "-e" when the "%s" file defines "%s" and the "dotenv_overload" runtime option is true.', $options['dotenv_path'] ?? '.env', $envKey));
                 }
 
                 if ($_SERVER[$debugKey] && $this->input->hasParameterOption('--no-debug', true)) {
@@ -131,7 +137,7 @@ class SymfonyRuntime extends GenericRuntime
     public function getRunner(?object $application): RunnerInterface
     {
         if ($application instanceof HttpKernelInterface) {
-            return new HttpKernelRunner($application, Request::createFromGlobals());
+            return new HttpKernelRunner($application, Request::createFromGlobals(), $this->options['debug'] ?? false);
         }
 
         if ($application instanceof Response) {
@@ -165,7 +171,7 @@ class SymfonyRuntime extends GenericRuntime
             return new ConsoleApplicationRunner($application, $defaultEnv, $this->getInput(), $output);
         }
 
-        if ($this->command) {
+        if (isset($this->command)) {
             $this->getInput()->bind($this->command->getDefinition());
         }
 
@@ -203,7 +209,7 @@ class SymfonyRuntime extends GenericRuntime
 
     private function getInput(): ArgvInput
     {
-        if (null !== $this->input) {
+        if (isset($this->input)) {
             return $this->input;
         }
 

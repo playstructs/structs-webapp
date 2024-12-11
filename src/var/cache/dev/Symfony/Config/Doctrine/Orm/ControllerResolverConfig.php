@@ -30,7 +30,7 @@ class ControllerResolverConfig
 
     /**
      * Set to false to disable using route placeholders as lookup criteria when the primary key doesn't match the argument name
-     * @default true
+     * @default null
      * @param ParamConfigurator|bool $value
      * @return $this
      */

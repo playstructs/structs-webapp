@@ -20,7 +20,6 @@ class MessengerConfig
     private $serializer;
     private $transports;
     private $failureTransport;
-    private $resetOnMessage;
     private $stopWorkerOnSignals;
     private $defaultBus;
     private $buses;
@@ -119,21 +118,6 @@ class MessengerConfig
     }
 
     /**
-     * Reset container services after each message.
-     * @default true
-     * @param ParamConfigurator|bool $value
-     * @deprecated Option "reset_on_message" at "messenger" is deprecated. It does nothing and will be removed in version 7.0.
-     * @return $this
-     */
-    public function resetOnMessage($value): static
-    {
-        $this->_usedProperties['resetOnMessage'] = true;
-        $this->resetOnMessage = $value;
-
-        return $this;
-    }
-
-    /**
      * @param ParamConfigurator|list<ParamConfigurator|int> $value
      *
      * @return $this
@@ -184,7 +168,7 @@ class MessengerConfig
 
         if (array_key_exists('routing', $value)) {
             $this->_usedProperties['routing'] = true;
-            $this->routing = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\Messenger\RoutingConfig($v) : $v; }, $value['routing']);
+            $this->routing = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Framework\Messenger\RoutingConfig($v) : $v, $value['routing']);
             unset($value['routing']);
         }
 
@@ -196,7 +180,7 @@ class MessengerConfig
 
         if (array_key_exists('transports', $value)) {
             $this->_usedProperties['transports'] = true;
-            $this->transports = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\Messenger\TransportConfig($v) : $v; }, $value['transports']);
+            $this->transports = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Framework\Messenger\TransportConfig($v) : $v, $value['transports']);
             unset($value['transports']);
         }
 
@@ -204,12 +188,6 @@ class MessengerConfig
             $this->_usedProperties['failureTransport'] = true;
             $this->failureTransport = $value['failure_transport'];
             unset($value['failure_transport']);
-        }
-
-        if (array_key_exists('reset_on_message', $value)) {
-            $this->_usedProperties['resetOnMessage'] = true;
-            $this->resetOnMessage = $value['reset_on_message'];
-            unset($value['reset_on_message']);
         }
 
         if (array_key_exists('stop_worker_on_signals', $value)) {
@@ -226,7 +204,7 @@ class MessengerConfig
 
         if (array_key_exists('buses', $value)) {
             $this->_usedProperties['buses'] = true;
-            $this->buses = array_map(function ($v) { return new \Symfony\Config\Framework\Messenger\BusConfig($v); }, $value['buses']);
+            $this->buses = array_map(fn ($v) => new \Symfony\Config\Framework\Messenger\BusConfig($v), $value['buses']);
             unset($value['buses']);
         }
 
@@ -242,19 +220,16 @@ class MessengerConfig
             $output['enabled'] = $this->enabled;
         }
         if (isset($this->_usedProperties['routing'])) {
-            $output['routing'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\Messenger\RoutingConfig ? $v->toArray() : $v; }, $this->routing);
+            $output['routing'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Framework\Messenger\RoutingConfig ? $v->toArray() : $v, $this->routing);
         }
         if (isset($this->_usedProperties['serializer'])) {
             $output['serializer'] = $this->serializer->toArray();
         }
         if (isset($this->_usedProperties['transports'])) {
-            $output['transports'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\Messenger\TransportConfig ? $v->toArray() : $v; }, $this->transports);
+            $output['transports'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Framework\Messenger\TransportConfig ? $v->toArray() : $v, $this->transports);
         }
         if (isset($this->_usedProperties['failureTransport'])) {
             $output['failure_transport'] = $this->failureTransport;
-        }
-        if (isset($this->_usedProperties['resetOnMessage'])) {
-            $output['reset_on_message'] = $this->resetOnMessage;
         }
         if (isset($this->_usedProperties['stopWorkerOnSignals'])) {
             $output['stop_worker_on_signals'] = $this->stopWorkerOnSignals;
@@ -263,7 +238,7 @@ class MessengerConfig
             $output['default_bus'] = $this->defaultBus;
         }
         if (isset($this->_usedProperties['buses'])) {
-            $output['buses'] = array_map(function ($v) { return $v->toArray(); }, $this->buses);
+            $output['buses'] = array_map(fn ($v) => $v->toArray(), $this->buses);
         }
 
         return $output;

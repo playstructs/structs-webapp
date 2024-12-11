@@ -179,13 +179,13 @@ class SecondLevelCacheConfig
 
         if (array_key_exists('regions', $value)) {
             $this->_usedProperties['regions'] = true;
-            $this->regions = array_map(function ($v) { return new \Symfony\Config\Doctrine\Orm\EntityManagerConfig\SecondLevelCache\RegionConfig($v); }, $value['regions']);
+            $this->regions = array_map(fn ($v) => new \Symfony\Config\Doctrine\Orm\EntityManagerConfig\SecondLevelCache\RegionConfig($v), $value['regions']);
             unset($value['regions']);
         }
 
         if (array_key_exists('loggers', $value)) {
             $this->_usedProperties['loggers'] = true;
-            $this->loggers = array_map(function ($v) { return new \Symfony\Config\Doctrine\Orm\EntityManagerConfig\SecondLevelCache\LoggerConfig($v); }, $value['loggers']);
+            $this->loggers = array_map(fn ($v) => new \Symfony\Config\Doctrine\Orm\EntityManagerConfig\SecondLevelCache\LoggerConfig($v), $value['loggers']);
             unset($value['loggers']);
         }
 
@@ -216,10 +216,10 @@ class SecondLevelCacheConfig
             $output['factory'] = $this->factory;
         }
         if (isset($this->_usedProperties['regions'])) {
-            $output['regions'] = array_map(function ($v) { return $v->toArray(); }, $this->regions);
+            $output['regions'] = array_map(fn ($v) => $v->toArray(), $this->regions);
         }
         if (isset($this->_usedProperties['loggers'])) {
-            $output['loggers'] = array_map(function ($v) { return $v->toArray(); }, $this->loggers);
+            $output['loggers'] = array_map(fn ($v) => $v->toArray(), $this->loggers);
         }
 
         return $output;

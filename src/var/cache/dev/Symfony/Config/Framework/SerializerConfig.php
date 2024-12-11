@@ -3,6 +3,7 @@
 namespace Symfony\Config\Framework;
 
 require_once __DIR__.\DIRECTORY_SEPARATOR.'Serializer'.\DIRECTORY_SEPARATOR.'MappingConfig.php';
+require_once __DIR__.\DIRECTORY_SEPARATOR.'Serializer'.\DIRECTORY_SEPARATOR.'NamedSerializerConfig.php';
 
 use Symfony\Component\Config\Loader\ParamConfigurator;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -13,12 +14,13 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 class SerializerConfig 
 {
     private $enabled;
-    private $enableAnnotations;
+    private $enableAttributes;
     private $nameConverter;
     private $circularReferenceHandler;
     private $maxDepthHandler;
     private $mapping;
     private $defaultContext;
+    private $namedSerializers;
     private $_usedProperties = [];
 
     /**
@@ -39,10 +41,10 @@ class SerializerConfig
      * @param ParamConfigurator|bool $value
      * @return $this
      */
-    public function enableAnnotations($value): static
+    public function enableAttributes($value): static
     {
-        $this->_usedProperties['enableAnnotations'] = true;
-        $this->enableAnnotations = $value;
+        $this->_usedProperties['enableAttributes'] = true;
+        $this->enableAttributes = $value;
 
         return $this;
     }
@@ -102,14 +104,28 @@ class SerializerConfig
     }
 
     /**
+     * @param ParamConfigurator|list<ParamConfigurator|mixed> $value
+     *
      * @return $this
      */
-    public function defaultContext(string $name, mixed $value): static
+    public function defaultContext(ParamConfigurator|array $value): static
     {
         $this->_usedProperties['defaultContext'] = true;
-        $this->defaultContext[$name] = $value;
+        $this->defaultContext = $value;
 
         return $this;
+    }
+
+    public function namedSerializer(string $name, array $value = []): \Symfony\Config\Framework\Serializer\NamedSerializerConfig
+    {
+        if (!isset($this->namedSerializers[$name])) {
+            $this->_usedProperties['namedSerializers'] = true;
+            $this->namedSerializers[$name] = new \Symfony\Config\Framework\Serializer\NamedSerializerConfig($value);
+        } elseif (1 < \func_num_args()) {
+            throw new InvalidConfigurationException('The node created by "namedSerializer()" has already been initialized. You cannot pass values the second time you call namedSerializer().');
+        }
+
+        return $this->namedSerializers[$name];
     }
 
     public function __construct(array $value = [])
@@ -120,10 +136,10 @@ class SerializerConfig
             unset($value['enabled']);
         }
 
-        if (array_key_exists('enable_annotations', $value)) {
-            $this->_usedProperties['enableAnnotations'] = true;
-            $this->enableAnnotations = $value['enable_annotations'];
-            unset($value['enable_annotations']);
+        if (array_key_exists('enable_attributes', $value)) {
+            $this->_usedProperties['enableAttributes'] = true;
+            $this->enableAttributes = $value['enable_attributes'];
+            unset($value['enable_attributes']);
         }
 
         if (array_key_exists('name_converter', $value)) {
@@ -156,6 +172,12 @@ class SerializerConfig
             unset($value['default_context']);
         }
 
+        if (array_key_exists('named_serializers', $value)) {
+            $this->_usedProperties['namedSerializers'] = true;
+            $this->namedSerializers = array_map(fn ($v) => new \Symfony\Config\Framework\Serializer\NamedSerializerConfig($v), $value['named_serializers']);
+            unset($value['named_serializers']);
+        }
+
         if ([] !== $value) {
             throw new InvalidConfigurationException(sprintf('The following keys are not supported by "%s": ', __CLASS__).implode(', ', array_keys($value)));
         }
@@ -167,8 +189,8 @@ class SerializerConfig
         if (isset($this->_usedProperties['enabled'])) {
             $output['enabled'] = $this->enabled;
         }
-        if (isset($this->_usedProperties['enableAnnotations'])) {
-            $output['enable_annotations'] = $this->enableAnnotations;
+        if (isset($this->_usedProperties['enableAttributes'])) {
+            $output['enable_attributes'] = $this->enableAttributes;
         }
         if (isset($this->_usedProperties['nameConverter'])) {
             $output['name_converter'] = $this->nameConverter;
@@ -184,6 +206,9 @@ class SerializerConfig
         }
         if (isset($this->_usedProperties['defaultContext'])) {
             $output['default_context'] = $this->defaultContext;
+        }
+        if (isset($this->_usedProperties['namedSerializers'])) {
+            $output['named_serializers'] = array_map(fn ($v) => $v->toArray(), $this->namedSerializers);
         }
 
         return $output;

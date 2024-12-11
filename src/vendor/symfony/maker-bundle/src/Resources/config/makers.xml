@@ -17,16 +17,15 @@
             </service>
 
             <service id="maker.maker.make_command" class="Symfony\Bundle\MakerBundle\Maker\MakeCommand">
-                <argument type="service" id="maker.php_compat_util" />
                 <tag name="maker.command" />
             </service>
 
             <service id="maker.maker.make_twig_component" class="Symfony\Bundle\MakerBundle\Maker\MakeTwigComponent">
                 <tag name="maker.command" />
+                <argument type="service" id="maker.file_manager" />
             </service>
 
             <service id="maker.maker.make_controller" class="Symfony\Bundle\MakerBundle\Maker\MakeController">
-                <argument type="service" id="maker.php_compat_util" />
                 <tag name="maker.command" />
             </service>
 
@@ -47,7 +46,6 @@
                 <argument>null</argument>
                 <argument type="service" id="maker.generator" />
                 <argument type="service" id="maker.entity_class_generator" />
-                <argument type="service" id="maker.php_compat_util" />
                 <tag name="maker.command" />
             </service>
 
@@ -92,6 +90,12 @@
                 <argument type="service" id="maker.file_manager" />
                 <argument type="service" id="maker.doctrine_helper" />
                 <argument type="service" id="maker.entity_class_generator" />
+                <argument type="service" id="router" on-invalid="ignore" />
+                <tag name="maker.command" />
+            </service>
+
+            <service id="maker.maker.make_schedule" class="Symfony\Bundle\MakerBundle\Maker\MakeSchedule">
+                <argument type="service" id="maker.file_manager" />
                 <tag name="maker.command" />
             </service>
 
@@ -153,6 +157,18 @@
                 <argument type="service" id="maker.file_manager" />
                 <argument type="service" id="maker.security_config_updater" />
                 <argument type="service" id="maker.security_controller_builder" />
+                <tag name="maker.command" />
+            </service>
+
+            <service id="maker.maker.make_custom_authenticator" class="Symfony\Bundle\MakerBundle\Maker\Security\MakeCustomAuthenticator">
+                <argument type="service" id="maker.file_manager" />
+                <argument type="service" id="maker.generator" />
+                <tag name="maker.command" />
+            </service>
+
+            <service id="maker.maker.make_webhook" class="Symfony\Bundle\MakerBundle\Maker\MakeWebhook">
+                <argument type="service" id="maker.file_manager" />
+                <argument type="service" id="maker.generator" />
                 <tag name="maker.command" />
             </service>
         </services>

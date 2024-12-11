@@ -36,7 +36,7 @@ class RetryFailedConfig
     }
 
     /**
-     * service id to override the retry strategy
+     * service id to override the retry strategy.
      * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -52,7 +52,7 @@ class RetryFailedConfig
     /**
      * @template TValue
      * @param TValue $value
-     * A list of HTTP status code that triggers a retry
+     * A list of HTTP status code that triggers a retry.
      * @return \Symfony\Config\Framework\HttpClient\DefaultOptions\RetryFailed\HttpCodeConfig|$this
      * @psalm-return (TValue is array ? \Symfony\Config\Framework\HttpClient\DefaultOptions\RetryFailed\HttpCodeConfig : static)
      */
@@ -89,7 +89,7 @@ class RetryFailedConfig
     }
 
     /**
-     * Time in ms to delay (or the initial value when multiplier is used)
+     * Time in ms to delay (or the initial value when multiplier is used).
      * @default 1000
      * @param ParamConfigurator|int $value
      * @return $this
@@ -103,7 +103,7 @@ class RetryFailedConfig
     }
 
     /**
-     * If greater than 1, delay will grow exponentially for each retry: delay * (multiple ^ retries)
+     * If greater than 1, delay will grow exponentially for each retry: delay * (multiple ^ retries).
      * @default 2
      * @param ParamConfigurator|float $value
      * @return $this
@@ -117,7 +117,7 @@ class RetryFailedConfig
     }
 
     /**
-     * Max time in ms that a retry should ever be delayed (0 = infinite)
+     * Max time in ms that a retry should ever be delayed (0 = infinite).
      * @default 0
      * @param ParamConfigurator|int $value
      * @return $this
@@ -131,7 +131,7 @@ class RetryFailedConfig
     }
 
     /**
-     * Randomness in percent (between 0 and 1) to apply to the delay
+     * Randomness in percent (between 0 and 1) to apply to the delay.
      * @default 0.1
      * @param ParamConfigurator|float $value
      * @return $this
@@ -160,7 +160,7 @@ class RetryFailedConfig
 
         if (array_key_exists('http_codes', $value)) {
             $this->_usedProperties['httpCodes'] = true;
-            $this->httpCodes = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\HttpClient\DefaultOptions\RetryFailed\HttpCodeConfig($v) : $v; }, $value['http_codes']);
+            $this->httpCodes = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Framework\HttpClient\DefaultOptions\RetryFailed\HttpCodeConfig($v) : $v, $value['http_codes']);
             unset($value['http_codes']);
         }
 
@@ -209,7 +209,7 @@ class RetryFailedConfig
             $output['retry_strategy'] = $this->retryStrategy;
         }
         if (isset($this->_usedProperties['httpCodes'])) {
-            $output['http_codes'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\HttpClient\DefaultOptions\RetryFailed\HttpCodeConfig ? $v->toArray() : $v; }, $this->httpCodes);
+            $output['http_codes'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Framework\HttpClient\DefaultOptions\RetryFailed\HttpCodeConfig ? $v->toArray() : $v, $this->httpCodes);
         }
         if (isset($this->_usedProperties['maxRetries'])) {
             $output['max_retries'] = $this->maxRetries;

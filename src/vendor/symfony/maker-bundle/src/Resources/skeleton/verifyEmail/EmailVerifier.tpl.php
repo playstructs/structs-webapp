@@ -13,16 +13,16 @@ class <?= $class_name; ?><?= "\n" ?>
     ) {
     }
 
-    public function sendEmailConfirmation(string $verifyEmailRouteName, UserInterface $user, TemplatedEmail $email): void
+    public function sendEmailConfirmation(string $verifyEmailRouteName, <?= $user_class_name ?> $user, TemplatedEmail $email): void
     {
         $signatureComponents = $this->verifyEmailHelper->generateSignature(
             $verifyEmailRouteName,
-            $user-><?= $id_getter ?>(),
+            (string) $user-><?= $id_getter ?>(),
 <?php if ($verify_email_anonymously): ?>
-            $user-><?= $email_getter ?>(),
-            ['id' => $user->getId()]
+            (string) $user-><?= $email_getter ?>(),
+            ['id' => $user-><?= $id_getter ?>()]
 <?php else: ?>
-            $user-><?= $email_getter ?>()
+            (string) $user-><?= $email_getter ?>()
 <?php endif; ?>
         );
 
@@ -39,11 +39,11 @@ class <?= $class_name; ?><?= "\n" ?>
     /**
      * @throws VerifyEmailExceptionInterface
      */
-    public function handleEmailConfirmation(Request $request, UserInterface $user): void
+    public function handleEmailConfirmation(Request $request, <?= $user_class_name ?> $user): void
     {
-        $this->verifyEmailHelper->validateEmailConfirmation($request->getUri(), $user-><?= $id_getter ?>(), $user-><?= $email_getter?>());
+        $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $user-><?= $id_getter ?>(), (string) $user-><?= $email_getter?>());
 
-        $user->setIsVerified(true);
+        $user->setVerified(true);
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();

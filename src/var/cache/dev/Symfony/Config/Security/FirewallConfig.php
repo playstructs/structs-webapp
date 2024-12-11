@@ -162,7 +162,7 @@ class FirewallConfig
     }
 
     /**
-     * An enabled authenticator name or a service id that implements "Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface"
+     * An enabled authenticator name or a service id that implements "Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface".
      * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this

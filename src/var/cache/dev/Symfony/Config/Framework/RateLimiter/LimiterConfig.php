@@ -22,7 +22,7 @@ class LimiterConfig
     private $_usedProperties = [];
 
     /**
-     * The service ID of the lock factory used by this limiter (or null to disable locking)
+     * The service ID of the lock factory used by this limiter (or null to disable locking).
      * @default 'lock.factory'
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -36,7 +36,7 @@ class LimiterConfig
     }
 
     /**
-     * The cache pool to use for storing the current limiter state
+     * The cache pool to use for storing the current limiter state.
      * @default 'cache.rate_limiter'
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -50,7 +50,7 @@ class LimiterConfig
     }
 
     /**
-     * The service ID of a custom storage implementation, this precedes any configured "cache_pool"
+     * The service ID of a custom storage implementation, this precedes any configured "cache_pool".
      * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -64,7 +64,7 @@ class LimiterConfig
     }
 
     /**
-     * The algorithm to be used by this limiter
+     * The algorithm to be used by this limiter.
      * @default null
      * @param ParamConfigurator|'fixed_window'|'token_bucket'|'sliding_window'|'no_limit' $value
      * @return $this
@@ -78,7 +78,7 @@ class LimiterConfig
     }
 
     /**
-     * The maximum allowed hits in a fixed interval or burst
+     * The maximum allowed hits in a fixed interval or burst.
      * @default null
      * @param ParamConfigurator|int $value
      * @return $this
@@ -106,7 +106,7 @@ class LimiterConfig
     }
 
     /**
-     * Configures the fill rate if "policy" is set to "token_bucket"
+     * Configures the fill rate if "policy" is set to "token_bucket".
     */
     public function rate(array $value = []): \Symfony\Config\Framework\RateLimiter\LimiterConfig\RateConfig
     {

@@ -13,6 +13,7 @@ class AssetMapperConfig
     private $enabled;
     private $paths;
     private $excludedPatterns;
+    private $excludeDotfiles;
     private $server;
     private $publicPrefix;
     private $missingImportMode;
@@ -21,7 +22,6 @@ class AssetMapperConfig
     private $importmapPolyfill;
     private $importmapScriptAttributes;
     private $vendorDir;
-    private $provider;
     private $_usedProperties = [];
 
     /**
@@ -62,7 +62,21 @@ class AssetMapperConfig
     }
 
     /**
-     * If true, a "dev server" will return the assets from the public directory (true in "debug" mode only by default)
+     * If true, any files starting with "." will be excluded from the asset mapper.
+     * @default true
+     * @param ParamConfigurator|bool $value
+     * @return $this
+     */
+    public function excludeDotfiles($value): static
+    {
+        $this->_usedProperties['excludeDotfiles'] = true;
+        $this->excludeDotfiles = $value;
+
+        return $this;
+    }
+
+    /**
+     * If true, a "dev server" will return the assets from the public directory (true in "debug" mode only by default).
      * @default true
      * @param ParamConfigurator|bool $value
      * @return $this
@@ -76,7 +90,7 @@ class AssetMapperConfig
     }
 
     /**
-     * The public path where the assets will be written to (and served from when "server" is true)
+     * The public path where the assets will be written to (and served from when "server" is true).
      * @default '/assets/'
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -129,8 +143,8 @@ class AssetMapperConfig
     }
 
     /**
-     * URL of the ES Module Polyfill to use, false to disable. Defaults to using a CDN URL.
-     * @default null
+     * The importmap name that will be used to load the polyfill. Set to false to disable.
+     * @default 'es-module-shims'
      * @param ParamConfigurator|mixed $value
      * @return $this
      */
@@ -167,20 +181,6 @@ class AssetMapperConfig
         return $this;
     }
 
-    /**
-     * The provider (CDN) to use.
-     * @default 'jsdelivr.esm'
-     * @param ParamConfigurator|mixed $value
-     * @return $this
-     */
-    public function provider($value): static
-    {
-        $this->_usedProperties['provider'] = true;
-        $this->provider = $value;
-
-        return $this;
-    }
-
     public function __construct(array $value = [])
     {
         if (array_key_exists('enabled', $value)) {
@@ -199,6 +199,12 @@ class AssetMapperConfig
             $this->_usedProperties['excludedPatterns'] = true;
             $this->excludedPatterns = $value['excluded_patterns'];
             unset($value['excluded_patterns']);
+        }
+
+        if (array_key_exists('exclude_dotfiles', $value)) {
+            $this->_usedProperties['excludeDotfiles'] = true;
+            $this->excludeDotfiles = $value['exclude_dotfiles'];
+            unset($value['exclude_dotfiles']);
         }
 
         if (array_key_exists('server', $value)) {
@@ -249,12 +255,6 @@ class AssetMapperConfig
             unset($value['vendor_dir']);
         }
 
-        if (array_key_exists('provider', $value)) {
-            $this->_usedProperties['provider'] = true;
-            $this->provider = $value['provider'];
-            unset($value['provider']);
-        }
-
         if ([] !== $value) {
             throw new InvalidConfigurationException(sprintf('The following keys are not supported by "%s": ', __CLASS__).implode(', ', array_keys($value)));
         }
@@ -271,6 +271,9 @@ class AssetMapperConfig
         }
         if (isset($this->_usedProperties['excludedPatterns'])) {
             $output['excluded_patterns'] = $this->excludedPatterns;
+        }
+        if (isset($this->_usedProperties['excludeDotfiles'])) {
+            $output['exclude_dotfiles'] = $this->excludeDotfiles;
         }
         if (isset($this->_usedProperties['server'])) {
             $output['server'] = $this->server;
@@ -295,9 +298,6 @@ class AssetMapperConfig
         }
         if (isset($this->_usedProperties['vendorDir'])) {
             $output['vendor_dir'] = $this->vendorDir;
-        }
-        if (isset($this->_usedProperties['provider'])) {
-            $output['provider'] = $this->provider;
         }
 
         return $output;

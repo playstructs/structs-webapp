@@ -72,7 +72,7 @@ class WebhookConfig
 
         if (array_key_exists('routing', $value)) {
             $this->_usedProperties['routing'] = true;
-            $this->routing = array_map(function ($v) { return new \Symfony\Config\Framework\Webhook\RoutingConfig($v); }, $value['routing']);
+            $this->routing = array_map(fn ($v) => new \Symfony\Config\Framework\Webhook\RoutingConfig($v), $value['routing']);
             unset($value['routing']);
         }
 
@@ -91,7 +91,7 @@ class WebhookConfig
             $output['message_bus'] = $this->messageBus;
         }
         if (isset($this->_usedProperties['routing'])) {
-            $output['routing'] = array_map(function ($v) { return $v->toArray(); }, $this->routing);
+            $output['routing'] = array_map(fn ($v) => $v->toArray(), $this->routing);
         }
 
         return $output;

@@ -59,7 +59,7 @@ class PoolConfig
     }
 
     /**
-     * Default lifetime of the pool
+     * Default lifetime of the pool.
      * @example "300" for 5 minutes expressed in seconds, "PT5M" for five minutes expressed as ISO 8601 time interval, or "5 minutes" as a date expression
      * @default null
      * @param ParamConfigurator|mixed $value

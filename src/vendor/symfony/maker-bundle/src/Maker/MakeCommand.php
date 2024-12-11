@@ -33,8 +33,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 final class MakeCommand extends AbstractMaker
 {
-    public function __construct(private PhpCompatUtil $phpCompatUtil)
+    public function __construct(private ?PhpCompatUtil $phpCompatUtil = null)
     {
+        if (null !== $phpCompatUtil) {
+            @trigger_deprecation(
+                'symfony/maker-bundle',
+                '1.55.0',
+                \sprintf('Initializing MakeCommand while providing an instance of "%s" is deprecated. The $phpCompatUtil param will be removed in a future version.', PhpCompatUtil::class),
+            );
+        }
     }
 
     public static function getCommandName(): string
@@ -50,7 +57,7 @@ final class MakeCommand extends AbstractMaker
     public function configureCommand(Command $command, InputConfiguration $inputConfig): void
     {
         $command
-            ->addArgument('name', InputArgument::OPTIONAL, sprintf('Choose a command name (e.g. <fg=yellow>app:%s</>)', Str::asCommand(Str::getRandomTerm())))
+            ->addArgument('name', InputArgument::OPTIONAL, \sprintf('Choose a command name (e.g. <fg=yellow>app:%s</>)', Str::asCommand(Str::getRandomTerm())))
             ->setHelp(file_get_contents(__DIR__.'/../Resources/help/MakeCommand.txt'))
         ;
     }
@@ -64,7 +71,7 @@ final class MakeCommand extends AbstractMaker
             $commandNameHasAppPrefix ? substr($commandName, 4) : $commandName,
             'Command\\',
             'Command',
-            sprintf('The "%s" command name is not valid because it would be implemented by "%s" class, which is not valid as a PHP class name (it must start with a letter or underscore, followed by any number of letters, numbers, or underscores).', $commandName, Str::asClassName($commandName, 'Command'))
+            \sprintf('The "%s" command name is not valid because it would be implemented by "%s" class, which is not valid as a PHP class name (it must start with a letter or underscore, followed by any number of letters, numbers, or underscores).', $commandName, Str::asClassName($commandName, 'Command'))
         );
 
         $useStatements = new UseStatementGenerator([

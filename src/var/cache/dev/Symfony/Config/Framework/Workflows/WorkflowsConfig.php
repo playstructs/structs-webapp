@@ -79,11 +79,11 @@ class WorkflowsConfig
     }
 
     /**
-     * @param ParamConfigurator|list<ParamConfigurator|mixed>|string $value
+     * @param ParamConfigurator|list<ParamConfigurator|mixed>|mixed $value
      *
      * @return $this
      */
-    public function supports(ParamConfigurator|string|array $value): static
+    public function supports(mixed $value): static
     {
         $this->_usedProperties['supports'] = true;
         $this->supports = $value;
@@ -118,7 +118,7 @@ class WorkflowsConfig
     }
 
     /**
-     * Select which Transition events should be dispatched for this Workflow
+     * Select which Transition events should be dispatched for this Workflow.
      * @example workflow.enter
      * @example workflow.transition
      * @default null
@@ -229,13 +229,13 @@ class WorkflowsConfig
 
         if (array_key_exists('places', $value)) {
             $this->_usedProperties['places'] = true;
-            $this->places = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\Workflows\WorkflowsConfig\PlaceConfig($v) : $v; }, $value['places']);
+            $this->places = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Framework\Workflows\WorkflowsConfig\PlaceConfig($v) : $v, $value['places']);
             unset($value['places']);
         }
 
         if (array_key_exists('transitions', $value)) {
             $this->_usedProperties['transitions'] = true;
-            $this->transitions = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\Workflows\WorkflowsConfig\TransitionConfig($v) : $v; }, $value['transitions']);
+            $this->transitions = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Framework\Workflows\WorkflowsConfig\TransitionConfig($v) : $v, $value['transitions']);
             unset($value['transitions']);
         }
 
@@ -275,10 +275,10 @@ class WorkflowsConfig
             $output['events_to_dispatch'] = $this->eventsToDispatch;
         }
         if (isset($this->_usedProperties['places'])) {
-            $output['places'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\Workflows\WorkflowsConfig\PlaceConfig ? $v->toArray() : $v; }, $this->places);
+            $output['places'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Framework\Workflows\WorkflowsConfig\PlaceConfig ? $v->toArray() : $v, $this->places);
         }
         if (isset($this->_usedProperties['transitions'])) {
-            $output['transitions'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\Workflows\WorkflowsConfig\TransitionConfig ? $v->toArray() : $v; }, $this->transitions);
+            $output['transitions'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Framework\Workflows\WorkflowsConfig\TransitionConfig ? $v->toArray() : $v, $this->transitions);
         }
         if (isset($this->_usedProperties['metadata'])) {
             $output['metadata'] = $this->metadata;

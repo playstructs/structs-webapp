@@ -17,7 +17,6 @@ class TwigConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInter
 {
     private $formThemes;
     private $globals;
-    private $autoescape;
     private $autoescapeService;
     private $autoescapeServiceMethod;
     private $baseTemplateClass;
@@ -76,21 +75,6 @@ class TwigConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInter
     }
 
     /**
-     * @default 'name'
-     * @param ParamConfigurator|mixed $value
-     * @deprecated Option "autoescape" at "twig" is deprecated, use autoescape_service[_method] instead.
-     *
-     * @return $this
-     */
-    public function autoescape(mixed $value = 'name'): static
-    {
-        $this->_usedProperties['autoescape'] = true;
-        $this->autoescape = $value;
-
-        return $this;
-    }
-
-    /**
      * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -120,6 +104,7 @@ class TwigConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInter
      * @example Twig\Template
      * @default null
      * @param ParamConfigurator|mixed $value
+     * @deprecated The child node "base_template_class" at path "twig" is deprecated.
      * @return $this
      */
     public function baseTemplateClass($value): static
@@ -209,7 +194,7 @@ class TwigConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInter
     }
 
     /**
-     * The default path used to load templates
+     * The default path used to load templates.
      * @default '%kernel.project_dir%/templates'
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -247,7 +232,7 @@ class TwigConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInter
     }
 
     /**
-     * The default format options used by the date filter
+     * The default format options used by the date filter.
      * @default {"format":"F j, Y H:i","interval_format":"%d days","timezone":null}
     */
     public function date(array $value = []): \Symfony\Config\Twig\DateConfig
@@ -263,7 +248,7 @@ class TwigConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInter
     }
 
     /**
-     * The default format options for the number_format filter
+     * The default format options for the number_format filter.
      * @default {"decimals":0,"decimal_point":".","thousands_separator":","}
     */
     public function numberFormat(array $value = []): \Symfony\Config\Twig\NumberFormatConfig
@@ -305,14 +290,8 @@ class TwigConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInter
 
         if (array_key_exists('globals', $value)) {
             $this->_usedProperties['globals'] = true;
-            $this->globals = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Twig\GlobalConfig($v) : $v; }, $value['globals']);
+            $this->globals = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Twig\GlobalConfig($v) : $v, $value['globals']);
             unset($value['globals']);
-        }
-
-        if (array_key_exists('autoescape', $value)) {
-            $this->_usedProperties['autoescape'] = true;
-            $this->autoescape = $value['autoescape'];
-            unset($value['autoescape']);
         }
 
         if (array_key_exists('autoescape_service', $value)) {
@@ -417,10 +396,7 @@ class TwigConfig implements \Symfony\Component\Config\Builder\ConfigBuilderInter
             $output['form_themes'] = $this->formThemes;
         }
         if (isset($this->_usedProperties['globals'])) {
-            $output['globals'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Twig\GlobalConfig ? $v->toArray() : $v; }, $this->globals);
-        }
-        if (isset($this->_usedProperties['autoescape'])) {
-            $output['autoescape'] = $this->autoescape;
+            $output['globals'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Twig\GlobalConfig ? $v->toArray() : $v, $this->globals);
         }
         if (isset($this->_usedProperties['autoescapeService'])) {
             $output['autoescape_service'] = $this->autoescapeService;

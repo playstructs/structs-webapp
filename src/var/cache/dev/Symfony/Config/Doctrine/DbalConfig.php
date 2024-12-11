@@ -103,7 +103,7 @@ class DbalConfig
 
         if (array_key_exists('types', $value)) {
             $this->_usedProperties['types'] = true;
-            $this->types = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Doctrine\Dbal\TypeConfig($v) : $v; }, $value['types']);
+            $this->types = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Doctrine\Dbal\TypeConfig($v) : $v, $value['types']);
             unset($value['types']);
         }
 
@@ -115,7 +115,7 @@ class DbalConfig
 
         if (array_key_exists('connections', $value)) {
             $this->_usedProperties['connections'] = true;
-            $this->connections = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Doctrine\Dbal\ConnectionConfig($v) : $v; }, $value['connections']);
+            $this->connections = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Doctrine\Dbal\ConnectionConfig($v) : $v, $value['connections']);
             unset($value['connections']);
         }
 
@@ -131,13 +131,13 @@ class DbalConfig
             $output['default_connection'] = $this->defaultConnection;
         }
         if (isset($this->_usedProperties['types'])) {
-            $output['types'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Doctrine\Dbal\TypeConfig ? $v->toArray() : $v; }, $this->types);
+            $output['types'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Doctrine\Dbal\TypeConfig ? $v->toArray() : $v, $this->types);
         }
         if (isset($this->_usedProperties['driverSchemes'])) {
             $output['driver_schemes'] = $this->driverSchemes;
         }
         if (isset($this->_usedProperties['connections'])) {
-            $output['connections'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Doctrine\Dbal\ConnectionConfig ? $v->toArray() : $v; }, $this->connections);
+            $output['connections'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Doctrine\Dbal\ConnectionConfig ? $v->toArray() : $v, $this->connections);
         }
 
         return $output;

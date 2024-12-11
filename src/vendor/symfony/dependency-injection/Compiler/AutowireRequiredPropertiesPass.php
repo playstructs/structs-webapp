@@ -24,6 +24,8 @@ use Symfony\Contracts\Service\Attribute\Required;
  */
 class AutowireRequiredPropertiesPass extends AbstractRecursivePass
 {
+    protected bool $skipScalars = true;
+
     protected function processValue(mixed $value, bool $isRoot = false): mixed
     {
         $value = parent::processValue($value, $isRoot);
@@ -40,14 +42,8 @@ class AutowireRequiredPropertiesPass extends AbstractRecursivePass
             if (!($type = $reflectionProperty->getType()) instanceof \ReflectionNamedType) {
                 continue;
             }
-            $doc = false;
-            if (!$reflectionProperty->getAttributes(Required::class)
-                && ((false === $doc = $reflectionProperty->getDocComment()) || false === stripos($doc, '@required') || !preg_match('#(?:^/\*\*|\n\s*+\*)\s*+@required(?:\s|\*/$)#i', $doc))
-            ) {
+            if (!$reflectionProperty->getAttributes(Required::class)) {
                 continue;
-            }
-            if ($doc) {
-                trigger_deprecation('symfony/dependency-injection', '6.3', 'Using the "@required" annotation on property "%s::$%s" is deprecated, use the "Symfony\Contracts\Service\Attribute\Required" attribute instead.', $reflectionProperty->class, $reflectionProperty->name);
             }
             if (\array_key_exists($name = $reflectionProperty->getName(), $properties)) {
                 continue;

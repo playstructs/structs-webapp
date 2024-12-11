@@ -37,6 +37,9 @@ class JsonDescriptor extends Descriptor
         $data = [];
         foreach ($routes->all() as $name => $route) {
             $data[$name] = $this->getRouteData($route);
+            if (($showAliases ??= $options['show_aliases'] ?? false) && $aliases = ($reverseAliases ??= $this->getReverseAliases($routes))[$name] ?? []) {
+                $data[$name]['aliases'] = $aliases;
+            }
         }
 
         $this->writeData($data, $options);
@@ -147,11 +150,16 @@ class JsonDescriptor extends Descriptor
         $this->writeData($this->getCallableData($callable), $options);
     }
 
-    protected function describeContainerParameter(mixed $parameter, array $options = []): void
+    protected function describeContainerParameter(mixed $parameter, ?array $deprecation, array $options = []): void
     {
         $key = $options['parameter'] ?? '';
+        $data = [$key => $parameter];
 
-        $this->writeData([$key => $parameter], $options);
+        if ($deprecation) {
+            $data['_deprecation'] = \sprintf('Since %s %s: %s', $deprecation[0], $deprecation[1], \sprintf(...\array_slice($deprecation, 2)));
+        }
+
+        $this->writeData($data, $options);
     }
 
     protected function describeContainerEnvVars(array $envs, array $options = []): void
@@ -161,7 +169,7 @@ class JsonDescriptor extends Descriptor
 
     protected function describeContainerDeprecations(ContainerBuilder $container, array $options = []): void
     {
-        $containerDeprecationFilePath = sprintf('%s/%sDeprecations.log', $container->getParameter('kernel.build_dir'), $container->getParameter('kernel.container_class'));
+        $containerDeprecationFilePath = \sprintf('%s/%sDeprecations.log', $container->getParameter('kernel.build_dir'), $container->getParameter('kernel.container_class'));
         if (!file_exists($containerDeprecationFilePath)) {
             throw new RuntimeException('The deprecation file does not exist, please try warming the cache first.');
         }
@@ -220,6 +228,23 @@ class JsonDescriptor extends Descriptor
         return $data;
     }
 
+    protected function sortParameters(ParameterBag $parameters): array
+    {
+        $sortedParameters = parent::sortParameters($parameters);
+
+        if ($deprecated = $parameters->allDeprecated()) {
+            $deprecations = [];
+
+            foreach ($deprecated as $parameter => $deprecation) {
+                $deprecations[$parameter] = \sprintf('Since %s %s: %s', $deprecation[0], $deprecation[1], \sprintf(...\array_slice($deprecation, 2)));
+            }
+
+            $sortedParameters['_deprecations'] = $deprecations;
+        }
+
+        return $sortedParameters;
+    }
+
     private function getContainerDefinitionData(Definition $definition, bool $omitTags = false, bool $showArguments = false, ?ContainerBuilder $container = null, ?string $id = null): array
     {
         $data = [
@@ -255,7 +280,7 @@ class JsonDescriptor extends Descriptor
                 if ($factory[0] instanceof Reference) {
                     $data['factory_service'] = (string) $factory[0];
                 } elseif ($factory[0] instanceof Definition) {
-                    $data['factory_service'] = sprintf('inline factory service (%s)', $factory[0]->getClass() ?? 'class not configured');
+                    $data['factory_service'] = \sprintf('inline factory service (%s)', $factory[0]->getClass() ?? 'class not configured');
                 } else {
                     $data['factory_class'] = $factory[0];
                 }
@@ -298,7 +323,7 @@ class JsonDescriptor extends Descriptor
     private function getEventDispatcherListenersData(EventDispatcherInterface $eventDispatcher, array $options): array
     {
         $data = [];
-        $event = \array_key_exists('event', $options) ? $options['event'] : null;
+        $event = $options['event'] ?? null;
 
         if (null !== $event) {
             foreach ($eventDispatcher->getListeners($event) as $listener) {
@@ -368,12 +393,12 @@ class JsonDescriptor extends Descriptor
             $data['type'] = 'closure';
 
             $r = new \ReflectionFunction($callable);
-            if (str_contains($r->name, '{closure}')) {
+            if ($r->isAnonymous()) {
                 return $data;
             }
             $data['name'] = $r->name;
 
-            if ($class = \PHP_VERSION_ID >= 80111 ? $r->getClosureCalledClass() : $r->getClosureScopeClass()) {
+            if ($class = $r->getClosureCalledClass()) {
                 $data['class'] = $class->name;
                 if (!$r->getClosureThis()) {
                     $data['static'] = true;

@@ -17,6 +17,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\HttplugClient;
+use Symfony\Component\HttpClient\Messenger\PingWebhookMessageHandler;
 use Symfony\Component\HttpClient\Psr18Client;
 use Symfony\Component\HttpClient\Retry\GenericRetryStrategy;
 use Symfony\Component\HttpClient\UriTemplateHttpClient;
@@ -58,8 +59,6 @@ return static function (ContainerConfigurator $container) {
             ])
 
         ->alias(HttpAsyncClient::class, 'httplug.http_client')
-        ->alias(\Http\Client\HttpClient::class, 'httplug.http_client')
-            ->deprecate('symfony/framework-bundle', '6.3', 'The "%alias_id%" service is deprecated, use "'.ClientInterface::class.'" instead.')
 
         ->set('http_client.abstract_retry_strategy', GenericRetryStrategy::class)
             ->abstract()
@@ -90,5 +89,11 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 [inline_service(\Rize\UriTemplate::class), 'expand'],
             ])
+
+        ->set('http_client.messenger.ping_webhook_handler', PingWebhookMessageHandler::class)
+            ->args([
+                service('http_client'),
+            ])
+            ->tag('messenger.message_handler')
     ;
 };

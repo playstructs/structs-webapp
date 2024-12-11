@@ -1,12 +1,10 @@
 <?= "<?php\n" ?>
 
-namespace <?= $namespace; ?>;
+namespace <?= $class_data->getNamespace(); ?>;
 
-use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Authorization\Voter\Voter;
-use Symfony\Component\Security\Core\User\UserInterface;
+<?= $class_data->getUseStatements(); ?>
 
-class <?= $class_name ?> extends Voter
+<?= $class_data->getClassDeclaration() ?>
 {
     public const EDIT = 'POST_EDIT';
     public const VIEW = 'POST_VIEW';
@@ -16,7 +14,7 @@ class <?= $class_name ?> extends Voter
         // replace with your own logic
         // https://symfony.com/doc/current/security/voters.html
         return in_array($attribute, [self::EDIT, self::VIEW])
-            && $subject instanceof \App\Entity\<?= str_replace('Voter', null, $class_name) ?>;
+            && $subject instanceof \App\Entity\<?= str_replace('Voter', null, $class_data->getClassName()) ?>;
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool

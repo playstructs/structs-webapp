@@ -146,7 +146,7 @@ class MailerConfig
 
         if (array_key_exists('headers', $value)) {
             $this->_usedProperties['headers'] = true;
-            $this->headers = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\Mailer\HeaderConfig($v) : $v; }, $value['headers']);
+            $this->headers = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Framework\Mailer\HeaderConfig($v) : $v, $value['headers']);
             unset($value['headers']);
         }
 
@@ -174,7 +174,7 @@ class MailerConfig
             $output['envelope'] = $this->envelope->toArray();
         }
         if (isset($this->_usedProperties['headers'])) {
-            $output['headers'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\Mailer\HeaderConfig ? $v->toArray() : $v; }, $this->headers);
+            $output['headers'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Framework\Mailer\HeaderConfig ? $v->toArray() : $v, $this->headers);
         }
 
         return $output;

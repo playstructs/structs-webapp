@@ -24,7 +24,8 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 class InlineServiceDefinitionsPass extends AbstractRecursivePass
 {
-    private ?AnalyzeServiceReferencesPass $analyzingPass;
+    protected bool $skipScalars = true;
+
     private array $cloningIds = [];
     private array $connectedIds = [];
     private array $notInlinedIds = [];
@@ -32,15 +33,12 @@ class InlineServiceDefinitionsPass extends AbstractRecursivePass
     private array $notInlinableIds = [];
     private ?ServiceReferenceGraph $graph = null;
 
-    public function __construct(?AnalyzeServiceReferencesPass $analyzingPass = null)
-    {
-        $this->analyzingPass = $analyzingPass;
+    public function __construct(
+        private ?AnalyzeServiceReferencesPass $analyzingPass = null,
+    ) {
     }
 
-    /**
-     * @return void
-     */
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
         $this->container = $container;
         if ($this->analyzingPass) {
@@ -139,7 +137,7 @@ class InlineServiceDefinitionsPass extends AbstractRecursivePass
             return $value;
         }
 
-        $this->container->log($this, sprintf('Inlined service "%s" to "%s".', $id, $this->currentId));
+        $this->container->log($this, \sprintf('Inlined service "%s" to "%s".', $id, $this->currentId));
         $this->inlinedIds[$id] = $definition->isPublic() || !$definition->isShared();
         $this->notInlinedIds[$this->currentId] = true;
 
@@ -167,6 +165,9 @@ class InlineServiceDefinitionsPass extends AbstractRecursivePass
      */
     private function isInlineableDefinition(string $id, Definition $definition): bool
     {
+        if (str_starts_with($id, '.autowire_inline.')) {
+            return true;
+        }
         if ($definition->hasErrors() || $definition->isDeprecated() || $definition->isLazy() || $definition->isSynthetic() || $definition->hasTag('container.do_not_inline')) {
             return false;
         }

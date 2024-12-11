@@ -42,7 +42,7 @@ class DateConfig
     }
 
     /**
-     * The timezone used when formatting dates, when set to null, the timezone returned by date_default_timezone_get() is used
+     * The timezone used when formatting dates, when set to null, the timezone returned by date_default_timezone_get() is used.
      * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this

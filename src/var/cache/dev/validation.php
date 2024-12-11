@@ -47,6 +47,9 @@ return [[
                 'defaultGroup' => [
                     'Form',
                 ],
+                'payload' => [
+                    1 => null,
+                ],
                 'groups' => [
                     1 => [
                         'Default',

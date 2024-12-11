@@ -50,7 +50,7 @@ class AccessControlConfig
     }
 
     /**
-     * use the urldecoded format
+     * Use the urldecoded format.
      * @example ^/path to resource/
      * @default null
      * @param ParamConfigurator|mixed $value

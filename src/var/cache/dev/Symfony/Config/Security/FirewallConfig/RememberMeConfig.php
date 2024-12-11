@@ -187,7 +187,7 @@ class RememberMeConfig
     }
 
     /**
-     * @default null
+     * @default false
      * @param ParamConfigurator|true|false|'auto' $value
      * @return $this
      */
@@ -213,7 +213,7 @@ class RememberMeConfig
     }
 
     /**
-     * @default 'lax'
+     * @default null
      * @param ParamConfigurator|NULL|'lax'|'strict'|'none' $value
      * @return $this
      */

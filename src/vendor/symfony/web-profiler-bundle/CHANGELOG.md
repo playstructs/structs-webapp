@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+7.2
+---
+
+ * Add support for displaying profiles of multiple serializer instances
+
+7.1
+---
+
+ * Set `XDEBUG_IGNORE` query parameter when sending toolbar XHR
+
+6.4
+---
+
+ * Add console commands to the profiler
+
 6.3
 ---
 

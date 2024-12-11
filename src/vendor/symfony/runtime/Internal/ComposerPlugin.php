@@ -27,17 +27,10 @@ use Symfony\Component\Runtime\SymfonyRuntime;
  */
 class ComposerPlugin implements PluginInterface, EventSubscriberInterface
 {
-    /**
-     * @var Composer
-     */
-    private $composer;
+    private Composer $composer;
+    private IOInterface $io;
 
-    /**
-     * @var IOInterface
-     */
-    private $io;
-
-    private static $activated = false;
+    private static bool $activated = false;
 
     public function activate(Composer $composer, IOInterface $io): void
     {
@@ -77,7 +70,7 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
             }
 
             if (!is_file($autoloadTemplate)) {
-                throw new \InvalidArgumentException(sprintf('File "%s" defined under "extra.runtime.autoload_template" in your composer.json file not found.', $this->composer->getPackage()->getExtra()['runtime']['autoload_template']));
+                throw new \InvalidArgumentException(\sprintf('File "%s" defined under "extra.runtime.autoload_template" in your composer.json file not found.', $this->composer->getPackage()->getExtra()['runtime']['autoload_template']));
             }
         }
 
@@ -89,6 +82,7 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
             $projectDir = substr($projectDir, 3);
         }
 
+        // the hack about __DIR__ is required because composer pre-processes plugins
         if (!$nestingLevel) {
             $projectDir = '__'.'DIR__.'.var_export('/'.$projectDir, true);
         } else {

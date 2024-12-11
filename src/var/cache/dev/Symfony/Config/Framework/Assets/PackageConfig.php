@@ -20,7 +20,7 @@ class PackageConfig
     private $_usedProperties = [];
 
     /**
-     * Throw an exception if an entry is missing from the manifest.json
+     * Throw an exception if an entry is missing from the manifest.json.
      * @default false
      * @param ParamConfigurator|bool $value
      * @return $this

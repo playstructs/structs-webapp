@@ -11,18 +11,33 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 class CsrfProtectionConfig 
 {
     private $enabled;
+    private $tokenId;
     private $fieldName;
+    private $fieldAttr;
     private $_usedProperties = [];
 
     /**
      * @default null
-     * @param ParamConfigurator|bool $value
+     * @param ParamConfigurator|mixed $value
      * @return $this
      */
     public function enabled($value): static
     {
         $this->_usedProperties['enabled'] = true;
         $this->enabled = $value;
+
+        return $this;
+    }
+
+    /**
+     * @default null
+     * @param ParamConfigurator|mixed $value
+     * @return $this
+     */
+    public function tokenId($value): static
+    {
+        $this->_usedProperties['tokenId'] = true;
+        $this->tokenId = $value;
 
         return $this;
     }
@@ -40,6 +55,19 @@ class CsrfProtectionConfig
         return $this;
     }
 
+    /**
+     * @param ParamConfigurator|list<ParamConfigurator|mixed> $value
+     *
+     * @return $this
+     */
+    public function fieldAttr(ParamConfigurator|array $value): static
+    {
+        $this->_usedProperties['fieldAttr'] = true;
+        $this->fieldAttr = $value;
+
+        return $this;
+    }
+
     public function __construct(array $value = [])
     {
         if (array_key_exists('enabled', $value)) {
@@ -48,10 +76,22 @@ class CsrfProtectionConfig
             unset($value['enabled']);
         }
 
+        if (array_key_exists('token_id', $value)) {
+            $this->_usedProperties['tokenId'] = true;
+            $this->tokenId = $value['token_id'];
+            unset($value['token_id']);
+        }
+
         if (array_key_exists('field_name', $value)) {
             $this->_usedProperties['fieldName'] = true;
             $this->fieldName = $value['field_name'];
             unset($value['field_name']);
+        }
+
+        if (array_key_exists('field_attr', $value)) {
+            $this->_usedProperties['fieldAttr'] = true;
+            $this->fieldAttr = $value['field_attr'];
+            unset($value['field_attr']);
         }
 
         if ([] !== $value) {
@@ -65,8 +105,14 @@ class CsrfProtectionConfig
         if (isset($this->_usedProperties['enabled'])) {
             $output['enabled'] = $this->enabled;
         }
+        if (isset($this->_usedProperties['tokenId'])) {
+            $output['token_id'] = $this->tokenId;
+        }
         if (isset($this->_usedProperties['fieldName'])) {
             $output['field_name'] = $this->fieldName;
+        }
+        if (isset($this->_usedProperties['fieldAttr'])) {
+            $output['field_attr'] = $this->fieldAttr;
         }
 
         return $output;

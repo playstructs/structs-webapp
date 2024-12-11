@@ -22,6 +22,9 @@ final class MonotonicClock implements ClockInterface
     private int $usOffset;
     private \DateTimeZone $timezone;
 
+    /**
+     * @throws \DateInvalidTimeZoneException When $timezone is invalid
+     */
     public function __construct(\DateTimeZone|string|null $timezone = null)
     {
         if (false === $offset = hrtime()) {
@@ -32,14 +35,10 @@ final class MonotonicClock implements ClockInterface
         $this->sOffset = $time[1] - $offset[0];
         $this->usOffset = (int) ($time[0] * 1000000) - (int) ($offset[1] / 1000);
 
-        if (\is_string($timezone ??= date_default_timezone_get())) {
-            $this->timezone = new \DateTimeZone($timezone);
-        } else {
-            $this->timezone = $timezone;
-        }
+        $this->timezone = \is_string($timezone ??= date_default_timezone_get()) ? $this->withTimeZone($timezone)->timezone : $timezone;
     }
 
-    public function now(): \DateTimeImmutable
+    public function now(): DatePoint
     {
         [$s, $us] = hrtime();
 
@@ -57,7 +56,7 @@ final class MonotonicClock implements ClockInterface
 
         $now = '@'.($s + $this->sOffset).'.'.$now;
 
-        return (new \DateTimeImmutable($now, $this->timezone))->setTimezone($this->timezone);
+        return DatePoint::createFromInterface(new \DateTimeImmutable($now, $this->timezone))->setTimezone($this->timezone);
     }
 
     public function sleep(float|int $seconds): void
@@ -71,10 +70,23 @@ final class MonotonicClock implements ClockInterface
         }
     }
 
+    /**
+     * @throws \DateInvalidTimeZoneException When $timezone is invalid
+     */
     public function withTimeZone(\DateTimeZone|string $timezone): static
     {
+        if (\PHP_VERSION_ID >= 80300 && \is_string($timezone)) {
+            $timezone = new \DateTimeZone($timezone);
+        } elseif (\is_string($timezone)) {
+            try {
+                $timezone = new \DateTimeZone($timezone);
+            } catch (\Exception $e) {
+                throw new \DateInvalidTimeZoneException($e->getMessage(), $e->getCode(), $e);
+            }
+        }
+
         $clone = clone $this;
-        $clone->timezone = \is_string($timezone) ? new \DateTimeZone($timezone) : $timezone;
+        $clone->timezone = $timezone;
 
         return $clone;
     }

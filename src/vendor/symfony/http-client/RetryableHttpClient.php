@@ -12,7 +12,6 @@
 namespace Symfony\Component\HttpClient;
 
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\Response\AsyncContext;
 use Symfony\Component\HttpClient\Response\AsyncResponse;
 use Symfony\Component\HttpClient\Retry\GenericRetryStrategy;
@@ -33,19 +32,19 @@ class RetryableHttpClient implements HttpClientInterface, ResetInterface
     use AsyncDecoratorTrait;
 
     private RetryStrategyInterface $strategy;
-    private int $maxRetries;
-    private LoggerInterface $logger;
     private array $baseUris = [];
 
     /**
      * @param int $maxRetries The maximum number of times to retry
      */
-    public function __construct(HttpClientInterface $client, ?RetryStrategyInterface $strategy = null, int $maxRetries = 3, ?LoggerInterface $logger = null)
-    {
+    public function __construct(
+        HttpClientInterface $client,
+        ?RetryStrategyInterface $strategy = null,
+        private int $maxRetries = 3,
+        private ?LoggerInterface $logger = null,
+    ) {
         $this->client = $client;
         $this->strategy = $strategy ?? new GenericRetryStrategy();
-        $this->maxRetries = $maxRetries;
-        $this->logger = $logger ?? new NullLogger();
     }
 
     public function withOptions(array $options): static
@@ -60,6 +59,9 @@ class RetryableHttpClient implements HttpClientInterface, ResetInterface
         }
 
         $clone = clone $this;
+        $clone->maxRetries = (int) ($options['max_retries'] ?? $this->maxRetries);
+        unset($options['max_retries']);
+
         $clone->client = $this->client->withOptions($options);
 
         return $clone;
@@ -71,11 +73,14 @@ class RetryableHttpClient implements HttpClientInterface, ResetInterface
         $baseUris = \is_array($baseUris) ? $baseUris : [];
         $options = self::shiftBaseUri($options, $baseUris);
 
-        if ($this->maxRetries <= 0) {
+        $maxRetries = (int) ($options['max_retries'] ?? $this->maxRetries);
+        unset($options['max_retries']);
+
+        if ($maxRetries <= 0) {
             return new AsyncResponse($this->client, $method, $url, $options);
         }
 
-        return new AsyncResponse($this->client, $method, $url, $options, function (ChunkInterface $chunk, AsyncContext $context) use ($method, $url, $options, &$baseUris) {
+        return new AsyncResponse($this->client, $method, $url, $options, function (ChunkInterface $chunk, AsyncContext $context) use ($method, $url, $options, $maxRetries, &$baseUris) {
             static $retryCount = 0;
             static $content = '';
             static $firstChunk;
@@ -95,7 +100,7 @@ class RetryableHttpClient implements HttpClientInterface, ResetInterface
                 if ('' !== $context->getInfo('primary_ip')) {
                     $shouldRetry = $this->strategy->shouldRetry($context, null, $exception);
                     if (null === $shouldRetry) {
-                        throw new \LogicException(sprintf('The "%s::shouldRetry()" method must not return null when called with an exception.', $this->strategy::class));
+                        throw new \LogicException(\sprintf('The "%s::shouldRetry()" method must not return null when called with an exception.', $this->strategy::class));
                     }
 
                     if (false === $shouldRetry) {
@@ -126,7 +131,7 @@ class RetryableHttpClient implements HttpClientInterface, ResetInterface
                 }
 
                 if (null === $shouldRetry = $this->strategy->shouldRetry($context, $content, null)) {
-                    throw new \LogicException(sprintf('The "%s::shouldRetry()" method must not return null when called with a body.', $this->strategy::class));
+                    throw new \LogicException(\sprintf('The "%s::shouldRetry()" method must not return null when called with a body.', $this->strategy::class));
                 }
 
                 if (false === $shouldRetry) {
@@ -143,7 +148,7 @@ class RetryableHttpClient implements HttpClientInterface, ResetInterface
             $content = '';
             $firstChunk = null;
 
-            $this->logger->info('Try #{count} after {delay}ms'.($exception ? ': '.$exception->getMessage() : ', status code: '.$context->getStatusCode()), [
+            $this->logger?->info('Try #{count} after {delay}ms'.($exception ? ': '.$exception->getMessage() : ', status code: '.$context->getStatusCode()), [
                 'count' => $retryCount,
                 'delay' => $delay,
             ]);
@@ -152,7 +157,7 @@ class RetryableHttpClient implements HttpClientInterface, ResetInterface
             $context->replaceRequest($method, $url, self::shiftBaseUri($options, $baseUris));
             $context->pause($delay / 1000);
 
-            if ($retryCount >= $this->maxRetries) {
+            if ($retryCount >= $maxRetries) {
                 $context->passthru();
             }
         });

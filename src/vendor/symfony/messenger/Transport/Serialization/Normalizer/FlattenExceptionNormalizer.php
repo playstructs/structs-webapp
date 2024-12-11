@@ -13,22 +13,22 @@ namespace Symfony\Component\Messenger\Transport\Serialization\Normalizer;
 
 use Symfony\Component\ErrorHandler\Exception\FlattenException;
 use Symfony\Component\Messenger\Transport\Serialization\Serializer;
-use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 /**
  * This normalizer is only used in Debug/Dev/Messenger contexts.
  *
  * @author Pascal Luna <skalpa@zetareticuli.org>
  */
-final class FlattenExceptionNormalizer implements DenormalizerInterface, ContextAwareNormalizerInterface
+final class FlattenExceptionNormalizer implements DenormalizerInterface, NormalizerInterface
 {
     use NormalizerAwareTrait;
 
     public function normalize(mixed $object, ?string $format = null, array $context = []): array
     {
-        $normalized = [
+        return [
             'message' => $object->getMessage(),
             'code' => $object->getCode(),
             'headers' => $object->getHeaders(),
@@ -41,8 +41,6 @@ final class FlattenExceptionNormalizer implements DenormalizerInterface, Context
             'trace' => $object->getTrace(),
             'trace_as_string' => $object->getTraceAsString(),
         ];
-
-        return $normalized;
     }
 
     public function getSupportedTypes(?string $format): array

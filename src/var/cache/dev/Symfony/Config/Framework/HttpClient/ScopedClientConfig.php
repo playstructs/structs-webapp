@@ -37,7 +37,9 @@ class ScopedClientConfig
     private $passphrase;
     private $ciphers;
     private $peerFingerprint;
+    private $cryptoMethod;
     private $extra;
+    private $rateLimiter;
     private $retryFailed;
     private $_usedProperties = [];
 
@@ -341,7 +343,7 @@ class ScopedClientConfig
     }
 
     /**
-     * A list of TLS ciphers separated by colons, commas or spaces (e.g. "RC3-SHA:TLS13-AES-128-GCM-SHA256"...)
+     * A list of TLS ciphers separated by colons, commas or spaces (e.g. "RC3-SHA:TLS13-AES-128-GCM-SHA256"...).
      * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -370,6 +372,20 @@ class ScopedClientConfig
     }
 
     /**
+     * The minimum version of TLS to accept; must be one of STREAM_CRYPTO_METHOD_TLSv*_CLIENT constants.
+     * @default null
+     * @param ParamConfigurator|mixed $value
+     * @return $this
+     */
+    public function cryptoMethod($value): static
+    {
+        $this->_usedProperties['cryptoMethod'] = true;
+        $this->cryptoMethod = $value;
+
+        return $this;
+    }
+
+    /**
      * @param ParamConfigurator|list<ParamConfigurator|mixed> $value
      *
      * @return $this
@@ -378,6 +394,20 @@ class ScopedClientConfig
     {
         $this->_usedProperties['extra'] = true;
         $this->extra = $value;
+
+        return $this;
+    }
+
+    /**
+     * Rate limiter name to use for throttling requests.
+     * @default null
+     * @param ParamConfigurator|mixed $value
+     * @return $this
+     */
+    public function rateLimiter($value): static
+    {
+        $this->_usedProperties['rateLimiter'] = true;
+        $this->rateLimiter = $value;
 
         return $this;
     }
@@ -554,10 +584,22 @@ class ScopedClientConfig
             unset($value['peer_fingerprint']);
         }
 
+        if (array_key_exists('crypto_method', $value)) {
+            $this->_usedProperties['cryptoMethod'] = true;
+            $this->cryptoMethod = $value['crypto_method'];
+            unset($value['crypto_method']);
+        }
+
         if (array_key_exists('extra', $value)) {
             $this->_usedProperties['extra'] = true;
             $this->extra = $value['extra'];
             unset($value['extra']);
+        }
+
+        if (array_key_exists('rate_limiter', $value)) {
+            $this->_usedProperties['rateLimiter'] = true;
+            $this->rateLimiter = $value['rate_limiter'];
+            unset($value['rate_limiter']);
         }
 
         if (array_key_exists('retry_failed', $value)) {
@@ -646,8 +688,14 @@ class ScopedClientConfig
         if (isset($this->_usedProperties['peerFingerprint'])) {
             $output['peer_fingerprint'] = $this->peerFingerprint->toArray();
         }
+        if (isset($this->_usedProperties['cryptoMethod'])) {
+            $output['crypto_method'] = $this->cryptoMethod;
+        }
         if (isset($this->_usedProperties['extra'])) {
             $output['extra'] = $this->extra;
+        }
+        if (isset($this->_usedProperties['rateLimiter'])) {
+            $output['rate_limiter'] = $this->rateLimiter;
         }
         if (isset($this->_usedProperties['retryFailed'])) {
             $output['retry_failed'] = $this->retryFailed instanceof \Symfony\Config\Framework\HttpClient\ScopedClientConfig\RetryFailedConfig ? $this->retryFailed->toArray() : $this->retryFailed;

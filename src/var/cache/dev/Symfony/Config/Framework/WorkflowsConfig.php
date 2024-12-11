@@ -64,7 +64,7 @@ class WorkflowsConfig
 
         if (array_key_exists('workflows', $value)) {
             $this->_usedProperties['workflows'] = true;
-            $this->workflows = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\Workflows\WorkflowsConfig($v) : $v; }, $value['workflows']);
+            $this->workflows = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Framework\Workflows\WorkflowsConfig($v) : $v, $value['workflows']);
             unset($value['workflows']);
         }
 
@@ -80,7 +80,7 @@ class WorkflowsConfig
             $output['enabled'] = $this->enabled;
         }
         if (isset($this->_usedProperties['workflows'])) {
-            $output['workflows'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\Workflows\WorkflowsConfig ? $v->toArray() : $v; }, $this->workflows);
+            $output['workflows'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Framework\Workflows\WorkflowsConfig ? $v->toArray() : $v, $this->workflows);
         }
 
         return $output;

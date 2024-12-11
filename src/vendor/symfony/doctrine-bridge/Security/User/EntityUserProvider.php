@@ -30,21 +30,21 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
  *
  * @author Fabien Potencier <fabien@symfony.com>
  * @author Johannes M. Schmitt <schmittjoh@gmail.com>
+ *
+ * @template TUser of UserInterface
+ *
+ * @template-implements UserProviderInterface<TUser>
  */
 class EntityUserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
-    private ManagerRegistry $registry;
-    private ?string $managerName;
-    private string $classOrAlias;
     private string $class;
-    private ?string $property;
 
-    public function __construct(ManagerRegistry $registry, string $classOrAlias, ?string $property = null, ?string $managerName = null)
-    {
-        $this->registry = $registry;
-        $this->managerName = $managerName;
-        $this->classOrAlias = $classOrAlias;
-        $this->property = $property;
+    public function __construct(
+        private readonly ManagerRegistry $registry,
+        private readonly string $classOrAlias,
+        private readonly ?string $property = null,
+        private readonly ?string $managerName = null,
+    ) {
     }
 
     public function loadUserByIdentifier(string $identifier): UserInterface
@@ -54,14 +54,14 @@ class EntityUserProvider implements UserProviderInterface, PasswordUpgraderInter
             $user = $repository->findOneBy([$this->property => $identifier]);
         } else {
             if (!$repository instanceof UserLoaderInterface) {
-                throw new \InvalidArgumentException(sprintf('You must either make the "%s" entity Doctrine Repository ("%s") implement "Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface" or set the "property" option in the corresponding entity provider configuration.', $this->classOrAlias, get_debug_type($repository)));
+                throw new \InvalidArgumentException(\sprintf('You must either make the "%s" entity Doctrine Repository ("%s") implement "Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface" or set the "property" option in the corresponding entity provider configuration.', $this->classOrAlias, get_debug_type($repository)));
             }
 
             $user = $repository->loadUserByIdentifier($identifier);
         }
 
         if (null === $user) {
-            $e = new UserNotFoundException(sprintf('User "%s" not found.', $identifier));
+            $e = new UserNotFoundException(\sprintf('User "%s" not found.', $identifier));
             $e->setUserIdentifier($identifier);
 
             throw $e;
@@ -74,7 +74,7 @@ class EntityUserProvider implements UserProviderInterface, PasswordUpgraderInter
     {
         $class = $this->getClass();
         if (!$user instanceof $class) {
-            throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', get_debug_type($user)));
+            throw new UnsupportedUserException(\sprintf('Instances of "%s" are not supported.', get_debug_type($user)));
         }
 
         $repository = $this->getRepository();
@@ -117,7 +117,7 @@ class EntityUserProvider implements UserProviderInterface, PasswordUpgraderInter
     {
         $class = $this->getClass();
         if (!$user instanceof $class) {
-            throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', get_debug_type($user)));
+            throw new UnsupportedUserException(\sprintf('Instances of "%s" are not supported.', get_debug_type($user)));
         }
 
         $repository = $this->getRepository();

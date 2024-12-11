@@ -113,7 +113,7 @@ class LdapConfig
     }
 
     /**
-     * @default '({uid_key}={username})'
+     * @default '({uid_key}={user_identifier})'
      * @param ParamConfigurator|mixed $value
      * @return $this
      */

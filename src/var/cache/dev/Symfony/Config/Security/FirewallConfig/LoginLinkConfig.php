@@ -19,6 +19,7 @@ class LoginLinkConfig
     private $successHandler;
     private $failureHandler;
     private $provider;
+    private $secret;
     private $alwaysUseDefaultTargetPath;
     private $defaultTargetPath;
     private $loginPath;
@@ -150,6 +151,19 @@ class LoginLinkConfig
     {
         $this->_usedProperties['provider'] = true;
         $this->provider = $value;
+
+        return $this;
+    }
+
+    /**
+     * @default '%kernel.secret%'
+     * @param ParamConfigurator|mixed $value
+     * @return $this
+     */
+    public function secret($value): static
+    {
+        $this->_usedProperties['secret'] = true;
+        $this->secret = $value;
 
         return $this;
     }
@@ -314,6 +328,12 @@ class LoginLinkConfig
             unset($value['provider']);
         }
 
+        if (array_key_exists('secret', $value)) {
+            $this->_usedProperties['secret'] = true;
+            $this->secret = $value['secret'];
+            unset($value['secret']);
+        }
+
         if (array_key_exists('always_use_default_target_path', $value)) {
             $this->_usedProperties['alwaysUseDefaultTargetPath'] = true;
             $this->alwaysUseDefaultTargetPath = $value['always_use_default_target_path'];
@@ -396,6 +416,9 @@ class LoginLinkConfig
         }
         if (isset($this->_usedProperties['provider'])) {
             $output['provider'] = $this->provider;
+        }
+        if (isset($this->_usedProperties['secret'])) {
+            $output['secret'] = $this->secret;
         }
         if (isset($this->_usedProperties['alwaysUseDefaultTargetPath'])) {
             $output['always_use_default_target_path'] = $this->alwaysUseDefaultTargetPath;

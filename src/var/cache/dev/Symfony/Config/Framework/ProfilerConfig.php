@@ -46,7 +46,7 @@ class ProfilerConfig
     }
 
     /**
-     * The name of the parameter to use to enable or disable collection on a per request basis
+     * The name of the parameter to use to enable or disable collection on a per request basis.
      * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this
@@ -99,7 +99,7 @@ class ProfilerConfig
     }
 
     /**
-     * Enables the serializer data collector and profiler panel
+     * Enables the serializer data collector and profiler panel.
      * @default false
      * @param ParamConfigurator|bool $value
      * @return $this

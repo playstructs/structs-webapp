@@ -70,7 +70,7 @@ class BusConfig
 
         if (array_key_exists('middleware', $value)) {
             $this->_usedProperties['middleware'] = true;
-            $this->middleware = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Framework\Messenger\BusConfig\MiddlewareConfig($v) : $v; }, $value['middleware']);
+            $this->middleware = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Framework\Messenger\BusConfig\MiddlewareConfig($v) : $v, $value['middleware']);
             unset($value['middleware']);
         }
 
@@ -86,7 +86,7 @@ class BusConfig
             $output['default_middleware'] = $this->defaultMiddleware instanceof \Symfony\Config\Framework\Messenger\BusConfig\DefaultMiddlewareConfig ? $this->defaultMiddleware->toArray() : $this->defaultMiddleware;
         }
         if (isset($this->_usedProperties['middleware'])) {
-            $output['middleware'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Framework\Messenger\BusConfig\MiddlewareConfig ? $v->toArray() : $v; }, $this->middleware);
+            $output['middleware'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Framework\Messenger\BusConfig\MiddlewareConfig ? $v->toArray() : $v, $this->middleware);
         }
 
         return $output;

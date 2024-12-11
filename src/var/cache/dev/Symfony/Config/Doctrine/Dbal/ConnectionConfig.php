@@ -51,7 +51,9 @@ class ConnectionConfig
     private $profiling;
     private $profilingCollectBacktrace;
     private $profilingCollectSchemaErrors;
+    private $disableTypeComments;
     private $serverVersion;
+    private $idleConnectionTtl;
     private $driverClass;
     private $wrapperClass;
     private $keepSlave;
@@ -60,6 +62,7 @@ class ConnectionConfig
     private $mappingTypes;
     private $defaultTableOptions;
     private $schemaManagerFactory;
+    private $resultCache;
     private $slaves;
     private $replicas;
     private $_usedProperties = [];
@@ -587,6 +590,19 @@ class ConnectionConfig
 
     /**
      * @default null
+     * @param ParamConfigurator|bool $value
+     * @return $this
+     */
+    public function disableTypeComments($value): static
+    {
+        $this->_usedProperties['disableTypeComments'] = true;
+        $this->disableTypeComments = $value;
+
+        return $this;
+    }
+
+    /**
+     * @default null
      * @param ParamConfigurator|mixed $value
      * @return $this
      */
@@ -594,6 +610,19 @@ class ConnectionConfig
     {
         $this->_usedProperties['serverVersion'] = true;
         $this->serverVersion = $value;
+
+        return $this;
+    }
+
+    /**
+     * @default 600
+     * @param ParamConfigurator|int $value
+     * @return $this
+     */
+    public function idleConnectionTtl($value): static
+    {
+        $this->_usedProperties['idleConnectionTtl'] = true;
+        $this->idleConnectionTtl = $value;
 
         return $this;
     }
@@ -693,6 +722,19 @@ class ConnectionConfig
     {
         $this->_usedProperties['schemaManagerFactory'] = true;
         $this->schemaManagerFactory = $value;
+
+        return $this;
+    }
+
+    /**
+     * @default null
+     * @param ParamConfigurator|mixed $value
+     * @return $this
+     */
+    public function resultCache($value): static
+    {
+        $this->_usedProperties['resultCache'] = true;
+        $this->resultCache = $value;
 
         return $this;
     }
@@ -978,10 +1020,22 @@ class ConnectionConfig
             unset($value['profiling_collect_schema_errors']);
         }
 
+        if (array_key_exists('disable_type_comments', $value)) {
+            $this->_usedProperties['disableTypeComments'] = true;
+            $this->disableTypeComments = $value['disable_type_comments'];
+            unset($value['disable_type_comments']);
+        }
+
         if (array_key_exists('server_version', $value)) {
             $this->_usedProperties['serverVersion'] = true;
             $this->serverVersion = $value['server_version'];
             unset($value['server_version']);
+        }
+
+        if (array_key_exists('idle_connection_ttl', $value)) {
+            $this->_usedProperties['idleConnectionTtl'] = true;
+            $this->idleConnectionTtl = $value['idle_connection_ttl'];
+            unset($value['idle_connection_ttl']);
         }
 
         if (array_key_exists('driver_class', $value)) {
@@ -1032,15 +1086,21 @@ class ConnectionConfig
             unset($value['schema_manager_factory']);
         }
 
+        if (array_key_exists('result_cache', $value)) {
+            $this->_usedProperties['resultCache'] = true;
+            $this->resultCache = $value['result_cache'];
+            unset($value['result_cache']);
+        }
+
         if (array_key_exists('slaves', $value)) {
             $this->_usedProperties['slaves'] = true;
-            $this->slaves = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Doctrine\Dbal\ConnectionConfig\SlaveConfig($v) : $v; }, $value['slaves']);
+            $this->slaves = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Doctrine\Dbal\ConnectionConfig\SlaveConfig($v) : $v, $value['slaves']);
             unset($value['slaves']);
         }
 
         if (array_key_exists('replicas', $value)) {
             $this->_usedProperties['replicas'] = true;
-            $this->replicas = array_map(function ($v) { return \is_array($v) ? new \Symfony\Config\Doctrine\Dbal\ConnectionConfig\ReplicaConfig($v) : $v; }, $value['replicas']);
+            $this->replicas = array_map(fn ($v) => \is_array($v) ? new \Symfony\Config\Doctrine\Dbal\ConnectionConfig\ReplicaConfig($v) : $v, $value['replicas']);
             unset($value['replicas']);
         }
 
@@ -1166,8 +1226,14 @@ class ConnectionConfig
         if (isset($this->_usedProperties['profilingCollectSchemaErrors'])) {
             $output['profiling_collect_schema_errors'] = $this->profilingCollectSchemaErrors;
         }
+        if (isset($this->_usedProperties['disableTypeComments'])) {
+            $output['disable_type_comments'] = $this->disableTypeComments;
+        }
         if (isset($this->_usedProperties['serverVersion'])) {
             $output['server_version'] = $this->serverVersion;
+        }
+        if (isset($this->_usedProperties['idleConnectionTtl'])) {
+            $output['idle_connection_ttl'] = $this->idleConnectionTtl;
         }
         if (isset($this->_usedProperties['driverClass'])) {
             $output['driver_class'] = $this->driverClass;
@@ -1193,11 +1259,14 @@ class ConnectionConfig
         if (isset($this->_usedProperties['schemaManagerFactory'])) {
             $output['schema_manager_factory'] = $this->schemaManagerFactory;
         }
+        if (isset($this->_usedProperties['resultCache'])) {
+            $output['result_cache'] = $this->resultCache;
+        }
         if (isset($this->_usedProperties['slaves'])) {
-            $output['slaves'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Doctrine\Dbal\ConnectionConfig\SlaveConfig ? $v->toArray() : $v; }, $this->slaves);
+            $output['slaves'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Doctrine\Dbal\ConnectionConfig\SlaveConfig ? $v->toArray() : $v, $this->slaves);
         }
         if (isset($this->_usedProperties['replicas'])) {
-            $output['replicas'] = array_map(function ($v) { return $v instanceof \Symfony\Config\Doctrine\Dbal\ConnectionConfig\ReplicaConfig ? $v->toArray() : $v; }, $this->replicas);
+            $output['replicas'] = array_map(fn ($v) => $v instanceof \Symfony\Config\Doctrine\Dbal\ConnectionConfig\ReplicaConfig ? $v->toArray() : $v, $this->replicas);
         }
 
         return $output;
