@@ -4,3 +4,8 @@ df8971,172.18.0.6,GET,http://webapp/,1733952588,,404,request
 ec166c,172.18.0.6,GET,http://webapp/,1733952838,,404,request
 51b97d,172.18.0.6,GET,http://webapp/,1733953422,,404,request
 93a6e4,172.18.0.6,GET,http://webapp/,1733953632,,404,request
+41ce84,172.18.0.6,GET,http://webapp/,1733956735,,404,request
+e65afa,172.18.0.6,GET,http://webapp/,1733956842,,404,request
+4e1ebd,172.18.0.7,GET,http://webapp/,1733956982,,404,request
+30b0ef,172.18.0.2,GET,http://webapp/lucky/number,1733957601,,200,request
+fb442a,172.18.0.2,GET,http://webapp/,1733957607,,404,request

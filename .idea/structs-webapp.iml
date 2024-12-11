@@ -132,6 +132,10 @@
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/twig/twig" />
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/webmozart/assert" />
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/type-info" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/apache-pack" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/asset-mapper" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/stimulus-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/ux-turbo" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
