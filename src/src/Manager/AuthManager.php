@@ -2,7 +2,10 @@
 
 namespace App\Manager;
 
+use App\Dto\ApiResponseContentDto;
 use App\Factory\PlayerPendingFactory;
+use App\Util\ConstraintViolationUtil;
+use DateMalformedStringException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,6 +19,8 @@ class AuthManager
 
     public PlayerPendingFactory $playerPendingFactory;
 
+    public ConstraintViolationUtil $constraintViolationUtil;
+
     public function __construct(
         ValidatorInterface $validator,
         EntityManagerInterface $entityManager,
@@ -24,30 +29,62 @@ class AuthManager
         $this->validator = $validator;
         $this->entityManager = $entityManager;
         $this->playerPendingFactory = $playerPendingFactory;
+        $this->constraintViolationUtil = new ConstraintViolationUtil();
     }
 
+    /**
+     * Registers a new player with the operating guild and chain.
+     *
+     * When a player pending record is added to the database
+     * it triggers a call to structsd that validates the user's signature
+     * and sends a GuildMembershipJoinProxy message.
+     * Once the GuildMembershipJoinProxy message is processed,
+     * an ID for the player will be generated and stored in the DB asynchronously.
+     *
+     * Since the signup process is asynchronous,
+     * login needs to be called separately after the player's ID is generated.
+     *
+     * @param Request $request
+     * @return Response
+     */
     public function signup(Request $request): Response {
+
         $content = json_decode($request->getContent(), true);
+        $playerPending = null;
 
-        $playerPending = $this->playerPendingFactory->makeFromArray($content);
+        try {
 
-        $errors = $this->validator->validate($playerPending);
+            $playerPending = $this->playerPendingFactory->makeFromArray($content);
 
-        $response = new Response();
+            $constraintViolationList = $this->validator->validate($playerPending);
+            $errors = $this->constraintViolationUtil->getErrorMessages($constraintViolationList);
 
-        if (count($errors) > 0) {
-            $errorsString = (string)$errors;
+        } catch (DateMalformedStringException $e) {
 
-            $response->setContent($errorsString);
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-        } else {
-            $this->entityManager->persist($playerPending);
-            $this->entityManager->flush();
+            $errors = ["date_malformed_string - {$e->getMessage()}"];
 
-            $response->setContent(var_export($playerPending, true));
-            $response->setStatusCode(Response::HTTP_ACCEPTED);
         }
 
-        return $response;
+        $responseContent = new ApiResponseContentDto();
+        $responseContent->errors = $errors;
+
+        if (count($errors) > 0) {
+
+            return new Response(
+                json_encode($responseContent),
+                Response::HTTP_BAD_REQUEST
+            );
+
+        }
+
+        $this->entityManager->persist($playerPending);
+        $this->entityManager->flush();
+
+        $responseContent->success = true;
+
+        return new Response(
+            json_encode($responseContent),
+            Response::HTTP_ACCEPTED
+        );
     }
 }

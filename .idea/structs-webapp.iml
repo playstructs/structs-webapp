@@ -136,6 +136,7 @@
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/asset-mapper" />
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/stimulus-bundle" />
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/ux-turbo" />
+      <excludeFolder url="file://$MODULE_DIR$/src/var" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

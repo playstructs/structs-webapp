@@ -32,9 +32,7 @@ class PlayerPending
     ]
     public ?string $pubkey = null;
 
-    #[
-        ORM\Column
-    ]
+    #[ORM\Column]
     public ?string $username = null;
 
     #[
