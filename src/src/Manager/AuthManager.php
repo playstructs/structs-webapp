@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use TypeError;
 
 class AuthManager
 {
@@ -58,6 +59,10 @@ class AuthManager
 
             $constraintViolationList = $this->validator->validate($playerPending);
             $errors = $this->constraintViolationUtil->getErrorMessages($constraintViolationList);
+
+        } catch (TypeError) {
+
+            $errors = ["invalid_request_content" => "Invalid request content structure"];
 
         } catch (DateMalformedStringException $e) {
 
