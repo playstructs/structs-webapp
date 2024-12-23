@@ -19,8 +19,8 @@ class PlayerPendingFactory
         $playerPending->setPubkey($playerData['pubkey'] ?? null);
         $playerPending->setUsername($playerData['username'] ?? null);
         $playerPending->setPfp($playerData['pfp'] ?? null);
-        $playerPending->setCreatedAt($playerData['created_at'] ?? 'now');
-        $playerPending->setUpdatedAt($playerData['updated_at'] ?? $playerPending->getCreatedAt());
+        $playerPending->setCreatedAt('now');
+        $playerPending->setUpdatedAt($playerPending->getCreatedAt());
         return $playerPending;
     }
 }

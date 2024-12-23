@@ -32,7 +32,7 @@ class PlayerPending
     ]
     public ?string $pubkey = null;
 
-    #[ORM\Column]
+    #[ORM\Column] // TODO: Add validation rules
     public ?string $username = null;
 
     #[

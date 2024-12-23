@@ -3,6 +3,7 @@
 namespace App\Manager;
 
 use App\Dto\ApiResponseContentDto;
+use App\Entity\PlayerPending;
 use App\Factory\PlayerPendingFactory;
 use App\Util\ConstraintViolationUtil;
 use DateMalformedStringException;
@@ -51,6 +52,8 @@ class AuthManager
     public function signup(Request $request): Response {
 
         $content = json_decode($request->getContent(), true);
+        $responseContent = new ApiResponseContentDto();
+        $playerPendingRepository = $this->entityManager->getRepository(PlayerPending::class);
         $playerPending = null;
 
         try {
@@ -66,11 +69,10 @@ class AuthManager
 
         } catch (DateMalformedStringException $e) {
 
-            $errors = ["date_malformed_string - {$e->getMessage()}"];
+            $errors = ["date_malformed_string" => $e->getMessage()];
 
         }
 
-        $responseContent = new ApiResponseContentDto();
         $responseContent->errors = $errors;
 
         if (count($errors) > 0) {
@@ -78,6 +80,18 @@ class AuthManager
             return new Response(
                 json_encode($responseContent),
                 Response::HTTP_BAD_REQUEST
+            );
+
+        }
+
+        // TODO: Will also need to check the player table when the entity and repository is created
+        if ($playerPendingRepository->find($playerPending->getPrimaryAddress())) {
+
+            $responseContent->errors = ['resource_already_exists' => 'Resource already exists'];
+
+            return new Response(
+                json_encode($responseContent),
+                Response::HTTP_CONFLICT
             );
 
         }
