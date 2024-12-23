@@ -32,7 +32,10 @@ class PlayerPending
     ]
     public ?string $pubkey = null;
 
-    #[ORM\Column] // TODO: Add validation rules
+    #[
+        ORM\Column,
+        Assert\Regex('/^[\p{L}0-9-_]{1,20}$/')
+    ]
     public ?string $username = null;
 
     #[
