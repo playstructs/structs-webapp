@@ -79,6 +79,7 @@ class AuthManagerTest extends KernelTestCase
                     "primary_address" => "!structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "!036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
+                    "guild_id" => "0-1",
                     "username" => "Test User",
                     "pfp" => "!{}"
                 ],
@@ -90,6 +91,7 @@ class AuthManagerTest extends KernelTestCase
                 [
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
+                    "guild_id" => "0-1",
                     "username" => "TestUser",
                     "pfp" => "{}"
                 ],
@@ -102,6 +104,7 @@ class AuthManagerTest extends KernelTestCase
                     "primary_address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
+                    "guild_id" => "0-1",
                     "username" => "TestUser",
                     "pfp" => "{}"
                 ],
@@ -114,6 +117,7 @@ class AuthManagerTest extends KernelTestCase
                     "primary_address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
+                    "guild_id" => "0-1",
                     "username" => "TestUser",
                     "pfp" => "{}"
                 ],
