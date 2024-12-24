@@ -11,6 +11,10 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use TypeError;
 
 class AuthManager
@@ -21,16 +25,20 @@ class AuthManager
 
     public PlayerPendingFactory $playerPendingFactory;
 
+    public SignatureValidationManager $signatureValidationManager;
+
     public ConstraintViolationUtil $constraintViolationUtil;
 
     public function __construct(
         ValidatorInterface $validator,
         EntityManagerInterface $entityManager,
-        PlayerPendingFactory $playerPendingFactory
+        PlayerPendingFactory $playerPendingFactory,
+        SignatureValidationManager $signatureValidationManager,
     ) {
         $this->validator = $validator;
         $this->entityManager = $entityManager;
         $this->playerPendingFactory = $playerPendingFactory;
+        $this->signatureValidationManager = $signatureValidationManager;
         $this->constraintViolationUtil = new ConstraintViolationUtil();
     }
 
@@ -48,6 +56,10 @@ class AuthManager
      *
      * @param Request $request
      * @return Response
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
      */
     public function signup(Request $request): Response {
 
@@ -82,6 +94,24 @@ class AuthManager
                 Response::HTTP_BAD_REQUEST
             );
 
+        }
+
+        if (!$this->signatureValidationManager->validate(
+            $playerPending->getPrimaryAddress(),
+            $playerPending->getPubkey(),
+            $playerPending->getSignature(),
+            $this->signatureValidationManager->buildGuildMembershipJoinProxyMessage(
+                '0-1', // TODO: Need to add guild_id to request and player_pending
+                $playerPending->getPrimaryAddress(),
+                0
+            )
+        )) {
+            $responseContent->errors = ['signature_validation_failed' => 'Invalid signature'];
+
+            return new Response(
+                json_encode($responseContent),
+                Response::HTTP_BAD_REQUEST
+            );
         }
 
         // TODO: Will also need to check the player table when the entity and repository is created
