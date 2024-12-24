@@ -101,7 +101,7 @@ class AuthManager
             $playerPending->getPubkey(),
             $playerPending->getSignature(),
             $this->signatureValidationManager->buildGuildMembershipJoinProxyMessage(
-                '0-1', // TODO: Need to add guild_id to request and player_pending
+                $playerPending->getGuildId(), // TODO: Need to add guild_id player_pending
                 $playerPending->getPrimaryAddress(),
                 0
             )

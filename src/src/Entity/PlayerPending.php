@@ -16,18 +16,27 @@ class PlayerPending
     #[
         ORM\Id,
         ORM\Column,
+        Assert\NotBlank,
         Assert\Regex('/^[a-zA-Z0-9]+$/')
     ]
     public string $primary_address;
 
     #[
+        Assert\NotBlank,
+        Assert\Regex('/^[a-zA-Z0-9\-]+$/')
+    ]
+    public ?string $guild_id = null;
+
+    #[
         ORM\Column,
+        Assert\NotBlank,
         Assert\Regex('/^[a-zA-Z0-9]+$/')
     ]
     public ?string $signature = null;
 
     #[
         ORM\Column,
+        Assert\NotBlank,
         Assert\Regex('/^[a-zA-Z0-9]+$/')
     ]
     public ?string $pubkey = null;
@@ -46,12 +55,14 @@ class PlayerPending
 
     #[
         ORM\Column,
+        Assert\NotBlank,
         Assert\DateTime(format: 'Y-m-d H:i:sP')
     ]
     public string $created_at;
 
     #[
         ORM\Column,
+        Assert\NotBlank,
         Assert\DateTime(format: 'Y-m-d H:i:sP')
     ]
     public string $updated_at;
@@ -64,6 +75,18 @@ class PlayerPending
     public function setPrimaryAddress(string $primary_address): static
     {
         $this->primary_address = $primary_address;
+
+        return $this;
+    }
+
+    public function getGuildId(): ?string
+    {
+        return $this->guild_id;
+    }
+
+    public function setGuildId(string $guild_id): static
+    {
+        $this->guild_id = $guild_id;
 
         return $this;
     }
