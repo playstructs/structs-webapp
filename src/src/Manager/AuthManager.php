@@ -3,13 +3,20 @@
 namespace App\Manager;
 
 use App\Dto\ApiResponseContentDto;
+use App\Entity\Player;
+use App\Entity\PlayerAddress;
 use App\Entity\PlayerPending;
+use App\Factory\LoginCredentialsDtoFactory;
 use App\Factory\PlayerPendingFactory;
+use App\Security\PlayerAuthenticator;
 use App\Util\ConstraintViolationUtil;
 use DateMalformedStringException;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
@@ -23,8 +30,6 @@ class AuthManager
 
     public ValidatorInterface $validator;
 
-    public PlayerPendingFactory $playerPendingFactory;
-
     public SignatureValidationManager $signatureValidationManager;
 
     public ConstraintViolationUtil $constraintViolationUtil;
@@ -32,12 +37,10 @@ class AuthManager
     public function __construct(
         ValidatorInterface $validator,
         EntityManagerInterface $entityManager,
-        PlayerPendingFactory $playerPendingFactory,
-        SignatureValidationManager $signatureValidationManager,
+        SignatureValidationManager $signatureValidationManager
     ) {
         $this->validator = $validator;
         $this->entityManager = $entityManager;
-        $this->playerPendingFactory = $playerPendingFactory;
         $this->signatureValidationManager = $signatureValidationManager;
         $this->constraintViolationUtil = new ConstraintViolationUtil();
     }
@@ -55,13 +58,17 @@ class AuthManager
      * login needs to be called separately after the player's ID is generated.
      *
      * @param Request $request
+     * @param PlayerPendingFactory $playerPendingFactory
      * @return Response
      * @throws ClientExceptionInterface
      * @throws RedirectionExceptionInterface
      * @throws ServerExceptionInterface
      * @throws TransportExceptionInterface
      */
-    public function signup(Request $request): Response {
+    public function signup(
+        Request $request,
+        PlayerPendingFactory $playerPendingFactory
+    ): Response {
 
         $content = json_decode($request->getContent(), true);
         $responseContent = new ApiResponseContentDto();
@@ -70,7 +77,7 @@ class AuthManager
 
         try {
 
-            $playerPending = $this->playerPendingFactory->makeFromArray($content);
+            $playerPending = $playerPendingFactory->makeFromArray($content);
 
             $constraintViolationList = $this->validator->validate($playerPending);
             $errors = $this->constraintViolationUtil->getErrorMessages($constraintViolationList);
@@ -134,6 +141,102 @@ class AuthManager
         return new Response(
             json_encode($responseContent),
             Response::HTTP_ACCEPTED
+        );
+    }
+
+    /**
+     * @param Request $request
+     * @param Security $security
+     * @param LoginCredentialsDtoFactory $loginCredentialsDtoFactory
+     * @return Response
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
+     */
+    public function login(
+        Request $request,
+        Security $security,
+        LoginCredentialsDtoFactory $loginCredentialsDtoFactory
+    ): Response {
+
+        $content = json_decode($request->getContent(), true);
+        $responseContent = new ApiResponseContentDto();
+        $loginCredentialsDto = null;
+
+        try {
+
+            $loginCredentialsDto = $loginCredentialsDtoFactory->makeFromArray($content);
+
+            $constraintViolationList = $this->validator->validate($loginCredentialsDto);
+            $errors = $this->constraintViolationUtil->getErrorMessages($constraintViolationList);
+
+        } catch (TypeError) {
+
+            $errors = ["invalid_request_content" => "Invalid request content structure"];
+
+        }
+
+        $responseContent->errors = $errors;
+
+        if (
+            count($errors) > 0
+            || !$this->signatureValidationManager->validate(
+                $loginCredentialsDto->address,
+                $loginCredentialsDto->pubkey,
+                $loginCredentialsDto->signature,
+                $this->signatureValidationManager->buildGuildMembershipJoinProxyMessage( // TODO: Change to buildLoginMessage when proper message is determined
+                    $loginCredentialsDto->guild_id,
+                    $loginCredentialsDto->address,
+                    0
+                )
+            )
+        ) {
+            $responseContent->errors = ['signature_validation_failed' => 'Invalid signature'];
+
+            return new JsonResponse(
+                $responseContent,
+                Response::HTTP_UNAUTHORIZED
+            );
+        }
+
+        $playerAddressRepo = $this->entityManager->getRepository(PlayerAddress::class);
+        $playerAddress = $playerAddressRepo->findOneBy([
+            'address' => $loginCredentialsDto->address,
+            'guild_id' => $loginCredentialsDto->guild_id,
+        ]);
+
+        if (!$playerAddress) {
+            $responseContent->errors = ['player_does_not_exists' => 'Player does not exist'];
+
+            return new JsonResponse(
+                $responseContent,
+                Response::HTTP_UNAUTHORIZED
+            );
+        }
+
+        $playerRepository = $this->entityManager->getRepository(Player::class);
+        $player = $playerRepository->find($playerAddress->getPlayerId());
+
+        $securityResponse = $security->login(
+            $player,
+            PlayerAuthenticator::class,
+            'api',
+            [(new RememberMeBadge())->enable()]
+        );
+
+        if ($securityResponse) {
+            return $securityResponse;
+        }
+
+        $session = $request->getSession();
+        $session->set('player_id', $player->getId());
+
+        $responseContent->success = true;
+
+        return new JsonResponse(
+            $responseContent,
+            Response::HTTP_OK
         );
     }
 }

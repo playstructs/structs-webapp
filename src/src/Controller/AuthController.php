@@ -2,11 +2,13 @@
 
 namespace App\Controller;
 
+use App\Factory\LoginCredentialsDtoFactory;
 use App\Factory\PlayerPendingFactory;
 use App\Manager\AuthManager;
 use App\Manager\SignatureValidationManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -41,9 +43,37 @@ class AuthController extends AbstractController
         $authManager = new AuthManager(
             $validator,
             $entityManager,
-            new PlayerPendingFactory(),
             new SignatureValidationManager($client)
         );
-        return $authManager->signup($request);
+        return $authManager->signup($request, new PlayerPendingFactory());
+    }
+
+    /**
+     * @param Request $request
+     * @param ValidatorInterface $validator
+     * @param EntityManagerInterface $entityManager
+     * @param HttpClientInterface $client
+     * @param Security $security
+     * @return Response
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
+     */
+    #[Route('/api/auth/login', name: 'api_login', methods: ['POST'])]
+    public function login(
+        Request $request,
+        ValidatorInterface $validator,
+        EntityManagerInterface $entityManager,
+        HttpClientInterface $client,
+        Security $security
+    ): Response
+    {
+        $authManager = new AuthManager(
+            $validator,
+            $entityManager,
+            new SignatureValidationManager($client)
+        );
+        return $authManager->login($request, $security, new LoginCredentialsDtoFactory());
     }
 }

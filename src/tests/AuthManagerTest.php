@@ -48,11 +48,10 @@ class AuthManagerTest extends KernelTestCase
         $authManager = new AuthManager(
             $validator,
             $entityManagerStub,
-            $playerPendingFactory,
             $signatureValidationManager
         );
         $request = Request::create('/api/auth/signup', 'POST', [], [], [] ,[], json_encode($requestContent));
-        $response = $authManager->signup($request);
+        $response = $authManager->signup($request, $playerPendingFactory);
         $responseContent = json_decode($response->getContent(), true);
 
         $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());

@@ -37,4 +37,8 @@ class SignatureValidationManager
     public function buildGuildMembershipJoinProxyMessage(string $guildId, string $address, int $nonce):string {
         return "GUILD{$guildId}ADDRESS{$address}NONCE{$nonce}";
     }
+
+    public function buildLoginMessage(string $guildId, string $address):string {
+        return "GUILD{$guildId}ADDRESS{$address}";
+    }
 }
