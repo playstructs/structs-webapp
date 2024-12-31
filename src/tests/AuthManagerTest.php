@@ -12,11 +12,24 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class AuthManagerTest extends KernelTestCase
 {
     /**
      * @dataProvider signupProvider
+     * @param mixed $requestContent
+     * @param bool $isSignatureValid
+     * @param int $expectedHttpStatusCode
+     * @param int $expectedErrorCount
+     * @return void
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
      */
     public function testSignup(
         mixed $requestContent,
@@ -71,7 +84,7 @@ class AuthManagerTest extends KernelTestCase
                 'hello',
                 false,
                 Response::HTTP_BAD_REQUEST,
-                1
+                4
             ],
             'constraint violations' => [
                 [

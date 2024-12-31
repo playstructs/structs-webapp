@@ -2,24 +2,25 @@
 
 namespace App\Factory;
 
+use App\Dto\ApiRequestParamsDto;
 use App\Entity\PlayerPending;
 use DateMalformedStringException;
 
 class PlayerPendingFactory
 {
     /**
-     * @param array $playerData
+     * @param ApiRequestParamsDto $requestParams
      * @return PlayerPending
      * @throws DateMalformedStringException
      */
-    public function makeFromArray(array $playerData): PlayerPending {
+    public function makeFromRequestParams(ApiRequestParamsDto $requestParams): PlayerPending {
         $playerPending = new PlayerPending();
-        $playerPending->setPrimaryAddress($playerData['primary_address'] ?? null);
-        $playerPending->setGuildId($playerData['guild_id'] ?? null);
-        $playerPending->setSignature($playerData['signature'] ?? null);
-        $playerPending->setPubkey($playerData['pubkey'] ?? null);
-        $playerPending->setUsername($playerData['username'] ?? null);
-        $playerPending->setPfp($playerData['pfp'] ?? null);
+        $playerPending->setPrimaryAddress($requestParams->primary_address);
+        $playerPending->setGuildId($requestParams->guild_id);
+        $playerPending->setSignature($requestParams->signature);
+        $playerPending->setPubkey($requestParams->pubkey);
+        $playerPending->setUsername($requestParams->username);
+        $playerPending->setPfp($requestParams->pfp);
         $playerPending->setCreatedAt('now');
         $playerPending->setUpdatedAt($playerPending->getCreatedAt());
         return $playerPending;

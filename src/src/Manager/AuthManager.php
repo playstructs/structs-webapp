@@ -2,6 +2,7 @@
 
 namespace App\Manager;
 
+use App\Constant\ApiParameters;
 use App\Dto\ApiResponseContentDto;
 use App\Entity\Player;
 use App\Entity\PlayerAddress;
@@ -34,6 +35,8 @@ class AuthManager
 
     public ConstraintViolationUtil $constraintViolationUtil;
 
+    public ApiRequestParsingManager $apiRequestParsingManager;
+
     public function __construct(
         ValidatorInterface $validator,
         EntityManagerInterface $entityManager,
@@ -43,6 +46,10 @@ class AuthManager
         $this->entityManager = $entityManager;
         $this->signatureValidationManager = $signatureValidationManager;
         $this->constraintViolationUtil = new ConstraintViolationUtil();
+        $this->apiRequestParsingManager = new ApiRequestParsingManager(
+            $this->validator,
+            $this->constraintViolationUtil
+        );
     }
 
     /**
@@ -70,37 +77,46 @@ class AuthManager
         PlayerPendingFactory $playerPendingFactory
     ): Response {
 
-        $content = json_decode($request->getContent(), true);
         $responseContent = new ApiResponseContentDto();
-        $playerPendingRepository = $this->entityManager->getRepository(PlayerPending::class);
         $playerPending = null;
+        $playerPendingRepository = $this->entityManager->getRepository(PlayerPending::class);
+
+        $parsedRequest = $this->apiRequestParsingManager->parse($request, [
+            ApiParameters::PRIMARY_ADDRESS,
+            ApiParameters::SIGNATURE,
+            ApiParameters::PUBKEY,
+            ApiParameters::GUILD_ID,
+        ],
+        [
+            ApiParameters::USERNAME,
+            ApiParameters::PFP
+        ]);
+
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse(
+                $responseContent,
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
 
         try {
 
-            $playerPending = $playerPendingFactory->makeFromArray($content);
-
-            $constraintViolationList = $this->validator->validate($playerPending);
-            $errors = $this->constraintViolationUtil->getErrorMessages($constraintViolationList);
-
-        } catch (TypeError) {
-
-            $errors = ["invalid_request_content" => "Invalid request content structure"];
+            $playerPending = $playerPendingFactory->makeFromRequestParams($parsedRequest->params);
 
         } catch (DateMalformedStringException $e) {
 
-            $errors = ["date_malformed_string" => $e->getMessage()];
+            $responseContent->errors  = ["date_malformed_string" => $e->getMessage()];
 
         }
 
-        $responseContent->errors = $errors;
-
-        if (count($errors) > 0) {
-
-            return new Response(
-                json_encode($responseContent),
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse(
+                $responseContent,
                 Response::HTTP_BAD_REQUEST
             );
-
         }
 
         if (!$this->signatureValidationManager->validate(
@@ -115,8 +131,8 @@ class AuthManager
         )) {
             $responseContent->errors = ['signature_validation_failed' => 'Invalid signature'];
 
-            return new Response(
-                json_encode($responseContent),
+            return new JsonResponse(
+                $responseContent,
                 Response::HTTP_BAD_REQUEST
             );
         }
@@ -126,8 +142,8 @@ class AuthManager
 
             $responseContent->errors = ['resource_already_exists' => 'Resource already exists'];
 
-            return new Response(
-                json_encode($responseContent),
+            return new JsonResponse(
+                $responseContent,
                 Response::HTTP_CONFLICT
             );
 
@@ -138,8 +154,8 @@ class AuthManager
 
         $responseContent->success = true;
 
-        return new Response(
-            json_encode($responseContent),
+        return new JsonResponse(
+            $responseContent,
             Response::HTTP_ACCEPTED
         );
     }
