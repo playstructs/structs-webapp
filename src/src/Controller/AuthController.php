@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Factory\LoginCredentialsDtoFactory;
 use App\Factory\PlayerPendingFactory;
 use App\Manager\AuthManager;
 use App\Manager\SignatureValidationManager;
@@ -74,6 +73,6 @@ class AuthController extends AbstractController
             $entityManager,
             new SignatureValidationManager($client)
         );
-        return $authManager->login($request, $security, new LoginCredentialsDtoFactory());
+        return $authManager->login($request, $security);
     }
 }

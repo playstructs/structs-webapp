@@ -2,7 +2,7 @@
 
 namespace App\Dto;
 
-class ParsedRequestDto
+class ApiParsedRequestDto
 {
     public array $errors = [];
 

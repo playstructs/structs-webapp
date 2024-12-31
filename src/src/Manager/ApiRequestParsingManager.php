@@ -3,7 +3,7 @@
 namespace App\Manager;
 
 use App\Dto\ApiRequestParamsDto;
-use App\Dto\ParsedRequestDto;
+use App\Dto\ApiParsedRequestDto;
 use App\Util\ConstraintViolationUtil;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -27,9 +27,9 @@ class ApiRequestParsingManager
         Request $request,
         array $requiredParams,
         array $optionalParams = []
-    ): ParsedRequestDto {
+    ): ApiParsedRequestDto {
 
-        $parsedRequest = new ParsedRequestDto();
+        $parsedRequest = new ApiParsedRequestDto();
 
         $content = json_decode($request->getContent(), true);
 

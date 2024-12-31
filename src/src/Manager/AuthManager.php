@@ -7,7 +7,6 @@ use App\Dto\ApiResponseContentDto;
 use App\Entity\Player;
 use App\Entity\PlayerAddress;
 use App\Entity\PlayerPending;
-use App\Factory\LoginCredentialsDtoFactory;
 use App\Factory\PlayerPendingFactory;
 use App\Security\PlayerAuthenticator;
 use App\Util\ConstraintViolationUtil;
@@ -23,7 +22,6 @@ use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
-use TypeError;
 
 class AuthManager
 {
@@ -163,7 +161,6 @@ class AuthManager
     /**
      * @param Request $request
      * @param Security $security
-     * @param LoginCredentialsDtoFactory $loginCredentialsDtoFactory
      * @return Response
      * @throws ClientExceptionInterface
      * @throws RedirectionExceptionInterface
@@ -172,43 +169,34 @@ class AuthManager
      */
     public function login(
         Request $request,
-        Security $security,
-        LoginCredentialsDtoFactory $loginCredentialsDtoFactory
+        Security $security
     ): Response {
 
-        $content = json_decode($request->getContent(), true);
         $responseContent = new ApiResponseContentDto();
-        $loginCredentialsDto = null;
 
-        try {
+        $parsedRequest = $this->apiRequestParsingManager->parse($request, [
+            ApiParameters::ADDRESS,
+            ApiParameters::SIGNATURE,
+            ApiParameters::PUBKEY,
+            ApiParameters::GUILD_ID,
+        ]);
 
-            $loginCredentialsDto = $loginCredentialsDtoFactory->makeFromArray($content);
-
-            $constraintViolationList = $this->validator->validate($loginCredentialsDto);
-            $errors = $this->constraintViolationUtil->getErrorMessages($constraintViolationList);
-
-        } catch (TypeError) {
-
-            $errors = ["invalid_request_content" => "Invalid request content structure"];
-
-        }
-
-        $responseContent->errors = $errors;
+        $responseContent->errors = $parsedRequest->errors;
 
         if (
-            count($errors) > 0
+            count($responseContent->errors) > 0
             || !$this->signatureValidationManager->validate(
-                $loginCredentialsDto->address,
-                $loginCredentialsDto->pubkey,
-                $loginCredentialsDto->signature,
+                $parsedRequest->params->address,
+                $parsedRequest->params->pubkey,
+                $parsedRequest->params->signature,
                 $this->signatureValidationManager->buildGuildMembershipJoinProxyMessage( // TODO: Change to buildLoginMessage when proper message is determined
-                    $loginCredentialsDto->guild_id,
-                    $loginCredentialsDto->address,
+                    $parsedRequest->params->guild_id,
+                    $parsedRequest->params->address,
                     0
                 )
             )
         ) {
-            $responseContent->errors = ['signature_validation_failed' => 'Invalid signature'];
+            $responseContent->errors['signature_validation_failed'] = 'Invalid signature';
 
             return new JsonResponse(
                 $responseContent,
@@ -218,8 +206,8 @@ class AuthManager
 
         $playerAddressRepo = $this->entityManager->getRepository(PlayerAddress::class);
         $playerAddress = $playerAddressRepo->findOneBy([
-            'address' => $loginCredentialsDto->address,
-            'guild_id' => $loginCredentialsDto->guild_id,
+            'address' => $parsedRequest->params->address,
+            'guild_id' => $parsedRequest->params->guild_id,
         ]);
 
         if (!$playerAddress) {
