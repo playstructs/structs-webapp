@@ -99,7 +99,6 @@ class AuthManager
             );
         }
 
-
         try {
 
             $playerPending = $playerPendingFactory->makeFromRequestParams($parsedRequest->params);
@@ -159,6 +158,8 @@ class AuthManager
     }
 
     /**
+     * Verifies a player for login based on a message signed using the player's private key.
+     *
      * @param Request $request
      * @param Security $security
      * @return Response
@@ -211,7 +212,7 @@ class AuthManager
         ]);
 
         if (!$playerAddress) {
-            $responseContent->errors = ['player_does_not_exists' => 'Player does not exist'];
+            $responseContent->errors = ['player_address_does_not_exists' => 'Player address does not exist'];
 
             return new JsonResponse(
                 $responseContent,
@@ -222,16 +223,21 @@ class AuthManager
         $playerRepository = $this->entityManager->getRepository(Player::class);
         $player = $playerRepository->find($playerAddress->getPlayerId());
 
-        $securityResponse = $security->login(
+        if (!$player) {
+            $responseContent->errors = ['player_does_not_exists' => 'Player does not exist'];
+
+            return new JsonResponse(
+                $responseContent,
+                Response::HTTP_UNAUTHORIZED
+            );
+        }
+
+        $security->login(
             $player,
             PlayerAuthenticator::class,
             'api',
             [(new RememberMeBadge())->enable()]
         );
-
-        if ($securityResponse) {
-            return $securityResponse;
-        }
 
         $session = $request->getSession();
         $session->set('player_id', $player->getId());
