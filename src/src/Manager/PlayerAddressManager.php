@@ -1,32 +1,46 @@
 <?php
 
-namespace App\Controller;
+namespace App\Manager;
 
 use App\Constant\ApiParameters;
 use App\Dto\ApiResponseContentDto;
 use App\Entity\PlayerAddress;
-use App\Manager\ApiRequestParsingManager;
 use App\Util\ConstraintViolationUtil;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-class PlayerController extends AbstractController
+class PlayerAddressManager
 {
-    #[Route('/api/player_address/id/address/{address}/guild/{guild_id}', name: 'api_player_id', methods: ['GET'])]
-    public function getPlayerIdByAddressAndGuild(
-        string $address,
-        string $guild_id,
+    public EntityManagerInterface $entityManager;
+
+    public ValidatorInterface $validator;
+
+    public ConstraintViolationUtil $constraintViolationUtil;
+
+    public ApiRequestParsingManager $apiRequestParsingManager;
+
+    public function __construct(
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
-    ): Response
-    {
+    ) {
+        $this->entityManager = $entityManager;
+        $this->validator = $validator;
+        $this->constraintViolationUtil = new ConstraintViolationUtil();
+        $this->apiRequestParsingManager = new ApiRequestParsingManager(
+            $this->validator,
+            $this->constraintViolationUtil
+        );
+    }
+
+    public function getPlayerIdByAddressAndGuild(
+        string $address,
+        string $guild_id
+    ): Response {
         $responseContent = new ApiResponseContentDto();
-        $apiRequestParsingManager = new ApiRequestParsingManager($validator, new ConstraintViolationUtil());
-        $parsedRequest = $apiRequestParsingManager->parse(
+
+        $parsedRequest = $this->apiRequestParsingManager->parse(
             [
                 ApiParameters::ADDRESS => $address,
                 ApiParameters::GUILD_ID => $guild_id,
@@ -40,10 +54,10 @@ class PlayerController extends AbstractController
         $responseContent->errors = $parsedRequest->errors;
 
         if (count($responseContent->errors) > 0) {
-            return new JsonResponse($responseContent, Response::HTTP_NOT_FOUND);
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
         }
 
-        $playerAddressRepository = $entityManager->getRepository(PlayerAddress::class);
+        $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
         $playerAddress = $playerAddressRepository->findOneBy([
             'address' => $parsedRequest->params->address,
             'guild_id' => $parsedRequest->params->guild_id
