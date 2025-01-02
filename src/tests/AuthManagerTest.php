@@ -120,7 +120,7 @@ class AuthManagerTest extends KernelTestCase
                 false,
                 false,
                 Response::HTTP_BAD_REQUEST,
-                4
+                1
             ],
             'constraint violations' => [
                 [
@@ -314,7 +314,7 @@ class AuthManagerTest extends KernelTestCase
                 false,
                 false,
                 Response::HTTP_UNAUTHORIZED,
-                5
+                2
             ],
             'constraint violations' => [
                 [

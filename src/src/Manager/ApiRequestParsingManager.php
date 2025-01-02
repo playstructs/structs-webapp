@@ -23,33 +23,43 @@ class ApiRequestParsingManager
         $this->constraintViolationUtil = $constraintViolationUtil;
     }
 
-    public function parse(
+    public function parseJsonRequest(
         Request $request,
         array $requiredParams,
         array $optionalParams = []
-    ): ApiParsedRequestDto {
-
+    ): ApiParsedRequestDto
+    {
         $parsedRequest = new ApiParsedRequestDto();
 
         $content = json_decode($request->getContent(), true);
 
-        if ($content === null) {
+        if (!is_array($content)) {
             $parsedRequest->errors = ["invalid_request_content" => "Invalid request content structure"];
             return $parsedRequest;
         }
 
+        return $this->parse($content, $requiredParams, $optionalParams);
+    }
+
+    public function parse(
+        array $requestParams,
+        array $requiredParams,
+        array $optionalParams = []
+    ): ApiParsedRequestDto
+    {
+        $parsedRequest = new ApiParsedRequestDto();
         $apiRequestParams = new ApiRequestParamsDto();
 
         foreach ($requiredParams as $requiredParam) {
-            if (!isset($content[$requiredParam])) {
+            if (!isset($requestParams[$requiredParam])) {
                 $parsedRequest->errors["{$requiredParam}_required"] = "{$requiredParam} is required";
             } else {
-                $apiRequestParams->$requiredParam = $content[$requiredParam];
+                $apiRequestParams->$requiredParam = $requestParams[$requiredParam];
             }
         }
 
         foreach ($optionalParams as $optionalParam) {
-            $apiRequestParams->$optionalParam = $content[$optionalParam] ?? null;
+            $apiRequestParams->$optionalParam = $requestParams[$optionalParam] ?? null;
         }
 
         $constraintViolationList = $this->validator->validate($apiRequestParams);

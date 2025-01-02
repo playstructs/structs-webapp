@@ -80,7 +80,7 @@ class AuthManager
         $playerPendingRepository = $this->entityManager->getRepository(PlayerPending::class);
         $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
 
-        $parsedRequest = $this->apiRequestParsingManager->parse($request, [
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
             ApiParameters::PRIMARY_ADDRESS,
             ApiParameters::SIGNATURE,
             ApiParameters::PUBKEY,
@@ -181,7 +181,7 @@ class AuthManager
 
         $responseContent = new ApiResponseContentDto();
 
-        $parsedRequest = $this->apiRequestParsingManager->parse($request, [
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
             ApiParameters::ADDRESS,
             ApiParameters::SIGNATURE,
             ApiParameters::PUBKEY,
