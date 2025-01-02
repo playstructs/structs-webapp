@@ -78,6 +78,7 @@ class AuthManager
         $responseContent = new ApiResponseContentDto();
         $playerPending = null;
         $playerPendingRepository = $this->entityManager->getRepository(PlayerPending::class);
+        $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
 
         $parsedRequest = $this->apiRequestParsingManager->parse($request, [
             ApiParameters::PRIMARY_ADDRESS,
@@ -121,7 +122,7 @@ class AuthManager
             $playerPending->getPubkey(),
             $playerPending->getSignature(),
             $this->signatureValidationManager->buildGuildMembershipJoinProxyMessage(
-                $playerPending->getGuildId(), // TODO: Need to add guild_id player_pending
+                $playerPending->getGuildId(),
                 $playerPending->getPrimaryAddress(),
                 0
             )
@@ -134,8 +135,13 @@ class AuthManager
             );
         }
 
-        // TODO: Will also need to check the player table when the entity and repository is created
-        if ($playerPendingRepository->find($playerPending->getPrimaryAddress())) {
+        if (
+            $playerPendingRepository->find($playerPending->getPrimaryAddress())
+            || $playerAddressRepository->findOneBy([
+                'address' => $playerPending->getPrimaryAddress(),
+                'guild_id' => $playerPending->getGuildId()
+            ])
+        ) {
 
             $responseContent->errors = ['resource_already_exists' => 'Resource already exists'];
 
