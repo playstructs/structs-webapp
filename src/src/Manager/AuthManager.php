@@ -139,7 +139,8 @@ class AuthManager
             $playerPendingRepository->find($playerPending->getPrimaryAddress())
             || $playerAddressRepository->findOneBy([
                 'address' => $playerPending->getPrimaryAddress(),
-                'guild_id' => $playerPending->getGuildId()
+                'guild_id' => $playerPending->getGuildId(),
+                'status' => 'approved'
             ])
         ) {
 

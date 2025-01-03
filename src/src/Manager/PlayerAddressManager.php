@@ -108,6 +108,7 @@ class PlayerAddressManager
             ApiParameters::PUBKEY,
             ApiParameters::GUILD_ID,
             ApiParameters::CODE,
+        ],[
             ApiParameters::IP,
             ApiParameters::USER_AGENT
         ]);
@@ -160,7 +161,8 @@ class PlayerAddressManager
             $playerAddressPendingRepository->find($playerAddressPending->getAddress())
             || $playerAddressRepository->findOneBy([
                 'address' => $playerAddressPending->getAddress(),
-                'guild_id' => $parsedRequest->params->guild_id
+                'guild_id' => $parsedRequest->params->guild_id,
+                'status' => 'approved'
             ])
         ) {
 
