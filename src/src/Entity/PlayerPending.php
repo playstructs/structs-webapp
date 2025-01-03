@@ -3,68 +3,39 @@
 namespace App\Entity;
 
 use App\Repository\PlayerPendingRepository;
+use App\Trait\PsqlTimestampTrait;
 use DateMalformedStringException;
-use DateTime;
-use DateTimeZone;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PlayerPendingRepository::class)]
 class PlayerPending
 {
+    use PsqlTimestampTrait;
 
     #[
         ORM\Id,
-        ORM\Column,
-        Assert\NotBlank,
-        Assert\Regex('/^[a-zA-Z0-9]+$/')
+        ORM\Column
     ]
     public string $primary_address;
 
-    #[
-        Assert\NotBlank,
-        Assert\Regex('/^[a-zA-Z0-9\-]+$/')
-    ]
     public ?string $guild_id = null;
 
-    #[
-        ORM\Column,
-        Assert\NotBlank,
-        Assert\Regex('/^[a-zA-Z0-9]+$/')
-    ]
+    #[ORM\Column]
     public ?string $signature = null;
 
-    #[
-        ORM\Column,
-        Assert\NotBlank,
-        Assert\Regex('/^[a-zA-Z0-9]+$/')
-    ]
+    #[ORM\Column]
     public ?string $pubkey = null;
 
-    #[
-        ORM\Column,
-        Assert\Regex('/^[\p{L}0-9-_]{1,20}$/')
-    ]
+    #[ORM\Column]
     public ?string $username = null;
 
-    #[
-        ORM\Column,
-        Assert\Json
-    ]
+    #[ORM\Column]
     public ?string $pfp = null;
 
-    #[
-        ORM\Column,
-        Assert\NotBlank,
-        Assert\DateTime(format: 'Y-m-d H:i:sP')
-    ]
+    #[ORM\Column]
     public string $created_at;
 
-    #[
-        ORM\Column,
-        Assert\NotBlank,
-        Assert\DateTime(format: 'Y-m-d H:i:sP')
-    ]
+    #[ORM\Column]
     public string $updated_at;
 
     public function getPrimaryAddress(): ?string
@@ -151,10 +122,14 @@ class PlayerPending
      */
     public function setCreatedAt(string $datetime): static
     {
-        $createdAtDateTime = new DateTime($datetime, new DateTimeZone('UTC'));
-        $this->created_at = $createdAtDateTime->format('Y-m-d H:i:sP');
+        $this->created_at = $this->formatTimestamp($datetime);
 
         return $this;
+    }
+
+    public function getUpdatedAt(): ?string
+    {
+        return $this->updated_at;
     }
 
     /**
@@ -164,8 +139,7 @@ class PlayerPending
      */
     public function setUpdatedAt(string $datetime): static
     {
-        $updatedAtDateTime = new DateTime($datetime, new DateTimeZone('UTC'));
-        $this->updated_at = $updatedAtDateTime->format('Y-m-d H:i:sP');
+        $this->updated_at = $this->formatTimestamp($datetime);
 
         return $this;
     }

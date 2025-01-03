@@ -3,22 +3,20 @@
 namespace App\Entity;
 
 use App\Repository\PlayerRepository;
+use App\Trait\PsqlTimestampTrait;
 use DateMalformedStringException;
-use DateTime;
-use DateTimeZone;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PlayerRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_ID', fields: ['id'])]
 class Player implements UserInterface
 {
+    use PsqlTimestampTrait;
+
     #[
         ORM\Id,
-        ORM\Column,
-        Assert\NotBlank,
-        Assert\Regex('/^[a-zA-Z0-9]+$/')
+        ORM\Column
     ]
     public string $id;
 
@@ -27,60 +25,31 @@ class Player implements UserInterface
      */
     private array $roles = [];
 
-    #[
-        ORM\Column,
-        Assert\Regex('/^[0-9]+$/')
-    ]
+    #[ORM\Column]
     public ?int $index = null;
 
-    #[
-        ORM\Column,
-        Assert\Regex('/^[a-zA-Z0-9]+$/')
-    ]
+    #[ORM\Column]
     public ?string $creator = null;
 
-    #[
-        ORM\Column,
-        Assert\Regex('/^[a-zA-Z0-9]+$/')
-    ]
+    #[ORM\Column]
     public ?string $primary_address = null;
 
-    #[
-        ORM\Column,
-        Assert\Regex('/^[a-zA-Z0-9\-]+$/')
-    ]
+    #[ORM\Column]
     public ?string $guild_id = null;
 
-    #[
-        ORM\Column,
-        Assert\Regex('/^[a-zA-Z0-9\-]+$/')
-    ]
+    #[ORM\Column]
     public ?string $substation_id = null;
 
-    #[
-        ORM\Column,
-        Assert\Regex('/^[a-zA-Z0-9\-]+$/')
-    ]
+    #[ORM\Column]
     public ?string $planet_id = null;
 
-    #[
-        ORM\Column,
-        Assert\Regex('/^[a-zA-Z0-9\-]+$/')
-    ]
+    #[ORM\Column]
     public ?string $fleet_id = null;
 
-    #[
-        ORM\Column,
-        Assert\NotBlank,
-        Assert\DateTime(format: 'Y-m-d H:i:sP')
-    ]
+    #[ORM\Column]
     public string $created_at;
 
-    #[
-        ORM\Column,
-        Assert\NotBlank,
-        Assert\DateTime(format: 'Y-m-d H:i:sP')
-    ]
+    #[ORM\Column]
     public string $updated_at;
 
     public function getId(): ?string
@@ -234,8 +203,7 @@ class Player implements UserInterface
      */
     public function setCreatedAt(string $datetime): static
     {
-        $createdAtDateTime = new DateTime($datetime, new DateTimeZone('UTC'));
-        $this->created_at = $createdAtDateTime->format('Y-m-d H:i:sP');
+        $this->created_at = $this->formatTimestamp($datetime);
 
         return $this;
     }
@@ -252,8 +220,7 @@ class Player implements UserInterface
      */
     public function setUpdatedAt(string $datetime): static
     {
-        $updatedAtDateTime = new DateTime($datetime, new DateTimeZone('UTC'));
-        $this->updated_at = $updatedAtDateTime->format('Y-m-d H:i:sP');
+        $this->updated_at = $this->formatTimestamp($datetime);
 
         return $this;
     }

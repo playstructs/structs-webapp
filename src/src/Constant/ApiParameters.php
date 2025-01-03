@@ -6,9 +6,11 @@ class ApiParameters
 {
     const string ADDRESS = 'address';
 
-    const string CREATED_AT = 'created_at';
+    const string CODE = 'code';
 
     const string GUILD_ID = 'guild_id';
+
+    const string IP = 'ip';
 
     const string PFP = 'pfp';
 
@@ -18,7 +20,7 @@ class ApiParameters
 
     const string SIGNATURE = 'signature';
 
-    const string UPDATED_AT = 'updated_at';
+    const string USER_AGENT = 'user_agent';
 
     const string USERNAME = 'username';
 }

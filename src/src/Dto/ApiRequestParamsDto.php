@@ -10,11 +10,14 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ADDRESS)]
     public ?string $address = null;
 
-    #[Assert\DateTime(format: 'Y-m-d H:i:sP')]
-    public ?string $created_at = null;
+    #[Assert\Regex(RegexPattern::CODE)]
+    public ?string $code = null;
 
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $guild_id = null;
+
+    #[Assert\Regex(RegexPattern::INET)]
+    public ?string $ip = null;
 
     #[Assert\Json]
     public ?string $pfp = null;
@@ -28,8 +31,8 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::SIGNATURE)]
     public ?string $signature = null;
 
-    #[Assert\DateTime(format: 'Y-m-d H:i:sP')]
-    public ?string $updated_at = null;
+    #[Assert\Length(min: 0, max: 255)]
+    public ?string $user_agent = null;
 
     #[Assert\Regex(RegexPattern::USERNAME)]
     public ?string $username = null;
