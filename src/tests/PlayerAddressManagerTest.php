@@ -236,7 +236,7 @@ class PlayerAddressManagerTest extends KernelTestCase
             ],
             'invalid signature'  => [
                 [
-                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
+                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn",
                     "signature" => "r6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
                     "guild_id" => "0-1",
@@ -252,7 +252,7 @@ class PlayerAddressManagerTest extends KernelTestCase
             ],
             'player address pending already exists'  => [
                 [
-                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
+                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
                     "guild_id" => "0-1",
@@ -268,7 +268,7 @@ class PlayerAddressManagerTest extends KernelTestCase
             ],
             'pending address already exists'  => [
                 [
-                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
+                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
                     "guild_id" => "0-1",
@@ -284,7 +284,7 @@ class PlayerAddressManagerTest extends KernelTestCase
             ],
             'valid'  => [
                 [
-                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
+                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
                     "guild_id" => "0-1",
@@ -300,7 +300,7 @@ class PlayerAddressManagerTest extends KernelTestCase
             ],
             'valid without option fields'  => [
                 [
-                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
+                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
                     "guild_id" => "0-1",
