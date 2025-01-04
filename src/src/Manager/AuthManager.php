@@ -8,6 +8,7 @@ use App\Entity\Player;
 use App\Entity\PlayerAddress;
 use App\Entity\PlayerPending;
 use App\Factory\PlayerPendingFactory;
+use App\Repository\PlayerAddressRepository;
 use App\Security\PlayerAuthenticator;
 use App\Util\ConstraintViolationUtil;
 use DateMalformedStringException;
@@ -78,6 +79,8 @@ class AuthManager
         $responseContent = new ApiResponseContentDto();
         $playerPending = null;
         $playerPendingRepository = $this->entityManager->getRepository(PlayerPending::class);
+
+        /** @var PlayerAddressRepository $playerAddressRepository */
         $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
 
         $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
@@ -137,11 +140,10 @@ class AuthManager
 
         if (
             $playerPendingRepository->find($playerPending->getPrimaryAddress())
-            || $playerAddressRepository->findOneBy([
-                'address' => $playerPending->getPrimaryAddress(),
-                'guild_id' => $playerPending->getGuildId(),
-                'status' => 'approved'
-            ])
+            || $playerAddressRepository->findApprovedByAddressAndGuild(
+                $playerPending->getPrimaryAddress(),
+                $playerPending->getGuildId()
+            )
         ) {
 
             $responseContent->errors = ['resource_already_exists' => 'Resource already exists'];

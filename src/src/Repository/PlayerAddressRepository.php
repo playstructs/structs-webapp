@@ -16,6 +16,17 @@ class PlayerAddressRepository extends ServiceEntityRepository
         parent::__construct($registry, PlayerAddress::class);
     }
 
+    public function findApprovedByAddressAndGuild(
+        string $address,
+        string $guild_id
+    ): ?PlayerAddress {
+        return $this->findOneBy([
+            'address' => $address,
+            'guild_id' => $guild_id,
+            'status' => 'approved'
+        ]);
+    }
+
     //    /**
     //     * @return PlayerAddress[] Returns an array of PlayerAddress objects
     //     */

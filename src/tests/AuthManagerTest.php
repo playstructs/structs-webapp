@@ -64,7 +64,7 @@ class AuthManagerTest extends KernelTestCase
             );
 
         $playerAddressRepositoryStub = $this->createStub(PlayerAddressRepository::class);
-        $playerAddressRepositoryStub->method('findOneBy')
+        $playerAddressRepositoryStub->method('findApprovedByAddressAndGuild')
             ->willReturn($playerAddressExists
                 ? $this->createStub(PlayerAddress::class)
                 : null

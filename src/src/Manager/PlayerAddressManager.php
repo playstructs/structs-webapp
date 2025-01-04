@@ -7,6 +7,7 @@ use App\Dto\ApiResponseContentDto;
 use App\Entity\PlayerAddress;
 use App\Entity\PlayerAddressPending;
 use App\Factory\PlayerAddressPendingFactory;
+use App\Repository\PlayerAddressRepository;
 use App\Util\ConstraintViolationUtil;
 use DateMalformedStringException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -65,11 +66,12 @@ class PlayerAddressManager
             return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
         }
 
+        /** @var PlayerAddressRepository $playerAddressRepository */
         $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
-        $playerAddress = $playerAddressRepository->findOneBy([
-            'address' => $parsedRequest->params->address,
-            'guild_id' => $parsedRequest->params->guild_id
-        ]);
+        $playerAddress = $playerAddressRepository->findApprovedByAddressAndGuild(
+            $parsedRequest->params->address,
+            $parsedRequest->params->guild_id
+        );
 
         if ($playerAddress === null) {
             $responseContent->errors = ['player_address_not_found' => 'Player address not found'];
@@ -100,6 +102,8 @@ class PlayerAddressManager
         $responseContent = new ApiResponseContentDto();
         $playerAddressPending = null;
         $playerAddressPendingRepository = $this->entityManager->getRepository(PlayerAddressPending::class);
+
+        /** @var PlayerAddressRepository $playerAddressRepository */
         $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
 
         $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
@@ -159,11 +163,10 @@ class PlayerAddressManager
 
         if (
             $playerAddressPendingRepository->find($playerAddressPending->getAddress())
-            || $playerAddressRepository->findOneBy([
-                'address' => $playerAddressPending->getAddress(),
-                'guild_id' => $parsedRequest->params->guild_id,
-                'status' => 'approved'
-            ])
+            || $playerAddressRepository->findApprovedByAddressAndGuild(
+                $parsedRequest->params->address,
+                $parsedRequest->params->guild_id
+            )
         ) {
 
             $responseContent->errors = ['resource_already_exists' => 'Resource already exists'];
