@@ -2,7 +2,9 @@
 
 namespace App\Trait;
 
+use App\Dto\ApiParsedRequestDto;
 use App\Dto\ApiResponseContentDto;
+use App\Manager\ApiRequestParsingManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -10,22 +12,53 @@ use Symfony\Component\HttpFoundation\Response;
 
 trait ApiQueryTrait
 {
+    public function getQueryParams(
+        array $apiRequiredParams,
+        ApiParsedRequestDto $parsedRequest
+    ):array {
+        $queryParams = [];
+
+        foreach ($apiRequiredParams as $param) {
+            $queryParams[$param] = $parsedRequest->params->$param;
+        }
+
+        return $queryParams;
+    }
+
     /**
      * @param EntityManagerInterface $entityManager
+     * @param ApiRequestParsingManager $apiRequestParsingManager
      * @param string $sqlQuery
-     * @param array $queryParams
+     * @param array $apiRequestParams
+     * @param array $apiRequiredParams
      * @return Response
      * @throws Exception
      */
     public function queryOne(
         EntityManagerInterface $entityManager,
+        ApiRequestParsingManager $apiRequestParsingManager,
         string $sqlQuery,
-        array $queryParams = []
+        array $apiRequestParams,
+        array $apiRequiredParams
     ):Response {
+        $responseContent = new ApiResponseContentDto();
+
+        $parsedRequest = $apiRequestParsingManager->parse(
+            $apiRequestParams,
+            $apiRequiredParams
+        );
+
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $queryParams = $this->getQueryParams($apiRequiredParams, $parsedRequest);
 
         $db = $entityManager->getConnection();
         $result = $db->fetchAssociative($sqlQuery, $queryParams);
-        $responseContent = new ApiResponseContentDto();
+
         $responseContent->data = $result === false ? null : $result;
         $responseContent->success = true;
 

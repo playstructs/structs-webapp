@@ -209,30 +209,21 @@ class PlayerAddressManager
      */
     public function countPlayerAddresses(string $player_id): Response
     {
-        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
-        $requiredFields = [ApiParameters::PLAYER_ID];
-
-        $parsedRequest = $this->apiRequestParsingManager->parse(
-            $requestParams,
-            $requiredFields
-        );
-
-        if (count($parsedRequest->errors) > 0) {
-            $responseContent = new ApiResponseContentDto();
-            $responseContent->errors = $parsedRequest->errors;
-            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
-        }
-
         $countQuery = '
             SELECT COUNT(*) AS "count"
             FROM player_address
             WHERE player_id = :player_id
         ';
 
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
         return $this->queryOne(
             $this->entityManager,
+            $this->apiRequestParsingManager,
             $countQuery,
-            ['player_id' => $parsedRequest->params->player_id]
+            $requestParams,
+            $requiredFields
         );
     }
 }
