@@ -14,6 +14,8 @@ class ApiParameters
 
     const string PFP = 'pfp';
 
+    const string PLAYER_ID = 'player_id';
+
     const string PRIMARY_ADDRESS = 'primary_address';
 
     const string PUBKEY = 'pubkey';

@@ -5,8 +5,8 @@ namespace App\Controller;
 use App\Factory\PlayerAddressPendingFactory;
 use App\Manager\PlayerAddressManager;
 use App\Manager\SignatureValidationManager;
+use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
-
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -78,5 +78,26 @@ class PlayerAddressController extends AbstractController
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
         return $playerAddressManager->getPendingAddressByCode($code);
+    }
+
+    /**
+     * @param string $player_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route(
+        '/api/player-address-count/{player_id}',
+        name: 'api_player_address_count',
+        methods: ['GET']
+    )]
+    public function countAddresses(
+        string $player_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
+        return $playerAddressManager->countPlayerAddresses($player_id);
     }
 }

@@ -22,6 +22,9 @@ class ApiRequestParamsDto
     #[Assert\Json]
     public ?string $pfp = null;
 
+    #[Assert\Regex(RegexPattern::ID)]
+    public ?string $player_id = null;
+
     #[Assert\Regex(RegexPattern::ADDRESS)]
     public ?string $primary_address = null;
 

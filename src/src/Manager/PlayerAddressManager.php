@@ -8,9 +8,11 @@ use App\Entity\PlayerAddress;
 use App\Entity\PlayerAddressPending;
 use App\Factory\PlayerAddressPendingFactory;
 use App\Repository\PlayerAddressRepository;
+use App\Trait\ApiQueryCountTrait;
 use App\Trait\ApiSelectOneTrait;
 use App\Util\ConstraintViolationUtil;
 use DateMalformedStringException;
+use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,6 +26,7 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 class PlayerAddressManager
 {
     use ApiSelectOneTrait;
+    use ApiQueryCountTrait;
 
     public EntityManagerInterface $entityManager;
 
@@ -196,6 +199,40 @@ class PlayerAddressManager
             $requiredFields,
             $optionalFields,
             $criteria
+        );
+    }
+
+    /**
+     * @param string $player_id
+     * @return Response
+     * @throws Exception
+     */
+    public function countPlayerAddresses(string $player_id): Response
+    {
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        $parsedRequest = $this->apiRequestParsingManager->parse(
+            $requestParams,
+            $requiredFields
+        );
+
+        if (count($parsedRequest->errors) > 0) {
+            $responseContent = new ApiResponseContentDto();
+            $responseContent->errors = $parsedRequest->errors;
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $countQuery = '
+            SELECT COUNT(*) 
+            FROM player_address
+            WHERE player_id = :player_id
+        ';
+
+        return $this->queryCount(
+            $this->entityManager,
+            $countQuery,
+            ['player_id' => $parsedRequest->params->player_id]
         );
     }
 }
