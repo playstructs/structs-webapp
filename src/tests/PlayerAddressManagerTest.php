@@ -9,6 +9,8 @@ use App\Manager\PlayerAddressManager;
 use App\Manager\SignatureValidationManager;
 use App\Repository\PlayerAddressPendingRepository;
 use App\Repository\PlayerAddressRepository;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -53,8 +55,10 @@ class PlayerAddressManagerTest extends KernelTestCase
             ->with($this->equalTo('player_id'))
             ->willReturn('1-1');
 
-        $playerAddressRepository = $this->createStub(PlayerAddressRepository::class);
-        $playerAddressRepository->method('findOneBy')
+        $playerAddressRepository = $this->createMock(PlayerAddressRepository::class);
+        $playerAddressRepository->expects($this->exactly($expectedHttpStatusCode === Response::HTTP_BAD_REQUEST ? 0 : 1))
+            ->method('findOneBy')
+            ->with(['address' => $address, 'guild_id' => $guild_id, 'status' => 'approved'])
             ->willReturn($playerAddressExists
                 ? $playerAddressMock
                 : null
@@ -325,7 +329,7 @@ class PlayerAddressManagerTest extends KernelTestCase
     }
 
     /**
-     * @dataProvider getGetPendingAddressByCodeProvider
+     * @dataProvider getPendingAddressByCodeProvider
      * @param string $code
      * @param bool $playerAddressPendingExists
      * @param int $expectedHttpStatusCode
@@ -355,8 +359,10 @@ class PlayerAddressManagerTest extends KernelTestCase
         $playerAddressPending->setIp('127.0.0.1');
         $playerAddressPending->setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0');
 
-        $playerAddressPendingRepository = $this->createStub(PlayerAddressPendingRepository::class);
-        $playerAddressPendingRepository->method('findOneBy')
+        $playerAddressPendingRepository = $this->createMock(PlayerAddressPendingRepository::class);
+        $playerAddressPendingRepository->expects($this->exactly($expectedHttpStatusCode === Response::HTTP_BAD_REQUEST ? 0 : 1))
+            ->method('findOneBy')
+            ->with(['code' => $code])
             ->willReturn($playerAddressPendingExists
                 ? $playerAddressPending
                 : null
@@ -382,7 +388,7 @@ class PlayerAddressManagerTest extends KernelTestCase
         $this->assertEquals($expectedData, $responseContent['data']);
     }
 
-    public function getGetPendingAddressByCodeProvider() : array
+    public function getPendingAddressByCodeProvider() : array
     {
         return [
             'bad code' => [
@@ -412,6 +418,81 @@ class PlayerAddressManagerTest extends KernelTestCase
                     'ip' => '127.0.0.1',
                     'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0'
                 ]
+            ]
+        ];
+    }
+
+    /**
+     * @dataProvider countAddressesProvider
+     * @param string $player_id
+     * @param int $addressCount
+     * @param int $expectedHttpStatusCode
+     * @param int $expectedErrorCount
+     * @param mixed $expectedData
+     * @return void
+     * @throws Exception
+     */
+    public function testCountAddresses(
+        string $player_id,
+        int $addressCount,
+        int $expectedHttpStatusCode,
+        int $expectedErrorCount,
+        mixed $expectedData
+    ): void
+    {
+        // (1) boot the Symfony kernel
+        self::bootKernel();
+
+        // (2) use static::getContainer() to access the service container
+        $container = static::getContainer();
+
+        $connectionMock = $this->createMock(Connection::class);
+        $connectionMock->expects($this->exactly($expectedErrorCount > 0 ? 0 : 1))
+            ->method('fetchOne')
+            ->with($this->anything(), ['player_id' => $player_id])
+            ->willReturn($addressCount);
+
+        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
+        $entityManagerStub->method('getConnection')
+            ->willReturn($connectionMock);
+
+        $validator = $container->get(ValidatorInterface::class);
+
+        $playerAddressManager = new PlayerAddressManager(
+            $entityManagerStub,
+            $validator
+        );
+        $response = $playerAddressManager->countPlayerAddresses($player_id);
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
+        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
+        $this->assertSame($expectedData, $responseContent['data']);
+    }
+
+    public function countAddressesProvider() : array
+    {
+        return [
+            'bad player_id' => [
+                '!#$#%#$%@$%',
+                0,
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
+            'unknown player' => [
+                "1-47634",
+                0,
+                Response::HTTP_OK,
+                0,
+                ['count' => 0]
+            ],
+            'valid player' => [
+                "1-13",
+                2,
+                Response::HTTP_OK,
+                0,
+                ['count' => 2]
             ]
         ];
     }
