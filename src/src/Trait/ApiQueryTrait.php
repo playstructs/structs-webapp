@@ -8,25 +8,25 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-trait ApiQueryCountTrait
+trait ApiQueryTrait
 {
     /**
      * @param EntityManagerInterface $entityManager
-     * @param string $sqlCountQuery
+     * @param string $sqlQuery
      * @param array $queryParams
      * @return Response
      * @throws Exception
      */
-    public function queryCount(
+    public function queryOne(
         EntityManagerInterface $entityManager,
-        string $sqlCountQuery,
+        string $sqlQuery,
         array $queryParams = []
     ):Response {
 
         $db = $entityManager->getConnection();
-        $count = $db->fetchOne($sqlCountQuery, $queryParams);
+        $result = $db->fetchAssociative($sqlQuery, $queryParams);
         $responseContent = new ApiResponseContentDto();
-        $responseContent->data = (object)['count' => $count];
+        $responseContent->data = $result === false ? null : $result;
         $responseContent->success = true;
 
         return new JsonResponse($responseContent, Response::HTTP_OK);

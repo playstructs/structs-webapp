@@ -56,7 +56,7 @@ trait ApiSelectOneTrait
             foreach ($returnFields as $field) {
                 $data[$field] = $resource->get($field);
             }
-            $responseContent->data = (object)$data;
+            $responseContent->data = $data;
         }
 
         $responseContent->success = true;

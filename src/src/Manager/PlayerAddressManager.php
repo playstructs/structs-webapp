@@ -8,7 +8,7 @@ use App\Entity\PlayerAddress;
 use App\Entity\PlayerAddressPending;
 use App\Factory\PlayerAddressPendingFactory;
 use App\Repository\PlayerAddressRepository;
-use App\Trait\ApiQueryCountTrait;
+use App\Trait\ApiQueryTrait;
 use App\Trait\ApiSelectOneTrait;
 use App\Util\ConstraintViolationUtil;
 use DateMalformedStringException;
@@ -26,7 +26,7 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 class PlayerAddressManager
 {
     use ApiSelectOneTrait;
-    use ApiQueryCountTrait;
+    use ApiQueryTrait;
 
     public EntityManagerInterface $entityManager;
 
@@ -224,12 +224,12 @@ class PlayerAddressManager
         }
 
         $countQuery = '
-            SELECT COUNT(*) 
+            SELECT COUNT(*) AS "count"
             FROM player_address
             WHERE player_id = :player_id
         ';
 
-        return $this->queryCount(
+        return $this->queryOne(
             $this->entityManager,
             $countQuery,
             ['player_id' => $parsedRequest->params->player_id]

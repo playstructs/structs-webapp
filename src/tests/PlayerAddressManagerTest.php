@@ -448,9 +448,9 @@ class PlayerAddressManagerTest extends KernelTestCase
 
         $connectionMock = $this->createMock(Connection::class);
         $connectionMock->expects($this->exactly($expectedErrorCount > 0 ? 0 : 1))
-            ->method('fetchOne')
+            ->method('fetchAssociative')
             ->with($this->anything(), ['player_id' => $player_id])
-            ->willReturn($addressCount);
+            ->willReturn(['count' => $addressCount]);
 
         $entityManagerStub = $this->createStub(EntityManagerInterface::class);
         $entityManagerStub->method('getConnection')

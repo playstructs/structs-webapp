@@ -8,5 +8,5 @@ class ApiResponseContentDto
 
     public array $errors = [];
 
-    public ?object $data = null;
+    public object|array|null $data = null;
 }
