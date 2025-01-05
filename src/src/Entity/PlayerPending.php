@@ -3,15 +3,12 @@
 namespace App\Entity;
 
 use App\Repository\PlayerPendingRepository;
-use App\Trait\PsqlTimestampTrait;
 use DateMalformedStringException;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PlayerPendingRepository::class)]
-class PlayerPending
+class PlayerPending extends AbstractEntity
 {
-    use PsqlTimestampTrait;
-
     #[
         ORM\Id,
         ORM\Column

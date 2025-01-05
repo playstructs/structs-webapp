@@ -3,41 +3,38 @@
 namespace App\Entity;
 
 use App\Repository\PlayerAddressPendingRepository;
-use App\Trait\PsqlTimestampTrait;
 use DateMalformedStringException;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PlayerAddressPendingRepository::class)]
-class PlayerAddressPending
+class PlayerAddressPending extends AbstractEntity
 {
-    use PsqlTimestampTrait;
-
     #[
         ORM\Id,
         ORM\Column
     ]
-    private string $address;
+    public string $address;
 
     #[ORM\Column]
-    private ?string $signature = null;
+    public ?string $signature = null;
 
     #[ORM\Column]
-    private ?string $pubkey = null;
+    public ?string $pubkey = null;
 
     #[ORM\Column]
-    private ?string $code = null;
+    public ?string $code = null;
 
     #[ORM\Column]
-    private ?string $ip = null;
+    public ?string $ip = null;
 
     #[ORM\Column]
-    private ?string $user_agent = null;
+    public ?string $user_agent = null;
 
     #[ORM\Column]
-    private string $created_at;
+    public string $created_at;
 
     #[ORM\Column]
-    private string $updated_at;
+    public string $updated_at;
 
     public function getAddress(): ?string
     {

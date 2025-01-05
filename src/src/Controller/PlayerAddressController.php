@@ -31,8 +31,8 @@ class PlayerAddressController extends AbstractController
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
     ): Response {
-        $playerManager = new PlayerAddressManager($entityManager, $validator);
-        return $playerManager->getPlayerIdByAddressAndGuild($address, $guild_id);
+        $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
+        return $playerAddressManager->getPlayerIdByAddressAndGuild($address, $guild_id);
     }
 
     /**
@@ -64,5 +64,19 @@ class PlayerAddressController extends AbstractController
             new PlayerAddressPendingFactory(),
             $signatureValidationManager
         );
+    }
+
+    #[Route(
+        '/api/player-address/code/{code}',
+        name: 'api_player_address_by_code',
+        methods: ['GET']
+    )]
+    public function getPendingAddressByCode(
+        string $code,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
+        return $playerAddressManager->getPendingAddressByCode($code);
     }
 }

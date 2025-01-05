@@ -48,14 +48,15 @@ class PlayerAddressManagerTest extends KernelTestCase
         // (2) use static::getContainer() to access the service container
         $container = static::getContainer();
 
-        $playerAddressStub = $this->createStub(PlayerAddress::class);
-        $playerAddressStub->method('getPlayerId')
+        $playerAddressMock = $this->createMock(PlayerAddress::class);
+        $playerAddressMock->method('get')
+            ->with($this->equalTo('player_id'))
             ->willReturn('1-1');
 
         $playerAddressRepository = $this->createStub(PlayerAddressRepository::class);
-        $playerAddressRepository->method('findApprovedByAddressAndGuild')
+        $playerAddressRepository->method('findOneBy')
             ->willReturn($playerAddressExists
-                ? $playerAddressStub
+                ? $playerAddressMock
                 : null
             );
 
@@ -95,6 +96,14 @@ class PlayerAddressManagerTest extends KernelTestCase
                 '!0-1',
                 false,
                 Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
+            'resource not found'  => [
+                "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
+                "0-1",
+                false,
+                Response::HTTP_NOT_FOUND,
                 1,
                 null
             ],
@@ -312,6 +321,98 @@ class PlayerAddressManagerTest extends KernelTestCase
                 Response::HTTP_ACCEPTED,
                 0
             ],
+        ];
+    }
+
+    /**
+     * @dataProvider getGetPendingAddressByCodeProvider
+     * @param string $code
+     * @param bool $playerAddressPendingExists
+     * @param int $expectedHttpStatusCode
+     * @param int $expectedErrorCount
+     * @param mixed $expectedData
+     * @return void
+     */
+    public function testGetPendingAddressByCode(
+        string $code,
+        bool   $playerAddressPendingExists,
+        int    $expectedHttpStatusCode,
+        int    $expectedErrorCount,
+        mixed $expectedData
+    ): void
+    {
+        // (1) boot the Symfony kernel
+        self::bootKernel();
+
+        // (2) use static::getContainer() to access the service container
+        $container = static::getContainer();
+
+        $playerAddressPending = new PlayerAddressPending();
+        $playerAddressPending->setAddress('structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn');
+        $playerAddressPending->setSignature('6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601');
+        $playerAddressPending->setPubkey('036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222');
+        $playerAddressPending->setCode($code);
+        $playerAddressPending->setIp('127.0.0.1');
+        $playerAddressPending->setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0');
+
+        $playerAddressPendingRepository = $this->createStub(PlayerAddressPendingRepository::class);
+        $playerAddressPendingRepository->method('findOneBy')
+            ->willReturn($playerAddressPendingExists
+                ? $playerAddressPending
+                : null
+            );
+
+        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
+        $entityManagerStub->method('getRepository')
+            ->willReturnMap([
+                [PlayerAddressPending::class, $playerAddressPendingRepository]
+            ]);
+
+        $validator = $container->get(ValidatorInterface::class);
+
+        $playerAddressManager = new PlayerAddressManager(
+            $entityManagerStub,
+            $validator
+        );
+        $response = $playerAddressManager->getPendingAddressByCode($code);
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
+        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
+        $this->assertEquals($expectedData, $responseContent['data']);
+    }
+
+    public function getGetPendingAddressByCodeProvider() : array
+    {
+        return [
+            'bad code' => [
+                '!#$#%#$%@$%',
+                false,
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
+            'resource not found' => [
+                "ZBS6UEC24Z",
+                false,
+                Response::HTTP_NOT_FOUND,
+                1,
+                null
+            ],
+            'valid' => [
+                "ZBS6UEC24Z",
+                true,
+                Response::HTTP_OK,
+                0,
+                [
+                    'address' => 'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
+                    'signature' => '6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601',
+                    'pubkey' => '036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222',
+                    'code' => 'ZBS6UEC24Z',
+                    'ip' => '127.0.0.1',
+                    'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0'
+                ]
+            ]
         ];
     }
 }

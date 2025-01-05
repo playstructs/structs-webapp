@@ -8,6 +8,7 @@ use App\Entity\PlayerAddress;
 use App\Entity\PlayerAddressPending;
 use App\Factory\PlayerAddressPendingFactory;
 use App\Repository\PlayerAddressRepository;
+use App\Trait\ApiSelectOneTrait;
 use App\Util\ConstraintViolationUtil;
 use DateMalformedStringException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,6 +23,8 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class PlayerAddressManager
 {
+    use ApiSelectOneTrait;
+
     public EntityManagerInterface $entityManager;
 
     public ValidatorInterface $validator;
@@ -47,41 +50,31 @@ class PlayerAddressManager
         string $address,
         string $guild_id
     ): Response {
-        $responseContent = new ApiResponseContentDto();
-
-        $parsedRequest = $this->apiRequestParsingManager->parse(
-            [
-                ApiParameters::ADDRESS => $address,
-                ApiParameters::GUILD_ID => $guild_id,
-            ],
-            [
-                ApiParameters::ADDRESS,
-                ApiParameters::GUILD_ID,
-            ]
+        $requestParams = [
+            ApiParameters::ADDRESS => $address,
+            ApiParameters::GUILD_ID => $guild_id
+        ];
+        $requiredFields = [
+            ApiParameters::ADDRESS,
+            ApiParameters::GUILD_ID
+        ];
+        $optionalFields = [];
+        $criteria = [
+            ApiParameters::ADDRESS => $address,
+            ApiParameters::GUILD_ID => $guild_id,
+            'status' => 'approved'
+        ];
+        $returnFields = ['player_id'];
+        return $this->selectOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            PlayerAddress::class,
+            $requestParams,
+            $requiredFields,
+            $optionalFields,
+            $criteria,
+            $returnFields
         );
-
-        $responseContent->errors = $parsedRequest->errors;
-
-        if (count($responseContent->errors) > 0) {
-            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
-        }
-
-        /** @var PlayerAddressRepository $playerAddressRepository */
-        $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
-        $playerAddress = $playerAddressRepository->findApprovedByAddressAndGuild(
-            $parsedRequest->params->address,
-            $parsedRequest->params->guild_id
-        );
-
-        if ($playerAddress === null) {
-            $responseContent->errors = ['player_address_not_found' => 'Player address not found'];
-            return new JsonResponse($responseContent, Response::HTTP_NOT_FOUND);
-        }
-
-        $responseContent->data = (object)['player_id' => $playerAddress->getPlayerId()];
-        $responseContent->success = true;
-
-        return new JsonResponse($responseContent, Response::HTTP_OK);
     }
 
     /**
@@ -186,6 +179,23 @@ class PlayerAddressManager
         return new JsonResponse(
             $responseContent,
             Response::HTTP_ACCEPTED
+        );
+    }
+
+    public function getPendingAddressByCode(string $code): Response
+    {
+        $requestParams = [ApiParameters::CODE => $code];
+        $requiredFields = [ApiParameters::CODE];
+        $optionalFields = [];
+        $criteria = $requestParams;
+        return $this->selectOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            PlayerAddressPending::class,
+            $requestParams,
+            $requiredFields,
+            $optionalFields,
+            $criteria
         );
     }
 }

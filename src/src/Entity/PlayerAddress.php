@@ -3,15 +3,12 @@
 namespace App\Entity;
 
 use App\Repository\PlayerAddressRepository;
-use App\Trait\PsqlTimestampTrait;
 use DateMalformedStringException;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PlayerAddressRepository::class)]
-class PlayerAddress
+class PlayerAddress extends AbstractEntity
 {
-    use PsqlTimestampTrait;
-
     #[
         ORM\Id,
         ORM\Column

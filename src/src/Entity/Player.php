@@ -3,17 +3,14 @@
 namespace App\Entity;
 
 use App\Repository\PlayerRepository;
-use App\Trait\PsqlTimestampTrait;
 use DateMalformedStringException;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: PlayerRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_ID', fields: ['id'])]
-class Player implements UserInterface
+class Player extends AbstractEntity implements UserInterface
 {
-    use PsqlTimestampTrait;
-
     #[
         ORM\Id,
         ORM\Column
