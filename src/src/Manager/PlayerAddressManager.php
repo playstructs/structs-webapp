@@ -226,4 +226,35 @@ class PlayerAddressManager
             $requiredFields
         );
     }
+
+    /**
+     * @param string $player_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getAddressList(string $player_id): Response
+    {
+        $query = '
+            SELECT pa.address, paa.block_time, pam.ip, pam.user_agent
+            FROM player_address pa
+            LEFT JOIN player_address_activity paa
+              ON pa.address = paa.address
+            LEFT JOIN player_address_meta pam
+              ON pa.address = pam.address
+            WHERE pa.player_id = :player_id
+            AND pa.status = \'approved\';
+        ';
+        //TODO: Will need to get the location associated with the IP address when GeoIP DB added
+
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        return $this->queryAll(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
 }
