@@ -10,7 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-trait ApiQueryTrait
+trait ApiSqlQueryTrait
 {
     public function getQueryParams(
         array $apiRequiredParams,

@@ -9,14 +9,14 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-trait ApiSelectOneTrait
+trait ApiFetchEntityTrait
 {
     public function getClassShortName($className): string
     {
         return preg_replace('/^.*\\\/', '', $className);
     }
 
-    public function selectOne(
+    public function fetchOne(
         EntityManagerInterface $entityManager,
         ApiRequestParsingManager $apiRequestParsingManager,
         string $targetResourceClassName,

@@ -8,8 +8,8 @@ use App\Entity\PlayerAddress;
 use App\Entity\PlayerAddressPending;
 use App\Factory\PlayerAddressPendingFactory;
 use App\Repository\PlayerAddressRepository;
-use App\Trait\ApiQueryTrait;
-use App\Trait\ApiSelectOneTrait;
+use App\Trait\ApiSqlQueryTrait;
+use App\Trait\ApiFetchEntityTrait;
 use App\Util\ConstraintViolationUtil;
 use DateMalformedStringException;
 use Doctrine\DBAL\Exception;
@@ -25,8 +25,8 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class PlayerAddressManager
 {
-    use ApiSelectOneTrait;
-    use ApiQueryTrait;
+    use ApiFetchEntityTrait;
+    use ApiSqlQueryTrait;
 
     public EntityManagerInterface $entityManager;
 
@@ -68,7 +68,7 @@ class PlayerAddressManager
             'status' => 'approved'
         ];
         $returnFields = ['player_id'];
-        return $this->selectOne(
+        return $this->fetchOne(
             $this->entityManager,
             $this->apiRequestParsingManager,
             PlayerAddress::class,
@@ -191,7 +191,7 @@ class PlayerAddressManager
         $requiredFields = [ApiParameters::CODE];
         $optionalFields = [];
         $criteria = $requestParams;
-        return $this->selectOne(
+        return $this->fetchOne(
             $this->entityManager,
             $this->apiRequestParsingManager,
             PlayerAddressPending::class,
