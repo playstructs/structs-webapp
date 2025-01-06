@@ -257,4 +257,33 @@ class PlayerAddressManager
             $requiredFields
         );
     }
+
+    /**
+     * @param string $address
+     * @return Response
+     * @throws Exception
+     */
+    public function getAddressDetails(string $address): Response
+    {
+        $query = '
+            SELECT pam.ip, pam.user_agent, vpa.permission_assets, vpa.permissions
+            FROM player_address_meta pam
+            LEFT JOIN view.permission_address vpa
+              ON pam.address = vpa.address
+            WHERE pam.address = :address
+            LIMIT 1;
+        ';
+        // TODO: Will need to get the location associated with the IP address when GeoIP DB added
+
+        $requestParams = [ApiParameters::ADDRESS => $address];
+        $requiredFields = [ApiParameters::ADDRESS];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
 }

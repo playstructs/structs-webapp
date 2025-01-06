@@ -121,4 +121,25 @@ class PlayerAddressController extends AbstractController
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
         return $playerAddressManager->getAddressList($player_id);
     }
+
+    /**
+     * @param string $address
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route(
+        '/api/player-address/{address}',
+        name: 'api_player_address_details',
+        methods: ['GET']
+    )]
+    public function getAddressDetails(
+        string $address,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
+        return $playerAddressManager->getAddressDetails($address);
+    }
 }

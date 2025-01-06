@@ -584,4 +584,92 @@ class PlayerAddressManagerTest extends KernelTestCase
             ]
         ];
     }
+
+    /**
+     * @dataProvider getAddressDetailsProvider
+     * @param string $address
+     * @param bool $addressExists
+     * @param int $expectedHttpStatusCode
+     * @param int $expectedErrorCount
+     * @param mixed $expectedData
+     * @return void
+     * @throws Exception
+     */
+    public function testGetAddressDetails(
+        string $address,
+        bool $addressExists,
+        int $expectedHttpStatusCode,
+        int $expectedErrorCount,
+        mixed $expectedData
+    ): void
+    {
+        // (1) boot the Symfony kernel
+        self::bootKernel();
+
+        // (2) use static::getContainer() to access the service container
+        $container = static::getContainer();
+
+        $connectionMock = $this->createMock(Connection::class);
+        $connectionMock->expects($this->exactly($expectedErrorCount > 0 ? 0 : 1))
+            ->method('fetchAssociative')
+            ->with($this->anything(), ['address' => $address])
+            ->willReturn($addressExists
+                ? [[
+                    'ip' => '127.0.0.1',
+                    'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0',
+                    'permission_assets' => 'f',
+                    'permissions' => 't',
+                ]]
+                : []
+            );
+
+        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
+        $entityManagerStub->method('getConnection')
+            ->willReturn($connectionMock);
+
+        $validator = $container->get(ValidatorInterface::class);
+
+        $playerAddressManager = new PlayerAddressManager(
+            $entityManagerStub,
+            $validator
+        );
+        $response = $playerAddressManager->getAddressDetails($address);
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
+        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
+        $this->assertSame($expectedData, $responseContent['data']);
+    }
+
+    public function getAddressDetailsProvider() : array
+    {
+        return [
+            'bad address' => [
+                '!#$#%#$%@$%',
+                false,
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
+            'unknown address' => [
+                "structs13nwzm5dfd26ue74jr6sc39gyn3qze0rjaaaaaa",
+                false,
+                Response::HTTP_OK,
+                0,
+                []
+            ],
+            'valid address' => [
+                "structs13nwzm5dfd26ue74jr6sc39gyn3qze0rjr9l9fz",
+                true,
+                Response::HTTP_OK,
+                0,
+                [[
+                    'ip' => '127.0.0.1',
+                    'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0',
+                    'permission_assets' => 'f',
+                    'permissions' => 't',
+                ]]
+            ]
+        ];
+    }
 }
