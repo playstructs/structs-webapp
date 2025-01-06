@@ -117,18 +117,116 @@ class ApiSqlQueryTraitTest extends KernelTestCase
                 Response::HTTP_OK,
                 0,
                 null,
+            ]
+        ];
+    }
+
+    /**
+     * @dataProvider queryAllProvider
+     * @param array $requestParams
+     * @param array $requiredFields
+     * @param string $query
+     * @param bool $isFetchExpected
+     * @param bool $hasFetchResult
+     * @param mixed $fetchResult
+     * @param int $expectedHttpStatusCode
+     * @param int $expectedErrorCount
+     * @param mixed $expectedData
+     * @return void
+     */
+    public function testQueryAll(
+        array $requestParams,
+        array $requiredFields,
+        string $query,
+        bool $isFetchExpected,
+        bool $hasFetchResult,
+        mixed $fetchResult,
+        int $expectedHttpStatusCode,
+        int $expectedErrorCount,
+        mixed $expectedData
+    ) {
+        // (1) boot the Symfony kernel
+        self::bootKernel();
+
+        // (2) use static::getContainer() to access the service container
+        $container = static::getContainer();
+
+        $connectionMock = $this->createMock(Connection::class);
+        $connectionMock->expects($this->exactly($isFetchExpected ? 1 : 0))
+            ->method('fetchAllAssociative')
+            ->with($query, $requestParams)
+            ->willReturn($hasFetchResult
+                ? $fetchResult
+                : []
+            );
+
+        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
+        $entityManagerStub->method('getConnection')
+            ->willReturn($connectionMock);
+
+        $apiRequestParsingManager = new ApiRequestParsingManager(
+            $container->get(ValidatorInterface::class),
+            new ConstraintViolationUtil()
+        );
+
+        $trait = new class { use ApiSqlQueryTrait; };
+        $response = $trait->queryAll(
+            $entityManagerStub,
+            $apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
+        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
+        $this->assertSame($expectedData, $responseContent['data']);
+    }
+
+    public function queryAllProvider() : array
+    {
+        return [
+            'valid' => [
+                [ApiParameters::PLAYER_ID => "1-13"],
+                [ApiParameters::PLAYER_ID],
+                'SELECT address FROM player_address WHERE player_id = :player_id',
+                true,
+                true,
+                [
+                    ['address' => 'structs13nwzm5dfd26ue74jr6sc39gyn3qze0rjr9l9fz'],
+                    ['address' => 'structs13nwzm5dfd26ue74jr6sc39gyn3qze0rjr9l9f2']
+                ],
+                Response::HTTP_OK,
+                0,
+                [
+                    ['address' => 'structs13nwzm5dfd26ue74jr6sc39gyn3qze0rjr9l9fz'],
+                    ['address' => 'structs13nwzm5dfd26ue74jr6sc39gyn3qze0rjr9l9f2']
+                ],
             ],
-//            'test case template' => [
-//                'requestParams',
-//                'requiredFields',
-//                'query',
-//                'isFetchExpected',
-//                'hasFetchResult',
-//                'fetchResult',
-//                'expectedHttpStatusCode',
-//                'expectedErrorCount',
-//                'expectedData'
-//            ],
+            'bad request params' => [
+                [ApiParameters::PLAYER_ID => "!1-13"],
+                [ApiParameters::PLAYER_ID],
+                'SELECT address FROM player_address WHERE player_id = :player_id',
+                false,
+                false,
+                [],
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null,
+            ],
+            'no matching records' => [
+                [ApiParameters::PLAYER_ID => "10-13"],
+                [ApiParameters::PLAYER_ID],
+                'SELECT address FROM player_address WHERE player_id = :player_id',
+                true,
+                false,
+                [],
+                Response::HTTP_OK,
+                0,
+                [],
+            ]
         ];
     }
 }

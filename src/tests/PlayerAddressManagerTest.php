@@ -9,8 +9,6 @@ use App\Manager\PlayerAddressManager;
 use App\Manager\SignatureValidationManager;
 use App\Repository\PlayerAddressPendingRepository;
 use App\Repository\PlayerAddressRepository;
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -418,94 +416,6 @@ class PlayerAddressManagerTest extends KernelTestCase
                     'ip' => '127.0.0.1',
                     'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0'
                 ]
-            ]
-        ];
-    }
-
-    /**
-     * @dataProvider getAddressListProvider
-     * @param string $player_id
-     * @param bool $playerExists
-     * @param int $expectedHttpStatusCode
-     * @param int $expectedErrorCount
-     * @param mixed $expectedData
-     * @return void
-     * @throws Exception
-     */
-    public function testGetAddressList(
-        string $player_id,
-        bool $playerExists,
-        int $expectedHttpStatusCode,
-        int $expectedErrorCount,
-        mixed $expectedData
-    ): void
-    {
-        // (1) boot the Symfony kernel
-        self::bootKernel();
-
-        // (2) use static::getContainer() to access the service container
-        $container = static::getContainer();
-
-        $connectionMock = $this->createMock(Connection::class);
-        $connectionMock->expects($this->exactly($expectedErrorCount > 0 ? 0 : 1))
-            ->method('fetchAllAssociative')
-            ->with($this->anything(), ['player_id' => $player_id])
-            ->willReturn($playerExists
-                ? [[
-                    'address' => 'structs13nwzm5dfd26ue74jr6sc39gyn3qze0rjr9l9fz',
-                    'block_time' => '2024-12-24 01:13:01.484609+00',
-                    'ip' => '127.0.0.1',
-                    'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0',
-                ]]
-                : []
-            );
-
-        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
-        $entityManagerStub->method('getConnection')
-            ->willReturn($connectionMock);
-
-        $validator = $container->get(ValidatorInterface::class);
-
-        $playerAddressManager = new PlayerAddressManager(
-            $entityManagerStub,
-            $validator
-        );
-        $response = $playerAddressManager->getAddressList($player_id);
-        $responseContent = json_decode($response->getContent(), true);
-
-        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
-        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
-        $this->assertSame($expectedData, $responseContent['data']);
-    }
-
-    public function getAddressListProvider() : array
-    {
-        return [
-            'bad player_id' => [
-                '!#$#%#$%@$%',
-                false,
-                Response::HTTP_BAD_REQUEST,
-                1,
-                null
-            ],
-            'unknown player' => [
-                "1-47634",
-                false,
-                Response::HTTP_OK,
-                0,
-                []
-            ],
-            'valid player' => [
-                "1-13",
-                true,
-                Response::HTTP_OK,
-                0,
-                [[
-                    'address' => 'structs13nwzm5dfd26ue74jr6sc39gyn3qze0rjr9l9fz',
-                    'block_time' => '2024-12-24 01:13:01.484609+00',
-                    'ip' => '127.0.0.1',
-                    'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0',
-                ]]
             ]
         ];
     }
