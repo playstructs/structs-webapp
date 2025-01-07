@@ -143,7 +143,7 @@ class PlayerAddressManager
             $playerAddressPending->getAddress(),
             $playerAddressPending->getPubkey(),
             $playerAddressPending->getSignature(),
-            $signatureValidationManager->buildGuildMembershipJoinProxyMessage(
+            $signatureValidationManager->buildGuildMembershipJoinProxyMessage( // TODO: find out what the actual message is
                 $parsedRequest->params->guild_id,
                 $playerAddressPending->getAddress(),
                 0

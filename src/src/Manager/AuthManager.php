@@ -218,6 +218,7 @@ class AuthManager
         $playerAddress = $playerAddressRepo->findOneBy([
             'address' => $parsedRequest->params->address,
             'guild_id' => $parsedRequest->params->guild_id,
+            'status' => 'approved'
         ]);
 
         if (!$playerAddress) {

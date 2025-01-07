@@ -39,6 +39,6 @@ class SignatureValidationManager
     }
 
     public function buildLoginMessage(string $guildId, string $address):string {
-        return "GUILD{$guildId}ADDRESS{$address}";
+        return "LOGIN_GUILD{$guildId}ADDRESS{$address}";
     }
 }
