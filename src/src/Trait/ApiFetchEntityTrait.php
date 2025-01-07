@@ -44,14 +44,9 @@ trait ApiFetchEntityTrait
         /** @var AbstractEntity|null $resource */
         $resource = $repository->findOneBy($criteria);
 
-        if ($resource === null) {
-            $responseContent->errors = ['resource_not_found' => "{$this->getClassShortName($targetResourceClassName)} not found"];
-            return new JsonResponse($responseContent, Response::HTTP_NOT_FOUND);
-        }
-
         $responseContent->data = $resource;
 
-        if (count($returnFields) > 0) {
+        if ($resource !== null && count($returnFields) > 0) {
             $data = [];
             foreach ($returnFields as $field) {
                 $data[$field] = $resource->get($field);

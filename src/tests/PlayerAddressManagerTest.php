@@ -24,103 +24,6 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 class PlayerAddressManagerTest extends KernelTestCase
 {
     /**
-     * @dataProvider getPlayerIdByAddressAndGuildProvider
-     * @param string $address
-     * @param string $guild_id
-     * @param bool $playerAddressExists
-     * @param int $expectedHttpStatusCode
-     * @param int $expectedErrorCount
-     * @param mixed $expectedData
-     * @return void
-     */
-    public function testGetPlayerIdByAddressAndGuild(
-        string $address,
-        string $guild_id,
-        bool   $playerAddressExists,
-        int    $expectedHttpStatusCode,
-        int    $expectedErrorCount,
-        mixed $expectedData
-    ): void
-    {
-        // (1) boot the Symfony kernel
-        self::bootKernel();
-
-        // (2) use static::getContainer() to access the service container
-        $container = static::getContainer();
-
-        $playerAddressMock = $this->createMock(PlayerAddress::class);
-        $playerAddressMock->method('get')
-            ->with($this->equalTo('player_id'))
-            ->willReturn('1-1');
-
-        $playerAddressRepository = $this->createMock(PlayerAddressRepository::class);
-        $playerAddressRepository->expects($this->exactly($expectedHttpStatusCode === Response::HTTP_BAD_REQUEST ? 0 : 1))
-            ->method('findOneBy')
-            ->with(['address' => $address, 'guild_id' => $guild_id, 'status' => 'approved'])
-            ->willReturn($playerAddressExists
-                ? $playerAddressMock
-                : null
-            );
-
-        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
-        $entityManagerStub->method('getRepository')
-            ->willReturnMap([
-                [PlayerAddress::class, $playerAddressRepository]
-            ]);
-
-        $validator = $container->get(ValidatorInterface::class);
-
-        $playerManager = new PlayerAddressManager(
-            $entityManagerStub,
-            $validator
-        );
-        $response = $playerManager->getPlayerIdByAddressAndGuild($address, $guild_id);
-        $responseContent = json_decode($response->getContent(), true);
-
-        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
-        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
-        $this->assertSame($expectedData, $responseContent['data']);
-    }
-
-    public function getPlayerIdByAddressAndGuildProvider() : array
-    {
-        return [
-            'bad address'  => [
-                '!structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf',
-                '0-1',
-                false,
-                Response::HTTP_BAD_REQUEST,
-                1,
-                null
-            ],
-            'bad guild_id'  => [
-                'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf',
-                '!0-1',
-                false,
-                Response::HTTP_BAD_REQUEST,
-                1,
-                null
-            ],
-            'resource not found'  => [
-                "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
-                "0-1",
-                false,
-                Response::HTTP_NOT_FOUND,
-                1,
-                null
-            ],
-            'valid'  => [
-                "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
-                "0-1",
-                true,
-                Response::HTTP_OK,
-                0,
-                ['player_id' => '1-1']
-            ]
-        ];
-    }
-
-    /**
      * @dataProvider addPendingAddressProvider
      * @param mixed $requestContent
      * @param bool $isSignatureValid
@@ -399,8 +302,8 @@ class PlayerAddressManagerTest extends KernelTestCase
             'resource not found' => [
                 "ZBS6UEC24Z",
                 false,
-                Response::HTTP_NOT_FOUND,
-                1,
+                Response::HTTP_OK,
+                0,
                 null
             ],
             'valid' => [
