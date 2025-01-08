@@ -23,6 +23,9 @@ class ApiRequestParamsDto
     public ?string $pfp = null;
 
     #[Assert\Regex(RegexPattern::ID)]
+    public ?string $planet_id = null;
+
+    #[Assert\Regex(RegexPattern::ID)]
     public ?string $player_id = null;
 
     #[Assert\Regex(RegexPattern::ADDRESS)]

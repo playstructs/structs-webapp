@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Manager\PlayerManager;
+use App\Manager\PlanetManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -10,23 +10,22 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-class PlayerController extends AbstractController
+class PlanetController extends AbstractController
 {
     /**
-     * @param string $player_id
+     * @param string $planet_id
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator
      * @return Response
      * @throws Exception
      */
-    #[Route('/api/player/{player_id}', name: 'api_get_player', methods: ['GET'])]
-    public function getPlayer(
-        string $player_id,
+    #[Route('/api/planet/{planet_id}', name: 'api_get_planet', methods: ['GET'])]
+    public function getPlanet(
+        string $planet_id,
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
-    ): Response
-    {
-        $playerManager = new PlayerManager($entityManager, $validator);
-        return $playerManager->getPlayer($player_id);
+    ): Response {
+        $planetManager = new PlanetManager($entityManager, $validator);
+        return $planetManager->getPlanet($planet_id);
     }
 }
