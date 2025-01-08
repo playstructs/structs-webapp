@@ -3,7 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\PlayerPendingRepository;
-use DateMalformedStringException;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PlayerPendingRepository::class)]
@@ -112,14 +111,9 @@ class PlayerPending extends AbstractEntity
         return $this->created_at;
     }
 
-    /**
-     * @param string $datetime
-     * @return $this
-     * @throws DateMalformedStringException
-     */
-    public function setCreatedAt(string $datetime): static
+    public function setCreatedAt(string $created_at): static
     {
-        $this->created_at = $this->formatTimestamp($datetime);
+        $this->created_at = $created_at;
 
         return $this;
     }
@@ -129,14 +123,9 @@ class PlayerPending extends AbstractEntity
         return $this->updated_at;
     }
 
-    /**
-     * @param string $datetime
-     * @return $this
-     * @throws DateMalformedStringException
-     */
-    public function setUpdatedAt(string $datetime): static
+    public function setUpdatedAt(string $updated_at): static
     {
-        $this->updated_at = $this->formatTimestamp($datetime);
+        $this->updated_at = $updated_at;
 
         return $this;
     }

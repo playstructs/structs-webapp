@@ -11,7 +11,6 @@ use App\Factory\PlayerPendingFactory;
 use App\Repository\PlayerAddressRepository;
 use App\Security\PlayerAuthenticator;
 use App\Util\ConstraintViolationUtil;
-use DateMalformedStringException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -77,7 +76,6 @@ class AuthManager
     ): Response {
 
         $responseContent = new ApiResponseContentDto();
-        $playerPending = null;
         $playerPendingRepository = $this->entityManager->getRepository(PlayerPending::class);
 
         /** @var PlayerAddressRepository $playerAddressRepository */
@@ -103,22 +101,7 @@ class AuthManager
             );
         }
 
-        try {
-
-            $playerPending = $playerPendingFactory->makeFromRequestParams($parsedRequest->params);
-
-        } catch (DateMalformedStringException $e) {
-
-            $responseContent->errors  = ["date_malformed_string" => $e->getMessage()];
-
-        }
-
-        if (count($responseContent->errors) > 0) {
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_BAD_REQUEST
-            );
-        }
+        $playerPending = $playerPendingFactory->makeFromRequestParams($parsedRequest->params);
 
         if (!$this->signatureValidationManager->validate(
             $playerPending->getPrimaryAddress(),

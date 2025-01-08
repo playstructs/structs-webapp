@@ -11,7 +11,6 @@ use App\Repository\PlayerAddressRepository;
 use App\Trait\ApiSqlQueryTrait;
 use App\Trait\ApiFetchEntityTrait;
 use App\Util\ConstraintViolationUtil;
-use DateMalformedStringException;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -96,7 +95,6 @@ class PlayerAddressManager
         SignatureValidationManager $signatureValidationManager
     ): Response {
         $responseContent = new ApiResponseContentDto();
-        $playerAddressPending = null;
         $playerAddressPendingRepository = $this->entityManager->getRepository(PlayerAddressPending::class);
 
         /** @var PlayerAddressRepository $playerAddressRepository */
@@ -122,22 +120,7 @@ class PlayerAddressManager
             );
         }
 
-        try {
-
-            $playerAddressPending = $playerAddressPendingFactory->makeFromRequestParams($parsedRequest->params);
-
-        } catch (DateMalformedStringException $e) {
-
-            $responseContent->errors  = ["date_malformed_string" => $e->getMessage()];
-
-        }
-
-        if (count($responseContent->errors) > 0) {
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_BAD_REQUEST
-            );
-        }
+        $playerAddressPending = $playerAddressPendingFactory->makeFromRequestParams($parsedRequest->params);
 
         if (!$signatureValidationManager->validate(
             $playerAddressPending->getAddress(),

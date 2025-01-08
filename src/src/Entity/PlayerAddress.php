@@ -3,7 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\PlayerAddressRepository;
-use DateMalformedStringException;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PlayerAddressRepository::class)]
@@ -83,12 +82,9 @@ class PlayerAddress extends AbstractEntity
         return $this->created_at;
     }
 
-    /**
-     * @throws DateMalformedStringException
-     */
     public function setCreatedAt(string $created_at): static
     {
-        $this->created_at = $this->formatTimestamp($created_at);
+        $this->created_at = $created_at;
 
         return $this;
     }
@@ -98,14 +94,9 @@ class PlayerAddress extends AbstractEntity
         return $this->updated_at;
     }
 
-    /**
-     * @param string $updated_at
-     * @return $this
-     * @throws DateMalformedStringException
-     */
     public function setUpdatedAt(string $updated_at): static
     {
-        $this->updated_at = $this->formatTimestamp($updated_at);
+        $this->updated_at = $updated_at;
 
         return $this;
     }
