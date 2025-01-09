@@ -28,4 +28,21 @@ class PlanetController extends AbstractController
         $planetManager = new PlanetManager($entityManager, $validator);
         return $planetManager->getPlanet($planet_id);
     }
+
+    /**
+     * @param string $planet_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/planet/{planet_id}/shield/health', name: 'api_get_planetary_shield_health', methods: ['GET'])]
+    public function getPlanetaryShieldHealth(
+        string $planet_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $planetManager = new PlanetManager($entityManager, $validator);
+        return $planetManager->getPlanetaryShieldHealth($planet_id);
+    }
 }

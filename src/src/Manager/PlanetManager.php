@@ -7,6 +7,7 @@ use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -75,5 +76,69 @@ class PlanetManager
             $requestParams,
             $requiredFields
         );
+    }
+
+    public function calcPlanetaryShieldHealth(
+        int $planetaryShield,
+        int $blockStartRaid,
+        int $currentBlock
+    ): int {
+        $scale = 8;
+        $planetaryShield = strval(max($planetaryShield, 1));
+        $blockStartRaid = strval($blockStartRaid);
+        $currentBlock = strval($currentBlock);
+        // min((1 - ($currentBlock - $blockStartRaid) / $planetaryShield) * 100, 0)
+        $health = bcmul(bcsub('1', bcdiv(bcsub($currentBlock, $blockStartRaid, $scale), $planetaryShield, $scale), $scale), 100, $scale);
+        return ceil(max($health, 0));
+    }
+
+    /**
+     * @param string $planet_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getPlanetaryShieldHealth(string $planet_id): Response
+    {
+        $query = '
+            SELECT
+              pa_ps.val AS planetary_shield ,
+              pa_bsr.val AS block_start_raid,
+              cb.height AS current_block
+            FROM planet_attribute pa_ps
+            INNER JOIN planet_attribute pa_bsr
+              ON pa_ps.object_id= pa_bsr.object_id
+            CROSS JOIN current_block cb
+            WHERE 
+              pa_ps.object_id = :planet_id
+              AND pa_ps.attribute_type = \'planetaryShield\'
+              AND pa_bsr.attribute_type = \'blockStartRaid\'
+        ';
+
+        $requestParams = [ApiParameters::PLANET_ID => $planet_id];
+        $requiredFields = [ApiParameters::PLANET_ID];
+
+        /** @var JsonResponse $response */
+        $response = $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+
+        $responseContent = json_decode($response->getContent(), true);
+
+        if ($responseContent['success'] === false || empty($responseContent['data'])) {
+            return $response;
+        }
+
+        $responseContent['data'] = ['health' => $this->calcPlanetaryShieldHealth(
+            $responseContent['data']['planetary_shield'],
+            $responseContent['data']['block_start_raid'],
+            $responseContent['data']['current_block']
+        )];
+        $response->setData($responseContent);
+
+        return $response;
     }
 }
