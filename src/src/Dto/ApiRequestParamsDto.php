@@ -13,11 +13,17 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::CODE)]
     public ?string $code = null;
 
+    #[Assert\Choice(['0', '1'])]
+    public ?string $fleet_away_only = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $guild_id = null;
 
     #[Assert\Regex(RegexPattern::INET)]
     public ?string $ip = null;
+
+    #[Assert\Regex(RegexPattern::INT)]
+    public ?string $min_ore = null;
 
     #[Assert\Json]
     public ?string $pfp = null;
@@ -33,6 +39,9 @@ class ApiRequestParamsDto
 
     #[Assert\Regex(RegexPattern::PUBKEY)]
     public ?string $pubkey = null;
+
+    #[Assert\Regex(RegexPattern::SEARCH_STRING)]
+    public ?string $search_string = null;
 
     #[Assert\Regex(RegexPattern::SIGNATURE)]
     public ?string $signature = null;

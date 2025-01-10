@@ -8,9 +8,13 @@ class ApiParameters
 
     const string CODE = 'code';
 
+    const string FLEET_AWAY_ONLY = 'fleet_away_only';
+
     const string GUILD_ID = 'guild_id';
 
     const string IP = 'ip';
+
+    const string MIN_ORE = 'min_ore';
 
     const string PFP = 'pfp';
 
@@ -21,6 +25,8 @@ class ApiParameters
     const string PRIMARY_ADDRESS = 'primary_address';
 
     const string PUBKEY = 'pubkey';
+
+    const string SEARCH_STRING = 'search_string';
 
     const string SIGNATURE = 'signature';
 

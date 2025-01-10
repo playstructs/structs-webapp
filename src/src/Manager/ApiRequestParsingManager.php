@@ -23,6 +23,18 @@ class ApiRequestParsingManager
         $this->constraintViolationUtil = $constraintViolationUtil;
     }
 
+    public function filterRequestParams(
+        Request $request,
+        array $filterParams
+    ): Request {
+        foreach ($filterParams as $param => $filterPattern) {
+            $value = $request->query->get($param);
+            $value = preg_replace($filterPattern, '', $value);
+            $request->query->set($param, $value);
+        }
+        return $request;
+    }
+
     public function parseJsonRequest(
         Request $request,
         array $requiredParams,

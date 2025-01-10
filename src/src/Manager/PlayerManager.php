@@ -3,10 +3,14 @@
 namespace App\Manager;
 
 use App\Constant\ApiParameters;
+use App\Constant\RegexPattern;
+use App\Dto\ApiResponseContentDto;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -110,5 +114,128 @@ class PlayerManager
             $requestParams,
             $requiredFields
         );
+    }
+
+    /**
+     * @param Request $request
+     * @return Response
+     * @throws Exception
+     */
+    public function raidSearch(Request $request): Response
+    {
+        $apiFilterParams = [
+            ApiParameters::SEARCH_STRING => RegexPattern::SEARCH_STRING_FILTER
+        ];
+
+        $request = $this->apiRequestParsingManager->filterRequestParams(
+            $request,
+            $apiFilterParams
+        );
+
+        $apiRequestParams = [
+            ApiParameters::GUILD_ID => $request->query->get(ApiParameters::GUILD_ID),
+            ApiParameters::MIN_ORE => $request->query->get(ApiParameters::MIN_ORE),
+            ApiParameters::SEARCH_STRING => $request->query->get(ApiParameters::SEARCH_STRING),
+            ApiParameters::FLEET_AWAY_ONLY => $request->query->get(ApiParameters::FLEET_AWAY_ONLY),
+        ];
+        $apiRequiredParams = [];
+        $apiOptionalParams = [
+            ApiParameters::GUILD_ID,
+            ApiParameters::MIN_ORE,
+            ApiParameters::SEARCH_STRING,
+            ApiParameters::FLEET_AWAY_ONLY
+        ];
+
+        $parsedRequest = $this->apiRequestParsingManager->parse(
+            $apiRequestParams,
+            $apiRequiredParams,
+            $apiOptionalParams
+        );
+
+        $responseContent = new ApiResponseContentDto();
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $queryGuildIdFilter = '';
+        $queryFleetAwayFilter = '';
+        $querySearchFilter = '';
+
+        $queryParams = ['min_ore' => $parsedRequest->params->min_ore ?? 0];
+
+        if (isset($parsedRequest->params->guild_id)) {
+            $queryParams['guild_id'] = $parsedRequest->params->guild_id;
+            $queryGuildIdFilter = ' AND p.guild_id = :guild_id ';
+        }
+
+        if (
+            isset($parsedRequest->params->fleet_away_only)
+            && $parsedRequest->params->fleet_away_only === '1'
+        ) {
+            $queryFleetAwayFilter = ' AND f.status = \'away\' ';
+        }
+
+        if (isset($parsedRequest->params->search_string)) {
+            $queryParams['search_string'] = "%{$parsedRequest->params->search_string}%";
+            $querySearchFilter = "
+                AND (
+                    p.id LIKE :search_string
+                    OR pm.username LIKE :search_string
+                    OR pa.address LIKE :search_string
+                )
+            ";
+        }
+
+        $query = "
+            SELECT
+              p.id,
+              pm.username,
+              pm.pfp,
+              gm.name AS guild_name,
+              gm.tag,
+              f.status,
+              COALESCE(planet_ore.val, 0) AS undiscovered_ore,
+              COALESCE(player_ore.val, 0) AS ore
+            FROM player p
+            INNER JOIN player_address pa
+              ON p.id = pa.player_id
+            INNER JOIN fleet f
+              ON p.fleet_id = f.id
+            LEFT JOIN player_meta pm
+              ON p.id = pm.id
+              AND p.guild_id = pm.guild_id
+            LEFT JOIN guild_meta gm
+              ON p.guild_id = gm.id
+            LEFT JOIN grid AS planet_ore
+              ON planet_ore.object_id = p.planet_id
+              AND planet_ore.attribute_type='ore'
+            LEFT JOIN grid AS player_ore
+              ON player_ore.object_id = p.id
+              AND player_ore.attribute_type='ore'
+            WHERE
+              player_ore.val >= :min_ore
+              $queryGuildIdFilter
+              $queryFleetAwayFilter
+              $querySearchFilter
+            GROUP BY
+              p.id,
+              pm.username,
+              pm.pfp,
+              guild_name,
+              gm.tag,
+              f.status,
+              undiscovered_ore,
+              ore
+        ";
+
+        $db = $this->entityManager->getConnection();
+        $result = $db->fetchAllAssociative($query, $queryParams);
+
+        $responseContent->data = $result;
+        $responseContent->success = true;
+
+        return new JsonResponse($responseContent, Response::HTTP_OK);
     }
 }
