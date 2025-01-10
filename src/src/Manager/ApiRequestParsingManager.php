@@ -29,8 +29,10 @@ class ApiRequestParsingManager
     ): Request {
         foreach ($filterParams as $param => $filterPattern) {
             $value = $request->query->get($param);
-            $value = preg_replace($filterPattern, '', $value);
-            $request->query->set($param, $value);
+            if ($value !== null) {
+                $value = preg_replace($filterPattern, '', $value);
+                $request->query->set($param, $value);
+            }
         }
         return $request;
     }

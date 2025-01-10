@@ -1,7 +1,5 @@
 <?php declare(strict_types=1);
 
-namespace App\Tests;
-
 use App\Entity\Player;
 use App\Entity\PlayerAddress;
 use App\Entity\PlayerPending;

@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Tests;
-
 use App\Entity\AbstractEntity;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 

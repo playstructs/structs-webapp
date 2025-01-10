@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Tests;
-
 use App\Constant\ApiParameters;
 use App\Manager\ApiRequestParsingManager;
 use App\Trait\ApiSqlQueryTrait;

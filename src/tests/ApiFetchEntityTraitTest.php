@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Tests;
-
 use App\Constant\ApiParameters;
 use App\Entity\PlayerAddress;
 use App\Manager\ApiRequestParsingManager;

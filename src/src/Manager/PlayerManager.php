@@ -177,7 +177,10 @@ class PlayerManager
             $queryFleetAwayFilter = ' AND f.status = \'away\' ';
         }
 
-        if (isset($parsedRequest->params->search_string)) {
+        if (
+            isset($parsedRequest->params->search_string)
+            && $parsedRequest->params->search_string !== ''
+        ) {
             $queryParams['search_string'] = "%{$parsedRequest->params->search_string}%";
             $querySearchFilter = "
                 AND (

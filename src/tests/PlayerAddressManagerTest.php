@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Tests;
-
 use App\Entity\PlayerAddress;
 use App\Entity\PlayerAddressPending;
 use App\Factory\PlayerAddressPendingFactory;
