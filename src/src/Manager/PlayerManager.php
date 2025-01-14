@@ -284,4 +284,62 @@ class PlayerManager
             $requiredFields
         );
     }
+
+    /**
+     * @param Request $request
+     * @return Response
+     * @throws Exception
+     */
+    public function updateUsername(Request $request): Response {
+        $responseContent = new ApiResponseContentDto();
+
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest(
+            $request,
+            [
+                ApiParameters::USERNAME
+            ],
+            [],
+            true
+        );
+
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $session = $request->getSession();
+        $player_id = $session->get('player_id');
+
+        $query = '
+            INSERT
+            INTO player_meta(id, guild_id, username, created_at, updated_at)
+            (
+                SELECT
+                    p.id,
+                    p.guild_id,
+                    :username AS "username",
+                    NOW() AS "created_at",
+                    NOW() AS "updated_at"
+                FROM player p
+                WHERE p.id = :player_id
+                LIMIT 1
+            )
+            ON CONFLICT (id, guild_id) DO UPDATE
+              SET 
+                username = :username,
+                updated_at = NOW();
+        ';
+
+        $db = $this->entityManager->getConnection();
+        $rowsAffected = $db->executeStatement($query, [
+            'player_id' => $player_id,
+            'username' => $parsedRequest->params->username
+        ]);
+
+        $responseContent->data = ['rows_affected' => $rowsAffected];
+        $responseContent->success = $rowsAffected === 1;
+
+        return new JsonResponse($responseContent, Response::HTTP_OK);
+    }
 }

@@ -22,5 +22,5 @@ class RegexPattern
 
     public const string SIGNATURE = '/^[a-zA-Z0-9]+$/';
 
-    public const string USERNAME = '/^[\p{L}0-9-_]{1,20}$/';
+    public const string USERNAME = '/^[\p{L}0-9-_]{3,20}$/';
 }

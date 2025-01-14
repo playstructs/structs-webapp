@@ -66,4 +66,21 @@ class PlayerController extends AbstractController
         $playerManager = new PlayerManager($entityManager, $validator);
         return $playerManager->getInfusionByPlayerId($player_id);
     }
+
+    /**
+     * @param Request $request
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/player/username', name: 'api_update_player_username', methods: ['PUT'])]
+    public function updatePlayerUsername(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerManager = new PlayerManager($entityManager, $validator);
+        return $playerManager->updateUsername($request);
+    }
 }
