@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class PlayerTest extends KernelTestCase
@@ -167,5 +168,126 @@ class PlayerTest extends KernelTestCase
         ];
     }
 
+    /**
+     * @dataProvider updateUsernameProvider
+     * @param array $requestContent
+     * @param bool $isStatementExecutionExpected
+     * @param array $expectedQueryParams
+     * @param int $rowsAffected
+     * @param string|null $sessionPlayerId
+     * @param int $expectedHttpStatusCode
+     * @param int $expectedErrorCount
+     * @param mixed $expectedData
+     * @return void
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function testUpdateUsername(
+        array $requestContent,
+        bool $isStatementExecutionExpected,
+        array $expectedQueryParams,
+        int $rowsAffected,
+        string|null $sessionPlayerId,
+        int $expectedHttpStatusCode,
+        int $expectedErrorCount,
+        mixed $expectedData
+    ): void
+    {
+        // (1) boot the Symfony kernel
+        self::bootKernel();
 
+        // (2) use static::getContainer() to access the service container
+        $container = static::getContainer();
+
+        $connectionMock = $this->createMock(Connection::class);
+        $connectionMock->expects($this->exactly($isStatementExecutionExpected ? 1 : 0))
+            ->method('executeStatement')
+            ->with($this->anything(), $expectedQueryParams)
+            ->willReturn($rowsAffected);
+
+        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
+        $entityManagerStub->method('getConnection')
+            ->willReturn($connectionMock);
+
+        $manager = new PlayerManager(
+            $entityManagerStub,
+            $container->get(ValidatorInterface::class),
+        );
+
+        $session = $this->createStub(SessionInterface::class);
+        $session->method('get')
+            ->willReturn($sessionPlayerId);
+
+        $request = Request::create('/api/player/username', 'PUT', [], [], [] ,[], json_encode($requestContent));
+        $request->setSession($session);
+
+        $response = $manager->updateUsername($request);
+
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
+        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
+        $this->assertSame($expectedData, $responseContent['data']);
+    }
+
+    public function updateUsernameProvider() : array
+    {
+        return [
+//            'test case' => [
+//                'requestContent',
+//                'isStatementExecutionExpected',
+//                'expectedQueryParams',
+//                'rowsAffected',
+//                'sessionPlayerId',
+//                'expectedHttpStatusCode',
+//                'expectedErrorCount',
+//                'expectedData'
+//            ],
+            'missing username' => [
+                [],
+                false,
+                [],
+                0,
+                '1-1',
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
+            'bad username' => [
+                ['username' => '!my new username'],
+                false,
+                [],
+                0,
+                '1-1',
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
+            'missing session player_id' => [
+                ['username' => 'my_new_username'],
+                true,
+                [
+                    'player_id' => null,
+                    'username' => 'my_new_username'
+                ],
+                0,
+                null,
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                1,
+                ['rows_affected' => 0]
+            ],
+            'valid' => [
+                ['username' => 'my_new_username'],
+                true,
+                [
+                    'player_id' => '1-1',
+                    'username' => 'my_new_username'
+                ],
+                1,
+                '1-1',
+                Response::HTTP_OK,
+                0,
+                ['rows_affected' => 1]
+            ]
+        ];
+    }
 }

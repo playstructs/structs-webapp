@@ -339,7 +339,13 @@ class PlayerManager
 
         $responseContent->data = ['rows_affected' => $rowsAffected];
         $responseContent->success = $rowsAffected === 1;
+        $status = Response::HTTP_OK;
 
-        return new JsonResponse($responseContent, Response::HTTP_OK);
+        if (!$responseContent->success) {
+            $responseContent->errors = ['inconsistent_data' => 'Logged in player not found in DB.'];
+            $status = Response::HTTP_INTERNAL_SERVER_ERROR;
+        }
+
+        return new JsonResponse($responseContent, $status);
     }
 }
