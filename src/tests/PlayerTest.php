@@ -48,7 +48,7 @@ class PlayerTest extends KernelTestCase
             $container->get(ValidatorInterface::class),
         );
 
-        $request = Request::create('/api/raid/players' . $requestQueryString);
+        $request = Request::create('/api/player/raid/search' . $requestQueryString);
         $response = $manager->raidSearch($request);
 
         $responseContent = json_decode($response->getContent(), true);
@@ -115,7 +115,8 @@ class PlayerTest extends KernelTestCase
                 '?search_string=1-13',
                 [
                     'min_ore' => '0',
-                    'search_string' => '%1-13%'
+                    'search_string' => '1-13',
+                    'like_search_string' => '%1-13%'
                 ],
                 Response::HTTP_OK,
                 0
@@ -124,7 +125,8 @@ class PlayerTest extends KernelTestCase
                 '?search_string=Zero-C00l',
                 [
                     'min_ore' => '0',
-                    'search_string' => '%Zero-C00l%'
+                    'search_string' => 'Zero-C00l',
+                    'like_search_string' => '%Zero-C00l%',
                 ],
                 Response::HTTP_OK,
                 0
@@ -133,7 +135,8 @@ class PlayerTest extends KernelTestCase
                 '?search_string=structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
                 [
                     'min_ore' => '0',
-                    'search_string' => '%structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn%'
+                    'search_string' => 'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
+                    'like_search_string' => '%structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn%'
                 ],
                 Response::HTTP_OK,
                 0
@@ -142,7 +145,8 @@ class PlayerTest extends KernelTestCase
                 '?search_string=Zero C00l!',
                 [
                     'min_ore' => '0',
-                    'search_string' => '%ZeroC00l%'
+                    'search_string' => 'ZeroC00l',
+                    'like_search_string' => '%ZeroC00l%'
                 ],
                 Response::HTTP_OK,
                 0
@@ -160,7 +164,8 @@ class PlayerTest extends KernelTestCase
                 [
                     'min_ore' => '5',
                     'guild_id' => '0-1',
-                    'search_string' => '%Ac1dBurn%'
+                    'search_string' => 'Ac1dBurn',
+                    'like_search_string' => '%Ac1dBurn%'
                 ],
                 Response::HTTP_OK,
                 0
@@ -232,16 +237,6 @@ class PlayerTest extends KernelTestCase
     public function updateUsernameProvider() : array
     {
         return [
-//            'test case' => [
-//                'requestContent',
-//                'isStatementExecutionExpected',
-//                'expectedQueryParams',
-//                'rowsAffected',
-//                'sessionPlayerId',
-//                'expectedHttpStatusCode',
-//                'expectedErrorCount',
-//                'expectedData'
-//            ],
             'missing username' => [
                 [],
                 false,
@@ -287,6 +282,113 @@ class PlayerTest extends KernelTestCase
                 Response::HTTP_OK,
                 0,
                 ['rows_affected' => 1]
+            ]
+        ];
+    }
+
+    /**
+     * @dataProvider transferSearchProvider
+     * @param string $requestQueryString
+     * @param array $expectedQueryParams
+     * @param int $expectedHttpStatusCode
+     * @param int $expectedErrorCount
+     * @return void
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function testTransferSearch(
+        string $requestQueryString,
+        array $expectedQueryParams,
+        int $expectedHttpStatusCode,
+        int $expectedErrorCount
+    ): void
+    {
+        // (1) boot the Symfony kernel
+        self::bootKernel();
+
+        // (2) use static::getContainer() to access the service container
+        $container = static::getContainer();
+
+        $connectionMock = $this->createMock(Connection::class);
+        $connectionMock->expects($this->exactly($expectedErrorCount > 0 ? 0 : 1))
+            ->method('fetchAllAssociative')
+            ->with($this->anything(), $expectedQueryParams)
+            ->willReturn([]);
+
+        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
+        $entityManagerStub->method('getConnection')
+            ->willReturn($connectionMock);
+
+        $manager = new PlayerManager(
+            $entityManagerStub,
+            $container->get(ValidatorInterface::class),
+        );
+
+        $request = Request::create('/api/player/transfer/search' . $requestQueryString);
+        $response = $manager->transferSearch($request);
+
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
+        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
+    }
+
+    public function transferSearchProvider(): array
+    {
+        return [
+            'No Query Params' => [
+                '',
+                [],
+                Response::HTTP_BAD_REQUEST,
+                1
+            ],
+            'Missing search string' => [
+                '?guild_id=1-13',
+                [],
+                Response::HTTP_BAD_REQUEST,
+                1
+            ],
+            'Valid Search String Player ID' => [
+                '?search_string=1-13',
+                [
+                    'search_string' => '1-13',
+                    'like_search_string' => '%1-13%',
+                ],
+                Response::HTTP_OK,
+                0
+            ],
+            'Valid Search String Address' => [
+                '?search_string=structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
+                [
+                    'search_string' => 'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
+                    'like_search_string' => '%structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn%'
+                ],
+                Response::HTTP_OK,
+                0
+            ],
+            'Valid Search String Username' => [
+                '?search_string=Zero C00l!',
+                [
+                    'search_string' => 'ZeroC00l',
+                    'like_search_string' => '%ZeroC00l%'
+                ],
+                Response::HTTP_OK,
+                0
+            ],
+            'Invalid Guild Id' => [
+                '?guild_id=!0-1&search_string=Ac1d Burn',
+                [],
+                Response::HTTP_BAD_REQUEST,
+                1
+            ],
+            'Valid All Query Params' => [
+                '?guild_id=0-1&search_string=Ac1d Burn',
+                [
+                    'guild_id' => '0-1',
+                    'search_string' => 'Ac1dBurn',
+                    'like_search_string' => '%Ac1dBurn%'
+                ],
+                Response::HTTP_OK,
+                0
             ]
         ];
     }

@@ -38,7 +38,7 @@ class PlayerController extends AbstractController
      * @return Response
      * @throws Exception
      */
-    #[Route('/api/raid/players', name: 'api_raid_search', methods: ['GET'])]
+    #[Route('/api/player/raid/search', name: 'api_raid_search', methods: ['GET'])]
     public function raidSearch(
         Request $request,
         EntityManagerInterface $entityManager,
@@ -82,5 +82,23 @@ class PlayerController extends AbstractController
     ): Response {
         $playerManager = new PlayerManager($entityManager, $validator);
         return $playerManager->updateUsername($request);
+    }
+
+    /**
+     * @param Request $request
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/player/transfer/search', name: 'api_transfer_search', methods: ['GET'])]
+    public function transferSearch(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response
+    {
+        $playerManager = new PlayerManager($entityManager, $validator);
+        return $playerManager->transferSearch($request);
     }
 }

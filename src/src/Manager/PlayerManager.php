@@ -181,12 +181,13 @@ class PlayerManager
             isset($parsedRequest->params->search_string)
             && $parsedRequest->params->search_string !== ''
         ) {
-            $queryParams['search_string'] = "%{$parsedRequest->params->search_string}%";
+            $queryParams['search_string'] = $parsedRequest->params->search_string;
+            $queryParams['like_search_string'] = "%{$parsedRequest->params->search_string}%";
             $querySearchFilter = "
                 AND (
-                    p.id LIKE :search_string
-                    OR pm.username LIKE :search_string
-                    OR pa.address LIKE :search_string
+                    p.id = :search_string
+                    OR pm.username ILIKE :like_search_string
+                    OR pa.address = :search_string
                 )
             ";
         }
@@ -202,9 +203,9 @@ class PlayerManager
               COALESCE(planet_ore.val, 0) AS undiscovered_ore,
               COALESCE(player_ore.val, 0) AS ore
             FROM player p
-            INNER JOIN player_address pa
+            LEFT JOIN player_address pa
               ON p.id = pa.player_id
-            INNER JOIN fleet f
+            LEFT JOIN fleet f
               ON p.fleet_id = f.id
             LEFT JOIN player_meta pm
               ON p.id = pm.id
@@ -218,7 +219,10 @@ class PlayerManager
               ON player_ore.object_id = p.id
               AND player_ore.attribute_type='ore'
             WHERE
-              player_ore.val >= :min_ore
+              (
+                  player_ore.val >= :min_ore
+                  OR (planet_ore.val IS NULL AND 0 = :min_ore)
+              )
               $queryGuildIdFilter
               $queryFleetAwayFilter
               $querySearchFilter
@@ -348,4 +352,109 @@ class PlayerManager
 
         return new JsonResponse($responseContent, $status);
     }
+
+    /**
+     * @param Request $request
+     * @return Response
+     * @throws Exception
+     */
+    public function transferSearch(Request $request): Response
+    {
+        $apiFilterParams = [
+            ApiParameters::SEARCH_STRING => RegexPattern::SEARCH_STRING_FILTER
+        ];
+
+        $request = $this->apiRequestParsingManager->filterRequestParams(
+            $request,
+            $apiFilterParams
+        );
+
+        $apiRequestParams = [
+            ApiParameters::GUILD_ID => $request->query->get(ApiParameters::GUILD_ID),
+            ApiParameters::SEARCH_STRING => $request->query->get(ApiParameters::SEARCH_STRING)
+        ];
+        $apiRequiredParams = [ApiParameters::SEARCH_STRING];
+        $apiOptionalParams = [ApiParameters::GUILD_ID];
+
+        $parsedRequest = $this->apiRequestParsingManager->parse(
+            $apiRequestParams,
+            $apiRequiredParams,
+            $apiOptionalParams
+        );
+
+        $responseContent = new ApiResponseContentDto();
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $queryParams = [
+            'search_string' => $parsedRequest->params->search_string,
+            'like_search_string' => '%' . $parsedRequest->params->search_string . '%'
+        ];
+
+        $queryGuildIdFilter = '';
+
+        if (isset($parsedRequest->params->guild_id)) {
+            $queryParams['guild_id'] = $parsedRequest->params->guild_id;
+            $queryGuildIdFilter = ' AND p.guild_id = :guild_id ';
+        }
+
+        $query = "
+            SELECT
+              p.id,
+              pa.address,
+              pm.username,
+              pm.pfp,
+              gm.name AS guild_name,
+              gm.tag,
+              COALESCE(vpi.balance, 0) as alpha
+            FROM player_address pa
+            LEFT JOIN player p
+              ON p.id = pa.player_id
+            LEFT JOIN player_meta pm
+              ON p.id = pm.id
+              AND p.guild_id = pm.guild_id
+            LEFT JOIN guild_meta gm
+              ON p.guild_id = gm.id
+            LEFT JOIN view.player_inventory vpi
+              ON p.id = vpi.player_id
+              AND vpi.denom = 'alpha'
+            WHERE
+              pa.address = :search_string
+              $queryGuildIdFilter
+            UNION
+            SELECT
+              p.id,
+              p.primary_address AS address,
+              pm.username,
+              pm.pfp,
+              gm.name AS guild_name,
+              gm.tag,
+              COALESCE(vpi.balance, 0) as alpha
+            FROM player p
+            LEFT JOIN player_meta pm
+              ON p.id = pm.id
+              AND p.guild_id = pm.guild_id
+            LEFT JOIN guild_meta gm
+              ON p.guild_id = gm.id
+            LEFT JOIN view.player_inventory vpi
+              ON p.id = vpi.player_id
+              AND vpi.denom = 'alpha'
+            WHERE
+              p.id = :search_string
+              OR pm.username ILIKE :like_search_string
+              $queryGuildIdFilter
+        ";
+
+        $db = $this->entityManager->getConnection();
+        $result = $db->fetchAllAssociative($query, $queryParams);
+
+        $responseContent->data = $result;
+        $responseContent->success = true;
+
+        return new JsonResponse($responseContent, Response::HTTP_OK);
+    }
+
 }
