@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Manager;
+
+use App\Constant\ApiParameters;
+use App\Trait\ApiSqlQueryTrait;
+use App\Util\ConstraintViolationUtil;
+use Doctrine\DBAL\Exception;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+
+class LedgerManager
+{
+    use ApiSqlQueryTrait;
+
+    public EntityManagerInterface $entityManager;
+
+    public ValidatorInterface $validator;
+
+    public ConstraintViolationUtil $constraintViolationUtil;
+
+    public ApiRequestParsingManager $apiRequestParsingManager;
+
+    public function __construct(
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ) {
+        $this->entityManager = $entityManager;
+        $this->validator = $validator;
+        $this->constraintViolationUtil = new ConstraintViolationUtil();
+        $this->apiRequestParsingManager = new ApiRequestParsingManager(
+            $this->validator,
+            $this->constraintViolationUtil
+        );
+    }
+
+    /**
+     * @param string $player_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getTransactions(string $player_id): Response
+    {
+        $query = '
+            SELECT
+              id,
+              l.address,
+              counterparty,
+              amount,
+              denom, 
+              "action",
+              direction,
+              "time"
+            FROM ledger l
+            INNER JOIN player_address pa
+              ON l.address = pa.player_id
+            WHERE pa.player_id = :player_id
+            AND l.action IN (\'sent\', \'received\')
+            AND l.denom = \'alpha\'
+            ORDER BY "time" DESC;
+        ';
+
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        return $this->queryAll(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+}
