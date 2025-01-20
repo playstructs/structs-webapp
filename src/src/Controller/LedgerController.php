@@ -19,7 +19,7 @@ class LedgerController extends AbstractController
      * @return Response
      * @throws Exception
      */
-    #[Route('/api/ledger/player/{player_id}', name: 'app_ledger')]
+    #[Route('/api/ledger/player/{player_id}', name: 'api_get_transactions')]
     public function getTransactions(
         string $player_id,
         EntityManagerInterface $entityManager,
@@ -27,5 +27,22 @@ class LedgerController extends AbstractController
     ): Response {
         $ledgerManager = new LedgerManager($entityManager, $validator);
         return $ledgerManager->getTransactions($player_id);
+    }
+
+    /**
+     * @param string $tx_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/ledger/{tx_id}', name: 'api_get_transaction')]
+    public function getTransaction(
+        string $tx_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $ledgerManager = new LedgerManager($entityManager, $validator);
+        return $ledgerManager->getTransaction($tx_id);
     }
 }

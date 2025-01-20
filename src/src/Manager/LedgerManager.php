@@ -72,4 +72,38 @@ class LedgerManager
             $requiredFields
         );
     }
+
+    /**
+     * @param string $tx_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getTransaction(string $tx_id): Response
+    {
+        $query = '
+            SELECT
+              id,
+              address,
+              counterparty,
+              amount,
+              denom, 
+              "action",
+              direction,
+              "time"
+            FROM ledger
+            WHERE id = :tx_id
+            LIMIT 1;
+        ';
+
+        $requestParams = [ApiParameters::TX_ID => $tx_id];
+        $requiredFields = [ApiParameters::TX_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
 }

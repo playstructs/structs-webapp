@@ -30,6 +30,8 @@ class ApiParameters
 
     const string SIGNATURE = 'signature';
 
+    const string TX_ID = 'tx_id';
+
     const string USER_AGENT = 'user_agent';
 
     const string USERNAME = 'username';
