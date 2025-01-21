@@ -37,8 +37,7 @@ class AuthController extends AbstractController
         ValidatorInterface $validator,
         EntityManagerInterface $entityManager,
         HttpClientInterface $client
-    ): Response
-    {
+    ): Response {
         $authManager = new AuthManager(
             $validator,
             $entityManager,
@@ -66,8 +65,7 @@ class AuthController extends AbstractController
         EntityManagerInterface $entityManager,
         HttpClientInterface $client,
         Security $security
-    ): Response
-    {
+    ): Response {
         $authManager = new AuthManager(
             $validator,
             $entityManager,

@@ -81,16 +81,19 @@ class AuthManager
         /** @var PlayerAddressRepository $playerAddressRepository */
         $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
 
-        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
-            ApiParameters::PRIMARY_ADDRESS,
-            ApiParameters::SIGNATURE,
-            ApiParameters::PUBKEY,
-            ApiParameters::GUILD_ID,
-        ],
-        [
-            ApiParameters::USERNAME,
-            ApiParameters::PFP
-        ]);
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest(
+            $request,
+            [
+                ApiParameters::PRIMARY_ADDRESS,
+                ApiParameters::SIGNATURE,
+                ApiParameters::PUBKEY,
+                ApiParameters::GUILD_ID,
+            ],
+            [
+                ApiParameters::USERNAME,
+                ApiParameters::PFP
+            ]
+        );
 
         $responseContent->errors = $parsedRequest->errors;
 
