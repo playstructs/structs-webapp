@@ -88,7 +88,8 @@ class PlanetManager
         $blockStartRaid = strval($blockStartRaid);
         $currentBlock = strval($currentBlock);
         // min((1 - ($currentBlock - $blockStartRaid) / $planetaryShield) * 100, 0)
-        $health = bcmul(bcsub('1', bcdiv(bcsub($currentBlock, $blockStartRaid, $scale), $planetaryShield, $scale), $scale), 100, $scale);
+        $health = bcmul(bcsub('1', bcdiv(bcsub($currentBlock, $blockStartRaid, $scale), $planetaryShield, $scale),
+            $scale), 100, $scale);
         return ceil(max($health, 0));
     }
 
@@ -132,11 +133,13 @@ class PlanetManager
             return $response;
         }
 
-        $responseContent['data'] = ['health' => $this->calcPlanetaryShieldHealth(
-            $responseContent['data']['planetary_shield'],
-            $responseContent['data']['block_start_raid'],
-            $responseContent['data']['current_block']
-        )];
+        $responseContent['data'] = [
+            'health' => $this->calcPlanetaryShieldHealth(
+                $responseContent['data']['planetary_shield'],
+                $responseContent['data']['block_start_raid'],
+                $responseContent['data']['current_block']
+            )
+        ];
         $response->setData($responseContent);
 
         return $response;
