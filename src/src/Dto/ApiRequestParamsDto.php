@@ -46,6 +46,9 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::SIGNATURE)]
     public ?string $signature = null;
 
+    #[Assert\Regex(RegexPattern::ID)]
+    public ?string $struct_id = null;
+
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $tx_id = null;
 

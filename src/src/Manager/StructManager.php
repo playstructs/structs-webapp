@@ -69,4 +69,33 @@ class StructManager
             $requiredFields
         );
     }
+
+    /**
+     * @param string $struct_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getStruct(string $struct_id): Response
+    {
+        $query = '
+            SELECT s.*, COALESCE(sa.val, 0) AS health
+            FROM struct s
+            LEFT JOIN struct_attribute sa
+              ON s.id = sa.object_id
+              AND sa.attribute_type = \'health\'
+            WHERE s.id = :struct_id
+            LIMIT 1;
+        ';
+
+        $requestParams = [ApiParameters::STRUCT_ID => $struct_id];
+        $requiredFields = [ApiParameters::STRUCT_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
 }
