@@ -18,7 +18,7 @@ class GuildController extends AbstractController
      * @return Response
      * @throws Exception
      */
-    #[Route('/api/guild-filter-list', name: 'api_guild_filter_list', methods: ['GET'])]
+    #[Route('/api/guild/name', name: 'api_get_guild_filter_list', methods: ['GET'])]
     public function getGuildFilterList(
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
@@ -67,7 +67,7 @@ class GuildController extends AbstractController
      * @return Response
      * @throws Exception
      */
-    #[Route('/api/guilds/count', name: 'api_count_guilds', methods: ['GET'])]
+    #[Route('/api/guild/count', name: 'api_count_guilds', methods: ['GET'])]
     public function countGuilds(
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
