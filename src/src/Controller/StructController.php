@@ -24,8 +24,7 @@ class StructController extends AbstractController
         string $planet_id,
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
-    ): Response
-    {
+    ): Response {
         $structManager = new StructManager($entityManager, $validator);
         return $structManager->getAllStructsOnPlanet($planet_id);
     }
@@ -40,8 +39,7 @@ class StructController extends AbstractController
     public function getAllStructTypes(
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
-    ): Response
-    {
+    ): Response {
         $structManager = new StructManager($entityManager, $validator);
         return $structManager->getAllStructTypes();
     }
@@ -58,8 +56,7 @@ class StructController extends AbstractController
         string $struct_id,
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
-    ): Response
-    {
+    ): Response {
         $structManager = new StructManager($entityManager, $validator);
         return $structManager->getStruct($struct_id);
     }
