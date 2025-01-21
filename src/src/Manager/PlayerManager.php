@@ -294,7 +294,8 @@ class PlayerManager
      * @return Response
      * @throws Exception
      */
-    public function updateUsername(Request $request): Response {
+    public function updateUsername(Request $request): Response
+    {
         $responseContent = new ApiResponseContentDto();
 
         $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest(
