@@ -44,21 +44,21 @@ class LedgerManager
     {
         $query = '
             SELECT
-              id,
+              l.id,
               l.address,
-              counterparty,
-              amount,
-              denom, 
-              "action",
-              direction,
-              "time"
+              l.counterparty,
+              l.amount,
+              l.denom, 
+              l.action,
+              l.direction,
+              l.time
             FROM ledger l
             INNER JOIN player_address pa
-              ON l.address = pa.player_id
+              ON l.address = pa.address
             WHERE pa.player_id = :player_id
             AND l.action IN (\'sent\', \'received\')
             AND l.denom = \'alpha\'
-            ORDER BY "time" DESC;
+            ORDER BY l.time DESC;
         ';
 
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
