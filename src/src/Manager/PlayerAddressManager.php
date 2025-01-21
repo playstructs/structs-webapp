@@ -100,13 +100,15 @@ class PlayerAddressManager
         /** @var PlayerAddressRepository $playerAddressRepository */
         $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
 
+        // TODO: Code should now be automatically generate by the db
+
         $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
             ApiParameters::ADDRESS,
             ApiParameters::SIGNATURE,
             ApiParameters::PUBKEY,
             ApiParameters::GUILD_ID,
             ApiParameters::CODE,
-        ],[
+        ], [
             ApiParameters::IP,
             ApiParameters::USER_AGENT
         ]);

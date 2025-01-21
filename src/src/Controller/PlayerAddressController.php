@@ -22,7 +22,7 @@ class PlayerAddressController extends AbstractController
 {
     #[Route(
         '/api/player-address/{address}/guild/{guild_id}/player-id',
-        name: 'api_player_address_read_player_id',
+        name: 'api_get_player_id_by_address_and_guild',
         methods: ['GET']
     )]
     public function getPlayerIdByAddressAndGuild(
@@ -48,7 +48,7 @@ class PlayerAddressController extends AbstractController
      */
     #[Route(
         '/api/player-address',
-        name: 'api_player_address_pending_create',
+        name: 'api_add_player_pending_address',
         methods: ['POST']
     )]
     public function addPlayerPendingAddress(
@@ -57,9 +57,9 @@ class PlayerAddressController extends AbstractController
         EntityManagerInterface $entityManager,
         HttpClientInterface $client
     ): Response {
-        $playerManager = new PlayerAddressManager($entityManager, $validator);
+        $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
         $signatureValidationManager = new SignatureValidationManager($client);
-        return $playerManager->addPendingAddress(
+        return $playerAddressManager->addPendingAddress(
             $request,
             new PlayerAddressPendingFactory(),
             $signatureValidationManager
@@ -68,7 +68,7 @@ class PlayerAddressController extends AbstractController
 
     #[Route(
         '/api/player-address/code/{code}',
-        name: 'api_player_address_by_code',
+        name: 'api_get_pending_address_by_code',
         methods: ['GET']
     )]
     public function getPendingAddressByCode(
@@ -88,8 +88,8 @@ class PlayerAddressController extends AbstractController
      * @throws Exception
      */
     #[Route(
-        '/api/player-address-count/{player_id}',
-        name: 'api_player_address_count',
+        '/api/player-address/count/player/{player_id}',
+        name: 'api_count_addresses',
         methods: ['GET']
     )]
     public function countAddresses(
@@ -109,8 +109,8 @@ class PlayerAddressController extends AbstractController
      * @throws Exception
      */
     #[Route(
-        '/api/player-addresses/{player_id}',
-        name: 'api_player_address_list',
+        '/api/player-address/player/{player_id}',
+        name: 'api_get_address_list',
         methods: ['GET']
     )]
     public function getAddressList(
@@ -131,7 +131,7 @@ class PlayerAddressController extends AbstractController
      */
     #[Route(
         '/api/player-address/{address}',
-        name: 'api_player_address_details',
+        name: 'api_get_address_details',
         methods: ['GET']
     )]
     public function getAddressDetails(
