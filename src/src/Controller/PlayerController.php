@@ -48,23 +48,6 @@ class PlayerController extends AbstractController
     }
 
     /**
-     * @param string $player_id
-     * @param EntityManagerInterface $entityManager
-     * @param ValidatorInterface $validator
-     * @return Response
-     * @throws Exception
-     */
-    #[Route('/api/player/{player_id}/infusion', name: 'api_get_infusion_by_player_id', methods: ['GET'])]
-    public function getInfusionByPlayerId(
-        string $player_id,
-        EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
-    ): Response {
-        $playerManager = new PlayerManager($entityManager, $validator);
-        return $playerManager->getInfusionByPlayerId($player_id);
-    }
-
-    /**
      * @param Request $request
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator
