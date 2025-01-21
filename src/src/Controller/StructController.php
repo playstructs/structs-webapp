@@ -19,7 +19,7 @@ class StructController extends AbstractController
      * @return Response
      * @throws Exception
      */
-    #[Route('/api/struct/planet/{planet_id}', name: 'api_get_all_structs_on_planet')]
+    #[Route('/api/struct/planet/{planet_id}', name: 'api_get_all_structs_on_planet', methods: ['GET'])]
     public function getAllStructsOnPlanet(
         string $planet_id,
         EntityManagerInterface $entityManager,
@@ -31,13 +31,29 @@ class StructController extends AbstractController
     }
 
     /**
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/struct/type', name: 'api_get_all_struct_types', methods: ['GET'])]
+    public function getAllStructTypes(
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response
+    {
+        $structManager = new StructManager($entityManager, $validator);
+        return $structManager->getAllStructTypes();
+    }
+
+    /**
      * @param string $struct_id
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator
      * @return Response
      * @throws Exception
      */
-    #[Route('/api/struct/{struct_id}', name: 'api_get_struct')]
+    #[Route('/api/struct/{struct_id}', name: 'api_get_struct', methods: ['GET'])]
     public function getStruct(
         string $struct_id,
         EntityManagerInterface $entityManager,

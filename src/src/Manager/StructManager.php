@@ -98,4 +98,25 @@ class StructManager
             $requiredFields
         );
     }
+
+    /**
+     * @return Response
+     * @throws Exception
+     */
+    public function getAllStructTypes(): Response
+    {
+        $query = '
+            SELECT *
+            FROM struct_type
+            ORDER BY id;
+        ';
+
+        return $this->queryAll(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            [],
+            []
+        );
+    }
 }
