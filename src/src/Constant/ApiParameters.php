@@ -34,6 +34,8 @@ class ApiParameters
 
     const string TX_ID = 'tx_id';
 
+    const string UNIX_TIMESTAMP = 'unix_timestamp';
+
     const string USER_AGENT = 'user_agent';
 
     const string USERNAME = 'username';

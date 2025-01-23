@@ -10,6 +10,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class SignatureValidationManager
 {
+    public const int MSG_EXPIRY_TIME = 600; // Ten minutes
 
     public HttpClientInterface $httpClient;
 
@@ -38,7 +39,15 @@ class SignatureValidationManager
         return "GUILD{$guildId}ADDRESS{$address}NONCE{$nonce}";
     }
 
-    public function buildLoginMessage(string $guildId, string $address):string {
-        return "LOGIN_GUILD{$guildId}ADDRESS{$address}";
+    public function buildLoginMessage(string $guildId, string $address, int $timestamp):string {
+        return "LOGIN_GUILD{$guildId}ADDRESS{$address}DATETIME{$timestamp}";
+    }
+
+    public function buildAddPendingAddressMessage(string $guildId, string $address):string {
+        return "ADD_PENDING_ADDRESS{$address}GUILD{$guildId}";
+    }
+
+    public function isMessageTimeValid(string $messageTimestamp): bool {
+        return (time() - intval($messageTimestamp)) < self::MSG_EXPIRY_TIME;
     }
 }

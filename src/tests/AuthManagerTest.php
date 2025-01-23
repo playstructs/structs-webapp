@@ -319,13 +319,14 @@ class AuthManagerTest extends KernelTestCase
                     "address" => "!structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "!036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
-                    "guild_id" => "0-1"
+                    "guild_id" => "0-1",
+                    "unix_timestamp" => "!1737660606"
                 ],
                 false,
                 false,
                 false,
                 Response::HTTP_UNAUTHORIZED,
-                3
+                4
             ],
             'missing field' => [
                 [
@@ -337,14 +338,15 @@ class AuthManagerTest extends KernelTestCase
                 false,
                 false,
                 Response::HTTP_UNAUTHORIZED,
-                2
+                3
             ],
             'invalid signature'  => [
                 [
                     "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
-                    "guild_id" => "0-1"
+                    "guild_id" => "0-1",
+                    "unix_timestamp" => strval(time())
                 ],
                 false,
                 false,
@@ -357,7 +359,8 @@ class AuthManagerTest extends KernelTestCase
                     "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
-                    "guild_id" => "0-1"
+                    "guild_id" => "0-1",
+                    "unix_timestamp" => strval(time())
                 ],
                 true,
                 false,
@@ -370,11 +373,26 @@ class AuthManagerTest extends KernelTestCase
                     "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
-                    "guild_id" => "0-1"
+                    "guild_id" => "0-1",
+                    "unix_timestamp" => strval(time())
                 ],
                 true,
                 true,
                 false,
+                Response::HTTP_UNAUTHORIZED,
+                1
+            ],
+            'expired message timestamp'  => [
+                [
+                    "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
+                    "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
+                    "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
+                    "guild_id" => "0-1",
+                    "unix_timestamp" => strval(time() - (SignatureValidationManager::MSG_EXPIRY_TIME * 2))
+                ],
+                true,
+                true,
+                true,
                 Response::HTTP_UNAUTHORIZED,
                 1
             ],
@@ -383,7 +401,8 @@ class AuthManagerTest extends KernelTestCase
                     "address" => "structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf",
                     "signature" => "6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601",
                     "pubkey" => "036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222",
-                    "guild_id" => "0-1"
+                    "guild_id" => "0-1",
+                    "unix_timestamp" => strval(time())
                 ],
                 true,
                 true,

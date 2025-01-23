@@ -16,6 +16,9 @@ security:
         api_auth:
             pattern: ^/api/auth/
             security: false
+        api_timestamp:
+            pattern: ^/api/timestamp
+            security: false
         api:
             pattern: ^/api/
             security: true

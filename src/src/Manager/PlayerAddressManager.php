@@ -106,8 +106,7 @@ class PlayerAddressManager
             ApiParameters::ADDRESS,
             ApiParameters::SIGNATURE,
             ApiParameters::PUBKEY,
-            ApiParameters::GUILD_ID,
-            ApiParameters::CODE,
+            ApiParameters::GUILD_ID
         ], [
             ApiParameters::IP,
             ApiParameters::USER_AGENT
@@ -128,10 +127,9 @@ class PlayerAddressManager
             $playerAddressPending->getAddress(),
             $playerAddressPending->getPubkey(),
             $playerAddressPending->getSignature(),
-            $signatureValidationManager->buildGuildMembershipJoinProxyMessage( // TODO: find out what the actual message is
+            $signatureValidationManager->buildAddPendingAddressMessage(
                 $parsedRequest->params->guild_id,
-                $playerAddressPending->getAddress(),
-                0
+                $playerAddressPending->getAddress()
             )
         )) {
             $responseContent->errors = ['signature_validation_failed' => 'Invalid signature'];

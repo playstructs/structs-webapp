@@ -175,20 +175,22 @@ class AuthManager
             ApiParameters::SIGNATURE,
             ApiParameters::PUBKEY,
             ApiParameters::GUILD_ID,
+            ApiParameters::UNIX_TIMESTAMP,
         ]);
 
         $responseContent->errors = $parsedRequest->errors;
 
         if (
             count($responseContent->errors) > 0
+            || !$this->signatureValidationManager->isMessageTimeValid($parsedRequest->params->unix_timestamp)
             || !$this->signatureValidationManager->validate(
                 $parsedRequest->params->address,
                 $parsedRequest->params->pubkey,
                 $parsedRequest->params->signature,
-                $this->signatureValidationManager->buildGuildMembershipJoinProxyMessage( // TODO: Change to buildLoginMessage when proper message is determined
+                $this->signatureValidationManager->buildLoginMessage(
                     $parsedRequest->params->guild_id,
                     $parsedRequest->params->address,
-                    0
+                    $parsedRequest->params->unix_timestamp
                 )
             )
         ) {

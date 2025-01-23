@@ -52,6 +52,9 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $tx_id = null;
 
+    #[Assert\Regex(RegexPattern::INT)]
+    public ?string $unix_timestamp = null;
+
     #[Assert\Length(min: 0, max: 255)]
     public ?string $user_agent = null;
 

@@ -12,7 +12,6 @@ class PlayerAddressPendingFactory
         $playerAddressPending->setAddress($requestParams->address);
         $playerAddressPending->setSignature($requestParams->signature);
         $playerAddressPending->setPubkey($requestParams->pubkey);
-        $playerAddressPending->setCode($requestParams->code);
         $playerAddressPending->setIp($requestParams->ip);
         $playerAddressPending->setUserAgent($requestParams->user_agent);
         return $playerAddressPending;
