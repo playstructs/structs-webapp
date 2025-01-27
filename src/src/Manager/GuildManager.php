@@ -43,13 +43,15 @@ class GuildManager
     {
         $query = '
             SELECT
-              gm.id,
+              g.id,
               gm.name
-            FROM guild_meta gm
+            FROM guild g
+            LEFT JOIN guild_meta gm
+              ON g.id = gm.id
             INNER JOIN player p
-              ON gm.id = p.guild_id
-            GROUP BY gm.id, gm.name
-            ORDER BY gm.name;
+              ON g.id = p.guild_id
+            GROUP BY g.id, gm.name
+            ORDER BY gm.name, g.id;
         ';
 
         return $this->queryAll(
