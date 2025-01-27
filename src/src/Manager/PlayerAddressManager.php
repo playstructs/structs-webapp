@@ -249,11 +249,13 @@ class PlayerAddressManager
     public function getAddressDetails(string $address): Response
     {
         $query = '
-            SELECT pam.ip, pam.user_agent, vpa.permission_assets, vpa.permissions
-            FROM player_address_meta pam
+            SELECT pa.address, pa.player_id, pam.ip, pam.user_agent, vpa.permission_assets, vpa.permissions
+            FROM player_address pa
+            LEFT JOIN player_address_meta pam
+              ON pa.address = pam.address
             LEFT JOIN view.permission_address vpa
-              ON pam.address = vpa.address
-            WHERE pam.address = :address
+              ON pa.address = vpa.address
+            WHERE pa.address = :address
             LIMIT 1;
         ';
         // TODO: Will need to get the location associated with the IP address when GeoIP DB added
