@@ -1,0 +1,25 @@
+{
+  "name": "structs-webapp",
+  "version": "1.0.0",
+  "description": "Structs Game Front-End",
+  "main": "index.js",
+  "directories": {},
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/playstructs/structs-webapp.git"
+  },
+  "keywords": [
+    "structs"
+  ],
+  "author": "Slow Ninja Inc",
+  "license": "ISC",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/playstructs/structs-webapp/issues"
+  },
+  "homepage": "https://github.com/playstructs/structs-webapp#readme",
+  "devDependencies": {
+    "webpack": "^5.97.1"
+  }
+}

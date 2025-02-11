@@ -44,7 +44,22 @@ RUN a2enmod rewrite
 # Copy the source files from the local machine to the container
 COPY ./src /src
 
+# Use bash for the shell
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Create a script file sourced by both interactive and non-interactive bash shells
+RUN touch /root/.bash_env
+RUN echo '. /root/.bash_env' >> ~/.bashrc
+
+# Download and install nvm
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | PROFILE=/root/.bash_env bash
+RUN echo node > .nvmrc
+RUN nvm install 22.14.0
+
 WORKDIR /src
 
-# Install project dependencies
-#RUN bash -c "composer update"
+# Install PHP project dependencies
+#RUN "composer update"
+
+# Install JS project dependencies
+RUN npm install
