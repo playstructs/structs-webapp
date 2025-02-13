@@ -4,7 +4,10 @@
   "description": "Structs Game Front-End",
   "main": "index.js",
   "directories": {},
-  "scripts": {},
+  "scripts": {
+    "dev": "webpack --watch --mode=development",
+    "build": "webpack --mode=production"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/playstructs/structs-webapp.git"
@@ -20,6 +23,10 @@
   },
   "homepage": "https://github.com/playstructs/structs-webapp#readme",
   "devDependencies": {
-    "webpack": "^5.97.1"
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "node-polyfill-webpack-plugin": "^4.1.0"
   }
 }

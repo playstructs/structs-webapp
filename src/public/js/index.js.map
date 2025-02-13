@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","mappings":";;;;AAAA","sources":["webpack://structs-webapp/./js/index.js"],"sourcesContent":["const webpackSetupTest = 'It works';\n"],"names":[],"sourceRoot":""}

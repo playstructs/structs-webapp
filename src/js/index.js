@@ -1,0 +1,1 @@
+const webpackSetupTest = 'It works';
