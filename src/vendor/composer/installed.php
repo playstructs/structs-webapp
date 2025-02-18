@@ -412,8 +412,8 @@
         'psr/log-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '3.0.0',
-                1 => '1.0|2.0|3.0',
+                0 => '1.0|2.0|3.0',
+                1 => '3.0.0',
             ),
         ),
         'psr/simple-cache-implementation' => array(
@@ -1320,9 +1320,9 @@
             'dev_requirement' => false,
         ),
         'twig/twig' => array(
-            'pretty_version' => 'v3.17.0',
-            'version' => '3.17.0.0',
-            'reference' => 'd3a64b742a5e74c57e3964d766e1032982145872',
+            'pretty_version' => 'v3.20.0',
+            'version' => '3.20.0.0',
+            'reference' => '3468920399451a384bef53cf7996965f7cd40183',
             'type' => 'library',
             'install_path' => __DIR__ . '/../twig/twig',
             'aliases' => array(),
