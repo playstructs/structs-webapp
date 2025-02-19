@@ -1,1 +1,1 @@
-const webpackSetupTest = 'It works';
+global.webpackSetupTest = 'It works';
