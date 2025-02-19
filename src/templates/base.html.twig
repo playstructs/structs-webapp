@@ -1,17 +1,26 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <title>{% block title %}Welcome!{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
-        {% block stylesheets %}
-        {% endblock %}
+<!doctype html>
+<html class="no-js" lang="en-us">
 
-        {% block javascripts %}
-            {% block importmap %}{{ importmap('app') }}{% endblock %}
-        {% endblock %}
+    <head>
+        <meta charset="utf-8">
+        <title>{% block title %}Structs{% endblock %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="css/normalize.css">
+        <link rel="stylesheet" href="css/structicons.css">
+        <link rel="stylesheet" href="css/sui/sui.css">
+        <link rel="stylesheet" href="css/sui-demo.css">
     </head>
     <body>
         {% block body %}{% endblock %}
     </body>
+    {% block javascripts %}
+        <script src="js/plugins.js"></script>
+        <script src="js/vendor/liga.js"></script>
+        <script src="js/main.js"></script>
+        <script src="js/index.js"></script>
+    {% endblock %}
 </html>
