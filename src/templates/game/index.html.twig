@@ -1,20 +1,123 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello GameController!{% endblock %}
+{% block title %}Structs{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+{#<style>#}
+{#    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }#}
+{#    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }#}
+{#</style>#}
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
+{#<div class="example-wrapper">#}
+{#    <h1>Hello {{ controller_name }}! ✅</h1>#}
 
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>/src/src/Controller/GameController.php</code></li>
-        <li>Your template at <code>/src/templates/game/index.html.twig</code></li>
-    </ul>
+{#    This friendly message is coming from:#}
+{#    <ul>#}
+{#        <li>Your controller at <code>/src/src/Controller/GameController.php</code></li>#}
+{#        <li>Your template at <code>/src/templates/game/index.html.twig</code></li>#}
+{#    </ul>#}
+{#</div>#}
+
+<div class="page-layout">
+
+    <div class="page-content sui-panel sui-theme-player">
+        <div class="sui-panel-edge-left"></div>
+        <div class="sui-panel-chunk sui-mod-grow sui-mod-shrink">
+            <div class="sui-screen sui-screen-full-width">
+                <div class="sui-screen-nav">
+                    <div class="sui-screen-nav-items">
+                        <a class="sui-screen-nav-item sui-mod-active" href="javascript:void(0)">Structs</a>
+                    </div>
+                </div>
+            </div>
+            <div class="page-body sui-screen sui-screen-full-width sui-screen-shrink">
+                <div class="page-body sui-page-body-screen">
+                    <div id="content-container" class="content">
+
+                        <!-- Content Start -->
+
+                        <div>Hello</div>
+                        <br>
+                        <div>Hello</div>
+                        <br>
+                        <div>Hello</div>
+                        <br>
+                        <div>Hello</div>
+                        <br>
+                        <div>Hello</div>
+                        <br>
+                        <div>Hello</div>
+                        <br>
+                        <div>Hello</div>
+                        <br>
+                        <div>Hello</div>
+                        <br>
+                        <div>Hello</div>
+                        <br>
+                        <div>Hello</div>
+                        <br>
+
+
+                        <!-- Content End -->
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="sui-panel-edge-right"></div>
+    </div>
+
+    <!-- Dialogue Panel Start -->
+
+    <div class="page-dialogue sui-panel sui-theme-enemy">
+        <div class="sui-panel-edge-left"></div>
+        <div class="sui-panel-chunk">
+            <!-- Left Panel Start -->
+
+            <div class="sui-screen sui-theme-player">
+                <div class="sui-screen-indicator">
+                    <div class="sui-screen-portrait-image skull-head"></div>
+                </div>
+            </div>
+
+            <div class="sui-panel-chunk-spacer-indicator"></div>
+
+            <!-- Left Panel End -->
+        </div>
+        <div class="sui-panel-connector"></div>
+        <div class="sui-panel-chunk sui-mod-grow">
+            <!-- Middle Panel Start -->
+
+            <div class="sui-screen sui-screen-full-width">
+                <div class="sui-screen-dialogue sui-theme-neutral">
+                    <strong>Struct Command:</strong>
+                    Please stop doing stuff wrong. Do it right instead.
+                </div>
+            </div>
+
+            <!-- Middle Panel End -->
+        </div>
+        <div class="sui-panel-connector sui-panel-style-medium-to-default"></div>
+        <div class="sui-panel-chunk sui-theme-player">
+            <!-- Right Panel Start -->
+
+            <div class="sui-dialogue-btn-chunk">
+                <div class="sui-dialogue-btn-chunk-col">
+                    <div class="sui-panel-chunk-spacer-btn-a"></div>
+
+                    <a href="javascript: void(0)" class="sui-panel-btn sui-mod-default">
+                        <i class="sui-icon-md icon-okay"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Panel End -->
+        </div>
+        <div class="sui-panel-edge-right sui-theme-player"></div>
+    </div>
+
+    <!-- Dialogue Panel END -->
+
 </div>
+
 {% endblock %}
