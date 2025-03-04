@@ -1,5 +1,4 @@
 import {MenuPage} from './MenuPage';
-import {MenuPageRouter} from "./MenuPageRouter";
 import {AuthController} from "./AuthController";
 
 MenuPage.disableCloseBtn();

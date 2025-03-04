@@ -1,4 +1,5 @@
 import {MenuPage} from './MenuPage';
+import {NavItemDTO} from "./NavItemDTO";
 
 export class AuthController {
   constructor() {
@@ -26,6 +27,33 @@ export class AuthController {
   }
 
   connecting() {
+    const navItems = [
+      new NavItemDTO(
+        'nav-item-fleet',
+        'Fleet',
+        () => {
+          console.log('Fleet');
+          MenuPage.router.goto('Auth', 'index')
+        }
+      ),
+      new NavItemDTO(
+        'nav-item-guild',
+        'Guild',
+        () => {
+          console.log('Guild');
+          MenuPage.router.goto('Auth', 'index')
+        }
+      ),
+      new NavItemDTO(
+        'nav-item-account',
+        'Account',
+        () => {
+          console.log('Account');
+          MenuPage.router.goto('Auth', 'index')
+        }
+      ),
+    ];
+    MenuPage.setNavItems(navItems, 'nav-item-guild');
     MenuPage.disableCloseBtn()
     MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">

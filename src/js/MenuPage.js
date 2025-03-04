@@ -32,6 +32,31 @@ export class MenuPage {
 
   static dialogueBtnBHandler = () => {};
 
+  /**
+   * @param {NavItemDTO[]}items
+   * @param {string|null} activeId the ID of the active nav item
+   */
+  static setNavItems(items, activeId = null) {
+
+    let itemsHtml = '';
+
+    for (let i = 0; i < items.length; i++) {
+      const activeClass= (activeId === items[i].id || (!activeId && i === 0)) ? 'sui-mod-active' : '';
+
+      itemsHtml += `<a 
+        id="${items[i].id}"
+        class="sui-screen-nav-item ${activeClass}"
+        href="javascript:void(0)"
+      >${items[i].label}</a>`;
+    }
+
+    document.getElementById(MenuPage.navId).innerHTML = itemsHtml;
+
+    for (let i = 0; i < items.length; i++) {
+      document.getElementById(items[i].id).addEventListener('click', items[i].actionHandler);
+    }
+  }
+
   static disableCloseBtn() {
     document.getElementById(MenuPage.closeBtnId).classList.add('hidden');
   }

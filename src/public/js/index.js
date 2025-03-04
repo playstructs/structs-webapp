@@ -13,6 +13,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   AuthController: () => (/* binding */ AuthController)
 /* harmony export */ });
 /* harmony import */ var _MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPage */ "./js/MenuPage.js");
+/* harmony import */ var _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./NavItemDTO */ "./js/NavItemDTO.js");
+
 
 
 class AuthController {
@@ -41,6 +43,33 @@ class AuthController {
   }
 
   connecting() {
+    const navItems = [
+      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-fleet',
+        'Fleet',
+        () => {
+          console.log('Fleet');
+          _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index')
+        }
+      ),
+      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-guild',
+        'Guild',
+        () => {
+          console.log('Guild');
+          _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index')
+        }
+      ),
+      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-account',
+        'Account',
+        () => {
+          console.log('Account');
+          _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index')
+        }
+      ),
+    ];
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems, 'nav-item-guild');
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
@@ -101,6 +130,31 @@ class MenuPage {
   static dialogueBtnAHandler = () => {};
 
   static dialogueBtnBHandler = () => {};
+
+  /**
+   * @param {NavItemDTO[]}items
+   * @param {string|null} activeId the ID of the active nav item
+   */
+  static setNavItems(items, activeId = null) {
+
+    let itemsHtml = '';
+
+    for (let i = 0; i < items.length; i++) {
+      const activeClass= (activeId === items[i].id || (!activeId && i === 0)) ? 'sui-mod-active' : '';
+
+      itemsHtml += `<a 
+        id="${items[i].id}"
+        class="sui-screen-nav-item ${activeClass}"
+        href="javascript:void(0)"
+      >${items[i].label}</a>`;
+    }
+
+    document.getElementById(MenuPage.navId).innerHTML = itemsHtml;
+
+    for (let i = 0; i < items.length; i++) {
+      document.getElementById(items[i].id).addEventListener('click', items[i].actionHandler);
+    }
+  }
 
   static disableCloseBtn() {
     document.getElementById(MenuPage.closeBtnId).classList.add('hidden');
@@ -229,6 +283,26 @@ class MenuPageRouter {
   }
 }
 
+/***/ }),
+
+/***/ "./js/NavItemDTO.js":
+/*!**************************!*\
+  !*** ./js/NavItemDTO.js ***!
+  \**************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   NavItemDTO: () => (/* binding */ NavItemDTO)
+/* harmony export */ });
+class NavItemDTO {
+  constructor(id, label, actionHandler = () => {}) {
+    this.id = id;
+    this.label = label;
+    this.actionHandler = actionHandler;
+  }
+}
+
 /***/ })
 
 /******/ 	});
@@ -295,9 +369,7 @@ var __webpack_exports__ = {};
   \*********************/
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPage */ "./js/MenuPage.js");
-/* harmony import */ var _MenuPageRouter__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./MenuPageRouter */ "./js/MenuPageRouter.js");
-/* harmony import */ var _AuthController__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./AuthController */ "./js/AuthController.js");
-
+/* harmony import */ var _AuthController__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./AuthController */ "./js/AuthController.js");
 
 
 
@@ -350,7 +422,7 @@ _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnB();
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
 
-const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_2__.AuthController();
+const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController();
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 })();
