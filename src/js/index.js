@@ -1,8 +1,8 @@
 import {MenuPageLayout} from './MenuPageLayout';
 
-global.webpackSetupTest = 'It works';
-
+MenuPageLayout.disableCloseBtn();
 MenuPageLayout.enableCloseBtn();
+
 MenuPageLayout.setBodyContent(`
 <div>Hello World</div>
 <br>
@@ -23,11 +23,28 @@ MenuPageLayout.setBodyContent(`
 `);
 
 MenuPageLayout.setDialogueScreenThemeToEnemy();
-MenuPageLayout.setDialogueScreenThemeToNeutral();
 
 MenuPageLayout.setDialogueScreenContent(`
-<strong>Struct Commandz:</strong>
+<strong>Struct Command:</strong>
 Please stop doing stuff wrong. Do it right instead.
 `);
 
-MenuPageLayout.initCloseBtnListener();
+MenuPageLayout.initListeners();
+
+MenuPageLayout.dialogueBtnAHandler = () => { console.log('A Pressed'); };
+MenuPageLayout.dialogueBtnBHandler = () => { console.log('B Pressed'); };
+
+MenuPageLayout.hideAndClearDialoguePanel();
+MenuPageLayout.showDialoguePanel();
+
+MenuPageLayout.setDialogueScreenContent(`
+<strong>Struct Command:</strong>
+Please stop doing stuff wrong. Do it right instead.
+`);
+MenuPageLayout.dialogueBtnAHandler = () => { console.log('A'); };
+MenuPageLayout.dialogueBtnBHandler = () => { console.log('B'); };
+
+MenuPageLayout.disableDialogueBtnB();
+MenuPageLayout.enableDialogueBtnB();
+MenuPageLayout.disableDialogueBtnA();
+MenuPageLayout.enableDialogueBtnA();
