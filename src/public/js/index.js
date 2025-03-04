@@ -2,6 +2,60 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./js/AuthController.js":
+/*!******************************!*\
+  !*** ./js/AuthController.js ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AuthController: () => (/* binding */ AuthController)
+/* harmony export */ });
+/* harmony import */ var _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPageLayout */ "./js/MenuPageLayout.js");
+
+
+class AuthController {
+  constructor() {
+    this.name = 'Auth';
+  }
+
+  index() {
+    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableCloseBtn()
+    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setBodyContent(`
+    <div class="sui-page-body-screen-content sui-screen-body justified-centered">
+      <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
+      
+      <a id="new-player-btn" href="javascript: void(0)" class="sui-screen-btn fixed-256 sui-mod-primary">New Player</a>
+      <a id="returning-player-btn" href="javascript: void(0)" class="sui-screen-btn fixed-256 sui-mod-secondary">Returning Player</a>
+    </div>
+    `);
+    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.hideAndClearDialoguePanel();
+    document.getElementById('new-player-btn').addEventListener('click', () => {
+      console.log('New Player');
+    });
+    document.getElementById('returning-player-btn').addEventListener('click', () => {
+      console.log('Returning Player');
+    });
+  }
+
+  connecting() {
+    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableCloseBtn()
+    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setBodyContent(`
+    <div class="sui-page-body-screen-content sui-screen-body justified-centered">
+      <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
+    </div>
+    `);
+    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.showDialoguePanel();
+    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setDialogueScreenContent(`Connecting to Corporate Database...`);
+    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableDialogueBtnB();
+    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableDialogueBtnA();
+  }
+
+}
+
+/***/ }),
+
 /***/ "./js/MenuPageLayout.js":
 /*!******************************!*\
   !*** ./js/MenuPageLayout.js ***!
@@ -143,6 +197,32 @@ class MenuPageLayout {
 }
 
 
+/***/ }),
+
+/***/ "./js/MenuPageRouter.js":
+/*!******************************!*\
+  !*** ./js/MenuPageRouter.js ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   MenuPageRouter: () => (/* binding */ MenuPageRouter)
+/* harmony export */ });
+class MenuPageRouter {
+  constructor() {
+    this.controllers = new Map();
+  }
+
+  registerController(controller) {
+    this.controllers.set(controller.name, controller);
+  }
+
+  goto(controllerName, pageName, options = {}) {
+    this.controllers.get(controllerName)[pageName](options);
+  }
+}
+
 /***/ })
 
 /******/ 	});
@@ -209,6 +289,10 @@ var __webpack_exports__ = {};
   \*********************/
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPageLayout */ "./js/MenuPageLayout.js");
+/* harmony import */ var _MenuPageRouter__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./MenuPageRouter */ "./js/MenuPageRouter.js");
+/* harmony import */ var _AuthController__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./AuthController */ "./js/AuthController.js");
+
+
 
 
 _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableCloseBtn();
@@ -260,6 +344,10 @@ _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.enableDialogueBtnB()
 _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableDialogueBtnA();
 _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.enableDialogueBtnA();
 
+const menuPageRouter = new _MenuPageRouter__WEBPACK_IMPORTED_MODULE_1__.MenuPageRouter();
+const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_2__.AuthController();
+menuPageRouter.registerController(authController);
+menuPageRouter.goto('Auth', 'index');
 })();
 
 /******/ })()

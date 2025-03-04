@@ -1,4 +1,6 @@
 import {MenuPageLayout} from './MenuPageLayout';
+import {MenuPageRouter} from "./MenuPageRouter";
+import {AuthController} from "./AuthController";
 
 MenuPageLayout.disableCloseBtn();
 MenuPageLayout.enableCloseBtn();
@@ -48,3 +50,8 @@ MenuPageLayout.disableDialogueBtnB();
 MenuPageLayout.enableDialogueBtnB();
 MenuPageLayout.disableDialogueBtnA();
 MenuPageLayout.enableDialogueBtnA();
+
+const menuPageRouter = new MenuPageRouter();
+const authController = new AuthController();
+menuPageRouter.registerController(authController);
+menuPageRouter.goto('Auth', 'index');

@@ -52,6 +52,24 @@ body {
   gap: 0;
 }
 
+#menu-page-body-content {
+  display: flex;
+  height: 100%;
+}
+
+.sui-page-body-screen-content.justified-centered {
+  justify-content: center;
+  gap: var(--spacing-xl);
+}
+
+.sui-screen-btn.fixed-256 {
+  width: 256px;
+}
+
+img.glitch-logo {
+  filter: brightness(0) saturate(100%) invert(97%) sepia(5%) saturate(838%) hue-rotate(150deg) brightness(86%) contrast(97%);
+}
+
 /* Utility Classes Start */
 
 .height-100 {
