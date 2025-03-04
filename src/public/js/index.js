@@ -12,7 +12,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   AuthController: () => (/* binding */ AuthController)
 /* harmony export */ });
-/* harmony import */ var _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPageLayout */ "./js/MenuPageLayout.js");
+/* harmony import */ var _MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPage */ "./js/MenuPage.js");
 
 
 class AuthController {
@@ -21,8 +21,8 @@ class AuthController {
   }
 
   index() {
-    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableCloseBtn()
-    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setBodyContent(`
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
       <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
       
@@ -30,9 +30,10 @@ class AuthController {
       <a id="returning-player-btn" href="javascript: void(0)" class="sui-screen-btn fixed-256 sui-mod-secondary">Returning Player</a>
     </div>
     `);
-    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.hideAndClearDialoguePanel();
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
     document.getElementById('new-player-btn').addEventListener('click', () => {
       console.log('New Player');
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'connecting');
     });
     document.getElementById('returning-player-btn').addEventListener('click', () => {
       console.log('Returning Player');
@@ -40,33 +41,36 @@ class AuthController {
   }
 
   connecting() {
-    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableCloseBtn()
-    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setBodyContent(`
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
       <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
     </div>
     `);
-    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.showDialoguePanel();
-    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setDialogueScreenContent(`Connecting to Corporate Database...`);
-    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableDialogueBtnB();
-    _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableDialogueBtnA();
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
   }
 
 }
 
 /***/ }),
 
-/***/ "./js/MenuPageLayout.js":
-/*!******************************!*\
-  !*** ./js/MenuPageLayout.js ***!
-  \******************************/
+/***/ "./js/MenuPage.js":
+/*!************************!*\
+  !*** ./js/MenuPage.js ***!
+  \************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   MenuPageLayout: () => (/* binding */ MenuPageLayout)
+/* harmony export */   MenuPage: () => (/* binding */ MenuPage)
 /* harmony export */ });
-class MenuPageLayout {
+/* harmony import */ var _MenuPageRouter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPageRouter */ "./js/MenuPageRouter.js");
+
+
+class MenuPage {
 
   /* Element IDs Start */
 
@@ -92,107 +96,109 @@ class MenuPageLayout {
 
   /* Element IDs End */
 
+  static router = new _MenuPageRouter__WEBPACK_IMPORTED_MODULE_0__.MenuPageRouter();
+
   static dialogueBtnAHandler = () => {};
 
   static dialogueBtnBHandler = () => {};
 
   static disableCloseBtn() {
-    document.getElementById(MenuPageLayout.closeBtnId).classList.add('hidden');
+    document.getElementById(MenuPage.closeBtnId).classList.add('hidden');
   }
 
   static enableCloseBtn() {
-    document.getElementById(MenuPageLayout.closeBtnId).classList.remove('hidden');
+    document.getElementById(MenuPage.closeBtnId).classList.remove('hidden');
   }
 
   static setBodyContent(content) {
-    document.getElementById(MenuPageLayout.bodyId).innerHTML = content;
+    document.getElementById(MenuPage.bodyId).innerHTML = content;
   }
 
   static setDialogueScreenContent(content) {
-    document.getElementById(MenuPageLayout.dialogueScreenId).innerHTML = content;
+    document.getElementById(MenuPage.dialogueScreenId).innerHTML = content;
   }
 
   static setDialogueScreenTheme(theme) {
-    const dialogueScreen = document.getElementById(MenuPageLayout.dialogueScreenId);
+    const dialogueScreen = document.getElementById(MenuPage.dialogueScreenId);
     dialogueScreen.classList.remove(...dialogueScreen.classList);
     dialogueScreen.classList.add('sui-screen-dialogue');
     dialogueScreen.classList.add(theme);
   }
 
   static setDialogueScreenThemeToNeutral() {
-    MenuPageLayout.setDialogueScreenTheme('sui-theme-neutral');
+    MenuPage.setDialogueScreenTheme('sui-theme-neutral');
   }
 
   static setDialogueScreenThemeToEnemy() {
-    MenuPageLayout.setDialogueScreenTheme('sui-theme-enemy');
+    MenuPage.setDialogueScreenTheme('sui-theme-enemy');
   }
 
   static enableDialogueBtnA() {
-    document.getElementById(MenuPageLayout.dialogueBtnAId).classList.remove('hidden');
+    document.getElementById(MenuPage.dialogueBtnAId).classList.remove('hidden');
   }
 
   static disableDialogueBtnA() {
-    document.getElementById(MenuPageLayout.dialogueBtnAId).classList.add('hidden');
+    document.getElementById(MenuPage.dialogueBtnAId).classList.add('hidden');
   }
 
   static enableDialogueBtnB() {
-    document.getElementById(MenuPageLayout.dialogueBtnChunkBId).classList.remove('hidden');
+    document.getElementById(MenuPage.dialogueBtnChunkBId).classList.remove('hidden');
   }
 
   static disableDialogueBtnB() {
-    document.getElementById(MenuPageLayout.dialogueBtnChunkBId).classList.add('hidden');
+    document.getElementById(MenuPage.dialogueBtnChunkBId).classList.add('hidden');
   }
 
   static clearDialogueScreen() {
-    document.getElementById(MenuPageLayout.dialogueScreenId).innerHTML = '';
+    document.getElementById(MenuPage.dialogueScreenId).innerHTML = '';
   }
 
   static clearDialogueBtnAHandler() {
-    MenuPageLayout.dialogueBtnAHandler = () => {};
+    MenuPage.dialogueBtnAHandler = () => {};
   }
 
   static clearDialogueBtnBHandler() {
-    MenuPageLayout.dialogueBtnBHandler = () => {};
+    MenuPage.dialogueBtnBHandler = () => {};
   }
 
   static hideAndClearDialoguePanel() {
-    document.getElementById(MenuPageLayout.dialoguePanelId).classList.add('hidden');
-    MenuPageLayout.clearDialogueScreen();
-    MenuPageLayout.setDialogueScreenThemeToNeutral();
-    MenuPageLayout.clearDialogueBtnAHandler();
-    MenuPageLayout.clearDialogueBtnBHandler();
+    document.getElementById(MenuPage.dialoguePanelId).classList.add('hidden');
+    MenuPage.clearDialogueScreen();
+    MenuPage.setDialogueScreenThemeToNeutral();
+    MenuPage.clearDialogueBtnAHandler();
+    MenuPage.clearDialogueBtnBHandler();
   }
 
   static showDialoguePanel() {
-    document.getElementById(MenuPageLayout.dialoguePanelId).classList.remove('hidden');
+    document.getElementById(MenuPage.dialoguePanelId).classList.remove('hidden');
   }
 
   static closeBtnHandler() {
-    document.getElementById(MenuPageLayout.pageLayoutId).classList.add('hidden');
+    document.getElementById(MenuPage.pageLayoutId).classList.add('hidden');
   }
 
   static initCloseBtnListener() {
-    document.getElementById(MenuPageLayout.closeBtnId).addEventListener('click', MenuPageLayout.closeBtnHandler);
+    document.getElementById(MenuPage.closeBtnId).addEventListener('click', MenuPage.closeBtnHandler);
   }
 
   static initDialogueBtnAListener() {
-    const dialogueBtnA = document.getElementById(MenuPageLayout.dialogueBtnAId);
+    const dialogueBtnA = document.getElementById(MenuPage.dialogueBtnAId);
     dialogueBtnA.addEventListener('click', () => {
-      MenuPageLayout.dialogueBtnAHandler();
+      MenuPage.dialogueBtnAHandler();
     });
   }
 
   static initDialogueBtnBListener() {
-    const dialogueBtnB = document.getElementById(MenuPageLayout.dialogueBtnBId);
+    const dialogueBtnB = document.getElementById(MenuPage.dialogueBtnBId);
     dialogueBtnB.addEventListener('click', () => {
-      MenuPageLayout.dialogueBtnBHandler();
+      MenuPage.dialogueBtnBHandler();
     });
   }
 
   static initListeners() {
-    MenuPageLayout.initCloseBtnListener();
-    MenuPageLayout.initDialogueBtnAListener();
-    MenuPageLayout.initDialogueBtnBListener();
+    MenuPage.initCloseBtnListener();
+    MenuPage.initDialogueBtnAListener();
+    MenuPage.initDialogueBtnBListener();
   }
 }
 
@@ -288,17 +294,17 @@ var __webpack_exports__ = {};
   !*** ./js/index.js ***!
   \*********************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPageLayout */ "./js/MenuPageLayout.js");
+/* harmony import */ var _MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPage */ "./js/MenuPage.js");
 /* harmony import */ var _MenuPageRouter__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./MenuPageRouter */ "./js/MenuPageRouter.js");
 /* harmony import */ var _AuthController__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./AuthController */ "./js/AuthController.js");
 
 
 
 
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableCloseBtn();
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.enableCloseBtn();
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn();
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableCloseBtn();
 
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setBodyContent(`
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
 <div>Hello World</div>
 <br>
 <div>Hello World</div>
@@ -317,37 +323,36 @@ _MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setBodyContent(`
 <br>
 `);
 
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setDialogueScreenThemeToEnemy();
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenThemeToEnemy();
 
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setDialogueScreenContent(`
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`
 <strong>Struct Command:</strong>
 Please stop doing stuff wrong. Do it right instead.
 `);
 
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.initListeners();
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.dialogueBtnAHandler = () => { console.log('A Pressed'); };
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.dialogueBtnBHandler = () => { console.log('B Pressed'); };
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => { console.log('A Pressed'); };
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnBHandler = () => { console.log('B Pressed'); };
 
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.hideAndClearDialoguePanel();
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.showDialoguePanel();
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
 
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.setDialogueScreenContent(`
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`
 <strong>Struct Command:</strong>
 Please stop doing stuff wrong. Do it right instead.
 `);
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.dialogueBtnAHandler = () => { console.log('A'); };
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.dialogueBtnBHandler = () => { console.log('B'); };
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => { console.log('A'); };
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnBHandler = () => { console.log('B'); };
 
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableDialogueBtnB();
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.enableDialogueBtnB();
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.disableDialogueBtnA();
-_MenuPageLayout__WEBPACK_IMPORTED_MODULE_0__.MenuPageLayout.enableDialogueBtnA();
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnB();
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
 
-const menuPageRouter = new _MenuPageRouter__WEBPACK_IMPORTED_MODULE_1__.MenuPageRouter();
 const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_2__.AuthController();
-menuPageRouter.registerController(authController);
-menuPageRouter.goto('Auth', 'index');
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 })();
 
 /******/ })()

@@ -1,11 +1,11 @@
-import {MenuPageLayout} from './MenuPageLayout';
+import {MenuPage} from './MenuPage';
 import {MenuPageRouter} from "./MenuPageRouter";
 import {AuthController} from "./AuthController";
 
-MenuPageLayout.disableCloseBtn();
-MenuPageLayout.enableCloseBtn();
+MenuPage.disableCloseBtn();
+MenuPage.enableCloseBtn();
 
-MenuPageLayout.setBodyContent(`
+MenuPage.setBodyContent(`
 <div>Hello World</div>
 <br>
 <div>Hello World</div>
@@ -24,34 +24,33 @@ MenuPageLayout.setBodyContent(`
 <br>
 `);
 
-MenuPageLayout.setDialogueScreenThemeToEnemy();
+MenuPage.setDialogueScreenThemeToEnemy();
 
-MenuPageLayout.setDialogueScreenContent(`
+MenuPage.setDialogueScreenContent(`
 <strong>Struct Command:</strong>
 Please stop doing stuff wrong. Do it right instead.
 `);
 
-MenuPageLayout.initListeners();
+MenuPage.initListeners();
 
-MenuPageLayout.dialogueBtnAHandler = () => { console.log('A Pressed'); };
-MenuPageLayout.dialogueBtnBHandler = () => { console.log('B Pressed'); };
+MenuPage.dialogueBtnAHandler = () => { console.log('A Pressed'); };
+MenuPage.dialogueBtnBHandler = () => { console.log('B Pressed'); };
 
-MenuPageLayout.hideAndClearDialoguePanel();
-MenuPageLayout.showDialoguePanel();
+MenuPage.hideAndClearDialoguePanel();
+MenuPage.showDialoguePanel();
 
-MenuPageLayout.setDialogueScreenContent(`
+MenuPage.setDialogueScreenContent(`
 <strong>Struct Command:</strong>
 Please stop doing stuff wrong. Do it right instead.
 `);
-MenuPageLayout.dialogueBtnAHandler = () => { console.log('A'); };
-MenuPageLayout.dialogueBtnBHandler = () => { console.log('B'); };
+MenuPage.dialogueBtnAHandler = () => { console.log('A'); };
+MenuPage.dialogueBtnBHandler = () => { console.log('B'); };
 
-MenuPageLayout.disableDialogueBtnB();
-MenuPageLayout.enableDialogueBtnB();
-MenuPageLayout.disableDialogueBtnA();
-MenuPageLayout.enableDialogueBtnA();
+MenuPage.disableDialogueBtnB();
+MenuPage.enableDialogueBtnB();
+MenuPage.disableDialogueBtnA();
+MenuPage.enableDialogueBtnA();
 
-const menuPageRouter = new MenuPageRouter();
 const authController = new AuthController();
-menuPageRouter.registerController(authController);
-menuPageRouter.goto('Auth', 'index');
+MenuPage.router.registerController(authController);
+MenuPage.router.goto('Auth', 'index');

@@ -1,4 +1,4 @@
-import {MenuPageLayout} from './MenuPageLayout';
+import {MenuPage} from './MenuPage';
 
 export class AuthController {
   constructor() {
@@ -6,8 +6,8 @@ export class AuthController {
   }
 
   index() {
-    MenuPageLayout.disableCloseBtn()
-    MenuPageLayout.setBodyContent(`
+    MenuPage.disableCloseBtn()
+    MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
       <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
       
@@ -15,9 +15,10 @@ export class AuthController {
       <a id="returning-player-btn" href="javascript: void(0)" class="sui-screen-btn fixed-256 sui-mod-secondary">Returning Player</a>
     </div>
     `);
-    MenuPageLayout.hideAndClearDialoguePanel();
+    MenuPage.hideAndClearDialoguePanel();
     document.getElementById('new-player-btn').addEventListener('click', () => {
       console.log('New Player');
+      MenuPage.router.goto('Auth', 'connecting');
     });
     document.getElementById('returning-player-btn').addEventListener('click', () => {
       console.log('Returning Player');
@@ -25,16 +26,16 @@ export class AuthController {
   }
 
   connecting() {
-    MenuPageLayout.disableCloseBtn()
-    MenuPageLayout.setBodyContent(`
+    MenuPage.disableCloseBtn()
+    MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
       <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
     </div>
     `);
-    MenuPageLayout.showDialoguePanel();
-    MenuPageLayout.setDialogueScreenContent(`Connecting to Corporate Database...`);
-    MenuPageLayout.disableDialogueBtnB();
-    MenuPageLayout.disableDialogueBtnA();
+    MenuPage.showDialoguePanel();
+    MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
+    MenuPage.disableDialogueBtnB();
+    MenuPage.disableDialogueBtnA();
   }
 
 }
