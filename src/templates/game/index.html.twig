@@ -3,67 +3,27 @@
 {% block title %}Structs{% endblock %}
 
 {% block body %}
-{#<style>#}
-{#    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }#}
-{#    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }#}
-{#</style>#}
 
-{#<div class="example-wrapper">#}
-{#    <h1>Hello {{ controller_name }}! ✅</h1>#}
+<div id="menu-page-layout">
 
-{#    This friendly message is coming from:#}
-{#    <ul>#}
-{#        <li>Your controller at <code>/src/src/Controller/GameController.php</code></li>#}
-{#        <li>Your template at <code>/src/templates/game/index.html.twig</code></li>#}
-{#    </ul>#}
-{#</div>#}
-
-<div class="page-layout">
-
-    <div class="page-content sui-panel sui-theme-player">
+    <div id="menu-page-panel" class="sui-panel sui-theme-player">
         <div class="sui-panel-edge-left"></div>
         <div class="sui-panel-chunk sui-mod-grow sui-mod-shrink">
             <div class="sui-screen sui-screen-full-width">
                 <div class="sui-screen-nav">
-                    <div class="sui-screen-nav-items">
+                    <div id="menu-page-nav-items" class="sui-screen-nav-items">
                         <a class="sui-screen-nav-item sui-mod-active" href="javascript:void(0)">Structs</a>
                     </div>
-                    <a class="sui-screen-nav-close" href="javascript: void(0)">
+                    <a id="menu-page-nav-close" class="sui-screen-nav-close" href="javascript: void(0)">
                         <i class="sui-icon-sm icon-close"></i>
                     </a>
                 </div>
             </div>
-            <div class="page-body sui-screen sui-screen-full-width sui-screen-shrink">
-                <div class="page-body sui-page-body-screen">
-                    <div id="content-container" class="content">
+            <div class="height-100 sui-screen sui-screen-full-width sui-screen-shrink">
+                <div class="height-100 sui-page-body-screen">
 
-                        <!-- Content Start -->
+                    <div id="menu-page-body-content"></div>
 
-                        <div>Hello</div>
-                        <br>
-                        <div>Hello</div>
-                        <br>
-                        <div>Hello</div>
-                        <br>
-                        <div>Hello</div>
-                        <br>
-                        <div>Hello</div>
-                        <br>
-                        <div>Hello</div>
-                        <br>
-                        <div>Hello</div>
-                        <br>
-                        <div>Hello</div>
-                        <br>
-                        <div>Hello</div>
-                        <br>
-                        <div>Hello</div>
-                        <br>
-
-
-                        <!-- Content End -->
-
-                    </div>
                 </div>
             </div>
         </div>
@@ -72,14 +32,14 @@
 
     <!-- Dialogue Panel Start -->
 
-    <div class="page-dialogue sui-panel sui-theme-enemy">
+    <div class="menu-page-dialogue sui-panel sui-theme-enemy">
         <div class="sui-panel-edge-left"></div>
         <div class="sui-panel-chunk">
             <!-- Left Panel Start -->
 
             <div class="sui-screen sui-theme-player">
-                <div class="sui-screen-indicator">
-                    <div class="sui-screen-portrait-image skull-head"></div>
+                <div id="menu-page-dialogue-indicator" class="sui-screen-indicator">
+                    <div class="sui-screen-portrait-image"></div>
                 </div>
             </div>
 
@@ -92,10 +52,7 @@
             <!-- Middle Panel Start -->
 
             <div class="sui-screen sui-screen-full-width">
-                <div class="sui-screen-dialogue sui-theme-neutral">
-                    <strong>Struct Command:</strong>
-                    Please stop doing stuff wrong. Do it right instead.
-                </div>
+                <div id="menu-page-dialogue-screen" class="sui-screen-dialogue sui-theme-neutral"></div>
             </div>
 
             <!-- Middle Panel End -->
@@ -108,14 +65,14 @@
                 <div class="sui-dialogue-btn-chunk-col">
                     <div class="sui-panel-chunk-spacer-btn-b"></div>
 
-                    <a href="javascript: void(0)" class="sui-panel-btn sui-mod-default">
+                    <a id="menu-page-dialogue-btn-b" href="javascript: void(0)" class="sui-panel-btn sui-mod-default">
                         <i class="sui-icon-md icon-arrow sui-flip-horizontal"></i>
                     </a>
                 </div>
                 <div class="sui-dialogue-btn-chunk-col">
                     <div class="sui-panel-chunk-spacer-btn-a"></div>
 
-                    <a href="javascript: void(0)" class="sui-panel-btn sui-mod-default">
+                    <a id="menu-page-dialogue-btn-a" href="javascript: void(0)" class="sui-panel-btn sui-mod-default">
                         <i class="sui-icon-md icon-okay"></i>
                     </a>
                 </div>
