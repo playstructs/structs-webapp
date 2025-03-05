@@ -16,6 +16,8 @@ export class MenuPage {
 
   static dialogueIndicatorId = 'menu-page-dialogue-indicator';
 
+  static dialogueIndicatorContentId = 'menu-page-dialogue-indicator-content';
+
   static dialogueScreenId = 'menu-page-dialogue-screen';
 
   static dialogueScreenContentId = 'menu-page-dialogue-screen-content';
@@ -71,19 +73,28 @@ export class MenuPage {
     document.getElementById(MenuPage.bodyId).innerHTML = content;
   }
 
-  static setDialogueIndicator(content) {
-    document.getElementById(MenuPage.dialogueIndicatorId).innerHTML = content;
+  static setDialogueIndicatorContent(content, useFadeAnimation = false) {
+    const dialogueIndicatorContent = document.getElementById(MenuPage.dialogueIndicatorContentId);
+    dialogueIndicatorContent.innerHTML = content;
+
+    if (useFadeAnimation) {
+      MenuPage.applyFadeInFadeOutAnimation(dialogueIndicatorContent);
+    }
+  }
+
+  static applyFadeInFadeOutAnimation(element) {
+    element.classList.add('fade-in-fade-out');
+    element.addEventListener('animationend', () => {
+      element.classList.remove('fade-in-fade-out');
+    });
   }
 
   static setDialogueScreenContent(content, useFadeAnimation = false) {
-    const dialogueScreen = document.getElementById(MenuPage.dialogueScreenContentId);
-    dialogueScreen.innerHTML = content;
+    const dialogueScreenContent = document.getElementById(MenuPage.dialogueScreenContentId);
+    dialogueScreenContent.innerHTML = content;
 
     if (useFadeAnimation) {
-      dialogueScreen.classList.add('fade-in-fade-out');
-      dialogueScreen.addEventListener('animationend', () => {
-        dialogueScreen.classList.remove('fade-in-fade-out');
-      });
+      MenuPage.applyFadeInFadeOutAnimation(dialogueScreenContent);
     }
   }
 

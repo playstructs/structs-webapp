@@ -80,7 +80,7 @@ class AuthController {
     </div>
     `);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicator(`<i class="sui-icon-md icon-info sui-text-primary"></i>`);
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-info sui-text-primary"></i>`);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
@@ -96,7 +96,7 @@ class AuthController {
       ];
       _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
 
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicator(`<i class="sui-icon-md icon-success sui-text-primary"></i>`);
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
       _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
     })
   }
@@ -132,6 +132,8 @@ class MenuPage {
   static dialoguePanelId = 'menu-page-dialogue';
 
   static dialogueIndicatorId = 'menu-page-dialogue-indicator';
+
+  static dialogueIndicatorContentId = 'menu-page-dialogue-indicator-content';
 
   static dialogueScreenId = 'menu-page-dialogue-screen';
 
@@ -188,19 +190,28 @@ class MenuPage {
     document.getElementById(MenuPage.bodyId).innerHTML = content;
   }
 
-  static setDialogueIndicator(content) {
-    document.getElementById(MenuPage.dialogueIndicatorId).innerHTML = content;
+  static setDialogueIndicatorContent(content, useFadeAnimation = false) {
+    const dialogueIndicatorContent = document.getElementById(MenuPage.dialogueIndicatorContentId);
+    dialogueIndicatorContent.innerHTML = content;
+
+    if (useFadeAnimation) {
+      MenuPage.applyFadeInFadeOutAnimation(dialogueIndicatorContent);
+    }
+  }
+
+  static applyFadeInFadeOutAnimation(element) {
+    element.classList.add('fade-in-fade-out');
+    element.addEventListener('animationend', () => {
+      element.classList.remove('fade-in-fade-out');
+    });
   }
 
   static setDialogueScreenContent(content, useFadeAnimation = false) {
-    const dialogueScreen = document.getElementById(MenuPage.dialogueScreenContentId);
-    dialogueScreen.innerHTML = content;
+    const dialogueScreenContent = document.getElementById(MenuPage.dialogueScreenContentId);
+    dialogueScreenContent.innerHTML = content;
 
     if (useFadeAnimation) {
-      dialogueScreen.classList.add('fade-in-fade-out');
-      dialogueScreen.addEventListener('animationend', () => {
-        dialogueScreen.classList.remove('fade-in-fade-out');
-      });
+      MenuPage.applyFadeInFadeOutAnimation(dialogueScreenContent);
     }
   }
 

@@ -64,7 +64,7 @@ export class AuthController {
     </div>
     `);
 
-    MenuPage.setDialogueIndicator(`<i class="sui-icon-md icon-info sui-text-primary"></i>`);
+    MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-info sui-text-primary"></i>`);
     MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
     MenuPage.disableDialogueBtnB();
     MenuPage.disableDialogueBtnA();
@@ -80,7 +80,7 @@ export class AuthController {
       ];
       MenuPage.setNavItems(navItems);
 
-      MenuPage.setDialogueIndicator(`<i class="sui-icon-md icon-success sui-text-primary"></i>`);
+      MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
       MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
     })
   }
