@@ -23,6 +23,13 @@ class AuthController {
   }
 
   index() {
+    const navItems = [
+      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-structs',
+        'Structs'
+      )
+    ];
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems, 'nav-item-structs');
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
@@ -45,37 +52,33 @@ class AuthController {
   connecting() {
     const navItems = [
       new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-fleet',
-        'Fleet',
-        () => {
-          console.log('Fleet');
-          _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index')
-        }
-      ),
-      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-guild',
-        'Guild',
-        () => {
-          console.log('Guild');
-          _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index')
-        }
-      ),
-      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-account',
-        'Account',
-        () => {
-          console.log('Account');
-          _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index')
-        }
-      ),
+        'nav-item-connecting',
+        'Connecting...'
+      )
     ];
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems, 'nav-item-guild');
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems, 'nav-item-connecting');
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
+
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
-      <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
+      <div class="connecting-logo-swap-container">
+        <img 
+          class="glitch-logo fade-out"
+          src="/img/sui/logo/logo-structs.gif"
+          alt="Animated Structs logo with glitching"
+        >
+        <div class="snc-logo-wrapper fade-in">
+          <img 
+            class="snc-logo"
+            src="/img/logo-snc.gif"
+            alt="SNC logo"
+          >
+          <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
+        </div>
+      </div>
     </div>
     `);
+
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
@@ -373,58 +376,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn();
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableCloseBtn();
-
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
-<div>Hello World</div>
-<br>
-<div>Hello World</div>
-<br>
-<div>Hello World</div>
-<br>
-<div>Hello World</div>
-<br>
-<div>Hello World</div>
-<br>
-<div>Hello World</div>
-<br>
-<div>Hello World</div>
-<br>
-<div>Hello World</div>
-<br>
-`);
-
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenThemeToEnemy();
-
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`
-<strong>Struct Command:</strong>
-Please stop doing stuff wrong. Do it right instead.
-`);
-
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
-
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => { console.log('A Pressed'); };
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnBHandler = () => { console.log('B Pressed'); };
-
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
-
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`
-<strong>Struct Command:</strong>
-Please stop doing stuff wrong. Do it right instead.
-`);
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => { console.log('A'); };
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnBHandler = () => { console.log('B'); };
-
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnB();
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
-
 const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController();
+
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
+
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
+
 })();
 
 /******/ })()

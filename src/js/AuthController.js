@@ -7,6 +7,13 @@ export class AuthController {
   }
 
   index() {
+    const navItems = [
+      new NavItemDTO(
+        'nav-item-structs',
+        'Structs'
+      )
+    ];
+    MenuPage.setNavItems(navItems, 'nav-item-structs');
     MenuPage.disableCloseBtn()
     MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
@@ -29,37 +36,33 @@ export class AuthController {
   connecting() {
     const navItems = [
       new NavItemDTO(
-        'nav-item-fleet',
-        'Fleet',
-        () => {
-          console.log('Fleet');
-          MenuPage.router.goto('Auth', 'index')
-        }
-      ),
-      new NavItemDTO(
-        'nav-item-guild',
-        'Guild',
-        () => {
-          console.log('Guild');
-          MenuPage.router.goto('Auth', 'index')
-        }
-      ),
-      new NavItemDTO(
-        'nav-item-account',
-        'Account',
-        () => {
-          console.log('Account');
-          MenuPage.router.goto('Auth', 'index')
-        }
-      ),
+        'nav-item-connecting',
+        'Connecting...'
+      )
     ];
-    MenuPage.setNavItems(navItems, 'nav-item-guild');
+    MenuPage.setNavItems(navItems, 'nav-item-connecting');
     MenuPage.disableCloseBtn()
+
     MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
-      <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
+      <div class="connecting-logo-swap-container">
+        <img 
+          class="glitch-logo fade-out"
+          src="/img/sui/logo/logo-structs.gif"
+          alt="Animated Structs logo with glitching"
+        >
+        <div class="snc-logo-wrapper fade-in">
+          <img 
+            class="snc-logo"
+            src="/img/logo-snc.gif"
+            alt="SNC logo"
+          >
+          <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
+        </div>
+      </div>
     </div>
     `);
+
     MenuPage.showDialoguePanel();
     MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
     MenuPage.disableDialogueBtnB();

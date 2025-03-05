@@ -7,6 +7,31 @@
  * 4. Typography
  * 5. Other
  */
+
+/* Keyframes Start */
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Keyframes End */
+
+/* General Styling Start */
+
 html {
   height: 100%;
   zoom: 1;
@@ -66,9 +91,66 @@ body {
   width: 256px;
 }
 
-img.glitch-logo {
-  filter: brightness(0) saturate(100%) invert(97%) sepia(5%) saturate(838%) hue-rotate(150deg) brightness(86%) contrast(97%);
+.connecting-logo-swap-container {
+  display: block;
+  position: absolute;
+  width: 192px;
+  height: 192px;
+  overflow: hidden;
 }
+
+img.glitch-logo {
+  filter: brightness(0) saturate(100%) invert(58%) sepia(39%) saturate(263%) hue-rotate(156deg) brightness(90%) contrast(84%);
+}
+
+.snc-logo-wrapper {
+  width: 192px;
+  height: 192px;
+  overflow: hidden;
+}
+
+.snc-logo {
+  width: 192px;
+}
+
+.snc-logo-wrapper .sui-text-header {
+  position: absolute;
+  width: 100%;
+  top: 137px;
+}
+
+.connecting-logo-swap-container .glitch-logo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 32px;
+}
+
+.connecting-logo-swap-container .snc-logo-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* General Styling End */
+
+/* Animated Classes Start */
+
+.glitch-logo.fade-out {
+  opacity: 1;
+  animation: fade-out 300ms ease-out;
+  animation-delay: 2s;
+  animation-fill-mode: forwards;
+}
+
+.snc-logo-wrapper.fade-in {
+  opacity: 0;
+  animation: fade-in 300ms ease-out;
+  animation-delay: 2000ms;
+  animation-fill-mode: forwards;
+}
+
+/* Animated Classes End */
 
 /* Utility Classes Start */
 
@@ -81,6 +163,8 @@ img.glitch-logo {
 }
 
 /* Utility Classes End */
+
+/* Media Queries Start */
 
 @media only screen and (min-width: 1152px),
 only screen and (min-height: 1024px) {
@@ -100,3 +184,5 @@ only screen and (min-height: 2048px) {
     transform-origin: 0 0;
   }
 }
+
+/* Media Queries End */
