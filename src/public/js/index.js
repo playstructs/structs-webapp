@@ -42,14 +42,14 @@ class AuthController {
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
     document.getElementById('new-player-btn').addEventListener('click', () => {
       console.log('New Player');
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signup');
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupConnectingToCorporate');
     });
     document.getElementById('returning-player-btn').addEventListener('click', () => {
       console.log('Returning Player');
     });
   }
 
-  signup() {
+  signupConnectingToCorporate() {
     const navItems = [
       new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
         'nav-item-text-only',
@@ -68,13 +68,7 @@ class AuthController {
           src="/img/sui/logo/logo-structs.gif"
           alt="Animated Structs logo with glitching"
         >
-        <div class="snc-logo-wrapper fade-in">
-          <img 
-            class="snc-logo"
-            src="/img/logo-snc.gif"
-            alt="SNC logo"
-          >
-          <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
+        <div id="snc-logo-wrapper" class="snc-logo-wrapper fade-in">
         </div>
       </div>
     </div>
@@ -86,19 +80,31 @@ class AuthController {
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
 
-
     document.getElementById('glitch-logo-fade').addEventListener('animationstart', () => {
-      const navItems = [
-        new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-          'nav-item-text-only',
-          'SN.Corporation'
-        )
-      ];
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
-
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupConnectionSuccessful');
     })
+  }
+
+  signupConnectionSuccessful() {
+    const navItems = [
+      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+
+    document.getElementById('snc-logo-wrapper').innerHTML = `
+        <img 
+          class="snc-logo"
+          src="/img/logo-snc.gif"
+          alt="SNC logo"
+        >
+        <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
+      `;
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
   }
 }
 

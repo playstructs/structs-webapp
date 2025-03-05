@@ -26,14 +26,14 @@ export class AuthController {
     MenuPage.hideAndClearDialoguePanel();
     document.getElementById('new-player-btn').addEventListener('click', () => {
       console.log('New Player');
-      MenuPage.router.goto('Auth', 'signup');
+      MenuPage.router.goto('Auth', 'signupConnectingToCorporate');
     });
     document.getElementById('returning-player-btn').addEventListener('click', () => {
       console.log('Returning Player');
     });
   }
 
-  signup() {
+  signupConnectingToCorporate() {
     const navItems = [
       new NavItemDTO(
         'nav-item-text-only',
@@ -52,13 +52,7 @@ export class AuthController {
           src="/img/sui/logo/logo-structs.gif"
           alt="Animated Structs logo with glitching"
         >
-        <div class="snc-logo-wrapper fade-in">
-          <img 
-            class="snc-logo"
-            src="/img/logo-snc.gif"
-            alt="SNC logo"
-          >
-          <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
+        <div id="snc-logo-wrapper" class="snc-logo-wrapper fade-in">
         </div>
       </div>
     </div>
@@ -70,18 +64,30 @@ export class AuthController {
     MenuPage.disableDialogueBtnA();
     MenuPage.showDialoguePanel();
 
-
     document.getElementById('glitch-logo-fade').addEventListener('animationstart', () => {
-      const navItems = [
-        new NavItemDTO(
-          'nav-item-text-only',
-          'SN.Corporation'
-        )
-      ];
-      MenuPage.setNavItems(navItems);
-
-      MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
-      MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
+      MenuPage.router.goto('Auth', 'signupConnectionSuccessful');
     })
+  }
+
+  signupConnectionSuccessful() {
+    const navItems = [
+      new NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    MenuPage.setNavItems(navItems);
+
+    document.getElementById('snc-logo-wrapper').innerHTML = `
+        <img 
+          class="snc-logo"
+          src="/img/logo-snc.gif"
+          alt="SNC logo"
+        >
+        <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
+      `;
+
+    MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
+    MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
   }
 }
