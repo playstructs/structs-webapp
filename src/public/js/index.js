@@ -42,27 +42,28 @@ class AuthController {
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
     document.getElementById('new-player-btn').addEventListener('click', () => {
       console.log('New Player');
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'connecting');
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signup');
     });
     document.getElementById('returning-player-btn').addEventListener('click', () => {
       console.log('Returning Player');
     });
   }
 
-  connecting() {
+  signup() {
     const navItems = [
       new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-connecting',
+        'nav-item-text-only',
         'Connecting...'
       )
     ];
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems, 'nav-item-connecting');
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
 
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
       <div class="connecting-logo-swap-container">
-        <img 
+        <img
+          id="glitch-logo-fade"
           class="glitch-logo fade-out"
           src="/img/sui/logo/logo-structs.gif"
           alt="Animated Structs logo with glitching"
@@ -79,12 +80,26 @@ class AuthController {
     </div>
     `);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicator(`<i class="sui-icon-md icon-info sui-text-primary"></i>`);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
-  }
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
 
+
+    document.getElementById('glitch-logo-fade').addEventListener('animationstart', () => {
+      const navItems = [
+        new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+          'nav-item-text-only',
+          'SN.Corporation'
+        )
+      ];
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicator(`<i class="sui-icon-md icon-success sui-text-primary"></i>`);
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
+    })
+  }
 }
 
 /***/ }),
@@ -119,6 +134,8 @@ class MenuPage {
   static dialogueIndicatorId = 'menu-page-dialogue-indicator';
 
   static dialogueScreenId = 'menu-page-dialogue-screen';
+
+  static dialogueScreenContentId = 'menu-page-dialogue-screen-content';
 
   static dialogueBtnChunkBId = 'menu-page-dialogue-btn-chunk-b';
 
@@ -171,8 +188,20 @@ class MenuPage {
     document.getElementById(MenuPage.bodyId).innerHTML = content;
   }
 
-  static setDialogueScreenContent(content) {
-    document.getElementById(MenuPage.dialogueScreenId).innerHTML = content;
+  static setDialogueIndicator(content) {
+    document.getElementById(MenuPage.dialogueIndicatorId).innerHTML = content;
+  }
+
+  static setDialogueScreenContent(content, useFadeAnimation = false) {
+    const dialogueScreen = document.getElementById(MenuPage.dialogueScreenContentId);
+    dialogueScreen.innerHTML = content;
+
+    if (useFadeAnimation) {
+      dialogueScreen.classList.add('fade-in-fade-out');
+      dialogueScreen.addEventListener('animationend', () => {
+        dialogueScreen.classList.remove('fade-in-fade-out');
+      });
+    }
   }
 
   static setDialogueScreenTheme(theme) {
@@ -207,7 +236,7 @@ class MenuPage {
   }
 
   static clearDialogueScreen() {
-    document.getElementById(MenuPage.dialogueScreenId).innerHTML = '';
+    document.getElementById(MenuPage.dialogueScreenContentId).innerHTML = '';
   }
 
   static clearDialogueBtnAHandler() {

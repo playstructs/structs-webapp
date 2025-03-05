@@ -18,6 +18,8 @@ export class MenuPage {
 
   static dialogueScreenId = 'menu-page-dialogue-screen';
 
+  static dialogueScreenContentId = 'menu-page-dialogue-screen-content';
+
   static dialogueBtnChunkBId = 'menu-page-dialogue-btn-chunk-b';
 
   static dialogueBtnAId = 'menu-page-dialogue-btn-a';
@@ -69,8 +71,20 @@ export class MenuPage {
     document.getElementById(MenuPage.bodyId).innerHTML = content;
   }
 
-  static setDialogueScreenContent(content) {
-    document.getElementById(MenuPage.dialogueScreenId).innerHTML = content;
+  static setDialogueIndicator(content) {
+    document.getElementById(MenuPage.dialogueIndicatorId).innerHTML = content;
+  }
+
+  static setDialogueScreenContent(content, useFadeAnimation = false) {
+    const dialogueScreen = document.getElementById(MenuPage.dialogueScreenContentId);
+    dialogueScreen.innerHTML = content;
+
+    if (useFadeAnimation) {
+      dialogueScreen.classList.add('fade-in-fade-out');
+      dialogueScreen.addEventListener('animationend', () => {
+        dialogueScreen.classList.remove('fade-in-fade-out');
+      });
+    }
   }
 
   static setDialogueScreenTheme(theme) {
@@ -105,7 +119,7 @@ export class MenuPage {
   }
 
   static clearDialogueScreen() {
-    document.getElementById(MenuPage.dialogueScreenId).innerHTML = '';
+    document.getElementById(MenuPage.dialogueScreenContentId).innerHTML = '';
   }
 
   static clearDialogueBtnAHandler() {

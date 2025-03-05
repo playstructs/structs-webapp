@@ -28,6 +28,17 @@
   }
 }
 
+@keyframes fade-out-fade-in {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 /* Keyframes End */
 
 /* General Styling Start */
@@ -135,6 +146,10 @@ img.glitch-logo {
 /* General Styling End */
 
 /* Animated Classes Start */
+
+.fade-in-fade-out {
+  animation: fade-out-fade-in 300ms ease-out;
+}
 
 .glitch-logo.fade-out {
   opacity: 1;
