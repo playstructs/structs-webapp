@@ -33,7 +33,7 @@
     opacity: 1;
   }
   50% {
-    opacity: 0.8;
+    opacity: 0.75;
   }
   100% {
     opacity: 1;
@@ -141,6 +141,30 @@ img.glitch-logo {
   position: absolute;
   top: 0;
   left: 0;
+}
+
+.full-screen-content-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.lottie-scan-lines-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  max-height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.hrbot-silhouette {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 256px;
+  height: 256px;
 }
 
 /* General Styling End */

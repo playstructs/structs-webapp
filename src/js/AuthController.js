@@ -89,5 +89,47 @@ export class AuthController {
 
     MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
     MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
+
+    setTimeout(() => {
+      MenuPage.router.goto('Auth', 'signupIncomingCall');
+    }, 4000);
+  }
+
+  signupIncomingCall() {
+    const navItems = [
+      new NavItemDTO(
+        'nav-item-text-only',
+        'Incoming Call'
+      )
+    ];
+    MenuPage.setNavItems(navItems);
+
+    MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+      <img
+        id="hrbot-silhouette"
+        class="hrbot-silhouette"
+        src="/img/hrbot-silhouette.png"
+        alt="A silhouette of the HR Bot"
+      >
+    </div>
+    `);
+
+    MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-alert sui-text-warning"></i>`, true);
+    MenuPage.setDialogueScreenContent(`<strong>Alert:</strong> Priority Call`, true);
+    MenuPage.enableDialogueBtnA();
+
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
   }
 }

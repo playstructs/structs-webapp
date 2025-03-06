@@ -105,6 +105,48 @@ class AuthController {
 
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
+
+    setTimeout(() => {
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall');
+    }, 4000);
+  }
+
+  signupIncomingCall() {
+    const navItems = [
+      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'Incoming Call'
+      )
+    ];
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+      <img
+        id="hrbot-silhouette"
+        class="hrbot-silhouette"
+        src="/img/hrbot-silhouette.png"
+        alt="A silhouette of the HR Bot"
+      >
+    </div>
+    `);
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-alert sui-text-warning"></i>`, true);
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`<strong>Alert:</strong> Priority Call`, true);
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
+
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
   }
 }
 
@@ -427,6 +469,7 @@ const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthCont
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
 
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
+// MenuPage.router.goto('Auth', 'signupIncomingCall');
 
 })();
 
