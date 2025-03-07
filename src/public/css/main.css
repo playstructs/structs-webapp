@@ -153,7 +153,7 @@ img.glitch-logo {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1;
+  z-index: 10;
   max-height: 100%;
   width: 100%;
   overflow: hidden;
@@ -165,6 +165,20 @@ img.glitch-logo {
   left: 0;
   width: 256px;
   height: 256px;
+}
+
+#hrbot-talking-large {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  width: 256px;
+  height: 256px;
+  opacity: 0;
+}
+
+#hrbot-talking-large.mod-opaque {
+  opacity: 1;
 }
 
 /* General Styling End */
@@ -186,6 +200,11 @@ img.glitch-logo {
   opacity: 0;
   animation: fade-in 300ms ease-out;
   animation-delay: 2000ms;
+  animation-fill-mode: forwards;
+}
+
+#hrbot-talking-large.fade-in {
+  animation: fade-in 500ms ease-out;
   animation-fill-mode: forwards;
 }
 

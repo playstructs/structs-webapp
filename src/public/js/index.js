@@ -105,13 +105,14 @@ class AuthController {
 
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
 
     setTimeout(() => {
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall');
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall1');
     }, 4000);
   }
 
-  signupIncomingCall() {
+  signupIncomingCall1() {
     const navItems = [
       new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
         'nav-item-text-only',
@@ -136,7 +137,11 @@ class AuthController {
 
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-alert sui-text-warning"></i>`, true);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`<strong>Alert:</strong> Priority Call`, true);
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall2');
+    };
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
 
     const {lottie} = window;
     const {loadAnimation} = lottie;
@@ -147,6 +152,80 @@ class AuthController {
       autoplay: true,
       path: '/lottie/transition-scan-lines/data.json'
     });
+  }
+
+  signupIncomingCall2() {
+    const navItems = [
+      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'Connecting...'
+      )
+    ];
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="hrbot-talking-large" class="fade-in"></div>
+      <img
+        id="hrbot-silhouette"
+        class="hrbot-silhouette"
+        src="/img/hrbot-silhouette.png"
+        alt="A silhouette of the HR Bot"
+      >
+    </div>
+    `);
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
+
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    loadAnimation({
+      container: document.getElementById('hrbot-talking-large'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      path: '/lottie/hr-bot/data.json'
+    });
+
+    setTimeout(() => {
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall3');
+    }, 800);
+  }
+
+  signupIncomingCall3() {
+    const navItems = [
+      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="hrbot-talking-large" class="mod-opaque"></div>
+    </div>
+    `);
+
+    // TODO: Setup indicator profile lottie animation
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`, true);
+
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const lottieHRBotLarge = loadAnimation({
+      container: document.getElementById('hrbot-talking-large'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: false,
+      path: '/lottie/hr-bot/data.json'
+    });
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
+      console.log('A');
+      lottieHRBotLarge.play();
+    };
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
   }
 }
 
@@ -467,9 +546,11 @@ __webpack_require__.r(__webpack_exports__);
 const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController();
 
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
-// MenuPage.router.goto('Auth', 'signupIncomingCall');
+
+// MenuPage.router.goto('Auth', 'signupCallIntro1');
 
 })();
 

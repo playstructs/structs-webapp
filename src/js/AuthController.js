@@ -89,13 +89,14 @@ export class AuthController {
 
     MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
     MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
+    MenuPage.showDialoguePanel();
 
     setTimeout(() => {
-      MenuPage.router.goto('Auth', 'signupIncomingCall');
+      MenuPage.router.goto('Auth', 'signupIncomingCall1');
     }, 4000);
   }
 
-  signupIncomingCall() {
+  signupIncomingCall1() {
     const navItems = [
       new NavItemDTO(
         'nav-item-text-only',
@@ -120,7 +121,11 @@ export class AuthController {
 
     MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-alert sui-text-warning"></i>`, true);
     MenuPage.setDialogueScreenContent(`<strong>Alert:</strong> Priority Call`, true);
+    MenuPage.dialogueBtnAHandler = () => {
+      MenuPage.router.goto('Auth', 'signupIncomingCall2');
+    };
     MenuPage.enableDialogueBtnA();
+    MenuPage.showDialoguePanel();
 
     const {lottie} = window;
     const {loadAnimation} = lottie;
@@ -131,5 +136,79 @@ export class AuthController {
       autoplay: true,
       path: '/lottie/transition-scan-lines/data.json'
     });
+  }
+
+  signupIncomingCall2() {
+    const navItems = [
+      new NavItemDTO(
+        'nav-item-text-only',
+        'Connecting...'
+      )
+    ];
+    MenuPage.setNavItems(navItems);
+
+    MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="hrbot-talking-large" class="fade-in"></div>
+      <img
+        id="hrbot-silhouette"
+        class="hrbot-silhouette"
+        src="/img/hrbot-silhouette.png"
+        alt="A silhouette of the HR Bot"
+      >
+    </div>
+    `);
+
+    MenuPage.disableDialogueBtnA();
+
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    loadAnimation({
+      container: document.getElementById('hrbot-talking-large'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      path: '/lottie/hr-bot/data.json'
+    });
+
+    setTimeout(() => {
+      MenuPage.router.goto('Auth', 'signupIncomingCall3');
+    }, 800);
+  }
+
+  signupIncomingCall3() {
+    const navItems = [
+      new NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    MenuPage.setNavItems(navItems);
+
+    MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="hrbot-talking-large" class="mod-opaque"></div>
+    </div>
+    `);
+
+    // TODO: Setup indicator profile lottie animation
+
+    MenuPage.setDialogueScreenContent(`<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`, true);
+
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const lottieHRBotLarge = loadAnimation({
+      container: document.getElementById('hrbot-talking-large'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: false,
+      path: '/lottie/hr-bot/data.json'
+    });
+
+    MenuPage.dialogueBtnAHandler = () => {
+      console.log('A');
+      lottieHRBotLarge.play();
+    };
+    MenuPage.enableDialogueBtnA();
   }
 }
