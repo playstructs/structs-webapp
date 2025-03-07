@@ -41,7 +41,6 @@ class AuthController {
     `);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
     document.getElementById('new-player-btn').addEventListener('click', () => {
-      console.log('New Player');
       _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupConnectingToCorporate');
     });
     document.getElementById('returning-player-btn').addEventListener('click', () => {
@@ -207,8 +206,6 @@ class AuthController {
     </div>
     `);
 
-    // TODO: Setup indicator profile lottie animation
-
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`, true);
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`, true);
 
@@ -234,7 +231,10 @@ class AuthController {
     })
 
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
-      console.log('A');
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`I have been tasked with assisting you as you complete your <span class="sui-text-secondary">Employee Orientation</span>`, true);
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
+        console.log('next step');
+      };
     };
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
   }

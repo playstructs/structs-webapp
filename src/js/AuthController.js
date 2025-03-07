@@ -25,7 +25,6 @@ export class AuthController {
     `);
     MenuPage.hideAndClearDialoguePanel();
     document.getElementById('new-player-btn').addEventListener('click', () => {
-      console.log('New Player');
       MenuPage.router.goto('Auth', 'signupConnectingToCorporate');
     });
     document.getElementById('returning-player-btn').addEventListener('click', () => {
@@ -191,8 +190,6 @@ export class AuthController {
     </div>
     `);
 
-    // TODO: Setup indicator profile lottie animation
-
     MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`, true);
     MenuPage.setDialogueScreenContent(`<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`, true);
 
@@ -218,7 +215,10 @@ export class AuthController {
     })
 
     MenuPage.dialogueBtnAHandler = () => {
-      console.log('A');
+      MenuPage.setDialogueScreenContent(`I have been tasked with assisting you as you complete your <span class="sui-text-secondary">Employee Orientation</span>`, true);
+      MenuPage.dialogueBtnAHandler = () => {
+        console.log('next step');
+      };
     };
     MenuPage.enableDialogueBtnA();
   }
