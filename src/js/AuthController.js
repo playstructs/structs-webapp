@@ -193,6 +193,7 @@ export class AuthController {
 
     // TODO: Setup indicator profile lottie animation
 
+    MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`, true);
     MenuPage.setDialogueScreenContent(`<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`, true);
 
     const {lottie} = window;
@@ -204,10 +205,20 @@ export class AuthController {
       autoplay: false,
       path: '/lottie/hr-bot/data.json'
     });
+    const lottieHRBotSmall = loadAnimation({
+      container: document.getElementById('hrbot-talking-small'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: false,
+      path: '/lottie/hr-bot/data.json'
+    });
+    setTimeout(() => {
+      lottieHRBotLarge.play();
+      lottieHRBotSmall.play();
+    })
 
     MenuPage.dialogueBtnAHandler = () => {
       console.log('A');
-      lottieHRBotLarge.play();
     };
     MenuPage.enableDialogueBtnA();
   }

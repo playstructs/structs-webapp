@@ -181,6 +181,15 @@ img.glitch-logo {
   opacity: 1;
 }
 
+#menu-page-dialogue-indicator {
+  overflow: hidden;
+}
+
+#hrbot-talking-small {
+  width: 64px;
+  height: 64px;
+}
+
 /* General Styling End */
 
 /* Animated Classes Start */
