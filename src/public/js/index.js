@@ -238,6 +238,79 @@ class AuthController {
     };
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
   }
+
+  signupSetUsername() {
+    const navItems = [
+      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+      <div class="sui-page-body-screen-content mod-positioned-absolute">
+        <div class="set-username-screen-body">
+          <div class="set-username-wrapper">
+            <div class="set-username-pfp-section">
+              <div class="set-username-pfp">
+              </div>
+            </div>
+            <div class="set-username-name-section">
+              <div class="set-username-field-wrapper">
+                <label class="sui-input-text" for="username">
+                <span>Display Name</span>
+                <input
+                  type="text"
+                  name="username"
+                  id="username"
+                  placeholder="Your Name"
+                >
+              </label>
+              </div>
+              <div class="set-username-btn-wrapper">
+                <a href="javascript: void(0)" class="sui-screen-btn sui-mod-primary">Submit</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    `);
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`To begin, please confirm your identity.`, true);
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.clearDialogueBtnAHandler();
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.clearDialogueBtnBHandler();
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
+
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const scanLines = loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
+    loadAnimation({
+      container: document.getElementById('hrbot-talking-small'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: '/lottie/hr-bot/data.json'
+    });
+
+    scanLines.addEventListener('complete', () => {
+      document.getElementById('lottie-scan-lines').classList.add('hidden');
+    });
+  }
 }
 
 /***/ }),
@@ -561,7 +634,7 @@ _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 
-// MenuPage.router.goto('Auth', 'signupCallIntro1');
+// MenuPage.router.goto('Auth', 'signupSetUsername');
 
 })();
 

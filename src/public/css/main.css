@@ -190,6 +190,81 @@ img.glitch-logo {
   height: 64px;
 }
 
+.sui-page-body-screen-content.mod-positioned-absolute {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.set-username-wrapper {
+  display: flex;
+  flex: 1 0 0;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 24px;
+}
+
+.set-username-pfp-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+}
+
+.set-username-name-section {
+  display: flex;
+  max-width: 320px;
+  min-width: 256px;
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+}
+
+.set-username-pfp {
+  display: flex;
+  width: 72px;
+  height: 72px;
+  align-items: center;
+  justify-content: center;
+  background-image: url("/img/sui/mock/mock-droid-360.png");
+  background-repeat: no-repeat;
+  box-shadow: -2px 0 0 0 var(--text-player-highlight), 2px 0 0 0 var(--text-player-highlight), 0 -2px 0 0 var(--text-player-highlight), 0 2px 0 0 var(--text-player-highlight);
+}
+
+.set-username-screen-body {
+  display: flex;
+  padding: var(--spacing-xl);
+  flex: 1 0 0;
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  gap: var(--spacing-xl) var(--spacing-xxl);
+}
+
+.set-username-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  justify-content: flex-end;
+}
+
+.set-username-btn-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: stretch;
+  justify-content: center;
+  gap: 10px;
+}
+
 /* General Styling End */
 
 /* Animated Classes Start */

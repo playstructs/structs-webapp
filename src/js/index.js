@@ -8,4 +8,4 @@ MenuPage.initListeners();
 
 MenuPage.router.goto('Auth', 'index');
 
-// MenuPage.router.goto('Auth', 'signupCallIntro1');
+// MenuPage.router.goto('Auth', 'signupSetUsername');
