@@ -1,9 +1,11 @@
 import {MenuPage} from './MenuPage';
 import {NavItemDTO} from "./NavItemDTO";
+import {AbstractController} from "./AbstractController";
+import {USERNAME_PATTERN} from "./RegexPattern";
 
-export class AuthController {
-  constructor() {
-    this.name = 'Auth';
+export class AuthController extends AbstractController {
+  constructor(gameState) {
+    super('Auth', gameState);
   }
 
   index() {
@@ -217,7 +219,7 @@ export class AuthController {
     MenuPage.dialogueBtnAHandler = () => {
       MenuPage.setDialogueScreenContent(`I have been tasked with assisting you as you complete your <span class="sui-text-secondary">Employee Orientation</span>`, true);
       MenuPage.dialogueBtnAHandler = () => {
-        console.log('next step');
+        MenuPage.router.goto('Auth', 'signupSetUsername');
       };
     };
     MenuPage.enableDialogueBtnA();
@@ -251,13 +253,13 @@ export class AuthController {
                 <input
                   type="text"
                   name="username"
-                  id="username"
+                  id="username-input"
                   placeholder="Your Name"
                 >
               </label>
               </div>
               <div class="set-username-btn-wrapper">
-                <a href="javascript: void(0)" class="sui-screen-btn sui-mod-primary">Submit</a>
+                <a id="submit-btn" href="javascript: void(0)" class="sui-screen-btn sui-mod-disabled">Submit</a>
               </div>
             </div>
           </div>
@@ -293,6 +295,37 @@ export class AuthController {
 
     scanLines.addEventListener('complete', () => {
       document.getElementById('lottie-scan-lines').classList.add('hidden');
+    });
+
+    const usernameInput = document.getElementById('username-input');
+    usernameInput.addEventListener('keyup', (e) => {
+      const submitBtn = document.getElementById('submit-btn');
+
+      if (usernameInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
+        submitBtn.classList.remove('sui-mod-disabled');
+        submitBtn.classList.add('sui-mod-primary');
+      } else if (usernameInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
+        submitBtn.classList.remove('sui-mod-primary');
+        submitBtn.classList.add('sui-mod-disabled');
+      }
+    });
+
+    const submitBtnHandler = () => {
+      const usernameInput = document.getElementById('username-input');
+
+      if (!USERNAME_PATTERN.test(usernameInput.value)) {
+        MenuPage.setDialogueScreenContent(`Only <strong>letters</strong>, <strong>numbers</strong>, <strong>-</strong> and <strong>_</strong> are allowed. <strong>Length</strong> must be between <strong>3</strong> and <strong>20</strong> characters.`, true);
+      } else {
+        this.gameState.signupRequest.username = document.getElementById('username-input').value;
+        console.log(this.gameState.signupRequest);
+      }
+    };
+
+    document.getElementById('submit-btn').addEventListener('click', submitBtnHandler);
+    usernameInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        submitBtnHandler();
+      }
     });
   }
 }

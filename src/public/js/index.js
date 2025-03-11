@@ -2,6 +2,29 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./js/AbstractController.js":
+/*!**********************************!*\
+  !*** ./js/AbstractController.js ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AbstractController: () => (/* binding */ AbstractController)
+/* harmony export */ });
+class AbstractController {
+  /**
+   * @param {string} name
+   * @param {GameState} gameState
+   */
+  constructor(name, gameState) {
+    this.name = name;
+    this.gameState = gameState;
+  }
+}
+
+/***/ }),
+
 /***/ "./js/AuthController.js":
 /*!******************************!*\
   !*** ./js/AuthController.js ***!
@@ -14,12 +37,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPage */ "./js/MenuPage.js");
 /* harmony import */ var _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./NavItemDTO */ "./js/NavItemDTO.js");
+/* harmony import */ var _AbstractController__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./AbstractController */ "./js/AbstractController.js");
+/* harmony import */ var _RegexPattern__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./RegexPattern */ "./js/RegexPattern.js");
 
 
 
-class AuthController {
-  constructor() {
-    this.name = 'Auth';
+
+
+class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.AbstractController {
+  constructor(gameState) {
+    super('Auth', gameState);
   }
 
   index() {
@@ -233,7 +260,7 @@ class AuthController {
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
       _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`I have been tasked with assisting you as you complete your <span class="sui-text-secondary">Employee Orientation</span>`, true);
       _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
-        console.log('next step');
+        _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupSetUsername');
       };
     };
     _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
@@ -267,13 +294,13 @@ class AuthController {
                 <input
                   type="text"
                   name="username"
-                  id="username"
+                  id="username-input"
                   placeholder="Your Name"
                 >
               </label>
               </div>
               <div class="set-username-btn-wrapper">
-                <a href="javascript: void(0)" class="sui-screen-btn sui-mod-primary">Submit</a>
+                <a id="submit-btn" href="javascript: void(0)" class="sui-screen-btn sui-mod-disabled">Submit</a>
               </div>
             </div>
           </div>
@@ -310,6 +337,59 @@ class AuthController {
     scanLines.addEventListener('complete', () => {
       document.getElementById('lottie-scan-lines').classList.add('hidden');
     });
+
+    const usernameInput = document.getElementById('username-input');
+    usernameInput.addEventListener('keyup', (e) => {
+      const submitBtn = document.getElementById('submit-btn');
+
+      if (usernameInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
+        submitBtn.classList.remove('sui-mod-disabled');
+        submitBtn.classList.add('sui-mod-primary');
+      } else if (usernameInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
+        submitBtn.classList.remove('sui-mod-primary');
+        submitBtn.classList.add('sui-mod-disabled');
+      }
+    });
+
+    const submitBtnHandler = () => {
+      const usernameInput = document.getElementById('username-input');
+
+      if (!_RegexPattern__WEBPACK_IMPORTED_MODULE_3__.USERNAME_PATTERN.test(usernameInput.value)) {
+        _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Only <strong>letters</strong>, <strong>numbers</strong>, <strong>-</strong> and <strong>_</strong> are allowed. <strong>Length</strong> must be between <strong>3</strong> and <strong>20</strong> characters.`, true);
+      } else {
+        this.gameState.signupRequest.username = document.getElementById('username-input').value;
+        console.log(this.gameState.signupRequest);
+      }
+    };
+
+    document.getElementById('submit-btn').addEventListener('click', submitBtnHandler);
+    usernameInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        submitBtnHandler();
+      }
+    });
+  }
+}
+
+/***/ }),
+
+/***/ "./js/GameState.js":
+/*!*************************!*\
+  !*** ./js/GameState.js ***!
+  \*************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GameState: () => (/* binding */ GameState)
+/* harmony export */ });
+/* harmony import */ var _SignupRequest__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./SignupRequest */ "./js/SignupRequest.js");
+
+
+class GameState {
+
+  constructor() {
+    this.signupRequest = new _SignupRequest__WEBPACK_IMPORTED_MODULE_0__.SignupRequest();
   }
 }
 
@@ -557,6 +637,45 @@ class NavItemDTO {
   }
 }
 
+/***/ }),
+
+/***/ "./js/RegexPattern.js":
+/*!****************************!*\
+  !*** ./js/RegexPattern.js ***!
+  \****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   USERNAME_PATTERN: () => (/* binding */ USERNAME_PATTERN)
+/* harmony export */ });
+const
+  USERNAME_PATTERN = /^[\p{L}0-9-_]{3,20}$/u
+;
+
+/***/ }),
+
+/***/ "./js/SignupRequest.js":
+/*!*****************************!*\
+  !*** ./js/SignupRequest.js ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SignupRequest: () => (/* binding */ SignupRequest)
+/* harmony export */ });
+class SignupRequest {
+  constructor() {
+      this.primary_address = null;
+      this.signature = null;
+      this.pubkey = null;
+      this.guild_id = null;
+      this.username = null;
+      this.pfp = null;
+  }
+}
+
 /***/ })
 
 /******/ 	});
@@ -598,6 +717,18 @@ class NavItemDTO {
 /******/ 		};
 /******/ 	})();
 /******/ 	
+/******/ 	/* webpack/runtime/global */
+/******/ 	(() => {
+/******/ 		__webpack_require__.g = (function() {
+/******/ 			if (typeof globalThis === 'object') return globalThis;
+/******/ 			try {
+/******/ 				return this || new Function('return this')();
+/******/ 			} catch (e) {
+/******/ 				if (typeof window === 'object') return window;
+/******/ 			}
+/******/ 		})();
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/hasOwnProperty shorthand */
 /******/ 	(() => {
 /******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
@@ -624,10 +755,15 @@ var __webpack_exports__ = {};
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPage */ "./js/MenuPage.js");
 /* harmony import */ var _AuthController__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./AuthController */ "./js/AuthController.js");
+/* harmony import */ var _GameState__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./GameState */ "./js/GameState.js");
 
 
 
-const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController();
+
+const gameState = new _GameState__WEBPACK_IMPORTED_MODULE_2__.GameState();
+__webpack_require__.g.gameState = gameState;
+
+const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController(gameState);
 
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
