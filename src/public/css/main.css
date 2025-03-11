@@ -203,7 +203,7 @@ img.glitch-logo {
   flex: 1 0 0;
   align-items: flex-start;
   justify-content: center;
-  gap: 24px;
+  gap: var(--spacing-xl);
 }
 
 .set-username-pfp-section {
@@ -214,7 +214,7 @@ img.glitch-logo {
   gap: var(--spacing-md);
 }
 
-.set-username-name-section {
+.set-username-input-mode {
   display: flex;
   max-width: 320px;
   min-width: 256px;
@@ -223,6 +223,13 @@ img.glitch-logo {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xl);
+}
+
+.set-username-display-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: -1px;
 }
 
 .set-username-pfp {
@@ -263,6 +270,27 @@ img.glitch-logo {
   align-self: stretch;
   justify-content: center;
   gap: 10px;
+}
+
+.set-username-chosen-name {
+  display: flex;
+  padding: 8px var(--spacing-md);
+  border: 1px solid var(--accent-disabled);
+  align-items: center;
+}
+
+.set-username-chosen-name h1 {
+  margin: 0;
+  color: var(--accent-primary-active);
+}
+
+.set-username-profile-created {
+  display: flex;
+  padding: 8px var(--spacing-md);
+  border: 1px solid var(--accent-disabled);
+  margin-top: -1px;
+  align-items: flex-start;
+  justify-content: flex-end;
 }
 
 /* General Styling End */

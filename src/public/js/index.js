@@ -287,7 +287,7 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
               <div class="set-username-pfp">
               </div>
             </div>
-            <div class="set-username-name-section">
+            <div id="set-username-name-section" class="set-username-input-mode">
               <div class="set-username-field-wrapper">
                 <label class="sui-input-text" for="username">
                 <span>Display Name</span>
@@ -339,7 +339,7 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
     });
 
     const usernameInput = document.getElementById('username-input');
-    usernameInput.addEventListener('keyup', (e) => {
+    usernameInput.addEventListener('keyup', () => {
       const submitBtn = document.getElementById('submit-btn');
 
       if (usernameInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
@@ -351,6 +351,8 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
       }
     });
 
+    const setUsernameNameSection = document.getElementById('set-username-name-section');
+
     const submitBtnHandler = () => {
       const usernameInput = document.getElementById('username-input');
 
@@ -358,7 +360,19 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
         _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Only <strong>letters</strong>, <strong>numbers</strong>, <strong>-</strong> and <strong>_</strong> are allowed. <strong>Length</strong> must be between <strong>3</strong> and <strong>20</strong> characters.`, true);
       } else {
         this.gameState.signupRequest.username = document.getElementById('username-input').value;
-        console.log(this.gameState.signupRequest);
+
+        setUsernameNameSection.classList.remove('set-username-input-mode');
+        setUsernameNameSection.classList.add('set-username-display-mode');
+        setUsernameNameSection.innerHTML = `
+          <div class="set-username-chosen-name sui-text-primary"><h1>${this.gameState.signupRequest.username}</h1></div>
+          <div class="set-username-profile-created">Profile Created</div>
+        `;
+
+        _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Welcome, ${this.gameState.signupRequest.username}.`, true);
+        _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
+          console.log('Profile Created OK');
+        };
+        _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
       }
     };
 
@@ -768,9 +782,9 @@ const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthCont
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
 _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
+// MenuPage.router.goto('Auth', 'index');
 
-// MenuPage.router.goto('Auth', 'signupSetUsername');
+_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupSetUsername');
 
 })();
 
