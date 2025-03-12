@@ -917,11 +917,28 @@ class HRBotTalkingTemplate {
     this.dialogueSequence = [];
     this.dialogueIndex = 0;
     this.actionOnSequenceEnd = () => {};
+    this.startWithScanLines = false;
   }
 
   initLottieAnimations() {
     const {lottie} = window;
     const {loadAnimation} = lottie;
+
+    if (this.startWithScanLines) {
+
+      const scanLines = loadAnimation({
+        container: document.getElementById('lottie-scan-lines'),
+        renderer: 'svg',
+        loop: false,
+        autoplay: true,
+        path: '/lottie/transition-scan-lines/data.json'
+      });
+      scanLines.addEventListener('complete', () => {
+        document.getElementById('lottie-scan-lines').classList.add('hidden');
+      });
+
+    }
+
     const lottieHRBotLarge = loadAnimation({
       container: document.getElementById('hrbot-talking-large'),
       renderer: 'svg',
@@ -954,6 +971,9 @@ class HRBotTalkingTemplate {
 
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setBodyContent(`
     <div class="full-screen-content-container">
+      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
       <div id="hrbot-talking-large" class="mod-opaque"></div>
     </div>
     `);
