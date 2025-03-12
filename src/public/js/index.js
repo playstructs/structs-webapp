@@ -32,6 +32,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _framework_AbstractController__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../framework/AbstractController */ "./js/framework/AbstractController.js");
 /* harmony import */ var _constants_RegexPattern__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/RegexPattern */ "./js/constants/RegexPattern.js");
+/* harmony import */ var _views_IndexView__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../views/IndexView */ "./js/views/IndexView.js");
+/* harmony import */ var _views_SignupConnectingToCorporate1View__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate1View */ "./js/views/SignupConnectingToCorporate1View.js");
+/* harmony import */ var _views_SignupConnectingToCorporate2View__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate2View */ "./js/views/SignupConnectingToCorporate2View.js");
+
+
+
 
 
 
@@ -43,92 +49,18 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   }
 
   index() {
-    const navItems = [
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-structs',
-        'Structs'
-      )
-    ];
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems, 'nav-item-structs');
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
-    <div class="sui-page-body-screen-content sui-screen-body justified-centered">
-      <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
-      
-      <a id="new-player-btn" href="javascript: void(0)" class="sui-screen-btn fixed-256 sui-mod-primary">New Player</a>
-      <a id="returning-player-btn" href="javascript: void(0)" class="sui-screen-btn fixed-256 sui-mod-secondary">Returning Player</a>
-    </div>
-    `);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
-    document.getElementById('new-player-btn').addEventListener('click', () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupConnectingToCorporate');
-    });
-    document.getElementById('returning-player-btn').addEventListener('click', () => {
-      console.log('Returning Player');
-    });
+    const view = new _views_IndexView__WEBPACK_IMPORTED_MODULE_4__.IndexView();
+    view.render();
   }
 
-  signupConnectingToCorporate() {
-    const navItems = [
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-text-only',
-        'Connecting...'
-      )
-    ];
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
-    <div class="sui-page-body-screen-content sui-screen-body justified-centered">
-      <div class="connecting-logo-swap-container">
-        <img
-          id="glitch-logo-fade"
-          class="glitch-logo fade-out"
-          src="/img/sui/logo/logo-structs.gif"
-          alt="Animated Structs logo with glitching"
-        >
-        <div id="snc-logo-wrapper" class="snc-logo-wrapper fade-in">
-        </div>
-      </div>
-    </div>
-    `);
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-info sui-text-primary"></i>`);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
-
-    document.getElementById('glitch-logo-fade').addEventListener('animationstart', () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupConnectionSuccessful');
-    })
+  signupConnectingToCorporate1() {
+    const view = new _views_SignupConnectingToCorporate1View__WEBPACK_IMPORTED_MODULE_5__.SignupConnectingToCorporate1View();
+    view.render();
   }
 
-  signupConnectionSuccessful() {
-    const navItems = [
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-text-only',
-        'SN.Corporation'
-      )
-    ];
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
-
-    document.getElementById('snc-logo-wrapper').innerHTML = `
-        <img 
-          class="snc-logo"
-          src="/img/logo-snc.gif"
-          alt="SNC logo"
-        >
-        <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
-      `;
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
-
-    setTimeout(() => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall1');
-    }, 4000);
+  signupConnectingToCorporate2() {
+    const view = new _views_SignupConnectingToCorporate2View__WEBPACK_IMPORTED_MODULE_6__.SignupConnectingToCorporate2View();
+    view.render();
   }
 
   signupIncomingCall1() {
@@ -446,6 +378,28 @@ class AbstractController {
 
 /***/ }),
 
+/***/ "./js/framework/AbstractView.js":
+/*!**************************************!*\
+  !*** ./js/framework/AbstractView.js ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AbstractView: () => (/* binding */ AbstractView)
+/* harmony export */ });
+/* harmony import */ var _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./NotImplementedError */ "./js/framework/NotImplementedError.js");
+
+
+class AbstractView {
+  render() {
+    throw new _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
+  }
+}
+
+
+/***/ }),
+
 /***/ "./js/framework/MenuPage.js":
 /*!**********************************!*\
   !*** ./js/framework/MenuPage.js ***!
@@ -670,6 +624,26 @@ class MenuPageRouter {
 
 /***/ }),
 
+/***/ "./js/framework/NotImplementedError.js":
+/*!*********************************************!*\
+  !*** ./js/framework/NotImplementedError.js ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   NotImplementedError: () => (/* binding */ NotImplementedError)
+/* harmony export */ });
+class NotImplementedError extends Error {
+  constructor(message= 'Function not implemented') {
+    super(message);
+    this.name = "NotImplementedError";
+  }
+}
+
+
+/***/ }),
+
 /***/ "./js/models/GameState.js":
 /*!********************************!*\
   !*** ./js/models/GameState.js ***!
@@ -689,6 +663,179 @@ class GameState {
     this.signupRequest = new _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__.SignupRequestDTO();
   }
 }
+
+/***/ }),
+
+/***/ "./js/views/IndexView.js":
+/*!*******************************!*\
+  !*** ./js/views/IndexView.js ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   IndexView: () => (/* binding */ IndexView)
+/* harmony export */ });
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../framework/AbstractView */ "./js/framework/AbstractView.js");
+
+
+
+
+class IndexView extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.AbstractView {
+
+  initPageCode() {
+    document.getElementById('new-player-btn').addEventListener('click', () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupConnectingToCorporate1');
+    });
+    document.getElementById('returning-player-btn').addEventListener('click', () => {
+      console.log('Returning Player');
+    });
+  }
+
+  render () {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-structs',
+        'Structs'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems, 'nav-item-structs');
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableCloseBtn()
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setBodyContent(`
+    <div class="sui-page-body-screen-content sui-screen-body justified-centered">
+      <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
+      
+      <a id="new-player-btn" href="javascript: void(0)" class="sui-screen-btn fixed-256 sui-mod-primary">New Player</a>
+      <a id="returning-player-btn" href="javascript: void(0)" class="sui-screen-btn fixed-256 sui-mod-secondary">Returning Player</a>
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.hideAndClearDialoguePanel();
+
+    this.initPageCode();
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/views/SignupConnectingToCorporate1View.js":
+/*!******************************************************!*\
+  !*** ./js/views/SignupConnectingToCorporate1View.js ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SignupConnectingToCorporate1View: () => (/* binding */ SignupConnectingToCorporate1View)
+/* harmony export */ });
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../framework/AbstractView */ "./js/framework/AbstractView.js");
+
+
+
+
+class SignupConnectingToCorporate1View extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.AbstractView {
+
+  initPageCode() {
+    document.getElementById('glitch-logo-fade').addEventListener('animationstart', () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupConnectingToCorporate2');
+    });
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-text-only',
+        'Connecting...'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableCloseBtn()
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setBodyContent(`
+    <div class="sui-page-body-screen-content sui-screen-body justified-centered">
+      <div class="connecting-logo-swap-container">
+        <img
+          id="glitch-logo-fade"
+          class="glitch-logo fade-out"
+          src="/img/sui/logo/logo-structs.gif"
+          alt="Animated Structs logo with glitching"
+        >
+        <div id="snc-logo-wrapper" class="snc-logo-wrapper fade-in">
+        </div>
+      </div>
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-info sui-text-primary"></i>`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableDialogueBtnB();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showDialoguePanel();
+
+    this.initPageCode();
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/views/SignupConnectingToCorporate2View.js":
+/*!******************************************************!*\
+  !*** ./js/views/SignupConnectingToCorporate2View.js ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SignupConnectingToCorporate2View: () => (/* binding */ SignupConnectingToCorporate2View)
+/* harmony export */ });
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../framework/AbstractView */ "./js/framework/AbstractView.js");
+
+
+
+
+class SignupConnectingToCorporate2View extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.AbstractView {
+
+  initPageCode() {
+    setTimeout(() => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupIncomingCall1');
+    }, 4000);
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems);
+
+    document.getElementById('snc-logo-wrapper').innerHTML = `
+        <img 
+          class="snc-logo"
+          src="/img/logo-snc.gif"
+          alt="SNC logo"
+        >
+        <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
+      `;
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showDialoguePanel();
+
+    this.initPageCode();
+  }
+}
+
 
 /***/ })
 
