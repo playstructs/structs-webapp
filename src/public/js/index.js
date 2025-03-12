@@ -37,6 +37,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _views_SignupConnectingToCorporate2View__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate2View */ "./js/views/SignupConnectingToCorporate2View.js");
 /* harmony import */ var _views_SignupIncomingCall1View__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../views/SignupIncomingCall1View */ "./js/views/SignupIncomingCall1View.js");
 /* harmony import */ var _views_SignupIncomingCall2View__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../views/SignupIncomingCall2View */ "./js/views/SignupIncomingCall2View.js");
+/* harmony import */ var _views_SignupIncomingCall3View__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../views/SignupIncomingCall3View */ "./js/views/SignupIncomingCall3View.js");
+
 
 
 
@@ -78,51 +80,8 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   }
 
   signupIncomingCall3() {
-    const navItems = [
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-text-only',
-        'SN.Corporation'
-      )
-    ];
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
-    <div class="full-screen-content-container">
-      <div id="hrbot-talking-large" class="mod-opaque"></div>
-    </div>
-    `);
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`, true);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`, true);
-
-    const {lottie} = window;
-    const {loadAnimation} = lottie;
-    const lottieHRBotLarge = loadAnimation({
-      container: document.getElementById('hrbot-talking-large'),
-      renderer: 'svg',
-      loop: true,
-      autoplay: false,
-      path: '/lottie/hr-bot/data.json'
-    });
-    const lottieHRBotSmall = loadAnimation({
-      container: document.getElementById('hrbot-talking-small'),
-      renderer: 'svg',
-      loop: true,
-      autoplay: false,
-      path: '/lottie/hr-bot/data.json'
-    });
-    setTimeout(() => {
-      lottieHRBotLarge.play();
-      lottieHRBotSmall.play();
-    })
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`I have been tasked with assisting you as you complete your <span class="sui-text-secondary">Employee Orientation</span>`, true);
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
-        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupSetUsername');
-      };
-    };
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
+    const view = new _views_SignupIncomingCall3View__WEBPACK_IMPORTED_MODULE_9__.SignupIncomingCall3View();
+    view.render();
   }
 
   signupSetUsername() {
@@ -900,6 +859,125 @@ class SignupIncomingCall2View {
     this.initLottieAnimations();
 
     this.initPageCode();
+  }
+}
+
+/***/ }),
+
+/***/ "./js/views/SignupIncomingCall3View.js":
+/*!*********************************************!*\
+  !*** ./js/views/SignupIncomingCall3View.js ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SignupIncomingCall3View: () => (/* binding */ SignupIncomingCall3View)
+/* harmony export */ });
+/* harmony import */ var _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./templates/HRBotTalkingTemplate */ "./js/views/templates/HRBotTalkingTemplate.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+class SignupIncomingCall3View {
+  render() {
+    const view = new _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__.HRBotTalkingTemplate();
+    view.dialogueSequence = [
+      `<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`,
+      `I have been tasked with assisting you as you complete your <span class="sui-text-secondary">Employee Orientation.</span>`
+    ];
+    view.actionOnSequenceEnd = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupSetUsername');
+    }
+    view.render();
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/views/templates/HRBotTalkingTemplate.js":
+/*!****************************************************!*\
+  !*** ./js/views/templates/HRBotTalkingTemplate.js ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   HRBotTalkingTemplate: () => (/* binding */ HRBotTalkingTemplate)
+/* harmony export */ });
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+class HRBotTalkingTemplate {
+
+  constructor() {
+    this.dialogueSequence = [];
+    this.dialogueIndex = 0;
+    this.actionOnSequenceEnd = () => {};
+  }
+
+  initLottieAnimations() {
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const lottieHRBotLarge = loadAnimation({
+      container: document.getElementById('hrbot-talking-large'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: false,
+      path: '/lottie/hr-bot/data.json'
+    });
+    const lottieHRBotSmall = loadAnimation({
+      container: document.getElementById('hrbot-talking-small'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: false,
+      path: '/lottie/hr-bot/data.json'
+    });
+    setTimeout(() => {
+      lottieHRBotLarge.play();
+      lottieHRBotSmall.play();
+    }, 500);
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableCloseBtn();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="hrbot-talking-large" class="mod-opaque"></div>
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(this.dialogueSequence[0], true);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableDialogueBtnB();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.clearDialogueBtnBHandler();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.dialogueBtnAHandler = () => {
+      this.dialogueIndex++;
+
+      if (this.dialogueIndex < this.dialogueSequence.length) {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(this.dialogueSequence[this.dialogueIndex], true);
+      }
+
+      if (this.dialogueIndex === this.dialogueSequence.length) {
+        this.actionOnSequenceEnd();
+      }
+    };
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showDialoguePanel();
+
+    this.initLottieAnimations();
   }
 }
 

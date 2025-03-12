@@ -7,6 +7,7 @@ import {SignupConnectingToCorporate1View} from "../views/SignupConnectingToCorpo
 import {SignupConnectingToCorporate2View} from "../views/SignupConnectingToCorporate2View";
 import {SignupIncomingCall1View} from "../views/SignupIncomingCall1View";
 import {SignupIncomingCall2View} from "../views/SignupIncomingCall2View";
+import {SignupIncomingCall3View} from "../views/SignupIncomingCall3View";
 
 export class AuthController extends AbstractController {
   constructor(gameState) {
@@ -39,51 +40,8 @@ export class AuthController extends AbstractController {
   }
 
   signupIncomingCall3() {
-    const navItems = [
-      new NavItemDTO(
-        'nav-item-text-only',
-        'SN.Corporation'
-      )
-    ];
-    MenuPage.setNavItems(navItems);
-
-    MenuPage.setBodyContent(`
-    <div class="full-screen-content-container">
-      <div id="hrbot-talking-large" class="mod-opaque"></div>
-    </div>
-    `);
-
-    MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`, true);
-    MenuPage.setDialogueScreenContent(`<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`, true);
-
-    const {lottie} = window;
-    const {loadAnimation} = lottie;
-    const lottieHRBotLarge = loadAnimation({
-      container: document.getElementById('hrbot-talking-large'),
-      renderer: 'svg',
-      loop: true,
-      autoplay: false,
-      path: '/lottie/hr-bot/data.json'
-    });
-    const lottieHRBotSmall = loadAnimation({
-      container: document.getElementById('hrbot-talking-small'),
-      renderer: 'svg',
-      loop: true,
-      autoplay: false,
-      path: '/lottie/hr-bot/data.json'
-    });
-    setTimeout(() => {
-      lottieHRBotLarge.play();
-      lottieHRBotSmall.play();
-    })
-
-    MenuPage.dialogueBtnAHandler = () => {
-      MenuPage.setDialogueScreenContent(`I have been tasked with assisting you as you complete your <span class="sui-text-secondary">Employee Orientation</span>`, true);
-      MenuPage.dialogueBtnAHandler = () => {
-        MenuPage.router.goto('Auth', 'signupSetUsername');
-      };
-    };
-    MenuPage.enableDialogueBtnA();
+    const view = new SignupIncomingCall3View();
+    view.render();
   }
 
   signupSetUsername() {
