@@ -5,6 +5,8 @@ import {USERNAME_PATTERN} from "../constants/RegexPattern";
 import {IndexView} from "../views/IndexView";
 import {SignupConnectingToCorporate1View} from "../views/SignupConnectingToCorporate1View";
 import {SignupConnectingToCorporate2View} from "../views/SignupConnectingToCorporate2View";
+import {SignupIncomingCall1View} from "../views/SignupIncomingCall1View";
+import {SignupIncomingCall2View} from "../views/SignupIncomingCall2View";
 
 export class AuthController extends AbstractController {
   constructor(gameState) {
@@ -27,83 +29,13 @@ export class AuthController extends AbstractController {
   }
 
   signupIncomingCall1() {
-    const navItems = [
-      new NavItemDTO(
-        'nav-item-text-only',
-        'Incoming Call'
-      )
-    ];
-    MenuPage.setNavItems(navItems);
-
-    MenuPage.setBodyContent(`
-    <div class="full-screen-content-container">
-      <div class="lottie-scan-lines-wrapper">
-        <div id="lottie-scan-lines"></div>
-      </div>
-      <img
-        id="hrbot-silhouette"
-        class="hrbot-silhouette"
-        src="/img/hrbot-silhouette.png"
-        alt="A silhouette of the HR Bot"
-      >
-    </div>
-    `);
-
-    MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-alert sui-text-warning"></i>`, true);
-    MenuPage.setDialogueScreenContent(`<strong>Alert:</strong> Priority Call`, true);
-    MenuPage.dialogueBtnAHandler = () => {
-      MenuPage.router.goto('Auth', 'signupIncomingCall2');
-    };
-    MenuPage.enableDialogueBtnA();
-    MenuPage.showDialoguePanel();
-
-    const {lottie} = window;
-    const {loadAnimation} = lottie;
-    loadAnimation({
-      container: document.getElementById('lottie-scan-lines'),
-      renderer: 'svg',
-      loop: false,
-      autoplay: true,
-      path: '/lottie/transition-scan-lines/data.json'
-    });
+    const view = new SignupIncomingCall1View();
+    view.render();
   }
 
   signupIncomingCall2() {
-    const navItems = [
-      new NavItemDTO(
-        'nav-item-text-only',
-        'Connecting...'
-      )
-    ];
-    MenuPage.setNavItems(navItems);
-
-    MenuPage.setBodyContent(`
-    <div class="full-screen-content-container">
-      <div id="hrbot-talking-large" class="fade-in"></div>
-      <img
-        id="hrbot-silhouette"
-        class="hrbot-silhouette"
-        src="/img/hrbot-silhouette.png"
-        alt="A silhouette of the HR Bot"
-      >
-    </div>
-    `);
-
-    MenuPage.disableDialogueBtnA();
-
-    const {lottie} = window;
-    const {loadAnimation} = lottie;
-    loadAnimation({
-      container: document.getElementById('hrbot-talking-large'),
-      renderer: 'svg',
-      loop: false,
-      autoplay: false,
-      path: '/lottie/hr-bot/data.json'
-    });
-
-    setTimeout(() => {
-      MenuPage.router.goto('Auth', 'signupIncomingCall3');
-    }, 800);
+    const view = new SignupIncomingCall2View();
+    view.render();
   }
 
   signupIncomingCall3() {

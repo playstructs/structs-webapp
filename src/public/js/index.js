@@ -35,6 +35,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _views_IndexView__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../views/IndexView */ "./js/views/IndexView.js");
 /* harmony import */ var _views_SignupConnectingToCorporate1View__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate1View */ "./js/views/SignupConnectingToCorporate1View.js");
 /* harmony import */ var _views_SignupConnectingToCorporate2View__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate2View */ "./js/views/SignupConnectingToCorporate2View.js");
+/* harmony import */ var _views_SignupIncomingCall1View__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../views/SignupIncomingCall1View */ "./js/views/SignupIncomingCall1View.js");
+/* harmony import */ var _views_SignupIncomingCall2View__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../views/SignupIncomingCall2View */ "./js/views/SignupIncomingCall2View.js");
+
+
 
 
 
@@ -64,83 +68,13 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   }
 
   signupIncomingCall1() {
-    const navItems = [
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-text-only',
-        'Incoming Call'
-      )
-    ];
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
-    <div class="full-screen-content-container">
-      <div class="lottie-scan-lines-wrapper">
-        <div id="lottie-scan-lines"></div>
-      </div>
-      <img
-        id="hrbot-silhouette"
-        class="hrbot-silhouette"
-        src="/img/hrbot-silhouette.png"
-        alt="A silhouette of the HR Bot"
-      >
-    </div>
-    `);
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-alert sui-text-warning"></i>`, true);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`<strong>Alert:</strong> Priority Call`, true);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall2');
-    };
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
-
-    const {lottie} = window;
-    const {loadAnimation} = lottie;
-    loadAnimation({
-      container: document.getElementById('lottie-scan-lines'),
-      renderer: 'svg',
-      loop: false,
-      autoplay: true,
-      path: '/lottie/transition-scan-lines/data.json'
-    });
+    const view = new _views_SignupIncomingCall1View__WEBPACK_IMPORTED_MODULE_7__.SignupIncomingCall1View();
+    view.render();
   }
 
   signupIncomingCall2() {
-    const navItems = [
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-text-only',
-        'Connecting...'
-      )
-    ];
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
-    <div class="full-screen-content-container">
-      <div id="hrbot-talking-large" class="fade-in"></div>
-      <img
-        id="hrbot-silhouette"
-        class="hrbot-silhouette"
-        src="/img/hrbot-silhouette.png"
-        alt="A silhouette of the HR Bot"
-      >
-    </div>
-    `);
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
-
-    const {lottie} = window;
-    const {loadAnimation} = lottie;
-    loadAnimation({
-      container: document.getElementById('hrbot-talking-large'),
-      renderer: 'svg',
-      loop: false,
-      autoplay: false,
-      path: '/lottie/hr-bot/data.json'
-    });
-
-    setTimeout(() => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall3');
-    }, 800);
+    const view = new _views_SignupIncomingCall2View__WEBPACK_IMPORTED_MODULE_8__.SignupIncomingCall2View();
+    view.render();
   }
 
   signupIncomingCall3() {
@@ -836,6 +770,138 @@ class SignupConnectingToCorporate2View extends _framework_AbstractView__WEBPACK_
   }
 }
 
+
+/***/ }),
+
+/***/ "./js/views/SignupIncomingCall1View.js":
+/*!*********************************************!*\
+  !*** ./js/views/SignupIncomingCall1View.js ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SignupIncomingCall1View: () => (/* binding */ SignupIncomingCall1View)
+/* harmony export */ });
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+class SignupIncomingCall1View {
+
+  initLottieAnimations() {
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-text-only',
+        'Incoming Call'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableCloseBtn();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+      <img
+        id="hrbot-silhouette"
+        class="hrbot-silhouette"
+        src="/img/hrbot-silhouette.png"
+        alt="A silhouette of the HR Bot"
+      >
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-alert sui-text-warning"></i>`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(`<strong>Alert:</strong> Priority Call`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.dialogueBtnAHandler = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupIncomingCall2');
+    };
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showDialoguePanel();
+
+    this.initLottieAnimations();
+  }
+}
+
+/***/ }),
+
+/***/ "./js/views/SignupIncomingCall2View.js":
+/*!*********************************************!*\
+  !*** ./js/views/SignupIncomingCall2View.js ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SignupIncomingCall2View: () => (/* binding */ SignupIncomingCall2View)
+/* harmony export */ });
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+class SignupIncomingCall2View {
+  initLottieAnimations() {
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    loadAnimation({
+      container: document.getElementById('hrbot-talking-large'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      path: '/lottie/hr-bot/data.json'
+    });
+  }
+
+  initPageCode() {
+    setTimeout(() => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupIncomingCall3');
+    }, 800);
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-text-only',
+        'Connecting...'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="hrbot-talking-large" class="fade-in"></div>
+      <img
+        id="hrbot-silhouette"
+        class="hrbot-silhouette"
+        src="/img/hrbot-silhouette.png"
+        alt="A silhouette of the HR Bot"
+      >
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableDialogueBtnA();
+
+    this.initLottieAnimations();
+
+    this.initPageCode();
+  }
+}
 
 /***/ })
 
