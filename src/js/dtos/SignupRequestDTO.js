@@ -1,4 +1,4 @@
-export class SignupRequest {
+export class SignupRequestDTO {
   constructor() {
       this.primary_address = null;
       this.signature = null;

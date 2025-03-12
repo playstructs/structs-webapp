@@ -1,7 +1,7 @@
-import {MenuPage} from './MenuPage';
-import {NavItemDTO} from "./NavItemDTO";
-import {AbstractController} from "./AbstractController";
-import {USERNAME_PATTERN} from "./RegexPattern";
+import {MenuPage} from '../framework/MenuPage';
+import {NavItemDTO} from "../dtos/NavItemDTO";
+import {AbstractController} from "../framework/AbstractController";
+import {USERNAME_PATTERN} from "../constants/RegexPattern";
 
 export class AuthController extends AbstractController {
   constructor(gameState) {

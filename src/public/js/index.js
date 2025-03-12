@@ -2,63 +2,56 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./js/AbstractController.js":
-/*!**********************************!*\
-  !*** ./js/AbstractController.js ***!
-  \**********************************/
+/***/ "./js/constants/RegexPattern.js":
+/*!**************************************!*\
+  !*** ./js/constants/RegexPattern.js ***!
+  \**************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AbstractController: () => (/* binding */ AbstractController)
+/* harmony export */   USERNAME_PATTERN: () => (/* binding */ USERNAME_PATTERN)
 /* harmony export */ });
-class AbstractController {
-  /**
-   * @param {string} name
-   * @param {GameState} gameState
-   */
-  constructor(name, gameState) {
-    this.name = name;
-    this.gameState = gameState;
-  }
-}
+const
+  USERNAME_PATTERN = /^[\p{L}0-9-_]{3,20}$/u
+;
 
 /***/ }),
 
-/***/ "./js/AuthController.js":
-/*!******************************!*\
-  !*** ./js/AuthController.js ***!
-  \******************************/
+/***/ "./js/controllers/AuthController.js":
+/*!******************************************!*\
+  !*** ./js/controllers/AuthController.js ***!
+  \******************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   AuthController: () => (/* binding */ AuthController)
 /* harmony export */ });
-/* harmony import */ var _MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPage */ "./js/MenuPage.js");
-/* harmony import */ var _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./NavItemDTO */ "./js/NavItemDTO.js");
-/* harmony import */ var _AbstractController__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./AbstractController */ "./js/AbstractController.js");
-/* harmony import */ var _RegexPattern__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./RegexPattern */ "./js/RegexPattern.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_AbstractController__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../framework/AbstractController */ "./js/framework/AbstractController.js");
+/* harmony import */ var _constants_RegexPattern__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/RegexPattern */ "./js/constants/RegexPattern.js");
 
 
 
 
 
-class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.AbstractController {
+class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MODULE_2__.AbstractController {
   constructor(gameState) {
     super('Auth', gameState);
   }
 
   index() {
     const navItems = [
-      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
         'nav-item-structs',
         'Structs'
       )
     ];
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems, 'nav-item-structs');
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems, 'nav-item-structs');
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
       <img class="glitch-logo" src="/img/sui/logo/logo-structs.gif" alt="Animated Structs logo with glitching">
       
@@ -66,9 +59,9 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
       <a id="returning-player-btn" href="javascript: void(0)" class="sui-screen-btn fixed-256 sui-mod-secondary">Returning Player</a>
     </div>
     `);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
     document.getElementById('new-player-btn').addEventListener('click', () => {
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupConnectingToCorporate');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupConnectingToCorporate');
     });
     document.getElementById('returning-player-btn').addEventListener('click', () => {
       console.log('Returning Player');
@@ -77,15 +70,15 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
 
   signupConnectingToCorporate() {
     const navItems = [
-      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
         'nav-item-text-only',
         'Connecting...'
       )
     ];
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableCloseBtn()
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="sui-page-body-screen-content sui-screen-body justified-centered">
       <div class="connecting-logo-swap-container">
         <img
@@ -100,25 +93,25 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
     </div>
     `);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-info sui-text-primary"></i>`);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-info sui-text-primary"></i>`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connecting to Corporate Database...`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
 
     document.getElementById('glitch-logo-fade').addEventListener('animationstart', () => {
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupConnectionSuccessful');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupConnectionSuccessful');
     })
   }
 
   signupConnectionSuccessful() {
     const navItems = [
-      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
         'nav-item-text-only',
         'SN.Corporation'
       )
     ];
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
 
     document.getElementById('snc-logo-wrapper').innerHTML = `
         <img 
@@ -129,25 +122,25 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
         <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
       `;
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-success sui-text-primary"></i>`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Connection Successful.`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
 
     setTimeout(() => {
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall1');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall1');
     }, 4000);
   }
 
   signupIncomingCall1() {
     const navItems = [
-      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
         'nav-item-text-only',
         'Incoming Call'
       )
     ];
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="full-screen-content-container">
       <div class="lottie-scan-lines-wrapper">
         <div id="lottie-scan-lines"></div>
@@ -161,13 +154,13 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
     </div>
     `);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-alert sui-text-warning"></i>`, true);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`<strong>Alert:</strong> Priority Call`, true);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall2');
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-alert sui-text-warning"></i>`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`<strong>Alert:</strong> Priority Call`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall2');
     };
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
 
     const {lottie} = window;
     const {loadAnimation} = lottie;
@@ -182,14 +175,14 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
 
   signupIncomingCall2() {
     const navItems = [
-      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
         'nav-item-text-only',
         'Connecting...'
       )
     ];
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="full-screen-content-container">
       <div id="hrbot-talking-large" class="fade-in"></div>
       <img
@@ -201,7 +194,7 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
     </div>
     `);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
 
     const {lottie} = window;
     const {loadAnimation} = lottie;
@@ -214,27 +207,27 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
     });
 
     setTimeout(() => {
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall3');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupIncomingCall3');
     }, 800);
   }
 
   signupIncomingCall3() {
     const navItems = [
-      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
         'nav-item-text-only',
         'SN.Corporation'
       )
     ];
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="full-screen-content-container">
       <div id="hrbot-talking-large" class="mod-opaque"></div>
     </div>
     `);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`, true);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`, true);
 
     const {lottie} = window;
     const {loadAnimation} = lottie;
@@ -257,25 +250,25 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
       lottieHRBotSmall.play();
     })
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`I have been tasked with assisting you as you complete your <span class="sui-text-secondary">Employee Orientation</span>`, true);
-      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
-        _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupSetUsername');
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`I have been tasked with assisting you as you complete your <span class="sui-text-secondary">Employee Orientation</span>`, true);
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupSetUsername');
       };
     };
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
   }
 
   signupSetUsername() {
     const navItems = [
-      new _NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
         'nav-item-text-only',
         'SN.Corporation'
       )
     ];
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="full-screen-content-container">
       <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
         <div id="lottie-scan-lines"></div>
@@ -309,13 +302,13 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
     </div>
     `);
 
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`To begin, please confirm your identity.`, true);
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.clearDialogueBtnAHandler();
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.clearDialogueBtnBHandler();
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
-    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`To begin, please confirm your identity.`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.clearDialogueBtnAHandler();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.clearDialogueBtnBHandler();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
 
     const {lottie} = window;
     const {loadAnimation} = lottie;
@@ -356,8 +349,8 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
     const submitBtnHandler = () => {
       const usernameInput = document.getElementById('username-input');
 
-      if (!_RegexPattern__WEBPACK_IMPORTED_MODULE_3__.USERNAME_PATTERN.test(usernameInput.value)) {
-        _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Only <strong>letters</strong>, <strong>numbers</strong>, <strong>-</strong> and <strong>_</strong> are allowed. <strong>Length</strong> must be between <strong>3</strong> and <strong>20</strong> characters.`, true);
+      if (!_constants_RegexPattern__WEBPACK_IMPORTED_MODULE_3__.USERNAME_PATTERN.test(usernameInput.value)) {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Only <strong>letters</strong>, <strong>numbers</strong>, <strong>-</strong> and <strong>_</strong> are allowed. <strong>Length</strong> must be between <strong>3</strong> and <strong>20</strong> characters.`, true);
       } else {
         this.gameState.signupRequest.username = document.getElementById('username-input').value;
 
@@ -368,11 +361,11 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
           <div class="set-username-profile-created">Profile Created</div>
         `;
 
-        _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Welcome, ${this.gameState.signupRequest.username}.`, true);
-        _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Welcome, ${this.gameState.signupRequest.username}.`, true);
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
           console.log('Profile Created OK');
         };
-        _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
       }
     };
 
@@ -387,39 +380,83 @@ class AuthController extends _AbstractController__WEBPACK_IMPORTED_MODULE_2__.Ab
 
 /***/ }),
 
-/***/ "./js/GameState.js":
-/*!*************************!*\
-  !*** ./js/GameState.js ***!
-  \*************************/
+/***/ "./js/dtos/NavItemDTO.js":
+/*!*******************************!*\
+  !*** ./js/dtos/NavItemDTO.js ***!
+  \*******************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   GameState: () => (/* binding */ GameState)
+/* harmony export */   NavItemDTO: () => (/* binding */ NavItemDTO)
 /* harmony export */ });
-/* harmony import */ var _SignupRequest__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./SignupRequest */ "./js/SignupRequest.js");
-
-
-class GameState {
-
-  constructor() {
-    this.signupRequest = new _SignupRequest__WEBPACK_IMPORTED_MODULE_0__.SignupRequest();
+class NavItemDTO {
+  constructor(id, label, actionHandler = () => {}) {
+    this.id = id;
+    this.label = label;
+    this.actionHandler = actionHandler;
   }
 }
 
 /***/ }),
 
-/***/ "./js/MenuPage.js":
-/*!************************!*\
-  !*** ./js/MenuPage.js ***!
-  \************************/
+/***/ "./js/dtos/SignupRequestDTO.js":
+/*!*************************************!*\
+  !*** ./js/dtos/SignupRequestDTO.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SignupRequestDTO: () => (/* binding */ SignupRequestDTO)
+/* harmony export */ });
+class SignupRequestDTO {
+  constructor() {
+      this.primary_address = null;
+      this.signature = null;
+      this.pubkey = null;
+      this.guild_id = null;
+      this.username = null;
+      this.pfp = null;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/framework/AbstractController.js":
+/*!********************************************!*\
+  !*** ./js/framework/AbstractController.js ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AbstractController: () => (/* binding */ AbstractController)
+/* harmony export */ });
+class AbstractController {
+  /**
+   * @param {string} name
+   * @param {GameState} gameState
+   */
+  constructor(name, gameState) {
+    this.name = name;
+    this.gameState = gameState;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/framework/MenuPage.js":
+/*!**********************************!*\
+  !*** ./js/framework/MenuPage.js ***!
+  \**********************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   MenuPage: () => (/* binding */ MenuPage)
 /* harmony export */ });
-/* harmony import */ var _MenuPageRouter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPageRouter */ "./js/MenuPageRouter.js");
+/* harmony import */ var _MenuPageRouter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPageRouter */ "./js/framework/MenuPageRouter.js");
 
 
 class MenuPage {
@@ -607,10 +644,10 @@ class MenuPage {
 
 /***/ }),
 
-/***/ "./js/MenuPageRouter.js":
-/*!******************************!*\
-  !*** ./js/MenuPageRouter.js ***!
-  \******************************/
+/***/ "./js/framework/MenuPageRouter.js":
+/*!****************************************!*\
+  !*** ./js/framework/MenuPageRouter.js ***!
+  \****************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -633,60 +670,23 @@ class MenuPageRouter {
 
 /***/ }),
 
-/***/ "./js/NavItemDTO.js":
-/*!**************************!*\
-  !*** ./js/NavItemDTO.js ***!
-  \**************************/
+/***/ "./js/models/GameState.js":
+/*!********************************!*\
+  !*** ./js/models/GameState.js ***!
+  \********************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   NavItemDTO: () => (/* binding */ NavItemDTO)
+/* harmony export */   GameState: () => (/* binding */ GameState)
 /* harmony export */ });
-class NavItemDTO {
-  constructor(id, label, actionHandler = () => {}) {
-    this.id = id;
-    this.label = label;
-    this.actionHandler = actionHandler;
-  }
-}
+/* harmony import */ var _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/SignupRequestDTO */ "./js/dtos/SignupRequestDTO.js");
 
-/***/ }),
 
-/***/ "./js/RegexPattern.js":
-/*!****************************!*\
-  !*** ./js/RegexPattern.js ***!
-  \****************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+class GameState {
 
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   USERNAME_PATTERN: () => (/* binding */ USERNAME_PATTERN)
-/* harmony export */ });
-const
-  USERNAME_PATTERN = /^[\p{L}0-9-_]{3,20}$/u
-;
-
-/***/ }),
-
-/***/ "./js/SignupRequest.js":
-/*!*****************************!*\
-  !*** ./js/SignupRequest.js ***!
-  \*****************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   SignupRequest: () => (/* binding */ SignupRequest)
-/* harmony export */ });
-class SignupRequest {
   constructor() {
-      this.primary_address = null;
-      this.signature = null;
-      this.pubkey = null;
-      this.guild_id = null;
-      this.username = null;
-      this.pfp = null;
+    this.signupRequest = new _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__.SignupRequestDTO();
   }
 }
 
@@ -767,24 +767,24 @@ var __webpack_exports__ = {};
   !*** ./js/index.js ***!
   \*********************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPage */ "./js/MenuPage.js");
-/* harmony import */ var _AuthController__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./AuthController */ "./js/AuthController.js");
-/* harmony import */ var _GameState__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./GameState */ "./js/GameState.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _controllers_AuthController__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./controllers/AuthController */ "./js/controllers/AuthController.js");
+/* harmony import */ var _models_GameState__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./models/GameState */ "./js/models/GameState.js");
 
 
 
 
-const gameState = new _GameState__WEBPACK_IMPORTED_MODULE_2__.GameState();
+const gameState = new _models_GameState__WEBPACK_IMPORTED_MODULE_2__.GameState();
 __webpack_require__.g.gameState = gameState;
 
-const authController = new _AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController(gameState);
+const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController(gameState);
 
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
-// MenuPage.router.goto('Auth', 'index');
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 
-_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupSetUsername');
+// MenuPage.router.goto('Auth', 'signupSetUsername');
 
 })();
 
