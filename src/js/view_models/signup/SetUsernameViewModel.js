@@ -42,9 +42,11 @@ export class SetUsernameViewModel extends AbstractViewModel {
       const submitBtn = document.getElementById('submit-btn');
 
       if (usernameInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
+        submitBtn.disabled = false;
         submitBtn.classList.remove('sui-mod-disabled');
         submitBtn.classList.add('sui-mod-primary');
       } else if (usernameInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
+        submitBtn.disabled = true;
         submitBtn.classList.remove('sui-mod-primary');
         submitBtn.classList.add('sui-mod-disabled');
       }
@@ -83,7 +85,7 @@ export class SetUsernameViewModel extends AbstractViewModel {
 
     MenuPage.setDialogueScreenContent(`Welcome, ${this.gameState.signupRequest.username}.`, true);
     MenuPage.dialogueBtnAHandler = () => {
-      console.log('Profile Created OK');
+      MenuPage.router.goto('Auth', 'signupRecoveryKey1');
     };
     MenuPage.enableDialogueBtnA();
   }
@@ -122,7 +124,7 @@ export class SetUsernameViewModel extends AbstractViewModel {
               </label>
               </div>
               <div class="set-username-btn-wrapper">
-                <a id="submit-btn" href="javascript: void(0)" class="sui-screen-btn sui-mod-disabled">Submit</a>
+                <button id="submit-btn" class="sui-screen-btn sui-mod-disabled" disabled>Submit</button>
               </div>
             </div>
           </div>

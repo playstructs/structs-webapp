@@ -36,6 +36,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_IncomingCall2ViewModel__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../view_models/signup/IncomingCall2ViewModel */ "./js/view_models/signup/IncomingCall2ViewModel.js");
 /* harmony import */ var _view_models_signup_IncomingCall3ViewModel__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../view_models/signup/IncomingCall3ViewModel */ "./js/view_models/signup/IncomingCall3ViewModel.js");
 /* harmony import */ var _view_models_signup_SetUsernameViewModel__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../view_models/signup/SetUsernameViewModel */ "./js/view_models/signup/SetUsernameViewModel.js");
+/* harmony import */ var _view_models_signup_RecoveryKey1ViewModel__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../view_models/signup/RecoveryKey1ViewModel */ "./js/view_models/signup/RecoveryKey1ViewModel.js");
+
 
 
 
@@ -82,6 +84,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   signupSetUsername() {
     const viewModel = new _view_models_signup_SetUsernameViewModel__WEBPACK_IMPORTED_MODULE_7__.SetUsernameViewModel(this.gameState);
+    viewModel.render();
+  }
+
+  signupRecoveryKey1() {
+    const viewModel = new _view_models_signup_RecoveryKey1ViewModel__WEBPACK_IMPORTED_MODULE_8__.RecoveryKey1ViewModel();
     viewModel.render();
   }
 }
@@ -785,6 +792,35 @@ class IncomingCall3ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPOR
 
 /***/ }),
 
+/***/ "./js/view_models/signup/RecoveryKey1ViewModel.js":
+/*!********************************************************!*\
+  !*** ./js/view_models/signup/RecoveryKey1ViewModel.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RecoveryKey1ViewModel: () => (/* binding */ RecoveryKey1ViewModel)
+/* harmony export */ });
+/* harmony import */ var _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../templates/HRBotTalkingTemplate */ "./js/view_models/templates/HRBotTalkingTemplate.js");
+
+
+class RecoveryKey1ViewModel {
+  render() {
+    const view = new _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__.HRBotTalkingTemplate();
+    view.startWithScanLines = true;
+    view.dialogueSequence = [
+      `Next, you will create a Recovery Key for your account. This Key allows you to recover your account in the event that you lose access.`,
+    ];
+    view.actionOnSequenceEnd = () => {
+      console.log('actionOnSequenceEnd');
+    }
+    view.render();
+  }
+}
+
+/***/ }),
+
 /***/ "./js/view_models/signup/SetUsernameViewModel.js":
 /*!*******************************************************!*\
   !*** ./js/view_models/signup/SetUsernameViewModel.js ***!
@@ -843,9 +879,11 @@ class SetUsernameViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
       const submitBtn = document.getElementById('submit-btn');
 
       if (usernameInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
+        submitBtn.disabled = false;
         submitBtn.classList.remove('sui-mod-disabled');
         submitBtn.classList.add('sui-mod-primary');
       } else if (usernameInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
+        submitBtn.disabled = true;
         submitBtn.classList.remove('sui-mod-primary');
         submitBtn.classList.add('sui-mod-disabled');
       }
@@ -884,7 +922,7 @@ class SetUsernameViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
 
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(`Welcome, ${this.gameState.signupRequest.username}.`, true);
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.dialogueBtnAHandler = () => {
-      console.log('Profile Created OK');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupRecoveryKey1');
     };
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableDialogueBtnA();
   }
@@ -923,7 +961,7 @@ class SetUsernameViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
               </label>
               </div>
               <div class="set-username-btn-wrapper">
-                <a id="submit-btn" href="javascript: void(0)" class="sui-screen-btn sui-mod-disabled">Submit</a>
+                <button id="submit-btn" class="sui-screen-btn sui-mod-disabled" disabled>Submit</button>
               </div>
             </div>
           </div>
