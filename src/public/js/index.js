@@ -154,20 +154,20 @@ class AbstractController {
 
 /***/ }),
 
-/***/ "./js/framework/AbstractView.js":
-/*!**************************************!*\
-  !*** ./js/framework/AbstractView.js ***!
-  \**************************************/
+/***/ "./js/framework/AbstractViewModel.js":
+/*!*******************************************!*\
+  !*** ./js/framework/AbstractViewModel.js ***!
+  \*******************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AbstractView: () => (/* binding */ AbstractView)
+/* harmony export */   AbstractViewModel: () => (/* binding */ AbstractViewModel)
 /* harmony export */ });
 /* harmony import */ var _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./NotImplementedError */ "./js/framework/NotImplementedError.js");
 
 
-class AbstractView {
+class AbstractViewModel {
   render() {
     throw new _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
   }
@@ -454,12 +454,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../framework/AbstractView */ "./js/framework/AbstractView.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 
 
 
 
-class IndexView extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.AbstractView {
+class IndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
 
   initPageCode() {
     document.getElementById('new-player-btn').addEventListener('click', () => {
@@ -510,12 +510,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractView */ "./js/framework/AbstractView.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 
 
 
 
-class ConnectingToCorp1ViewModel extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.AbstractView {
+class ConnectingToCorp1ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
 
   initPageCode() {
     document.getElementById('glitch-logo-fade').addEventListener('animationstart', () => {
@@ -573,12 +573,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractView */ "./js/framework/AbstractView.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 
 
 
 
-class ConnectingToCorp2ViewModel extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.AbstractView {
+class ConnectingToCorp2ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
 
   initPageCode() {
     setTimeout(() => {
@@ -627,10 +627,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 
 
 
-class IncomingCall1ViewModel {
+
+class IncomingCall1ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
 
   initLottieAnimations() {
     const {lottie} = window;
@@ -694,10 +696,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 
 
 
-class IncomingCall2ViewModel {
+
+class IncomingCall2ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
   initLottieAnimations() {
     const {lottie} = window;
     const {loadAnimation} = lottie;
@@ -759,10 +763,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../templates/HRBotTalkingTemplate */ "./js/view_models/templates/HRBotTalkingTemplate.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 
 
 
-class IncomingCall3ViewModel {
+
+class IncomingCall3ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
   render() {
     const view = new _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__.HRBotTalkingTemplate();
     view.dialogueSequence = [
@@ -792,16 +798,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
 /* harmony import */ var _constants_RegexPattern__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../constants/RegexPattern */ "./js/constants/RegexPattern.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 
 
 
 
-class SetUsernameViewModel {
+
+class SetUsernameViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_3__.AbstractViewModel {
 
   /**
    * @param {GameState} gameState
    */
   constructor(gameState) {
+    super();
     this.gameState = gameState;
   }
 

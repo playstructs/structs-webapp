@@ -1,7 +1,8 @@
 import {HRBotTalkingTemplate} from "../templates/HRBotTalkingTemplate";
 import {MenuPage} from "../../framework/MenuPage";
+import {AbstractViewModel} from "../../framework/AbstractViewModel";
 
-export class IncomingCall3ViewModel {
+export class IncomingCall3ViewModel extends AbstractViewModel {
   render() {
     const view = new HRBotTalkingTemplate();
     view.dialogueSequence = [

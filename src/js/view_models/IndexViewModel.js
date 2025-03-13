@@ -1,8 +1,8 @@
 import {NavItemDTO} from "../dtos/NavItemDTO";
 import {MenuPage} from "../framework/MenuPage";
-import {AbstractView} from "../framework/AbstractView";
+import {AbstractViewModel} from "../framework/AbstractViewModel";
 
-export class IndexView extends AbstractView {
+export class IndexView extends AbstractViewModel {
 
   initPageCode() {
     document.getElementById('new-player-btn').addEventListener('click', () => {

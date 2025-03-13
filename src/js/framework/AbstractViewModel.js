@@ -1,6 +1,6 @@
 import {NotImplementedError} from "./NotImplementedError";
 
-export class AbstractView {
+export class AbstractViewModel {
   render() {
     throw new NotImplementedError();
   }

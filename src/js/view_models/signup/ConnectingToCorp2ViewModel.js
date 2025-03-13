@@ -1,8 +1,8 @@
 import {NavItemDTO} from "../../dtos/NavItemDTO";
 import {MenuPage} from "../../framework/MenuPage";
-import {AbstractView} from "../../framework/AbstractView";
+import {AbstractViewModel} from "../../framework/AbstractViewModel";
 
-export class ConnectingToCorp2ViewModel extends AbstractView {
+export class ConnectingToCorp2ViewModel extends AbstractViewModel {
 
   initPageCode() {
     setTimeout(() => {

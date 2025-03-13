@@ -1,13 +1,15 @@
 import {NavItemDTO} from "../../dtos/NavItemDTO";
 import {MenuPage} from "../../framework/MenuPage";
 import {USERNAME_PATTERN} from "../../constants/RegexPattern";
+import {AbstractViewModel} from "../../framework/AbstractViewModel";
 
-export class SetUsernameViewModel {
+export class SetUsernameViewModel extends AbstractViewModel {
 
   /**
    * @param {GameState} gameState
    */
   constructor(gameState) {
+    super();
     this.gameState = gameState;
   }
 

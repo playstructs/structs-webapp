@@ -1,7 +1,8 @@
 import {NavItemDTO} from "../../dtos/NavItemDTO";
 import {MenuPage} from "../../framework/MenuPage";
+import {AbstractViewModel} from "../../framework/AbstractViewModel";
 
-export class IncomingCall2ViewModel {
+export class IncomingCall2ViewModel extends AbstractViewModel {
   initLottieAnimations() {
     const {lottie} = window;
     const {loadAnimation} = lottie;
