@@ -28,16 +28,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   AuthController: () => (/* binding */ AuthController)
 /* harmony export */ });
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
-/* harmony import */ var _framework_AbstractController__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../framework/AbstractController */ "./js/framework/AbstractController.js");
-/* harmony import */ var _constants_RegexPattern__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/RegexPattern */ "./js/constants/RegexPattern.js");
-/* harmony import */ var _views_IndexView__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../views/IndexView */ "./js/views/IndexView.js");
-/* harmony import */ var _views_SignupConnectingToCorporate1View__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate1View */ "./js/views/SignupConnectingToCorporate1View.js");
-/* harmony import */ var _views_SignupConnectingToCorporate2View__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate2View */ "./js/views/SignupConnectingToCorporate2View.js");
-/* harmony import */ var _views_SignupIncomingCall1View__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../views/SignupIncomingCall1View */ "./js/views/SignupIncomingCall1View.js");
-/* harmony import */ var _views_SignupIncomingCall2View__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../views/SignupIncomingCall2View */ "./js/views/SignupIncomingCall2View.js");
-/* harmony import */ var _views_SignupIncomingCall3View__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../views/SignupIncomingCall3View */ "./js/views/SignupIncomingCall3View.js");
+/* harmony import */ var _framework_AbstractController__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractController */ "./js/framework/AbstractController.js");
+/* harmony import */ var _views_IndexView__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../views/IndexView */ "./js/views/IndexView.js");
+/* harmony import */ var _views_SignupConnectingToCorporate1View__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate1View */ "./js/views/SignupConnectingToCorporate1View.js");
+/* harmony import */ var _views_SignupConnectingToCorporate2View__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate2View */ "./js/views/SignupConnectingToCorporate2View.js");
+/* harmony import */ var _views_SignupIncomingCall1View__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../views/SignupIncomingCall1View */ "./js/views/SignupIncomingCall1View.js");
+/* harmony import */ var _views_SignupIncomingCall2View__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../views/SignupIncomingCall2View */ "./js/views/SignupIncomingCall2View.js");
+/* harmony import */ var _views_SignupIncomingCall3View__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../views/SignupIncomingCall3View */ "./js/views/SignupIncomingCall3View.js");
+/* harmony import */ var _views_SignupSetUsernameView__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../views/SignupSetUsernameView */ "./js/views/SignupSetUsernameView.js");
 
 
 
@@ -47,159 +45,44 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
-
-class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MODULE_2__.AbstractController {
+class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MODULE_0__.AbstractController {
   constructor(gameState) {
     super('Auth', gameState);
   }
 
   index() {
-    const view = new _views_IndexView__WEBPACK_IMPORTED_MODULE_4__.IndexView();
+    const view = new _views_IndexView__WEBPACK_IMPORTED_MODULE_1__.IndexView();
     view.render();
   }
 
   signupConnectingToCorporate1() {
-    const view = new _views_SignupConnectingToCorporate1View__WEBPACK_IMPORTED_MODULE_5__.SignupConnectingToCorporate1View();
+    const view = new _views_SignupConnectingToCorporate1View__WEBPACK_IMPORTED_MODULE_2__.SignupConnectingToCorporate1View();
     view.render();
   }
 
   signupConnectingToCorporate2() {
-    const view = new _views_SignupConnectingToCorporate2View__WEBPACK_IMPORTED_MODULE_6__.SignupConnectingToCorporate2View();
+    const view = new _views_SignupConnectingToCorporate2View__WEBPACK_IMPORTED_MODULE_3__.SignupConnectingToCorporate2View();
     view.render();
   }
 
   signupIncomingCall1() {
-    const view = new _views_SignupIncomingCall1View__WEBPACK_IMPORTED_MODULE_7__.SignupIncomingCall1View();
+    const view = new _views_SignupIncomingCall1View__WEBPACK_IMPORTED_MODULE_4__.SignupIncomingCall1View();
     view.render();
   }
 
   signupIncomingCall2() {
-    const view = new _views_SignupIncomingCall2View__WEBPACK_IMPORTED_MODULE_8__.SignupIncomingCall2View();
+    const view = new _views_SignupIncomingCall2View__WEBPACK_IMPORTED_MODULE_5__.SignupIncomingCall2View();
     view.render();
   }
 
   signupIncomingCall3() {
-    const view = new _views_SignupIncomingCall3View__WEBPACK_IMPORTED_MODULE_9__.SignupIncomingCall3View();
+    const view = new _views_SignupIncomingCall3View__WEBPACK_IMPORTED_MODULE_6__.SignupIncomingCall3View();
     view.render();
   }
 
   signupSetUsername() {
-    const navItems = [
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-text-only',
-        'SN.Corporation'
-      )
-    ];
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setNavItems(navItems);
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
-    <div class="full-screen-content-container">
-      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
-        <div id="lottie-scan-lines"></div>
-      </div>
-      <div class="sui-page-body-screen-content mod-positioned-absolute">
-        <div class="set-username-screen-body">
-          <div class="set-username-wrapper">
-            <div class="set-username-pfp-section">
-              <div class="set-username-pfp">
-              </div>
-            </div>
-            <div id="set-username-name-section" class="set-username-input-mode">
-              <div class="set-username-field-wrapper">
-                <label class="sui-input-text" for="username">
-                <span>Display Name</span>
-                <input
-                  type="text"
-                  name="username"
-                  id="username-input"
-                  placeholder="Your Name"
-                >
-              </label>
-              </div>
-              <div class="set-username-btn-wrapper">
-                <a id="submit-btn" href="javascript: void(0)" class="sui-screen-btn sui-mod-disabled">Submit</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    `);
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`To begin, please confirm your identity.`, true);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.clearDialogueBtnAHandler();
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.clearDialogueBtnBHandler();
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnA();
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.disableDialogueBtnB();
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.showDialoguePanel();
-
-    const {lottie} = window;
-    const {loadAnimation} = lottie;
-    const scanLines = loadAnimation({
-      container: document.getElementById('lottie-scan-lines'),
-      renderer: 'svg',
-      loop: false,
-      autoplay: true,
-      path: '/lottie/transition-scan-lines/data.json'
-    });
-    loadAnimation({
-      container: document.getElementById('hrbot-talking-small'),
-      renderer: 'svg',
-      loop: true,
-      autoplay: true,
-      path: '/lottie/hr-bot/data.json'
-    });
-
-    scanLines.addEventListener('complete', () => {
-      document.getElementById('lottie-scan-lines').classList.add('hidden');
-    });
-
-    const usernameInput = document.getElementById('username-input');
-    usernameInput.addEventListener('keyup', () => {
-      const submitBtn = document.getElementById('submit-btn');
-
-      if (usernameInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
-        submitBtn.classList.remove('sui-mod-disabled');
-        submitBtn.classList.add('sui-mod-primary');
-      } else if (usernameInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
-        submitBtn.classList.remove('sui-mod-primary');
-        submitBtn.classList.add('sui-mod-disabled');
-      }
-    });
-
-    const setUsernameNameSection = document.getElementById('set-username-name-section');
-
-    const submitBtnHandler = () => {
-      const usernameInput = document.getElementById('username-input');
-
-      if (!_constants_RegexPattern__WEBPACK_IMPORTED_MODULE_3__.USERNAME_PATTERN.test(usernameInput.value)) {
-        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Only <strong>letters</strong>, <strong>numbers</strong>, <strong>-</strong> and <strong>_</strong> are allowed. <strong>Length</strong> must be between <strong>3</strong> and <strong>20</strong> characters.`, true);
-      } else {
-        this.gameState.signupRequest.username = document.getElementById('username-input').value;
-
-        setUsernameNameSection.classList.remove('set-username-input-mode');
-        setUsernameNameSection.classList.add('set-username-display-mode');
-        setUsernameNameSection.innerHTML = `
-          <div class="set-username-chosen-name sui-text-primary"><h1>${this.gameState.signupRequest.username}</h1></div>
-          <div class="set-username-profile-created">Profile Created</div>
-        `;
-
-        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setDialogueScreenContent(`Welcome, ${this.gameState.signupRequest.username}.`, true);
-        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler = () => {
-          console.log('Profile Created OK');
-        };
-        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enableDialogueBtnA();
-      }
-    };
-
-    document.getElementById('submit-btn').addEventListener('click', submitBtnHandler);
-    usernameInput.addEventListener('keyup', (e) => {
-      if (e.key === 'Enter') {
-        submitBtnHandler();
-      }
-    });
+    const view = new _views_SignupSetUsernameView__WEBPACK_IMPORTED_MODULE_7__.SignupSetUsernameView(this.gameState);
+    view.render();
   }
 }
 
@@ -893,6 +776,166 @@ class SignupIncomingCall3View {
   }
 }
 
+
+/***/ }),
+
+/***/ "./js/views/SignupSetUsernameView.js":
+/*!*******************************************!*\
+  !*** ./js/views/SignupSetUsernameView.js ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SignupSetUsernameView: () => (/* binding */ SignupSetUsernameView)
+/* harmony export */ });
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _constants_RegexPattern__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/RegexPattern */ "./js/constants/RegexPattern.js");
+
+
+
+
+class SignupSetUsernameView {
+
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    this.gameState = gameState;
+  }
+
+  initLottieAnimations() {
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const scanLines = loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
+    loadAnimation({
+      container: document.getElementById('hrbot-talking-small'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: '/lottie/hr-bot/data.json'
+    });
+
+    scanLines.addEventListener('complete', () => {
+      document.getElementById('lottie-scan-lines').classList.add('hidden');
+    });
+  }
+
+  initPageCode() {
+    const usernameInput = document.getElementById('username-input');
+    usernameInput.addEventListener('keyup', () => {
+      const submitBtn = document.getElementById('submit-btn');
+
+      if (usernameInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
+        submitBtn.classList.remove('sui-mod-disabled');
+        submitBtn.classList.add('sui-mod-primary');
+      } else if (usernameInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
+        submitBtn.classList.remove('sui-mod-primary');
+        submitBtn.classList.add('sui-mod-disabled');
+      }
+    });
+
+    const submitBtnHandler = () => {
+      const usernameInput = document.getElementById('username-input');
+
+      if (!_constants_RegexPattern__WEBPACK_IMPORTED_MODULE_2__.USERNAME_PATTERN.test(usernameInput.value)) {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(`Only <strong>letters</strong>, <strong>numbers</strong>, <strong>-</strong> and <strong>_</strong> are allowed. <strong>Length</strong> must be between <strong>3</strong> and <strong>20</strong> characters.`, true);
+      } else {
+        this.gameState.signupRequest.username = document.getElementById('username-input').value;
+
+        this.renderSuccessfulSubmission();
+      }
+    };
+
+    document.getElementById('submit-btn').addEventListener('click', submitBtnHandler);
+    usernameInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        submitBtnHandler();
+      }
+    });
+  }
+
+  renderSuccessfulSubmission() {
+    const setUsernameNameSection = document.getElementById('set-username-name-section');
+
+    setUsernameNameSection.classList.remove('set-username-input-mode');
+    setUsernameNameSection.classList.add('set-username-display-mode');
+
+    setUsernameNameSection.innerHTML = `
+      <div class="set-username-chosen-name sui-text-primary"><h1>${this.gameState.signupRequest.username}</h1></div>
+      <div class="set-username-profile-created">Profile Created</div>
+    `;
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(`Welcome, ${this.gameState.signupRequest.username}.`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.dialogueBtnAHandler = () => {
+      console.log('Profile Created OK');
+    };
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableDialogueBtnA();
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+      <div class="sui-page-body-screen-content mod-positioned-absolute">
+        <div class="set-username-screen-body">
+          <div class="set-username-wrapper">
+            <div class="set-username-pfp-section">
+              <div class="set-username-pfp">
+              </div>
+            </div>
+            <div id="set-username-name-section" class="set-username-input-mode">
+              <div class="set-username-field-wrapper">
+                <label class="sui-input-text" for="username">
+                <span>Display Name</span>
+                <input
+                  type="text"
+                  name="username"
+                  id="username-input"
+                  placeholder="Your Name"
+                >
+              </label>
+              </div>
+              <div class="set-username-btn-wrapper">
+                <a id="submit-btn" href="javascript: void(0)" class="sui-screen-btn sui-mod-disabled">Submit</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(`To begin, please confirm your identity.`, true);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.clearDialogueBtnAHandler();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.clearDialogueBtnBHandler();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableDialogueBtnB();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showDialoguePanel();
+
+    this.initLottieAnimations()
+
+    this.initPageCode();
+  }
+}
 
 /***/ }),
 
