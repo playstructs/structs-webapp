@@ -13,37 +13,37 @@ export class AuthController extends AbstractController {
   }
 
   index() {
-    const view = new IndexView();
-    view.render();
+    const viewModel = new IndexView();
+    viewModel.render();
   }
 
   signupConnectingToCorporate1() {
-    const view = new ConnectingToCorp1ViewModel();
-    view.render();
+    const viewModel = new ConnectingToCorp1ViewModel();
+    viewModel.render();
   }
 
   signupConnectingToCorporate2() {
-    const view = new ConnectingToCorp2ViewModel();
-    view.render();
+    const viewModel = new ConnectingToCorp2ViewModel();
+    viewModel.render();
   }
 
   signupIncomingCall1() {
-    const view = new IncomingCall1ViewModel();
-    view.render();
+    const viewModel = new IncomingCall1ViewModel();
+    viewModel.render();
   }
 
   signupIncomingCall2() {
-    const view = new IncomingCall2ViewModel();
-    view.render();
+    const viewModel = new IncomingCall2ViewModel();
+    viewModel.render();
   }
 
   signupIncomingCall3() {
-    const view = new IncomingCall3ViewModel();
-    view.render();
+    const viewModel = new IncomingCall3ViewModel();
+    viewModel.render();
   }
 
   signupSetUsername() {
-    const view = new SetUsernameViewModel(this.gameState);
-    view.render();
+    const viewModel = new SetUsernameViewModel(this.gameState);
+    viewModel.render();
   }
 }

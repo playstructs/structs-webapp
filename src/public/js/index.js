@@ -51,38 +51,38 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   }
 
   index() {
-    const view = new _view_models_IndexViewModel__WEBPACK_IMPORTED_MODULE_1__.IndexView();
-    view.render();
+    const viewModel = new _view_models_IndexViewModel__WEBPACK_IMPORTED_MODULE_1__.IndexView();
+    viewModel.render();
   }
 
   signupConnectingToCorporate1() {
-    const view = new _view_models_signup_ConnectingToCorp1ViewModel__WEBPACK_IMPORTED_MODULE_2__.ConnectingToCorp1ViewModel();
-    view.render();
+    const viewModel = new _view_models_signup_ConnectingToCorp1ViewModel__WEBPACK_IMPORTED_MODULE_2__.ConnectingToCorp1ViewModel();
+    viewModel.render();
   }
 
   signupConnectingToCorporate2() {
-    const view = new _view_models_signup_ConnectingToCorp2ViewModel__WEBPACK_IMPORTED_MODULE_3__.ConnectingToCorp2ViewModel();
-    view.render();
+    const viewModel = new _view_models_signup_ConnectingToCorp2ViewModel__WEBPACK_IMPORTED_MODULE_3__.ConnectingToCorp2ViewModel();
+    viewModel.render();
   }
 
   signupIncomingCall1() {
-    const view = new _view_models_signup_IncomingCall1ViewModel__WEBPACK_IMPORTED_MODULE_4__.IncomingCall1ViewModel();
-    view.render();
+    const viewModel = new _view_models_signup_IncomingCall1ViewModel__WEBPACK_IMPORTED_MODULE_4__.IncomingCall1ViewModel();
+    viewModel.render();
   }
 
   signupIncomingCall2() {
-    const view = new _view_models_signup_IncomingCall2ViewModel__WEBPACK_IMPORTED_MODULE_5__.IncomingCall2ViewModel();
-    view.render();
+    const viewModel = new _view_models_signup_IncomingCall2ViewModel__WEBPACK_IMPORTED_MODULE_5__.IncomingCall2ViewModel();
+    viewModel.render();
   }
 
   signupIncomingCall3() {
-    const view = new _view_models_signup_IncomingCall3ViewModel__WEBPACK_IMPORTED_MODULE_6__.IncomingCall3ViewModel();
-    view.render();
+    const viewModel = new _view_models_signup_IncomingCall3ViewModel__WEBPACK_IMPORTED_MODULE_6__.IncomingCall3ViewModel();
+    viewModel.render();
   }
 
   signupSetUsername() {
-    const view = new _view_models_signup_SetUsernameViewModel__WEBPACK_IMPORTED_MODULE_7__.SetUsernameViewModel(this.gameState);
-    view.render();
+    const viewModel = new _view_models_signup_SetUsernameViewModel__WEBPACK_IMPORTED_MODULE_7__.SetUsernameViewModel(this.gameState);
+    viewModel.render();
   }
 }
 
