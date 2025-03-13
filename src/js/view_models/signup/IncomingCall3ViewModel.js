@@ -1,7 +1,7 @@
-import {HRBotTalkingTemplate} from "./templates/HRBotTalkingTemplate";
-import {MenuPage} from "../framework/MenuPage";
+import {HRBotTalkingTemplate} from "../templates/HRBotTalkingTemplate";
+import {MenuPage} from "../../framework/MenuPage";
 
-export class SignupIncomingCall3View {
+export class IncomingCall3ViewModel {
   render() {
     const view = new HRBotTalkingTemplate();
     view.dialogueSequence = [

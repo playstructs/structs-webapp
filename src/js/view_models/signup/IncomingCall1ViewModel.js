@@ -1,7 +1,7 @@
-import {NavItemDTO} from "../dtos/NavItemDTO";
-import {MenuPage} from "../framework/MenuPage";
+import {NavItemDTO} from "../../dtos/NavItemDTO";
+import {MenuPage} from "../../framework/MenuPage";
 
-export class SignupIncomingCall1View {
+export class IncomingCall1ViewModel {
 
   initLottieAnimations() {
     const {lottie} = window;

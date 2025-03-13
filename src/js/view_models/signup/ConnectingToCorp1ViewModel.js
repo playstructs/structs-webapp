@@ -1,8 +1,8 @@
-import {NavItemDTO} from "../dtos/NavItemDTO";
-import {MenuPage} from "../framework/MenuPage";
-import {AbstractView} from "../framework/AbstractView";
+import {NavItemDTO} from "../../dtos/NavItemDTO";
+import {MenuPage} from "../../framework/MenuPage";
+import {AbstractView} from "../../framework/AbstractView";
 
-export class SignupConnectingToCorporate1View extends AbstractView {
+export class ConnectingToCorp1ViewModel extends AbstractView {
 
   initPageCode() {
     document.getElementById('glitch-logo-fade').addEventListener('animationstart', () => {

@@ -1,8 +1,8 @@
-import {NavItemDTO} from "../dtos/NavItemDTO";
-import {MenuPage} from "../framework/MenuPage";
-import {USERNAME_PATTERN} from "../constants/RegexPattern";
+import {NavItemDTO} from "../../dtos/NavItemDTO";
+import {MenuPage} from "../../framework/MenuPage";
+import {USERNAME_PATTERN} from "../../constants/RegexPattern";
 
-export class SignupSetUsernameView {
+export class SetUsernameViewModel {
 
   /**
    * @param {GameState} gameState

@@ -29,13 +29,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   AuthController: () => (/* binding */ AuthController)
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractController__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractController */ "./js/framework/AbstractController.js");
-/* harmony import */ var _views_IndexView__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../views/IndexView */ "./js/views/IndexView.js");
-/* harmony import */ var _views_SignupConnectingToCorporate1View__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate1View */ "./js/views/SignupConnectingToCorporate1View.js");
-/* harmony import */ var _views_SignupConnectingToCorporate2View__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../views/SignupConnectingToCorporate2View */ "./js/views/SignupConnectingToCorporate2View.js");
-/* harmony import */ var _views_SignupIncomingCall1View__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../views/SignupIncomingCall1View */ "./js/views/SignupIncomingCall1View.js");
-/* harmony import */ var _views_SignupIncomingCall2View__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../views/SignupIncomingCall2View */ "./js/views/SignupIncomingCall2View.js");
-/* harmony import */ var _views_SignupIncomingCall3View__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../views/SignupIncomingCall3View */ "./js/views/SignupIncomingCall3View.js");
-/* harmony import */ var _views_SignupSetUsernameView__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../views/SignupSetUsernameView */ "./js/views/SignupSetUsernameView.js");
+/* harmony import */ var _view_models_IndexViewModel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../view_models/IndexViewModel */ "./js/view_models/IndexViewModel.js");
+/* harmony import */ var _view_models_signup_ConnectingToCorp1ViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../view_models/signup/ConnectingToCorp1ViewModel */ "./js/view_models/signup/ConnectingToCorp1ViewModel.js");
+/* harmony import */ var _view_models_signup_ConnectingToCorp2ViewModel__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../view_models/signup/ConnectingToCorp2ViewModel */ "./js/view_models/signup/ConnectingToCorp2ViewModel.js");
+/* harmony import */ var _view_models_signup_IncomingCall1ViewModel__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../view_models/signup/IncomingCall1ViewModel */ "./js/view_models/signup/IncomingCall1ViewModel.js");
+/* harmony import */ var _view_models_signup_IncomingCall2ViewModel__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../view_models/signup/IncomingCall2ViewModel */ "./js/view_models/signup/IncomingCall2ViewModel.js");
+/* harmony import */ var _view_models_signup_IncomingCall3ViewModel__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../view_models/signup/IncomingCall3ViewModel */ "./js/view_models/signup/IncomingCall3ViewModel.js");
+/* harmony import */ var _view_models_signup_SetUsernameViewModel__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../view_models/signup/SetUsernameViewModel */ "./js/view_models/signup/SetUsernameViewModel.js");
 
 
 
@@ -51,37 +51,37 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   }
 
   index() {
-    const view = new _views_IndexView__WEBPACK_IMPORTED_MODULE_1__.IndexView();
+    const view = new _view_models_IndexViewModel__WEBPACK_IMPORTED_MODULE_1__.IndexView();
     view.render();
   }
 
   signupConnectingToCorporate1() {
-    const view = new _views_SignupConnectingToCorporate1View__WEBPACK_IMPORTED_MODULE_2__.SignupConnectingToCorporate1View();
+    const view = new _view_models_signup_ConnectingToCorp1ViewModel__WEBPACK_IMPORTED_MODULE_2__.ConnectingToCorp1ViewModel();
     view.render();
   }
 
   signupConnectingToCorporate2() {
-    const view = new _views_SignupConnectingToCorporate2View__WEBPACK_IMPORTED_MODULE_3__.SignupConnectingToCorporate2View();
+    const view = new _view_models_signup_ConnectingToCorp2ViewModel__WEBPACK_IMPORTED_MODULE_3__.ConnectingToCorp2ViewModel();
     view.render();
   }
 
   signupIncomingCall1() {
-    const view = new _views_SignupIncomingCall1View__WEBPACK_IMPORTED_MODULE_4__.SignupIncomingCall1View();
+    const view = new _view_models_signup_IncomingCall1ViewModel__WEBPACK_IMPORTED_MODULE_4__.IncomingCall1ViewModel();
     view.render();
   }
 
   signupIncomingCall2() {
-    const view = new _views_SignupIncomingCall2View__WEBPACK_IMPORTED_MODULE_5__.SignupIncomingCall2View();
+    const view = new _view_models_signup_IncomingCall2ViewModel__WEBPACK_IMPORTED_MODULE_5__.IncomingCall2ViewModel();
     view.render();
   }
 
   signupIncomingCall3() {
-    const view = new _views_SignupIncomingCall3View__WEBPACK_IMPORTED_MODULE_6__.SignupIncomingCall3View();
+    const view = new _view_models_signup_IncomingCall3ViewModel__WEBPACK_IMPORTED_MODULE_6__.IncomingCall3ViewModel();
     view.render();
   }
 
   signupSetUsername() {
-    const view = new _views_SignupSetUsernameView__WEBPACK_IMPORTED_MODULE_7__.SignupSetUsernameView(this.gameState);
+    const view = new _view_models_signup_SetUsernameViewModel__WEBPACK_IMPORTED_MODULE_7__.SetUsernameViewModel(this.gameState);
     view.render();
   }
 }
@@ -442,10 +442,10 @@ class GameState {
 
 /***/ }),
 
-/***/ "./js/views/IndexView.js":
-/*!*******************************!*\
-  !*** ./js/views/IndexView.js ***!
-  \*******************************/
+/***/ "./js/view_models/IndexViewModel.js":
+/*!******************************************!*\
+  !*** ./js/view_models/IndexViewModel.js ***!
+  \******************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -498,24 +498,24 @@ class IndexView extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.Abs
 
 /***/ }),
 
-/***/ "./js/views/SignupConnectingToCorporate1View.js":
-/*!******************************************************!*\
-  !*** ./js/views/SignupConnectingToCorporate1View.js ***!
-  \******************************************************/
+/***/ "./js/view_models/signup/ConnectingToCorp1ViewModel.js":
+/*!*************************************************************!*\
+  !*** ./js/view_models/signup/ConnectingToCorp1ViewModel.js ***!
+  \*************************************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   SignupConnectingToCorporate1View: () => (/* binding */ SignupConnectingToCorporate1View)
+/* harmony export */   ConnectingToCorp1ViewModel: () => (/* binding */ ConnectingToCorp1ViewModel)
 /* harmony export */ });
-/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../framework/AbstractView */ "./js/framework/AbstractView.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractView */ "./js/framework/AbstractView.js");
 
 
 
 
-class SignupConnectingToCorporate1View extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.AbstractView {
+class ConnectingToCorp1ViewModel extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.AbstractView {
 
   initPageCode() {
     document.getElementById('glitch-logo-fade').addEventListener('animationstart', () => {
@@ -561,24 +561,24 @@ class SignupConnectingToCorporate1View extends _framework_AbstractView__WEBPACK_
 
 /***/ }),
 
-/***/ "./js/views/SignupConnectingToCorporate2View.js":
-/*!******************************************************!*\
-  !*** ./js/views/SignupConnectingToCorporate2View.js ***!
-  \******************************************************/
+/***/ "./js/view_models/signup/ConnectingToCorp2ViewModel.js":
+/*!*************************************************************!*\
+  !*** ./js/view_models/signup/ConnectingToCorp2ViewModel.js ***!
+  \*************************************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   SignupConnectingToCorporate2View: () => (/* binding */ SignupConnectingToCorporate2View)
+/* harmony export */   ConnectingToCorp2ViewModel: () => (/* binding */ ConnectingToCorp2ViewModel)
 /* harmony export */ });
-/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../framework/AbstractView */ "./js/framework/AbstractView.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractView */ "./js/framework/AbstractView.js");
 
 
 
 
-class SignupConnectingToCorporate2View extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.AbstractView {
+class ConnectingToCorp2ViewModel extends _framework_AbstractView__WEBPACK_IMPORTED_MODULE_2__.AbstractView {
 
   initPageCode() {
     setTimeout(() => {
@@ -615,22 +615,22 @@ class SignupConnectingToCorporate2View extends _framework_AbstractView__WEBPACK_
 
 /***/ }),
 
-/***/ "./js/views/SignupIncomingCall1View.js":
-/*!*********************************************!*\
-  !*** ./js/views/SignupIncomingCall1View.js ***!
-  \*********************************************/
+/***/ "./js/view_models/signup/IncomingCall1ViewModel.js":
+/*!*********************************************************!*\
+  !*** ./js/view_models/signup/IncomingCall1ViewModel.js ***!
+  \*********************************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   SignupIncomingCall1View: () => (/* binding */ SignupIncomingCall1View)
+/* harmony export */   IncomingCall1ViewModel: () => (/* binding */ IncomingCall1ViewModel)
 /* harmony export */ });
-/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
 
 
 
-class SignupIncomingCall1View {
+class IncomingCall1ViewModel {
 
   initLottieAnimations() {
     const {lottie} = window;
@@ -682,22 +682,22 @@ class SignupIncomingCall1View {
 
 /***/ }),
 
-/***/ "./js/views/SignupIncomingCall2View.js":
-/*!*********************************************!*\
-  !*** ./js/views/SignupIncomingCall2View.js ***!
-  \*********************************************/
+/***/ "./js/view_models/signup/IncomingCall2ViewModel.js":
+/*!*********************************************************!*\
+  !*** ./js/view_models/signup/IncomingCall2ViewModel.js ***!
+  \*********************************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   SignupIncomingCall2View: () => (/* binding */ SignupIncomingCall2View)
+/* harmony export */   IncomingCall2ViewModel: () => (/* binding */ IncomingCall2ViewModel)
 /* harmony export */ });
-/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
 
 
 
-class SignupIncomingCall2View {
+class IncomingCall2ViewModel {
   initLottieAnimations() {
     const {lottie} = window;
     const {loadAnimation} = lottie;
@@ -747,22 +747,22 @@ class SignupIncomingCall2View {
 
 /***/ }),
 
-/***/ "./js/views/SignupIncomingCall3View.js":
-/*!*********************************************!*\
-  !*** ./js/views/SignupIncomingCall3View.js ***!
-  \*********************************************/
+/***/ "./js/view_models/signup/IncomingCall3ViewModel.js":
+/*!*********************************************************!*\
+  !*** ./js/view_models/signup/IncomingCall3ViewModel.js ***!
+  \*********************************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   SignupIncomingCall3View: () => (/* binding */ SignupIncomingCall3View)
+/* harmony export */   IncomingCall3ViewModel: () => (/* binding */ IncomingCall3ViewModel)
 /* harmony export */ });
-/* harmony import */ var _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./templates/HRBotTalkingTemplate */ "./js/views/templates/HRBotTalkingTemplate.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../templates/HRBotTalkingTemplate */ "./js/view_models/templates/HRBotTalkingTemplate.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
 
 
 
-class SignupIncomingCall3View {
+class IncomingCall3ViewModel {
   render() {
     const view = new _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__.HRBotTalkingTemplate();
     view.dialogueSequence = [
@@ -779,24 +779,24 @@ class SignupIncomingCall3View {
 
 /***/ }),
 
-/***/ "./js/views/SignupSetUsernameView.js":
-/*!*******************************************!*\
-  !*** ./js/views/SignupSetUsernameView.js ***!
-  \*******************************************/
+/***/ "./js/view_models/signup/SetUsernameViewModel.js":
+/*!*******************************************************!*\
+  !*** ./js/view_models/signup/SetUsernameViewModel.js ***!
+  \*******************************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   SignupSetUsernameView: () => (/* binding */ SignupSetUsernameView)
+/* harmony export */   SetUsernameViewModel: () => (/* binding */ SetUsernameViewModel)
 /* harmony export */ });
-/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _constants_RegexPattern__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/RegexPattern */ "./js/constants/RegexPattern.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _constants_RegexPattern__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../constants/RegexPattern */ "./js/constants/RegexPattern.js");
 
 
 
 
-class SignupSetUsernameView {
+class SetUsernameViewModel {
 
   /**
    * @param {GameState} gameState
@@ -939,10 +939,10 @@ class SignupSetUsernameView {
 
 /***/ }),
 
-/***/ "./js/views/templates/HRBotTalkingTemplate.js":
-/*!****************************************************!*\
-  !*** ./js/views/templates/HRBotTalkingTemplate.js ***!
-  \****************************************************/
+/***/ "./js/view_models/templates/HRBotTalkingTemplate.js":
+/*!**********************************************************!*\
+  !*** ./js/view_models/templates/HRBotTalkingTemplate.js ***!
+  \**********************************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);

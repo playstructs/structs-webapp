@@ -1,8 +1,8 @@
-import {NavItemDTO} from "../dtos/NavItemDTO";
-import {MenuPage} from "../framework/MenuPage";
-import {AbstractView} from "../framework/AbstractView";
+import {NavItemDTO} from "../../dtos/NavItemDTO";
+import {MenuPage} from "../../framework/MenuPage";
+import {AbstractView} from "../../framework/AbstractView";
 
-export class SignupConnectingToCorporate2View extends AbstractView {
+export class ConnectingToCorp2ViewModel extends AbstractView {
 
   initPageCode() {
     setTimeout(() => {
