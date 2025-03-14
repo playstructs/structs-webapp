@@ -79,6 +79,9 @@ export class RecoveryKeyCreationViewModel {
               </div>
             </div>
           </div>
+          <div>
+            <button id= "written-down-btn" class="sui-screen-btn sui-mod-disabled" disabled>I've Written It Down</button>
+          </div>
         </div>
         
     </div>
@@ -88,6 +91,16 @@ export class RecoveryKeyCreationViewModel {
 
     document.getElementById('display-recovery-key-btn').addEventListener('click', () => {
       document.getElementById('recovery-key').classList.toggle('hidden');
+
+      const writtenDownBtn = document.getElementById('written-down-btn');
+      writtenDownBtn.classList.remove('sui-mod-disabled');
+      writtenDownBtn.classList.add('sui-mod-primary');
+      writtenDownBtn.disabled = false;
+    });
+
+    document.getElementById('written-down-btn').addEventListener('click', () => {
+      console.log('written down');
+      // MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
     });
   }
 }
