@@ -36,7 +36,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_IncomingCall2ViewModel__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../view_models/signup/IncomingCall2ViewModel */ "./js/view_models/signup/IncomingCall2ViewModel.js");
 /* harmony import */ var _view_models_signup_IncomingCall3ViewModel__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../view_models/signup/IncomingCall3ViewModel */ "./js/view_models/signup/IncomingCall3ViewModel.js");
 /* harmony import */ var _view_models_signup_SetUsernameViewModel__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../view_models/signup/SetUsernameViewModel */ "./js/view_models/signup/SetUsernameViewModel.js");
-/* harmony import */ var _view_models_signup_RecoveryKey1ViewModel__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../view_models/signup/RecoveryKey1ViewModel */ "./js/view_models/signup/RecoveryKey1ViewModel.js");
+/* harmony import */ var _view_models_signup_RecoveryKeyIntroViewModel__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyIntroViewModel */ "./js/view_models/signup/RecoveryKeyIntroViewModel.js");
 
 
 
@@ -87,8 +87,8 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
     viewModel.render();
   }
 
-  signupRecoveryKey1() {
-    const viewModel = new _view_models_signup_RecoveryKey1ViewModel__WEBPACK_IMPORTED_MODULE_8__.RecoveryKey1ViewModel();
+  signupRecoveryKeyIntro() {
+    const viewModel = new _view_models_signup_RecoveryKeyIntroViewModel__WEBPACK_IMPORTED_MODULE_8__.RecoveryKeyIntroViewModel();
     viewModel.render();
   }
 }
@@ -792,20 +792,20 @@ class IncomingCall3ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPOR
 
 /***/ }),
 
-/***/ "./js/view_models/signup/RecoveryKey1ViewModel.js":
-/*!********************************************************!*\
-  !*** ./js/view_models/signup/RecoveryKey1ViewModel.js ***!
-  \********************************************************/
+/***/ "./js/view_models/signup/RecoveryKeyIntroViewModel.js":
+/*!************************************************************!*\
+  !*** ./js/view_models/signup/RecoveryKeyIntroViewModel.js ***!
+  \************************************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   RecoveryKey1ViewModel: () => (/* binding */ RecoveryKey1ViewModel)
+/* harmony export */   RecoveryKeyIntroViewModel: () => (/* binding */ RecoveryKeyIntroViewModel)
 /* harmony export */ });
 /* harmony import */ var _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../templates/HRBotTalkingTemplate */ "./js/view_models/templates/HRBotTalkingTemplate.js");
 
 
-class RecoveryKey1ViewModel {
+class RecoveryKeyIntroViewModel {
   render() {
     const view = new _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__.HRBotTalkingTemplate();
     view.startWithScanLines = true;
@@ -922,7 +922,7 @@ class SetUsernameViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
 
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(`Welcome, ${this.gameState.signupRequest.username}.`, true);
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.dialogueBtnAHandler = () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupRecoveryKey1');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupRecoveryKeyIntro');
     };
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableDialogueBtnA();
   }

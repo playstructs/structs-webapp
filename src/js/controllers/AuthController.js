@@ -6,7 +6,7 @@ import {IncomingCall1ViewModel} from "../view_models/signup/IncomingCall1ViewMod
 import {IncomingCall2ViewModel} from "../view_models/signup/IncomingCall2ViewModel";
 import {IncomingCall3ViewModel} from "../view_models/signup/IncomingCall3ViewModel";
 import {SetUsernameViewModel} from "../view_models/signup/SetUsernameViewModel";
-import {RecoveryKey1ViewModel} from "../view_models/signup/RecoveryKey1ViewModel";
+import {RecoveryKeyIntroViewModel} from "../view_models/signup/RecoveryKeyIntroViewModel";
 
 export class AuthController extends AbstractController {
   constructor(gameState) {
@@ -48,8 +48,8 @@ export class AuthController extends AbstractController {
     viewModel.render();
   }
 
-  signupRecoveryKey1() {
-    const viewModel = new RecoveryKey1ViewModel();
+  signupRecoveryKeyIntro() {
+    const viewModel = new RecoveryKeyIntroViewModel();
     viewModel.render();
   }
 }

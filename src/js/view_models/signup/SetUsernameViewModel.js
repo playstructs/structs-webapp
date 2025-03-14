@@ -85,7 +85,7 @@ export class SetUsernameViewModel extends AbstractViewModel {
 
     MenuPage.setDialogueScreenContent(`Welcome, ${this.gameState.signupRequest.username}.`, true);
     MenuPage.dialogueBtnAHandler = () => {
-      MenuPage.router.goto('Auth', 'signupRecoveryKey1');
+      MenuPage.router.goto('Auth', 'signupRecoveryKeyIntro');
     };
     MenuPage.enableDialogueBtnA();
   }

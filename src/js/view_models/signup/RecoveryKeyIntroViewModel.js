@@ -1,6 +1,6 @@
 import {HRBotTalkingTemplate} from "../templates/HRBotTalkingTemplate";
 
-export class RecoveryKey1ViewModel {
+export class RecoveryKeyIntroViewModel {
   render() {
     const view = new HRBotTalkingTemplate();
     view.startWithScanLines = true;
