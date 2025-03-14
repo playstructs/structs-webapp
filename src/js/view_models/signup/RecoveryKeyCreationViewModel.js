@@ -24,11 +24,11 @@ export class RecoveryKeyCreationViewModel {
             <a href="javascript: void(0);" class="sui-text-secondary">Learn More About Recovery Keys</a>
           </div>
           <div class="common-group-col mod-border">
-            <a href="javascript: void(0);" class="sui-screen-btn sui-mod-secondary">
+            <a id="display-recovery-key-btn" href="javascript: void(0);" class="sui-screen-btn sui-mod-secondary">
               <i class="sui-icon-md icon-key"></i>
               <span>Display Recovery Key</span>
             </a>
-            <div id="recovery-key" class="text-recovery-key">
+            <div id="recovery-key" class="text-recovery-key hidden">
               <div class="recovery-key-word">
                 <span class="sui-text-secondary">1</span>
                 <span class="mod-white">apple</span>
@@ -85,5 +85,9 @@ export class RecoveryKeyCreationViewModel {
     `);
 
     MenuPage.hideAndClearDialoguePanel();
+
+    document.getElementById('display-recovery-key-btn').addEventListener('click', () => {
+      document.getElementById('recovery-key').classList.toggle('hidden');
+    });
   }
 }
