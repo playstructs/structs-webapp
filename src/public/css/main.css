@@ -41,7 +41,7 @@
 }
 /* Keyframes End */
 
-/* General Styling Start */
+/* Tag Styling Start */
 
 html {
   height: 100%;
@@ -52,10 +52,49 @@ body {
   height: 100%;
 }
 
-#main-container {
-  height: 100%;
-  width: 100%;
+/* Tag Styling End */
+
+/* SUI Modifiers Start */
+
+.sui-page-body-screen-content.justified-centered {
+  justify-content: center;
+  gap: var(--spacing-xl);
 }
+
+.sui-page-body-screen-content.mod-positioned-absolute {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.sui-screen-btn.fixed-256 {
+  width: 256px;
+}
+
+a.sui-text-secondary,
+a.sui-text-secondary:link,
+a.sui-text-secondary:visited {
+  color: var(--accent-secondary);
+
+  font-family: 'DirectiveZero', sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 20px;
+  text-decoration: underline;
+}
+
+a.sui-text-secondary:active,
+a.sui-text-secondary:hover {
+  color: var(--accent-secondary-active);
+  text-decoration: underline;
+}
+
+/* SUI Modifiers End */
+
+/* Menu Page Component Styling Start */
 
 #menu-page-layout {
   display: flex;
@@ -93,14 +132,49 @@ body {
   height: 100%;
 }
 
-.sui-page-body-screen-content.justified-centered {
+#menu-page-dialogue-indicator {
+  overflow: hidden;
+}
+
+/* Menu Page Component Styling End */
+
+/* Common Containers Start */
+
+/*
+
+common-layout - has padding
+common-group - no padding
+
+*/
+
+.common-layout-col {
+  display: flex;
+  padding: var(--spacing-xl);
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  gap: var(--spacing-xxxl);
+}
+
+.common-group-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
   justify-content: center;
   gap: var(--spacing-xl);
 }
 
-.sui-screen-btn.fixed-256 {
-  width: 256px;
+.common-group-col.mod-border {
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border);
 }
+
+/* Common Containers End */
+
+/* Page Specific Styling Start */
 
 .connecting-logo-swap-container {
   display: block;
@@ -181,21 +255,9 @@ img.glitch-logo {
   opacity: 1;
 }
 
-#menu-page-dialogue-indicator {
-  overflow: hidden;
-}
-
 #hrbot-talking-small {
   width: 64px;
   height: 64px;
-}
-
-.sui-page-body-screen-content.mod-positioned-absolute {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
 }
 
 .set-username-wrapper {
@@ -293,7 +355,37 @@ img.glitch-logo {
   justify-content: flex-end;
 }
 
-/* General Styling End */
+.text-recovery-key {
+  font-family: Inter, sans-serif;
+  text-align: center;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.text-recovery-key .mod-white {
+  color: #FFF;
+}
+
+#recovery-key {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+  gap: 16px;
+  align-self: stretch;
+  flex-wrap: wrap;
+}
+
+.recovery-key-word {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Page Specific Styling Start */
 
 /* Animated Classes Start */
 

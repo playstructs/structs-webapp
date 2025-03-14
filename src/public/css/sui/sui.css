@@ -791,6 +791,7 @@ a.sui-nav-btn:active,
 a.sui-nav-btn:visited {
   display: inline-flex;
   align-items: center;
+  padding: var(--spacing-md);
 
   font-family: 'ExtremeHazard', sans-serif;
   font-size: 8px;
@@ -802,7 +803,7 @@ a.sui-nav-btn:visited {
 
 .sui-nav-btn .icon-chevron-left,
 .sui-nav-btn .icon-chevron-right {
-  padding: var(--spacing-md);
+  padding-right: var(--spacing-md);
 }
 
 /* ---- Screen Button End ---- */
@@ -1414,6 +1415,7 @@ a.sui-screen-portrait:hover {
 .sui-page-header {
   display: flex;
   box-sizing: border-box;
+  min-height: var(--spacing-xxxl);
   width: 100%;
   padding: 0 var(--spacing-xl) 0 var(--spacing-xs);
   border-bottom: 1px solid var(--border-subtle);

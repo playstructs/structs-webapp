@@ -1,4 +1,5 @@
 import {MenuPageRouter} from "./MenuPageRouter";
+import {NavItemDTO} from "../dtos/NavItemDTO";
 
 export class MenuPage {
 
@@ -6,7 +7,9 @@ export class MenuPage {
 
   static pageLayoutId = 'menu-page-layout';
 
-  static navId = 'menu-page-nav-items';
+  static navId = 'menu-page-nav';
+
+  static navItemsId = 'menu-page-nav-items';
 
   static closeBtnId = 'menu-page-nav-close';
 
@@ -54,7 +57,7 @@ export class MenuPage {
       >${items[i].label}</a>`;
     }
 
-    document.getElementById(MenuPage.navId).innerHTML = itemsHtml;
+    document.getElementById(MenuPage.navItemsId).innerHTML = itemsHtml;
 
     for (let i = 0; i < items.length; i++) {
       document.getElementById(items[i].id).addEventListener('click', items[i].actionHandler);
@@ -67,6 +70,21 @@ export class MenuPage {
 
   static enableCloseBtn() {
     document.getElementById(MenuPage.closeBtnId).classList.remove('hidden');
+  }
+
+  static hideAndClearNav() {
+    const navItems = [
+      new NavItemDTO(
+        'nav-item-structs',
+        'Structs'
+      )
+    ];
+    MenuPage.setNavItems(navItems, 'nav-item-structs');
+    document.getElementById(MenuPage.navId).classList.add('hidden');
+  }
+
+  static showNav() {
+    document.getElementById(MenuPage.navId).classList.remove('hidden');
   }
 
   static setBodyContent(content) {

@@ -37,6 +37,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_IncomingCall3ViewModel__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../view_models/signup/IncomingCall3ViewModel */ "./js/view_models/signup/IncomingCall3ViewModel.js");
 /* harmony import */ var _view_models_signup_SetUsernameViewModel__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../view_models/signup/SetUsernameViewModel */ "./js/view_models/signup/SetUsernameViewModel.js");
 /* harmony import */ var _view_models_signup_RecoveryKeyIntroViewModel__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyIntroViewModel */ "./js/view_models/signup/RecoveryKeyIntroViewModel.js");
+/* harmony import */ var _view_models_signup_RecoveryKeyCreationViewModel__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyCreationViewModel */ "./js/view_models/signup/RecoveryKeyCreationViewModel.js");
+
 
 
 
@@ -89,6 +91,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   signupRecoveryKeyIntro() {
     const viewModel = new _view_models_signup_RecoveryKeyIntroViewModel__WEBPACK_IMPORTED_MODULE_8__.RecoveryKeyIntroViewModel();
+    viewModel.render();
+  }
+
+  signupRecoveryKeyCreation() {
+    const viewModel = new _view_models_signup_RecoveryKeyCreationViewModel__WEBPACK_IMPORTED_MODULE_9__.RecoveryKeyCreationViewModel();
     viewModel.render();
   }
 }
@@ -194,6 +201,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   MenuPage: () => (/* binding */ MenuPage)
 /* harmony export */ });
 /* harmony import */ var _MenuPageRouter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPageRouter */ "./js/framework/MenuPageRouter.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+
 
 
 class MenuPage {
@@ -202,7 +211,9 @@ class MenuPage {
 
   static pageLayoutId = 'menu-page-layout';
 
-  static navId = 'menu-page-nav-items';
+  static navId = 'menu-page-nav';
+
+  static navItemsId = 'menu-page-nav-items';
 
   static closeBtnId = 'menu-page-nav-close';
 
@@ -250,7 +261,7 @@ class MenuPage {
       >${items[i].label}</a>`;
     }
 
-    document.getElementById(MenuPage.navId).innerHTML = itemsHtml;
+    document.getElementById(MenuPage.navItemsId).innerHTML = itemsHtml;
 
     for (let i = 0; i < items.length; i++) {
       document.getElementById(items[i].id).addEventListener('click', items[i].actionHandler);
@@ -263,6 +274,21 @@ class MenuPage {
 
   static enableCloseBtn() {
     document.getElementById(MenuPage.closeBtnId).classList.remove('hidden');
+  }
+
+  static hideAndClearNav() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-structs',
+        'Structs'
+      )
+    ];
+    MenuPage.setNavItems(navItems, 'nav-item-structs');
+    document.getElementById(MenuPage.navId).classList.add('hidden');
+  }
+
+  static showNav() {
+    document.getElementById(MenuPage.navId).classList.remove('hidden');
   }
 
   static setBodyContent(content) {
@@ -792,6 +818,109 @@ class IncomingCall3ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPOR
 
 /***/ }),
 
+/***/ "./js/view_models/signup/RecoveryKeyCreationViewModel.js":
+/*!***************************************************************!*\
+  !*** ./js/view_models/signup/RecoveryKeyCreationViewModel.js ***!
+  \***************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RecoveryKeyCreationViewModel: () => (/* binding */ RecoveryKeyCreationViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+class RecoveryKeyCreationViewModel {
+  render() {
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+    
+      <!-- Page Header Start -->
+
+        <div class="sui-page-header">
+          <a href="javascript: void(0)" class="sui-nav-btn">
+<!--            <i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>-->
+            Create Recovery Key
+          </a>
+        </div>
+
+        <!-- Page Header End -->
+        
+        <div class="common-layout-col">
+          <div class="common-group-col">
+            <div>Write down your 12-word Recovery Key and keep it in a safe place. You will need this Key to recover your account if you log out or clear your browser cache.</div>
+            <a href="javascript: void(0);" class="sui-text-secondary">Learn More About Recovery Keys</a>
+          </div>
+          <div class="common-group-col mod-border">
+            <a href="javascript: void(0);" class="sui-screen-btn sui-mod-secondary">
+              <i class="sui-icon-md icon-key"></i>
+              <span>Display Recovery Key</span>
+            </a>
+            <div id="recovery-key" class="text-recovery-key">
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">1</span>
+                <span class="mod-white">apple</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">2</span>
+                <span class="mod-white">mask</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">3</span>
+                <span class="mod-white">lens</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">4</span>
+                <span class="mod-white">scout</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">5</span>
+                <span class="mod-white">acid</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">6</span>
+                <span class="mod-white">exclude</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">7</span>
+                <span class="mod-white">evolve</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">8</span>
+                <span class="mod-white">double</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">9</span>
+                <span class="mod-white">build</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">10</span>
+                <span class="mod-white">theme</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">11</span>
+                <span class="mod-white">tone</span>
+              </div>
+              <div class="recovery-key-word">
+                <span class="sui-text-secondary">12</span>
+                <span class="mod-white">enlist</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
+  }
+}
+
+/***/ }),
+
 /***/ "./js/view_models/signup/RecoveryKeyIntroViewModel.js":
 /*!************************************************************!*\
   !*** ./js/view_models/signup/RecoveryKeyIntroViewModel.js ***!
@@ -803,6 +932,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   RecoveryKeyIntroViewModel: () => (/* binding */ RecoveryKeyIntroViewModel)
 /* harmony export */ });
 /* harmony import */ var _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../templates/HRBotTalkingTemplate */ "./js/view_models/templates/HRBotTalkingTemplate.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
 
 
 class RecoveryKeyIntroViewModel {
@@ -813,7 +944,7 @@ class RecoveryKeyIntroViewModel {
       `Next, you will create a Recovery Key for your account. This Key allows you to recover your account in the event that you lose access.`,
     ];
     view.actionOnSequenceEnd = () => {
-      console.log('actionOnSequenceEnd');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
     }
     view.render();
   }
@@ -1183,9 +1314,9 @@ const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
-_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
+// MenuPage.router.goto('Auth', 'index');
 
-// MenuPage.router.goto('Auth', 'signupSetUsername');
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
 
 })();
 
