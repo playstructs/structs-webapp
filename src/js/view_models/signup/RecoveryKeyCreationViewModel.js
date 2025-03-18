@@ -51,11 +51,28 @@ export class RecoveryKeyCreationViewModel extends AbstractViewModel {
     });
   }
 
-  async render() {
+  /**
+   * @param {string} pageLabel
+   * @param {boolean} showBackButton
+   * @param {function} backButtonHandler
+   * @param {string} messageHtml
+   * @param {string} writtenDownBtnLabel
+   * @param {function} customCodeCallback
+   */
+  renderPage(
+    pageLabel,
+    showBackButton,
+    backButtonHandler,
+    messageHtml,
+    writtenDownBtnLabel,
+    customCodeCallback = () => {}
+  ) {
     const recoveryKeyHtml = this.renderRecoveryKeyHtml(this.mnemonic);
 
     const pageHeader = new PageHeader();
-    pageHeader.pageLabel = 'Create Recovery Key';
+    pageHeader.pageLabel = pageLabel;
+    pageHeader.showBackButton = true;
+    pageHeader.backButtonHandler = backButtonHandler;
 
     MenuPage.hideAndClearNav();
 
@@ -66,8 +83,7 @@ export class RecoveryKeyCreationViewModel extends AbstractViewModel {
         
       <div class="common-layout-col">
         <div class="common-group-col">
-          <div>Write down your 12-word Recovery Key and keep it in a safe place. You will need this Key to recover your account if you log out or clear your browser cache.</div>
-          <a href="javascript: void(0);" class="sui-text-secondary">Learn More About Recovery Keys</a>
+          ${messageHtml}
         </div>
         <div class="common-group-col mod-border">
           <a id="display-recovery-key-btn" href="javascript: void(0);" class="sui-screen-btn sui-mod-secondary">
@@ -77,7 +93,7 @@ export class RecoveryKeyCreationViewModel extends AbstractViewModel {
           ${ recoveryKeyHtml }
         </div>
         <div>
-          <button id= "written-down-btn" class="sui-screen-btn sui-mod-disabled" disabled>I've Written It Down</button>
+          <button id="written-down-btn" class="sui-screen-btn sui-mod-disabled" disabled>${writtenDownBtnLabel}</button>
         </div>
       </div>
         
@@ -87,5 +103,49 @@ export class RecoveryKeyCreationViewModel extends AbstractViewModel {
     MenuPage.hideAndClearDialoguePanel();
 
     this.initPageCode();
+
+    pageHeader.init();
+
+    customCodeCallback();
+  }
+
+  renderCreationView() {
+    this.renderPage(
+      'Create Recovery Key',
+      false,
+      () => {},
+      `
+      <div>Write down your 12-word Recovery Key and keep it in a safe place. You will need this Key to recover your account if you log out or clear your browser cache.</div>
+      <a href="javascript: void(0);" class="sui-text-secondary">Learn More About Recovery Keys</a>
+      `,
+      `I've Written It Down`
+    );
+  }
+
+  renderConfirmFail() {
+    this.renderPage(
+      'Confirm Recovery Key',
+      true,
+      () => {
+        MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
+      },
+      `
+      <div>
+        <i class="sui-icon-md icon-alert sui-text-destructive"></i>
+        <span class="sui-text-destructive">Incorrect Recovery Key</span>
+      </div>
+      <div>Please review the exact spelling and order of your 12-word Recovery Key below, then try again.</div>
+      `,
+      `Try Again`
+    );
+  }
+
+  render(view = 'CREATION') {
+    if (view === 'CREATION') {
+      this.renderCreationView();
+    } else if (view === 'CONFIRM_FAIL') {
+      this.renderConfirmFail();
+    }
+    console.log(this.mnemonic);
   }
 }

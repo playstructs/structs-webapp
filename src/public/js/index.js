@@ -116,6 +116,14 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
     viewModel.render();
   }
 
+  /**
+   * @param {object} options
+   */
+  signupRecoveryKeyConfirmFail(options) {
+    const viewModel = new _view_models_signup_RecoveryKeyCreationViewModel__WEBPACK_IMPORTED_MODULE_9__.RecoveryKeyCreationViewModel(this.mnemonic);
+    viewModel.render(options.view);
+  }
+
   signupAwaitingId() {
     const viewModel = new _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__.AwaitingIdViewModel();
     viewModel.render();
@@ -999,7 +1007,7 @@ class RecoveryKeyConfirmationViewModel extends _framework_AbstractViewModel__WEB
       if (recoveryKeyInput.value === this.mnemonic) {
         _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupAwaitingId');
       } else {
-        console.log('recovery key mismatch', this.mnemonic, recoveryKeyInput.value);
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmFail', {view: 'CONFIRM_FAIL'});
       }
     };
 
@@ -1123,11 +1131,28 @@ class RecoveryKeyCreationViewModel extends _framework_AbstractViewModel__WEBPACK
     });
   }
 
-  async render() {
+  /**
+   * @param {string} pageLabel
+   * @param {boolean} showBackButton
+   * @param {function} backButtonHandler
+   * @param {string} messageHtml
+   * @param {string} writtenDownBtnLabel
+   * @param {function} customCodeCallback
+   */
+  renderPage(
+    pageLabel,
+    showBackButton,
+    backButtonHandler,
+    messageHtml,
+    writtenDownBtnLabel,
+    customCodeCallback = () => {}
+  ) {
     const recoveryKeyHtml = this.renderRecoveryKeyHtml(this.mnemonic);
 
     const pageHeader = new _templates_partials_PageHeader__WEBPACK_IMPORTED_MODULE_2__.PageHeader();
-    pageHeader.pageLabel = 'Create Recovery Key';
+    pageHeader.pageLabel = pageLabel;
+    pageHeader.showBackButton = true;
+    pageHeader.backButtonHandler = backButtonHandler;
 
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearNav();
 
@@ -1138,8 +1163,7 @@ class RecoveryKeyCreationViewModel extends _framework_AbstractViewModel__WEBPACK
         
       <div class="common-layout-col">
         <div class="common-group-col">
-          <div>Write down your 12-word Recovery Key and keep it in a safe place. You will need this Key to recover your account if you log out or clear your browser cache.</div>
-          <a href="javascript: void(0);" class="sui-text-secondary">Learn More About Recovery Keys</a>
+          ${messageHtml}
         </div>
         <div class="common-group-col mod-border">
           <a id="display-recovery-key-btn" href="javascript: void(0);" class="sui-screen-btn sui-mod-secondary">
@@ -1149,7 +1173,7 @@ class RecoveryKeyCreationViewModel extends _framework_AbstractViewModel__WEBPACK
           ${ recoveryKeyHtml }
         </div>
         <div>
-          <button id= "written-down-btn" class="sui-screen-btn sui-mod-disabled" disabled>I've Written It Down</button>
+          <button id="written-down-btn" class="sui-screen-btn sui-mod-disabled" disabled>${writtenDownBtnLabel}</button>
         </div>
       </div>
         
@@ -1159,6 +1183,50 @@ class RecoveryKeyCreationViewModel extends _framework_AbstractViewModel__WEBPACK
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
 
     this.initPageCode();
+
+    pageHeader.init();
+
+    customCodeCallback();
+  }
+
+  renderCreationView() {
+    this.renderPage(
+      'Create Recovery Key',
+      false,
+      () => {},
+      `
+      <div>Write down your 12-word Recovery Key and keep it in a safe place. You will need this Key to recover your account if you log out or clear your browser cache.</div>
+      <a href="javascript: void(0);" class="sui-text-secondary">Learn More About Recovery Keys</a>
+      `,
+      `I've Written It Down`
+    );
+  }
+
+  renderConfirmFail() {
+    this.renderPage(
+      'Confirm Recovery Key',
+      true,
+      () => {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
+      },
+      `
+      <div>
+        <i class="sui-icon-md icon-alert sui-text-destructive"></i>
+        <span class="sui-text-destructive">Incorrect Recovery Key</span>
+      </div>
+      <div>Please review the exact spelling and order of your 12-word Recovery Key below, then try again.</div>
+      `,
+      `Try Again`
+    );
+  }
+
+  render(view = 'CREATION') {
+    if (view === 'CREATION') {
+      this.renderCreationView();
+    } else if (view === 'CONFIRM_FAIL') {
+      this.renderConfirmFail();
+    }
+    console.log(this.mnemonic);
   }
 }
 

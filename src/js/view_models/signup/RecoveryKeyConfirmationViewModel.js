@@ -34,7 +34,7 @@ export class RecoveryKeyConfirmationViewModel extends AbstractViewModel {
       if (recoveryKeyInput.value === this.mnemonic) {
         MenuPage.router.goto('Auth', 'signupAwaitingId');
       } else {
-        console.log('recovery key mismatch', this.mnemonic, recoveryKeyInput.value);
+        MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmFail', {view: 'CONFIRM_FAIL'});
       }
     };
 

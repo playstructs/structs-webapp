@@ -72,6 +72,14 @@ export class AuthController extends AbstractController {
     viewModel.render();
   }
 
+  /**
+   * @param {object} options
+   */
+  signupRecoveryKeyConfirmFail(options) {
+    const viewModel = new RecoveryKeyCreationViewModel(this.mnemonic);
+    viewModel.render(options.view);
+  }
+
   signupAwaitingId() {
     const viewModel = new AwaitingIdViewModel();
     viewModel.render();
