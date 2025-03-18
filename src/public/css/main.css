@@ -406,6 +406,11 @@ img.glitch-logo {
   gap: 4px;
 }
 
+#computer-connecting-animation {
+  width: 384px;
+  height: 128px;
+}
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */

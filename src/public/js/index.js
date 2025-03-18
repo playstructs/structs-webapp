@@ -41,6 +41,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_RecoveryKeyCreationViewModel__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyCreationViewModel */ "./js/view_models/signup/RecoveryKeyCreationViewModel.js");
 /* harmony import */ var _managers_WalletManager__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../managers/WalletManager */ "./js/managers/WalletManager.js");
 /* harmony import */ var _view_models_signup_RecoveryKeyConfirmationViewModel__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyConfirmationViewModel */ "./js/view_models/signup/RecoveryKeyConfirmationViewModel.js");
+/* harmony import */ var _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../view_models/signup/AwaitingIdViewModel */ "./js/view_models/signup/AwaitingIdViewModel.js");
+
 
 
 
@@ -111,6 +113,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   signupRecoveryKeyConfirmation() {
     const viewModel = new _view_models_signup_RecoveryKeyConfirmationViewModel__WEBPACK_IMPORTED_MODULE_11__.RecoveryKeyConfirmationViewModel(this.mnemonic);
+    viewModel.render();
+  }
+
+  signupAwaitingId() {
+    const viewModel = new _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__.AwaitingIdViewModel();
     viewModel.render();
   }
 }
@@ -597,6 +604,59 @@ class IndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2_
 
 /***/ }),
 
+/***/ "./js/view_models/signup/AwaitingIdViewModel.js":
+/*!******************************************************!*\
+  !*** ./js/view_models/signup/AwaitingIdViewModel.js ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AwaitingIdViewModel: () => (/* binding */ AwaitingIdViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class AwaitingIdViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel{
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'Connecting...'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableCloseBtn();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+        
+      <div class="common-layout-col">
+        <div class="common-group-col">
+          <img id="computer-connecting-animation" src="/img/loading.gif" alt="Computer connecting to SN.C">
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-info sui-text-warning"></i>`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(`Please wait while your Employee Record is confirmed...`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnB();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showDialoguePanel();
+  }
+}
+
+
+/***/ }),
+
 /***/ "./js/view_models/signup/ConnectingToCorp1ViewModel.js":
 /*!*************************************************************!*\
   !*** ./js/view_models/signup/ConnectingToCorp1ViewModel.js ***!
@@ -936,10 +996,10 @@ class RecoveryKeyConfirmationViewModel extends _framework_AbstractViewModel__WEB
       const recoveryKeyInput = document.getElementById('recovery-key-input');
       recoveryKeyInput.value = recoveryKeyInput.value.replace(/\s\s+/g, ' ');
 
-      if (recoveryKeyInput.value !== this.mnemonic) {
-        console.log('recovery key mismatch', this.mnemonic, recoveryKeyInput.value);
+      if (recoveryKeyInput.value === this.mnemonic) {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupAwaitingId');
       } else {
-        console.log('recovery key match');
+        console.log('recovery key mismatch', this.mnemonic, recoveryKeyInput.value);
       }
     };
 

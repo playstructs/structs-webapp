@@ -31,10 +31,10 @@ export class RecoveryKeyConfirmationViewModel extends AbstractViewModel {
       const recoveryKeyInput = document.getElementById('recovery-key-input');
       recoveryKeyInput.value = recoveryKeyInput.value.replace(/\s\s+/g, ' ');
 
-      if (recoveryKeyInput.value !== this.mnemonic) {
-        console.log('recovery key mismatch', this.mnemonic, recoveryKeyInput.value);
+      if (recoveryKeyInput.value === this.mnemonic) {
+        MenuPage.router.goto('Auth', 'signupAwaitingId');
       } else {
-        console.log('recovery key match');
+        console.log('recovery key mismatch', this.mnemonic, recoveryKeyInput.value);
       }
     };
 
