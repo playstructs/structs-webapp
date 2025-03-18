@@ -40,6 +40,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_RecoveryKeyIntroViewModel__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyIntroViewModel */ "./js/view_models/signup/RecoveryKeyIntroViewModel.js");
 /* harmony import */ var _view_models_signup_RecoveryKeyCreationViewModel__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyCreationViewModel */ "./js/view_models/signup/RecoveryKeyCreationViewModel.js");
 /* harmony import */ var _managers_WalletManager__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../managers/WalletManager */ "./js/managers/WalletManager.js");
+/* harmony import */ var _view_models_signup_RecoveryKeyConfirmationViewModel__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyConfirmationViewModel */ "./js/view_models/signup/RecoveryKeyConfirmationViewModel.js");
+
 
 
 
@@ -100,8 +102,15 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   }
 
   signupRecoveryKeyCreation() {
-    this.mnemonic = this.walletManager.createMnemonic();
+    if (this.mnemonic === null) {
+      this.mnemonic = this.walletManager.createMnemonic();
+    }
     const viewModel = new _view_models_signup_RecoveryKeyCreationViewModel__WEBPACK_IMPORTED_MODULE_9__.RecoveryKeyCreationViewModel(this.mnemonic);
+    viewModel.render();
+  }
+
+  signupRecoveryKeyConfirmation() {
+    const viewModel = new _view_models_signup_RecoveryKeyConfirmationViewModel__WEBPACK_IMPORTED_MODULE_11__.RecoveryKeyConfirmationViewModel(this.mnemonic);
     viewModel.render();
   }
 }
@@ -880,6 +889,113 @@ class IncomingCall3ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPOR
 
 /***/ }),
 
+/***/ "./js/view_models/signup/RecoveryKeyConfirmationViewModel.js":
+/*!*******************************************************************!*\
+  !*** ./js/view_models/signup/RecoveryKeyConfirmationViewModel.js ***!
+  \*******************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RecoveryKeyConfirmationViewModel: () => (/* binding */ RecoveryKeyConfirmationViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _templates_partials_PageHeader__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../templates/partials/PageHeader */ "./js/view_models/templates/partials/PageHeader.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class RecoveryKeyConfirmationViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+  /**
+   * @param mnemonic
+   */
+  constructor(mnemonic) {
+    super();
+    this.mnemonic = mnemonic;
+  }
+
+  initPageCode() {
+    const recoveryKeyInput = document.getElementById('recovery-key-input');
+    recoveryKeyInput.addEventListener('keyup', () => {
+      const submitBtn = document.getElementById('submit-btn');
+
+      if (recoveryKeyInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('sui-mod-disabled');
+        submitBtn.classList.add('sui-mod-primary');
+      } else if (recoveryKeyInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
+        submitBtn.disabled = true;
+        submitBtn.classList.remove('sui-mod-primary');
+        submitBtn.classList.add('sui-mod-disabled');
+      }
+    });
+
+    const submitBtnHandler = () => {
+      const recoveryKeyInput = document.getElementById('recovery-key-input');
+      recoveryKeyInput.value = recoveryKeyInput.value.replace(/\s\s+/g, ' ');
+
+      if (recoveryKeyInput.value !== this.mnemonic) {
+        console.log('recovery key mismatch', this.mnemonic, recoveryKeyInput.value);
+      } else {
+        console.log('recovery key match');
+      }
+    };
+
+    document.getElementById('submit-btn').addEventListener('click', submitBtnHandler);
+    recoveryKeyInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        submitBtnHandler();
+      }
+    });
+  }
+
+  async render() {
+    const pageHeader = new _templates_partials_PageHeader__WEBPACK_IMPORTED_MODULE_1__.PageHeader();
+    pageHeader.pageLabel = 'Confirm Recovery Key';
+    pageHeader.showBackButton = true;
+    pageHeader.backButtonHandler = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
+    };
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.hideAndClearNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+    
+      ${pageHeader.render()}
+        
+      <div class="common-layout-col">
+        <div class="common-group-col">
+          <div>To confirm your Recovery Key, enter each word, in order, separated by spaces.</div>
+        </div>
+        <div class="common-group-row mod-border">
+          <label class="sui-input-text" for="recovery-key-input">
+            <span>Confirm Recovery Key</span>
+            <input
+              type="text"
+              name="recovery-key-input"
+              id="recovery-key-input"
+              placeholder="word word word ..."
+            >
+          </label>
+          <button id="submit-btn" class="sui-screen-btn sui-mod-disabled" disabled>Next</button>
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.hideAndClearDialoguePanel();
+
+    pageHeader.init();
+    this.initPageCode();
+  }
+}
+
+/***/ }),
+
 /***/ "./js/view_models/signup/RecoveryKeyCreationViewModel.js":
 /*!***************************************************************!*\
   !*** ./js/view_models/signup/RecoveryKeyCreationViewModel.js ***!
@@ -943,8 +1059,7 @@ class RecoveryKeyCreationViewModel extends _framework_AbstractViewModel__WEBPACK
     });
 
     document.getElementById('written-down-btn').addEventListener('click', () => {
-      console.log('written down');
-      // MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
     });
   }
 
@@ -1152,14 +1267,14 @@ class SetUsernameViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
             <div id="set-username-name-section" class="set-username-input-mode">
               <div class="set-username-field-wrapper">
                 <label class="sui-input-text" for="username">
-                <span>Display Name</span>
-                <input
-                  type="text"
-                  name="username"
-                  id="username-input"
-                  placeholder="Your Name"
-                >
-              </label>
+                  <span>Display Name</span>
+                  <input
+                    type="text"
+                    name="username"
+                    id="username-input"
+                    placeholder="Your Name"
+                  >
+                </label>
               </div>
               <div class="set-username-btn-wrapper">
                 <button id="submit-btn" class="sui-screen-btn sui-mod-disabled" disabled>Submit</button>

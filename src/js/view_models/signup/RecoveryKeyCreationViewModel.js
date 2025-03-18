@@ -47,8 +47,7 @@ export class RecoveryKeyCreationViewModel extends AbstractViewModel {
     });
 
     document.getElementById('written-down-btn').addEventListener('click', () => {
-      console.log('written down');
-      // MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
+      MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
     });
   }
 

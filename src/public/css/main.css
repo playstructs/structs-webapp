@@ -172,6 +172,25 @@ common-group - no padding
   border: 1px solid var(--border);
 }
 
+.common-group-row {
+  display: flex;
+  padding: var(--spacing-xl);
+  align-items: flex-end;
+  align-content: flex-end;
+  gap: var(--spacing-xl);
+  align-self: stretch;
+  flex-wrap: wrap;
+}
+
+.common-group-row.mod-border {
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border);
+}
+
+.common-group-row.mod-border label.sui-input-text {
+  flex: 1 0 0;
+}
+
 /* Common Containers End */
 
 /* Page Specific Styling Start */

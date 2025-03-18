@@ -114,14 +114,14 @@ export class SetUsernameViewModel extends AbstractViewModel {
             <div id="set-username-name-section" class="set-username-input-mode">
               <div class="set-username-field-wrapper">
                 <label class="sui-input-text" for="username">
-                <span>Display Name</span>
-                <input
-                  type="text"
-                  name="username"
-                  id="username-input"
-                  placeholder="Your Name"
-                >
-              </label>
+                  <span>Display Name</span>
+                  <input
+                    type="text"
+                    name="username"
+                    id="username-input"
+                    placeholder="Your Name"
+                  >
+                </label>
               </div>
               <div class="set-username-btn-wrapper">
                 <button id="submit-btn" class="sui-screen-btn sui-mod-disabled" disabled>Submit</button>
