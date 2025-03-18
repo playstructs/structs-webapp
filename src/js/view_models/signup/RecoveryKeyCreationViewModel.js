@@ -1,5 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
+import {PageHeader} from "../templates/partials/PageHeader";
 
 export class RecoveryKeyCreationViewModel extends AbstractViewModel {
 
@@ -34,23 +35,35 @@ export class RecoveryKeyCreationViewModel extends AbstractViewModel {
     return html;
   }
 
+  initPageCode() {
+    document.getElementById('display-recovery-key-btn').addEventListener('click', () => {
+      document.getElementById('display-recovery-key-btn').classList.add('hidden');
+      document.getElementById('recovery-key').classList.remove('hidden');
+
+      const writtenDownBtn = document.getElementById('written-down-btn');
+      writtenDownBtn.classList.remove('sui-mod-disabled');
+      writtenDownBtn.classList.add('sui-mod-primary');
+      writtenDownBtn.disabled = false;
+    });
+
+    document.getElementById('written-down-btn').addEventListener('click', () => {
+      console.log('written down');
+      // MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
+    });
+  }
+
   async render() {
     const recoveryKeyHtml = this.renderRecoveryKeyHtml(this.mnemonic);
+
+    const pageHeader = new PageHeader();
+    pageHeader.pageLabel = 'Create Recovery Key';
 
     MenuPage.hideAndClearNav();
 
     MenuPage.setBodyContent(`
     <div class="full-screen-content-container">
     
-      <!-- Page Header Start -->
-
-      <div class="sui-page-header">
-        <a href="javascript: void(0)" class="sui-nav-btn">
-          Create Recovery Key
-        </a>
-      </div>
-
-      <!-- Page Header End -->
+      ${pageHeader.render()}
         
       <div class="common-layout-col">
         <div class="common-group-col">
@@ -74,19 +87,6 @@ export class RecoveryKeyCreationViewModel extends AbstractViewModel {
 
     MenuPage.hideAndClearDialoguePanel();
 
-    document.getElementById('display-recovery-key-btn').addEventListener('click', () => {
-      document.getElementById('display-recovery-key-btn').classList.add('hidden');
-      document.getElementById('recovery-key').classList.remove('hidden');
-
-      const writtenDownBtn = document.getElementById('written-down-btn');
-      writtenDownBtn.classList.remove('sui-mod-disabled');
-      writtenDownBtn.classList.add('sui-mod-primary');
-      writtenDownBtn.disabled = false;
-    });
-
-    document.getElementById('written-down-btn').addEventListener('click', () => {
-      console.log('written down');
-      // MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
-    });
+    this.initPageCode();
   }
 }

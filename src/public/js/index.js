@@ -893,6 +893,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
 /* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _templates_partials_PageHeader__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../templates/partials/PageHeader */ "./js/view_models/templates/partials/PageHeader.js");
+
 
 
 
@@ -929,23 +931,35 @@ class RecoveryKeyCreationViewModel extends _framework_AbstractViewModel__WEBPACK
     return html;
   }
 
+  initPageCode() {
+    document.getElementById('display-recovery-key-btn').addEventListener('click', () => {
+      document.getElementById('display-recovery-key-btn').classList.add('hidden');
+      document.getElementById('recovery-key').classList.remove('hidden');
+
+      const writtenDownBtn = document.getElementById('written-down-btn');
+      writtenDownBtn.classList.remove('sui-mod-disabled');
+      writtenDownBtn.classList.add('sui-mod-primary');
+      writtenDownBtn.disabled = false;
+    });
+
+    document.getElementById('written-down-btn').addEventListener('click', () => {
+      console.log('written down');
+      // MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
+    });
+  }
+
   async render() {
     const recoveryKeyHtml = this.renderRecoveryKeyHtml(this.mnemonic);
+
+    const pageHeader = new _templates_partials_PageHeader__WEBPACK_IMPORTED_MODULE_2__.PageHeader();
+    pageHeader.pageLabel = 'Create Recovery Key';
 
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearNav();
 
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setBodyContent(`
     <div class="full-screen-content-container">
     
-      <!-- Page Header Start -->
-
-      <div class="sui-page-header">
-        <a href="javascript: void(0)" class="sui-nav-btn">
-          Create Recovery Key
-        </a>
-      </div>
-
-      <!-- Page Header End -->
+      ${pageHeader.render()}
         
       <div class="common-layout-col">
         <div class="common-group-col">
@@ -969,20 +983,7 @@ class RecoveryKeyCreationViewModel extends _framework_AbstractViewModel__WEBPACK
 
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
 
-    document.getElementById('display-recovery-key-btn').addEventListener('click', () => {
-      document.getElementById('display-recovery-key-btn').classList.add('hidden');
-      document.getElementById('recovery-key').classList.remove('hidden');
-
-      const writtenDownBtn = document.getElementById('written-down-btn');
-      writtenDownBtn.classList.remove('sui-mod-disabled');
-      writtenDownBtn.classList.add('sui-mod-primary');
-      writtenDownBtn.disabled = false;
-    });
-
-    document.getElementById('written-down-btn').addEventListener('click', () => {
-      console.log('written down');
-      // MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmation');
-    });
+    this.initPageCode();
   }
 }
 
@@ -1289,6 +1290,54 @@ class HRBotTalkingTemplate {
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showDialoguePanel();
 
     this.initLottieAnimations();
+  }
+}
+
+/***/ }),
+
+/***/ "./js/view_models/templates/partials/PageHeader.js":
+/*!*********************************************************!*\
+  !*** ./js/view_models/templates/partials/PageHeader.js ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PageHeader: () => (/* binding */ PageHeader)
+/* harmony export */ });
+class PageHeader {
+
+  constructor() {
+    this.pageLabel = '';
+    this.showBackButton = false;
+    this.backButtonHandler = () => {};
+  }
+
+  init() {
+    document.getElementById('page-header-back-button').addEventListener('click', this.backButtonHandler);
+  }
+
+  render() {
+    const backButtonIcon = this.showBackButton
+      ? `<i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>`
+      : '';
+    const backButtonHref = this.showBackButton
+      ? 'href="javascript: void(0)"'
+      : '';
+
+    return `
+    <!-- Page Header Start -->
+
+    <div class="sui-page-header">
+      <a id="page-header-back-button" ${backButtonHref} class="sui-nav-btn">
+        ${backButtonIcon}
+        ${this.pageLabel}
+      </a>
+    </div>
+
+    <!-- Page Header End -->
+    `;
   }
 }
 
