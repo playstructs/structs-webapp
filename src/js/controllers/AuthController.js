@@ -8,10 +8,13 @@ import {IncomingCall3ViewModel} from "../view_models/signup/IncomingCall3ViewMod
 import {SetUsernameViewModel} from "../view_models/signup/SetUsernameViewModel";
 import {RecoveryKeyIntroViewModel} from "../view_models/signup/RecoveryKeyIntroViewModel";
 import {RecoveryKeyCreationViewModel} from "../view_models/signup/RecoveryKeyCreationViewModel";
+import {WalletManager} from "../managers/WalletManager";
 
 export class AuthController extends AbstractController {
   constructor(gameState) {
     super('Auth', gameState);
+    this.walletManager = new WalletManager();
+    this.mnemonic = null;
   }
 
   index() {
@@ -55,7 +58,8 @@ export class AuthController extends AbstractController {
   }
 
   signupRecoveryKeyCreation() {
-    const viewModel = new RecoveryKeyCreationViewModel();
+    this.mnemonic = this.walletManager.createMnemonic();
+    const viewModel = new RecoveryKeyCreationViewModel(this.mnemonic);
     viewModel.render();
   }
 }
