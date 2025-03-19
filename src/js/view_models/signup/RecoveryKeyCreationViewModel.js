@@ -116,9 +116,22 @@ export class RecoveryKeyCreationViewModel extends AbstractViewModel {
       () => {},
       `
       <div>Write down your 12-word Recovery Key and keep it in a safe place. You will need this Key to recover your account if you log out or clear your browser cache.</div>
-      <a href="javascript: void(0);" class="sui-text-secondary">Learn More About Recovery Keys</a>
+      <a id="recovery-key-faq-link" href="javascript: void(0);" class="sui-text-secondary">Learn More About Recovery Keys</a>
       `,
-      `I've Written It Down`
+      `I've Written It Down`,
+      () => {
+        document.getElementById('recovery-key-faq-link').addEventListener('click', () => {
+          MenuPage.router.goto(
+            'Auth',
+            'signupRecoveryKeyFaq',
+            {
+              backButtonHandler: () => {
+                MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
+              }
+            }
+          );
+        });
+      }
     );
   }
 

@@ -11,6 +11,7 @@ import {RecoveryKeyCreationViewModel} from "../view_models/signup/RecoveryKeyCre
 import {WalletManager} from "../managers/WalletManager";
 import {RecoveryKeyConfirmationViewModel} from "../view_models/signup/RecoveryKeyConfirmationViewModel";
 import {AwaitingIdViewModel} from "../view_models/signup/AwaitingIdViewModel";
+import {RecoveryKeyFaqViewModel} from "../view_models/signup/RecoveryKeyFaqViewModel";
 
 export class AuthController extends AbstractController {
   constructor(gameState) {
@@ -82,6 +83,14 @@ export class AuthController extends AbstractController {
 
   signupAwaitingId() {
     const viewModel = new AwaitingIdViewModel();
+    viewModel.render();
+  }
+
+  /**
+   * @param {object} options
+   */
+  signupRecoveryKeyFaq(options) {
+    const viewModel = new RecoveryKeyFaqViewModel(options.backButtonHandler);
     viewModel.render();
   }
 }

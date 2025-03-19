@@ -42,6 +42,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _managers_WalletManager__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../managers/WalletManager */ "./js/managers/WalletManager.js");
 /* harmony import */ var _view_models_signup_RecoveryKeyConfirmationViewModel__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyConfirmationViewModel */ "./js/view_models/signup/RecoveryKeyConfirmationViewModel.js");
 /* harmony import */ var _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../view_models/signup/AwaitingIdViewModel */ "./js/view_models/signup/AwaitingIdViewModel.js");
+/* harmony import */ var _view_models_signup_RecoveryKeyFaqViewModel__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyFaqViewModel */ "./js/view_models/signup/RecoveryKeyFaqViewModel.js");
+
 
 
 
@@ -126,6 +128,14 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   signupAwaitingId() {
     const viewModel = new _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__.AwaitingIdViewModel();
+    viewModel.render();
+  }
+
+  /**
+   * @param {object} options
+   */
+  signupRecoveryKeyFaq(options) {
+    const viewModel = new _view_models_signup_RecoveryKeyFaqViewModel__WEBPACK_IMPORTED_MODULE_13__.RecoveryKeyFaqViewModel(options.backButtonHandler);
     viewModel.render();
   }
 }
@@ -1196,9 +1206,22 @@ class RecoveryKeyCreationViewModel extends _framework_AbstractViewModel__WEBPACK
       () => {},
       `
       <div>Write down your 12-word Recovery Key and keep it in a safe place. You will need this Key to recover your account if you log out or clear your browser cache.</div>
-      <a href="javascript: void(0);" class="sui-text-secondary">Learn More About Recovery Keys</a>
+      <a id="recovery-key-faq-link" href="javascript: void(0);" class="sui-text-secondary">Learn More About Recovery Keys</a>
       `,
-      `I've Written It Down`
+      `I've Written It Down`,
+      () => {
+        document.getElementById('recovery-key-faq-link').addEventListener('click', () => {
+          _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto(
+            'Auth',
+            'signupRecoveryKeyFaq',
+            {
+              backButtonHandler: () => {
+                _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
+              }
+            }
+          );
+        });
+      }
     );
   }
 
@@ -1227,6 +1250,82 @@ class RecoveryKeyCreationViewModel extends _framework_AbstractViewModel__WEBPACK
       this.renderConfirmFail();
     }
     console.log(this.mnemonic);
+  }
+}
+
+/***/ }),
+
+/***/ "./js/view_models/signup/RecoveryKeyFaqViewModel.js":
+/*!**********************************************************!*\
+  !*** ./js/view_models/signup/RecoveryKeyFaqViewModel.js ***!
+  \**********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RecoveryKeyFaqViewModel: () => (/* binding */ RecoveryKeyFaqViewModel)
+/* harmony export */ });
+/* harmony import */ var _templates_partials_PageHeader__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../templates/partials/PageHeader */ "./js/view_models/templates/partials/PageHeader.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+
+
+
+
+class RecoveryKeyFaqViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
+
+  /**
+   * @param {function} backButtonHandler
+   */
+  constructor(backButtonHandler) {
+    super();
+    this.backButtonHandler = backButtonHandler;
+  }
+
+  render() {
+    const pageHeader = new _templates_partials_PageHeader__WEBPACK_IMPORTED_MODULE_0__.PageHeader();
+    pageHeader.pageLabel = 'About Recovery Keys';
+    pageHeader.showBackButton = true;
+    pageHeader.backButtonHandler = this.backButtonHandler;
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.hideAndClearNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+    
+      ${pageHeader.render()}
+        
+      <div class="recovery-key-faq-layout">
+        <div class="recovery-key-faq-question-group">
+          <div class="sui-text-secondary">What is a Recovery Key?</div>
+          <div>Your recovery key is the 12-word secrect code that was given to you created your account.</div>
+        </div>
+        <div class="recovery-key-faq-question-group">
+          <div class="sui-text-secondary">Why do I need my Recovery Key?</div>
+          <div>In the event that you lose access to your account, you can use your Recovery Key to log in.</div>
+        </div>
+        <div class="recovery-key-faq-question-group">
+          <div class="sui-text-secondary">How can I protect my Recovery Key?</div>
+          <div>It is important to write down your Recovery Key and keep it in a safe place. You may also consider saving your Recovery Key to a password manager. We do not store Recovery Keys and cannot help you retrieve your Key if you lose it.</div>
+        </div>
+        <div class="recovery-key-faq-question-group">
+          <div class="sui-text-secondary">I want to log in on a new device. Do I need my recovery Key?</div>
+          <div>No. If you currently have access to a logged-in device, you can log in a new device by using the Login From Another Device option.<br> 
+            <br>
+            Note: this option is only available if the logged-in device has Account Management permissions.<br>
+            <br>
+            If you have no currently logged-in devices with Account Management permissions, you will need to use your Recovery Key to log in again.
+          </div>
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.hideAndClearDialoguePanel();
+
+    pageHeader.init();
   }
 }
 
