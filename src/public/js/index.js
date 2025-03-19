@@ -43,6 +43,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_RecoveryKeyConfirmationViewModel__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyConfirmationViewModel */ "./js/view_models/signup/RecoveryKeyConfirmationViewModel.js");
 /* harmony import */ var _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../view_models/signup/AwaitingIdViewModel */ "./js/view_models/signup/AwaitingIdViewModel.js");
 /* harmony import */ var _view_models_signup_RecoveryKeyFaqViewModel__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyFaqViewModel */ "./js/view_models/signup/RecoveryKeyFaqViewModel.js");
+/* harmony import */ var _view_models_signup_SignupSuccessViewModel__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../view_models/signup/SignupSuccessViewModel */ "./js/view_models/signup/SignupSuccessViewModel.js");
+
 
 
 
@@ -136,6 +138,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
    */
   signupRecoveryKeyFaq(options) {
     const viewModel = new _view_models_signup_RecoveryKeyFaqViewModel__WEBPACK_IMPORTED_MODULE_13__.RecoveryKeyFaqViewModel(options.backButtonHandler);
+    viewModel.render();
+  }
+
+  signupSuccess() {
+    const viewModel = new _view_models_signup_SignupSuccessViewModel__WEBPACK_IMPORTED_MODULE_14__.SignupSuccessViewModel();
     viewModel.render();
   }
 }
@@ -669,6 +676,10 @@ class AwaitingIdViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnB();
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnA();
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showDialoguePanel();
+
+    setTimeout(() => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupSuccess');
+    }, 5000);
   }
 }
 
@@ -1522,6 +1533,67 @@ class SetUsernameViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showDialoguePanel();
 
     this.initLottieAnimations()
+
+    this.initPageCode();
+  }
+}
+
+/***/ }),
+
+/***/ "./js/view_models/signup/SignupSuccessViewModel.js":
+/*!*********************************************************!*\
+  !*** ./js/view_models/signup/SignupSuccessViewModel.js ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SignupSuccessViewModel: () => (/* binding */ SignupSuccessViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _templates_partials_PageHeader__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../templates/partials/PageHeader */ "./js/view_models/templates/partials/PageHeader.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class SignupSuccessViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
+  initPageCode() {
+    document.getElementById('return-to-game-btn').addEventListener('click', () => {
+      console.log('return to game');
+    });
+  }
+
+  render() {
+    const pageHeader = new _templates_partials_PageHeader__WEBPACK_IMPORTED_MODULE_1__.PageHeader();
+    pageHeader.pageLabel = 'Success!';
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.hideAndClearNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+    
+      ${pageHeader.render()}
+        
+      <div class="common-layout-col">
+        <div class="common-group-col">
+          <div>
+            <i class="sui-icon-md icon-alert sui-text-primary"></i>
+            <span class="sui-text-primary">Success!</span>
+          </div>
+          <div>Your account has been created. Keep your Recovery Key safe; you will need it if you lose access to your account.</div>
+        </div>
+        <div>
+          <button id="return-to-game-btn" class="sui-screen-btn sui-mod-secondary" >Return To Game</button>
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.hideAndClearDialoguePanel();
 
     this.initPageCode();
   }
@@ -61922,9 +61994,9 @@ const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
-// MenuPage.router.goto('Auth', 'index');
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 
-_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
+// MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
 
 })();
 

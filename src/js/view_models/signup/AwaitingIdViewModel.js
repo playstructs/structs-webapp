@@ -31,5 +31,9 @@ export class AwaitingIdViewModel extends AbstractViewModel{
     MenuPage.disableDialogueBtnB();
     MenuPage.disableDialogueBtnA();
     MenuPage.showDialoguePanel();
+
+    setTimeout(() => {
+      MenuPage.router.goto('Auth', 'signupSuccess');
+    }, 5000);
   }
 }

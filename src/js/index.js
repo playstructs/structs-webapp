@@ -10,6 +10,6 @@ const authController = new AuthController(gameState);
 MenuPage.router.registerController(authController);
 MenuPage.initListeners();
 
-// MenuPage.router.goto('Auth', 'index');
+MenuPage.router.goto('Auth', 'index');
 
-MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
+// MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
