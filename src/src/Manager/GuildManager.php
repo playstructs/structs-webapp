@@ -191,11 +191,11 @@ class GuildManager
         $query = '
             SELECT
               p.guild_id,
-              sum(i.fuel) as total_fuel,
-              avg(i.power) as avg_power,
-              avg(i.power) as total_power,
-              avg(i.ratio) as avg_ratio,
-              avg(i.commission) as avg_commission
+              floor(sum(i.fuel)) as total_fuel,
+              floor(avg(i.power)) as avg_power,
+              floor(avg(i.power)) as total_power,
+              floor(avg(i.ratio) * 100) as avg_ratio,
+              floor(avg(i.commission) * 100) as avg_commission
             FROM player p
             INNER JOIN guild g
               ON p.guild_id = g.id
