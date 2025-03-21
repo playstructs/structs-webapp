@@ -6,7 +6,7 @@ export class SignupSuccessViewModel extends AbstractViewModel {
 
   initPageCode() {
     document.getElementById('return-to-game-btn').addEventListener('click', () => {
-      console.log('return to game');
+      MenuPage.router.goto('Auth', 'signupAwaitingId');
     });
   }
 

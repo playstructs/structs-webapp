@@ -1,6 +1,89 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./js/api/GuildAPI.js":
+/*!****************************!*\
+  !*** ./js/api/GuildAPI.js ***!
+  \****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GuildAPI: () => (/* binding */ GuildAPI)
+/* harmony export */ });
+/* harmony import */ var _framework_JsonAjaxer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/JsonAjaxer */ "./js/framework/JsonAjaxer.js");
+/* harmony import */ var _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./GuildAPIResponse */ "./js/api/GuildAPIResponse.js");
+/* harmony import */ var _factories_GuildFactory__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../factories/GuildFactory */ "./js/factories/GuildFactory.js");
+
+
+
+
+class GuildAPI {
+
+  constructor() {
+    this.apiUrl = '/api';
+    this.ajax = new _framework_JsonAjaxer__WEBPACK_IMPORTED_MODULE_0__.JsonAjaxer();
+    this.guildFactory = new _factories_GuildFactory__WEBPACK_IMPORTED_MODULE_2__.GuildFactory();
+  }
+
+  /**
+   * @param {string} guildId
+   * @param {string} address
+   * @param {number} nonce
+   * @return {string}
+   */
+  buildGuildMembershipJoinProxyMessage(guildId, address, nonce) {
+    return `GUILD${guildId}ADDRESS${address}NONCE${nonce}`;
+  }
+
+  /**
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async getThisGuild() {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/this`);
+    const response = new _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__.GuildAPIResponse(jsonResponse);
+    response.data = this.guildFactory.make(response.data);
+    return response;
+  }
+
+  /**
+   * @param {SignupRequestDTO} signupRequestDTO
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async signup(signupRequestDTO) {
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/signup`, signupRequestDTO);
+    return new _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__.GuildAPIResponse(jsonResponse);
+  }
+}
+
+/***/ }),
+
+/***/ "./js/api/GuildAPIResponse.js":
+/*!************************************!*\
+  !*** ./js/api/GuildAPIResponse.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GuildAPIResponse: () => (/* binding */ GuildAPIResponse)
+/* harmony export */ });
+class GuildAPIResponse {
+
+  /**
+   * @param {object} jsonResponse
+   */
+  constructor(jsonResponse) {
+    this.success = jsonResponse.hasOwnProperty('success') ? jsonResponse.success : false;
+    this.errors = jsonResponse.hasOwnProperty('errors') ? jsonResponse.errors : [];
+    this.data = jsonResponse.hasOwnProperty('data') ? jsonResponse.data : null;
+  }
+}
+
+/***/ }),
+
 /***/ "./js/constants/RegexPattern.js":
 /*!**************************************!*\
   !*** ./js/constants/RegexPattern.js ***!
@@ -44,6 +127,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../view_models/signup/AwaitingIdViewModel */ "./js/view_models/signup/AwaitingIdViewModel.js");
 /* harmony import */ var _view_models_signup_RecoveryKeyFaqViewModel__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyFaqViewModel */ "./js/view_models/signup/RecoveryKeyFaqViewModel.js");
 /* harmony import */ var _view_models_signup_SignupSuccessViewModel__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../view_models/signup/SignupSuccessViewModel */ "./js/view_models/signup/SignupSuccessViewModel.js");
+/* harmony import */ var _managers_AuthManager__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../managers/AuthManager */ "./js/managers/AuthManager.js");
+
 
 
 
@@ -61,9 +146,24 @@ __webpack_require__.r(__webpack_exports__);
 
 
 class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MODULE_0__.AbstractController {
-  constructor(gameState) {
+
+  /**
+   *
+   * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
+   * @param {WalletManager} walletManager
+   * @param {AuthManager} authManager
+   */
+  constructor(
+    gameState,
+    guildAPI,
+    walletManager,
+    authManager
+  ) {
     super('Auth', gameState);
-    this.walletManager = new _managers_WalletManager__WEBPACK_IMPORTED_MODULE_10__.WalletManager();
+    this.guildAPI = guildAPI;
+    this.walletManager = walletManager;
+    this.authManager  = authManager;
     this.mnemonic = null;
   }
 
@@ -116,7 +216,10 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   }
 
   signupRecoveryKeyConfirmation() {
-    const viewModel = new _view_models_signup_RecoveryKeyConfirmationViewModel__WEBPACK_IMPORTED_MODULE_11__.RecoveryKeyConfirmationViewModel(this.mnemonic);
+    const viewModel = new _view_models_signup_RecoveryKeyConfirmationViewModel__WEBPACK_IMPORTED_MODULE_11__.RecoveryKeyConfirmationViewModel(
+      this.mnemonic,
+      this.authManager
+    );
     viewModel.render();
   }
 
@@ -126,11 +229,6 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   signupRecoveryKeyConfirmFail(options) {
     const viewModel = new _view_models_signup_RecoveryKeyCreationViewModel__WEBPACK_IMPORTED_MODULE_9__.RecoveryKeyCreationViewModel(this.mnemonic);
     viewModel.render(options.view);
-  }
-
-  signupAwaitingId() {
-    const viewModel = new _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__.AwaitingIdViewModel();
-    viewModel.render();
   }
 
   /**
@@ -143,6 +241,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   signupSuccess() {
     const viewModel = new _view_models_signup_SignupSuccessViewModel__WEBPACK_IMPORTED_MODULE_14__.SignupSuccessViewModel();
+    viewModel.render();
+  }
+
+  signupAwaitingId() {
+    const viewModel = new _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__.AwaitingIdViewModel();
     viewModel.render();
   }
 }
@@ -194,6 +297,45 @@ class SignupRequestDTO {
 
 /***/ }),
 
+/***/ "./js/errors/GuildAPIError.js":
+/*!************************************!*\
+  !*** ./js/errors/GuildAPIError.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GuildAPIError: () => (/* binding */ GuildAPIError)
+/* harmony export */ });
+class GuildAPIError extends Error {}
+
+/***/ }),
+
+/***/ "./js/factories/GuildFactory.js":
+/*!**************************************!*\
+  !*** ./js/factories/GuildFactory.js ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GuildFactory: () => (/* binding */ GuildFactory)
+/* harmony export */ });
+/* harmony import */ var _models_Guild__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/Guild */ "./js/models/Guild.js");
+
+
+class GuildFactory {
+  make(obj) {
+    const guild = new _models_Guild__WEBPACK_IMPORTED_MODULE_0__.Guild();
+    Object.assign(guild, obj);
+    return guild;
+  }
+}
+
+/***/ }),
+
 /***/ "./js/framework/AbstractController.js":
 /*!********************************************!*\
   !*** ./js/framework/AbstractController.js ***!
@@ -235,6 +377,48 @@ __webpack_require__.r(__webpack_exports__);
 class AbstractViewModel {
   render() {
     throw new _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/framework/JsonAjaxer.js":
+/*!************************************!*\
+  !*** ./js/framework/JsonAjaxer.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   JsonAjaxer: () => (/* binding */ JsonAjaxer)
+/* harmony export */ });
+/**
+ * Encapsulate and abstract HTTP request methods.
+ */
+class JsonAjaxer {
+  async get (url) {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      redirect: 'follow'
+    });
+    return response.json();
+  }
+
+  async post (url, data) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    return response.json();
   }
 }
 
@@ -507,6 +691,153 @@ class NotImplementedError extends Error {
 
 /***/ }),
 
+/***/ "./js/index.js":
+/*!*********************!*\
+  !*** ./js/index.js ***!
+  \*********************/
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _controllers_AuthController__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./controllers/AuthController */ "./js/controllers/AuthController.js");
+/* harmony import */ var _models_GameState__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./models/GameState */ "./js/models/GameState.js");
+/* harmony import */ var _api_GuildAPI__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./api/GuildAPI */ "./js/api/GuildAPI.js");
+/* harmony import */ var _managers_WalletManager__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./managers/WalletManager */ "./js/managers/WalletManager.js");
+/* harmony import */ var _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./managers/AuthManager */ "./js/managers/AuthManager.js");
+/* harmony import */ var _managers_GuildManager__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./managers/GuildManager */ "./js/managers/GuildManager.js");
+
+
+
+
+
+
+
+
+const gameState = new _models_GameState__WEBPACK_IMPORTED_MODULE_2__.GameState();
+__webpack_require__.g.gameState = gameState;
+
+const guildAPI = new _api_GuildAPI__WEBPACK_IMPORTED_MODULE_3__.GuildAPI();
+
+const guildManager = new _managers_GuildManager__WEBPACK_IMPORTED_MODULE_6__.GuildManager(gameState, guildAPI);
+const walletManager = new _managers_WalletManager__WEBPACK_IMPORTED_MODULE_4__.WalletManager();
+const authManager = new _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__.AuthManager(gameState, guildAPI, walletManager);
+
+const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController(
+  gameState,
+  guildAPI,
+  walletManager,
+  authManager
+);
+
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
+
+await guildManager.getThisGuild();
+
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
+
+// MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
+
+__webpack_async_result__();
+} catch(e) { __webpack_async_result__(e); } }, 1);
+
+/***/ }),
+
+/***/ "./js/managers/AuthManager.js":
+/*!************************************!*\
+  !*** ./js/managers/AuthManager.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AuthManager: () => (/* binding */ AuthManager)
+/* harmony export */ });
+class AuthManager {
+
+  /**
+   * @param {GameState} gameState
+   * @param {GuildAPI} guildApi
+   * @param {WalletManager} walletManager
+   */
+  constructor(gameState, guildApi, walletManager) {
+    this.gameState = gameState;
+    this.guildApi = guildApi;
+    this.walletManager = walletManager;
+  }
+
+  /**
+   * @param {string} mnemonic
+   * @return {Promise<boolean>}
+   */
+  async signup(mnemonic) {
+    const wallet = await this.walletManager.createWallet(mnemonic);
+    const accounts = await wallet.getAccountsWithPrivkeys();
+    const account = accounts[0];
+
+    this.gameState.signupRequest.pubkey = this.walletManager.bytesToHex(account.pubkey);
+    this.gameState.signupRequest.primary_address = account.address;
+    this.gameState.signupRequest.guild_id = this.gameState.thisGuild.id;
+
+    const message = this.guildApi.buildGuildMembershipJoinProxyMessage(
+      this.gameState.signupRequest.guild_id,
+      this.gameState.signupRequest.primary_address,
+      0
+    );
+
+    this.gameState.signupRequest.signature = await this.walletManager.createSignatureForProxyMessage(message, account.privkey);
+
+    const response = await this.guildApi.signup(this.gameState.signupRequest);
+
+    return response.success;
+  }
+
+}
+
+/***/ }),
+
+/***/ "./js/managers/GuildManager.js":
+/*!*************************************!*\
+  !*** ./js/managers/GuildManager.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GuildManager: () => (/* binding */ GuildManager)
+/* harmony export */ });
+/* harmony import */ var _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../errors/GuildAPIError */ "./js/errors/GuildAPIError.js");
+
+
+class GuildManager {
+
+  /**
+   * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
+   */
+  constructor(gameState, guildAPI) {
+    this.gameState = gameState;
+    this.guildAPI = guildAPI;
+  }
+
+  async getThisGuild() {
+    const response = await this.guildAPI.getThisGuild();
+    if (response.success) {
+      this.gameState.thisGuild = response.data;
+    } else {
+      console.log(response.errors);
+      throw new _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_0__.GuildAPIError(`Could not get operating guild's info.`);
+    }
+  }
+
+}
+
+/***/ }),
+
 /***/ "./js/managers/WalletManager.js":
 /*!**************************************!*\
   !*** ./js/managers/WalletManager.js ***!
@@ -524,6 +855,10 @@ __webpack_require__.r(__webpack_exports__);
 
 
 class WalletManager {
+
+  constructor() {
+    this.textEncoder = new TextEncoder();
+  }
 
   /**
    * @return {string}
@@ -544,6 +879,28 @@ class WalletManager {
         prefix: "structs"
       }
     );
+  }
+
+  /**
+   * @param {string} message
+   * @param {Uint8Array} privateKey
+   * @return {Promise<string>}
+   */
+  async createSignatureForProxyMessage(message, privateKey) {
+    const encodedMessage = this.textEncoder.encode(message);
+    const digest = (0,_cosmjs_crypto__WEBPACK_IMPORTED_MODULE_1__.sha256)(encodedMessage);
+    const rawSignature = await _cosmjs_crypto__WEBPACK_IMPORTED_MODULE_1__.Secp256k1.createSignature(digest, privateKey);
+    return this.bytesToHex(rawSignature.toFixedLength());
+  }
+
+  /**
+   * @param byteArray
+   * @return {string}
+   */
+  bytesToHex(byteArray) {
+    return Array.from(byteArray, function(byte) {
+      return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+    }).join('');
   }
 }
 
@@ -567,6 +924,42 @@ class GameState {
 
   constructor() {
     this.signupRequest = new _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__.SignupRequestDTO();
+    this.thisGuild = null;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/models/Guild.js":
+/*!****************************!*\
+  !*** ./js/models/Guild.js ***!
+  \****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Guild: () => (/* binding */ Guild)
+/* harmony export */ });
+class Guild {
+  constructor() {
+    this.id = null;
+    this.endpoint = null;
+    this.join_infusion_minimum = null;
+    this.join_infusion_minimum_bypass_by_request = null;
+    this.join_infusion_minimum_bypass_by_invite = null;
+    this.primary_reactor_id = null;
+    this.entry_substation_id = null;
+    this.creator = null;
+    this.owner = null;
+    this.name = null;
+    this.description = null;
+    this.tag = null;
+    this.logo = null;
+    this.socials = null;
+    this.website = null;
+    this.this_infrastructure = true;
+    this.status = null;
   }
 }
 
@@ -678,7 +1071,7 @@ class AwaitingIdViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showDialoguePanel();
 
     setTimeout(() => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupSuccess');
+      console.log('Awaiting ID');
     }, 5000);
   }
 }
@@ -998,11 +1391,16 @@ __webpack_require__.r(__webpack_exports__);
 
 class RecoveryKeyConfirmationViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
   /**
-   * @param mnemonic
+   * @param {string} mnemonic
+   * @param {AuthManager} authManager
    */
-  constructor(mnemonic) {
+  constructor(
+    mnemonic,
+    authManager
+  ) {
     super();
     this.mnemonic = mnemonic;
+    this.authManager = authManager;
   }
 
   initPageCode() {
@@ -1025,10 +1423,20 @@ class RecoveryKeyConfirmationViewModel extends _framework_AbstractViewModel__WEB
       const recoveryKeyInput = document.getElementById('recovery-key-input');
       recoveryKeyInput.value = recoveryKeyInput.value.replace(/\s\s+/g, ' ');
 
-      if (recoveryKeyInput.value === this.mnemonic) {
-        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupAwaitingId');
-      } else {
+      if (recoveryKeyInput.value !== this.mnemonic) {
+
         _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmFail', {view: 'CONFIRM_FAIL'});
+
+      } else {
+
+        this.authManager.signup(this.mnemonic).then((success) => {
+          if (success) {
+            _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupSuccess');
+          } else {
+            _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmFail', {view: 'CONFIRM_FAIL'});
+          }
+        });
+
       }
     };
 
@@ -1562,7 +1970,7 @@ class SignupSuccessViewModel extends _framework_AbstractViewModel__WEBPACK_IMPOR
 
   initPageCode() {
     document.getElementById('return-to-game-btn').addEventListener('click', () => {
-      console.log('return to game');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupAwaitingId');
     });
   }
 
@@ -61921,6 +62329,75 @@ module.exports = /*#__PURE__*/JSON.parse('{"2.16.840.1.101.3.4.1.1":"aes-128-ecb
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/async module */
+/******/ 	(() => {
+/******/ 		var webpackQueues = typeof Symbol === "function" ? Symbol("webpack queues") : "__webpack_queues__";
+/******/ 		var webpackExports = typeof Symbol === "function" ? Symbol("webpack exports") : "__webpack_exports__";
+/******/ 		var webpackError = typeof Symbol === "function" ? Symbol("webpack error") : "__webpack_error__";
+/******/ 		var resolveQueue = (queue) => {
+/******/ 			if(queue && queue.d < 1) {
+/******/ 				queue.d = 1;
+/******/ 				queue.forEach((fn) => (fn.r--));
+/******/ 				queue.forEach((fn) => (fn.r-- ? fn.r++ : fn()));
+/******/ 			}
+/******/ 		}
+/******/ 		var wrapDeps = (deps) => (deps.map((dep) => {
+/******/ 			if(dep !== null && typeof dep === "object") {
+/******/ 				if(dep[webpackQueues]) return dep;
+/******/ 				if(dep.then) {
+/******/ 					var queue = [];
+/******/ 					queue.d = 0;
+/******/ 					dep.then((r) => {
+/******/ 						obj[webpackExports] = r;
+/******/ 						resolveQueue(queue);
+/******/ 					}, (e) => {
+/******/ 						obj[webpackError] = e;
+/******/ 						resolveQueue(queue);
+/******/ 					});
+/******/ 					var obj = {};
+/******/ 					obj[webpackQueues] = (fn) => (fn(queue));
+/******/ 					return obj;
+/******/ 				}
+/******/ 			}
+/******/ 			var ret = {};
+/******/ 			ret[webpackQueues] = x => {};
+/******/ 			ret[webpackExports] = dep;
+/******/ 			return ret;
+/******/ 		}));
+/******/ 		__webpack_require__.a = (module, body, hasAwait) => {
+/******/ 			var queue;
+/******/ 			hasAwait && ((queue = []).d = -1);
+/******/ 			var depQueues = new Set();
+/******/ 			var exports = module.exports;
+/******/ 			var currentDeps;
+/******/ 			var outerResolve;
+/******/ 			var reject;
+/******/ 			var promise = new Promise((resolve, rej) => {
+/******/ 				reject = rej;
+/******/ 				outerResolve = resolve;
+/******/ 			});
+/******/ 			promise[webpackExports] = exports;
+/******/ 			promise[webpackQueues] = (fn) => (queue && fn(queue), depQueues.forEach(fn), promise["catch"](x => {}));
+/******/ 			module.exports = promise;
+/******/ 			body((deps) => {
+/******/ 				currentDeps = wrapDeps(deps);
+/******/ 				var fn;
+/******/ 				var getResult = () => (currentDeps.map((d) => {
+/******/ 					if(d[webpackError]) throw d[webpackError];
+/******/ 					return d[webpackExports];
+/******/ 				}))
+/******/ 				var promise = new Promise((resolve) => {
+/******/ 					fn = () => (resolve(getResult));
+/******/ 					fn.r = 0;
+/******/ 					var fnQueue = (q) => (q !== queue && !depQueues.has(q) && (depQueues.add(q), q && !q.d && (fn.r++, q.push(fn))));
+/******/ 					currentDeps.map((dep) => (dep[webpackQueues](fnQueue)));
+/******/ 				});
+/******/ 				return fn.r ? promise : getResult();
+/******/ 			}, (err) => ((err ? reject(promise[webpackError] = err) : outerResolve(exports)), resolveQueue(queue)));
+/******/ 			queue && queue.d < 0 && (queue.d = 0);
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/define property getters */
 /******/ 	(() => {
 /******/ 		// define getter functions for harmony exports
@@ -61971,35 +62448,12 @@ module.exports = /*#__PURE__*/JSON.parse('{"2.16.840.1.101.3.4.1.1":"aes-128-ecb
 /******/ 	})();
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry needs to be wrapped in an IIFE because it needs to be in strict mode.
-(() => {
-"use strict";
-/*!*********************!*\
-  !*** ./js/index.js ***!
-  \*********************/
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _controllers_AuthController__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./controllers/AuthController */ "./js/controllers/AuthController.js");
-/* harmony import */ var _models_GameState__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./models/GameState */ "./js/models/GameState.js");
-
-
-
-
-const gameState = new _models_GameState__WEBPACK_IMPORTED_MODULE_2__.GameState();
-__webpack_require__.g.gameState = gameState;
-
-const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController(gameState);
-
-_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
-_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
-
-_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
-
-// MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
-
-})();
-
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module used 'module' so it can't be inlined
+/******/ 	var __webpack_exports__ = __webpack_require__("./js/index.js");
+/******/ 	
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map

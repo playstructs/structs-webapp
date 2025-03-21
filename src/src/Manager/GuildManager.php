@@ -266,4 +266,45 @@ class GuildManager
             $requiredFields
         );
     }
+
+    /**
+     * @return Response
+     * @throws Exception
+     */
+    public function getThisGuild(): Response
+    {
+        $query = '
+            SELECT
+              g.id,
+              g.endpoint,
+              g.join_infusion_minimum,
+              g.join_infusion_minimum_bypass_by_request,
+              g.join_infusion_minimum_bypass_by_invite,
+              g.primary_reactor_id,
+              g.entry_substation_id,
+              g.creator,
+              g.owner,
+              gm.name,
+              gm.description,
+              gm.tag,
+              gm.logo,
+              gm.socials,
+              gm.website,
+              gm.this_infrastructure,
+              gm.status
+            FROM guild g
+            LEFT JOIN guild_meta gm
+              ON g.id = gm.id
+            WHERE gm.this_infrastructure = TRUE
+            LIMIT 1;
+        ';
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            [],
+            []
+        );
+    }
 }

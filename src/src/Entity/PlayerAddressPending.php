@@ -29,12 +29,6 @@ class PlayerAddressPending extends AbstractEntity
     #[ORM\Column]
     public ?string $user_agent = null;
 
-    #[ORM\Column]
-    public string $created_at;
-
-    #[ORM\Column]
-    public string $updated_at;
-
     public function getAddress(): ?string
     {
         return $this->address;
@@ -103,38 +97,6 @@ class PlayerAddressPending extends AbstractEntity
     public function setUserAgent(?string $user_agent): static
     {
         $this->user_agent = $user_agent;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?string
-    {
-        return $this->created_at;
-    }
-
-    /**
-     * @param string $created_at
-     * @return $this
-     */
-    public function setCreatedAt(string $created_at): static
-    {
-        $this->created_at = $created_at;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?string
-    {
-        return $this->updated_at;
-    }
-
-    /**
-     * @param string $updated_at
-     * @return $this
-     */
-    public function setUpdatedAt(string $updated_at): static
-    {
-        $this->updated_at = $updated_at;
 
         return $this;
     }

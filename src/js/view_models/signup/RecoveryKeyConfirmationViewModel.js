@@ -4,11 +4,16 @@ import {MenuPage} from "../../framework/MenuPage";
 
 export class RecoveryKeyConfirmationViewModel extends AbstractViewModel {
   /**
-   * @param mnemonic
+   * @param {string} mnemonic
+   * @param {AuthManager} authManager
    */
-  constructor(mnemonic) {
+  constructor(
+    mnemonic,
+    authManager
+  ) {
     super();
     this.mnemonic = mnemonic;
+    this.authManager = authManager;
   }
 
   initPageCode() {
@@ -31,10 +36,20 @@ export class RecoveryKeyConfirmationViewModel extends AbstractViewModel {
       const recoveryKeyInput = document.getElementById('recovery-key-input');
       recoveryKeyInput.value = recoveryKeyInput.value.replace(/\s\s+/g, ' ');
 
-      if (recoveryKeyInput.value === this.mnemonic) {
-        MenuPage.router.goto('Auth', 'signupAwaitingId');
-      } else {
+      if (recoveryKeyInput.value !== this.mnemonic) {
+
         MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmFail', {view: 'CONFIRM_FAIL'});
+
+      } else {
+
+        this.authManager.signup(this.mnemonic).then((success) => {
+          if (success) {
+            MenuPage.router.goto('Auth', 'signupSuccess');
+          } else {
+            MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmFail', {view: 'CONFIRM_FAIL'});
+          }
+        });
+
       }
     };
 

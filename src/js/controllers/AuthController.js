@@ -13,11 +13,27 @@ import {RecoveryKeyConfirmationViewModel} from "../view_models/signup/RecoveryKe
 import {AwaitingIdViewModel} from "../view_models/signup/AwaitingIdViewModel";
 import {RecoveryKeyFaqViewModel} from "../view_models/signup/RecoveryKeyFaqViewModel";
 import {SignupSuccessViewModel} from "../view_models/signup/SignupSuccessViewModel";
+import {AuthManager} from "../managers/AuthManager";
 
 export class AuthController extends AbstractController {
-  constructor(gameState) {
+
+  /**
+   *
+   * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
+   * @param {WalletManager} walletManager
+   * @param {AuthManager} authManager
+   */
+  constructor(
+    gameState,
+    guildAPI,
+    walletManager,
+    authManager
+  ) {
     super('Auth', gameState);
-    this.walletManager = new WalletManager();
+    this.guildAPI = guildAPI;
+    this.walletManager = walletManager;
+    this.authManager  = authManager;
     this.mnemonic = null;
   }
 
@@ -70,7 +86,10 @@ export class AuthController extends AbstractController {
   }
 
   signupRecoveryKeyConfirmation() {
-    const viewModel = new RecoveryKeyConfirmationViewModel(this.mnemonic);
+    const viewModel = new RecoveryKeyConfirmationViewModel(
+      this.mnemonic,
+      this.authManager
+    );
     viewModel.render();
   }
 
@@ -80,11 +99,6 @@ export class AuthController extends AbstractController {
   signupRecoveryKeyConfirmFail(options) {
     const viewModel = new RecoveryKeyCreationViewModel(this.mnemonic);
     viewModel.render(options.view);
-  }
-
-  signupAwaitingId() {
-    const viewModel = new AwaitingIdViewModel();
-    viewModel.render();
   }
 
   /**
@@ -97,6 +111,11 @@ export class AuthController extends AbstractController {
 
   signupSuccess() {
     const viewModel = new SignupSuccessViewModel();
+    viewModel.render();
+  }
+
+  signupAwaitingId() {
+    const viewModel = new AwaitingIdViewModel();
     viewModel.render();
   }
 }

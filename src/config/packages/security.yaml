@@ -16,6 +16,9 @@ security:
         api_auth:
             pattern: ^/api/auth/
             security: false
+        api_get_this_guild:
+            pattern: ^/api/guild/this
+            security: false
         api_timestamp:
             pattern: ^/api/timestamp
             security: false

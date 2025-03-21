@@ -18,6 +18,21 @@ class GuildController extends AbstractController
      * @return Response
      * @throws Exception
      */
+    #[Route('/api/guild/this', name: 'api_get_this_guild', methods: ['GET'])]
+    public function getThisGuild(
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $guildManager = new GuildManager($entityManager, $validator);
+        return $guildManager->getThisGuild();
+    }
+
+    /**
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
     #[Route('/api/guild/name', name: 'api_get_guild_filter_list', methods: ['GET'])]
     public function getGuildFilterList(
         EntityManagerInterface $entityManager,

@@ -14,6 +14,7 @@ class PlayerPending extends AbstractEntity
     ]
     public string $primary_address;
 
+    #[ORM\Column]
     public ?string $guild_id = null;
 
     #[ORM\Column]
@@ -27,12 +28,6 @@ class PlayerPending extends AbstractEntity
 
     #[ORM\Column]
     public ?string $pfp = null;
-
-    #[ORM\Column]
-    public string $created_at;
-
-    #[ORM\Column]
-    public string $updated_at;
 
     public function getPrimaryAddress(): ?string
     {
@@ -102,30 +97,6 @@ class PlayerPending extends AbstractEntity
     public function setPfp(?string $pfp): static
     {
         $this->pfp = $pfp;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?string
-    {
-        return $this->created_at;
-    }
-
-    public function setCreatedAt(string $created_at): static
-    {
-        $this->created_at = $created_at;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?string
-    {
-        return $this->updated_at;
-    }
-
-    public function setUpdatedAt(string $updated_at): static
-    {
-        $this->updated_at = $updated_at;
 
         return $this;
     }

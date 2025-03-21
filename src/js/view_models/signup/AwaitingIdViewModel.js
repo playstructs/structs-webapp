@@ -33,7 +33,7 @@ export class AwaitingIdViewModel extends AbstractViewModel{
     MenuPage.showDialoguePanel();
 
     setTimeout(() => {
-      MenuPage.router.goto('Auth', 'signupSuccess');
+      console.log('Awaiting ID');
     }, 5000);
   }
 }
