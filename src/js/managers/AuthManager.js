@@ -1,14 +1,23 @@
+import {PlayerCreatedListener} from "../grass_listeners/PlayerCreatedListener";
+
 export class AuthManager {
 
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildApi
    * @param {WalletManager} walletManager
+   * @param {GrassManager} grassManager
    */
-  constructor(gameState, guildApi, walletManager) {
+  constructor(
+    gameState,
+    guildApi,
+    walletManager,
+    grassManager
+  ) {
     this.gameState = gameState;
     this.guildApi = guildApi;
     this.walletManager = walletManager;
+    this.grassManager = grassManager;
   }
 
   /**
@@ -31,6 +40,12 @@ export class AuthManager {
     );
 
     this.gameState.signupRequest.signature = await this.walletManager.createSignatureForProxyMessage(message, account.privkey);
+
+    const playerCreatedListener = new PlayerCreatedListener();
+    playerCreatedListener.guildId = this.gameState.signupRequest.guild_id;
+    playerCreatedListener.playerAddress = this.gameState.signupRequest.primary_address;
+
+    this.grassManager.registerListener(playerCreatedListener);
 
     const response = await this.guildApi.signup(this.gameState.signupRequest);
 

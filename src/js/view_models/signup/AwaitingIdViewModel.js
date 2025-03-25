@@ -31,9 +31,5 @@ export class AwaitingIdViewModel extends AbstractViewModel{
     MenuPage.disableDialogueBtnB();
     MenuPage.disableDialogueBtnA();
     MenuPage.showDialoguePanel();
-
-    setTimeout(() => {
-      console.log('Awaiting ID');
-    }, 5000);
   }
 }

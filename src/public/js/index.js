@@ -297,6 +297,21 @@ class SignupRequestDTO {
 
 /***/ }),
 
+/***/ "./js/errors/GrassError.js":
+/*!*********************************!*\
+  !*** ./js/errors/GrassError.js ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GrassError: () => (/* binding */ GrassError)
+/* harmony export */ });
+class GrassError extends Error {}
+
+/***/ }),
+
 /***/ "./js/errors/GuildAPIError.js":
 /*!************************************!*\
   !*** ./js/errors/GuildAPIError.js ***!
@@ -691,6 +706,71 @@ class NotImplementedError extends Error {
 
 /***/ }),
 
+/***/ "./js/grass_listeners/AbstractGrassListener.js":
+/*!*****************************************************!*\
+  !*** ./js/grass_listeners/AbstractGrassListener.js ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AbstractGrassListener: () => (/* binding */ AbstractGrassListener)
+/* harmony export */ });
+/* harmony import */ var _framework_NotImplementedError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/NotImplementedError */ "./js/framework/NotImplementedError.js");
+
+
+class AbstractGrassListener {
+
+  /**
+   * @param {string} name
+   */
+  constructor(name) {
+    this.name = name;
+  }
+
+  handler(messageData) {
+    throw new _framework_NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
+  }
+}
+
+/***/ }),
+
+/***/ "./js/grass_listeners/PlayerCreatedListener.js":
+/*!*****************************************************!*\
+  !*** ./js/grass_listeners/PlayerCreatedListener.js ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlayerCreatedListener: () => (/* binding */ PlayerCreatedListener)
+/* harmony export */ });
+/* harmony import */ var _AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AbstractGrassListener */ "./js/grass_listeners/AbstractGrassListener.js");
+
+
+class PlayerCreatedListener extends _AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+
+  constructor() {
+    super('PLAYER_CREATED');
+    this.guildId = null;
+    this.playerAddress = null;
+  }
+
+  handler(messageData) {
+    if (
+      messageData.category === 'player_consensus'
+      && messageData.subject.startsWith(`structs.player.${this.guildId}`)
+      && messageData.primary_address === this.playerAddress
+    ) {
+      console.log(messageData.id);
+    }
+  }
+}
+
+/***/ }),
+
 /***/ "./js/index.js":
 /*!*********************!*\
   !*** ./js/index.js ***!
@@ -707,6 +787,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _managers_WalletManager__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./managers/WalletManager */ "./js/managers/WalletManager.js");
 /* harmony import */ var _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./managers/AuthManager */ "./js/managers/AuthManager.js");
 /* harmony import */ var _managers_GuildManager__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./managers/GuildManager */ "./js/managers/GuildManager.js");
+/* harmony import */ var _managers_GrassManager__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./managers/GrassManager */ "./js/managers/GrassManager.js");
+
 
 
 
@@ -722,7 +804,13 @@ const guildAPI = new _api_GuildAPI__WEBPACK_IMPORTED_MODULE_3__.GuildAPI();
 
 const guildManager = new _managers_GuildManager__WEBPACK_IMPORTED_MODULE_6__.GuildManager(gameState, guildAPI);
 const walletManager = new _managers_WalletManager__WEBPACK_IMPORTED_MODULE_4__.WalletManager();
-const authManager = new _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__.AuthManager(gameState, guildAPI, walletManager);
+const grassManager = new _managers_GrassManager__WEBPACK_IMPORTED_MODULE_7__.GrassManager(gameState);
+const authManager = new _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__.AuthManager(
+  gameState,
+  guildAPI,
+  walletManager,
+  grassManager
+);
 
 const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController(
   gameState,
@@ -735,6 +823,8 @@ _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerControl
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
 await guildManager.getThisGuild();
+
+grassManager.init();
 
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 
@@ -756,17 +846,27 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   AuthManager: () => (/* binding */ AuthManager)
 /* harmony export */ });
+/* harmony import */ var _grass_listeners_PlayerCreatedListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../grass_listeners/PlayerCreatedListener */ "./js/grass_listeners/PlayerCreatedListener.js");
+
+
 class AuthManager {
 
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildApi
    * @param {WalletManager} walletManager
+   * @param {GrassManager} grassManager
    */
-  constructor(gameState, guildApi, walletManager) {
+  constructor(
+    gameState,
+    guildApi,
+    walletManager,
+    grassManager
+  ) {
     this.gameState = gameState;
     this.guildApi = guildApi;
     this.walletManager = walletManager;
+    this.grassManager = grassManager;
   }
 
   /**
@@ -790,11 +890,105 @@ class AuthManager {
 
     this.gameState.signupRequest.signature = await this.walletManager.createSignatureForProxyMessage(message, account.privkey);
 
+    const playerCreatedListener = new _grass_listeners_PlayerCreatedListener__WEBPACK_IMPORTED_MODULE_0__.PlayerCreatedListener();
+    playerCreatedListener.guildId = this.gameState.signupRequest.guild_id;
+    playerCreatedListener.playerAddress = this.gameState.signupRequest.primary_address;
+
+    this.grassManager.registerListener(playerCreatedListener);
+
     const response = await this.guildApi.signup(this.gameState.signupRequest);
 
     return response.success;
   }
 
+}
+
+/***/ }),
+
+/***/ "./js/managers/GrassManager.js":
+/*!*************************************!*\
+  !*** ./js/managers/GrassManager.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GrassManager: () => (/* binding */ GrassManager)
+/* harmony export */ });
+/* harmony import */ var _nats_io_nats_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @nats-io/nats-core */ "./node_modules/@nats-io/nats-core/lib/mod.js");
+/* harmony import */ var _errors_GrassError__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../errors/GrassError */ "./js/errors/GrassError.js");
+
+
+
+class GrassManager {
+
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    this.gameState = gameState;
+    this.listeners = new Map();
+  }
+
+  /**
+   * @param {MsgImpl} message
+   * @return {object}
+   */
+  getMessageData(message) {
+    return message.json();
+  }
+
+  /**
+   * @param {object} messageData
+   * @return {boolean}
+   */
+  shouldIgnoreMessage(messageData) {
+    return !messageData.hasOwnProperty('subject')
+      || !messageData.hasOwnProperty('category');
+  }
+
+  /**
+   * @param {AbstractGrassListener} listener
+   */
+  registerListener(listener) {
+    this.listeners.set(listener.name, listener.handler.bind(listener));
+  }
+
+  /**
+   * @param {string} name
+   */
+  unregisterListener(name) {
+    this.listeners.delete(name);
+  }
+
+  init() {
+    if (this.gameState.thisGuild === null) {
+      throw new _errors_GrassError__WEBPACK_IMPORTED_MODULE_1__.GrassError("Init guild info before initializing GRASS. Guild info is needed for GRASS event filtering.");
+    }
+
+    _nats_io_nats_core__WEBPACK_IMPORTED_MODULE_0__.wsconnect({
+      servers: "ws://localhost:1443"
+    }).then((nc) => {
+      const subscription = nc.subscribe(`structs.>`);
+      (async function () {
+        for await (const message of subscription) {
+
+          const messageData = this.getMessageData(message);
+
+          if (this.shouldIgnoreMessage(messageData)) {
+            continue;
+          }
+
+          this.listeners.forEach((listener) => {
+            listener(messageData);
+          });
+
+        }
+        throw new _errors_GrassError__WEBPACK_IMPORTED_MODULE_1__.GrassError("GRASS subscription closed unexpectedly.");
+      }.bind(this))();
+    });
+  }
 }
 
 /***/ }),
@@ -1069,10 +1263,6 @@ class AwaitingIdViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnB();
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnA();
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showDialoguePanel();
-
-    setTimeout(() => {
-      console.log('Awaiting ID');
-    }, 5000);
   }
 }
 
@@ -8419,6 +8609,7726 @@ function isDefined(value) {
 }
 exports.isDefined = isDefined;
 //# sourceMappingURL=typechecks.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/authenticator.js":
+/*!**************************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/authenticator.js ***!
+  \**************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.multiAuthenticator = multiAuthenticator;
+exports.noAuthFn = noAuthFn;
+exports.usernamePasswordAuthenticator = usernamePasswordAuthenticator;
+exports.tokenAuthenticator = tokenAuthenticator;
+exports.nkeyAuthenticator = nkeyAuthenticator;
+exports.jwtAuthenticator = jwtAuthenticator;
+exports.credsAuthenticator = credsAuthenticator;
+/*
+ * Copyright 2020-2023 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const nkeys_1 = __webpack_require__(/*! ./nkeys */ "./node_modules/@nats-io/nats-core/lib/nkeys.js");
+const encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+function multiAuthenticator(authenticators) {
+    return (nonce) => {
+        let auth = {};
+        authenticators.forEach((a) => {
+            const args = a(nonce) || {};
+            auth = Object.assign(auth, args);
+        });
+        return auth;
+    };
+}
+function noAuthFn() {
+    return () => {
+        return;
+    };
+}
+/**
+ * Returns a user/pass authenticator for the specified user and optional password
+ * @param { string | () => string } user
+ * @param {string | () => string } pass
+ * @return {UserPass}
+ */
+function usernamePasswordAuthenticator(user, pass) {
+    return () => {
+        const u = typeof user === "function" ? user() : user;
+        const p = typeof pass === "function" ? pass() : pass;
+        return { user: u, pass: p };
+    };
+}
+/**
+ * Returns a token authenticator for the specified token
+ * @param { string | () => string } token
+ * @return {TokenAuth}
+ */
+function tokenAuthenticator(token) {
+    return () => {
+        const auth_token = typeof token === "function" ? token() : token;
+        return { auth_token };
+    };
+}
+/**
+ * Returns an Authenticator that returns a NKeyAuth based that uses the
+ * specified seed or function returning a seed.
+ * @param {Uint8Array | (() => Uint8Array)} seed - the nkey seed
+ * @return {NKeyAuth}
+ */
+function nkeyAuthenticator(seed) {
+    return (nonce) => {
+        const s = typeof seed === "function" ? seed() : seed;
+        const kp = s ? nkeys_1.nkeys.fromSeed(s) : undefined;
+        const nkey = kp ? kp.getPublicKey() : "";
+        const challenge = encoders_1.TE.encode(nonce || "");
+        const sigBytes = kp !== undefined && nonce ? kp.sign(challenge) : undefined;
+        const sig = sigBytes ? nkeys_1.nkeys.encode(sigBytes) : "";
+        return { nkey, sig };
+    };
+}
+/**
+ * Returns an Authenticator function that returns a JwtAuth.
+ * If a seed is provided, the public key, and signature are
+ * calculated.
+ *
+ * @param {string | ()=>string} ajwt - the jwt
+ * @param {Uint8Array | ()=> Uint8Array } seed - the optional nkey seed
+ * @return {Authenticator}
+ */
+function jwtAuthenticator(ajwt, seed) {
+    return (nonce) => {
+        const jwt = typeof ajwt === "function" ? ajwt() : ajwt;
+        const fn = nkeyAuthenticator(seed);
+        const { nkey, sig } = fn(nonce);
+        return { jwt, nkey, sig };
+    };
+}
+/**
+ * Returns an Authenticator function that returns a JwtAuth.
+ * This is a convenience Authenticator that parses the
+ * specified creds and delegates to the jwtAuthenticator.
+ * @param {Uint8Array | () => Uint8Array } creds - the contents of a creds file or a function that returns the creds
+ * @returns {JwtAuth}
+ */
+function credsAuthenticator(creds) {
+    const fn = typeof creds !== "function" ? () => creds : creds;
+    const parse = () => {
+        const CREDS = /\s*(?:(?:[-]{3,}[^\n]*[-]{3,}\n)(.+)(?:\n\s*[-]{3,}[^\n]*[-]{3,}\n))/ig;
+        const s = encoders_1.TD.decode(fn());
+        // get the JWT
+        let m = CREDS.exec(s);
+        if (!m) {
+            throw new Error("unable to parse credentials");
+        }
+        const jwt = m[1].trim();
+        // get the nkey
+        m = CREDS.exec(s);
+        if (!m) {
+            throw new Error("unable to parse credentials");
+        }
+        const seed = encoders_1.TE.encode(m[1].trim());
+        return { jwt, seed };
+    };
+    const jwtFn = () => {
+        const { jwt } = parse();
+        return jwt;
+    };
+    const nkeyFn = () => {
+        const { seed } = parse();
+        return seed;
+    };
+    return jwtAuthenticator(jwtFn, nkeyFn);
+}
+//# sourceMappingURL=authenticator.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/bench.js":
+/*!******************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/bench.js ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2020-2022 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Bench = exports.Metric = void 0;
+exports.throughput = throughput;
+exports.msgThroughput = msgThroughput;
+exports.humanizeBytes = humanizeBytes;
+const types_1 = __webpack_require__(/*! ./types */ "./node_modules/@nats-io/nats-core/lib/types.js");
+const nuid_1 = __webpack_require__(/*! ./nuid */ "./node_modules/@nats-io/nats-core/lib/nuid.js");
+const util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nats-core/lib/util.js");
+class Metric {
+    name;
+    duration;
+    date;
+    payload;
+    msgs;
+    lang;
+    version;
+    bytes;
+    asyncRequests;
+    min;
+    max;
+    constructor(name, duration) {
+        this.name = name;
+        this.duration = duration;
+        this.date = Date.now();
+        this.payload = 0;
+        this.msgs = 0;
+        this.bytes = 0;
+    }
+    toString() {
+        const sec = (this.duration) / 1000;
+        const mps = Math.round(this.msgs / sec);
+        const label = this.asyncRequests ? "asyncRequests" : "";
+        let minmax = "";
+        if (this.max) {
+            minmax = `${this.min}/${this.max}`;
+        }
+        return `${this.name}${label ? " [asyncRequests]" : ""} ${humanizeNumber(mps)} msgs/sec - [${sec.toFixed(2)} secs] ~ ${throughput(this.bytes, sec)} ${minmax}`;
+    }
+    toCsv() {
+        return `"${this.name}",${new Date(this.date).toISOString()},${this.lang},${this.version},${this.msgs},${this.payload},${this.bytes},${this.duration},${this.asyncRequests ? this.asyncRequests : false}\n`;
+    }
+    static header() {
+        return `Test,Date,Lang,Version,Count,MsgPayload,Bytes,Millis,Async\n`;
+    }
+}
+exports.Metric = Metric;
+class Bench {
+    nc;
+    callbacks;
+    msgs;
+    size;
+    subject;
+    asyncRequests;
+    pub;
+    sub;
+    req;
+    rep;
+    perf;
+    payload;
+    constructor(nc, opts = {
+        msgs: 100000,
+        size: 128,
+        subject: "",
+        asyncRequests: false,
+        pub: false,
+        sub: false,
+        req: false,
+        rep: false,
+    }) {
+        this.nc = nc;
+        this.callbacks = opts.callbacks || false;
+        this.msgs = opts.msgs || 0;
+        this.size = opts.size || 0;
+        this.subject = opts.subject || nuid_1.nuid.next();
+        this.asyncRequests = opts.asyncRequests || false;
+        this.pub = opts.pub || false;
+        this.sub = opts.sub || false;
+        this.req = opts.req || false;
+        this.rep = opts.rep || false;
+        this.perf = new util_1.Perf();
+        this.payload = this.size ? new Uint8Array(this.size) : types_1.Empty;
+        if (!this.pub && !this.sub && !this.req && !this.rep) {
+            throw new Error("no options selected");
+        }
+    }
+    async run() {
+        this.nc.closed()
+            .then((err) => {
+            if (err) {
+                throw err;
+            }
+        });
+        if (this.callbacks) {
+            await this.runCallbacks();
+        }
+        else {
+            await this.runAsync();
+        }
+        return this.processMetrics();
+    }
+    processMetrics() {
+        const nc = this.nc;
+        const { lang, version } = nc.protocol.transport;
+        if (this.pub && this.sub) {
+            this.perf.measure("pubsub", "pubStart", "subStop");
+        }
+        if (this.req && this.rep) {
+            this.perf.measure("reqrep", "reqStart", "reqStop");
+        }
+        const measures = this.perf.getEntries();
+        const pubsub = measures.find((m) => m.name === "pubsub");
+        const reqrep = measures.find((m) => m.name === "reqrep");
+        const req = measures.find((m) => m.name === "req");
+        const rep = measures.find((m) => m.name === "rep");
+        const pub = measures.find((m) => m.name === "pub");
+        const sub = measures.find((m) => m.name === "sub");
+        const stats = this.nc.stats();
+        const metrics = [];
+        if (pubsub) {
+            const { name, duration } = pubsub;
+            const m = new Metric(name, duration);
+            m.msgs = this.msgs * 2;
+            m.bytes = stats.inBytes + stats.outBytes;
+            m.lang = lang;
+            m.version = version;
+            m.payload = this.payload.length;
+            metrics.push(m);
+        }
+        if (reqrep) {
+            const { name, duration } = reqrep;
+            const m = new Metric(name, duration);
+            m.msgs = this.msgs * 2;
+            m.bytes = stats.inBytes + stats.outBytes;
+            m.lang = lang;
+            m.version = version;
+            m.payload = this.payload.length;
+            metrics.push(m);
+        }
+        if (pub) {
+            const { name, duration } = pub;
+            const m = new Metric(name, duration);
+            m.msgs = this.msgs;
+            m.bytes = stats.outBytes;
+            m.lang = lang;
+            m.version = version;
+            m.payload = this.payload.length;
+            metrics.push(m);
+        }
+        if (sub) {
+            const { name, duration } = sub;
+            const m = new Metric(name, duration);
+            m.msgs = this.msgs;
+            m.bytes = stats.inBytes;
+            m.lang = lang;
+            m.version = version;
+            m.payload = this.payload.length;
+            metrics.push(m);
+        }
+        if (rep) {
+            const { name, duration } = rep;
+            const m = new Metric(name, duration);
+            m.msgs = this.msgs;
+            m.bytes = stats.inBytes + stats.outBytes;
+            m.lang = lang;
+            m.version = version;
+            m.payload = this.payload.length;
+            metrics.push(m);
+        }
+        if (req) {
+            const { name, duration } = req;
+            const m = new Metric(name, duration);
+            m.msgs = this.msgs;
+            m.bytes = stats.inBytes + stats.outBytes;
+            m.lang = lang;
+            m.version = version;
+            m.payload = this.payload.length;
+            metrics.push(m);
+        }
+        return metrics;
+    }
+    async runCallbacks() {
+        const jobs = [];
+        if (this.sub) {
+            const d = (0, util_1.deferred)();
+            jobs.push(d);
+            let i = 0;
+            this.nc.subscribe(this.subject, {
+                max: this.msgs,
+                callback: () => {
+                    i++;
+                    if (i === 1) {
+                        this.perf.mark("subStart");
+                    }
+                    if (i === this.msgs) {
+                        this.perf.mark("subStop");
+                        this.perf.measure("sub", "subStart", "subStop");
+                        d.resolve();
+                    }
+                },
+            });
+        }
+        if (this.rep) {
+            const d = (0, util_1.deferred)();
+            jobs.push(d);
+            let i = 0;
+            this.nc.subscribe(this.subject, {
+                max: this.msgs,
+                callback: (_, m) => {
+                    m.respond(this.payload);
+                    i++;
+                    if (i === 1) {
+                        this.perf.mark("repStart");
+                    }
+                    if (i === this.msgs) {
+                        this.perf.mark("repStop");
+                        this.perf.measure("rep", "repStart", "repStop");
+                        d.resolve();
+                    }
+                },
+            });
+        }
+        if (this.pub) {
+            const job = (async () => {
+                this.perf.mark("pubStart");
+                for (let i = 0; i < this.msgs; i++) {
+                    this.nc.publish(this.subject, this.payload);
+                }
+                await this.nc.flush();
+                this.perf.mark("pubStop");
+                this.perf.measure("pub", "pubStart", "pubStop");
+            })();
+            jobs.push(job);
+        }
+        if (this.req) {
+            const job = (async () => {
+                if (this.asyncRequests) {
+                    this.perf.mark("reqStart");
+                    const a = [];
+                    for (let i = 0; i < this.msgs; i++) {
+                        a.push(this.nc.request(this.subject, this.payload, { timeout: 20000 }));
+                    }
+                    await Promise.all(a);
+                    this.perf.mark("reqStop");
+                    this.perf.measure("req", "reqStart", "reqStop");
+                }
+                else {
+                    this.perf.mark("reqStart");
+                    for (let i = 0; i < this.msgs; i++) {
+                        await this.nc.request(this.subject);
+                    }
+                    this.perf.mark("reqStop");
+                    this.perf.measure("req", "reqStart", "reqStop");
+                }
+            })();
+            jobs.push(job);
+        }
+        await Promise.all(jobs);
+    }
+    async runAsync() {
+        const jobs = [];
+        if (this.rep) {
+            let first = false;
+            const sub = this.nc.subscribe(this.subject, { max: this.msgs });
+            const job = (async () => {
+                for await (const m of sub) {
+                    if (!first) {
+                        this.perf.mark("repStart");
+                        first = true;
+                    }
+                    m.respond(this.payload);
+                }
+                await this.nc.flush();
+                this.perf.mark("repStop");
+                this.perf.measure("rep", "repStart", "repStop");
+            })();
+            jobs.push(job);
+        }
+        if (this.sub) {
+            let first = false;
+            const sub = this.nc.subscribe(this.subject, { max: this.msgs });
+            const job = (async () => {
+                for await (const _m of sub) {
+                    if (!first) {
+                        this.perf.mark("subStart");
+                        first = true;
+                    }
+                }
+                this.perf.mark("subStop");
+                this.perf.measure("sub", "subStart", "subStop");
+            })();
+            jobs.push(job);
+        }
+        if (this.pub) {
+            const job = (async () => {
+                this.perf.mark("pubStart");
+                for (let i = 0; i < this.msgs; i++) {
+                    this.nc.publish(this.subject, this.payload);
+                }
+                await this.nc.flush();
+                this.perf.mark("pubStop");
+                this.perf.measure("pub", "pubStart", "pubStop");
+            })();
+            jobs.push(job);
+        }
+        if (this.req) {
+            const job = (async () => {
+                if (this.asyncRequests) {
+                    this.perf.mark("reqStart");
+                    const a = [];
+                    for (let i = 0; i < this.msgs; i++) {
+                        a.push(this.nc.request(this.subject, this.payload, { timeout: 20000 }));
+                    }
+                    await Promise.all(a);
+                    this.perf.mark("reqStop");
+                    this.perf.measure("req", "reqStart", "reqStop");
+                }
+                else {
+                    this.perf.mark("reqStart");
+                    for (let i = 0; i < this.msgs; i++) {
+                        await this.nc.request(this.subject);
+                    }
+                    this.perf.mark("reqStop");
+                    this.perf.measure("req", "reqStart", "reqStop");
+                }
+            })();
+            jobs.push(job);
+        }
+        await Promise.all(jobs);
+    }
+}
+exports.Bench = Bench;
+function throughput(bytes, seconds) {
+    return `${humanizeBytes(bytes / seconds)}/sec`;
+}
+function msgThroughput(msgs, seconds) {
+    return `${(Math.floor(msgs / seconds))} msgs/sec`;
+}
+function humanizeBytes(bytes, si = false) {
+    const base = si ? 1000 : 1024;
+    const pre = si
+        ? ["k", "M", "G", "T", "P", "E"]
+        : ["K", "M", "G", "T", "P", "E"];
+    const post = si ? "iB" : "B";
+    if (bytes < base) {
+        return `${bytes.toFixed(2)} ${post}`;
+    }
+    const exp = parseInt(Math.log(bytes) / Math.log(base) + "");
+    const index = parseInt((exp - 1) + "");
+    return `${(bytes / Math.pow(base, exp)).toFixed(2)} ${pre[index]}${post}`;
+}
+function humanizeNumber(n) {
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+//# sourceMappingURL=bench.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/core.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/core.js ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2023 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DEFAULT_HOST = exports.DEFAULT_PORT = exports.Match = void 0;
+exports.syncIterator = syncIterator;
+exports.createInbox = createInbox;
+const nuid_1 = __webpack_require__(/*! ./nuid */ "./node_modules/@nats-io/nats-core/lib/nuid.js");
+const errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+exports.Match = {
+    // Exact option is case-sensitive
+    Exact: "exact",
+    // Case-sensitive, but key is transformed to Canonical MIME representation
+    CanonicalMIME: "canonical",
+    // Case-insensitive matches
+    IgnoreCase: "insensitive",
+};
+/**
+ * syncIterator is a utility function that allows an AsyncIterator to be triggered
+ * by calling next() - the utility will yield null if the underlying iterator is closed.
+ * Note it is possibly an error to call use this function on an AsyncIterable that has
+ * already been started (Symbol.asyncIterator() has been called) from a looping construct.
+ */
+function syncIterator(src) {
+    const iter = src[Symbol.asyncIterator]();
+    return {
+        async next() {
+            const m = await iter.next();
+            if (m.done) {
+                return Promise.resolve(null);
+            }
+            return Promise.resolve(m.value);
+        },
+    };
+}
+function createInbox(prefix = "") {
+    prefix = prefix || "_INBOX";
+    if (typeof prefix !== "string") {
+        throw (new TypeError("prefix must be a string"));
+    }
+    prefix.split(".")
+        .forEach((v) => {
+        if (v === "*" || v === ">") {
+            throw errors_1.InvalidArgumentError.format("prefix", `cannot have wildcards ('${prefix}')`);
+        }
+    });
+    return `${prefix}.${nuid_1.nuid.next()}`;
+}
+exports.DEFAULT_PORT = 4222;
+exports.DEFAULT_HOST = "127.0.0.1";
+//# sourceMappingURL=core.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/databuffer.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/databuffer.js ***!
+  \***********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2018-2021 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DataBuffer = void 0;
+const encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+class DataBuffer {
+    buffers;
+    byteLength;
+    constructor() {
+        this.buffers = [];
+        this.byteLength = 0;
+    }
+    static concat(...bufs) {
+        let max = 0;
+        for (let i = 0; i < bufs.length; i++) {
+            max += bufs[i].length;
+        }
+        const out = new Uint8Array(max);
+        let index = 0;
+        for (let i = 0; i < bufs.length; i++) {
+            out.set(bufs[i], index);
+            index += bufs[i].length;
+        }
+        return out;
+    }
+    static fromAscii(m) {
+        if (!m) {
+            m = "";
+        }
+        return encoders_1.TE.encode(m);
+    }
+    static toAscii(a) {
+        return encoders_1.TD.decode(a);
+    }
+    reset() {
+        this.buffers.length = 0;
+        this.byteLength = 0;
+    }
+    pack() {
+        if (this.buffers.length > 1) {
+            const v = new Uint8Array(this.byteLength);
+            let index = 0;
+            for (let i = 0; i < this.buffers.length; i++) {
+                v.set(this.buffers[i], index);
+                index += this.buffers[i].length;
+            }
+            this.buffers.length = 0;
+            this.buffers.push(v);
+        }
+    }
+    shift() {
+        if (this.buffers.length) {
+            const a = this.buffers.shift();
+            if (a) {
+                this.byteLength -= a.length;
+                return a;
+            }
+        }
+        return new Uint8Array(0);
+    }
+    drain(n) {
+        if (this.buffers.length) {
+            this.pack();
+            const v = this.buffers.pop();
+            if (v) {
+                const max = this.byteLength;
+                if (n === undefined || n > max) {
+                    n = max;
+                }
+                const d = v.subarray(0, n);
+                if (max > n) {
+                    this.buffers.push(v.subarray(n));
+                }
+                this.byteLength = max - n;
+                return d;
+            }
+        }
+        return new Uint8Array(0);
+    }
+    fill(a, ...bufs) {
+        if (a) {
+            this.buffers.push(a);
+            this.byteLength += a.length;
+        }
+        for (let i = 0; i < bufs.length; i++) {
+            if (bufs[i] && bufs[i].length) {
+                this.buffers.push(bufs[i]);
+                this.byteLength += bufs[i].length;
+            }
+        }
+    }
+    peek() {
+        if (this.buffers.length) {
+            this.pack();
+            return this.buffers[0];
+        }
+        return new Uint8Array(0);
+    }
+    size() {
+        return this.byteLength;
+    }
+    length() {
+        return this.buffers.length;
+    }
+}
+exports.DataBuffer = DataBuffer;
+//# sourceMappingURL=databuffer.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/denobuffer.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/denobuffer.js ***!
+  \***********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+// Copyright 2018-2021 the Deno authors. All rights reserved. MIT license.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DenoBuffer = exports.MAX_SIZE = exports.AssertionError = void 0;
+exports.assert = assert;
+exports.concat = concat;
+exports.append = append;
+exports.readAll = readAll;
+exports.writeAll = writeAll;
+// This code has been ported almost directly from Go's src/bytes/buffer.go
+// Copyright 2009 The Go Authors. All rights reserved. BSD license.
+// https://github.com/golang/go/blob/master/LICENSE
+// This code removes all Deno specific functionality to enable its use
+// in a browser environment
+//@internal
+const encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+class AssertionError extends Error {
+    constructor(msg) {
+        super(msg);
+        this.name = "AssertionError";
+    }
+}
+exports.AssertionError = AssertionError;
+// @internal
+function assert(cond, msg = "Assertion failed.") {
+    if (!cond) {
+        throw new AssertionError(msg);
+    }
+}
+// MIN_READ is the minimum ArrayBuffer size passed to a read call by
+// buffer.ReadFrom. As long as the Buffer has at least MIN_READ bytes beyond
+// what is required to hold the contents of r, readFrom() will not grow the
+// underlying buffer.
+const MIN_READ = 32 * 1024;
+exports.MAX_SIZE = 2 ** 32 - 2;
+// `off` is the offset into `dst` where it will at which to begin writing values
+// from `src`.
+// Returns the number of bytes copied.
+function copy(src, dst, off = 0) {
+    const r = dst.byteLength - off;
+    if (src.byteLength > r) {
+        src = src.subarray(0, r);
+    }
+    dst.set(src, off);
+    return src.byteLength;
+}
+function concat(origin, b) {
+    if (origin === undefined && b === undefined) {
+        return new Uint8Array(0);
+    }
+    if (origin === undefined) {
+        return b;
+    }
+    if (b === undefined) {
+        return origin;
+    }
+    const output = new Uint8Array(origin.length + b.length);
+    output.set(origin, 0);
+    output.set(b, origin.length);
+    return output;
+}
+function append(origin, b) {
+    return concat(origin, Uint8Array.of(b));
+}
+class DenoBuffer {
+    _buf; // contents are the bytes _buf[off : len(_buf)]
+    _off; // read at _buf[off], write at _buf[_buf.byteLength]
+    constructor(ab) {
+        this._off = 0;
+        if (ab == null) {
+            this._buf = new Uint8Array(0);
+            return;
+        }
+        this._buf = new Uint8Array(ab);
+    }
+    bytes(options = { copy: true }) {
+        if (options.copy === false)
+            return this._buf.subarray(this._off);
+        return this._buf.slice(this._off);
+    }
+    empty() {
+        return this._buf.byteLength <= this._off;
+    }
+    get length() {
+        return this._buf.byteLength - this._off;
+    }
+    get capacity() {
+        return this._buf.buffer.byteLength;
+    }
+    truncate(n) {
+        if (n === 0) {
+            this.reset();
+            return;
+        }
+        if (n < 0 || n > this.length) {
+            throw Error("bytes.Buffer: truncation out of range");
+        }
+        this._reslice(this._off + n);
+    }
+    reset() {
+        this._reslice(0);
+        this._off = 0;
+    }
+    _tryGrowByReslice(n) {
+        const l = this._buf.byteLength;
+        if (n <= this.capacity - l) {
+            this._reslice(l + n);
+            return l;
+        }
+        return -1;
+    }
+    _reslice(len) {
+        assert(len <= this._buf.buffer.byteLength);
+        this._buf = new Uint8Array(this._buf.buffer, 0, len);
+    }
+    readByte() {
+        const a = new Uint8Array(1);
+        if (this.read(a)) {
+            return a[0];
+        }
+        return null;
+    }
+    read(p) {
+        if (this.empty()) {
+            // Buffer is empty, reset to recover space.
+            this.reset();
+            if (p.byteLength === 0) {
+                // this edge case is tested in 'bufferReadEmptyAtEOF' test
+                return 0;
+            }
+            return null;
+        }
+        const nread = copy(this._buf.subarray(this._off), p);
+        this._off += nread;
+        return nread;
+    }
+    writeByte(n) {
+        return this.write(Uint8Array.of(n));
+    }
+    writeString(s) {
+        return this.write(encoders_1.TE.encode(s));
+    }
+    write(p) {
+        const m = this._grow(p.byteLength);
+        return copy(p, this._buf, m);
+    }
+    _grow(n) {
+        const m = this.length;
+        // If buffer is empty, reset to recover space.
+        if (m === 0 && this._off !== 0) {
+            this.reset();
+        }
+        // Fast: Try to _grow by means of a _reslice.
+        const i = this._tryGrowByReslice(n);
+        if (i >= 0) {
+            return i;
+        }
+        const c = this.capacity;
+        if (n <= Math.floor(c / 2) - m) {
+            // We can slide things down instead of allocating a new
+            // ArrayBuffer. We only need m+n <= c to slide, but
+            // we instead let capacity get twice as large so we
+            // don't spend all our time copying.
+            copy(this._buf.subarray(this._off), this._buf);
+        }
+        else if (c + n > exports.MAX_SIZE) {
+            throw new Error("The buffer cannot be grown beyond the maximum size.");
+        }
+        else {
+            // Not enough space anywhere, we need to allocate.
+            const buf = new Uint8Array(Math.min(2 * c + n, exports.MAX_SIZE));
+            copy(this._buf.subarray(this._off), buf);
+            this._buf = buf;
+        }
+        // Restore this.off and len(this._buf).
+        this._off = 0;
+        this._reslice(Math.min(m + n, exports.MAX_SIZE));
+        return m;
+    }
+    grow(n) {
+        if (n < 0) {
+            throw Error("Buffer._grow: negative count");
+        }
+        const m = this._grow(n);
+        this._reslice(m);
+    }
+    readFrom(r) {
+        let n = 0;
+        const tmp = new Uint8Array(MIN_READ);
+        while (true) {
+            const shouldGrow = this.capacity - this.length < MIN_READ;
+            // read into tmp buffer if there's not enough room
+            // otherwise read directly into the internal buffer
+            const buf = shouldGrow
+                ? tmp
+                : new Uint8Array(this._buf.buffer, this.length);
+            const nread = r.read(buf);
+            if (nread === null) {
+                return n;
+            }
+            // write will grow if needed
+            if (shouldGrow)
+                this.write(buf.subarray(0, nread));
+            else
+                this._reslice(this.length + nread);
+            n += nread;
+        }
+    }
+}
+exports.DenoBuffer = DenoBuffer;
+function readAll(r) {
+    const buf = new DenoBuffer();
+    buf.readFrom(r);
+    return buf.bytes();
+}
+function writeAll(w, arr) {
+    let nwritten = 0;
+    while (nwritten < arr.length) {
+        nwritten += w.write(arr.subarray(nwritten));
+    }
+}
+//# sourceMappingURL=denobuffer.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/encoders.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/encoders.js ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TD = exports.TE = exports.Empty = void 0;
+exports.encode = encode;
+exports.decode = decode;
+/*
+ * Copyright 2020 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+exports.Empty = new Uint8Array(0);
+exports.TE = new TextEncoder();
+exports.TD = new TextDecoder();
+function concat(...bufs) {
+    let max = 0;
+    for (let i = 0; i < bufs.length; i++) {
+        max += bufs[i].length;
+    }
+    const out = new Uint8Array(max);
+    let index = 0;
+    for (let i = 0; i < bufs.length; i++) {
+        out.set(bufs[i], index);
+        index += bufs[i].length;
+    }
+    return out;
+}
+function encode(...a) {
+    const bufs = [];
+    for (let i = 0; i < a.length; i++) {
+        bufs.push(exports.TE.encode(a[i]));
+    }
+    if (bufs.length === 0) {
+        return exports.Empty;
+    }
+    if (bufs.length === 1) {
+        return bufs[0];
+    }
+    return concat(...bufs);
+}
+function decode(a) {
+    if (!a || a.length === 0) {
+        return "";
+    }
+    return exports.TD.decode(a);
+}
+//# sourceMappingURL=encoders.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/errors.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/errors.js ***!
+  \*******************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * Copyright 2024 Synadia Communications, Inc
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.errors = exports.PermissionViolationError = exports.NoRespondersError = exports.TimeoutError = exports.RequestError = exports.ProtocolError = exports.ConnectionError = exports.DrainingConnectionError = exports.ClosedConnectionError = exports.AuthorizationError = exports.UserAuthenticationExpiredError = exports.InvalidOperationError = exports.InvalidArgumentError = exports.InvalidSubjectError = void 0;
+/**
+ * Represents an error that is thrown when an invalid subject is encountered.
+ * This class extends the built-in Error object.
+ *
+ * @class
+ * @extends Error
+ */
+class InvalidSubjectError extends Error {
+    constructor(subject, options) {
+        super(`illegal subject: '${subject}'`, options);
+        this.name = "InvalidSubjectError";
+    }
+}
+exports.InvalidSubjectError = InvalidSubjectError;
+class InvalidArgumentError extends Error {
+    constructor(message, options) {
+        super(message, options);
+        this.name = "InvalidArgumentError";
+    }
+    static format(property, message, options) {
+        if (Array.isArray(message) && message.length > 1) {
+            message = message[0];
+        }
+        if (Array.isArray(property)) {
+            property = property.map((n) => `'${n}'`);
+            property = property.join(",");
+        }
+        else {
+            property = `'${property}'`;
+        }
+        return new InvalidArgumentError(`${property} ${message}`, options);
+    }
+}
+exports.InvalidArgumentError = InvalidArgumentError;
+/**
+ * InvalidOperationError is a custom error class that extends the standard Error object.
+ * It represents an error that occurs when an invalid operation is attempted on one of
+ * objects returned by the API. For example, trying to iterate on an object that was
+ * configured with a callback.
+ *
+ * @class InvalidOperationError
+ * @extends {Error}
+ *
+ * @param {string} message - The error message that explains the reason for the error.
+ * @param {ErrorOptions} [options] - Optional parameter to provide additional error options.
+ */
+class InvalidOperationError extends Error {
+    constructor(message, options) {
+        super(message, options);
+        this.name = "InvalidOperationError";
+    }
+}
+exports.InvalidOperationError = InvalidOperationError;
+/**
+ * Represents an error indicating that user authentication has expired.
+ * This error is typically thrown when a user attempts to access a connection
+ * but their authentication credentials have expired.
+ */
+class UserAuthenticationExpiredError extends Error {
+    constructor(message, options) {
+        super(message, options);
+        this.name = "UserAuthenticationExpiredError";
+    }
+    static parse(s) {
+        const ss = s.toLowerCase();
+        if (ss.indexOf("user authentication expired") !== -1) {
+            return new UserAuthenticationExpiredError(s);
+        }
+        return null;
+    }
+}
+exports.UserAuthenticationExpiredError = UserAuthenticationExpiredError;
+/**
+ * Represents an error related to authorization issues.
+ * Note that these could represent an authorization violation,
+ * or that the account authentication configuration has expired,
+ * or an authentication timeout.
+ */
+class AuthorizationError extends Error {
+    constructor(message, options) {
+        super(message, options);
+        this.name = "AuthorizationError";
+    }
+    static parse(s) {
+        const messages = [
+            "authorization violation",
+            "account authentication expired",
+            "authentication timeout",
+        ];
+        const ss = s.toLowerCase();
+        for (let i = 0; i < messages.length; i++) {
+            if (ss.indexOf(messages[i]) !== -1) {
+                return new AuthorizationError(s);
+            }
+        }
+        return null;
+    }
+}
+exports.AuthorizationError = AuthorizationError;
+/**
+ * Class representing an error thrown when an operation is attempted on a closed connection.
+ *
+ * This error is intended to signal that a connection-related operation could not be completed
+ * because the connection is no longer open or has been terminated.
+ *
+ * @class
+ * @extends Error
+ */
+class ClosedConnectionError extends Error {
+    constructor() {
+        super("closed connection");
+        this.name = "ClosedConnectionError";
+    }
+}
+exports.ClosedConnectionError = ClosedConnectionError;
+/**
+ * The `ConnectionDrainingError` class represents a specific type of error
+ * that occurs when a connection is being drained.
+ *
+ * This error is typically used in scenarios where connections need to be
+ * gracefully closed or when they are transitioning to an inactive state.
+ *
+ * The error message is set to "connection draining" and the error name is
+ * overridden to "DrainingConnectionError".
+ */
+class DrainingConnectionError extends Error {
+    constructor() {
+        super("connection draining");
+        this.name = "DrainingConnectionError";
+    }
+}
+exports.DrainingConnectionError = DrainingConnectionError;
+/**
+ * Represents an error that occurs when a network connection fails.
+ * Extends the built-in Error class to provide additional context for connection-related issues.
+ *
+ * @param {string} message - A human-readable description of the error.
+ * @param {ErrorOptions} [options] - Optional settings for customizing the error behavior.
+ */
+class ConnectionError extends Error {
+    constructor(message, options) {
+        super(message, options);
+        this.name = "ConnectionError";
+    }
+}
+exports.ConnectionError = ConnectionError;
+/**
+ * Represents an error encountered during protocol operations.
+ * This class extends the built-in `Error` class, providing a specific
+ * error type called `ProtocolError`.
+ *
+ * @param {string} message - A descriptive message describing the error.
+ * @param {ErrorOptions} [options] - Optional parameters to include additional details.
+ */
+class ProtocolError extends Error {
+    constructor(message, options) {
+        super(message, options);
+        this.name = "ProtocolError";
+    }
+}
+exports.ProtocolError = ProtocolError;
+/**
+ * Class representing an error that occurs during an request operation
+ * (such as TimeoutError, or NoRespondersError, or some other error).
+ *
+ * @extends Error
+ */
+class RequestError extends Error {
+    constructor(message = "", options) {
+        super(message, options);
+        this.name = "RequestError";
+    }
+    isNoResponders() {
+        return this.cause instanceof NoRespondersError;
+    }
+}
+exports.RequestError = RequestError;
+/**
+ * TimeoutError is a custom error class that extends the built-in Error class.
+ * It is used to represent an error that occurs when an operation exceeds a
+ * predefined time limit.
+ *
+ * @class
+ * @extends {Error}
+ */
+class TimeoutError extends Error {
+    constructor(options) {
+        super("timeout", options);
+        this.name = "TimeoutError";
+    }
+}
+exports.TimeoutError = TimeoutError;
+/**
+ * NoRespondersError is an error thrown when no responders (no service is
+ * subscribing to the subject) are found for a given subject. This error
+ * is typically found as the cause for a RequestError
+ *
+ * @extends Error
+ *
+ * @param {string} subject - The subject for which no responders were found.
+ * @param {ErrorOptions} [options] - Optional error options.
+ */
+class NoRespondersError extends Error {
+    subject;
+    constructor(subject, options) {
+        super(`no responders: '${subject}'`, options);
+        this.subject = subject;
+        this.name = "NoResponders";
+    }
+}
+exports.NoRespondersError = NoRespondersError;
+/**
+ * Class representing a Permission Violation Error.
+ * It provides information about the operation (either "publish" or "subscription")
+ * and the subject used for the operation and the optional queue (if a subscription).
+ *
+ * This error is terminal for a subscription.
+ */
+class PermissionViolationError extends Error {
+    operation;
+    subject;
+    queue;
+    constructor(message, operation, subject, queue, options) {
+        super(message, options);
+        this.name = "PermissionViolationError";
+        this.operation = operation;
+        this.subject = subject;
+        this.queue = queue;
+    }
+    static parse(s) {
+        const t = s ? s.toLowerCase() : "";
+        if (t.indexOf("permissions violation") === -1) {
+            return null;
+        }
+        let operation = "publish";
+        let subject = "";
+        let queue = undefined;
+        const m = s.match(/(Publish|Subscription) to "(\S+)"/);
+        if (m) {
+            operation = m[1].toLowerCase();
+            subject = m[2];
+            if (operation === "subscription") {
+                const qm = s.match(/using queue "(\S+)"/);
+                if (qm) {
+                    queue = qm[1];
+                }
+            }
+        }
+        return new PermissionViolationError(s, operation, subject, queue);
+    }
+}
+exports.PermissionViolationError = PermissionViolationError;
+exports.errors = {
+    AuthorizationError,
+    ClosedConnectionError,
+    ConnectionError,
+    DrainingConnectionError,
+    InvalidArgumentError,
+    InvalidOperationError,
+    InvalidSubjectError,
+    NoRespondersError,
+    PermissionViolationError,
+    ProtocolError,
+    RequestError,
+    TimeoutError,
+    UserAuthenticationExpiredError,
+};
+//# sourceMappingURL=errors.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/headers.js":
+/*!********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/headers.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2020-2023 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MsgHdrsImpl = void 0;
+exports.canonicalMIMEHeaderKey = canonicalMIMEHeaderKey;
+exports.headers = headers;
+// Heavily inspired by Golang's https://golang.org/src/net/http/header.go
+const encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+const core_1 = __webpack_require__(/*! ./core */ "./node_modules/@nats-io/nats-core/lib/core.js");
+const errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+// https://www.ietf.org/rfc/rfc822.txt
+// 3.1.2.  STRUCTURE OF HEADER FIELDS
+//
+// Once a field has been unfolded, it may be viewed as being com-
+// posed of a field-name followed by a colon (":"), followed by a
+// field-body, and  terminated  by  a  carriage-return/line-feed.
+// The  field-name must be composed of printable ASCII characters
+// (i.e., characters that  have  values  between  33.  and  126.,
+// decimal, except colon).  The field-body may be composed of any
+// ASCII characters, except CR or LF.  (While CR and/or LF may be
+// present  in the actual text, they are removed by the action of
+// unfolding the field.)
+function canonicalMIMEHeaderKey(k) {
+    const a = 97;
+    const A = 65;
+    const Z = 90;
+    const z = 122;
+    const dash = 45;
+    const colon = 58;
+    const start = 33;
+    const end = 126;
+    const toLower = a - A;
+    let upper = true;
+    const buf = new Array(k.length);
+    for (let i = 0; i < k.length; i++) {
+        let c = k.charCodeAt(i);
+        if (c === colon || c < start || c > end) {
+            throw errors_1.InvalidArgumentError.format("header", `'${k[i]}' is not a valid character in a header name`);
+        }
+        if (upper && a <= c && c <= z) {
+            c -= toLower;
+        }
+        else if (!upper && A <= c && c <= Z) {
+            c += toLower;
+        }
+        buf[i] = c;
+        upper = c == dash;
+    }
+    return String.fromCharCode(...buf);
+}
+function headers(code = 0, description = "") {
+    if ((code === 0 && description !== "") || (code > 0 && description === "")) {
+        throw errors_1.InvalidArgumentError.format("description", "is required");
+    }
+    return new MsgHdrsImpl(code, description);
+}
+const HEADER = "NATS/1.0";
+class MsgHdrsImpl {
+    _code;
+    headers;
+    _description;
+    constructor(code = 0, description = "") {
+        this._code = code;
+        this._description = description;
+        this.headers = new Map();
+    }
+    [Symbol.iterator]() {
+        return this.headers.entries();
+    }
+    size() {
+        return this.headers.size;
+    }
+    equals(mh) {
+        if (mh && this.headers.size === mh.headers.size &&
+            this._code === mh._code) {
+            for (const [k, v] of this.headers) {
+                const a = mh.values(k);
+                if (v.length !== a.length) {
+                    return false;
+                }
+                const vv = [...v].sort();
+                const aa = [...a].sort();
+                for (let i = 0; i < vv.length; i++) {
+                    if (vv[i] !== aa[i]) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+    static decode(a) {
+        const mh = new MsgHdrsImpl();
+        const s = encoders_1.TD.decode(a);
+        const lines = s.split("\r\n");
+        const h = lines[0];
+        if (h !== HEADER) {
+            // malformed headers could add extra space without adding a code or description
+            let str = h.replace(HEADER, "").trim();
+            if (str.length > 0) {
+                mh._code = parseInt(str, 10);
+                if (isNaN(mh._code)) {
+                    mh._code = 0;
+                }
+                const scode = mh._code.toString();
+                str = str.replace(scode, "");
+                mh._description = str.trim();
+            }
+        }
+        if (lines.length >= 1) {
+            lines.slice(1).map((s) => {
+                if (s) {
+                    const idx = s.indexOf(":");
+                    if (idx > -1) {
+                        const k = s.slice(0, idx);
+                        const v = s.slice(idx + 1).trim();
+                        mh.append(k, v);
+                    }
+                }
+            });
+        }
+        return mh;
+    }
+    toString() {
+        if (this.headers.size === 0 && this._code === 0) {
+            return "";
+        }
+        let s = HEADER;
+        if (this._code > 0 && this._description !== "") {
+            s += ` ${this._code} ${this._description}`;
+        }
+        for (const [k, v] of this.headers) {
+            for (let i = 0; i < v.length; i++) {
+                s = `${s}\r\n${k}: ${v[i]}`;
+            }
+        }
+        return `${s}\r\n\r\n`;
+    }
+    encode() {
+        return encoders_1.TE.encode(this.toString());
+    }
+    static validHeaderValue(k) {
+        const inv = /[\r\n]/;
+        if (inv.test(k)) {
+            throw errors_1.InvalidArgumentError.format("header", "values cannot contain \\r or \\n");
+        }
+        return k.trim();
+    }
+    keys() {
+        const keys = [];
+        for (const sk of this.headers.keys()) {
+            keys.push(sk);
+        }
+        return keys;
+    }
+    findKeys(k, match = core_1.Match.Exact) {
+        const keys = this.keys();
+        switch (match) {
+            case core_1.Match.Exact:
+                return keys.filter((v) => {
+                    return v === k;
+                });
+            case core_1.Match.CanonicalMIME:
+                k = canonicalMIMEHeaderKey(k);
+                return keys.filter((v) => {
+                    return v === k;
+                });
+            default: {
+                const lci = k.toLowerCase();
+                return keys.filter((v) => {
+                    return lci === v.toLowerCase();
+                });
+            }
+        }
+    }
+    get(k, match = core_1.Match.Exact) {
+        const keys = this.findKeys(k, match);
+        if (keys.length) {
+            const v = this.headers.get(keys[0]);
+            if (v) {
+                return Array.isArray(v) ? v[0] : v;
+            }
+        }
+        return "";
+    }
+    last(k, match = core_1.Match.Exact) {
+        const keys = this.findKeys(k, match);
+        if (keys.length) {
+            const v = this.headers.get(keys[0]);
+            if (v) {
+                return Array.isArray(v) ? v[v.length - 1] : v;
+            }
+        }
+        return "";
+    }
+    has(k, match = core_1.Match.Exact) {
+        return this.findKeys(k, match).length > 0;
+    }
+    set(k, v, match = core_1.Match.Exact) {
+        this.delete(k, match);
+        this.append(k, v, match);
+    }
+    append(k, v, match = core_1.Match.Exact) {
+        // validate the key
+        const ck = canonicalMIMEHeaderKey(k);
+        if (match === core_1.Match.CanonicalMIME) {
+            k = ck;
+        }
+        // if we get non-sensical ignores/etc, we should try
+        // to do the right thing and use the first key that matches
+        const keys = this.findKeys(k, match);
+        k = keys.length > 0 ? keys[0] : k;
+        const value = MsgHdrsImpl.validHeaderValue(v);
+        let a = this.headers.get(k);
+        if (!a) {
+            a = [];
+            this.headers.set(k, a);
+        }
+        a.push(value);
+    }
+    values(k, match = core_1.Match.Exact) {
+        const buf = [];
+        const keys = this.findKeys(k, match);
+        keys.forEach((v) => {
+            const values = this.headers.get(v);
+            if (values) {
+                buf.push(...values);
+            }
+        });
+        return buf;
+    }
+    delete(k, match = core_1.Match.Exact) {
+        const keys = this.findKeys(k, match);
+        keys.forEach((v) => {
+            this.headers.delete(v);
+        });
+    }
+    get hasError() {
+        return this._code >= 300;
+    }
+    get status() {
+        return `${this._code} ${this._description}`.trim();
+    }
+    toRecord() {
+        const data = {};
+        this.keys().forEach((v) => {
+            data[v] = this.values(v);
+        });
+        return data;
+    }
+    get code() {
+        return this._code;
+    }
+    get description() {
+        return this._description;
+    }
+    static fromRecord(r) {
+        const h = new MsgHdrsImpl();
+        for (const k in r) {
+            h.headers.set(k, r[k]);
+        }
+        return h;
+    }
+}
+exports.MsgHdrsImpl = MsgHdrsImpl;
+//# sourceMappingURL=headers.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/heartbeats.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/heartbeats.js ***!
+  \***********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2020-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Heartbeat = void 0;
+const util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nats-core/lib/util.js");
+class Heartbeat {
+    ph;
+    interval;
+    maxOut;
+    timer;
+    pendings;
+    constructor(ph, interval, maxOut) {
+        this.ph = ph;
+        this.interval = interval;
+        this.maxOut = maxOut;
+        this.pendings = [];
+    }
+    // api to start the heartbeats, since this can be
+    // spuriously called from dial, ensure we don't
+    // leak timers
+    start() {
+        this.cancel();
+        this._schedule();
+    }
+    // api for canceling the heartbeats, if stale is
+    // true it will initiate a client disconnect
+    cancel(stale) {
+        if (this.timer) {
+            clearTimeout(this.timer);
+            this.timer = undefined;
+        }
+        this._reset();
+        if (stale) {
+            this.ph.disconnect();
+        }
+    }
+    _schedule() {
+        // @ts-ignore: node is not a number - we treat this opaquely
+        this.timer = setTimeout(() => {
+            this.ph.dispatchStatus({ type: "ping", pendingPings: this.pendings.length + 1 });
+            if (this.pendings.length === this.maxOut) {
+                this.cancel(true);
+                return;
+            }
+            const ping = (0, util_1.deferred)();
+            this.ph.flush(ping)
+                .then(() => {
+                this._reset();
+            })
+                .catch(() => {
+                // we disconnected - pongs were rejected
+                this.cancel();
+            });
+            this.pendings.push(ping);
+            this._schedule();
+        }, this.interval);
+    }
+    _reset() {
+        // clear pendings after resolving them
+        this.pendings = this.pendings.filter((p) => {
+            const d = p;
+            d.resolve();
+            return false;
+        });
+    }
+}
+exports.Heartbeat = Heartbeat;
+//# sourceMappingURL=heartbeats.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/idleheartbeat_monitor.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/idleheartbeat_monitor.js ***!
+  \**********************************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * Copyright 2022 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.IdleHeartbeatMonitor = void 0;
+class IdleHeartbeatMonitor {
+    interval;
+    maxOut;
+    cancelAfter;
+    timer;
+    autoCancelTimer;
+    last;
+    missed;
+    count;
+    callback;
+    /**
+     * Constructor
+     * @param interval in millis to check
+     * @param cb a callback to report when heartbeats are missed
+     * @param opts monitor options @see IdleHeartbeatOptions
+     */
+    constructor(interval, cb, opts = { maxOut: 2 }) {
+        this.interval = interval;
+        this.maxOut = opts?.maxOut || 2;
+        this.cancelAfter = opts?.cancelAfter || 0;
+        this.last = Date.now();
+        this.missed = 0;
+        this.count = 0;
+        this.callback = cb;
+        this._schedule();
+    }
+    /**
+     * cancel monitoring
+     */
+    cancel() {
+        if (this.autoCancelTimer) {
+            clearTimeout(this.autoCancelTimer);
+        }
+        if (this.timer) {
+            clearInterval(this.timer);
+        }
+        this.timer = 0;
+        this.autoCancelTimer = 0;
+        this.missed = 0;
+    }
+    /**
+     * work signals that there was work performed
+     */
+    work() {
+        this.last = Date.now();
+        this.missed = 0;
+    }
+    /**
+     * internal api to change the interval, cancelAfter and maxOut
+     * @param interval
+     * @param cancelAfter
+     * @param maxOut
+     */
+    _change(interval, cancelAfter = 0, maxOut = 2) {
+        this.interval = interval;
+        this.maxOut = maxOut;
+        this.cancelAfter = cancelAfter;
+        this.restart();
+    }
+    /**
+     * cancels and restarts the monitoring
+     */
+    restart() {
+        this.cancel();
+        this._schedule();
+    }
+    /**
+     * internal api called to start monitoring
+     */
+    _schedule() {
+        if (this.cancelAfter > 0) {
+            // @ts-ignore: in node is not a number - we treat this opaquely
+            this.autoCancelTimer = setTimeout(() => {
+                this.cancel();
+            }, this.cancelAfter);
+        }
+        // @ts-ignore: in node is not a number - we treat this opaquely
+        this.timer = setInterval(() => {
+            this.count++;
+            if ((Date.now() - this.last) > this.interval) {
+                this.missed++;
+            }
+            if (this.missed >= this.maxOut) {
+                try {
+                    if (this.callback(this.missed) === true) {
+                        this.cancel();
+                    }
+                }
+                catch (err) {
+                    console.log(err);
+                }
+            }
+        }, this.interval);
+    }
+}
+exports.IdleHeartbeatMonitor = IdleHeartbeatMonitor;
+//# sourceMappingURL=idleheartbeat_monitor.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/internal_mod.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/internal_mod.js ***!
+  \*************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+/*
+ * Copyright 2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TD = exports.Metric = exports.Bench = exports.writeAll = exports.readAll = exports.MAX_SIZE = exports.DenoBuffer = exports.State = exports.Parser = exports.Kind = exports.QueuedIteratorImpl = exports.usernamePasswordAuthenticator = exports.tokenAuthenticator = exports.nkeyAuthenticator = exports.jwtAuthenticator = exports.credsAuthenticator = exports.RequestOne = exports.parseOptions = exports.hasWsProtocol = exports.defaultOptions = exports.DEFAULT_MAX_RECONNECT_ATTEMPTS = exports.checkUnsupportedOption = exports.checkOptions = exports.buildAuthenticator = exports.DataBuffer = exports.MuxSubscription = exports.Heartbeat = exports.MsgHdrsImpl = exports.headers = exports.canonicalMIMEHeaderKey = exports.timeout = exports.SimpleMutex = exports.render = exports.nanos = exports.millis = exports.extend = exports.delay = exports.deferred = exports.deadline = exports.collect = exports.backoff = exports.ProtocolHandler = exports.INFO = exports.Connect = exports.setTransportFactory = exports.getResolveFn = exports.MsgImpl = exports.nuid = exports.Nuid = exports.NatsConnectionImpl = void 0;
+exports.UserAuthenticationExpiredError = exports.TimeoutError = exports.RequestError = exports.ProtocolError = exports.PermissionViolationError = exports.NoRespondersError = exports.InvalidSubjectError = exports.InvalidOperationError = exports.InvalidArgumentError = exports.errors = exports.DrainingConnectionError = exports.ConnectionError = exports.ClosedConnectionError = exports.AuthorizationError = exports.wsUrlParseFn = exports.wsconnect = exports.Servers = exports.isIPV4OrHostname = exports.IdleHeartbeatMonitor = exports.Subscriptions = exports.SubscriptionImpl = exports.syncIterator = exports.Match = exports.createInbox = exports.protoLen = exports.extractProtocolMessage = exports.Empty = exports.parseSemVer = exports.Features = exports.Feature = exports.compare = exports.parseIP = exports.isIP = exports.ipV4 = exports.TE = void 0;
+var nats_1 = __webpack_require__(/*! ./nats */ "./node_modules/@nats-io/nats-core/lib/nats.js");
+Object.defineProperty(exports, "NatsConnectionImpl", ({ enumerable: true, get: function () { return nats_1.NatsConnectionImpl; } }));
+var nuid_1 = __webpack_require__(/*! ./nuid */ "./node_modules/@nats-io/nats-core/lib/nuid.js");
+Object.defineProperty(exports, "Nuid", ({ enumerable: true, get: function () { return nuid_1.Nuid; } }));
+Object.defineProperty(exports, "nuid", ({ enumerable: true, get: function () { return nuid_1.nuid; } }));
+var msg_1 = __webpack_require__(/*! ./msg */ "./node_modules/@nats-io/nats-core/lib/msg.js");
+Object.defineProperty(exports, "MsgImpl", ({ enumerable: true, get: function () { return msg_1.MsgImpl; } }));
+var transport_1 = __webpack_require__(/*! ./transport */ "./node_modules/@nats-io/nats-core/lib/transport.js");
+Object.defineProperty(exports, "getResolveFn", ({ enumerable: true, get: function () { return transport_1.getResolveFn; } }));
+Object.defineProperty(exports, "setTransportFactory", ({ enumerable: true, get: function () { return transport_1.setTransportFactory; } }));
+var protocol_1 = __webpack_require__(/*! ./protocol */ "./node_modules/@nats-io/nats-core/lib/protocol.js");
+Object.defineProperty(exports, "Connect", ({ enumerable: true, get: function () { return protocol_1.Connect; } }));
+Object.defineProperty(exports, "INFO", ({ enumerable: true, get: function () { return protocol_1.INFO; } }));
+Object.defineProperty(exports, "ProtocolHandler", ({ enumerable: true, get: function () { return protocol_1.ProtocolHandler; } }));
+var util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nats-core/lib/util.js");
+Object.defineProperty(exports, "backoff", ({ enumerable: true, get: function () { return util_1.backoff; } }));
+Object.defineProperty(exports, "collect", ({ enumerable: true, get: function () { return util_1.collect; } }));
+Object.defineProperty(exports, "deadline", ({ enumerable: true, get: function () { return util_1.deadline; } }));
+Object.defineProperty(exports, "deferred", ({ enumerable: true, get: function () { return util_1.deferred; } }));
+Object.defineProperty(exports, "delay", ({ enumerable: true, get: function () { return util_1.delay; } }));
+Object.defineProperty(exports, "extend", ({ enumerable: true, get: function () { return util_1.extend; } }));
+Object.defineProperty(exports, "millis", ({ enumerable: true, get: function () { return util_1.millis; } }));
+Object.defineProperty(exports, "nanos", ({ enumerable: true, get: function () { return util_1.nanos; } }));
+Object.defineProperty(exports, "render", ({ enumerable: true, get: function () { return util_1.render; } }));
+Object.defineProperty(exports, "SimpleMutex", ({ enumerable: true, get: function () { return util_1.SimpleMutex; } }));
+Object.defineProperty(exports, "timeout", ({ enumerable: true, get: function () { return util_1.timeout; } }));
+var headers_1 = __webpack_require__(/*! ./headers */ "./node_modules/@nats-io/nats-core/lib/headers.js");
+Object.defineProperty(exports, "canonicalMIMEHeaderKey", ({ enumerable: true, get: function () { return headers_1.canonicalMIMEHeaderKey; } }));
+Object.defineProperty(exports, "headers", ({ enumerable: true, get: function () { return headers_1.headers; } }));
+Object.defineProperty(exports, "MsgHdrsImpl", ({ enumerable: true, get: function () { return headers_1.MsgHdrsImpl; } }));
+var heartbeats_1 = __webpack_require__(/*! ./heartbeats */ "./node_modules/@nats-io/nats-core/lib/heartbeats.js");
+Object.defineProperty(exports, "Heartbeat", ({ enumerable: true, get: function () { return heartbeats_1.Heartbeat; } }));
+var muxsubscription_1 = __webpack_require__(/*! ./muxsubscription */ "./node_modules/@nats-io/nats-core/lib/muxsubscription.js");
+Object.defineProperty(exports, "MuxSubscription", ({ enumerable: true, get: function () { return muxsubscription_1.MuxSubscription; } }));
+var databuffer_1 = __webpack_require__(/*! ./databuffer */ "./node_modules/@nats-io/nats-core/lib/databuffer.js");
+Object.defineProperty(exports, "DataBuffer", ({ enumerable: true, get: function () { return databuffer_1.DataBuffer; } }));
+var options_1 = __webpack_require__(/*! ./options */ "./node_modules/@nats-io/nats-core/lib/options.js");
+Object.defineProperty(exports, "buildAuthenticator", ({ enumerable: true, get: function () { return options_1.buildAuthenticator; } }));
+Object.defineProperty(exports, "checkOptions", ({ enumerable: true, get: function () { return options_1.checkOptions; } }));
+Object.defineProperty(exports, "checkUnsupportedOption", ({ enumerable: true, get: function () { return options_1.checkUnsupportedOption; } }));
+Object.defineProperty(exports, "DEFAULT_MAX_RECONNECT_ATTEMPTS", ({ enumerable: true, get: function () { return options_1.DEFAULT_MAX_RECONNECT_ATTEMPTS; } }));
+Object.defineProperty(exports, "defaultOptions", ({ enumerable: true, get: function () { return options_1.defaultOptions; } }));
+Object.defineProperty(exports, "hasWsProtocol", ({ enumerable: true, get: function () { return options_1.hasWsProtocol; } }));
+Object.defineProperty(exports, "parseOptions", ({ enumerable: true, get: function () { return options_1.parseOptions; } }));
+var request_1 = __webpack_require__(/*! ./request */ "./node_modules/@nats-io/nats-core/lib/request.js");
+Object.defineProperty(exports, "RequestOne", ({ enumerable: true, get: function () { return request_1.RequestOne; } }));
+var authenticator_1 = __webpack_require__(/*! ./authenticator */ "./node_modules/@nats-io/nats-core/lib/authenticator.js");
+Object.defineProperty(exports, "credsAuthenticator", ({ enumerable: true, get: function () { return authenticator_1.credsAuthenticator; } }));
+Object.defineProperty(exports, "jwtAuthenticator", ({ enumerable: true, get: function () { return authenticator_1.jwtAuthenticator; } }));
+Object.defineProperty(exports, "nkeyAuthenticator", ({ enumerable: true, get: function () { return authenticator_1.nkeyAuthenticator; } }));
+Object.defineProperty(exports, "tokenAuthenticator", ({ enumerable: true, get: function () { return authenticator_1.tokenAuthenticator; } }));
+Object.defineProperty(exports, "usernamePasswordAuthenticator", ({ enumerable: true, get: function () { return authenticator_1.usernamePasswordAuthenticator; } }));
+__exportStar(__webpack_require__(/*! ./nkeys */ "./node_modules/@nats-io/nats-core/lib/nkeys.js"), exports);
+var queued_iterator_1 = __webpack_require__(/*! ./queued_iterator */ "./node_modules/@nats-io/nats-core/lib/queued_iterator.js");
+Object.defineProperty(exports, "QueuedIteratorImpl", ({ enumerable: true, get: function () { return queued_iterator_1.QueuedIteratorImpl; } }));
+var parser_1 = __webpack_require__(/*! ./parser */ "./node_modules/@nats-io/nats-core/lib/parser.js");
+Object.defineProperty(exports, "Kind", ({ enumerable: true, get: function () { return parser_1.Kind; } }));
+Object.defineProperty(exports, "Parser", ({ enumerable: true, get: function () { return parser_1.Parser; } }));
+Object.defineProperty(exports, "State", ({ enumerable: true, get: function () { return parser_1.State; } }));
+var denobuffer_1 = __webpack_require__(/*! ./denobuffer */ "./node_modules/@nats-io/nats-core/lib/denobuffer.js");
+Object.defineProperty(exports, "DenoBuffer", ({ enumerable: true, get: function () { return denobuffer_1.DenoBuffer; } }));
+Object.defineProperty(exports, "MAX_SIZE", ({ enumerable: true, get: function () { return denobuffer_1.MAX_SIZE; } }));
+Object.defineProperty(exports, "readAll", ({ enumerable: true, get: function () { return denobuffer_1.readAll; } }));
+Object.defineProperty(exports, "writeAll", ({ enumerable: true, get: function () { return denobuffer_1.writeAll; } }));
+var bench_1 = __webpack_require__(/*! ./bench */ "./node_modules/@nats-io/nats-core/lib/bench.js");
+Object.defineProperty(exports, "Bench", ({ enumerable: true, get: function () { return bench_1.Bench; } }));
+Object.defineProperty(exports, "Metric", ({ enumerable: true, get: function () { return bench_1.Metric; } }));
+var encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+Object.defineProperty(exports, "TD", ({ enumerable: true, get: function () { return encoders_1.TD; } }));
+Object.defineProperty(exports, "TE", ({ enumerable: true, get: function () { return encoders_1.TE; } }));
+var ipparser_1 = __webpack_require__(/*! ./ipparser */ "./node_modules/@nats-io/nats-core/lib/ipparser.js");
+Object.defineProperty(exports, "ipV4", ({ enumerable: true, get: function () { return ipparser_1.ipV4; } }));
+Object.defineProperty(exports, "isIP", ({ enumerable: true, get: function () { return ipparser_1.isIP; } }));
+Object.defineProperty(exports, "parseIP", ({ enumerable: true, get: function () { return ipparser_1.parseIP; } }));
+var semver_1 = __webpack_require__(/*! ./semver */ "./node_modules/@nats-io/nats-core/lib/semver.js");
+Object.defineProperty(exports, "compare", ({ enumerable: true, get: function () { return semver_1.compare; } }));
+Object.defineProperty(exports, "Feature", ({ enumerable: true, get: function () { return semver_1.Feature; } }));
+Object.defineProperty(exports, "Features", ({ enumerable: true, get: function () { return semver_1.Features; } }));
+Object.defineProperty(exports, "parseSemVer", ({ enumerable: true, get: function () { return semver_1.parseSemVer; } }));
+var types_1 = __webpack_require__(/*! ./types */ "./node_modules/@nats-io/nats-core/lib/types.js");
+Object.defineProperty(exports, "Empty", ({ enumerable: true, get: function () { return types_1.Empty; } }));
+var transport_2 = __webpack_require__(/*! ./transport */ "./node_modules/@nats-io/nats-core/lib/transport.js");
+Object.defineProperty(exports, "extractProtocolMessage", ({ enumerable: true, get: function () { return transport_2.extractProtocolMessage; } }));
+Object.defineProperty(exports, "protoLen", ({ enumerable: true, get: function () { return transport_2.protoLen; } }));
+var core_1 = __webpack_require__(/*! ./core */ "./node_modules/@nats-io/nats-core/lib/core.js");
+Object.defineProperty(exports, "createInbox", ({ enumerable: true, get: function () { return core_1.createInbox; } }));
+Object.defineProperty(exports, "Match", ({ enumerable: true, get: function () { return core_1.Match; } }));
+Object.defineProperty(exports, "syncIterator", ({ enumerable: true, get: function () { return core_1.syncIterator; } }));
+var protocol_2 = __webpack_require__(/*! ./protocol */ "./node_modules/@nats-io/nats-core/lib/protocol.js");
+Object.defineProperty(exports, "SubscriptionImpl", ({ enumerable: true, get: function () { return protocol_2.SubscriptionImpl; } }));
+Object.defineProperty(exports, "Subscriptions", ({ enumerable: true, get: function () { return protocol_2.Subscriptions; } }));
+var idleheartbeat_monitor_1 = __webpack_require__(/*! ./idleheartbeat_monitor */ "./node_modules/@nats-io/nats-core/lib/idleheartbeat_monitor.js");
+Object.defineProperty(exports, "IdleHeartbeatMonitor", ({ enumerable: true, get: function () { return idleheartbeat_monitor_1.IdleHeartbeatMonitor; } }));
+var servers_1 = __webpack_require__(/*! ./servers */ "./node_modules/@nats-io/nats-core/lib/servers.js");
+Object.defineProperty(exports, "isIPV4OrHostname", ({ enumerable: true, get: function () { return servers_1.isIPV4OrHostname; } }));
+Object.defineProperty(exports, "Servers", ({ enumerable: true, get: function () { return servers_1.Servers; } }));
+var ws_transport_1 = __webpack_require__(/*! ./ws_transport */ "./node_modules/@nats-io/nats-core/lib/ws_transport.js");
+Object.defineProperty(exports, "wsconnect", ({ enumerable: true, get: function () { return ws_transport_1.wsconnect; } }));
+Object.defineProperty(exports, "wsUrlParseFn", ({ enumerable: true, get: function () { return ws_transport_1.wsUrlParseFn; } }));
+var errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+Object.defineProperty(exports, "AuthorizationError", ({ enumerable: true, get: function () { return errors_1.AuthorizationError; } }));
+Object.defineProperty(exports, "ClosedConnectionError", ({ enumerable: true, get: function () { return errors_1.ClosedConnectionError; } }));
+Object.defineProperty(exports, "ConnectionError", ({ enumerable: true, get: function () { return errors_1.ConnectionError; } }));
+Object.defineProperty(exports, "DrainingConnectionError", ({ enumerable: true, get: function () { return errors_1.DrainingConnectionError; } }));
+Object.defineProperty(exports, "errors", ({ enumerable: true, get: function () { return errors_1.errors; } }));
+Object.defineProperty(exports, "InvalidArgumentError", ({ enumerable: true, get: function () { return errors_1.InvalidArgumentError; } }));
+Object.defineProperty(exports, "InvalidOperationError", ({ enumerable: true, get: function () { return errors_1.InvalidOperationError; } }));
+Object.defineProperty(exports, "InvalidSubjectError", ({ enumerable: true, get: function () { return errors_1.InvalidSubjectError; } }));
+Object.defineProperty(exports, "NoRespondersError", ({ enumerable: true, get: function () { return errors_1.NoRespondersError; } }));
+Object.defineProperty(exports, "PermissionViolationError", ({ enumerable: true, get: function () { return errors_1.PermissionViolationError; } }));
+Object.defineProperty(exports, "ProtocolError", ({ enumerable: true, get: function () { return errors_1.ProtocolError; } }));
+Object.defineProperty(exports, "RequestError", ({ enumerable: true, get: function () { return errors_1.RequestError; } }));
+Object.defineProperty(exports, "TimeoutError", ({ enumerable: true, get: function () { return errors_1.TimeoutError; } }));
+Object.defineProperty(exports, "UserAuthenticationExpiredError", ({ enumerable: true, get: function () { return errors_1.UserAuthenticationExpiredError; } }));
+//# sourceMappingURL=internal_mod.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/ipparser.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/ipparser.js ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * Copyright 2020-2021 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ipV4 = ipV4;
+exports.isIP = isIP;
+exports.parseIP = parseIP;
+// JavaScript port of go net/ip/ParseIP
+// https://github.com/golang/go/blob/master/src/net/ip.go
+// Copyright 2009 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+const IPv4LEN = 4;
+const IPv6LEN = 16;
+const ASCII0 = 48;
+const ASCII9 = 57;
+const ASCIIA = 65;
+const ASCIIF = 70;
+const ASCIIa = 97;
+const ASCIIf = 102;
+const big = 0xFFFFFF;
+function ipV4(a, b, c, d) {
+    const ip = new Uint8Array(IPv6LEN);
+    const prefix = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff];
+    prefix.forEach((v, idx) => {
+        ip[idx] = v;
+    });
+    ip[12] = a;
+    ip[13] = b;
+    ip[14] = c;
+    ip[15] = d;
+    return ip;
+}
+function isIP(h) {
+    return parseIP(h) !== undefined;
+}
+function parseIP(h) {
+    for (let i = 0; i < h.length; i++) {
+        switch (h[i]) {
+            case ".":
+                return parseIPv4(h);
+            case ":":
+                return parseIPv6(h);
+        }
+    }
+    return;
+}
+function parseIPv4(s) {
+    const ip = new Uint8Array(IPv4LEN);
+    for (let i = 0; i < IPv4LEN; i++) {
+        if (s.length === 0) {
+            return undefined;
+        }
+        if (i > 0) {
+            if (s[0] !== ".") {
+                return undefined;
+            }
+            s = s.substring(1);
+        }
+        const { n, c, ok } = dtoi(s);
+        if (!ok || n > 0xFF) {
+            return undefined;
+        }
+        s = s.substring(c);
+        ip[i] = n;
+    }
+    return ipV4(ip[0], ip[1], ip[2], ip[3]);
+}
+function parseIPv6(s) {
+    const ip = new Uint8Array(IPv6LEN);
+    let ellipsis = -1;
+    if (s.length >= 2 && s[0] === ":" && s[1] === ":") {
+        ellipsis = 0;
+        s = s.substring(2);
+        if (s.length === 0) {
+            return ip;
+        }
+    }
+    let i = 0;
+    while (i < IPv6LEN) {
+        const { n, c, ok } = xtoi(s);
+        if (!ok || n > 0xFFFF) {
+            return undefined;
+        }
+        if (c < s.length && s[c] === ".") {
+            if (ellipsis < 0 && i != IPv6LEN - IPv4LEN) {
+                return undefined;
+            }
+            if (i + IPv4LEN > IPv6LEN) {
+                return undefined;
+            }
+            const ip4 = parseIPv4(s);
+            if (ip4 === undefined) {
+                return undefined;
+            }
+            ip[i] = ip4[12];
+            ip[i + 1] = ip4[13];
+            ip[i + 2] = ip4[14];
+            ip[i + 3] = ip4[15];
+            s = "";
+            i += IPv4LEN;
+            break;
+        }
+        ip[i] = n >> 8;
+        ip[i + 1] = n;
+        i += 2;
+        s = s.substring(c);
+        if (s.length === 0) {
+            break;
+        }
+        if (s[0] !== ":" || s.length == 1) {
+            return undefined;
+        }
+        s = s.substring(1);
+        if (s[0] === ":") {
+            if (ellipsis >= 0) {
+                return undefined;
+            }
+            ellipsis = i;
+            s = s.substring(1);
+            if (s.length === 0) {
+                break;
+            }
+        }
+    }
+    if (s.length !== 0) {
+        return undefined;
+    }
+    if (i < IPv6LEN) {
+        if (ellipsis < 0) {
+            return undefined;
+        }
+        const n = IPv6LEN - i;
+        for (let j = i - 1; j >= ellipsis; j--) {
+            ip[j + n] = ip[j];
+        }
+        for (let j = ellipsis + n - 1; j >= ellipsis; j--) {
+            ip[j] = 0;
+        }
+    }
+    else if (ellipsis >= 0) {
+        return undefined;
+    }
+    return ip;
+}
+function dtoi(s) {
+    let i = 0;
+    let n = 0;
+    for (i = 0; i < s.length && ASCII0 <= s.charCodeAt(i) && s.charCodeAt(i) <= ASCII9; i++) {
+        n = n * 10 + (s.charCodeAt(i) - ASCII0);
+        if (n >= big) {
+            return { n: big, c: i, ok: false };
+        }
+    }
+    if (i === 0) {
+        return { n: 0, c: 0, ok: false };
+    }
+    return { n: n, c: i, ok: true };
+}
+function xtoi(s) {
+    let n = 0;
+    let i = 0;
+    for (i = 0; i < s.length; i++) {
+        if (ASCII0 <= s.charCodeAt(i) && s.charCodeAt(i) <= ASCII9) {
+            n *= 16;
+            n += s.charCodeAt(i) - ASCII0;
+        }
+        else if (ASCIIa <= s.charCodeAt(i) && s.charCodeAt(i) <= ASCIIf) {
+            n *= 16;
+            n += (s.charCodeAt(i) - ASCIIa) + 10;
+        }
+        else if (ASCIIA <= s.charCodeAt(i) && s.charCodeAt(i) <= ASCIIF) {
+            n *= 16;
+            n += (s.charCodeAt(i) - ASCIIA) + 10;
+        }
+        else {
+            break;
+        }
+        if (n >= big) {
+            return { n: 0, c: i, ok: false };
+        }
+    }
+    if (i === 0) {
+        return { n: 0, c: i, ok: false };
+    }
+    return { n: n, c: i, ok: true };
+}
+//# sourceMappingURL=ipparser.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/mod.js":
+/*!****************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/mod.js ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.wsconnect = exports.usernamePasswordAuthenticator = exports.UserAuthenticationExpiredError = exports.tokenAuthenticator = exports.TimeoutError = exports.syncIterator = exports.RequestError = exports.ProtocolError = exports.PermissionViolationError = exports.nuid = exports.Nuid = exports.NoRespondersError = exports.nkeys = exports.nkeyAuthenticator = exports.nanos = exports.MsgHdrsImpl = exports.millis = exports.Metric = exports.Match = exports.jwtAuthenticator = exports.InvalidSubjectError = exports.InvalidOperationError = exports.InvalidArgumentError = exports.headers = exports.hasWsProtocol = exports.errors = exports.Empty = exports.DrainingConnectionError = exports.delay = exports.deferred = exports.deadline = exports.credsAuthenticator = exports.createInbox = exports.ConnectionError = exports.ClosedConnectionError = exports.canonicalMIMEHeaderKey = exports.buildAuthenticator = exports.Bench = exports.backoff = exports.AuthorizationError = void 0;
+var internal_mod_1 = __webpack_require__(/*! ./internal_mod */ "./node_modules/@nats-io/nats-core/lib/internal_mod.js");
+Object.defineProperty(exports, "AuthorizationError", ({ enumerable: true, get: function () { return internal_mod_1.AuthorizationError; } }));
+Object.defineProperty(exports, "backoff", ({ enumerable: true, get: function () { return internal_mod_1.backoff; } }));
+Object.defineProperty(exports, "Bench", ({ enumerable: true, get: function () { return internal_mod_1.Bench; } }));
+Object.defineProperty(exports, "buildAuthenticator", ({ enumerable: true, get: function () { return internal_mod_1.buildAuthenticator; } }));
+Object.defineProperty(exports, "canonicalMIMEHeaderKey", ({ enumerable: true, get: function () { return internal_mod_1.canonicalMIMEHeaderKey; } }));
+Object.defineProperty(exports, "ClosedConnectionError", ({ enumerable: true, get: function () { return internal_mod_1.ClosedConnectionError; } }));
+Object.defineProperty(exports, "ConnectionError", ({ enumerable: true, get: function () { return internal_mod_1.ConnectionError; } }));
+Object.defineProperty(exports, "createInbox", ({ enumerable: true, get: function () { return internal_mod_1.createInbox; } }));
+Object.defineProperty(exports, "credsAuthenticator", ({ enumerable: true, get: function () { return internal_mod_1.credsAuthenticator; } }));
+Object.defineProperty(exports, "deadline", ({ enumerable: true, get: function () { return internal_mod_1.deadline; } }));
+Object.defineProperty(exports, "deferred", ({ enumerable: true, get: function () { return internal_mod_1.deferred; } }));
+Object.defineProperty(exports, "delay", ({ enumerable: true, get: function () { return internal_mod_1.delay; } }));
+Object.defineProperty(exports, "DrainingConnectionError", ({ enumerable: true, get: function () { return internal_mod_1.DrainingConnectionError; } }));
+Object.defineProperty(exports, "Empty", ({ enumerable: true, get: function () { return internal_mod_1.Empty; } }));
+Object.defineProperty(exports, "errors", ({ enumerable: true, get: function () { return internal_mod_1.errors; } }));
+Object.defineProperty(exports, "hasWsProtocol", ({ enumerable: true, get: function () { return internal_mod_1.hasWsProtocol; } }));
+Object.defineProperty(exports, "headers", ({ enumerable: true, get: function () { return internal_mod_1.headers; } }));
+Object.defineProperty(exports, "InvalidArgumentError", ({ enumerable: true, get: function () { return internal_mod_1.InvalidArgumentError; } }));
+Object.defineProperty(exports, "InvalidOperationError", ({ enumerable: true, get: function () { return internal_mod_1.InvalidOperationError; } }));
+Object.defineProperty(exports, "InvalidSubjectError", ({ enumerable: true, get: function () { return internal_mod_1.InvalidSubjectError; } }));
+Object.defineProperty(exports, "jwtAuthenticator", ({ enumerable: true, get: function () { return internal_mod_1.jwtAuthenticator; } }));
+Object.defineProperty(exports, "Match", ({ enumerable: true, get: function () { return internal_mod_1.Match; } }));
+Object.defineProperty(exports, "Metric", ({ enumerable: true, get: function () { return internal_mod_1.Metric; } }));
+Object.defineProperty(exports, "millis", ({ enumerable: true, get: function () { return internal_mod_1.millis; } }));
+Object.defineProperty(exports, "MsgHdrsImpl", ({ enumerable: true, get: function () { return internal_mod_1.MsgHdrsImpl; } }));
+Object.defineProperty(exports, "nanos", ({ enumerable: true, get: function () { return internal_mod_1.nanos; } }));
+Object.defineProperty(exports, "nkeyAuthenticator", ({ enumerable: true, get: function () { return internal_mod_1.nkeyAuthenticator; } }));
+Object.defineProperty(exports, "nkeys", ({ enumerable: true, get: function () { return internal_mod_1.nkeys; } }));
+Object.defineProperty(exports, "NoRespondersError", ({ enumerable: true, get: function () { return internal_mod_1.NoRespondersError; } }));
+Object.defineProperty(exports, "Nuid", ({ enumerable: true, get: function () { return internal_mod_1.Nuid; } }));
+Object.defineProperty(exports, "nuid", ({ enumerable: true, get: function () { return internal_mod_1.nuid; } }));
+Object.defineProperty(exports, "PermissionViolationError", ({ enumerable: true, get: function () { return internal_mod_1.PermissionViolationError; } }));
+Object.defineProperty(exports, "ProtocolError", ({ enumerable: true, get: function () { return internal_mod_1.ProtocolError; } }));
+Object.defineProperty(exports, "RequestError", ({ enumerable: true, get: function () { return internal_mod_1.RequestError; } }));
+Object.defineProperty(exports, "syncIterator", ({ enumerable: true, get: function () { return internal_mod_1.syncIterator; } }));
+Object.defineProperty(exports, "TimeoutError", ({ enumerable: true, get: function () { return internal_mod_1.TimeoutError; } }));
+Object.defineProperty(exports, "tokenAuthenticator", ({ enumerable: true, get: function () { return internal_mod_1.tokenAuthenticator; } }));
+Object.defineProperty(exports, "UserAuthenticationExpiredError", ({ enumerable: true, get: function () { return internal_mod_1.UserAuthenticationExpiredError; } }));
+Object.defineProperty(exports, "usernamePasswordAuthenticator", ({ enumerable: true, get: function () { return internal_mod_1.usernamePasswordAuthenticator; } }));
+Object.defineProperty(exports, "wsconnect", ({ enumerable: true, get: function () { return internal_mod_1.wsconnect; } }));
+//# sourceMappingURL=mod.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/msg.js":
+/*!****************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/msg.js ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MsgImpl = void 0;
+/*
+ * Copyright 2020-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const headers_1 = __webpack_require__(/*! ./headers */ "./node_modules/@nats-io/nats-core/lib/headers.js");
+const encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+class MsgImpl {
+    _headers;
+    _msg;
+    _rdata;
+    _reply;
+    _subject;
+    publisher;
+    constructor(msg, data, publisher) {
+        this._msg = msg;
+        this._rdata = data;
+        this.publisher = publisher;
+    }
+    get subject() {
+        if (this._subject) {
+            return this._subject;
+        }
+        this._subject = encoders_1.TD.decode(this._msg.subject);
+        return this._subject;
+    }
+    get reply() {
+        if (this._reply) {
+            return this._reply;
+        }
+        this._reply = encoders_1.TD.decode(this._msg.reply);
+        return this._reply;
+    }
+    get sid() {
+        return this._msg.sid;
+    }
+    get headers() {
+        if (this._msg.hdr > -1 && !this._headers) {
+            const buf = this._rdata.subarray(0, this._msg.hdr);
+            this._headers = headers_1.MsgHdrsImpl.decode(buf);
+        }
+        return this._headers;
+    }
+    get data() {
+        if (!this._rdata) {
+            return new Uint8Array(0);
+        }
+        return this._msg.hdr > -1
+            ? this._rdata.subarray(this._msg.hdr)
+            : this._rdata;
+    }
+    // eslint-ignore-next-line @typescript-eslint/no-explicit-any
+    respond(data = encoders_1.Empty, opts) {
+        if (this.reply) {
+            this.publisher.publish(this.reply, data, opts);
+            return true;
+        }
+        return false;
+    }
+    size() {
+        const subj = this._msg.subject.length;
+        const reply = this._msg.reply?.length || 0;
+        const payloadAndHeaders = this._msg.size === -1 ? 0 : this._msg.size;
+        return subj + reply + payloadAndHeaders;
+    }
+    json(reviver) {
+        return JSON.parse(this.string(), reviver);
+    }
+    string() {
+        return encoders_1.TD.decode(this.data);
+    }
+    requestInfo() {
+        const v = this.headers?.get("Nats-Request-Info");
+        if (v) {
+            return JSON.parse(v, function (key, value) {
+                if ((key === "start" || key === "stop") && value !== "") {
+                    return new Date(Date.parse(value));
+                }
+                return value;
+            });
+        }
+        return null;
+    }
+}
+exports.MsgImpl = MsgImpl;
+//# sourceMappingURL=msg.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/muxsubscription.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/muxsubscription.js ***!
+  \****************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MuxSubscription = void 0;
+const core_1 = __webpack_require__(/*! ./core */ "./node_modules/@nats-io/nats-core/lib/core.js");
+const errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+class MuxSubscription {
+    baseInbox;
+    reqs;
+    constructor() {
+        this.reqs = new Map();
+    }
+    size() {
+        return this.reqs.size;
+    }
+    init(prefix) {
+        this.baseInbox = `${(0, core_1.createInbox)(prefix)}.`;
+        return this.baseInbox;
+    }
+    add(r) {
+        if (!isNaN(r.received)) {
+            r.received = 0;
+        }
+        this.reqs.set(r.token, r);
+    }
+    get(token) {
+        return this.reqs.get(token);
+    }
+    cancel(r) {
+        this.reqs.delete(r.token);
+    }
+    getToken(m) {
+        const s = m.subject || "";
+        if (s.indexOf(this.baseInbox) === 0) {
+            return s.substring(this.baseInbox.length);
+        }
+        return null;
+    }
+    all() {
+        return Array.from(this.reqs.values());
+    }
+    handleError(isMuxPermissionError, err) {
+        if (isMuxPermissionError) {
+            // one or more requests queued but mux cannot process them
+            this.all().forEach((r) => {
+                r.resolver(err, {});
+            });
+            return true;
+        }
+        if (err.operation === "publish") {
+            const req = this.all().find((s) => {
+                return s.requestSubject === err.subject;
+            });
+            if (req) {
+                req.resolver(err, {});
+                return true;
+            }
+        }
+        return false;
+    }
+    dispatcher() {
+        return (err, m) => {
+            const token = this.getToken(m);
+            if (token) {
+                const r = this.get(token);
+                if (r) {
+                    if (err === null) {
+                        err = (m?.data?.length === 0 && m.headers?.code === 503)
+                            ? new errors_1.NoRespondersError(r.requestSubject)
+                            : null;
+                    }
+                    r.resolver(err, m);
+                }
+            }
+        };
+    }
+    close() {
+        const err = new errors_1.RequestError("connection closed");
+        this.reqs.forEach((req) => {
+            req.resolver(err, {});
+        });
+    }
+}
+exports.MuxSubscription = MuxSubscription;
+//# sourceMappingURL=muxsubscription.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/nats.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/nats.js ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2018-2023 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.NatsConnectionImpl = void 0;
+const util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nats-core/lib/util.js");
+const protocol_1 = __webpack_require__(/*! ./protocol */ "./node_modules/@nats-io/nats-core/lib/protocol.js");
+const encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+const semver_1 = __webpack_require__(/*! ./semver */ "./node_modules/@nats-io/nats-core/lib/semver.js");
+const options_1 = __webpack_require__(/*! ./options */ "./node_modules/@nats-io/nats-core/lib/options.js");
+const queued_iterator_1 = __webpack_require__(/*! ./queued_iterator */ "./node_modules/@nats-io/nats-core/lib/queued_iterator.js");
+const request_1 = __webpack_require__(/*! ./request */ "./node_modules/@nats-io/nats-core/lib/request.js");
+const core_1 = __webpack_require__(/*! ./core */ "./node_modules/@nats-io/nats-core/lib/core.js");
+const errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+class NatsConnectionImpl {
+    options;
+    protocol;
+    draining;
+    constructor(opts) {
+        this.draining = false;
+        this.options = (0, options_1.parseOptions)(opts);
+    }
+    static connect(opts = {}) {
+        return new Promise((resolve, reject) => {
+            const nc = new NatsConnectionImpl(opts);
+            protocol_1.ProtocolHandler.connect(nc.options, nc)
+                .then((ph) => {
+                nc.protocol = ph;
+                resolve(nc);
+            })
+                .catch((err) => {
+                reject(err);
+            });
+        });
+    }
+    closed() {
+        return this.protocol.closed;
+    }
+    async close() {
+        await this.protocol.close();
+    }
+    _check(subject, sub, pub) {
+        if (this.isClosed()) {
+            throw new errors_1.errors.ClosedConnectionError();
+        }
+        if (sub && this.isDraining()) {
+            throw new errors_1.errors.DrainingConnectionError();
+        }
+        if (pub && this.protocol.noMorePublishing) {
+            throw new errors_1.errors.DrainingConnectionError();
+        }
+        subject = subject || "";
+        if (subject.length === 0) {
+            throw new errors_1.errors.InvalidSubjectError(subject);
+        }
+    }
+    publish(subject, data, options) {
+        this._check(subject, false, true);
+        if (options?.reply) {
+            this._check(options.reply, false, true);
+        }
+        this.protocol.publish(subject, data, options);
+    }
+    publishMessage(msg) {
+        return this.publish(msg.subject, msg.data, {
+            reply: msg.reply,
+            headers: msg.headers,
+        });
+    }
+    respondMessage(msg) {
+        if (msg.reply) {
+            this.publish(msg.reply, msg.data, {
+                reply: msg.reply,
+                headers: msg.headers,
+            });
+            return true;
+        }
+        return false;
+    }
+    subscribe(subject, opts = {}) {
+        this._check(subject, true, false);
+        const sub = new protocol_1.SubscriptionImpl(this.protocol, subject, opts);
+        if (typeof opts.callback !== "function" && typeof opts.slow === "number") {
+            sub.setSlowNotificationFn(opts.slow, (pending) => {
+                this.protocol.dispatchStatus({
+                    type: "slowConsumer",
+                    sub,
+                    pending,
+                });
+            });
+        }
+        this.protocol.subscribe(sub);
+        return sub;
+    }
+    _resub(s, subject, max) {
+        this._check(subject, true, false);
+        const si = s;
+        // FIXME: need way of understanding a callbacks processed
+        //   count without it, we cannot really do much - ie
+        //   for rejected messages, the count would be lower, etc.
+        //   To handle cases were for example KV is building a map
+        //   the consumer would say how many messages we need to do
+        //   a proper build before we can handle updates.
+        si.max = max; // this might clear it
+        if (max) {
+            // we cannot auto-unsub, because we don't know the
+            // number of messages we processed vs received
+            // allow the auto-unsub on processMsg to work if they
+            // we were called with a new max
+            si.max = max + si.received;
+        }
+        this.protocol.resub(si, subject);
+    }
+    // possibilities are:
+    // stop on error or any non-100 status
+    // AND:
+    // - wait for timer
+    // - wait for n messages or timer
+    // - wait for unknown messages, done when empty or reset timer expires (with possible alt wait)
+    // - wait for unknown messages, done when an empty payload is received or timer expires (with possible alt wait)
+    requestMany(subject, data = encoders_1.Empty, opts = { maxWait: 1000, maxMessages: -1 }) {
+        const asyncTraces = !(this.protocol.options.noAsyncTraces || false);
+        try {
+            this._check(subject, true, true);
+        }
+        catch (err) {
+            return Promise.reject(err);
+        }
+        opts.strategy = opts.strategy || "timer";
+        opts.maxWait = opts.maxWait || 1000;
+        if (opts.maxWait < 1) {
+            return Promise.reject(errors_1.InvalidArgumentError.format("timeout", "must be greater than 0"));
+        }
+        // the iterator for user results
+        const qi = new queued_iterator_1.QueuedIteratorImpl();
+        function stop(err) {
+            qi.push(() => {
+                qi.stop(err);
+            });
+        }
+        // callback for the subscription or the mux handler
+        // simply pushes errors and messages into the iterator
+        function callback(err, msg) {
+            if (err || msg === null) {
+                stop(err === null ? undefined : err);
+            }
+            else {
+                qi.push(msg);
+            }
+        }
+        if (opts.noMux) {
+            // we setup a subscription and manage it
+            const stack = asyncTraces ? new Error().stack : null;
+            let max = typeof opts.maxMessages === "number" && opts.maxMessages > 0
+                ? opts.maxMessages
+                : -1;
+            const sub = this.subscribe((0, core_1.createInbox)(this.options.inboxPrefix), {
+                callback: (err, msg) => {
+                    // we only expect runtime errors or a no responders
+                    if (msg?.data?.length === 0 &&
+                        msg?.headers?.status === "503") {
+                        err = new errors_1.errors.NoRespondersError(subject);
+                    }
+                    // augment any error with the current stack to provide context
+                    // for the error on the suer code
+                    if (err) {
+                        if (stack) {
+                            err.stack += `\n\n${stack}`;
+                        }
+                        cancel(err);
+                        return;
+                    }
+                    // push the message
+                    callback(null, msg);
+                    // see if the m request is completed
+                    if (opts.strategy === "count") {
+                        max--;
+                        if (max === 0) {
+                            cancel();
+                        }
+                    }
+                    if (opts.strategy === "stall") {
+                        clearTimers();
+                        timer = setTimeout(() => {
+                            cancel();
+                        }, 300);
+                    }
+                    if (opts.strategy === "sentinel") {
+                        if (msg && msg.data.length === 0) {
+                            cancel();
+                        }
+                    }
+                },
+            });
+            sub.requestSubject = subject;
+            sub.closed
+                .then(() => {
+                stop();
+            })
+                .catch((err) => {
+                qi.stop(err);
+            });
+            const cancel = (err) => {
+                if (err) {
+                    qi.push(() => {
+                        throw err;
+                    });
+                }
+                clearTimers();
+                sub.drain()
+                    .then(() => {
+                    stop();
+                })
+                    .catch((_err) => {
+                    stop();
+                });
+            };
+            qi.iterClosed
+                .then(() => {
+                clearTimers();
+                sub?.unsubscribe();
+            })
+                .catch((_err) => {
+                clearTimers();
+                sub?.unsubscribe();
+            });
+            try {
+                this.publish(subject, data, { reply: sub.getSubject() });
+            }
+            catch (err) {
+                cancel(err);
+            }
+            let timer = setTimeout(() => {
+                cancel();
+            }, opts.maxWait);
+            const clearTimers = () => {
+                if (timer) {
+                    clearTimeout(timer);
+                }
+            };
+        }
+        else {
+            // the ingestion is the RequestMany
+            const rmo = opts;
+            rmo.callback = callback;
+            qi.iterClosed.then(() => {
+                r.cancel();
+            }).catch((err) => {
+                r.cancel(err);
+            });
+            const r = new request_1.RequestMany(this.protocol.muxSubscriptions, subject, rmo);
+            this.protocol.request(r);
+            try {
+                this.publish(subject, data, {
+                    reply: `${this.protocol.muxSubscriptions.baseInbox}${r.token}`,
+                    headers: opts.headers,
+                });
+            }
+            catch (err) {
+                r.cancel(err);
+            }
+        }
+        return Promise.resolve(qi);
+    }
+    request(subject, data, opts = { timeout: 1000, noMux: false }) {
+        try {
+            this._check(subject, true, true);
+        }
+        catch (err) {
+            return Promise.reject(err);
+        }
+        const asyncTraces = !(this.protocol.options.noAsyncTraces || false);
+        opts.timeout = opts.timeout || 1000;
+        if (opts.timeout < 1) {
+            return Promise.reject(errors_1.InvalidArgumentError.format("timeout", `must be greater than 0`));
+        }
+        if (!opts.noMux && opts.reply) {
+            return Promise.reject(errors_1.InvalidArgumentError.format(["reply", "noMux"], "are mutually exclusive"));
+        }
+        if (opts.noMux) {
+            const inbox = opts.reply
+                ? opts.reply
+                : (0, core_1.createInbox)(this.options.inboxPrefix);
+            const d = (0, util_1.deferred)();
+            const errCtx = asyncTraces ? new errors_1.errors.RequestError("") : null;
+            const sub = this.subscribe(inbox, {
+                max: 1,
+                timeout: opts.timeout,
+                callback: (err, msg) => {
+                    // check for no responders status
+                    if (msg && msg.data?.length === 0 && msg.headers?.code === 503) {
+                        err = new errors_1.errors.NoRespondersError(subject);
+                    }
+                    if (err) {
+                        // we have a proper stack on timeout
+                        if (!(err instanceof errors_1.TimeoutError)) {
+                            if (errCtx) {
+                                errCtx.message = err.message;
+                                errCtx.cause = err;
+                                err = errCtx;
+                            }
+                            else {
+                                err = new errors_1.errors.RequestError(err.message, { cause: err });
+                            }
+                        }
+                        d.reject(err);
+                        sub.unsubscribe();
+                    }
+                    else {
+                        d.resolve(msg);
+                    }
+                },
+            });
+            sub.requestSubject = subject;
+            this.protocol.publish(subject, data, {
+                reply: inbox,
+                headers: opts.headers,
+            });
+            return d;
+        }
+        else {
+            const r = new request_1.RequestOne(this.protocol.muxSubscriptions, subject, opts, asyncTraces);
+            this.protocol.request(r);
+            try {
+                this.publish(subject, data, {
+                    reply: `${this.protocol.muxSubscriptions.baseInbox}${r.token}`,
+                    headers: opts.headers,
+                });
+            }
+            catch (err) {
+                r.cancel(err);
+            }
+            const p = Promise.race([r.timer, r.deferred]);
+            p.catch(() => {
+                r.cancel();
+            });
+            return p;
+        }
+    }
+    /** *
+     * Flushes to the server. Promise resolves when round-trip completes.
+     * @returns {Promise<void>}
+     */
+    flush() {
+        if (this.isClosed()) {
+            return Promise.reject(new errors_1.errors.ClosedConnectionError());
+        }
+        return this.protocol.flush();
+    }
+    drain() {
+        if (this.isClosed()) {
+            return Promise.reject(new errors_1.errors.ClosedConnectionError());
+        }
+        if (this.isDraining()) {
+            return Promise.reject(new errors_1.errors.DrainingConnectionError());
+        }
+        this.draining = true;
+        return this.protocol.drain();
+    }
+    isClosed() {
+        return this.protocol.isClosed();
+    }
+    isDraining() {
+        return this.draining;
+    }
+    getServer() {
+        const srv = this.protocol.getServer();
+        return srv ? srv.listen : "";
+    }
+    status() {
+        const iter = new queued_iterator_1.QueuedIteratorImpl();
+        iter.iterClosed.then(() => {
+            const idx = this.protocol.listeners.indexOf(iter);
+            if (idx > -1) {
+                this.protocol.listeners.splice(idx, 1);
+            }
+        });
+        this.protocol.listeners.push(iter);
+        return iter;
+    }
+    get info() {
+        return this.protocol.isClosed() ? undefined : this.protocol.info;
+    }
+    async context() {
+        const r = await this.request(`$SYS.REQ.USER.INFO`);
+        return r.json((key, value) => {
+            if (key === "time") {
+                return new Date(Date.parse(value));
+            }
+            return value;
+        });
+    }
+    stats() {
+        return {
+            inBytes: this.protocol.inBytes,
+            outBytes: this.protocol.outBytes,
+            inMsgs: this.protocol.inMsgs,
+            outMsgs: this.protocol.outMsgs,
+        };
+    }
+    getServerVersion() {
+        const info = this.info;
+        return info ? (0, semver_1.parseSemVer)(info.version) : undefined;
+    }
+    async rtt() {
+        if (this.isClosed()) {
+            throw new errors_1.errors.ClosedConnectionError();
+        }
+        if (!this.protocol.connected) {
+            throw new errors_1.errors.RequestError("connection disconnected");
+        }
+        const start = Date.now();
+        await this.flush();
+        return Date.now() - start;
+    }
+    get features() {
+        return this.protocol.features;
+    }
+    reconnect() {
+        if (this.isClosed()) {
+            return Promise.reject(new errors_1.errors.ClosedConnectionError());
+        }
+        if (this.isDraining()) {
+            return Promise.reject(new errors_1.errors.DrainingConnectionError());
+        }
+        return this.protocol.reconnect();
+    }
+}
+exports.NatsConnectionImpl = NatsConnectionImpl;
+//# sourceMappingURL=nats.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/nkeys.js":
+/*!******************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/nkeys.js ***!
+  \******************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.nkeys = void 0;
+exports.nkeys = __importStar(__webpack_require__(/*! @nats-io/nkeys */ "./node_modules/@nats-io/nkeys/lib/mod.js"));
+//# sourceMappingURL=nkeys.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/nuid.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/nuid.js ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2016-2021 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.nuid = exports.Nuid = void 0;
+var nuid_1 = __webpack_require__(/*! @nats-io/nuid */ "./node_modules/@nats-io/nuid/lib/nuid.js");
+Object.defineProperty(exports, "Nuid", ({ enumerable: true, get: function () { return nuid_1.Nuid; } }));
+Object.defineProperty(exports, "nuid", ({ enumerable: true, get: function () { return nuid_1.nuid; } }));
+//# sourceMappingURL=nuid.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/options.js":
+/*!********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/options.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2021-2023 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DEFAULT_RECONNECT_TIME_WAIT = exports.DEFAULT_MAX_PING_OUT = exports.DEFAULT_PING_INTERVAL = exports.DEFAULT_JITTER_TLS = exports.DEFAULT_JITTER = exports.DEFAULT_MAX_RECONNECT_ATTEMPTS = void 0;
+exports.defaultOptions = defaultOptions;
+exports.hasWsProtocol = hasWsProtocol;
+exports.buildAuthenticator = buildAuthenticator;
+exports.parseOptions = parseOptions;
+exports.checkOptions = checkOptions;
+exports.checkUnsupportedOption = checkUnsupportedOption;
+const util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nats-core/lib/util.js");
+const transport_1 = __webpack_require__(/*! ./transport */ "./node_modules/@nats-io/nats-core/lib/transport.js");
+const core_1 = __webpack_require__(/*! ./core */ "./node_modules/@nats-io/nats-core/lib/core.js");
+const authenticator_1 = __webpack_require__(/*! ./authenticator */ "./node_modules/@nats-io/nats-core/lib/authenticator.js");
+const errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+exports.DEFAULT_MAX_RECONNECT_ATTEMPTS = 10;
+exports.DEFAULT_JITTER = 100;
+exports.DEFAULT_JITTER_TLS = 1000;
+// Ping interval
+exports.DEFAULT_PING_INTERVAL = 2 * 60 * 1000; // 2 minutes
+exports.DEFAULT_MAX_PING_OUT = 2;
+// DISCONNECT Parameters, 2 sec wait, 10 tries
+exports.DEFAULT_RECONNECT_TIME_WAIT = 2 * 1000;
+function defaultOptions() {
+    return {
+        maxPingOut: exports.DEFAULT_MAX_PING_OUT,
+        maxReconnectAttempts: exports.DEFAULT_MAX_RECONNECT_ATTEMPTS,
+        noRandomize: false,
+        pedantic: false,
+        pingInterval: exports.DEFAULT_PING_INTERVAL,
+        reconnect: true,
+        reconnectJitter: exports.DEFAULT_JITTER,
+        reconnectJitterTLS: exports.DEFAULT_JITTER_TLS,
+        reconnectTimeWait: exports.DEFAULT_RECONNECT_TIME_WAIT,
+        tls: undefined,
+        verbose: false,
+        waitOnFirstConnect: false,
+        ignoreAuthErrorAbort: false,
+    };
+}
+function hasWsProtocol(opts) {
+    if (opts) {
+        let { servers } = opts;
+        if (typeof servers === "string") {
+            servers = [servers];
+        }
+        if (servers) {
+            for (let i = 0; i < servers.length; i++) {
+                const s = servers[i].toLowerCase();
+                if (s.startsWith("ws://") || s.startsWith("wss://")) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+function buildAuthenticator(opts) {
+    const buf = [];
+    // jwtAuthenticator is created by the user, since it
+    // will require possibly reading files which
+    // some of the clients are simply unable to do
+    if (typeof opts.authenticator === "function") {
+        buf.push(opts.authenticator);
+    }
+    if (Array.isArray(opts.authenticator)) {
+        buf.push(...opts.authenticator);
+    }
+    if (opts.token) {
+        buf.push((0, authenticator_1.tokenAuthenticator)(opts.token));
+    }
+    if (opts.user) {
+        buf.push((0, authenticator_1.usernamePasswordAuthenticator)(opts.user, opts.pass));
+    }
+    return buf.length === 0 ? (0, authenticator_1.noAuthFn)() : (0, authenticator_1.multiAuthenticator)(buf);
+}
+function parseOptions(opts) {
+    const dhp = `${core_1.DEFAULT_HOST}:${(0, transport_1.defaultPort)()}`;
+    opts = opts || { servers: [dhp] };
+    opts.servers = opts.servers || [];
+    if (typeof opts.servers === "string") {
+        opts.servers = [opts.servers];
+    }
+    if (opts.servers.length > 0 && opts.port) {
+        throw errors_1.InvalidArgumentError.format(["servers", "port"], "are mutually exclusive");
+    }
+    if (opts.servers.length === 0 && opts.port) {
+        opts.servers = [`${core_1.DEFAULT_HOST}:${opts.port}`];
+    }
+    if (opts.servers && opts.servers.length === 0) {
+        opts.servers = [dhp];
+    }
+    const options = (0, util_1.extend)(defaultOptions(), opts);
+    options.authenticator = buildAuthenticator(options);
+    ["reconnectDelayHandler", "authenticator"].forEach((n) => {
+        if (options[n] && typeof options[n] !== "function") {
+            throw TypeError(`'${n}' must be a function`);
+        }
+    });
+    if (!options.reconnectDelayHandler) {
+        options.reconnectDelayHandler = () => {
+            let extra = options.tls
+                ? options.reconnectJitterTLS
+                : options.reconnectJitter;
+            if (extra) {
+                extra++;
+                extra = Math.floor(Math.random() * extra);
+            }
+            return options.reconnectTimeWait + extra;
+        };
+    }
+    if (options.inboxPrefix) {
+        (0, core_1.createInbox)(options.inboxPrefix);
+    }
+    // if not set - we set it
+    if (options.resolve === undefined) {
+        // set a default based on whether the client can resolve or not
+        options.resolve = typeof (0, transport_1.getResolveFn)() === "function";
+    }
+    if (options.resolve) {
+        if (typeof (0, transport_1.getResolveFn)() !== "function") {
+            throw errors_1.InvalidArgumentError.format("resolve", "is not supported in the current runtime");
+        }
+    }
+    return options;
+}
+function checkOptions(info, options) {
+    const { proto, tls_required: tlsRequired, tls_available: tlsAvailable } = info;
+    if ((proto === undefined || proto < 1) && options.noEcho) {
+        throw new errors_1.errors.ConnectionError(`server does not support 'noEcho'`);
+    }
+    const tls = tlsRequired || tlsAvailable || false;
+    if (options.tls && !tls) {
+        throw new errors_1.errors.ConnectionError(`server does not support 'tls'`);
+    }
+}
+function checkUnsupportedOption(prop, v) {
+    if (v) {
+        throw errors_1.InvalidArgumentError.format(prop, "is not supported");
+    }
+}
+//# sourceMappingURL=options.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/parser.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/parser.js ***!
+  \*******************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.cc = exports.State = exports.Parser = exports.Kind = void 0;
+exports.describe = describe;
+// deno-lint-ignore-file no-undef
+/*
+ * Copyright 2020-2021 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const denobuffer_1 = __webpack_require__(/*! ./denobuffer */ "./node_modules/@nats-io/nats-core/lib/denobuffer.js");
+const encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+exports.Kind = {
+    OK: 0,
+    ERR: 1,
+    MSG: 2,
+    INFO: 3,
+    PING: 4,
+    PONG: 5,
+};
+function describe(e) {
+    let ks;
+    let data = "";
+    switch (e.kind) {
+        case exports.Kind.MSG:
+            ks = "MSG";
+            break;
+        case exports.Kind.OK:
+            ks = "OK";
+            break;
+        case exports.Kind.ERR:
+            ks = "ERR";
+            data = encoders_1.TD.decode(e.data);
+            break;
+        case exports.Kind.PING:
+            ks = "PING";
+            break;
+        case exports.Kind.PONG:
+            ks = "PONG";
+            break;
+        case exports.Kind.INFO:
+            ks = "INFO";
+            data = encoders_1.TD.decode(e.data);
+    }
+    return `${ks}: ${data}`;
+}
+function newMsgArg() {
+    const ma = {};
+    ma.sid = -1;
+    ma.hdr = -1;
+    ma.size = -1;
+    return ma;
+}
+const ASCII_0 = 48;
+const ASCII_9 = 57;
+// This is an almost verbatim port of the Go NATS parser
+// https://github.com/nats-io/nats.go/blob/master/parser.go
+class Parser {
+    dispatcher;
+    state;
+    as;
+    drop;
+    hdr;
+    ma;
+    argBuf;
+    msgBuf;
+    constructor(dispatcher) {
+        this.dispatcher = dispatcher;
+        this.state = exports.State.OP_START;
+        this.as = 0;
+        this.drop = 0;
+        this.hdr = 0;
+    }
+    parse(buf) {
+        let i;
+        for (i = 0; i < buf.length; i++) {
+            const b = buf[i];
+            switch (this.state) {
+                case exports.State.OP_START:
+                    switch (b) {
+                        case exports.cc.M:
+                        case exports.cc.m:
+                            this.state = exports.State.OP_M;
+                            this.hdr = -1;
+                            this.ma = newMsgArg();
+                            break;
+                        case exports.cc.H:
+                        case exports.cc.h:
+                            this.state = exports.State.OP_H;
+                            this.hdr = 0;
+                            this.ma = newMsgArg();
+                            break;
+                        case exports.cc.P:
+                        case exports.cc.p:
+                            this.state = exports.State.OP_P;
+                            break;
+                        case exports.cc.PLUS:
+                            this.state = exports.State.OP_PLUS;
+                            break;
+                        case exports.cc.MINUS:
+                            this.state = exports.State.OP_MINUS;
+                            break;
+                        case exports.cc.I:
+                        case exports.cc.i:
+                            this.state = exports.State.OP_I;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_H:
+                    switch (b) {
+                        case exports.cc.M:
+                        case exports.cc.m:
+                            this.state = exports.State.OP_M;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_M:
+                    switch (b) {
+                        case exports.cc.S:
+                        case exports.cc.s:
+                            this.state = exports.State.OP_MS;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_MS:
+                    switch (b) {
+                        case exports.cc.G:
+                        case exports.cc.g:
+                            this.state = exports.State.OP_MSG;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_MSG:
+                    switch (b) {
+                        case exports.cc.SPACE:
+                        case exports.cc.TAB:
+                            this.state = exports.State.OP_MSG_SPC;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_MSG_SPC:
+                    switch (b) {
+                        case exports.cc.SPACE:
+                        case exports.cc.TAB:
+                            continue;
+                        default:
+                            this.state = exports.State.MSG_ARG;
+                            this.as = i;
+                    }
+                    break;
+                case exports.State.MSG_ARG:
+                    switch (b) {
+                        case exports.cc.CR:
+                            this.drop = 1;
+                            break;
+                        case exports.cc.NL: {
+                            const arg = this.argBuf
+                                ? this.argBuf.bytes()
+                                : buf.subarray(this.as, i - this.drop);
+                            this.processMsgArgs(arg);
+                            this.drop = 0;
+                            this.as = i + 1;
+                            this.state = exports.State.MSG_PAYLOAD;
+                            // jump ahead with the index. If this overruns
+                            // what is left we fall out and process a split buffer.
+                            i = this.as + this.ma.size - 1;
+                            break;
+                        }
+                        default:
+                            if (this.argBuf) {
+                                this.argBuf.writeByte(b);
+                            }
+                    }
+                    break;
+                case exports.State.MSG_PAYLOAD:
+                    if (this.msgBuf) {
+                        if (this.msgBuf.length >= this.ma.size) {
+                            const data = this.msgBuf.bytes({ copy: false });
+                            this.dispatcher.push({ kind: exports.Kind.MSG, msg: this.ma, data: data });
+                            this.argBuf = undefined;
+                            this.msgBuf = undefined;
+                            this.state = exports.State.MSG_END;
+                        }
+                        else {
+                            let toCopy = this.ma.size - this.msgBuf.length;
+                            const avail = buf.length - i;
+                            if (avail < toCopy) {
+                                toCopy = avail;
+                            }
+                            if (toCopy > 0) {
+                                this.msgBuf.write(buf.subarray(i, i + toCopy));
+                                i = (i + toCopy) - 1;
+                            }
+                            else {
+                                this.msgBuf.writeByte(b);
+                            }
+                        }
+                    }
+                    else if (i - this.as >= this.ma.size) {
+                        this.dispatcher.push({ kind: exports.Kind.MSG, msg: this.ma, data: buf.subarray(this.as, i) });
+                        this.argBuf = undefined;
+                        this.msgBuf = undefined;
+                        this.state = exports.State.MSG_END;
+                    }
+                    break;
+                case exports.State.MSG_END:
+                    switch (b) {
+                        case exports.cc.NL:
+                            this.drop = 0;
+                            this.as = i + 1;
+                            this.state = exports.State.OP_START;
+                            break;
+                        default:
+                            continue;
+                    }
+                    break;
+                case exports.State.OP_PLUS:
+                    switch (b) {
+                        case exports.cc.O:
+                        case exports.cc.o:
+                            this.state = exports.State.OP_PLUS_O;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_PLUS_O:
+                    switch (b) {
+                        case exports.cc.K:
+                        case exports.cc.k:
+                            this.state = exports.State.OP_PLUS_OK;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_PLUS_OK:
+                    switch (b) {
+                        case exports.cc.NL:
+                            this.dispatcher.push({ kind: exports.Kind.OK });
+                            this.drop = 0;
+                            this.state = exports.State.OP_START;
+                            break;
+                    }
+                    break;
+                case exports.State.OP_MINUS:
+                    switch (b) {
+                        case exports.cc.E:
+                        case exports.cc.e:
+                            this.state = exports.State.OP_MINUS_E;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_MINUS_E:
+                    switch (b) {
+                        case exports.cc.R:
+                        case exports.cc.r:
+                            this.state = exports.State.OP_MINUS_ER;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_MINUS_ER:
+                    switch (b) {
+                        case exports.cc.R:
+                        case exports.cc.r:
+                            this.state = exports.State.OP_MINUS_ERR;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_MINUS_ERR:
+                    switch (b) {
+                        case exports.cc.SPACE:
+                        case exports.cc.TAB:
+                            this.state = exports.State.OP_MINUS_ERR_SPC;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_MINUS_ERR_SPC:
+                    switch (b) {
+                        case exports.cc.SPACE:
+                        case exports.cc.TAB:
+                            continue;
+                        default:
+                            this.state = exports.State.MINUS_ERR_ARG;
+                            this.as = i;
+                    }
+                    break;
+                case exports.State.MINUS_ERR_ARG:
+                    switch (b) {
+                        case exports.cc.CR:
+                            this.drop = 1;
+                            break;
+                        case exports.cc.NL: {
+                            let arg;
+                            if (this.argBuf) {
+                                arg = this.argBuf.bytes();
+                                this.argBuf = undefined;
+                            }
+                            else {
+                                arg = buf.subarray(this.as, i - this.drop);
+                            }
+                            this.dispatcher.push({ kind: exports.Kind.ERR, data: arg });
+                            this.drop = 0;
+                            this.as = i + 1;
+                            this.state = exports.State.OP_START;
+                            break;
+                        }
+                        default:
+                            if (this.argBuf) {
+                                this.argBuf.write(Uint8Array.of(b));
+                            }
+                    }
+                    break;
+                case exports.State.OP_P:
+                    switch (b) {
+                        case exports.cc.I:
+                        case exports.cc.i:
+                            this.state = exports.State.OP_PI;
+                            break;
+                        case exports.cc.O:
+                        case exports.cc.o:
+                            this.state = exports.State.OP_PO;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_PO:
+                    switch (b) {
+                        case exports.cc.N:
+                        case exports.cc.n:
+                            this.state = exports.State.OP_PON;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_PON:
+                    switch (b) {
+                        case exports.cc.G:
+                        case exports.cc.g:
+                            this.state = exports.State.OP_PONG;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_PONG:
+                    switch (b) {
+                        case exports.cc.NL:
+                            this.dispatcher.push({ kind: exports.Kind.PONG });
+                            this.drop = 0;
+                            this.state = exports.State.OP_START;
+                            break;
+                    }
+                    break;
+                case exports.State.OP_PI:
+                    switch (b) {
+                        case exports.cc.N:
+                        case exports.cc.n:
+                            this.state = exports.State.OP_PIN;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_PIN:
+                    switch (b) {
+                        case exports.cc.G:
+                        case exports.cc.g:
+                            this.state = exports.State.OP_PING;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_PING:
+                    switch (b) {
+                        case exports.cc.NL:
+                            this.dispatcher.push({ kind: exports.Kind.PING });
+                            this.drop = 0;
+                            this.state = exports.State.OP_START;
+                            break;
+                    }
+                    break;
+                case exports.State.OP_I:
+                    switch (b) {
+                        case exports.cc.N:
+                        case exports.cc.n:
+                            this.state = exports.State.OP_IN;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_IN:
+                    switch (b) {
+                        case exports.cc.F:
+                        case exports.cc.f:
+                            this.state = exports.State.OP_INF;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_INF:
+                    switch (b) {
+                        case exports.cc.O:
+                        case exports.cc.o:
+                            this.state = exports.State.OP_INFO;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_INFO:
+                    switch (b) {
+                        case exports.cc.SPACE:
+                        case exports.cc.TAB:
+                            this.state = exports.State.OP_INFO_SPC;
+                            break;
+                        default:
+                            throw this.fail(buf.subarray(i));
+                    }
+                    break;
+                case exports.State.OP_INFO_SPC:
+                    switch (b) {
+                        case exports.cc.SPACE:
+                        case exports.cc.TAB:
+                            continue;
+                        default:
+                            this.state = exports.State.INFO_ARG;
+                            this.as = i;
+                    }
+                    break;
+                case exports.State.INFO_ARG:
+                    switch (b) {
+                        case exports.cc.CR:
+                            this.drop = 1;
+                            break;
+                        case exports.cc.NL: {
+                            let arg;
+                            if (this.argBuf) {
+                                arg = this.argBuf.bytes();
+                                this.argBuf = undefined;
+                            }
+                            else {
+                                arg = buf.subarray(this.as, i - this.drop);
+                            }
+                            this.dispatcher.push({ kind: exports.Kind.INFO, data: arg });
+                            this.drop = 0;
+                            this.as = i + 1;
+                            this.state = exports.State.OP_START;
+                            break;
+                        }
+                        default:
+                            if (this.argBuf) {
+                                this.argBuf.writeByte(b);
+                            }
+                    }
+                    break;
+                default:
+                    throw this.fail(buf.subarray(i));
+            }
+        }
+        if ((this.state === exports.State.MSG_ARG || this.state === exports.State.MINUS_ERR_ARG ||
+            this.state === exports.State.INFO_ARG) && !this.argBuf) {
+            this.argBuf = new denobuffer_1.DenoBuffer(buf.subarray(this.as, i - this.drop));
+        }
+        if (this.state === exports.State.MSG_PAYLOAD && !this.msgBuf) {
+            if (!this.argBuf) {
+                this.cloneMsgArg();
+            }
+            this.msgBuf = new denobuffer_1.DenoBuffer(buf.subarray(this.as));
+        }
+    }
+    cloneMsgArg() {
+        const s = this.ma.subject.length;
+        const r = this.ma.reply ? this.ma.reply.length : 0;
+        const buf = new Uint8Array(s + r);
+        buf.set(this.ma.subject);
+        if (this.ma.reply) {
+            buf.set(this.ma.reply, s);
+        }
+        this.argBuf = new denobuffer_1.DenoBuffer(buf);
+        this.ma.subject = buf.subarray(0, s);
+        if (this.ma.reply) {
+            this.ma.reply = buf.subarray(s);
+        }
+    }
+    processMsgArgs(arg) {
+        if (this.hdr >= 0) {
+            return this.processHeaderMsgArgs(arg);
+        }
+        const args = [];
+        let start = -1;
+        for (let i = 0; i < arg.length; i++) {
+            const b = arg[i];
+            switch (b) {
+                case exports.cc.SPACE:
+                case exports.cc.TAB:
+                case exports.cc.CR:
+                case exports.cc.NL:
+                    if (start >= 0) {
+                        args.push(arg.subarray(start, i));
+                        start = -1;
+                    }
+                    break;
+                default:
+                    if (start < 0) {
+                        start = i;
+                    }
+            }
+        }
+        if (start >= 0) {
+            args.push(arg.subarray(start));
+        }
+        switch (args.length) {
+            case 3:
+                this.ma.subject = args[0];
+                this.ma.sid = this.protoParseInt(args[1]);
+                this.ma.reply = undefined;
+                this.ma.size = this.protoParseInt(args[2]);
+                break;
+            case 4:
+                this.ma.subject = args[0];
+                this.ma.sid = this.protoParseInt(args[1]);
+                this.ma.reply = args[2];
+                this.ma.size = this.protoParseInt(args[3]);
+                break;
+            default:
+                throw this.fail(arg, "processMsgArgs Parse Error");
+        }
+        if (this.ma.sid < 0) {
+            throw this.fail(arg, "processMsgArgs Bad or Missing Sid Error");
+        }
+        if (this.ma.size < 0) {
+            throw this.fail(arg, "processMsgArgs Bad or Missing Size Error");
+        }
+    }
+    fail(data, label = "") {
+        if (!label) {
+            label = `parse error [${this.state}]`;
+        }
+        else {
+            label = `${label} [${this.state}]`;
+        }
+        return new Error(`${label}: ${encoders_1.TD.decode(data)}`);
+    }
+    processHeaderMsgArgs(arg) {
+        const args = [];
+        let start = -1;
+        for (let i = 0; i < arg.length; i++) {
+            const b = arg[i];
+            switch (b) {
+                case exports.cc.SPACE:
+                case exports.cc.TAB:
+                case exports.cc.CR:
+                case exports.cc.NL:
+                    if (start >= 0) {
+                        args.push(arg.subarray(start, i));
+                        start = -1;
+                    }
+                    break;
+                default:
+                    if (start < 0) {
+                        start = i;
+                    }
+            }
+        }
+        if (start >= 0) {
+            args.push(arg.subarray(start));
+        }
+        switch (args.length) {
+            case 4:
+                this.ma.subject = args[0];
+                this.ma.sid = this.protoParseInt(args[1]);
+                this.ma.reply = undefined;
+                this.ma.hdr = this.protoParseInt(args[2]);
+                this.ma.size = this.protoParseInt(args[3]);
+                break;
+            case 5:
+                this.ma.subject = args[0];
+                this.ma.sid = this.protoParseInt(args[1]);
+                this.ma.reply = args[2];
+                this.ma.hdr = this.protoParseInt(args[3]);
+                this.ma.size = this.protoParseInt(args[4]);
+                break;
+            default:
+                throw this.fail(arg, "processHeaderMsgArgs Parse Error");
+        }
+        if (this.ma.sid < 0) {
+            throw this.fail(arg, "processHeaderMsgArgs Bad or Missing Sid Error");
+        }
+        if (this.ma.hdr < 0 || this.ma.hdr > this.ma.size) {
+            throw this.fail(arg, "processHeaderMsgArgs Bad or Missing Header Size Error");
+        }
+        if (this.ma.size < 0) {
+            throw this.fail(arg, "processHeaderMsgArgs Bad or Missing Size Error");
+        }
+    }
+    protoParseInt(a) {
+        if (a.length === 0) {
+            return -1;
+        }
+        let n = 0;
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] < ASCII_0 || a[i] > ASCII_9) {
+                return -1;
+            }
+            n = n * 10 + (a[i] - ASCII_0);
+        }
+        return n;
+    }
+}
+exports.Parser = Parser;
+exports.State = {
+    OP_START: 0,
+    OP_PLUS: 1,
+    OP_PLUS_O: 2,
+    OP_PLUS_OK: 3,
+    OP_MINUS: 4,
+    OP_MINUS_E: 5,
+    OP_MINUS_ER: 6,
+    OP_MINUS_ERR: 7,
+    OP_MINUS_ERR_SPC: 8,
+    MINUS_ERR_ARG: 9,
+    OP_M: 10,
+    OP_MS: 11,
+    OP_MSG: 12,
+    OP_MSG_SPC: 13,
+    MSG_ARG: 14,
+    MSG_PAYLOAD: 15,
+    MSG_END: 16,
+    OP_H: 17,
+    OP_P: 18,
+    OP_PI: 19,
+    OP_PIN: 20,
+    OP_PING: 21,
+    OP_PO: 22,
+    OP_PON: 23,
+    OP_PONG: 24,
+    OP_I: 25,
+    OP_IN: 26,
+    OP_INF: 27,
+    OP_INFO: 28,
+    OP_INFO_SPC: 29,
+    INFO_ARG: 30,
+};
+exports.cc = {
+    CR: "\r".charCodeAt(0),
+    E: "E".charCodeAt(0),
+    e: "e".charCodeAt(0),
+    F: "F".charCodeAt(0),
+    f: "f".charCodeAt(0),
+    G: "G".charCodeAt(0),
+    g: "g".charCodeAt(0),
+    H: "H".charCodeAt(0),
+    h: "h".charCodeAt(0),
+    I: "I".charCodeAt(0),
+    i: "i".charCodeAt(0),
+    K: "K".charCodeAt(0),
+    k: "k".charCodeAt(0),
+    M: "M".charCodeAt(0),
+    m: "m".charCodeAt(0),
+    MINUS: "-".charCodeAt(0),
+    N: "N".charCodeAt(0),
+    n: "n".charCodeAt(0),
+    NL: "\n".charCodeAt(0),
+    O: "O".charCodeAt(0),
+    o: "o".charCodeAt(0),
+    P: "P".charCodeAt(0),
+    p: "p".charCodeAt(0),
+    PLUS: "+".charCodeAt(0),
+    R: "R".charCodeAt(0),
+    r: "r".charCodeAt(0),
+    S: "S".charCodeAt(0),
+    s: "s".charCodeAt(0),
+    SPACE: " ".charCodeAt(0),
+    TAB: "\t".charCodeAt(0),
+};
+//# sourceMappingURL=parser.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/protocol.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/protocol.js ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ProtocolHandler = exports.Subscriptions = exports.SubscriptionImpl = exports.Connect = exports.INFO = void 0;
+/*
+ * Copyright 2018-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+const transport_1 = __webpack_require__(/*! ./transport */ "./node_modules/@nats-io/nats-core/lib/transport.js");
+const util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nats-core/lib/util.js");
+const databuffer_1 = __webpack_require__(/*! ./databuffer */ "./node_modules/@nats-io/nats-core/lib/databuffer.js");
+const servers_1 = __webpack_require__(/*! ./servers */ "./node_modules/@nats-io/nats-core/lib/servers.js");
+const queued_iterator_1 = __webpack_require__(/*! ./queued_iterator */ "./node_modules/@nats-io/nats-core/lib/queued_iterator.js");
+const muxsubscription_1 = __webpack_require__(/*! ./muxsubscription */ "./node_modules/@nats-io/nats-core/lib/muxsubscription.js");
+const heartbeats_1 = __webpack_require__(/*! ./heartbeats */ "./node_modules/@nats-io/nats-core/lib/heartbeats.js");
+const parser_1 = __webpack_require__(/*! ./parser */ "./node_modules/@nats-io/nats-core/lib/parser.js");
+const msg_1 = __webpack_require__(/*! ./msg */ "./node_modules/@nats-io/nats-core/lib/msg.js");
+const semver_1 = __webpack_require__(/*! ./semver */ "./node_modules/@nats-io/nats-core/lib/semver.js");
+const options_1 = __webpack_require__(/*! ./options */ "./node_modules/@nats-io/nats-core/lib/options.js");
+const errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+const FLUSH_THRESHOLD = 1024 * 32;
+exports.INFO = /^INFO\s+([^\r\n]+)\r\n/i;
+const PONG_CMD = (0, encoders_1.encode)("PONG\r\n");
+const PING_CMD = (0, encoders_1.encode)("PING\r\n");
+class Connect {
+    echo;
+    no_responders;
+    protocol;
+    verbose;
+    pedantic;
+    jwt;
+    nkey;
+    sig;
+    user;
+    pass;
+    auth_token;
+    tls_required;
+    name;
+    lang;
+    version;
+    headers;
+    constructor(transport, opts, nonce) {
+        this.protocol = 1;
+        this.version = transport.version;
+        this.lang = transport.lang;
+        this.echo = opts.noEcho ? false : undefined;
+        this.verbose = opts.verbose;
+        this.pedantic = opts.pedantic;
+        this.tls_required = opts.tls ? true : undefined;
+        this.name = opts.name;
+        const creds = (opts && typeof opts.authenticator === "function"
+            ? opts.authenticator(nonce)
+            : {}) || {};
+        (0, util_1.extend)(this, creds);
+    }
+}
+exports.Connect = Connect;
+class SlowNotifier {
+    slow;
+    cb;
+    notified;
+    constructor(slow, cb) {
+        this.slow = slow;
+        this.cb = cb;
+        this.notified = false;
+    }
+    maybeNotify(pending) {
+        // if we are below the threshold reset the ability to notify
+        if (pending <= this.slow) {
+            this.notified = false;
+        }
+        else {
+            if (!this.notified) {
+                // crossed the threshold, notify and silence.
+                this.cb(pending);
+                this.notified = true;
+            }
+        }
+    }
+}
+class SubscriptionImpl extends queued_iterator_1.QueuedIteratorImpl {
+    sid;
+    queue;
+    draining;
+    max;
+    subject;
+    drained;
+    protocol;
+    timer;
+    info;
+    cleanupFn;
+    closed;
+    requestSubject;
+    slow;
+    constructor(protocol, subject, opts = {}) {
+        super();
+        (0, util_1.extend)(this, opts);
+        this.protocol = protocol;
+        this.subject = subject;
+        this.draining = false;
+        this.noIterator = typeof opts.callback === "function";
+        this.closed = (0, util_1.deferred)();
+        const asyncTraces = !(protocol.options?.noAsyncTraces || false);
+        if (opts.timeout) {
+            this.timer = (0, util_1.timeout)(opts.timeout, asyncTraces);
+            this.timer
+                .then(() => {
+                // timer was cancelled
+                this.timer = undefined;
+            })
+                .catch((err) => {
+                // timer fired
+                this.stop(err);
+                if (this.noIterator) {
+                    this.callback(err, {});
+                }
+            });
+        }
+        if (!this.noIterator) {
+            // cleanup - they used break or return from the iterator
+            // make sure we clean up, if they didn't call unsub
+            this.iterClosed.then((err) => {
+                this.closed.resolve(err);
+                this.unsubscribe();
+            });
+        }
+    }
+    setSlowNotificationFn(slow, fn) {
+        this.slow = undefined;
+        if (fn) {
+            if (this.noIterator) {
+                throw new Error("callbacks don't support slow notifications");
+            }
+            this.slow = new SlowNotifier(slow, fn);
+        }
+    }
+    callback(err, msg) {
+        this.cancelTimeout();
+        err ? this.stop(err) : this.push(msg);
+        if (!err && this.slow) {
+            this.slow.maybeNotify(this.getPending());
+        }
+    }
+    close(err) {
+        if (!this.isClosed()) {
+            this.cancelTimeout();
+            const fn = () => {
+                this.stop();
+                if (this.cleanupFn) {
+                    try {
+                        this.cleanupFn(this, this.info);
+                    }
+                    catch (_err) {
+                        // ignoring
+                    }
+                }
+                this.closed.resolve(err);
+            };
+            if (this.noIterator) {
+                fn();
+            }
+            else {
+                this.push(fn);
+            }
+        }
+    }
+    unsubscribe(max) {
+        this.protocol.unsubscribe(this, max);
+    }
+    cancelTimeout() {
+        if (this.timer) {
+            this.timer.cancel();
+            this.timer = undefined;
+        }
+    }
+    drain() {
+        if (this.protocol.isClosed()) {
+            return Promise.reject(new errors_1.errors.ClosedConnectionError());
+        }
+        if (this.isClosed()) {
+            return Promise.reject(new errors_1.errors.InvalidOperationError("subscription is already closed"));
+        }
+        if (!this.drained) {
+            this.draining = true;
+            this.protocol.unsub(this);
+            this.drained = this.protocol.flush((0, util_1.deferred)())
+                .then(() => {
+                this.protocol.subscriptions.cancel(this);
+            })
+                .catch(() => {
+                this.protocol.subscriptions.cancel(this);
+            });
+        }
+        return this.drained;
+    }
+    isDraining() {
+        return this.draining;
+    }
+    isClosed() {
+        return this.done;
+    }
+    getSubject() {
+        return this.subject;
+    }
+    getMax() {
+        return this.max;
+    }
+    getID() {
+        return this.sid;
+    }
+}
+exports.SubscriptionImpl = SubscriptionImpl;
+class Subscriptions {
+    mux;
+    subs;
+    sidCounter;
+    constructor() {
+        this.sidCounter = 0;
+        this.mux = null;
+        this.subs = new Map();
+    }
+    size() {
+        return this.subs.size;
+    }
+    add(s) {
+        this.sidCounter++;
+        s.sid = this.sidCounter;
+        this.subs.set(s.sid, s);
+        return s;
+    }
+    setMux(s) {
+        this.mux = s;
+        return s;
+    }
+    getMux() {
+        return this.mux;
+    }
+    get(sid) {
+        return this.subs.get(sid);
+    }
+    resub(s) {
+        this.sidCounter++;
+        this.subs.delete(s.sid);
+        s.sid = this.sidCounter;
+        this.subs.set(s.sid, s);
+        return s;
+    }
+    all() {
+        return Array.from(this.subs.values());
+    }
+    cancel(s) {
+        if (s) {
+            s.close();
+            this.subs.delete(s.sid);
+        }
+    }
+    handleError(err) {
+        const subs = this.all();
+        let sub;
+        if (err.operation === "subscription") {
+            sub = subs.find((s) => {
+                return s.subject === err.subject && s.queue === err.queue;
+            });
+        }
+        else if (err.operation === "publish") {
+            // we have a no mux subscription
+            sub = subs.find((s) => {
+                return s.requestSubject === err.subject;
+            });
+        }
+        if (sub) {
+            sub.callback(err, {});
+            sub.close(err);
+            this.subs.delete(sub.sid);
+            return sub !== this.mux;
+        }
+        return false;
+    }
+    close() {
+        this.subs.forEach((sub) => {
+            sub.close();
+        });
+    }
+}
+exports.Subscriptions = Subscriptions;
+class ProtocolHandler {
+    connected;
+    connectedOnce;
+    infoReceived;
+    info;
+    muxSubscriptions;
+    options;
+    outbound;
+    pongs;
+    subscriptions;
+    transport;
+    noMorePublishing;
+    connectError;
+    publisher;
+    _closed;
+    closed;
+    listeners;
+    heartbeats;
+    parser;
+    outMsgs;
+    inMsgs;
+    outBytes;
+    inBytes;
+    pendingLimit;
+    lastError;
+    abortReconnect;
+    whyClosed;
+    servers;
+    server;
+    features;
+    connectPromise;
+    dialDelay;
+    raceTimer;
+    constructor(options, publisher) {
+        this._closed = false;
+        this.connected = false;
+        this.connectedOnce = false;
+        this.infoReceived = false;
+        this.noMorePublishing = false;
+        this.abortReconnect = false;
+        this.listeners = [];
+        this.pendingLimit = FLUSH_THRESHOLD;
+        this.outMsgs = 0;
+        this.inMsgs = 0;
+        this.outBytes = 0;
+        this.inBytes = 0;
+        this.options = options;
+        this.publisher = publisher;
+        this.subscriptions = new Subscriptions();
+        this.muxSubscriptions = new muxsubscription_1.MuxSubscription();
+        this.outbound = new databuffer_1.DataBuffer();
+        this.pongs = [];
+        this.whyClosed = "";
+        //@ts-ignore: options.pendingLimit is hidden
+        this.pendingLimit = options.pendingLimit || this.pendingLimit;
+        this.features = new semver_1.Features({ major: 0, minor: 0, micro: 0 });
+        this.connectPromise = null;
+        this.dialDelay = null;
+        const servers = typeof options.servers === "string"
+            ? [options.servers]
+            : options.servers;
+        this.servers = new servers_1.Servers(servers, {
+            randomize: !options.noRandomize,
+        });
+        this.closed = (0, util_1.deferred)();
+        this.parser = new parser_1.Parser(this);
+        this.heartbeats = new heartbeats_1.Heartbeat(this, this.options.pingInterval || options_1.DEFAULT_PING_INTERVAL, this.options.maxPingOut || options_1.DEFAULT_MAX_PING_OUT);
+    }
+    resetOutbound() {
+        this.outbound.reset();
+        const pongs = this.pongs;
+        this.pongs = [];
+        // reject the pongs - the disconnect from here shouldn't have a trace
+        // because that confuses API consumers
+        const err = new errors_1.errors.RequestError("connection disconnected");
+        err.stack = "";
+        pongs.forEach((p) => {
+            p.reject(err);
+        });
+        this.parser = new parser_1.Parser(this);
+        this.infoReceived = false;
+    }
+    dispatchStatus(status) {
+        this.listeners.forEach((q) => {
+            q.push(status);
+        });
+    }
+    prepare() {
+        if (this.transport) {
+            this.transport.discard();
+        }
+        this.info = undefined;
+        this.resetOutbound();
+        const pong = (0, util_1.deferred)();
+        pong.catch(() => {
+            // provide at least one catch - as pong rejection can happen before it is expected
+        });
+        this.pongs.unshift(pong);
+        this.connectError = (err) => {
+            pong.reject(err);
+        };
+        this.transport = (0, transport_1.newTransport)();
+        this.transport.closed()
+            .then(async (_err) => {
+            this.connected = false;
+            if (!this.isClosed()) {
+                // if the transport gave an error use that, otherwise
+                // we may have received a protocol error
+                await this.disconnected(this.transport.closeError || this.lastError);
+                return;
+            }
+        });
+        return pong;
+    }
+    disconnect() {
+        this.dispatchStatus({ type: "staleConnection" });
+        this.transport.disconnect();
+    }
+    reconnect() {
+        if (this.connected) {
+            this.dispatchStatus({
+                type: "forceReconnect",
+            });
+            this.transport.disconnect();
+        }
+        return Promise.resolve();
+    }
+    async disconnected(err) {
+        this.dispatchStatus({
+            type: "disconnect",
+            server: this.servers.getCurrentServer().toString(),
+        });
+        if (this.options.reconnect) {
+            await this.dialLoop()
+                .then(() => {
+                this.dispatchStatus({
+                    type: "reconnect",
+                    server: this.servers.getCurrentServer().toString(),
+                });
+                // if we are here we reconnected, but we have an authentication
+                // that expired, we need to clean it up, otherwise we'll queue up
+                // two of these, and the default for the client will be to
+                // close, rather than attempt again - possibly they have an
+                // authenticator that dynamically updates
+                if (this.lastError instanceof errors_1.errors.UserAuthenticationExpiredError) {
+                    this.lastError = undefined;
+                }
+            })
+                .catch((err) => {
+                this.close(err).catch();
+            });
+        }
+        else {
+            await this.close(err).catch();
+        }
+    }
+    async dial(srv) {
+        const pong = this.prepare();
+        try {
+            this.raceTimer = (0, util_1.timeout)(this.options.timeout || 20000);
+            const cp = this.transport.connect(srv, this.options);
+            await Promise.race([cp, this.raceTimer]);
+            (async () => {
+                try {
+                    for await (const b of this.transport) {
+                        this.parser.parse(b);
+                    }
+                }
+                catch (err) {
+                    console.log("reader closed", err);
+                }
+            })().then();
+        }
+        catch (err) {
+            pong.reject(err);
+        }
+        try {
+            await Promise.race([this.raceTimer, pong]);
+            this.raceTimer?.cancel();
+            this.connected = true;
+            this.connectError = undefined;
+            this.sendSubscriptions();
+            this.connectedOnce = true;
+            this.server.didConnect = true;
+            this.server.reconnects = 0;
+            this.flushPending();
+            this.heartbeats.start();
+        }
+        catch (err) {
+            this.raceTimer?.cancel();
+            await this.transport.close(err);
+            throw err;
+        }
+    }
+    async _doDial(srv) {
+        const { resolve } = this.options;
+        const alts = await srv.resolve({
+            fn: (0, transport_1.getResolveFn)(),
+            debug: this.options.debug,
+            randomize: !this.options.noRandomize,
+            resolve,
+        });
+        let lastErr = null;
+        for (const a of alts) {
+            try {
+                lastErr = null;
+                this.dispatchStatus({ type: "reconnecting" });
+                await this.dial(a);
+                // if here we connected
+                return;
+            }
+            catch (err) {
+                lastErr = err;
+            }
+        }
+        // if we are here, we failed, and we have no additional
+        // alternatives for this server
+        throw lastErr;
+    }
+    dialLoop() {
+        if (this.connectPromise === null) {
+            this.connectPromise = this.dodialLoop();
+            this.connectPromise
+                .then(() => { })
+                .catch(() => { })
+                .finally(() => {
+                this.connectPromise = null;
+            });
+        }
+        return this.connectPromise;
+    }
+    async dodialLoop() {
+        let lastError;
+        while (true) {
+            if (this._closed) {
+                // if we are disconnected, and close is called, the client
+                // still tries to reconnect - to match the reconnect policy
+                // in the case of close, want to stop.
+                this.servers.clear();
+            }
+            const wait = this.options.reconnectDelayHandler
+                ? this.options.reconnectDelayHandler()
+                : options_1.DEFAULT_RECONNECT_TIME_WAIT;
+            let maxWait = wait;
+            const srv = this.selectServer();
+            if (!srv || this.abortReconnect) {
+                if (lastError) {
+                    throw lastError;
+                }
+                else if (this.lastError) {
+                    throw this.lastError;
+                }
+                else {
+                    throw new errors_1.errors.ConnectionError("connection refused");
+                }
+            }
+            const now = Date.now();
+            if (srv.lastConnect === 0 || srv.lastConnect + wait <= now) {
+                srv.lastConnect = Date.now();
+                try {
+                    await this._doDial(srv);
+                    break;
+                }
+                catch (err) {
+                    lastError = err;
+                    if (!this.connectedOnce) {
+                        if (this.options.waitOnFirstConnect) {
+                            continue;
+                        }
+                        this.servers.removeCurrentServer();
+                    }
+                    srv.reconnects++;
+                    const mra = this.options.maxReconnectAttempts || 0;
+                    if (mra !== -1 && srv.reconnects >= mra) {
+                        this.servers.removeCurrentServer();
+                    }
+                }
+            }
+            else {
+                maxWait = Math.min(maxWait, srv.lastConnect + wait - now);
+                this.dialDelay = (0, util_1.delay)(maxWait);
+                await this.dialDelay;
+            }
+        }
+    }
+    static async connect(options, publisher) {
+        const h = new ProtocolHandler(options, publisher);
+        await h.dialLoop();
+        return h;
+    }
+    static toError(s) {
+        let err = errors_1.errors.PermissionViolationError.parse(s);
+        if (err) {
+            return err;
+        }
+        err = errors_1.errors.UserAuthenticationExpiredError.parse(s);
+        if (err) {
+            return err;
+        }
+        err = errors_1.errors.AuthorizationError.parse(s);
+        if (err) {
+            return err;
+        }
+        return new errors_1.errors.ProtocolError(s);
+    }
+    processMsg(msg, data) {
+        this.inMsgs++;
+        this.inBytes += data.length;
+        if (!this.subscriptions.sidCounter) {
+            return;
+        }
+        const sub = this.subscriptions.get(msg.sid);
+        if (!sub) {
+            return;
+        }
+        sub.received += 1;
+        if (sub.callback) {
+            sub.callback(null, new msg_1.MsgImpl(msg, data, this));
+        }
+        if (sub.max !== undefined && sub.received >= sub.max) {
+            sub.unsubscribe();
+        }
+    }
+    processError(m) {
+        let s = (0, encoders_1.decode)(m);
+        if (s.startsWith("'") && s.endsWith("'")) {
+            s = s.slice(1, s.length - 1);
+        }
+        const err = ProtocolHandler.toError(s);
+        switch (err.constructor) {
+            case errors_1.errors.PermissionViolationError: {
+                const pe = err;
+                const mux = this.subscriptions.getMux();
+                const isMuxPermission = mux ? pe.subject === mux.subject : false;
+                this.subscriptions.handleError(pe);
+                this.muxSubscriptions.handleError(isMuxPermission, pe);
+                if (isMuxPermission) {
+                    // remove the permission - enable it to be recreated
+                    this.subscriptions.setMux(null);
+                }
+            }
+        }
+        this.dispatchStatus({ type: "error", error: err });
+        this.handleError(err);
+    }
+    handleError(err) {
+        if (err instanceof errors_1.errors.UserAuthenticationExpiredError ||
+            err instanceof errors_1.errors.AuthorizationError) {
+            this.handleAuthError(err);
+        }
+        if (!(err instanceof errors_1.errors.PermissionViolationError)) {
+            this.lastError = err;
+        }
+    }
+    handleAuthError(err) {
+        if ((this.lastError instanceof errors_1.errors.UserAuthenticationExpiredError ||
+            this.lastError instanceof errors_1.errors.AuthorizationError) &&
+            this.options.ignoreAuthErrorAbort === false) {
+            this.abortReconnect = true;
+        }
+        if (this.connectError) {
+            this.connectError(err);
+        }
+        else {
+            this.disconnect();
+        }
+    }
+    processPing() {
+        this.transport.send(PONG_CMD);
+    }
+    processPong() {
+        const cb = this.pongs.shift();
+        if (cb) {
+            cb.resolve();
+        }
+    }
+    processInfo(m) {
+        const info = JSON.parse((0, encoders_1.decode)(m));
+        this.info = info;
+        const updates = this.options && this.options.ignoreClusterUpdates
+            ? undefined
+            : this.servers.update(info, this.transport.isEncrypted());
+        if (!this.infoReceived) {
+            this.features.update((0, semver_1.parseSemVer)(info.version));
+            this.infoReceived = true;
+            if (this.transport.isEncrypted()) {
+                this.servers.updateTLSName();
+            }
+            // send connect
+            const { version, lang } = this.transport;
+            try {
+                const c = new Connect({ version, lang }, this.options, info.nonce);
+                if (info.headers) {
+                    c.headers = true;
+                    c.no_responders = true;
+                }
+                const cs = JSON.stringify(c);
+                this.transport.send((0, encoders_1.encode)(`CONNECT ${cs}${transport_1.CR_LF}`));
+                this.transport.send(PING_CMD);
+            }
+            catch (err) {
+                // if we are dying here, this is likely some an authenticator blowing up
+                this.close(err).catch();
+            }
+        }
+        if (updates) {
+            const { added, deleted } = updates;
+            this.dispatchStatus({ type: "update", added, deleted });
+        }
+        const ldm = info.ldm !== undefined ? info.ldm : false;
+        if (ldm) {
+            this.dispatchStatus({
+                type: "ldm",
+                server: this.servers.getCurrentServer().toString(),
+            });
+        }
+    }
+    push(e) {
+        switch (e.kind) {
+            case parser_1.Kind.MSG: {
+                const { msg, data } = e;
+                this.processMsg(msg, data);
+                break;
+            }
+            case parser_1.Kind.OK:
+                break;
+            case parser_1.Kind.ERR:
+                this.processError(e.data);
+                break;
+            case parser_1.Kind.PING:
+                this.processPing();
+                break;
+            case parser_1.Kind.PONG:
+                this.processPong();
+                break;
+            case parser_1.Kind.INFO:
+                this.processInfo(e.data);
+                break;
+        }
+    }
+    sendCommand(cmd, ...payloads) {
+        const len = this.outbound.length();
+        let buf;
+        if (typeof cmd === "string") {
+            buf = (0, encoders_1.encode)(cmd);
+        }
+        else {
+            buf = cmd;
+        }
+        this.outbound.fill(buf, ...payloads);
+        if (len === 0) {
+            queueMicrotask(() => {
+                this.flushPending();
+            });
+        }
+        else if (this.outbound.size() >= this.pendingLimit) {
+            // flush inline
+            this.flushPending();
+        }
+    }
+    publish(subject, payload = encoders_1.Empty, options) {
+        let data;
+        if (payload instanceof Uint8Array) {
+            data = payload;
+        }
+        else if (typeof payload === "string") {
+            data = encoders_1.TE.encode(payload);
+        }
+        else {
+            throw new TypeError("payload types can be strings or Uint8Array");
+        }
+        let len = data.length;
+        options = options || {};
+        options.reply = options.reply || "";
+        let headers = encoders_1.Empty;
+        let hlen = 0;
+        if (options.headers) {
+            if (this.info && !this.info.headers) {
+                errors_1.InvalidArgumentError.format("headers", "are not available on this server");
+            }
+            const hdrs = options.headers;
+            headers = hdrs.encode();
+            hlen = headers.length;
+            len = data.length + hlen;
+        }
+        if (this.info && len > this.info.max_payload) {
+            throw errors_1.InvalidArgumentError.format("payload", "max_payload size exceeded");
+        }
+        this.outBytes += len;
+        this.outMsgs++;
+        let proto;
+        if (options.headers) {
+            if (options.reply) {
+                proto = `HPUB ${subject} ${options.reply} ${hlen} ${len}\r\n`;
+            }
+            else {
+                proto = `HPUB ${subject} ${hlen} ${len}\r\n`;
+            }
+            this.sendCommand(proto, headers, data, transport_1.CRLF);
+        }
+        else {
+            if (options.reply) {
+                proto = `PUB ${subject} ${options.reply} ${len}\r\n`;
+            }
+            else {
+                proto = `PUB ${subject} ${len}\r\n`;
+            }
+            this.sendCommand(proto, data, transport_1.CRLF);
+        }
+    }
+    request(r) {
+        this.initMux();
+        this.muxSubscriptions.add(r);
+        return r;
+    }
+    subscribe(s) {
+        this.subscriptions.add(s);
+        this._subunsub(s);
+        return s;
+    }
+    _sub(s) {
+        if (s.queue) {
+            this.sendCommand(`SUB ${s.subject} ${s.queue} ${s.sid}\r\n`);
+        }
+        else {
+            this.sendCommand(`SUB ${s.subject} ${s.sid}\r\n`);
+        }
+    }
+    _subunsub(s) {
+        this._sub(s);
+        if (s.max) {
+            this.unsubscribe(s, s.max);
+        }
+        return s;
+    }
+    unsubscribe(s, max) {
+        this.unsub(s, max);
+        if (s.max === undefined || s.received >= s.max) {
+            this.subscriptions.cancel(s);
+        }
+    }
+    unsub(s, max) {
+        if (!s || this.isClosed()) {
+            return;
+        }
+        if (max) {
+            this.sendCommand(`UNSUB ${s.sid} ${max}\r\n`);
+        }
+        else {
+            this.sendCommand(`UNSUB ${s.sid}\r\n`);
+        }
+        s.max = max;
+    }
+    resub(s, subject) {
+        if (!s || this.isClosed()) {
+            return;
+        }
+        this.unsub(s);
+        s.subject = subject;
+        this.subscriptions.resub(s);
+        // we don't auto-unsub here because we don't
+        // really know "processed"
+        this._sub(s);
+    }
+    flush(p) {
+        if (!p) {
+            p = (0, util_1.deferred)();
+        }
+        this.pongs.push(p);
+        this.outbound.fill(PING_CMD);
+        this.flushPending();
+        return p;
+    }
+    sendSubscriptions() {
+        const cmds = [];
+        this.subscriptions.all().forEach((s) => {
+            const sub = s;
+            if (sub.queue) {
+                cmds.push(`SUB ${sub.subject} ${sub.queue} ${sub.sid}${transport_1.CR_LF}`);
+            }
+            else {
+                cmds.push(`SUB ${sub.subject} ${sub.sid}${transport_1.CR_LF}`);
+            }
+        });
+        if (cmds.length) {
+            this.transport.send((0, encoders_1.encode)(cmds.join("")));
+        }
+    }
+    async close(err) {
+        if (this._closed) {
+            return;
+        }
+        this.whyClosed = new Error("close trace").stack || "";
+        this.heartbeats.cancel();
+        if (this.connectError) {
+            this.connectError(err);
+            this.connectError = undefined;
+        }
+        this.muxSubscriptions.close();
+        this.subscriptions.close();
+        const proms = [];
+        for (let i = 0; i < this.listeners.length; i++) {
+            const qi = this.listeners[i];
+            if (qi) {
+                qi.stop();
+                proms.push(qi.iterClosed);
+            }
+        }
+        if (proms.length) {
+            await Promise.all(proms);
+        }
+        this._closed = true;
+        await this.transport.close(err);
+        this.raceTimer?.cancel();
+        this.dialDelay?.cancel();
+        this.closed.resolve(err);
+    }
+    isClosed() {
+        return this._closed;
+    }
+    async drain() {
+        const subs = this.subscriptions.all();
+        const promises = [];
+        subs.forEach((sub) => {
+            promises.push(sub.drain());
+        });
+        try {
+            await Promise.allSettled(promises);
+        }
+        catch {
+            // nothing we can do here
+        }
+        finally {
+            this.noMorePublishing = true;
+            await this.flush();
+        }
+        return this.close();
+    }
+    flushPending() {
+        if (!this.infoReceived || !this.connected) {
+            return;
+        }
+        if (this.outbound.size()) {
+            const d = this.outbound.drain();
+            this.transport.send(d);
+        }
+    }
+    initMux() {
+        const mux = this.subscriptions.getMux();
+        if (!mux) {
+            const inbox = this.muxSubscriptions.init(this.options.inboxPrefix);
+            // dot is already part of mux
+            const sub = new SubscriptionImpl(this, `${inbox}*`);
+            sub.callback = this.muxSubscriptions.dispatcher();
+            this.subscriptions.setMux(sub);
+            this.subscribe(sub);
+        }
+    }
+    selectServer() {
+        const server = this.servers.selectServer();
+        if (server === undefined) {
+            return undefined;
+        }
+        // Place in client context.
+        this.server = server;
+        return this.server;
+    }
+    getServer() {
+        return this.server;
+    }
+}
+exports.ProtocolHandler = ProtocolHandler;
+//# sourceMappingURL=protocol.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/queued_iterator.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/queued_iterator.js ***!
+  \****************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.QueuedIteratorImpl = void 0;
+const util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nats-core/lib/util.js");
+const errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+class QueuedIteratorImpl {
+    inflight;
+    processed;
+    // this is updated by the protocol
+    received;
+    noIterator;
+    iterClosed;
+    done;
+    signal;
+    yields;
+    filtered;
+    pendingFiltered;
+    ctx;
+    _data; //data is for use by extenders in any way they like
+    err;
+    time;
+    profile;
+    yielding;
+    didBreak;
+    constructor() {
+        this.inflight = 0;
+        this.filtered = 0;
+        this.pendingFiltered = 0;
+        this.processed = 0;
+        this.received = 0;
+        this.noIterator = false;
+        this.done = false;
+        this.signal = (0, util_1.deferred)();
+        this.yields = [];
+        this.iterClosed = (0, util_1.deferred)();
+        this.time = 0;
+        this.yielding = false;
+        this.didBreak = false;
+        this.profile = false;
+    }
+    [Symbol.asyncIterator]() {
+        return this.iterate();
+    }
+    push(v) {
+        if (this.done) {
+            return;
+        }
+        // if they `break` from a `for await`, any signaling that is pushed via
+        // a function is not handled this can prevent closed promises from
+        // resolving downstream.
+        if (this.didBreak) {
+            if (typeof v === "function") {
+                const cb = v;
+                try {
+                    cb();
+                }
+                catch (_) {
+                    // ignored
+                }
+            }
+            return;
+        }
+        if (typeof v === "function") {
+            this.pendingFiltered++;
+        }
+        this.yields.push(v);
+        this.signal.resolve();
+    }
+    async *iterate() {
+        if (this.noIterator) {
+            throw new errors_1.InvalidOperationError("iterator cannot be used when a callback is registered");
+        }
+        if (this.yielding) {
+            throw new errors_1.InvalidOperationError("iterator is already yielding");
+        }
+        this.yielding = true;
+        try {
+            while (true) {
+                if (this.yields.length === 0) {
+                    await this.signal;
+                }
+                if (this.err) {
+                    throw this.err;
+                }
+                const yields = this.yields;
+                this.inflight = yields.length;
+                this.yields = [];
+                for (let i = 0; i < yields.length; i++) {
+                    if (typeof yields[i] === "function") {
+                        this.pendingFiltered--;
+                        const fn = yields[i];
+                        try {
+                            fn();
+                        }
+                        catch (err) {
+                            // failed on the invocation - fail the iterator
+                            // so they know to fix the callback
+                            throw err;
+                        }
+                        // fn could have also set an error
+                        if (this.err) {
+                            throw this.err;
+                        }
+                        continue;
+                    }
+                    this.processed++;
+                    this.inflight--;
+                    const start = this.profile ? Date.now() : 0;
+                    yield yields[i];
+                    this.time = this.profile ? Date.now() - start : 0;
+                }
+                // yielding could have paused and microtask
+                // could have added messages. Prevent allocations
+                // if possible
+                if (this.done) {
+                    break;
+                }
+                else if (this.yields.length === 0) {
+                    yields.length = 0;
+                    this.yields = yields;
+                    this.signal = (0, util_1.deferred)();
+                }
+            }
+        }
+        finally {
+            // the iterator used break/return
+            this.didBreak = true;
+            this.stop();
+        }
+    }
+    stop(err) {
+        if (this.done) {
+            return;
+        }
+        this.err = err;
+        this.done = true;
+        this.signal.resolve();
+        this.iterClosed.resolve(err);
+    }
+    getProcessed() {
+        return this.noIterator ? this.received : this.processed;
+    }
+    getPending() {
+        return this.yields.length + this.inflight - this.pendingFiltered;
+    }
+    getReceived() {
+        return this.received - this.filtered;
+    }
+}
+exports.QueuedIteratorImpl = QueuedIteratorImpl;
+//# sourceMappingURL=queued_iterator.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/request.js":
+/*!********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/request.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.RequestOne = exports.RequestMany = exports.BaseRequest = void 0;
+const util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nats-core/lib/util.js");
+const nuid_1 = __webpack_require__(/*! ./nuid */ "./node_modules/@nats-io/nats-core/lib/nuid.js");
+const errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+class BaseRequest {
+    token;
+    received;
+    ctx;
+    requestSubject;
+    mux;
+    constructor(mux, requestSubject, asyncTraces = true) {
+        this.mux = mux;
+        this.requestSubject = requestSubject;
+        this.received = 0;
+        this.token = nuid_1.nuid.next();
+        if (asyncTraces) {
+            this.ctx = new errors_1.RequestError();
+        }
+    }
+}
+exports.BaseRequest = BaseRequest;
+/**
+ * Request expects multiple message response
+ * the request ends when the timer expires,
+ * an error arrives or an expected count of messages
+ * arrives, end is signaled by a null message
+ */
+class RequestMany extends BaseRequest {
+    callback;
+    done;
+    timer;
+    max;
+    opts;
+    constructor(mux, requestSubject, opts = { maxWait: 1000 }) {
+        super(mux, requestSubject);
+        this.opts = opts;
+        if (typeof this.opts.callback !== "function") {
+            throw new TypeError("callback must be a function");
+        }
+        this.callback = this.opts.callback;
+        this.max = typeof opts.maxMessages === "number" && opts.maxMessages > 0
+            ? opts.maxMessages
+            : -1;
+        this.done = (0, util_1.deferred)();
+        this.done.then(() => {
+            this.callback(null, null);
+        });
+        // @ts-ignore: node is not a number
+        this.timer = setTimeout(() => {
+            this.cancel();
+        }, opts.maxWait);
+    }
+    cancel(err) {
+        if (err) {
+            this.callback(err, null);
+        }
+        clearTimeout(this.timer);
+        this.mux.cancel(this);
+        this.done.resolve();
+    }
+    resolver(err, msg) {
+        if (err) {
+            if (this.ctx) {
+                err.stack += `\n\n${this.ctx.stack}`;
+            }
+            this.cancel(err);
+        }
+        else {
+            this.callback(null, msg);
+            if (this.opts.strategy === "count") {
+                this.max--;
+                if (this.max === 0) {
+                    this.cancel();
+                }
+            }
+            if (this.opts.strategy === "stall") {
+                clearTimeout(this.timer);
+                // @ts-ignore: node is not a number
+                this.timer = setTimeout(() => {
+                    this.cancel();
+                }, this.opts.stall || 300);
+            }
+            if (this.opts.strategy === "sentinel") {
+                if (msg && msg.data.length === 0) {
+                    this.cancel();
+                }
+            }
+        }
+    }
+}
+exports.RequestMany = RequestMany;
+class RequestOne extends BaseRequest {
+    deferred;
+    timer;
+    constructor(mux, requestSubject, opts = { timeout: 1000 }, asyncTraces = true) {
+        super(mux, requestSubject, asyncTraces);
+        // extend(this, opts);
+        this.deferred = (0, util_1.deferred)();
+        this.timer = (0, util_1.timeout)(opts.timeout, asyncTraces);
+    }
+    resolver(err, msg) {
+        if (this.timer) {
+            this.timer.cancel();
+        }
+        if (err) {
+            // we have proper stack on timeout
+            if (!(err instanceof errors_1.TimeoutError)) {
+                if (this.ctx) {
+                    this.ctx.message = err.message;
+                    this.ctx.cause = err;
+                    err = this.ctx;
+                }
+                else {
+                    err = new errors_1.errors.RequestError(err.message, { cause: err });
+                }
+            }
+            this.deferred.reject(err);
+        }
+        else {
+            this.deferred.resolve(msg);
+        }
+        this.cancel();
+    }
+    cancel(err) {
+        if (this.timer) {
+            this.timer.cancel();
+        }
+        this.mux.cancel(this);
+        this.deferred.reject(err ? err : new errors_1.RequestError("cancelled"));
+    }
+}
+exports.RequestOne = RequestOne;
+//# sourceMappingURL=request.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/semver.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/semver.js ***!
+  \*******************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * Copyright 2022-2023 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Features = exports.Feature = void 0;
+exports.parseSemVer = parseSemVer;
+exports.compare = compare;
+function parseSemVer(s = "") {
+    const m = s.match(/(\d+).(\d+).(\d+)/);
+    if (m) {
+        return {
+            major: parseInt(m[1]),
+            minor: parseInt(m[2]),
+            micro: parseInt(m[3]),
+        };
+    }
+    throw new Error(`'${s}' is not a semver value`);
+}
+function compare(a, b) {
+    if (a.major < b.major)
+        return -1;
+    if (a.major > b.major)
+        return 1;
+    if (a.minor < b.minor)
+        return -1;
+    if (a.minor > b.minor)
+        return 1;
+    if (a.micro < b.micro)
+        return -1;
+    if (a.micro > b.micro)
+        return 1;
+    return 0;
+}
+exports.Feature = {
+    JS_KV: "js_kv",
+    JS_OBJECTSTORE: "js_objectstore",
+    JS_PULL_MAX_BYTES: "js_pull_max_bytes",
+    JS_NEW_CONSUMER_CREATE_API: "js_new_consumer_create",
+    JS_ALLOW_DIRECT: "js_allow_direct",
+    JS_MULTIPLE_CONSUMER_FILTER: "js_multiple_consumer_filter",
+    JS_SIMPLIFICATION: "js_simplification",
+    JS_STREAM_CONSUMER_METADATA: "js_stream_consumer_metadata",
+    JS_CONSUMER_FILTER_SUBJECTS: "js_consumer_filter_subjects",
+    JS_STREAM_FIRST_SEQ: "js_stream_first_seq",
+    JS_STREAM_SUBJECT_TRANSFORM: "js_stream_subject_transform",
+    JS_STREAM_SOURCE_SUBJECT_TRANSFORM: "js_stream_source_subject_transform",
+    JS_STREAM_COMPRESSION: "js_stream_compression",
+    JS_DEFAULT_CONSUMER_LIMITS: "js_default_consumer_limits",
+    JS_BATCH_DIRECT_GET: "js_batch_direct_get",
+    JS_PRIORITY_GROUPS: "js_priority_groups",
+};
+class Features {
+    server;
+    features;
+    disabled;
+    constructor(v) {
+        this.features = new Map();
+        this.disabled = [];
+        this.update(v);
+    }
+    /**
+     * Removes all disabled entries
+     */
+    resetDisabled() {
+        this.disabled.length = 0;
+        this.update(this.server);
+    }
+    /**
+     * Disables a particular feature.
+     * @param f
+     */
+    disable(f) {
+        this.disabled.push(f);
+        this.update(this.server);
+    }
+    isDisabled(f) {
+        return this.disabled.indexOf(f) !== -1;
+    }
+    update(v) {
+        if (typeof v === "string") {
+            v = parseSemVer(v);
+        }
+        this.server = v;
+        this.set(exports.Feature.JS_KV, "2.6.2");
+        this.set(exports.Feature.JS_OBJECTSTORE, "2.6.3");
+        this.set(exports.Feature.JS_PULL_MAX_BYTES, "2.8.3");
+        this.set(exports.Feature.JS_NEW_CONSUMER_CREATE_API, "2.9.0");
+        this.set(exports.Feature.JS_ALLOW_DIRECT, "2.9.0");
+        this.set(exports.Feature.JS_MULTIPLE_CONSUMER_FILTER, "2.10.0");
+        this.set(exports.Feature.JS_SIMPLIFICATION, "2.9.4");
+        this.set(exports.Feature.JS_STREAM_CONSUMER_METADATA, "2.10.0");
+        this.set(exports.Feature.JS_CONSUMER_FILTER_SUBJECTS, "2.10.0");
+        this.set(exports.Feature.JS_STREAM_FIRST_SEQ, "2.10.0");
+        this.set(exports.Feature.JS_STREAM_SUBJECT_TRANSFORM, "2.10.0");
+        this.set(exports.Feature.JS_STREAM_SOURCE_SUBJECT_TRANSFORM, "2.10.0");
+        this.set(exports.Feature.JS_STREAM_COMPRESSION, "2.10.0");
+        this.set(exports.Feature.JS_DEFAULT_CONSUMER_LIMITS, "2.10.0");
+        this.set(exports.Feature.JS_BATCH_DIRECT_GET, "2.11.0");
+        this.set(exports.Feature.JS_PRIORITY_GROUPS, "2.11.0");
+        this.disabled.forEach((f) => {
+            this.features.delete(f);
+        });
+    }
+    /**
+     * Register a feature that requires a particular server version.
+     * @param f
+     * @param requires
+     */
+    set(f, requires) {
+        this.features.set(f, {
+            min: requires,
+            ok: compare(this.server, parseSemVer(requires)) >= 0,
+        });
+    }
+    /**
+     * Returns whether the feature is available and the min server
+     * version that supports it.
+     * @param f
+     */
+    get(f) {
+        return this.features.get(f) || { min: "unknown", ok: false };
+    }
+    /**
+     * Returns true if the feature is supported
+     * @param f
+     */
+    supports(f) {
+        return this.get(f)?.ok || false;
+    }
+    /**
+     * Returns true if the server is at least the specified version
+     * @param v
+     */
+    require(v) {
+        if (typeof v === "string") {
+            v = parseSemVer(v);
+        }
+        return compare(this.server, v) >= 0;
+    }
+}
+exports.Features = Features;
+//# sourceMappingURL=semver.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/servers.js":
+/*!********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/servers.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Servers = exports.ServerImpl = void 0;
+exports.isIPV4OrHostname = isIPV4OrHostname;
+exports.hostPort = hostPort;
+/*
+ * Copyright 2018-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const transport_1 = __webpack_require__(/*! ./transport */ "./node_modules/@nats-io/nats-core/lib/transport.js");
+const util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nats-core/lib/util.js");
+const ipparser_1 = __webpack_require__(/*! ./ipparser */ "./node_modules/@nats-io/nats-core/lib/ipparser.js");
+const core_1 = __webpack_require__(/*! ./core */ "./node_modules/@nats-io/nats-core/lib/core.js");
+function isIPV4OrHostname(hp) {
+    // in the wild seeing IPv4s as IPv6s
+    // ::ffff:35.234.43.228 which incorrectly get mapped to IPv4 unless
+    // we add this test first
+    if (hp.indexOf("[") !== -1 || hp.indexOf("::") !== -1) {
+        return false;
+    }
+    if (hp.indexOf(".") !== -1) {
+        return true;
+    }
+    // if we have a plain hostname or host:port
+    if (hp.split(":").length <= 2) {
+        return true;
+    }
+    return false;
+}
+function isIPV6(hp) {
+    return !isIPV4OrHostname(hp);
+}
+function filterIpv6MappedToIpv4(hp) {
+    const prefix = "::FFFF:";
+    const idx = hp.toUpperCase().indexOf(prefix);
+    if (idx !== -1 && hp.indexOf(".") !== -1) {
+        // we have something like: ::FFFF:127.0.0.1 or [::FFFF:127.0.0.1]:4222
+        let ip = hp.substring(idx + prefix.length);
+        ip = ip.replace("[", "");
+        return ip.replace("]", "");
+    }
+    return hp;
+}
+function hostPort(u) {
+    u = u.trim();
+    // remove any protocol that may have been provided
+    if (u.match(/^(.*:\/\/)(.*)/m)) {
+        u = u.replace(/^(.*:\/\/)(.*)/gm, "$2");
+    }
+    // in web environments, URL may not be a living standard
+    // that means that protocols other than HTTP/S are not
+    // parsable correctly.
+    // the third complication is that we may have been given
+    // an IPv6 or worse IPv6 mapping an Ipv4
+    u = filterIpv6MappedToIpv4(u);
+    // we only wrap cases where they gave us a plain ipv6
+    // and we are not already bracketed
+    if (isIPV6(u) && u.indexOf("[") === -1) {
+        u = `[${u}]`;
+    }
+    // if we have ipv6, we expect port after ']:' otherwise after ':'
+    const op = isIPV6(u) ? u.match(/(]:)(\d+)/) : u.match(/(:)(\d+)/);
+    const port = op && op.length === 3 && op[1] && op[2]
+        ? parseInt(op[2])
+        : core_1.DEFAULT_PORT;
+    // the next complication is that new URL() may
+    // eat ports which match the protocol - so for example
+    // port 80 may be eliminated - so we flip the protocol
+    // so that it always yields a value
+    const protocol = port === 80 ? "https" : "http";
+    const url = new URL(`${protocol}://${u}`);
+    url.port = `${port}`;
+    let hostname = url.hostname;
+    // if we are bracketed, we need to rip it out
+    if (hostname.charAt(0) === "[") {
+        hostname = hostname.substring(1, hostname.length - 1);
+    }
+    const listen = url.host;
+    return { listen, hostname, port };
+}
+/**
+ * @hidden
+ */
+class ServerImpl {
+    src;
+    listen;
+    hostname;
+    port;
+    didConnect;
+    reconnects;
+    lastConnect;
+    gossiped;
+    tlsName;
+    resolves;
+    constructor(u, gossiped = false) {
+        this.src = u;
+        this.tlsName = "";
+        const v = hostPort(u);
+        this.listen = v.listen;
+        this.hostname = v.hostname;
+        this.port = v.port;
+        this.didConnect = false;
+        this.reconnects = 0;
+        this.lastConnect = 0;
+        this.gossiped = gossiped;
+    }
+    toString() {
+        return this.listen;
+    }
+    async resolve(opts) {
+        if (!opts.fn || opts.resolve === false) {
+            // we cannot resolve - transport doesn't support it
+            // or user opted out
+            // don't add - to resolves or we get a circ reference
+            return [this];
+        }
+        const buf = [];
+        if ((0, ipparser_1.isIP)(this.hostname)) {
+            // don't add - to resolves or we get a circ reference
+            return [this];
+        }
+        else {
+            // resolve the hostname to ips
+            const ips = await opts.fn(this.hostname);
+            if (opts.debug) {
+                console.log(`resolve ${this.hostname} = ${ips.join(",")}`);
+            }
+            for (const ip of ips) {
+                // letting URL handle the details of representing IPV6 ip with a port, etc
+                // careful to make sure the protocol doesn't line with standard ports or they
+                // get swallowed
+                const proto = this.port === 80 ? "https" : "http";
+                // ipv6 won't be bracketed here, because it came from resolve
+                const url = new URL(`${proto}://${isIPV6(ip) ? "[" + ip + "]" : ip}`);
+                url.port = `${this.port}`;
+                const ss = new ServerImpl(url.host, false);
+                ss.tlsName = this.hostname;
+                buf.push(ss);
+            }
+        }
+        if (opts.randomize) {
+            (0, util_1.shuffle)(buf);
+        }
+        this.resolves = buf;
+        return buf;
+    }
+}
+exports.ServerImpl = ServerImpl;
+/**
+ * @hidden
+ */
+class Servers {
+    firstSelect;
+    servers;
+    currentServer;
+    tlsName;
+    randomize;
+    constructor(listens = [], opts = {}) {
+        this.firstSelect = true;
+        this.servers = [];
+        this.tlsName = "";
+        this.randomize = opts.randomize || false;
+        const urlParseFn = (0, transport_1.getUrlParseFn)();
+        if (listens) {
+            listens.forEach((hp) => {
+                hp = urlParseFn ? urlParseFn(hp) : hp;
+                this.servers.push(new ServerImpl(hp));
+            });
+            if (this.randomize) {
+                this.servers = (0, util_1.shuffle)(this.servers);
+            }
+        }
+        if (this.servers.length === 0) {
+            this.addServer(`${core_1.DEFAULT_HOST}:${(0, transport_1.defaultPort)()}`, false);
+        }
+        this.currentServer = this.servers[0];
+    }
+    clear() {
+        this.servers.length = 0;
+    }
+    updateTLSName() {
+        const cs = this.getCurrentServer();
+        if (!(0, ipparser_1.isIP)(cs.hostname)) {
+            this.tlsName = cs.hostname;
+            this.servers.forEach((s) => {
+                if (s.gossiped) {
+                    s.tlsName = this.tlsName;
+                }
+            });
+        }
+    }
+    getCurrentServer() {
+        return this.currentServer;
+    }
+    addServer(u, implicit = false) {
+        const urlParseFn = (0, transport_1.getUrlParseFn)();
+        u = urlParseFn ? urlParseFn(u) : u;
+        const s = new ServerImpl(u, implicit);
+        if ((0, ipparser_1.isIP)(s.hostname)) {
+            s.tlsName = this.tlsName;
+        }
+        this.servers.push(s);
+    }
+    selectServer() {
+        // allow using select without breaking the order of the servers
+        if (this.firstSelect) {
+            this.firstSelect = false;
+            return this.currentServer;
+        }
+        const t = this.servers.shift();
+        if (t) {
+            this.servers.push(t);
+            this.currentServer = t;
+        }
+        return t;
+    }
+    removeCurrentServer() {
+        this.removeServer(this.currentServer);
+    }
+    removeServer(server) {
+        if (server) {
+            const index = this.servers.indexOf(server);
+            this.servers.splice(index, 1);
+        }
+    }
+    length() {
+        return this.servers.length;
+    }
+    next() {
+        return this.servers.length ? this.servers[0] : undefined;
+    }
+    getServers() {
+        return this.servers;
+    }
+    update(info, encrypted) {
+        const added = [];
+        let deleted = [];
+        const urlParseFn = (0, transport_1.getUrlParseFn)();
+        const discovered = new Map();
+        if (info.connect_urls && info.connect_urls.length > 0) {
+            info.connect_urls.forEach((hp) => {
+                hp = urlParseFn ? urlParseFn(hp, encrypted) : hp;
+                const s = new ServerImpl(hp, true);
+                discovered.set(hp, s);
+            });
+        }
+        // remove gossiped servers that are no longer reported
+        const toDelete = [];
+        this.servers.forEach((s, index) => {
+            const u = s.listen;
+            if (s.gossiped && this.currentServer.listen !== u &&
+                discovered.get(u) === undefined) {
+                // server was removed
+                toDelete.push(index);
+            }
+            // remove this entry from reported
+            discovered.delete(u);
+        });
+        // perform the deletion
+        toDelete.reverse();
+        toDelete.forEach((index) => {
+            const removed = this.servers.splice(index, 1);
+            deleted = deleted.concat(removed[0].listen);
+        });
+        // remaining servers are new
+        discovered.forEach((v, k) => {
+            this.servers.push(v);
+            added.push(k);
+        });
+        return { added, deleted };
+    }
+}
+exports.Servers = Servers;
+//# sourceMappingURL=servers.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/transport.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/transport.js ***!
+  \**********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LF = exports.CR = exports.CRLF = exports.CR_LF_LEN = exports.CR_LF = void 0;
+exports.setTransportFactory = setTransportFactory;
+exports.defaultPort = defaultPort;
+exports.getUrlParseFn = getUrlParseFn;
+exports.newTransport = newTransport;
+exports.getResolveFn = getResolveFn;
+exports.protoLen = protoLen;
+exports.extractProtocolMessage = extractProtocolMessage;
+/*
+ * Copyright 2020-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+const core_1 = __webpack_require__(/*! ./core */ "./node_modules/@nats-io/nats-core/lib/core.js");
+const databuffer_1 = __webpack_require__(/*! ./databuffer */ "./node_modules/@nats-io/nats-core/lib/databuffer.js");
+let transportConfig;
+function setTransportFactory(config) {
+    transportConfig = config;
+}
+function defaultPort() {
+    return transportConfig !== undefined &&
+        transportConfig.defaultPort !== undefined
+        ? transportConfig.defaultPort
+        : core_1.DEFAULT_PORT;
+}
+function getUrlParseFn() {
+    return transportConfig !== undefined && transportConfig.urlParseFn
+        ? transportConfig.urlParseFn
+        : undefined;
+}
+function newTransport() {
+    if (!transportConfig || typeof transportConfig.factory !== "function") {
+        throw new Error("transport fn is not set");
+    }
+    return transportConfig.factory();
+}
+function getResolveFn() {
+    return transportConfig !== undefined && transportConfig.dnsResolveFn
+        ? transportConfig.dnsResolveFn
+        : undefined;
+}
+exports.CR_LF = "\r\n";
+exports.CR_LF_LEN = exports.CR_LF.length;
+exports.CRLF = databuffer_1.DataBuffer.fromAscii(exports.CR_LF);
+exports.CR = new Uint8Array(exports.CRLF)[0]; // 13
+exports.LF = new Uint8Array(exports.CRLF)[1]; // 10
+function protoLen(ba) {
+    for (let i = 0; i < ba.length; i++) {
+        const n = i + 1;
+        if (ba.byteLength > n && ba[i] === exports.CR && ba[n] === exports.LF) {
+            return n + 1;
+        }
+    }
+    return 0;
+}
+function extractProtocolMessage(a) {
+    // protocol messages are ascii, so Uint8Array
+    const len = protoLen(a);
+    if (len > 0) {
+        const ba = new Uint8Array(a);
+        const out = ba.slice(0, len);
+        return encoders_1.TD.decode(out);
+    }
+    return "";
+}
+//# sourceMappingURL=transport.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/types.js":
+/*!******************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/types.js ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Empty = void 0;
+var encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+Object.defineProperty(exports, "Empty", ({ enumerable: true, get: function () { return encoders_1.Empty; } }));
+//# sourceMappingURL=types.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/util.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/util.js ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SimpleMutex = exports.Perf = void 0;
+exports.extend = extend;
+exports.render = render;
+exports.timeout = timeout;
+exports.delay = delay;
+exports.deadline = deadline;
+exports.deferred = deferred;
+exports.debugDeferred = debugDeferred;
+exports.shuffle = shuffle;
+exports.collect = collect;
+exports.jitter = jitter;
+exports.backoff = backoff;
+exports.nanos = nanos;
+exports.millis = millis;
+/*
+ * Copyright 2018-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+// deno-lint-ignore-file no-explicit-any
+const encoders_1 = __webpack_require__(/*! ./encoders */ "./node_modules/@nats-io/nats-core/lib/encoders.js");
+const errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+function extend(a, ...b) {
+    for (let i = 0; i < b.length; i++) {
+        const o = b[i];
+        Object.keys(o).forEach(function (k) {
+            a[k] = o[k];
+        });
+    }
+    return a;
+}
+function render(frame) {
+    const cr = "␍";
+    const lf = "␊";
+    return encoders_1.TD.decode(frame)
+        .replace(/\n/g, lf)
+        .replace(/\r/g, cr);
+}
+function timeout(ms, asyncTraces = true) {
+    // by generating the stack here to help identify what timed out
+    const err = asyncTraces ? new errors_1.TimeoutError() : null;
+    let methods;
+    let timer;
+    const p = new Promise((_resolve, reject) => {
+        const cancel = () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+        methods = { cancel };
+        // @ts-ignore: node is not a number
+        timer = setTimeout(() => {
+            if (err === null) {
+                reject(new errors_1.TimeoutError());
+            }
+            else {
+                reject(err);
+            }
+        }, ms);
+    });
+    // noinspection JSUnusedAssignment
+    return Object.assign(p, methods);
+}
+function delay(ms = 0) {
+    let methods;
+    const p = new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            resolve();
+        }, ms);
+        const cancel = () => {
+            if (timer) {
+                clearTimeout(timer);
+                resolve();
+            }
+        };
+        methods = { cancel };
+    });
+    return Object.assign(p, methods);
+}
+async function deadline(p, millis = 1000) {
+    const d = deferred();
+    const timer = setTimeout(() => {
+        d.reject(new errors_1.TimeoutError());
+    }, millis);
+    try {
+        return await Promise.race([p, d]);
+    }
+    finally {
+        clearTimeout(timer);
+    }
+}
+/**
+ * Returns a Promise that has a resolve/reject methods that can
+ * be used to resolve and defer the Deferred.
+ */
+function deferred() {
+    let methods = {};
+    const p = new Promise((resolve, reject) => {
+        methods = { resolve, reject };
+    });
+    return Object.assign(p, methods);
+}
+function debugDeferred() {
+    let methods = {};
+    const p = new Promise((resolve, reject) => {
+        methods = {
+            resolve: (v) => {
+                console.trace("resolve", v);
+                resolve(v);
+            },
+            reject: (err) => {
+                console.trace("reject");
+                reject(err);
+            },
+        };
+    });
+    return Object.assign(p, methods);
+}
+function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+async function collect(iter) {
+    const buf = [];
+    for await (const v of iter) {
+        buf.push(v);
+    }
+    return buf;
+}
+class Perf {
+    timers;
+    measures;
+    constructor() {
+        this.timers = new Map();
+        this.measures = new Map();
+    }
+    mark(key) {
+        this.timers.set(key, performance.now());
+    }
+    measure(key, startKey, endKey) {
+        const s = this.timers.get(startKey);
+        if (s === undefined) {
+            throw new Error(`${startKey} is not defined`);
+        }
+        const e = this.timers.get(endKey);
+        if (e === undefined) {
+            throw new Error(`${endKey} is not defined`);
+        }
+        this.measures.set(key, e - s);
+    }
+    getEntries() {
+        const values = [];
+        this.measures.forEach((v, k) => {
+            values.push({ name: k, duration: v });
+        });
+        return values;
+    }
+}
+exports.Perf = Perf;
+class SimpleMutex {
+    max;
+    current;
+    waiting;
+    /**
+     * @param max number of concurrent operations
+     */
+    constructor(max = 1) {
+        this.max = max;
+        this.current = 0;
+        this.waiting = [];
+    }
+    /**
+     * Returns a promise that resolves when the mutex is acquired
+     */
+    lock() {
+        // increment the count
+        this.current++;
+        // if we have runners, resolve it
+        if (this.current <= this.max) {
+            return Promise.resolve();
+        }
+        // otherwise defer it
+        const d = deferred();
+        this.waiting.push(d);
+        return d;
+    }
+    /**
+     * Release an acquired mutex - must be called
+     */
+    unlock() {
+        // decrement the count
+        this.current--;
+        // if we have deferred, resolve one
+        const d = this.waiting.pop();
+        d?.resolve();
+    }
+}
+exports.SimpleMutex = SimpleMutex;
+/**
+ * Returns a new number between  .5*n and 1.5*n.
+ * If the n is 0, returns 0.
+ * @param n
+ */
+function jitter(n) {
+    if (n === 0) {
+        return 0;
+    }
+    return Math.floor(n / 2 + Math.random() * n);
+}
+/**
+ * Returns a Backoff with the specified interval policy set.
+ * @param policy
+ */
+function backoff(policy = [0, 250, 250, 500, 500, 3000, 5000]) {
+    if (!Array.isArray(policy)) {
+        policy = [0, 250, 250, 500, 500, 3000, 5000];
+    }
+    const max = policy.length - 1;
+    return {
+        backoff(attempt) {
+            return jitter(attempt > max ? policy[max] : policy[attempt]);
+        },
+    };
+}
+/**
+ * Converts the specified millis into Nanos
+ * @param millis
+ */
+function nanos(millis) {
+    return millis * 1000000;
+}
+/**
+ * Convert the specified Nanos into millis
+ * @param ns
+ */
+function millis(ns) {
+    return Math.floor(ns / 1000000);
+}
+//# sourceMappingURL=util.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/version.js":
+/*!********************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/version.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.version = void 0;
+// This file is generated - do not edit
+exports.version = "3.0.0";
+//# sourceMappingURL=version.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nats-core/lib/ws_transport.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/@nats-io/nats-core/lib/ws_transport.js ***!
+  \*************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2020-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.WsTransport = void 0;
+exports.wsUrlParseFn = wsUrlParseFn;
+exports.wsconnect = wsconnect;
+const util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nats-core/lib/util.js");
+const transport_1 = __webpack_require__(/*! ./transport */ "./node_modules/@nats-io/nats-core/lib/transport.js");
+const options_1 = __webpack_require__(/*! ./options */ "./node_modules/@nats-io/nats-core/lib/options.js");
+const databuffer_1 = __webpack_require__(/*! ./databuffer */ "./node_modules/@nats-io/nats-core/lib/databuffer.js");
+const protocol_1 = __webpack_require__(/*! ./protocol */ "./node_modules/@nats-io/nats-core/lib/protocol.js");
+const nats_1 = __webpack_require__(/*! ./nats */ "./node_modules/@nats-io/nats-core/lib/nats.js");
+const version_1 = __webpack_require__(/*! ./version */ "./node_modules/@nats-io/nats-core/lib/version.js");
+const errors_1 = __webpack_require__(/*! ./errors */ "./node_modules/@nats-io/nats-core/lib/errors.js");
+const VERSION = version_1.version;
+const LANG = "nats.ws";
+class WsTransport {
+    version;
+    lang;
+    closeError;
+    connected;
+    done;
+    // @ts-ignore: expecting global WebSocket
+    socket;
+    options;
+    socketClosed;
+    encrypted;
+    peeked;
+    yields;
+    signal;
+    closedNotification;
+    constructor() {
+        this.version = VERSION;
+        this.lang = LANG;
+        this.connected = false;
+        this.done = false;
+        this.socketClosed = false;
+        this.encrypted = false;
+        this.peeked = false;
+        this.yields = [];
+        this.signal = (0, util_1.deferred)();
+        this.closedNotification = (0, util_1.deferred)();
+    }
+    async connect(server, options) {
+        const connected = false;
+        const ok = (0, util_1.deferred)();
+        this.options = options;
+        const u = server.src;
+        if (options.wsFactory) {
+            const { socket, encrypted } = await options.wsFactory(server.src, options);
+            this.socket = socket;
+            this.encrypted = encrypted;
+        }
+        else {
+            this.encrypted = u.indexOf("wss://") === 0;
+            this.socket = new WebSocket(u);
+        }
+        this.socket.binaryType = "arraybuffer";
+        this.socket.onopen = () => {
+            if (this.done) {
+                this._closed(new Error("aborted"));
+            }
+            // we don't do anything here...
+        };
+        this.socket.onmessage = (me) => {
+            if (this.done) {
+                return;
+            }
+            this.yields.push(new Uint8Array(me.data));
+            if (this.peeked) {
+                this.signal.resolve();
+                return;
+            }
+            const t = databuffer_1.DataBuffer.concat(...this.yields);
+            const pm = (0, transport_1.extractProtocolMessage)(t);
+            if (pm !== "") {
+                const m = protocol_1.INFO.exec(pm);
+                if (!m) {
+                    if (options.debug) {
+                        console.error("!!!", (0, util_1.render)(t));
+                    }
+                    ok.reject(new Error("unexpected response from server"));
+                    return;
+                }
+                try {
+                    const info = JSON.parse(m[1]);
+                    (0, options_1.checkOptions)(info, this.options);
+                    this.peeked = true;
+                    this.connected = true;
+                    this.signal.resolve();
+                    ok.resolve();
+                }
+                catch (err) {
+                    ok.reject(err);
+                    return;
+                }
+            }
+        };
+        // @ts-ignore: CloseEvent is provided in browsers
+        this.socket.onclose = (evt) => {
+            let reason;
+            if (!evt.wasClean && evt.reason !== "") {
+                reason = new Error(evt.reason);
+            }
+            this._closed(reason);
+            this._cleanup();
+        };
+        // @ts-ignore: signature can be any
+        this.socket.onerror = (e) => {
+            if (this.done) {
+                return;
+            }
+            const evt = e;
+            const err = new errors_1.errors.ConnectionError(evt.message);
+            if (!connected) {
+                ok.reject(err);
+            }
+            else {
+                this._closed(err);
+            }
+            this._cleanup();
+        };
+        return ok;
+    }
+    _cleanup() {
+        if (this.socketClosed === false) {
+            // node seems to not emit closed if there's an error
+            // all other runtimes do.
+            this.socketClosed = true;
+            this.socket.onopen = null;
+            this.socket.onmessage = null;
+            this.socket.onerror = null;
+            this.socket.onclose = null;
+            this.closedNotification.resolve(this.closeError);
+        }
+    }
+    disconnect() {
+        this._closed(undefined, true);
+    }
+    async _closed(err, _internal = true) {
+        if (this.done) {
+            try {
+                this.socket.close();
+            }
+            catch (_) {
+                // nothing
+            }
+            return;
+        }
+        this.closeError = err;
+        if (!err) {
+            while (!this.socketClosed && this.socket.bufferedAmount > 0) {
+                await (0, util_1.delay)(100);
+            }
+        }
+        this.done = true;
+        try {
+            this.socket.close();
+        }
+        catch (_) {
+            // ignore this
+        }
+        return this.closedNotification;
+    }
+    get isClosed() {
+        return this.done;
+    }
+    [Symbol.asyncIterator]() {
+        return this.iterate();
+    }
+    async *iterate() {
+        while (true) {
+            if (this.done) {
+                return;
+            }
+            if (this.yields.length === 0) {
+                await this.signal;
+            }
+            const yields = this.yields;
+            this.yields = [];
+            for (let i = 0; i < yields.length; i++) {
+                if (this.options.debug) {
+                    console.info(`> ${(0, util_1.render)(yields[i])}`);
+                }
+                yield yields[i];
+            }
+            // yielding could have paused and microtask
+            // could have added messages. Prevent allocations
+            // if possible
+            if (this.done) {
+                break;
+            }
+            else if (this.yields.length === 0) {
+                yields.length = 0;
+                this.yields = yields;
+                this.signal = (0, util_1.deferred)();
+            }
+        }
+    }
+    isEncrypted() {
+        return this.connected && this.encrypted;
+    }
+    send(frame) {
+        if (this.done) {
+            return;
+        }
+        try {
+            this.socket.send(frame.buffer);
+            if (this.options.debug) {
+                console.info(`< ${(0, util_1.render)(frame)}`);
+            }
+            return;
+        }
+        catch (err) {
+            // we ignore write errors because client will
+            // fail on a read or when the heartbeat timer
+            // detects a stale connection
+            if (this.options.debug) {
+                console.error(`!!! ${(0, util_1.render)(frame)}: ${err}`);
+            }
+        }
+    }
+    close(err) {
+        return this._closed(err, false);
+    }
+    closed() {
+        return this.closedNotification;
+    }
+    // this is to allow a force discard on a connection
+    // if the connection fails during the handshake protocol.
+    // Firefox for example, will keep connections going,
+    // so eventually if it succeeds, the client will have
+    // an additional transport running. With this
+    discard() {
+        this.socket?.close();
+    }
+}
+exports.WsTransport = WsTransport;
+function wsUrlParseFn(u, encrypted) {
+    const ut = /^(.*:\/\/)(.*)/;
+    if (!ut.test(u)) {
+        // if we have no hint to encrypted and no protocol, assume encrypted
+        // else we fix the url from the update to match
+        if (typeof encrypted === "boolean") {
+            u = `${encrypted === true ? "https" : "http"}://${u}`;
+        }
+        else {
+            u = `https://${u}`;
+        }
+    }
+    let url = new URL(u);
+    const srcProto = url.protocol.toLowerCase();
+    if (srcProto === "ws:") {
+        encrypted = false;
+    }
+    if (srcProto === "wss:") {
+        encrypted = true;
+    }
+    if (srcProto !== "https:" && srcProto !== "http") {
+        u = u.replace(/^(.*:\/\/)(.*)/gm, "$2");
+        url = new URL(`http://${u}`);
+    }
+    let protocol;
+    let port;
+    const host = url.hostname;
+    const path = url.pathname;
+    const search = url.search || "";
+    switch (srcProto) {
+        case "http:":
+        case "ws:":
+        case "nats:":
+            port = url.port || "80";
+            protocol = "ws:";
+            break;
+        case "https:":
+        case "wss:":
+        case "tls:":
+            port = url.port || "443";
+            protocol = "wss:";
+            break;
+        default:
+            port = url.port || encrypted === true ? "443" : "80";
+            protocol = encrypted === true ? "wss:" : "ws:";
+            break;
+    }
+    return `${protocol}//${host}:${port}${path}${search}`;
+}
+function wsconnect(opts = {}) {
+    (0, transport_1.setTransportFactory)({
+        defaultPort: 443,
+        urlParseFn: wsUrlParseFn,
+        factory: () => {
+            if (opts.tls) {
+                throw errors_1.InvalidArgumentError.format("tls", "is not configurable on w3c websocket connections");
+            }
+            return new WsTransport();
+        },
+    });
+    return nats_1.NatsConnectionImpl.connect(opts);
+}
+//# sourceMappingURL=ws_transport.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/base32.js":
+/*!***************************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/base32.js ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * Copyright 2018-2021 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.base32 = void 0;
+// Fork of https://github.com/LinusU/base32-encode
+// and https://github.com/LinusU/base32-decode to support returning
+// buffers without padding.
+/**
+ * @ignore
+ */
+const b32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+/**
+ * @ignore
+ */
+class base32 {
+    static encode(src) {
+        let bits = 0;
+        let value = 0;
+        const a = new Uint8Array(src);
+        const buf = new Uint8Array(src.byteLength * 2);
+        let j = 0;
+        for (let i = 0; i < a.byteLength; i++) {
+            value = (value << 8) | a[i];
+            bits += 8;
+            while (bits >= 5) {
+                const index = (value >>> (bits - 5)) & 31;
+                buf[j++] = b32Alphabet.charAt(index).charCodeAt(0);
+                bits -= 5;
+            }
+        }
+        if (bits > 0) {
+            const index = (value << (5 - bits)) & 31;
+            buf[j++] = b32Alphabet.charAt(index).charCodeAt(0);
+        }
+        return buf.slice(0, j);
+    }
+    static decode(src) {
+        let bits = 0;
+        let byte = 0;
+        let j = 0;
+        const a = new Uint8Array(src);
+        const out = new Uint8Array(a.byteLength * 5 / 8 | 0);
+        for (let i = 0; i < a.byteLength; i++) {
+            const v = String.fromCharCode(a[i]);
+            const vv = b32Alphabet.indexOf(v);
+            if (vv === -1) {
+                throw new Error("Illegal Base32 character: " + a[i]);
+            }
+            byte = (byte << 5) | vv;
+            bits += 5;
+            if (bits >= 8) {
+                out[j++] = (byte >>> (bits - 8)) & 255;
+                bits -= 8;
+            }
+        }
+        return out.slice(0, j);
+    }
+}
+exports.base32 = base32;
+//# sourceMappingURL=base32.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/codec.js":
+/*!**************************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/codec.js ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+/*
+ * Copyright 2018-2020 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Codec = void 0;
+const crc16_1 = __webpack_require__(/*! ./crc16 */ "./node_modules/@nats-io/nkeys/lib/crc16.js");
+const nkeys_1 = __webpack_require__(/*! ./nkeys */ "./node_modules/@nats-io/nkeys/lib/nkeys.js");
+const base32_1 = __webpack_require__(/*! ./base32 */ "./node_modules/@nats-io/nkeys/lib/base32.js");
+/**
+ * @ignore
+ */
+class Codec {
+    static encode(prefix, src) {
+        if (!src || !(src instanceof Uint8Array)) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.SerializationError);
+        }
+        if (!nkeys_1.Prefixes.isValidPrefix(prefix)) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidPrefixByte);
+        }
+        return Codec._encode(false, prefix, src);
+    }
+    static encodeSeed(role, src) {
+        if (!src) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ApiError);
+        }
+        if (!nkeys_1.Prefixes.isValidPublicPrefix(role)) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidPrefixByte);
+        }
+        if (src.byteLength !== 32) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidSeedLen);
+        }
+        return Codec._encode(true, role, src);
+    }
+    static decode(expected, src) {
+        if (!nkeys_1.Prefixes.isValidPrefix(expected)) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidPrefixByte);
+        }
+        const raw = Codec._decode(src);
+        if (raw[0] !== expected) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidPrefixByte);
+        }
+        return raw.slice(1);
+    }
+    static decodeSeed(src) {
+        const raw = Codec._decode(src);
+        const prefix = Codec._decodePrefix(raw);
+        if (prefix[0] != nkeys_1.Prefix.Seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidSeed);
+        }
+        if (!nkeys_1.Prefixes.isValidPublicPrefix(prefix[1])) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidPrefixByte);
+        }
+        return ({ buf: raw.slice(2), prefix: prefix[1] });
+    }
+    // unsafe encode no prefix/role validation
+    static _encode(seed, role, payload) {
+        // offsets for this token
+        const payloadOffset = seed ? 2 : 1;
+        const payloadLen = payload.byteLength;
+        const checkLen = 2;
+        const cap = payloadOffset + payloadLen + checkLen;
+        const checkOffset = payloadOffset + payloadLen;
+        const raw = new Uint8Array(cap);
+        // make the prefixes human readable when encoded
+        if (seed) {
+            const encodedPrefix = Codec._encodePrefix(nkeys_1.Prefix.Seed, role);
+            raw.set(encodedPrefix);
+        }
+        else {
+            raw[0] = role;
+        }
+        raw.set(payload, payloadOffset);
+        //calculate the checksum write it LE
+        const checksum = crc16_1.crc16.checksum(raw.slice(0, checkOffset));
+        const dv = new DataView(raw.buffer);
+        dv.setUint16(checkOffset, checksum, true);
+        return base32_1.base32.encode(raw);
+    }
+    // unsafe decode - no prefix/role validation
+    static _decode(src) {
+        if (src.byteLength < 4) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidEncoding);
+        }
+        let raw;
+        try {
+            raw = base32_1.base32.decode(src);
+        }
+        catch (ex) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidEncoding, { cause: ex });
+        }
+        const checkOffset = raw.byteLength - 2;
+        const dv = new DataView(raw.buffer);
+        const checksum = dv.getUint16(checkOffset, true);
+        const payload = raw.slice(0, checkOffset);
+        if (!crc16_1.crc16.validate(payload, checksum)) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidChecksum);
+        }
+        return payload;
+    }
+    static _encodePrefix(kind, role) {
+        // In order to make this human printable for both bytes, we need to do a little
+        // bit manipulation to setup for base32 encoding which takes 5 bits at a time.
+        const b1 = kind | (role >> 5);
+        const b2 = (role & 31) << 3; // 31 = 00011111
+        return new Uint8Array([b1, b2]);
+    }
+    static _decodePrefix(raw) {
+        // Need to do the reverse from the printable representation to
+        // get back to internal representation.
+        const b1 = raw[0] & 248; // 248 = 11111000
+        const b2 = (raw[0] & 7) << 5 | ((raw[1] & 248) >> 3); // 7 = 00000111
+        return new Uint8Array([b1, b2]);
+    }
+}
+exports.Codec = Codec;
+//# sourceMappingURL=codec.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/crc16.js":
+/*!**************************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/crc16.js ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * Copyright 2018-2020 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.crc16 = void 0;
+// An implementation of crc16 according to CCITT standards for XMODEM.
+/**
+ * @ignore
+ */
+const crc16tab = new Uint16Array([
+    0x0000,
+    0x1021,
+    0x2042,
+    0x3063,
+    0x4084,
+    0x50a5,
+    0x60c6,
+    0x70e7,
+    0x8108,
+    0x9129,
+    0xa14a,
+    0xb16b,
+    0xc18c,
+    0xd1ad,
+    0xe1ce,
+    0xf1ef,
+    0x1231,
+    0x0210,
+    0x3273,
+    0x2252,
+    0x52b5,
+    0x4294,
+    0x72f7,
+    0x62d6,
+    0x9339,
+    0x8318,
+    0xb37b,
+    0xa35a,
+    0xd3bd,
+    0xc39c,
+    0xf3ff,
+    0xe3de,
+    0x2462,
+    0x3443,
+    0x0420,
+    0x1401,
+    0x64e6,
+    0x74c7,
+    0x44a4,
+    0x5485,
+    0xa56a,
+    0xb54b,
+    0x8528,
+    0x9509,
+    0xe5ee,
+    0xf5cf,
+    0xc5ac,
+    0xd58d,
+    0x3653,
+    0x2672,
+    0x1611,
+    0x0630,
+    0x76d7,
+    0x66f6,
+    0x5695,
+    0x46b4,
+    0xb75b,
+    0xa77a,
+    0x9719,
+    0x8738,
+    0xf7df,
+    0xe7fe,
+    0xd79d,
+    0xc7bc,
+    0x48c4,
+    0x58e5,
+    0x6886,
+    0x78a7,
+    0x0840,
+    0x1861,
+    0x2802,
+    0x3823,
+    0xc9cc,
+    0xd9ed,
+    0xe98e,
+    0xf9af,
+    0x8948,
+    0x9969,
+    0xa90a,
+    0xb92b,
+    0x5af5,
+    0x4ad4,
+    0x7ab7,
+    0x6a96,
+    0x1a71,
+    0x0a50,
+    0x3a33,
+    0x2a12,
+    0xdbfd,
+    0xcbdc,
+    0xfbbf,
+    0xeb9e,
+    0x9b79,
+    0x8b58,
+    0xbb3b,
+    0xab1a,
+    0x6ca6,
+    0x7c87,
+    0x4ce4,
+    0x5cc5,
+    0x2c22,
+    0x3c03,
+    0x0c60,
+    0x1c41,
+    0xedae,
+    0xfd8f,
+    0xcdec,
+    0xddcd,
+    0xad2a,
+    0xbd0b,
+    0x8d68,
+    0x9d49,
+    0x7e97,
+    0x6eb6,
+    0x5ed5,
+    0x4ef4,
+    0x3e13,
+    0x2e32,
+    0x1e51,
+    0x0e70,
+    0xff9f,
+    0xefbe,
+    0xdfdd,
+    0xcffc,
+    0xbf1b,
+    0xaf3a,
+    0x9f59,
+    0x8f78,
+    0x9188,
+    0x81a9,
+    0xb1ca,
+    0xa1eb,
+    0xd10c,
+    0xc12d,
+    0xf14e,
+    0xe16f,
+    0x1080,
+    0x00a1,
+    0x30c2,
+    0x20e3,
+    0x5004,
+    0x4025,
+    0x7046,
+    0x6067,
+    0x83b9,
+    0x9398,
+    0xa3fb,
+    0xb3da,
+    0xc33d,
+    0xd31c,
+    0xe37f,
+    0xf35e,
+    0x02b1,
+    0x1290,
+    0x22f3,
+    0x32d2,
+    0x4235,
+    0x5214,
+    0x6277,
+    0x7256,
+    0xb5ea,
+    0xa5cb,
+    0x95a8,
+    0x8589,
+    0xf56e,
+    0xe54f,
+    0xd52c,
+    0xc50d,
+    0x34e2,
+    0x24c3,
+    0x14a0,
+    0x0481,
+    0x7466,
+    0x6447,
+    0x5424,
+    0x4405,
+    0xa7db,
+    0xb7fa,
+    0x8799,
+    0x97b8,
+    0xe75f,
+    0xf77e,
+    0xc71d,
+    0xd73c,
+    0x26d3,
+    0x36f2,
+    0x0691,
+    0x16b0,
+    0x6657,
+    0x7676,
+    0x4615,
+    0x5634,
+    0xd94c,
+    0xc96d,
+    0xf90e,
+    0xe92f,
+    0x99c8,
+    0x89e9,
+    0xb98a,
+    0xa9ab,
+    0x5844,
+    0x4865,
+    0x7806,
+    0x6827,
+    0x18c0,
+    0x08e1,
+    0x3882,
+    0x28a3,
+    0xcb7d,
+    0xdb5c,
+    0xeb3f,
+    0xfb1e,
+    0x8bf9,
+    0x9bd8,
+    0xabbb,
+    0xbb9a,
+    0x4a75,
+    0x5a54,
+    0x6a37,
+    0x7a16,
+    0x0af1,
+    0x1ad0,
+    0x2ab3,
+    0x3a92,
+    0xfd2e,
+    0xed0f,
+    0xdd6c,
+    0xcd4d,
+    0xbdaa,
+    0xad8b,
+    0x9de8,
+    0x8dc9,
+    0x7c26,
+    0x6c07,
+    0x5c64,
+    0x4c45,
+    0x3ca2,
+    0x2c83,
+    0x1ce0,
+    0x0cc1,
+    0xef1f,
+    0xff3e,
+    0xcf5d,
+    0xdf7c,
+    0xaf9b,
+    0xbfba,
+    0x8fd9,
+    0x9ff8,
+    0x6e17,
+    0x7e36,
+    0x4e55,
+    0x5e74,
+    0x2e93,
+    0x3eb2,
+    0x0ed1,
+    0x1ef0,
+]);
+/**
+ * @ignore
+ */
+class crc16 {
+    // crc16 returns the crc for the data provided.
+    static checksum(data) {
+        let crc = 0;
+        for (let i = 0; i < data.byteLength; i++) {
+            const b = data[i];
+            crc = ((crc << 8) & 0xffff) ^ crc16tab[((crc >> 8) ^ b) & 0x00FF];
+        }
+        return crc;
+    }
+    // validate will check the calculated crc16 checksum for data against the expected.
+    static validate(data, expected) {
+        const ba = crc16.checksum(data);
+        return ba == expected;
+    }
+}
+exports.crc16 = crc16;
+//# sourceMappingURL=crc16.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/curve.js":
+/*!**************************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/curve.js ***!
+  \**************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+/*
+ * Copyright 2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CurveKP = exports.curveNonceLen = exports.curveKeyLen = void 0;
+const nkeys_1 = __webpack_require__(/*! ./nkeys */ "./node_modules/@nats-io/nkeys/lib/nkeys.js");
+const nacl_1 = __importDefault(__webpack_require__(/*! ./nacl */ "./node_modules/@nats-io/nkeys/lib/nacl.js"));
+const codec_1 = __webpack_require__(/*! ./codec */ "./node_modules/@nats-io/nkeys/lib/codec.js");
+const nkeys_2 = __webpack_require__(/*! ./nkeys */ "./node_modules/@nats-io/nkeys/lib/nkeys.js");
+const base32_1 = __webpack_require__(/*! ./base32 */ "./node_modules/@nats-io/nkeys/lib/base32.js");
+const crc16_1 = __webpack_require__(/*! ./crc16 */ "./node_modules/@nats-io/nkeys/lib/crc16.js");
+exports.curveKeyLen = 32;
+const curveDecodeLen = 35;
+exports.curveNonceLen = 24;
+// "xkv1" in bytes
+const XKeyVersionV1 = [120, 107, 118, 49];
+class CurveKP {
+    seed;
+    constructor(seed) {
+        this.seed = seed;
+    }
+    clear() {
+        if (!this.seed) {
+            return;
+        }
+        this.seed.fill(0);
+        this.seed = undefined;
+    }
+    getPrivateKey() {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        return codec_1.Codec.encode(nkeys_2.Prefix.Private, this.seed);
+    }
+    getPublicKey() {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        const pub = nacl_1.default.scalarMult.base(this.seed);
+        const buf = codec_1.Codec.encode(nkeys_2.Prefix.Curve, pub);
+        return new TextDecoder().decode(buf);
+    }
+    getSeed() {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        return codec_1.Codec.encodeSeed(nkeys_2.Prefix.Curve, this.seed);
+    }
+    sign() {
+        throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidCurveOperation);
+    }
+    verify() {
+        throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidCurveOperation);
+    }
+    decodePubCurveKey(src) {
+        try {
+            const raw = base32_1.base32.decode(new TextEncoder().encode(src));
+            if (raw.byteLength !== curveDecodeLen) {
+                throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidCurveKey);
+            }
+            if (raw[0] !== nkeys_2.Prefix.Curve) {
+                throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidPublicKey);
+            }
+            const checkOffset = raw.byteLength - 2;
+            const dv = new DataView(raw.buffer);
+            const checksum = dv.getUint16(checkOffset, true);
+            const payload = raw.slice(0, checkOffset);
+            if (!crc16_1.crc16.validate(payload, checksum)) {
+                throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidChecksum);
+            }
+            // remove the prefix byte
+            return payload.slice(1);
+        }
+        catch (ex) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidRecipient, { cause: ex });
+        }
+    }
+    seal(message, recipient, nonce) {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        if (!nonce) {
+            nonce = nacl_1.default.randomBytes(exports.curveNonceLen);
+        }
+        const pub = this.decodePubCurveKey(recipient);
+        // prefix a header to the nonce
+        const out = new Uint8Array(XKeyVersionV1.length + exports.curveNonceLen);
+        out.set(XKeyVersionV1, 0);
+        out.set(nonce, XKeyVersionV1.length);
+        // this is only the encoded payload
+        const encrypted = nacl_1.default.box(message, nonce, pub, this.seed);
+        // the full message is the header+nonce+encrypted
+        const fullMessage = new Uint8Array(out.length + encrypted.length);
+        fullMessage.set(out);
+        fullMessage.set(encrypted, out.length);
+        return fullMessage;
+    }
+    open(message, sender) {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        if (message.length <= exports.curveNonceLen + XKeyVersionV1.length) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidEncrypted);
+        }
+        for (let i = 0; i < XKeyVersionV1.length; i++) {
+            if (message[i] !== XKeyVersionV1[i]) {
+                throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidEncrypted);
+            }
+        }
+        const pub = this.decodePubCurveKey(sender);
+        // strip off the header
+        message = message.slice(XKeyVersionV1.length);
+        // extract the nonce
+        const nonce = message.slice(0, exports.curveNonceLen);
+        // stripe the nonce
+        message = message.slice(exports.curveNonceLen);
+        return nacl_1.default.box.open(message, nonce, pub, this.seed);
+    }
+}
+exports.CurveKP = CurveKP;
+//# sourceMappingURL=curve.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/kp.js":
+/*!***********************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/kp.js ***!
+  \***********************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+/*
+ * Copyright 2018-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.KP = void 0;
+const codec_1 = __webpack_require__(/*! ./codec */ "./node_modules/@nats-io/nkeys/lib/codec.js");
+const nkeys_1 = __webpack_require__(/*! ./nkeys */ "./node_modules/@nats-io/nkeys/lib/nkeys.js");
+const nacl_1 = __importDefault(__webpack_require__(/*! ./nacl */ "./node_modules/@nats-io/nkeys/lib/nacl.js"));
+/**
+ * @ignore
+ */
+class KP {
+    seed;
+    constructor(seed) {
+        this.seed = seed;
+    }
+    getRawSeed() {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        const sd = codec_1.Codec.decodeSeed(this.seed);
+        return sd.buf;
+    }
+    getSeed() {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        return this.seed;
+    }
+    getPublicKey() {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        const sd = codec_1.Codec.decodeSeed(this.seed);
+        const kp = nacl_1.default.sign.keyPair.fromSeed(this.getRawSeed());
+        const buf = codec_1.Codec.encode(sd.prefix, kp.publicKey);
+        return new TextDecoder().decode(buf);
+    }
+    getPrivateKey() {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        const kp = nacl_1.default.sign.keyPair.fromSeed(this.getRawSeed());
+        return codec_1.Codec.encode(nkeys_1.Prefix.Private, kp.secretKey);
+    }
+    sign(input) {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        const kp = nacl_1.default.sign.keyPair.fromSeed(this.getRawSeed());
+        return nacl_1.default.sign.detached(input, kp.secretKey);
+    }
+    verify(input, sig) {
+        if (!this.seed) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        const kp = nacl_1.default.sign.keyPair.fromSeed(this.getRawSeed());
+        return nacl_1.default.sign.detached.verify(input, sig, kp.publicKey);
+    }
+    clear() {
+        if (!this.seed) {
+            return;
+        }
+        this.seed.fill(0);
+        this.seed = undefined;
+    }
+    seal(_, _recipient, _nonce) {
+        throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidNKeyOperation);
+    }
+    open(_, _sender) {
+        throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidNKeyOperation);
+    }
+}
+exports.KP = KP;
+//# sourceMappingURL=kp.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/mod.js":
+/*!************************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/mod.js ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.version = exports.encode = exports.decode = exports.Prefixes = exports.Prefix = exports.NKeysErrorCode = exports.NKeysError = exports.fromSeed = exports.fromPublic = exports.fromCurveSeed = exports.createUser = exports.createServer = exports.createPair = exports.createOperator = exports.createCurve = exports.createCluster = exports.createAccount = void 0;
+var nkeys_1 = __webpack_require__(/*! ./nkeys */ "./node_modules/@nats-io/nkeys/lib/nkeys.js");
+Object.defineProperty(exports, "createAccount", ({ enumerable: true, get: function () { return nkeys_1.createAccount; } }));
+Object.defineProperty(exports, "createCluster", ({ enumerable: true, get: function () { return nkeys_1.createCluster; } }));
+Object.defineProperty(exports, "createCurve", ({ enumerable: true, get: function () { return nkeys_1.createCurve; } }));
+Object.defineProperty(exports, "createOperator", ({ enumerable: true, get: function () { return nkeys_1.createOperator; } }));
+Object.defineProperty(exports, "createPair", ({ enumerable: true, get: function () { return nkeys_1.createPair; } }));
+Object.defineProperty(exports, "createServer", ({ enumerable: true, get: function () { return nkeys_1.createServer; } }));
+Object.defineProperty(exports, "createUser", ({ enumerable: true, get: function () { return nkeys_1.createUser; } }));
+Object.defineProperty(exports, "fromCurveSeed", ({ enumerable: true, get: function () { return nkeys_1.fromCurveSeed; } }));
+Object.defineProperty(exports, "fromPublic", ({ enumerable: true, get: function () { return nkeys_1.fromPublic; } }));
+Object.defineProperty(exports, "fromSeed", ({ enumerable: true, get: function () { return nkeys_1.fromSeed; } }));
+Object.defineProperty(exports, "NKeysError", ({ enumerable: true, get: function () { return nkeys_1.NKeysError; } }));
+Object.defineProperty(exports, "NKeysErrorCode", ({ enumerable: true, get: function () { return nkeys_1.NKeysErrorCode; } }));
+Object.defineProperty(exports, "Prefix", ({ enumerable: true, get: function () { return nkeys_1.Prefix; } }));
+Object.defineProperty(exports, "Prefixes", ({ enumerable: true, get: function () { return nkeys_1.Prefixes; } }));
+var util_1 = __webpack_require__(/*! ./util */ "./node_modules/@nats-io/nkeys/lib/util.js");
+Object.defineProperty(exports, "decode", ({ enumerable: true, get: function () { return util_1.decode; } }));
+Object.defineProperty(exports, "encode", ({ enumerable: true, get: function () { return util_1.encode; } }));
+var version_1 = __webpack_require__(/*! ./version */ "./node_modules/@nats-io/nkeys/lib/version.js");
+Object.defineProperty(exports, "version", ({ enumerable: true, get: function () { return version_1.version; } }));
+//# sourceMappingURL=mod.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/nacl.js":
+/*!*************************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/nacl.js ***!
+  \*************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const tweetnacl_1 = __importDefault(__webpack_require__(/*! tweetnacl */ "./node_modules/tweetnacl/nacl-fast.js"));
+exports["default"] = tweetnacl_1.default;
+//# sourceMappingURL=nacl.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/nkeys.js":
+/*!**************************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/nkeys.js ***!
+  \**************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.NKeysError = exports.NKeysErrorCode = exports.Prefixes = exports.Prefix = void 0;
+exports.createPair = createPair;
+exports.createOperator = createOperator;
+exports.createAccount = createAccount;
+exports.createUser = createUser;
+exports.createCluster = createCluster;
+exports.createServer = createServer;
+exports.createCurve = createCurve;
+exports.fromPublic = fromPublic;
+exports.fromCurveSeed = fromCurveSeed;
+exports.fromSeed = fromSeed;
+/*
+ * Copyright 2018-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const kp_1 = __webpack_require__(/*! ./kp */ "./node_modules/@nats-io/nkeys/lib/kp.js");
+const public_1 = __webpack_require__(/*! ./public */ "./node_modules/@nats-io/nkeys/lib/public.js");
+const codec_1 = __webpack_require__(/*! ./codec */ "./node_modules/@nats-io/nkeys/lib/codec.js");
+const curve_1 = __webpack_require__(/*! ./curve */ "./node_modules/@nats-io/nkeys/lib/curve.js");
+const nacl_1 = __importDefault(__webpack_require__(/*! ./nacl */ "./node_modules/@nats-io/nkeys/lib/nacl.js"));
+/**
+ * @ignore
+ */
+function createPair(prefix) {
+    const len = prefix === Prefix.Curve ? curve_1.curveKeyLen : 32;
+    const rawSeed = nacl_1.default.randomBytes(len);
+    const str = codec_1.Codec.encodeSeed(prefix, new Uint8Array(rawSeed));
+    return prefix === Prefix.Curve
+        ? new curve_1.CurveKP(new Uint8Array(rawSeed))
+        : new kp_1.KP(str);
+}
+/**
+ * Creates a KeyPair with an operator prefix
+ * @returns {KeyPair} Returns the created KeyPair.
+ */
+function createOperator() {
+    return createPair(Prefix.Operator);
+}
+/**
+ * Creates a KeyPair with an account prefix
+ * @returns {KeyPair} Returns the created KeyPair.
+ */
+function createAccount() {
+    return createPair(Prefix.Account);
+}
+/**
+ * Creates a KeyPair with a user prefix
+ * @returns {KeyPair} Returns the created KeyPair.
+ */
+function createUser() {
+    return createPair(Prefix.User);
+}
+/**
+ * @ignore
+ */
+function createCluster() {
+    return createPair(Prefix.Cluster);
+}
+/**
+ * @ignore
+ */
+function createServer() {
+    return createPair(Prefix.Server);
+}
+/**
+ * Generates and returns a KeyPair object using the Curve prefix.
+ * Curve KeyPairs can seal/open (encrypt/decrypt) payloads.
+ *
+ * @return {KeyPair} The generated KeyPair object with Curve prefix.
+ */
+function createCurve() {
+    return createPair(Prefix.Curve);
+}
+/**
+ * Creates a KeyPair from a specified public key
+ * @param {string} src of the public key in string format.
+ * @returns {KeyPair} Returns the created KeyPair.
+ * @see KeyPair#getPublicKey
+ */
+function fromPublic(src) {
+    const ba = new TextEncoder().encode(src);
+    const raw = codec_1.Codec._decode(ba);
+    const prefix = Prefixes.parsePrefix(raw[0]);
+    if (Prefixes.isValidPublicPrefix(prefix)) {
+        return new public_1.PublicKey(ba);
+    }
+    throw new NKeysError(NKeysErrorCode.InvalidPublicKey);
+}
+/**
+ * Creates a KeyPair from a Curve seed. Curve keys can encrypt and decrypt payloads.
+ *
+ * @param {Uint8Array} src - The seed representing the Curve key in encoded format.
+ * @return {KeyPair} The resulting KeyPair generated from the Curve seed.
+ * @throws {NKeysError} If the seed's prefix is not a Curve prefix or if the seed length is invalid.
+ */
+function fromCurveSeed(src) {
+    const sd = codec_1.Codec.decodeSeed(src);
+    if (sd.prefix !== Prefix.Curve) {
+        throw new NKeysError(NKeysErrorCode.InvalidCurveSeed);
+    }
+    if (sd.buf.byteLength !== curve_1.curveKeyLen) {
+        throw new NKeysError(NKeysErrorCode.InvalidSeedLen);
+    }
+    return new curve_1.CurveKP(sd.buf);
+}
+/**
+ * Creates a KeyPair from a specified seed.
+ * @param {Uint8Array} src of the seed key as Uint8Array
+ * @returns {KeyPair} Returns the created KeyPair.
+ * @see KeyPair#getSeed
+ */
+function fromSeed(src) {
+    const sd = codec_1.Codec.decodeSeed(src);
+    // if we are here it decoded properly
+    if (sd.prefix === Prefix.Curve) {
+        return fromCurveSeed(src);
+    }
+    return new kp_1.KP(src);
+}
+/**
+ * @ignore
+ */
+var Prefix;
+(function (Prefix) {
+    Prefix[Prefix["Unknown"] = -1] = "Unknown";
+    //Seed is the version byte used for encoded NATS Seeds
+    Prefix[Prefix["Seed"] = 144] = "Seed";
+    //PrefixBytePrivate is the version byte used for encoded NATS Private keys
+    Prefix[Prefix["Private"] = 120] = "Private";
+    //PrefixByteOperator is the version byte used for encoded NATS Operators
+    Prefix[Prefix["Operator"] = 112] = "Operator";
+    //PrefixByteServer is the version byte used for encoded NATS Servers
+    Prefix[Prefix["Server"] = 104] = "Server";
+    //PrefixByteCluster is the version byte used for encoded NATS Clusters
+    Prefix[Prefix["Cluster"] = 16] = "Cluster";
+    //PrefixByteAccount is the version byte used for encoded NATS Accounts
+    Prefix[Prefix["Account"] = 0] = "Account";
+    //PrefixByteUser is the version byte used for encoded NATS Users
+    Prefix[Prefix["User"] = 160] = "User";
+    Prefix[Prefix["Curve"] = 184] = "Curve";
+})(Prefix || (exports.Prefix = Prefix = {}));
+/**
+ * @private
+ */
+class Prefixes {
+    static isValidPublicPrefix(prefix) {
+        return prefix == Prefix.Server ||
+            prefix == Prefix.Operator ||
+            prefix == Prefix.Cluster ||
+            prefix == Prefix.Account ||
+            prefix == Prefix.User ||
+            prefix == Prefix.Curve;
+    }
+    static startsWithValidPrefix(s) {
+        const c = s[0];
+        return c == "S" || c == "P" || c == "O" || c == "N" || c == "C" ||
+            c == "A" || c == "U" || c == "X";
+    }
+    static isValidPrefix(prefix) {
+        const v = this.parsePrefix(prefix);
+        return v !== Prefix.Unknown;
+    }
+    static parsePrefix(v) {
+        switch (v) {
+            case Prefix.Seed:
+                return Prefix.Seed;
+            case Prefix.Private:
+                return Prefix.Private;
+            case Prefix.Operator:
+                return Prefix.Operator;
+            case Prefix.Server:
+                return Prefix.Server;
+            case Prefix.Cluster:
+                return Prefix.Cluster;
+            case Prefix.Account:
+                return Prefix.Account;
+            case Prefix.User:
+                return Prefix.User;
+            case Prefix.Curve:
+                return Prefix.Curve;
+            default:
+                return Prefix.Unknown;
+        }
+    }
+}
+exports.Prefixes = Prefixes;
+/**
+ * Possible error codes on exceptions thrown by the library.
+ */
+var NKeysErrorCode;
+(function (NKeysErrorCode) {
+    NKeysErrorCode["InvalidPrefixByte"] = "nkeys: invalid prefix byte";
+    NKeysErrorCode["InvalidKey"] = "nkeys: invalid key";
+    NKeysErrorCode["InvalidPublicKey"] = "nkeys: invalid public key";
+    NKeysErrorCode["InvalidSeedLen"] = "nkeys: invalid seed length";
+    NKeysErrorCode["InvalidSeed"] = "nkeys: invalid seed";
+    NKeysErrorCode["InvalidCurveSeed"] = "nkeys: invalid curve seed";
+    NKeysErrorCode["InvalidCurveKey"] = "nkeys: not a valid curve key";
+    NKeysErrorCode["InvalidCurveOperation"] = "nkeys: curve key is not valid for sign/verify";
+    NKeysErrorCode["InvalidNKeyOperation"] = "keys: only curve key can seal/open";
+    NKeysErrorCode["InvalidEncoding"] = "nkeys: invalid encoded key";
+    NKeysErrorCode["InvalidRecipient"] = "nkeys: not a valid recipient public curve key";
+    NKeysErrorCode["InvalidEncrypted"] = "nkeys: encrypted input is not valid";
+    NKeysErrorCode["CannotSign"] = "nkeys: cannot sign, no private key available";
+    NKeysErrorCode["PublicKeyOnly"] = "nkeys: no seed or private key available";
+    NKeysErrorCode["InvalidChecksum"] = "nkeys: invalid checksum";
+    NKeysErrorCode["SerializationError"] = "nkeys: serialization error";
+    NKeysErrorCode["ApiError"] = "nkeys: api error";
+    NKeysErrorCode["ClearedPair"] = "nkeys: pair is cleared";
+})(NKeysErrorCode || (exports.NKeysErrorCode = NKeysErrorCode = {}));
+class NKeysError extends Error {
+    code;
+    constructor(code, options) {
+        super(code, options);
+        this.code = code;
+    }
+}
+exports.NKeysError = NKeysError;
+//# sourceMappingURL=nkeys.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/public.js":
+/*!***************************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/public.js ***!
+  \***************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+/*
+ * Copyright 2018-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PublicKey = void 0;
+const codec_1 = __webpack_require__(/*! ./codec */ "./node_modules/@nats-io/nkeys/lib/codec.js");
+const nkeys_1 = __webpack_require__(/*! ./nkeys */ "./node_modules/@nats-io/nkeys/lib/nkeys.js");
+const nacl_1 = __importDefault(__webpack_require__(/*! ./nacl */ "./node_modules/@nats-io/nkeys/lib/nacl.js"));
+/**
+ * @ignore
+ */
+class PublicKey {
+    publicKey;
+    constructor(publicKey) {
+        this.publicKey = publicKey;
+    }
+    getPublicKey() {
+        if (!this.publicKey) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        return new TextDecoder().decode(this.publicKey);
+    }
+    getPrivateKey() {
+        if (!this.publicKey) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.PublicKeyOnly);
+    }
+    getSeed() {
+        if (!this.publicKey) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.PublicKeyOnly);
+    }
+    sign(_) {
+        if (!this.publicKey) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.CannotSign);
+    }
+    verify(input, sig) {
+        if (!this.publicKey) {
+            throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.ClearedPair);
+        }
+        const buf = codec_1.Codec._decode(this.publicKey);
+        return nacl_1.default.sign.detached.verify(input, sig, buf.slice(1));
+    }
+    clear() {
+        if (!this.publicKey) {
+            return;
+        }
+        this.publicKey.fill(0);
+        this.publicKey = undefined;
+    }
+    seal(_, _recipient, _nonce) {
+        throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidNKeyOperation);
+    }
+    open(_, _sender) {
+        throw new nkeys_1.NKeysError(nkeys_1.NKeysErrorCode.InvalidNKeyOperation);
+    }
+}
+exports.PublicKey = PublicKey;
+//# sourceMappingURL=public.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/util.js":
+/*!*************************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/util.js ***!
+  \*************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.encode = encode;
+exports.decode = decode;
+exports.dump = dump;
+/*
+ * Copyright 2018-2020 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Encode binary data to a base64 string
+ * @param {Uint8Array} bytes to encode to base64
+ */
+function encode(bytes) {
+    return btoa(String.fromCharCode(...bytes));
+}
+/**
+ * Decode a base64 encoded string to a binary Uint8Array
+ * @param {string} b64str encoded string
+ */
+function decode(b64str) {
+    const bin = atob(b64str);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+        bytes[i] = bin.charCodeAt(i);
+    }
+    return bytes;
+}
+/**
+ * @ignore
+ */
+function dump(buf, msg) {
+    if (msg) {
+        console.log(msg);
+    }
+    const a = [];
+    for (let i = 0; i < buf.byteLength; i++) {
+        if (i % 8 === 0) {
+            a.push("\n");
+        }
+        let v = buf[i].toString(16);
+        if (v.length === 1) {
+            v = "0" + v;
+        }
+        a.push(v);
+    }
+    console.log(a.join("  "));
+}
+//# sourceMappingURL=util.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nkeys/lib/version.js":
+/*!****************************************************!*\
+  !*** ./node_modules/@nats-io/nkeys/lib/version.js ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.version = void 0;
+// this file is autogenerated - do not edit
+exports.version = "2.0.3";
+//# sourceMappingURL=version.js.map
+
+/***/ }),
+
+/***/ "./node_modules/@nats-io/nuid/lib/nuid.js":
+/*!************************************************!*\
+  !*** ./node_modules/@nats-io/nuid/lib/nuid.js ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+/*
+ * Copyright 2016-2024 The NATS Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.nuid = exports.Nuid = void 0;
+const digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const base = 36;
+const preLen = 12;
+const seqLen = 10;
+const maxSeq = 3656158440062976; // base^seqLen == 36^10
+const minInc = 33;
+const maxInc = 333;
+const totalLen = preLen + seqLen;
+function _getRandomValues(a) {
+    for (let i = 0; i < a.length; i++) {
+        a[i] = Math.floor(Math.random() * 255);
+    }
+}
+function fillRandom(a) {
+    if (globalThis?.crypto?.getRandomValues) {
+        globalThis.crypto.getRandomValues(a);
+    }
+    else {
+        _getRandomValues(a);
+    }
+}
+/**
+ * Nuid is a class that generates unique identifiers.
+ */
+class Nuid {
+    /**
+     *   @hidden
+     */
+    buf;
+    /**
+     *   @hidden
+     */
+    seq;
+    /**
+     * @hidden
+     */
+    inc;
+    /**
+     * @hidden
+     */
+    inited;
+    constructor() {
+        this.buf = new Uint8Array(totalLen);
+        this.inited = false;
+    }
+    /**
+     * Initializes a nuid with a crypto random prefix,
+     * and pseudo-random sequence and increment. This function
+     * is only called if any api on a nuid is called.
+     *
+     * @ignore
+     */
+    init() {
+        this.inited = true;
+        this.setPre();
+        this.initSeqAndInc();
+        this.fillSeq();
+    }
+    /**
+     * Initializes the pseudo random sequence number and the increment range.
+     * @ignore
+     */
+    initSeqAndInc() {
+        this.seq = Math.floor(Math.random() * maxSeq);
+        this.inc = Math.floor(Math.random() * (maxInc - minInc) + minInc);
+    }
+    /**
+     * Sets the prefix from crypto random bytes. Converts them to base36.
+     *
+     * @ignore
+     */
+    setPre() {
+        const cbuf = new Uint8Array(preLen);
+        fillRandom(cbuf);
+        for (let i = 0; i < preLen; i++) {
+            const di = cbuf[i] % base;
+            this.buf[i] = digits.charCodeAt(di);
+        }
+    }
+    /**
+     * Fills the sequence part of the nuid as base36 from this.seq.
+     * @ignore
+     */
+    fillSeq() {
+        let n = this.seq;
+        for (let i = totalLen - 1; i >= preLen; i--) {
+            this.buf[i] = digits.charCodeAt(n % base);
+            n = Math.floor(n / base);
+        }
+    }
+    /**
+     * Returns the next nuid.
+     */
+    next() {
+        if (!this.inited) {
+            this.init();
+        }
+        this.seq += this.inc;
+        if (this.seq > maxSeq) {
+            this.setPre();
+            this.initSeqAndInc();
+        }
+        this.fillSeq();
+        // @ts-ignore - Uint8Arrays can be an argument
+        return String.fromCharCode.apply(String, this.buf);
+    }
+    /**
+     * Resets the prefix and counter for the nuid. This is typically
+     * called automatically from within next() if the current sequence
+     * exceeds the resolution of the nuid.
+     */
+    reset() {
+        this.init();
+    }
+}
+exports.Nuid = Nuid;
+/**
+ * A nuid instance you can use by simply calling `next()` on it.
+ */
+exports.nuid = new Nuid();
+//# sourceMappingURL=nuid.js.map
 
 /***/ }),
 
@@ -61857,6 +69767,2407 @@ function simpleEnd(buf) {
 
 /***/ }),
 
+/***/ "./node_modules/tweetnacl/nacl-fast.js":
+/*!*********************************************!*\
+  !*** ./node_modules/tweetnacl/nacl-fast.js ***!
+  \*********************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+(function(nacl) {
+'use strict';
+
+// Ported in 2014 by Dmitry Chestnykh and Devi Mandiri.
+// Public domain.
+//
+// Implementation derived from TweetNaCl version 20140427.
+// See for details: http://tweetnacl.cr.yp.to/
+
+var gf = function(init) {
+  var i, r = new Float64Array(16);
+  if (init) for (i = 0; i < init.length; i++) r[i] = init[i];
+  return r;
+};
+
+//  Pluggable, initialized in high-level API below.
+var randombytes = function(/* x, n */) { throw new Error('no PRNG'); };
+
+var _0 = new Uint8Array(16);
+var _9 = new Uint8Array(32); _9[0] = 9;
+
+var gf0 = gf(),
+    gf1 = gf([1]),
+    _121665 = gf([0xdb41, 1]),
+    D = gf([0x78a3, 0x1359, 0x4dca, 0x75eb, 0xd8ab, 0x4141, 0x0a4d, 0x0070, 0xe898, 0x7779, 0x4079, 0x8cc7, 0xfe73, 0x2b6f, 0x6cee, 0x5203]),
+    D2 = gf([0xf159, 0x26b2, 0x9b94, 0xebd6, 0xb156, 0x8283, 0x149a, 0x00e0, 0xd130, 0xeef3, 0x80f2, 0x198e, 0xfce7, 0x56df, 0xd9dc, 0x2406]),
+    X = gf([0xd51a, 0x8f25, 0x2d60, 0xc956, 0xa7b2, 0x9525, 0xc760, 0x692c, 0xdc5c, 0xfdd6, 0xe231, 0xc0a4, 0x53fe, 0xcd6e, 0x36d3, 0x2169]),
+    Y = gf([0x6658, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666]),
+    I = gf([0xa0b0, 0x4a0e, 0x1b27, 0xc4ee, 0xe478, 0xad2f, 0x1806, 0x2f43, 0xd7a7, 0x3dfb, 0x0099, 0x2b4d, 0xdf0b, 0x4fc1, 0x2480, 0x2b83]);
+
+function ts64(x, i, h, l) {
+  x[i]   = (h >> 24) & 0xff;
+  x[i+1] = (h >> 16) & 0xff;
+  x[i+2] = (h >>  8) & 0xff;
+  x[i+3] = h & 0xff;
+  x[i+4] = (l >> 24)  & 0xff;
+  x[i+5] = (l >> 16)  & 0xff;
+  x[i+6] = (l >>  8)  & 0xff;
+  x[i+7] = l & 0xff;
+}
+
+function vn(x, xi, y, yi, n) {
+  var i,d = 0;
+  for (i = 0; i < n; i++) d |= x[xi+i]^y[yi+i];
+  return (1 & ((d - 1) >>> 8)) - 1;
+}
+
+function crypto_verify_16(x, xi, y, yi) {
+  return vn(x,xi,y,yi,16);
+}
+
+function crypto_verify_32(x, xi, y, yi) {
+  return vn(x,xi,y,yi,32);
+}
+
+function core_salsa20(o, p, k, c) {
+  var j0  = c[ 0] & 0xff | (c[ 1] & 0xff)<<8 | (c[ 2] & 0xff)<<16 | (c[ 3] & 0xff)<<24,
+      j1  = k[ 0] & 0xff | (k[ 1] & 0xff)<<8 | (k[ 2] & 0xff)<<16 | (k[ 3] & 0xff)<<24,
+      j2  = k[ 4] & 0xff | (k[ 5] & 0xff)<<8 | (k[ 6] & 0xff)<<16 | (k[ 7] & 0xff)<<24,
+      j3  = k[ 8] & 0xff | (k[ 9] & 0xff)<<8 | (k[10] & 0xff)<<16 | (k[11] & 0xff)<<24,
+      j4  = k[12] & 0xff | (k[13] & 0xff)<<8 | (k[14] & 0xff)<<16 | (k[15] & 0xff)<<24,
+      j5  = c[ 4] & 0xff | (c[ 5] & 0xff)<<8 | (c[ 6] & 0xff)<<16 | (c[ 7] & 0xff)<<24,
+      j6  = p[ 0] & 0xff | (p[ 1] & 0xff)<<8 | (p[ 2] & 0xff)<<16 | (p[ 3] & 0xff)<<24,
+      j7  = p[ 4] & 0xff | (p[ 5] & 0xff)<<8 | (p[ 6] & 0xff)<<16 | (p[ 7] & 0xff)<<24,
+      j8  = p[ 8] & 0xff | (p[ 9] & 0xff)<<8 | (p[10] & 0xff)<<16 | (p[11] & 0xff)<<24,
+      j9  = p[12] & 0xff | (p[13] & 0xff)<<8 | (p[14] & 0xff)<<16 | (p[15] & 0xff)<<24,
+      j10 = c[ 8] & 0xff | (c[ 9] & 0xff)<<8 | (c[10] & 0xff)<<16 | (c[11] & 0xff)<<24,
+      j11 = k[16] & 0xff | (k[17] & 0xff)<<8 | (k[18] & 0xff)<<16 | (k[19] & 0xff)<<24,
+      j12 = k[20] & 0xff | (k[21] & 0xff)<<8 | (k[22] & 0xff)<<16 | (k[23] & 0xff)<<24,
+      j13 = k[24] & 0xff | (k[25] & 0xff)<<8 | (k[26] & 0xff)<<16 | (k[27] & 0xff)<<24,
+      j14 = k[28] & 0xff | (k[29] & 0xff)<<8 | (k[30] & 0xff)<<16 | (k[31] & 0xff)<<24,
+      j15 = c[12] & 0xff | (c[13] & 0xff)<<8 | (c[14] & 0xff)<<16 | (c[15] & 0xff)<<24;
+
+  var x0 = j0, x1 = j1, x2 = j2, x3 = j3, x4 = j4, x5 = j5, x6 = j6, x7 = j7,
+      x8 = j8, x9 = j9, x10 = j10, x11 = j11, x12 = j12, x13 = j13, x14 = j14,
+      x15 = j15, u;
+
+  for (var i = 0; i < 20; i += 2) {
+    u = x0 + x12 | 0;
+    x4 ^= u<<7 | u>>>(32-7);
+    u = x4 + x0 | 0;
+    x8 ^= u<<9 | u>>>(32-9);
+    u = x8 + x4 | 0;
+    x12 ^= u<<13 | u>>>(32-13);
+    u = x12 + x8 | 0;
+    x0 ^= u<<18 | u>>>(32-18);
+
+    u = x5 + x1 | 0;
+    x9 ^= u<<7 | u>>>(32-7);
+    u = x9 + x5 | 0;
+    x13 ^= u<<9 | u>>>(32-9);
+    u = x13 + x9 | 0;
+    x1 ^= u<<13 | u>>>(32-13);
+    u = x1 + x13 | 0;
+    x5 ^= u<<18 | u>>>(32-18);
+
+    u = x10 + x6 | 0;
+    x14 ^= u<<7 | u>>>(32-7);
+    u = x14 + x10 | 0;
+    x2 ^= u<<9 | u>>>(32-9);
+    u = x2 + x14 | 0;
+    x6 ^= u<<13 | u>>>(32-13);
+    u = x6 + x2 | 0;
+    x10 ^= u<<18 | u>>>(32-18);
+
+    u = x15 + x11 | 0;
+    x3 ^= u<<7 | u>>>(32-7);
+    u = x3 + x15 | 0;
+    x7 ^= u<<9 | u>>>(32-9);
+    u = x7 + x3 | 0;
+    x11 ^= u<<13 | u>>>(32-13);
+    u = x11 + x7 | 0;
+    x15 ^= u<<18 | u>>>(32-18);
+
+    u = x0 + x3 | 0;
+    x1 ^= u<<7 | u>>>(32-7);
+    u = x1 + x0 | 0;
+    x2 ^= u<<9 | u>>>(32-9);
+    u = x2 + x1 | 0;
+    x3 ^= u<<13 | u>>>(32-13);
+    u = x3 + x2 | 0;
+    x0 ^= u<<18 | u>>>(32-18);
+
+    u = x5 + x4 | 0;
+    x6 ^= u<<7 | u>>>(32-7);
+    u = x6 + x5 | 0;
+    x7 ^= u<<9 | u>>>(32-9);
+    u = x7 + x6 | 0;
+    x4 ^= u<<13 | u>>>(32-13);
+    u = x4 + x7 | 0;
+    x5 ^= u<<18 | u>>>(32-18);
+
+    u = x10 + x9 | 0;
+    x11 ^= u<<7 | u>>>(32-7);
+    u = x11 + x10 | 0;
+    x8 ^= u<<9 | u>>>(32-9);
+    u = x8 + x11 | 0;
+    x9 ^= u<<13 | u>>>(32-13);
+    u = x9 + x8 | 0;
+    x10 ^= u<<18 | u>>>(32-18);
+
+    u = x15 + x14 | 0;
+    x12 ^= u<<7 | u>>>(32-7);
+    u = x12 + x15 | 0;
+    x13 ^= u<<9 | u>>>(32-9);
+    u = x13 + x12 | 0;
+    x14 ^= u<<13 | u>>>(32-13);
+    u = x14 + x13 | 0;
+    x15 ^= u<<18 | u>>>(32-18);
+  }
+   x0 =  x0 +  j0 | 0;
+   x1 =  x1 +  j1 | 0;
+   x2 =  x2 +  j2 | 0;
+   x3 =  x3 +  j3 | 0;
+   x4 =  x4 +  j4 | 0;
+   x5 =  x5 +  j5 | 0;
+   x6 =  x6 +  j6 | 0;
+   x7 =  x7 +  j7 | 0;
+   x8 =  x8 +  j8 | 0;
+   x9 =  x9 +  j9 | 0;
+  x10 = x10 + j10 | 0;
+  x11 = x11 + j11 | 0;
+  x12 = x12 + j12 | 0;
+  x13 = x13 + j13 | 0;
+  x14 = x14 + j14 | 0;
+  x15 = x15 + j15 | 0;
+
+  o[ 0] = x0 >>>  0 & 0xff;
+  o[ 1] = x0 >>>  8 & 0xff;
+  o[ 2] = x0 >>> 16 & 0xff;
+  o[ 3] = x0 >>> 24 & 0xff;
+
+  o[ 4] = x1 >>>  0 & 0xff;
+  o[ 5] = x1 >>>  8 & 0xff;
+  o[ 6] = x1 >>> 16 & 0xff;
+  o[ 7] = x1 >>> 24 & 0xff;
+
+  o[ 8] = x2 >>>  0 & 0xff;
+  o[ 9] = x2 >>>  8 & 0xff;
+  o[10] = x2 >>> 16 & 0xff;
+  o[11] = x2 >>> 24 & 0xff;
+
+  o[12] = x3 >>>  0 & 0xff;
+  o[13] = x3 >>>  8 & 0xff;
+  o[14] = x3 >>> 16 & 0xff;
+  o[15] = x3 >>> 24 & 0xff;
+
+  o[16] = x4 >>>  0 & 0xff;
+  o[17] = x4 >>>  8 & 0xff;
+  o[18] = x4 >>> 16 & 0xff;
+  o[19] = x4 >>> 24 & 0xff;
+
+  o[20] = x5 >>>  0 & 0xff;
+  o[21] = x5 >>>  8 & 0xff;
+  o[22] = x5 >>> 16 & 0xff;
+  o[23] = x5 >>> 24 & 0xff;
+
+  o[24] = x6 >>>  0 & 0xff;
+  o[25] = x6 >>>  8 & 0xff;
+  o[26] = x6 >>> 16 & 0xff;
+  o[27] = x6 >>> 24 & 0xff;
+
+  o[28] = x7 >>>  0 & 0xff;
+  o[29] = x7 >>>  8 & 0xff;
+  o[30] = x7 >>> 16 & 0xff;
+  o[31] = x7 >>> 24 & 0xff;
+
+  o[32] = x8 >>>  0 & 0xff;
+  o[33] = x8 >>>  8 & 0xff;
+  o[34] = x8 >>> 16 & 0xff;
+  o[35] = x8 >>> 24 & 0xff;
+
+  o[36] = x9 >>>  0 & 0xff;
+  o[37] = x9 >>>  8 & 0xff;
+  o[38] = x9 >>> 16 & 0xff;
+  o[39] = x9 >>> 24 & 0xff;
+
+  o[40] = x10 >>>  0 & 0xff;
+  o[41] = x10 >>>  8 & 0xff;
+  o[42] = x10 >>> 16 & 0xff;
+  o[43] = x10 >>> 24 & 0xff;
+
+  o[44] = x11 >>>  0 & 0xff;
+  o[45] = x11 >>>  8 & 0xff;
+  o[46] = x11 >>> 16 & 0xff;
+  o[47] = x11 >>> 24 & 0xff;
+
+  o[48] = x12 >>>  0 & 0xff;
+  o[49] = x12 >>>  8 & 0xff;
+  o[50] = x12 >>> 16 & 0xff;
+  o[51] = x12 >>> 24 & 0xff;
+
+  o[52] = x13 >>>  0 & 0xff;
+  o[53] = x13 >>>  8 & 0xff;
+  o[54] = x13 >>> 16 & 0xff;
+  o[55] = x13 >>> 24 & 0xff;
+
+  o[56] = x14 >>>  0 & 0xff;
+  o[57] = x14 >>>  8 & 0xff;
+  o[58] = x14 >>> 16 & 0xff;
+  o[59] = x14 >>> 24 & 0xff;
+
+  o[60] = x15 >>>  0 & 0xff;
+  o[61] = x15 >>>  8 & 0xff;
+  o[62] = x15 >>> 16 & 0xff;
+  o[63] = x15 >>> 24 & 0xff;
+}
+
+function core_hsalsa20(o,p,k,c) {
+  var j0  = c[ 0] & 0xff | (c[ 1] & 0xff)<<8 | (c[ 2] & 0xff)<<16 | (c[ 3] & 0xff)<<24,
+      j1  = k[ 0] & 0xff | (k[ 1] & 0xff)<<8 | (k[ 2] & 0xff)<<16 | (k[ 3] & 0xff)<<24,
+      j2  = k[ 4] & 0xff | (k[ 5] & 0xff)<<8 | (k[ 6] & 0xff)<<16 | (k[ 7] & 0xff)<<24,
+      j3  = k[ 8] & 0xff | (k[ 9] & 0xff)<<8 | (k[10] & 0xff)<<16 | (k[11] & 0xff)<<24,
+      j4  = k[12] & 0xff | (k[13] & 0xff)<<8 | (k[14] & 0xff)<<16 | (k[15] & 0xff)<<24,
+      j5  = c[ 4] & 0xff | (c[ 5] & 0xff)<<8 | (c[ 6] & 0xff)<<16 | (c[ 7] & 0xff)<<24,
+      j6  = p[ 0] & 0xff | (p[ 1] & 0xff)<<8 | (p[ 2] & 0xff)<<16 | (p[ 3] & 0xff)<<24,
+      j7  = p[ 4] & 0xff | (p[ 5] & 0xff)<<8 | (p[ 6] & 0xff)<<16 | (p[ 7] & 0xff)<<24,
+      j8  = p[ 8] & 0xff | (p[ 9] & 0xff)<<8 | (p[10] & 0xff)<<16 | (p[11] & 0xff)<<24,
+      j9  = p[12] & 0xff | (p[13] & 0xff)<<8 | (p[14] & 0xff)<<16 | (p[15] & 0xff)<<24,
+      j10 = c[ 8] & 0xff | (c[ 9] & 0xff)<<8 | (c[10] & 0xff)<<16 | (c[11] & 0xff)<<24,
+      j11 = k[16] & 0xff | (k[17] & 0xff)<<8 | (k[18] & 0xff)<<16 | (k[19] & 0xff)<<24,
+      j12 = k[20] & 0xff | (k[21] & 0xff)<<8 | (k[22] & 0xff)<<16 | (k[23] & 0xff)<<24,
+      j13 = k[24] & 0xff | (k[25] & 0xff)<<8 | (k[26] & 0xff)<<16 | (k[27] & 0xff)<<24,
+      j14 = k[28] & 0xff | (k[29] & 0xff)<<8 | (k[30] & 0xff)<<16 | (k[31] & 0xff)<<24,
+      j15 = c[12] & 0xff | (c[13] & 0xff)<<8 | (c[14] & 0xff)<<16 | (c[15] & 0xff)<<24;
+
+  var x0 = j0, x1 = j1, x2 = j2, x3 = j3, x4 = j4, x5 = j5, x6 = j6, x7 = j7,
+      x8 = j8, x9 = j9, x10 = j10, x11 = j11, x12 = j12, x13 = j13, x14 = j14,
+      x15 = j15, u;
+
+  for (var i = 0; i < 20; i += 2) {
+    u = x0 + x12 | 0;
+    x4 ^= u<<7 | u>>>(32-7);
+    u = x4 + x0 | 0;
+    x8 ^= u<<9 | u>>>(32-9);
+    u = x8 + x4 | 0;
+    x12 ^= u<<13 | u>>>(32-13);
+    u = x12 + x8 | 0;
+    x0 ^= u<<18 | u>>>(32-18);
+
+    u = x5 + x1 | 0;
+    x9 ^= u<<7 | u>>>(32-7);
+    u = x9 + x5 | 0;
+    x13 ^= u<<9 | u>>>(32-9);
+    u = x13 + x9 | 0;
+    x1 ^= u<<13 | u>>>(32-13);
+    u = x1 + x13 | 0;
+    x5 ^= u<<18 | u>>>(32-18);
+
+    u = x10 + x6 | 0;
+    x14 ^= u<<7 | u>>>(32-7);
+    u = x14 + x10 | 0;
+    x2 ^= u<<9 | u>>>(32-9);
+    u = x2 + x14 | 0;
+    x6 ^= u<<13 | u>>>(32-13);
+    u = x6 + x2 | 0;
+    x10 ^= u<<18 | u>>>(32-18);
+
+    u = x15 + x11 | 0;
+    x3 ^= u<<7 | u>>>(32-7);
+    u = x3 + x15 | 0;
+    x7 ^= u<<9 | u>>>(32-9);
+    u = x7 + x3 | 0;
+    x11 ^= u<<13 | u>>>(32-13);
+    u = x11 + x7 | 0;
+    x15 ^= u<<18 | u>>>(32-18);
+
+    u = x0 + x3 | 0;
+    x1 ^= u<<7 | u>>>(32-7);
+    u = x1 + x0 | 0;
+    x2 ^= u<<9 | u>>>(32-9);
+    u = x2 + x1 | 0;
+    x3 ^= u<<13 | u>>>(32-13);
+    u = x3 + x2 | 0;
+    x0 ^= u<<18 | u>>>(32-18);
+
+    u = x5 + x4 | 0;
+    x6 ^= u<<7 | u>>>(32-7);
+    u = x6 + x5 | 0;
+    x7 ^= u<<9 | u>>>(32-9);
+    u = x7 + x6 | 0;
+    x4 ^= u<<13 | u>>>(32-13);
+    u = x4 + x7 | 0;
+    x5 ^= u<<18 | u>>>(32-18);
+
+    u = x10 + x9 | 0;
+    x11 ^= u<<7 | u>>>(32-7);
+    u = x11 + x10 | 0;
+    x8 ^= u<<9 | u>>>(32-9);
+    u = x8 + x11 | 0;
+    x9 ^= u<<13 | u>>>(32-13);
+    u = x9 + x8 | 0;
+    x10 ^= u<<18 | u>>>(32-18);
+
+    u = x15 + x14 | 0;
+    x12 ^= u<<7 | u>>>(32-7);
+    u = x12 + x15 | 0;
+    x13 ^= u<<9 | u>>>(32-9);
+    u = x13 + x12 | 0;
+    x14 ^= u<<13 | u>>>(32-13);
+    u = x14 + x13 | 0;
+    x15 ^= u<<18 | u>>>(32-18);
+  }
+
+  o[ 0] = x0 >>>  0 & 0xff;
+  o[ 1] = x0 >>>  8 & 0xff;
+  o[ 2] = x0 >>> 16 & 0xff;
+  o[ 3] = x0 >>> 24 & 0xff;
+
+  o[ 4] = x5 >>>  0 & 0xff;
+  o[ 5] = x5 >>>  8 & 0xff;
+  o[ 6] = x5 >>> 16 & 0xff;
+  o[ 7] = x5 >>> 24 & 0xff;
+
+  o[ 8] = x10 >>>  0 & 0xff;
+  o[ 9] = x10 >>>  8 & 0xff;
+  o[10] = x10 >>> 16 & 0xff;
+  o[11] = x10 >>> 24 & 0xff;
+
+  o[12] = x15 >>>  0 & 0xff;
+  o[13] = x15 >>>  8 & 0xff;
+  o[14] = x15 >>> 16 & 0xff;
+  o[15] = x15 >>> 24 & 0xff;
+
+  o[16] = x6 >>>  0 & 0xff;
+  o[17] = x6 >>>  8 & 0xff;
+  o[18] = x6 >>> 16 & 0xff;
+  o[19] = x6 >>> 24 & 0xff;
+
+  o[20] = x7 >>>  0 & 0xff;
+  o[21] = x7 >>>  8 & 0xff;
+  o[22] = x7 >>> 16 & 0xff;
+  o[23] = x7 >>> 24 & 0xff;
+
+  o[24] = x8 >>>  0 & 0xff;
+  o[25] = x8 >>>  8 & 0xff;
+  o[26] = x8 >>> 16 & 0xff;
+  o[27] = x8 >>> 24 & 0xff;
+
+  o[28] = x9 >>>  0 & 0xff;
+  o[29] = x9 >>>  8 & 0xff;
+  o[30] = x9 >>> 16 & 0xff;
+  o[31] = x9 >>> 24 & 0xff;
+}
+
+function crypto_core_salsa20(out,inp,k,c) {
+  core_salsa20(out,inp,k,c);
+}
+
+function crypto_core_hsalsa20(out,inp,k,c) {
+  core_hsalsa20(out,inp,k,c);
+}
+
+var sigma = new Uint8Array([101, 120, 112, 97, 110, 100, 32, 51, 50, 45, 98, 121, 116, 101, 32, 107]);
+            // "expand 32-byte k"
+
+function crypto_stream_salsa20_xor(c,cpos,m,mpos,b,n,k) {
+  var z = new Uint8Array(16), x = new Uint8Array(64);
+  var u, i;
+  for (i = 0; i < 16; i++) z[i] = 0;
+  for (i = 0; i < 8; i++) z[i] = n[i];
+  while (b >= 64) {
+    crypto_core_salsa20(x,z,k,sigma);
+    for (i = 0; i < 64; i++) c[cpos+i] = m[mpos+i] ^ x[i];
+    u = 1;
+    for (i = 8; i < 16; i++) {
+      u = u + (z[i] & 0xff) | 0;
+      z[i] = u & 0xff;
+      u >>>= 8;
+    }
+    b -= 64;
+    cpos += 64;
+    mpos += 64;
+  }
+  if (b > 0) {
+    crypto_core_salsa20(x,z,k,sigma);
+    for (i = 0; i < b; i++) c[cpos+i] = m[mpos+i] ^ x[i];
+  }
+  return 0;
+}
+
+function crypto_stream_salsa20(c,cpos,b,n,k) {
+  var z = new Uint8Array(16), x = new Uint8Array(64);
+  var u, i;
+  for (i = 0; i < 16; i++) z[i] = 0;
+  for (i = 0; i < 8; i++) z[i] = n[i];
+  while (b >= 64) {
+    crypto_core_salsa20(x,z,k,sigma);
+    for (i = 0; i < 64; i++) c[cpos+i] = x[i];
+    u = 1;
+    for (i = 8; i < 16; i++) {
+      u = u + (z[i] & 0xff) | 0;
+      z[i] = u & 0xff;
+      u >>>= 8;
+    }
+    b -= 64;
+    cpos += 64;
+  }
+  if (b > 0) {
+    crypto_core_salsa20(x,z,k,sigma);
+    for (i = 0; i < b; i++) c[cpos+i] = x[i];
+  }
+  return 0;
+}
+
+function crypto_stream(c,cpos,d,n,k) {
+  var s = new Uint8Array(32);
+  crypto_core_hsalsa20(s,n,k,sigma);
+  var sn = new Uint8Array(8);
+  for (var i = 0; i < 8; i++) sn[i] = n[i+16];
+  return crypto_stream_salsa20(c,cpos,d,sn,s);
+}
+
+function crypto_stream_xor(c,cpos,m,mpos,d,n,k) {
+  var s = new Uint8Array(32);
+  crypto_core_hsalsa20(s,n,k,sigma);
+  var sn = new Uint8Array(8);
+  for (var i = 0; i < 8; i++) sn[i] = n[i+16];
+  return crypto_stream_salsa20_xor(c,cpos,m,mpos,d,sn,s);
+}
+
+/*
+* Port of Andrew Moon's Poly1305-donna-16. Public domain.
+* https://github.com/floodyberry/poly1305-donna
+*/
+
+var poly1305 = function(key) {
+  this.buffer = new Uint8Array(16);
+  this.r = new Uint16Array(10);
+  this.h = new Uint16Array(10);
+  this.pad = new Uint16Array(8);
+  this.leftover = 0;
+  this.fin = 0;
+
+  var t0, t1, t2, t3, t4, t5, t6, t7;
+
+  t0 = key[ 0] & 0xff | (key[ 1] & 0xff) << 8; this.r[0] = ( t0                     ) & 0x1fff;
+  t1 = key[ 2] & 0xff | (key[ 3] & 0xff) << 8; this.r[1] = ((t0 >>> 13) | (t1 <<  3)) & 0x1fff;
+  t2 = key[ 4] & 0xff | (key[ 5] & 0xff) << 8; this.r[2] = ((t1 >>> 10) | (t2 <<  6)) & 0x1f03;
+  t3 = key[ 6] & 0xff | (key[ 7] & 0xff) << 8; this.r[3] = ((t2 >>>  7) | (t3 <<  9)) & 0x1fff;
+  t4 = key[ 8] & 0xff | (key[ 9] & 0xff) << 8; this.r[4] = ((t3 >>>  4) | (t4 << 12)) & 0x00ff;
+  this.r[5] = ((t4 >>>  1)) & 0x1ffe;
+  t5 = key[10] & 0xff | (key[11] & 0xff) << 8; this.r[6] = ((t4 >>> 14) | (t5 <<  2)) & 0x1fff;
+  t6 = key[12] & 0xff | (key[13] & 0xff) << 8; this.r[7] = ((t5 >>> 11) | (t6 <<  5)) & 0x1f81;
+  t7 = key[14] & 0xff | (key[15] & 0xff) << 8; this.r[8] = ((t6 >>>  8) | (t7 <<  8)) & 0x1fff;
+  this.r[9] = ((t7 >>>  5)) & 0x007f;
+
+  this.pad[0] = key[16] & 0xff | (key[17] & 0xff) << 8;
+  this.pad[1] = key[18] & 0xff | (key[19] & 0xff) << 8;
+  this.pad[2] = key[20] & 0xff | (key[21] & 0xff) << 8;
+  this.pad[3] = key[22] & 0xff | (key[23] & 0xff) << 8;
+  this.pad[4] = key[24] & 0xff | (key[25] & 0xff) << 8;
+  this.pad[5] = key[26] & 0xff | (key[27] & 0xff) << 8;
+  this.pad[6] = key[28] & 0xff | (key[29] & 0xff) << 8;
+  this.pad[7] = key[30] & 0xff | (key[31] & 0xff) << 8;
+};
+
+poly1305.prototype.blocks = function(m, mpos, bytes) {
+  var hibit = this.fin ? 0 : (1 << 11);
+  var t0, t1, t2, t3, t4, t5, t6, t7, c;
+  var d0, d1, d2, d3, d4, d5, d6, d7, d8, d9;
+
+  var h0 = this.h[0],
+      h1 = this.h[1],
+      h2 = this.h[2],
+      h3 = this.h[3],
+      h4 = this.h[4],
+      h5 = this.h[5],
+      h6 = this.h[6],
+      h7 = this.h[7],
+      h8 = this.h[8],
+      h9 = this.h[9];
+
+  var r0 = this.r[0],
+      r1 = this.r[1],
+      r2 = this.r[2],
+      r3 = this.r[3],
+      r4 = this.r[4],
+      r5 = this.r[5],
+      r6 = this.r[6],
+      r7 = this.r[7],
+      r8 = this.r[8],
+      r9 = this.r[9];
+
+  while (bytes >= 16) {
+    t0 = m[mpos+ 0] & 0xff | (m[mpos+ 1] & 0xff) << 8; h0 += ( t0                     ) & 0x1fff;
+    t1 = m[mpos+ 2] & 0xff | (m[mpos+ 3] & 0xff) << 8; h1 += ((t0 >>> 13) | (t1 <<  3)) & 0x1fff;
+    t2 = m[mpos+ 4] & 0xff | (m[mpos+ 5] & 0xff) << 8; h2 += ((t1 >>> 10) | (t2 <<  6)) & 0x1fff;
+    t3 = m[mpos+ 6] & 0xff | (m[mpos+ 7] & 0xff) << 8; h3 += ((t2 >>>  7) | (t3 <<  9)) & 0x1fff;
+    t4 = m[mpos+ 8] & 0xff | (m[mpos+ 9] & 0xff) << 8; h4 += ((t3 >>>  4) | (t4 << 12)) & 0x1fff;
+    h5 += ((t4 >>>  1)) & 0x1fff;
+    t5 = m[mpos+10] & 0xff | (m[mpos+11] & 0xff) << 8; h6 += ((t4 >>> 14) | (t5 <<  2)) & 0x1fff;
+    t6 = m[mpos+12] & 0xff | (m[mpos+13] & 0xff) << 8; h7 += ((t5 >>> 11) | (t6 <<  5)) & 0x1fff;
+    t7 = m[mpos+14] & 0xff | (m[mpos+15] & 0xff) << 8; h8 += ((t6 >>>  8) | (t7 <<  8)) & 0x1fff;
+    h9 += ((t7 >>> 5)) | hibit;
+
+    c = 0;
+
+    d0 = c;
+    d0 += h0 * r0;
+    d0 += h1 * (5 * r9);
+    d0 += h2 * (5 * r8);
+    d0 += h3 * (5 * r7);
+    d0 += h4 * (5 * r6);
+    c = (d0 >>> 13); d0 &= 0x1fff;
+    d0 += h5 * (5 * r5);
+    d0 += h6 * (5 * r4);
+    d0 += h7 * (5 * r3);
+    d0 += h8 * (5 * r2);
+    d0 += h9 * (5 * r1);
+    c += (d0 >>> 13); d0 &= 0x1fff;
+
+    d1 = c;
+    d1 += h0 * r1;
+    d1 += h1 * r0;
+    d1 += h2 * (5 * r9);
+    d1 += h3 * (5 * r8);
+    d1 += h4 * (5 * r7);
+    c = (d1 >>> 13); d1 &= 0x1fff;
+    d1 += h5 * (5 * r6);
+    d1 += h6 * (5 * r5);
+    d1 += h7 * (5 * r4);
+    d1 += h8 * (5 * r3);
+    d1 += h9 * (5 * r2);
+    c += (d1 >>> 13); d1 &= 0x1fff;
+
+    d2 = c;
+    d2 += h0 * r2;
+    d2 += h1 * r1;
+    d2 += h2 * r0;
+    d2 += h3 * (5 * r9);
+    d2 += h4 * (5 * r8);
+    c = (d2 >>> 13); d2 &= 0x1fff;
+    d2 += h5 * (5 * r7);
+    d2 += h6 * (5 * r6);
+    d2 += h7 * (5 * r5);
+    d2 += h8 * (5 * r4);
+    d2 += h9 * (5 * r3);
+    c += (d2 >>> 13); d2 &= 0x1fff;
+
+    d3 = c;
+    d3 += h0 * r3;
+    d3 += h1 * r2;
+    d3 += h2 * r1;
+    d3 += h3 * r0;
+    d3 += h4 * (5 * r9);
+    c = (d3 >>> 13); d3 &= 0x1fff;
+    d3 += h5 * (5 * r8);
+    d3 += h6 * (5 * r7);
+    d3 += h7 * (5 * r6);
+    d3 += h8 * (5 * r5);
+    d3 += h9 * (5 * r4);
+    c += (d3 >>> 13); d3 &= 0x1fff;
+
+    d4 = c;
+    d4 += h0 * r4;
+    d4 += h1 * r3;
+    d4 += h2 * r2;
+    d4 += h3 * r1;
+    d4 += h4 * r0;
+    c = (d4 >>> 13); d4 &= 0x1fff;
+    d4 += h5 * (5 * r9);
+    d4 += h6 * (5 * r8);
+    d4 += h7 * (5 * r7);
+    d4 += h8 * (5 * r6);
+    d4 += h9 * (5 * r5);
+    c += (d4 >>> 13); d4 &= 0x1fff;
+
+    d5 = c;
+    d5 += h0 * r5;
+    d5 += h1 * r4;
+    d5 += h2 * r3;
+    d5 += h3 * r2;
+    d5 += h4 * r1;
+    c = (d5 >>> 13); d5 &= 0x1fff;
+    d5 += h5 * r0;
+    d5 += h6 * (5 * r9);
+    d5 += h7 * (5 * r8);
+    d5 += h8 * (5 * r7);
+    d5 += h9 * (5 * r6);
+    c += (d5 >>> 13); d5 &= 0x1fff;
+
+    d6 = c;
+    d6 += h0 * r6;
+    d6 += h1 * r5;
+    d6 += h2 * r4;
+    d6 += h3 * r3;
+    d6 += h4 * r2;
+    c = (d6 >>> 13); d6 &= 0x1fff;
+    d6 += h5 * r1;
+    d6 += h6 * r0;
+    d6 += h7 * (5 * r9);
+    d6 += h8 * (5 * r8);
+    d6 += h9 * (5 * r7);
+    c += (d6 >>> 13); d6 &= 0x1fff;
+
+    d7 = c;
+    d7 += h0 * r7;
+    d7 += h1 * r6;
+    d7 += h2 * r5;
+    d7 += h3 * r4;
+    d7 += h4 * r3;
+    c = (d7 >>> 13); d7 &= 0x1fff;
+    d7 += h5 * r2;
+    d7 += h6 * r1;
+    d7 += h7 * r0;
+    d7 += h8 * (5 * r9);
+    d7 += h9 * (5 * r8);
+    c += (d7 >>> 13); d7 &= 0x1fff;
+
+    d8 = c;
+    d8 += h0 * r8;
+    d8 += h1 * r7;
+    d8 += h2 * r6;
+    d8 += h3 * r5;
+    d8 += h4 * r4;
+    c = (d8 >>> 13); d8 &= 0x1fff;
+    d8 += h5 * r3;
+    d8 += h6 * r2;
+    d8 += h7 * r1;
+    d8 += h8 * r0;
+    d8 += h9 * (5 * r9);
+    c += (d8 >>> 13); d8 &= 0x1fff;
+
+    d9 = c;
+    d9 += h0 * r9;
+    d9 += h1 * r8;
+    d9 += h2 * r7;
+    d9 += h3 * r6;
+    d9 += h4 * r5;
+    c = (d9 >>> 13); d9 &= 0x1fff;
+    d9 += h5 * r4;
+    d9 += h6 * r3;
+    d9 += h7 * r2;
+    d9 += h8 * r1;
+    d9 += h9 * r0;
+    c += (d9 >>> 13); d9 &= 0x1fff;
+
+    c = (((c << 2) + c)) | 0;
+    c = (c + d0) | 0;
+    d0 = c & 0x1fff;
+    c = (c >>> 13);
+    d1 += c;
+
+    h0 = d0;
+    h1 = d1;
+    h2 = d2;
+    h3 = d3;
+    h4 = d4;
+    h5 = d5;
+    h6 = d6;
+    h7 = d7;
+    h8 = d8;
+    h9 = d9;
+
+    mpos += 16;
+    bytes -= 16;
+  }
+  this.h[0] = h0;
+  this.h[1] = h1;
+  this.h[2] = h2;
+  this.h[3] = h3;
+  this.h[4] = h4;
+  this.h[5] = h5;
+  this.h[6] = h6;
+  this.h[7] = h7;
+  this.h[8] = h8;
+  this.h[9] = h9;
+};
+
+poly1305.prototype.finish = function(mac, macpos) {
+  var g = new Uint16Array(10);
+  var c, mask, f, i;
+
+  if (this.leftover) {
+    i = this.leftover;
+    this.buffer[i++] = 1;
+    for (; i < 16; i++) this.buffer[i] = 0;
+    this.fin = 1;
+    this.blocks(this.buffer, 0, 16);
+  }
+
+  c = this.h[1] >>> 13;
+  this.h[1] &= 0x1fff;
+  for (i = 2; i < 10; i++) {
+    this.h[i] += c;
+    c = this.h[i] >>> 13;
+    this.h[i] &= 0x1fff;
+  }
+  this.h[0] += (c * 5);
+  c = this.h[0] >>> 13;
+  this.h[0] &= 0x1fff;
+  this.h[1] += c;
+  c = this.h[1] >>> 13;
+  this.h[1] &= 0x1fff;
+  this.h[2] += c;
+
+  g[0] = this.h[0] + 5;
+  c = g[0] >>> 13;
+  g[0] &= 0x1fff;
+  for (i = 1; i < 10; i++) {
+    g[i] = this.h[i] + c;
+    c = g[i] >>> 13;
+    g[i] &= 0x1fff;
+  }
+  g[9] -= (1 << 13);
+
+  mask = (c ^ 1) - 1;
+  for (i = 0; i < 10; i++) g[i] &= mask;
+  mask = ~mask;
+  for (i = 0; i < 10; i++) this.h[i] = (this.h[i] & mask) | g[i];
+
+  this.h[0] = ((this.h[0]       ) | (this.h[1] << 13)                    ) & 0xffff;
+  this.h[1] = ((this.h[1] >>>  3) | (this.h[2] << 10)                    ) & 0xffff;
+  this.h[2] = ((this.h[2] >>>  6) | (this.h[3] <<  7)                    ) & 0xffff;
+  this.h[3] = ((this.h[3] >>>  9) | (this.h[4] <<  4)                    ) & 0xffff;
+  this.h[4] = ((this.h[4] >>> 12) | (this.h[5] <<  1) | (this.h[6] << 14)) & 0xffff;
+  this.h[5] = ((this.h[6] >>>  2) | (this.h[7] << 11)                    ) & 0xffff;
+  this.h[6] = ((this.h[7] >>>  5) | (this.h[8] <<  8)                    ) & 0xffff;
+  this.h[7] = ((this.h[8] >>>  8) | (this.h[9] <<  5)                    ) & 0xffff;
+
+  f = this.h[0] + this.pad[0];
+  this.h[0] = f & 0xffff;
+  for (i = 1; i < 8; i++) {
+    f = (((this.h[i] + this.pad[i]) | 0) + (f >>> 16)) | 0;
+    this.h[i] = f & 0xffff;
+  }
+
+  mac[macpos+ 0] = (this.h[0] >>> 0) & 0xff;
+  mac[macpos+ 1] = (this.h[0] >>> 8) & 0xff;
+  mac[macpos+ 2] = (this.h[1] >>> 0) & 0xff;
+  mac[macpos+ 3] = (this.h[1] >>> 8) & 0xff;
+  mac[macpos+ 4] = (this.h[2] >>> 0) & 0xff;
+  mac[macpos+ 5] = (this.h[2] >>> 8) & 0xff;
+  mac[macpos+ 6] = (this.h[3] >>> 0) & 0xff;
+  mac[macpos+ 7] = (this.h[3] >>> 8) & 0xff;
+  mac[macpos+ 8] = (this.h[4] >>> 0) & 0xff;
+  mac[macpos+ 9] = (this.h[4] >>> 8) & 0xff;
+  mac[macpos+10] = (this.h[5] >>> 0) & 0xff;
+  mac[macpos+11] = (this.h[5] >>> 8) & 0xff;
+  mac[macpos+12] = (this.h[6] >>> 0) & 0xff;
+  mac[macpos+13] = (this.h[6] >>> 8) & 0xff;
+  mac[macpos+14] = (this.h[7] >>> 0) & 0xff;
+  mac[macpos+15] = (this.h[7] >>> 8) & 0xff;
+};
+
+poly1305.prototype.update = function(m, mpos, bytes) {
+  var i, want;
+
+  if (this.leftover) {
+    want = (16 - this.leftover);
+    if (want > bytes)
+      want = bytes;
+    for (i = 0; i < want; i++)
+      this.buffer[this.leftover + i] = m[mpos+i];
+    bytes -= want;
+    mpos += want;
+    this.leftover += want;
+    if (this.leftover < 16)
+      return;
+    this.blocks(this.buffer, 0, 16);
+    this.leftover = 0;
+  }
+
+  if (bytes >= 16) {
+    want = bytes - (bytes % 16);
+    this.blocks(m, mpos, want);
+    mpos += want;
+    bytes -= want;
+  }
+
+  if (bytes) {
+    for (i = 0; i < bytes; i++)
+      this.buffer[this.leftover + i] = m[mpos+i];
+    this.leftover += bytes;
+  }
+};
+
+function crypto_onetimeauth(out, outpos, m, mpos, n, k) {
+  var s = new poly1305(k);
+  s.update(m, mpos, n);
+  s.finish(out, outpos);
+  return 0;
+}
+
+function crypto_onetimeauth_verify(h, hpos, m, mpos, n, k) {
+  var x = new Uint8Array(16);
+  crypto_onetimeauth(x,0,m,mpos,n,k);
+  return crypto_verify_16(h,hpos,x,0);
+}
+
+function crypto_secretbox(c,m,d,n,k) {
+  var i;
+  if (d < 32) return -1;
+  crypto_stream_xor(c,0,m,0,d,n,k);
+  crypto_onetimeauth(c, 16, c, 32, d - 32, c);
+  for (i = 0; i < 16; i++) c[i] = 0;
+  return 0;
+}
+
+function crypto_secretbox_open(m,c,d,n,k) {
+  var i;
+  var x = new Uint8Array(32);
+  if (d < 32) return -1;
+  crypto_stream(x,0,32,n,k);
+  if (crypto_onetimeauth_verify(c, 16,c, 32,d - 32,x) !== 0) return -1;
+  crypto_stream_xor(m,0,c,0,d,n,k);
+  for (i = 0; i < 32; i++) m[i] = 0;
+  return 0;
+}
+
+function set25519(r, a) {
+  var i;
+  for (i = 0; i < 16; i++) r[i] = a[i]|0;
+}
+
+function car25519(o) {
+  var i, v, c = 1;
+  for (i = 0; i < 16; i++) {
+    v = o[i] + c + 65535;
+    c = Math.floor(v / 65536);
+    o[i] = v - c * 65536;
+  }
+  o[0] += c-1 + 37 * (c-1);
+}
+
+function sel25519(p, q, b) {
+  var t, c = ~(b-1);
+  for (var i = 0; i < 16; i++) {
+    t = c & (p[i] ^ q[i]);
+    p[i] ^= t;
+    q[i] ^= t;
+  }
+}
+
+function pack25519(o, n) {
+  var i, j, b;
+  var m = gf(), t = gf();
+  for (i = 0; i < 16; i++) t[i] = n[i];
+  car25519(t);
+  car25519(t);
+  car25519(t);
+  for (j = 0; j < 2; j++) {
+    m[0] = t[0] - 0xffed;
+    for (i = 1; i < 15; i++) {
+      m[i] = t[i] - 0xffff - ((m[i-1]>>16) & 1);
+      m[i-1] &= 0xffff;
+    }
+    m[15] = t[15] - 0x7fff - ((m[14]>>16) & 1);
+    b = (m[15]>>16) & 1;
+    m[14] &= 0xffff;
+    sel25519(t, m, 1-b);
+  }
+  for (i = 0; i < 16; i++) {
+    o[2*i] = t[i] & 0xff;
+    o[2*i+1] = t[i]>>8;
+  }
+}
+
+function neq25519(a, b) {
+  var c = new Uint8Array(32), d = new Uint8Array(32);
+  pack25519(c, a);
+  pack25519(d, b);
+  return crypto_verify_32(c, 0, d, 0);
+}
+
+function par25519(a) {
+  var d = new Uint8Array(32);
+  pack25519(d, a);
+  return d[0] & 1;
+}
+
+function unpack25519(o, n) {
+  var i;
+  for (i = 0; i < 16; i++) o[i] = n[2*i] + (n[2*i+1] << 8);
+  o[15] &= 0x7fff;
+}
+
+function A(o, a, b) {
+  for (var i = 0; i < 16; i++) o[i] = a[i] + b[i];
+}
+
+function Z(o, a, b) {
+  for (var i = 0; i < 16; i++) o[i] = a[i] - b[i];
+}
+
+function M(o, a, b) {
+  var v, c,
+     t0 = 0,  t1 = 0,  t2 = 0,  t3 = 0,  t4 = 0,  t5 = 0,  t6 = 0,  t7 = 0,
+     t8 = 0,  t9 = 0, t10 = 0, t11 = 0, t12 = 0, t13 = 0, t14 = 0, t15 = 0,
+    t16 = 0, t17 = 0, t18 = 0, t19 = 0, t20 = 0, t21 = 0, t22 = 0, t23 = 0,
+    t24 = 0, t25 = 0, t26 = 0, t27 = 0, t28 = 0, t29 = 0, t30 = 0,
+    b0 = b[0],
+    b1 = b[1],
+    b2 = b[2],
+    b3 = b[3],
+    b4 = b[4],
+    b5 = b[5],
+    b6 = b[6],
+    b7 = b[7],
+    b8 = b[8],
+    b9 = b[9],
+    b10 = b[10],
+    b11 = b[11],
+    b12 = b[12],
+    b13 = b[13],
+    b14 = b[14],
+    b15 = b[15];
+
+  v = a[0];
+  t0 += v * b0;
+  t1 += v * b1;
+  t2 += v * b2;
+  t3 += v * b3;
+  t4 += v * b4;
+  t5 += v * b5;
+  t6 += v * b6;
+  t7 += v * b7;
+  t8 += v * b8;
+  t9 += v * b9;
+  t10 += v * b10;
+  t11 += v * b11;
+  t12 += v * b12;
+  t13 += v * b13;
+  t14 += v * b14;
+  t15 += v * b15;
+  v = a[1];
+  t1 += v * b0;
+  t2 += v * b1;
+  t3 += v * b2;
+  t4 += v * b3;
+  t5 += v * b4;
+  t6 += v * b5;
+  t7 += v * b6;
+  t8 += v * b7;
+  t9 += v * b8;
+  t10 += v * b9;
+  t11 += v * b10;
+  t12 += v * b11;
+  t13 += v * b12;
+  t14 += v * b13;
+  t15 += v * b14;
+  t16 += v * b15;
+  v = a[2];
+  t2 += v * b0;
+  t3 += v * b1;
+  t4 += v * b2;
+  t5 += v * b3;
+  t6 += v * b4;
+  t7 += v * b5;
+  t8 += v * b6;
+  t9 += v * b7;
+  t10 += v * b8;
+  t11 += v * b9;
+  t12 += v * b10;
+  t13 += v * b11;
+  t14 += v * b12;
+  t15 += v * b13;
+  t16 += v * b14;
+  t17 += v * b15;
+  v = a[3];
+  t3 += v * b0;
+  t4 += v * b1;
+  t5 += v * b2;
+  t6 += v * b3;
+  t7 += v * b4;
+  t8 += v * b5;
+  t9 += v * b6;
+  t10 += v * b7;
+  t11 += v * b8;
+  t12 += v * b9;
+  t13 += v * b10;
+  t14 += v * b11;
+  t15 += v * b12;
+  t16 += v * b13;
+  t17 += v * b14;
+  t18 += v * b15;
+  v = a[4];
+  t4 += v * b0;
+  t5 += v * b1;
+  t6 += v * b2;
+  t7 += v * b3;
+  t8 += v * b4;
+  t9 += v * b5;
+  t10 += v * b6;
+  t11 += v * b7;
+  t12 += v * b8;
+  t13 += v * b9;
+  t14 += v * b10;
+  t15 += v * b11;
+  t16 += v * b12;
+  t17 += v * b13;
+  t18 += v * b14;
+  t19 += v * b15;
+  v = a[5];
+  t5 += v * b0;
+  t6 += v * b1;
+  t7 += v * b2;
+  t8 += v * b3;
+  t9 += v * b4;
+  t10 += v * b5;
+  t11 += v * b6;
+  t12 += v * b7;
+  t13 += v * b8;
+  t14 += v * b9;
+  t15 += v * b10;
+  t16 += v * b11;
+  t17 += v * b12;
+  t18 += v * b13;
+  t19 += v * b14;
+  t20 += v * b15;
+  v = a[6];
+  t6 += v * b0;
+  t7 += v * b1;
+  t8 += v * b2;
+  t9 += v * b3;
+  t10 += v * b4;
+  t11 += v * b5;
+  t12 += v * b6;
+  t13 += v * b7;
+  t14 += v * b8;
+  t15 += v * b9;
+  t16 += v * b10;
+  t17 += v * b11;
+  t18 += v * b12;
+  t19 += v * b13;
+  t20 += v * b14;
+  t21 += v * b15;
+  v = a[7];
+  t7 += v * b0;
+  t8 += v * b1;
+  t9 += v * b2;
+  t10 += v * b3;
+  t11 += v * b4;
+  t12 += v * b5;
+  t13 += v * b6;
+  t14 += v * b7;
+  t15 += v * b8;
+  t16 += v * b9;
+  t17 += v * b10;
+  t18 += v * b11;
+  t19 += v * b12;
+  t20 += v * b13;
+  t21 += v * b14;
+  t22 += v * b15;
+  v = a[8];
+  t8 += v * b0;
+  t9 += v * b1;
+  t10 += v * b2;
+  t11 += v * b3;
+  t12 += v * b4;
+  t13 += v * b5;
+  t14 += v * b6;
+  t15 += v * b7;
+  t16 += v * b8;
+  t17 += v * b9;
+  t18 += v * b10;
+  t19 += v * b11;
+  t20 += v * b12;
+  t21 += v * b13;
+  t22 += v * b14;
+  t23 += v * b15;
+  v = a[9];
+  t9 += v * b0;
+  t10 += v * b1;
+  t11 += v * b2;
+  t12 += v * b3;
+  t13 += v * b4;
+  t14 += v * b5;
+  t15 += v * b6;
+  t16 += v * b7;
+  t17 += v * b8;
+  t18 += v * b9;
+  t19 += v * b10;
+  t20 += v * b11;
+  t21 += v * b12;
+  t22 += v * b13;
+  t23 += v * b14;
+  t24 += v * b15;
+  v = a[10];
+  t10 += v * b0;
+  t11 += v * b1;
+  t12 += v * b2;
+  t13 += v * b3;
+  t14 += v * b4;
+  t15 += v * b5;
+  t16 += v * b6;
+  t17 += v * b7;
+  t18 += v * b8;
+  t19 += v * b9;
+  t20 += v * b10;
+  t21 += v * b11;
+  t22 += v * b12;
+  t23 += v * b13;
+  t24 += v * b14;
+  t25 += v * b15;
+  v = a[11];
+  t11 += v * b0;
+  t12 += v * b1;
+  t13 += v * b2;
+  t14 += v * b3;
+  t15 += v * b4;
+  t16 += v * b5;
+  t17 += v * b6;
+  t18 += v * b7;
+  t19 += v * b8;
+  t20 += v * b9;
+  t21 += v * b10;
+  t22 += v * b11;
+  t23 += v * b12;
+  t24 += v * b13;
+  t25 += v * b14;
+  t26 += v * b15;
+  v = a[12];
+  t12 += v * b0;
+  t13 += v * b1;
+  t14 += v * b2;
+  t15 += v * b3;
+  t16 += v * b4;
+  t17 += v * b5;
+  t18 += v * b6;
+  t19 += v * b7;
+  t20 += v * b8;
+  t21 += v * b9;
+  t22 += v * b10;
+  t23 += v * b11;
+  t24 += v * b12;
+  t25 += v * b13;
+  t26 += v * b14;
+  t27 += v * b15;
+  v = a[13];
+  t13 += v * b0;
+  t14 += v * b1;
+  t15 += v * b2;
+  t16 += v * b3;
+  t17 += v * b4;
+  t18 += v * b5;
+  t19 += v * b6;
+  t20 += v * b7;
+  t21 += v * b8;
+  t22 += v * b9;
+  t23 += v * b10;
+  t24 += v * b11;
+  t25 += v * b12;
+  t26 += v * b13;
+  t27 += v * b14;
+  t28 += v * b15;
+  v = a[14];
+  t14 += v * b0;
+  t15 += v * b1;
+  t16 += v * b2;
+  t17 += v * b3;
+  t18 += v * b4;
+  t19 += v * b5;
+  t20 += v * b6;
+  t21 += v * b7;
+  t22 += v * b8;
+  t23 += v * b9;
+  t24 += v * b10;
+  t25 += v * b11;
+  t26 += v * b12;
+  t27 += v * b13;
+  t28 += v * b14;
+  t29 += v * b15;
+  v = a[15];
+  t15 += v * b0;
+  t16 += v * b1;
+  t17 += v * b2;
+  t18 += v * b3;
+  t19 += v * b4;
+  t20 += v * b5;
+  t21 += v * b6;
+  t22 += v * b7;
+  t23 += v * b8;
+  t24 += v * b9;
+  t25 += v * b10;
+  t26 += v * b11;
+  t27 += v * b12;
+  t28 += v * b13;
+  t29 += v * b14;
+  t30 += v * b15;
+
+  t0  += 38 * t16;
+  t1  += 38 * t17;
+  t2  += 38 * t18;
+  t3  += 38 * t19;
+  t4  += 38 * t20;
+  t5  += 38 * t21;
+  t6  += 38 * t22;
+  t7  += 38 * t23;
+  t8  += 38 * t24;
+  t9  += 38 * t25;
+  t10 += 38 * t26;
+  t11 += 38 * t27;
+  t12 += 38 * t28;
+  t13 += 38 * t29;
+  t14 += 38 * t30;
+  // t15 left as is
+
+  // first car
+  c = 1;
+  v =  t0 + c + 65535; c = Math.floor(v / 65536);  t0 = v - c * 65536;
+  v =  t1 + c + 65535; c = Math.floor(v / 65536);  t1 = v - c * 65536;
+  v =  t2 + c + 65535; c = Math.floor(v / 65536);  t2 = v - c * 65536;
+  v =  t3 + c + 65535; c = Math.floor(v / 65536);  t3 = v - c * 65536;
+  v =  t4 + c + 65535; c = Math.floor(v / 65536);  t4 = v - c * 65536;
+  v =  t5 + c + 65535; c = Math.floor(v / 65536);  t5 = v - c * 65536;
+  v =  t6 + c + 65535; c = Math.floor(v / 65536);  t6 = v - c * 65536;
+  v =  t7 + c + 65535; c = Math.floor(v / 65536);  t7 = v - c * 65536;
+  v =  t8 + c + 65535; c = Math.floor(v / 65536);  t8 = v - c * 65536;
+  v =  t9 + c + 65535; c = Math.floor(v / 65536);  t9 = v - c * 65536;
+  v = t10 + c + 65535; c = Math.floor(v / 65536); t10 = v - c * 65536;
+  v = t11 + c + 65535; c = Math.floor(v / 65536); t11 = v - c * 65536;
+  v = t12 + c + 65535; c = Math.floor(v / 65536); t12 = v - c * 65536;
+  v = t13 + c + 65535; c = Math.floor(v / 65536); t13 = v - c * 65536;
+  v = t14 + c + 65535; c = Math.floor(v / 65536); t14 = v - c * 65536;
+  v = t15 + c + 65535; c = Math.floor(v / 65536); t15 = v - c * 65536;
+  t0 += c-1 + 37 * (c-1);
+
+  // second car
+  c = 1;
+  v =  t0 + c + 65535; c = Math.floor(v / 65536);  t0 = v - c * 65536;
+  v =  t1 + c + 65535; c = Math.floor(v / 65536);  t1 = v - c * 65536;
+  v =  t2 + c + 65535; c = Math.floor(v / 65536);  t2 = v - c * 65536;
+  v =  t3 + c + 65535; c = Math.floor(v / 65536);  t3 = v - c * 65536;
+  v =  t4 + c + 65535; c = Math.floor(v / 65536);  t4 = v - c * 65536;
+  v =  t5 + c + 65535; c = Math.floor(v / 65536);  t5 = v - c * 65536;
+  v =  t6 + c + 65535; c = Math.floor(v / 65536);  t6 = v - c * 65536;
+  v =  t7 + c + 65535; c = Math.floor(v / 65536);  t7 = v - c * 65536;
+  v =  t8 + c + 65535; c = Math.floor(v / 65536);  t8 = v - c * 65536;
+  v =  t9 + c + 65535; c = Math.floor(v / 65536);  t9 = v - c * 65536;
+  v = t10 + c + 65535; c = Math.floor(v / 65536); t10 = v - c * 65536;
+  v = t11 + c + 65535; c = Math.floor(v / 65536); t11 = v - c * 65536;
+  v = t12 + c + 65535; c = Math.floor(v / 65536); t12 = v - c * 65536;
+  v = t13 + c + 65535; c = Math.floor(v / 65536); t13 = v - c * 65536;
+  v = t14 + c + 65535; c = Math.floor(v / 65536); t14 = v - c * 65536;
+  v = t15 + c + 65535; c = Math.floor(v / 65536); t15 = v - c * 65536;
+  t0 += c-1 + 37 * (c-1);
+
+  o[ 0] = t0;
+  o[ 1] = t1;
+  o[ 2] = t2;
+  o[ 3] = t3;
+  o[ 4] = t4;
+  o[ 5] = t5;
+  o[ 6] = t6;
+  o[ 7] = t7;
+  o[ 8] = t8;
+  o[ 9] = t9;
+  o[10] = t10;
+  o[11] = t11;
+  o[12] = t12;
+  o[13] = t13;
+  o[14] = t14;
+  o[15] = t15;
+}
+
+function S(o, a) {
+  M(o, a, a);
+}
+
+function inv25519(o, i) {
+  var c = gf();
+  var a;
+  for (a = 0; a < 16; a++) c[a] = i[a];
+  for (a = 253; a >= 0; a--) {
+    S(c, c);
+    if(a !== 2 && a !== 4) M(c, c, i);
+  }
+  for (a = 0; a < 16; a++) o[a] = c[a];
+}
+
+function pow2523(o, i) {
+  var c = gf();
+  var a;
+  for (a = 0; a < 16; a++) c[a] = i[a];
+  for (a = 250; a >= 0; a--) {
+      S(c, c);
+      if(a !== 1) M(c, c, i);
+  }
+  for (a = 0; a < 16; a++) o[a] = c[a];
+}
+
+function crypto_scalarmult(q, n, p) {
+  var z = new Uint8Array(32);
+  var x = new Float64Array(80), r, i;
+  var a = gf(), b = gf(), c = gf(),
+      d = gf(), e = gf(), f = gf();
+  for (i = 0; i < 31; i++) z[i] = n[i];
+  z[31]=(n[31]&127)|64;
+  z[0]&=248;
+  unpack25519(x,p);
+  for (i = 0; i < 16; i++) {
+    b[i]=x[i];
+    d[i]=a[i]=c[i]=0;
+  }
+  a[0]=d[0]=1;
+  for (i=254; i>=0; --i) {
+    r=(z[i>>>3]>>>(i&7))&1;
+    sel25519(a,b,r);
+    sel25519(c,d,r);
+    A(e,a,c);
+    Z(a,a,c);
+    A(c,b,d);
+    Z(b,b,d);
+    S(d,e);
+    S(f,a);
+    M(a,c,a);
+    M(c,b,e);
+    A(e,a,c);
+    Z(a,a,c);
+    S(b,a);
+    Z(c,d,f);
+    M(a,c,_121665);
+    A(a,a,d);
+    M(c,c,a);
+    M(a,d,f);
+    M(d,b,x);
+    S(b,e);
+    sel25519(a,b,r);
+    sel25519(c,d,r);
+  }
+  for (i = 0; i < 16; i++) {
+    x[i+16]=a[i];
+    x[i+32]=c[i];
+    x[i+48]=b[i];
+    x[i+64]=d[i];
+  }
+  var x32 = x.subarray(32);
+  var x16 = x.subarray(16);
+  inv25519(x32,x32);
+  M(x16,x16,x32);
+  pack25519(q,x16);
+  return 0;
+}
+
+function crypto_scalarmult_base(q, n) {
+  return crypto_scalarmult(q, n, _9);
+}
+
+function crypto_box_keypair(y, x) {
+  randombytes(x, 32);
+  return crypto_scalarmult_base(y, x);
+}
+
+function crypto_box_beforenm(k, y, x) {
+  var s = new Uint8Array(32);
+  crypto_scalarmult(s, x, y);
+  return crypto_core_hsalsa20(k, _0, s, sigma);
+}
+
+var crypto_box_afternm = crypto_secretbox;
+var crypto_box_open_afternm = crypto_secretbox_open;
+
+function crypto_box(c, m, d, n, y, x) {
+  var k = new Uint8Array(32);
+  crypto_box_beforenm(k, y, x);
+  return crypto_box_afternm(c, m, d, n, k);
+}
+
+function crypto_box_open(m, c, d, n, y, x) {
+  var k = new Uint8Array(32);
+  crypto_box_beforenm(k, y, x);
+  return crypto_box_open_afternm(m, c, d, n, k);
+}
+
+var K = [
+  0x428a2f98, 0xd728ae22, 0x71374491, 0x23ef65cd,
+  0xb5c0fbcf, 0xec4d3b2f, 0xe9b5dba5, 0x8189dbbc,
+  0x3956c25b, 0xf348b538, 0x59f111f1, 0xb605d019,
+  0x923f82a4, 0xaf194f9b, 0xab1c5ed5, 0xda6d8118,
+  0xd807aa98, 0xa3030242, 0x12835b01, 0x45706fbe,
+  0x243185be, 0x4ee4b28c, 0x550c7dc3, 0xd5ffb4e2,
+  0x72be5d74, 0xf27b896f, 0x80deb1fe, 0x3b1696b1,
+  0x9bdc06a7, 0x25c71235, 0xc19bf174, 0xcf692694,
+  0xe49b69c1, 0x9ef14ad2, 0xefbe4786, 0x384f25e3,
+  0x0fc19dc6, 0x8b8cd5b5, 0x240ca1cc, 0x77ac9c65,
+  0x2de92c6f, 0x592b0275, 0x4a7484aa, 0x6ea6e483,
+  0x5cb0a9dc, 0xbd41fbd4, 0x76f988da, 0x831153b5,
+  0x983e5152, 0xee66dfab, 0xa831c66d, 0x2db43210,
+  0xb00327c8, 0x98fb213f, 0xbf597fc7, 0xbeef0ee4,
+  0xc6e00bf3, 0x3da88fc2, 0xd5a79147, 0x930aa725,
+  0x06ca6351, 0xe003826f, 0x14292967, 0x0a0e6e70,
+  0x27b70a85, 0x46d22ffc, 0x2e1b2138, 0x5c26c926,
+  0x4d2c6dfc, 0x5ac42aed, 0x53380d13, 0x9d95b3df,
+  0x650a7354, 0x8baf63de, 0x766a0abb, 0x3c77b2a8,
+  0x81c2c92e, 0x47edaee6, 0x92722c85, 0x1482353b,
+  0xa2bfe8a1, 0x4cf10364, 0xa81a664b, 0xbc423001,
+  0xc24b8b70, 0xd0f89791, 0xc76c51a3, 0x0654be30,
+  0xd192e819, 0xd6ef5218, 0xd6990624, 0x5565a910,
+  0xf40e3585, 0x5771202a, 0x106aa070, 0x32bbd1b8,
+  0x19a4c116, 0xb8d2d0c8, 0x1e376c08, 0x5141ab53,
+  0x2748774c, 0xdf8eeb99, 0x34b0bcb5, 0xe19b48a8,
+  0x391c0cb3, 0xc5c95a63, 0x4ed8aa4a, 0xe3418acb,
+  0x5b9cca4f, 0x7763e373, 0x682e6ff3, 0xd6b2b8a3,
+  0x748f82ee, 0x5defb2fc, 0x78a5636f, 0x43172f60,
+  0x84c87814, 0xa1f0ab72, 0x8cc70208, 0x1a6439ec,
+  0x90befffa, 0x23631e28, 0xa4506ceb, 0xde82bde9,
+  0xbef9a3f7, 0xb2c67915, 0xc67178f2, 0xe372532b,
+  0xca273ece, 0xea26619c, 0xd186b8c7, 0x21c0c207,
+  0xeada7dd6, 0xcde0eb1e, 0xf57d4f7f, 0xee6ed178,
+  0x06f067aa, 0x72176fba, 0x0a637dc5, 0xa2c898a6,
+  0x113f9804, 0xbef90dae, 0x1b710b35, 0x131c471b,
+  0x28db77f5, 0x23047d84, 0x32caab7b, 0x40c72493,
+  0x3c9ebe0a, 0x15c9bebc, 0x431d67c4, 0x9c100d4c,
+  0x4cc5d4be, 0xcb3e42b6, 0x597f299c, 0xfc657e2a,
+  0x5fcb6fab, 0x3ad6faec, 0x6c44198c, 0x4a475817
+];
+
+function crypto_hashblocks_hl(hh, hl, m, n) {
+  var wh = new Int32Array(16), wl = new Int32Array(16),
+      bh0, bh1, bh2, bh3, bh4, bh5, bh6, bh7,
+      bl0, bl1, bl2, bl3, bl4, bl5, bl6, bl7,
+      th, tl, i, j, h, l, a, b, c, d;
+
+  var ah0 = hh[0],
+      ah1 = hh[1],
+      ah2 = hh[2],
+      ah3 = hh[3],
+      ah4 = hh[4],
+      ah5 = hh[5],
+      ah6 = hh[6],
+      ah7 = hh[7],
+
+      al0 = hl[0],
+      al1 = hl[1],
+      al2 = hl[2],
+      al3 = hl[3],
+      al4 = hl[4],
+      al5 = hl[5],
+      al6 = hl[6],
+      al7 = hl[7];
+
+  var pos = 0;
+  while (n >= 128) {
+    for (i = 0; i < 16; i++) {
+      j = 8 * i + pos;
+      wh[i] = (m[j+0] << 24) | (m[j+1] << 16) | (m[j+2] << 8) | m[j+3];
+      wl[i] = (m[j+4] << 24) | (m[j+5] << 16) | (m[j+6] << 8) | m[j+7];
+    }
+    for (i = 0; i < 80; i++) {
+      bh0 = ah0;
+      bh1 = ah1;
+      bh2 = ah2;
+      bh3 = ah3;
+      bh4 = ah4;
+      bh5 = ah5;
+      bh6 = ah6;
+      bh7 = ah7;
+
+      bl0 = al0;
+      bl1 = al1;
+      bl2 = al2;
+      bl3 = al3;
+      bl4 = al4;
+      bl5 = al5;
+      bl6 = al6;
+      bl7 = al7;
+
+      // add
+      h = ah7;
+      l = al7;
+
+      a = l & 0xffff; b = l >>> 16;
+      c = h & 0xffff; d = h >>> 16;
+
+      // Sigma1
+      h = ((ah4 >>> 14) | (al4 << (32-14))) ^ ((ah4 >>> 18) | (al4 << (32-18))) ^ ((al4 >>> (41-32)) | (ah4 << (32-(41-32))));
+      l = ((al4 >>> 14) | (ah4 << (32-14))) ^ ((al4 >>> 18) | (ah4 << (32-18))) ^ ((ah4 >>> (41-32)) | (al4 << (32-(41-32))));
+
+      a += l & 0xffff; b += l >>> 16;
+      c += h & 0xffff; d += h >>> 16;
+
+      // Ch
+      h = (ah4 & ah5) ^ (~ah4 & ah6);
+      l = (al4 & al5) ^ (~al4 & al6);
+
+      a += l & 0xffff; b += l >>> 16;
+      c += h & 0xffff; d += h >>> 16;
+
+      // K
+      h = K[i*2];
+      l = K[i*2+1];
+
+      a += l & 0xffff; b += l >>> 16;
+      c += h & 0xffff; d += h >>> 16;
+
+      // w
+      h = wh[i%16];
+      l = wl[i%16];
+
+      a += l & 0xffff; b += l >>> 16;
+      c += h & 0xffff; d += h >>> 16;
+
+      b += a >>> 16;
+      c += b >>> 16;
+      d += c >>> 16;
+
+      th = c & 0xffff | d << 16;
+      tl = a & 0xffff | b << 16;
+
+      // add
+      h = th;
+      l = tl;
+
+      a = l & 0xffff; b = l >>> 16;
+      c = h & 0xffff; d = h >>> 16;
+
+      // Sigma0
+      h = ((ah0 >>> 28) | (al0 << (32-28))) ^ ((al0 >>> (34-32)) | (ah0 << (32-(34-32)))) ^ ((al0 >>> (39-32)) | (ah0 << (32-(39-32))));
+      l = ((al0 >>> 28) | (ah0 << (32-28))) ^ ((ah0 >>> (34-32)) | (al0 << (32-(34-32)))) ^ ((ah0 >>> (39-32)) | (al0 << (32-(39-32))));
+
+      a += l & 0xffff; b += l >>> 16;
+      c += h & 0xffff; d += h >>> 16;
+
+      // Maj
+      h = (ah0 & ah1) ^ (ah0 & ah2) ^ (ah1 & ah2);
+      l = (al0 & al1) ^ (al0 & al2) ^ (al1 & al2);
+
+      a += l & 0xffff; b += l >>> 16;
+      c += h & 0xffff; d += h >>> 16;
+
+      b += a >>> 16;
+      c += b >>> 16;
+      d += c >>> 16;
+
+      bh7 = (c & 0xffff) | (d << 16);
+      bl7 = (a & 0xffff) | (b << 16);
+
+      // add
+      h = bh3;
+      l = bl3;
+
+      a = l & 0xffff; b = l >>> 16;
+      c = h & 0xffff; d = h >>> 16;
+
+      h = th;
+      l = tl;
+
+      a += l & 0xffff; b += l >>> 16;
+      c += h & 0xffff; d += h >>> 16;
+
+      b += a >>> 16;
+      c += b >>> 16;
+      d += c >>> 16;
+
+      bh3 = (c & 0xffff) | (d << 16);
+      bl3 = (a & 0xffff) | (b << 16);
+
+      ah1 = bh0;
+      ah2 = bh1;
+      ah3 = bh2;
+      ah4 = bh3;
+      ah5 = bh4;
+      ah6 = bh5;
+      ah7 = bh6;
+      ah0 = bh7;
+
+      al1 = bl0;
+      al2 = bl1;
+      al3 = bl2;
+      al4 = bl3;
+      al5 = bl4;
+      al6 = bl5;
+      al7 = bl6;
+      al0 = bl7;
+
+      if (i%16 === 15) {
+        for (j = 0; j < 16; j++) {
+          // add
+          h = wh[j];
+          l = wl[j];
+
+          a = l & 0xffff; b = l >>> 16;
+          c = h & 0xffff; d = h >>> 16;
+
+          h = wh[(j+9)%16];
+          l = wl[(j+9)%16];
+
+          a += l & 0xffff; b += l >>> 16;
+          c += h & 0xffff; d += h >>> 16;
+
+          // sigma0
+          th = wh[(j+1)%16];
+          tl = wl[(j+1)%16];
+          h = ((th >>> 1) | (tl << (32-1))) ^ ((th >>> 8) | (tl << (32-8))) ^ (th >>> 7);
+          l = ((tl >>> 1) | (th << (32-1))) ^ ((tl >>> 8) | (th << (32-8))) ^ ((tl >>> 7) | (th << (32-7)));
+
+          a += l & 0xffff; b += l >>> 16;
+          c += h & 0xffff; d += h >>> 16;
+
+          // sigma1
+          th = wh[(j+14)%16];
+          tl = wl[(j+14)%16];
+          h = ((th >>> 19) | (tl << (32-19))) ^ ((tl >>> (61-32)) | (th << (32-(61-32)))) ^ (th >>> 6);
+          l = ((tl >>> 19) | (th << (32-19))) ^ ((th >>> (61-32)) | (tl << (32-(61-32)))) ^ ((tl >>> 6) | (th << (32-6)));
+
+          a += l & 0xffff; b += l >>> 16;
+          c += h & 0xffff; d += h >>> 16;
+
+          b += a >>> 16;
+          c += b >>> 16;
+          d += c >>> 16;
+
+          wh[j] = (c & 0xffff) | (d << 16);
+          wl[j] = (a & 0xffff) | (b << 16);
+        }
+      }
+    }
+
+    // add
+    h = ah0;
+    l = al0;
+
+    a = l & 0xffff; b = l >>> 16;
+    c = h & 0xffff; d = h >>> 16;
+
+    h = hh[0];
+    l = hl[0];
+
+    a += l & 0xffff; b += l >>> 16;
+    c += h & 0xffff; d += h >>> 16;
+
+    b += a >>> 16;
+    c += b >>> 16;
+    d += c >>> 16;
+
+    hh[0] = ah0 = (c & 0xffff) | (d << 16);
+    hl[0] = al0 = (a & 0xffff) | (b << 16);
+
+    h = ah1;
+    l = al1;
+
+    a = l & 0xffff; b = l >>> 16;
+    c = h & 0xffff; d = h >>> 16;
+
+    h = hh[1];
+    l = hl[1];
+
+    a += l & 0xffff; b += l >>> 16;
+    c += h & 0xffff; d += h >>> 16;
+
+    b += a >>> 16;
+    c += b >>> 16;
+    d += c >>> 16;
+
+    hh[1] = ah1 = (c & 0xffff) | (d << 16);
+    hl[1] = al1 = (a & 0xffff) | (b << 16);
+
+    h = ah2;
+    l = al2;
+
+    a = l & 0xffff; b = l >>> 16;
+    c = h & 0xffff; d = h >>> 16;
+
+    h = hh[2];
+    l = hl[2];
+
+    a += l & 0xffff; b += l >>> 16;
+    c += h & 0xffff; d += h >>> 16;
+
+    b += a >>> 16;
+    c += b >>> 16;
+    d += c >>> 16;
+
+    hh[2] = ah2 = (c & 0xffff) | (d << 16);
+    hl[2] = al2 = (a & 0xffff) | (b << 16);
+
+    h = ah3;
+    l = al3;
+
+    a = l & 0xffff; b = l >>> 16;
+    c = h & 0xffff; d = h >>> 16;
+
+    h = hh[3];
+    l = hl[3];
+
+    a += l & 0xffff; b += l >>> 16;
+    c += h & 0xffff; d += h >>> 16;
+
+    b += a >>> 16;
+    c += b >>> 16;
+    d += c >>> 16;
+
+    hh[3] = ah3 = (c & 0xffff) | (d << 16);
+    hl[3] = al3 = (a & 0xffff) | (b << 16);
+
+    h = ah4;
+    l = al4;
+
+    a = l & 0xffff; b = l >>> 16;
+    c = h & 0xffff; d = h >>> 16;
+
+    h = hh[4];
+    l = hl[4];
+
+    a += l & 0xffff; b += l >>> 16;
+    c += h & 0xffff; d += h >>> 16;
+
+    b += a >>> 16;
+    c += b >>> 16;
+    d += c >>> 16;
+
+    hh[4] = ah4 = (c & 0xffff) | (d << 16);
+    hl[4] = al4 = (a & 0xffff) | (b << 16);
+
+    h = ah5;
+    l = al5;
+
+    a = l & 0xffff; b = l >>> 16;
+    c = h & 0xffff; d = h >>> 16;
+
+    h = hh[5];
+    l = hl[5];
+
+    a += l & 0xffff; b += l >>> 16;
+    c += h & 0xffff; d += h >>> 16;
+
+    b += a >>> 16;
+    c += b >>> 16;
+    d += c >>> 16;
+
+    hh[5] = ah5 = (c & 0xffff) | (d << 16);
+    hl[5] = al5 = (a & 0xffff) | (b << 16);
+
+    h = ah6;
+    l = al6;
+
+    a = l & 0xffff; b = l >>> 16;
+    c = h & 0xffff; d = h >>> 16;
+
+    h = hh[6];
+    l = hl[6];
+
+    a += l & 0xffff; b += l >>> 16;
+    c += h & 0xffff; d += h >>> 16;
+
+    b += a >>> 16;
+    c += b >>> 16;
+    d += c >>> 16;
+
+    hh[6] = ah6 = (c & 0xffff) | (d << 16);
+    hl[6] = al6 = (a & 0xffff) | (b << 16);
+
+    h = ah7;
+    l = al7;
+
+    a = l & 0xffff; b = l >>> 16;
+    c = h & 0xffff; d = h >>> 16;
+
+    h = hh[7];
+    l = hl[7];
+
+    a += l & 0xffff; b += l >>> 16;
+    c += h & 0xffff; d += h >>> 16;
+
+    b += a >>> 16;
+    c += b >>> 16;
+    d += c >>> 16;
+
+    hh[7] = ah7 = (c & 0xffff) | (d << 16);
+    hl[7] = al7 = (a & 0xffff) | (b << 16);
+
+    pos += 128;
+    n -= 128;
+  }
+
+  return n;
+}
+
+function crypto_hash(out, m, n) {
+  var hh = new Int32Array(8),
+      hl = new Int32Array(8),
+      x = new Uint8Array(256),
+      i, b = n;
+
+  hh[0] = 0x6a09e667;
+  hh[1] = 0xbb67ae85;
+  hh[2] = 0x3c6ef372;
+  hh[3] = 0xa54ff53a;
+  hh[4] = 0x510e527f;
+  hh[5] = 0x9b05688c;
+  hh[6] = 0x1f83d9ab;
+  hh[7] = 0x5be0cd19;
+
+  hl[0] = 0xf3bcc908;
+  hl[1] = 0x84caa73b;
+  hl[2] = 0xfe94f82b;
+  hl[3] = 0x5f1d36f1;
+  hl[4] = 0xade682d1;
+  hl[5] = 0x2b3e6c1f;
+  hl[6] = 0xfb41bd6b;
+  hl[7] = 0x137e2179;
+
+  crypto_hashblocks_hl(hh, hl, m, n);
+  n %= 128;
+
+  for (i = 0; i < n; i++) x[i] = m[b-n+i];
+  x[n] = 128;
+
+  n = 256-128*(n<112?1:0);
+  x[n-9] = 0;
+  ts64(x, n-8,  (b / 0x20000000) | 0, b << 3);
+  crypto_hashblocks_hl(hh, hl, x, n);
+
+  for (i = 0; i < 8; i++) ts64(out, 8*i, hh[i], hl[i]);
+
+  return 0;
+}
+
+function add(p, q) {
+  var a = gf(), b = gf(), c = gf(),
+      d = gf(), e = gf(), f = gf(),
+      g = gf(), h = gf(), t = gf();
+
+  Z(a, p[1], p[0]);
+  Z(t, q[1], q[0]);
+  M(a, a, t);
+  A(b, p[0], p[1]);
+  A(t, q[0], q[1]);
+  M(b, b, t);
+  M(c, p[3], q[3]);
+  M(c, c, D2);
+  M(d, p[2], q[2]);
+  A(d, d, d);
+  Z(e, b, a);
+  Z(f, d, c);
+  A(g, d, c);
+  A(h, b, a);
+
+  M(p[0], e, f);
+  M(p[1], h, g);
+  M(p[2], g, f);
+  M(p[3], e, h);
+}
+
+function cswap(p, q, b) {
+  var i;
+  for (i = 0; i < 4; i++) {
+    sel25519(p[i], q[i], b);
+  }
+}
+
+function pack(r, p) {
+  var tx = gf(), ty = gf(), zi = gf();
+  inv25519(zi, p[2]);
+  M(tx, p[0], zi);
+  M(ty, p[1], zi);
+  pack25519(r, ty);
+  r[31] ^= par25519(tx) << 7;
+}
+
+function scalarmult(p, q, s) {
+  var b, i;
+  set25519(p[0], gf0);
+  set25519(p[1], gf1);
+  set25519(p[2], gf1);
+  set25519(p[3], gf0);
+  for (i = 255; i >= 0; --i) {
+    b = (s[(i/8)|0] >> (i&7)) & 1;
+    cswap(p, q, b);
+    add(q, p);
+    add(p, p);
+    cswap(p, q, b);
+  }
+}
+
+function scalarbase(p, s) {
+  var q = [gf(), gf(), gf(), gf()];
+  set25519(q[0], X);
+  set25519(q[1], Y);
+  set25519(q[2], gf1);
+  M(q[3], X, Y);
+  scalarmult(p, q, s);
+}
+
+function crypto_sign_keypair(pk, sk, seeded) {
+  var d = new Uint8Array(64);
+  var p = [gf(), gf(), gf(), gf()];
+  var i;
+
+  if (!seeded) randombytes(sk, 32);
+  crypto_hash(d, sk, 32);
+  d[0] &= 248;
+  d[31] &= 127;
+  d[31] |= 64;
+
+  scalarbase(p, d);
+  pack(pk, p);
+
+  for (i = 0; i < 32; i++) sk[i+32] = pk[i];
+  return 0;
+}
+
+var L = new Float64Array([0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10]);
+
+function modL(r, x) {
+  var carry, i, j, k;
+  for (i = 63; i >= 32; --i) {
+    carry = 0;
+    for (j = i - 32, k = i - 12; j < k; ++j) {
+      x[j] += carry - 16 * x[i] * L[j - (i - 32)];
+      carry = Math.floor((x[j] + 128) / 256);
+      x[j] -= carry * 256;
+    }
+    x[j] += carry;
+    x[i] = 0;
+  }
+  carry = 0;
+  for (j = 0; j < 32; j++) {
+    x[j] += carry - (x[31] >> 4) * L[j];
+    carry = x[j] >> 8;
+    x[j] &= 255;
+  }
+  for (j = 0; j < 32; j++) x[j] -= carry * L[j];
+  for (i = 0; i < 32; i++) {
+    x[i+1] += x[i] >> 8;
+    r[i] = x[i] & 255;
+  }
+}
+
+function reduce(r) {
+  var x = new Float64Array(64), i;
+  for (i = 0; i < 64; i++) x[i] = r[i];
+  for (i = 0; i < 64; i++) r[i] = 0;
+  modL(r, x);
+}
+
+// Note: difference from C - smlen returned, not passed as argument.
+function crypto_sign(sm, m, n, sk) {
+  var d = new Uint8Array(64), h = new Uint8Array(64), r = new Uint8Array(64);
+  var i, j, x = new Float64Array(64);
+  var p = [gf(), gf(), gf(), gf()];
+
+  crypto_hash(d, sk, 32);
+  d[0] &= 248;
+  d[31] &= 127;
+  d[31] |= 64;
+
+  var smlen = n + 64;
+  for (i = 0; i < n; i++) sm[64 + i] = m[i];
+  for (i = 0; i < 32; i++) sm[32 + i] = d[32 + i];
+
+  crypto_hash(r, sm.subarray(32), n+32);
+  reduce(r);
+  scalarbase(p, r);
+  pack(sm, p);
+
+  for (i = 32; i < 64; i++) sm[i] = sk[i];
+  crypto_hash(h, sm, n + 64);
+  reduce(h);
+
+  for (i = 0; i < 64; i++) x[i] = 0;
+  for (i = 0; i < 32; i++) x[i] = r[i];
+  for (i = 0; i < 32; i++) {
+    for (j = 0; j < 32; j++) {
+      x[i+j] += h[i] * d[j];
+    }
+  }
+
+  modL(sm.subarray(32), x);
+  return smlen;
+}
+
+function unpackneg(r, p) {
+  var t = gf(), chk = gf(), num = gf(),
+      den = gf(), den2 = gf(), den4 = gf(),
+      den6 = gf();
+
+  set25519(r[2], gf1);
+  unpack25519(r[1], p);
+  S(num, r[1]);
+  M(den, num, D);
+  Z(num, num, r[2]);
+  A(den, r[2], den);
+
+  S(den2, den);
+  S(den4, den2);
+  M(den6, den4, den2);
+  M(t, den6, num);
+  M(t, t, den);
+
+  pow2523(t, t);
+  M(t, t, num);
+  M(t, t, den);
+  M(t, t, den);
+  M(r[0], t, den);
+
+  S(chk, r[0]);
+  M(chk, chk, den);
+  if (neq25519(chk, num)) M(r[0], r[0], I);
+
+  S(chk, r[0]);
+  M(chk, chk, den);
+  if (neq25519(chk, num)) return -1;
+
+  if (par25519(r[0]) === (p[31]>>7)) Z(r[0], gf0, r[0]);
+
+  M(r[3], r[0], r[1]);
+  return 0;
+}
+
+function crypto_sign_open(m, sm, n, pk) {
+  var i;
+  var t = new Uint8Array(32), h = new Uint8Array(64);
+  var p = [gf(), gf(), gf(), gf()],
+      q = [gf(), gf(), gf(), gf()];
+
+  if (n < 64) return -1;
+
+  if (unpackneg(q, pk)) return -1;
+
+  for (i = 0; i < n; i++) m[i] = sm[i];
+  for (i = 0; i < 32; i++) m[i+32] = pk[i];
+  crypto_hash(h, m, n);
+  reduce(h);
+  scalarmult(p, q, h);
+
+  scalarbase(q, sm.subarray(32));
+  add(p, q);
+  pack(t, p);
+
+  n -= 64;
+  if (crypto_verify_32(sm, 0, t, 0)) {
+    for (i = 0; i < n; i++) m[i] = 0;
+    return -1;
+  }
+
+  for (i = 0; i < n; i++) m[i] = sm[i + 64];
+  return n;
+}
+
+var crypto_secretbox_KEYBYTES = 32,
+    crypto_secretbox_NONCEBYTES = 24,
+    crypto_secretbox_ZEROBYTES = 32,
+    crypto_secretbox_BOXZEROBYTES = 16,
+    crypto_scalarmult_BYTES = 32,
+    crypto_scalarmult_SCALARBYTES = 32,
+    crypto_box_PUBLICKEYBYTES = 32,
+    crypto_box_SECRETKEYBYTES = 32,
+    crypto_box_BEFORENMBYTES = 32,
+    crypto_box_NONCEBYTES = crypto_secretbox_NONCEBYTES,
+    crypto_box_ZEROBYTES = crypto_secretbox_ZEROBYTES,
+    crypto_box_BOXZEROBYTES = crypto_secretbox_BOXZEROBYTES,
+    crypto_sign_BYTES = 64,
+    crypto_sign_PUBLICKEYBYTES = 32,
+    crypto_sign_SECRETKEYBYTES = 64,
+    crypto_sign_SEEDBYTES = 32,
+    crypto_hash_BYTES = 64;
+
+nacl.lowlevel = {
+  crypto_core_hsalsa20: crypto_core_hsalsa20,
+  crypto_stream_xor: crypto_stream_xor,
+  crypto_stream: crypto_stream,
+  crypto_stream_salsa20_xor: crypto_stream_salsa20_xor,
+  crypto_stream_salsa20: crypto_stream_salsa20,
+  crypto_onetimeauth: crypto_onetimeauth,
+  crypto_onetimeauth_verify: crypto_onetimeauth_verify,
+  crypto_verify_16: crypto_verify_16,
+  crypto_verify_32: crypto_verify_32,
+  crypto_secretbox: crypto_secretbox,
+  crypto_secretbox_open: crypto_secretbox_open,
+  crypto_scalarmult: crypto_scalarmult,
+  crypto_scalarmult_base: crypto_scalarmult_base,
+  crypto_box_beforenm: crypto_box_beforenm,
+  crypto_box_afternm: crypto_box_afternm,
+  crypto_box: crypto_box,
+  crypto_box_open: crypto_box_open,
+  crypto_box_keypair: crypto_box_keypair,
+  crypto_hash: crypto_hash,
+  crypto_sign: crypto_sign,
+  crypto_sign_keypair: crypto_sign_keypair,
+  crypto_sign_open: crypto_sign_open,
+
+  crypto_secretbox_KEYBYTES: crypto_secretbox_KEYBYTES,
+  crypto_secretbox_NONCEBYTES: crypto_secretbox_NONCEBYTES,
+  crypto_secretbox_ZEROBYTES: crypto_secretbox_ZEROBYTES,
+  crypto_secretbox_BOXZEROBYTES: crypto_secretbox_BOXZEROBYTES,
+  crypto_scalarmult_BYTES: crypto_scalarmult_BYTES,
+  crypto_scalarmult_SCALARBYTES: crypto_scalarmult_SCALARBYTES,
+  crypto_box_PUBLICKEYBYTES: crypto_box_PUBLICKEYBYTES,
+  crypto_box_SECRETKEYBYTES: crypto_box_SECRETKEYBYTES,
+  crypto_box_BEFORENMBYTES: crypto_box_BEFORENMBYTES,
+  crypto_box_NONCEBYTES: crypto_box_NONCEBYTES,
+  crypto_box_ZEROBYTES: crypto_box_ZEROBYTES,
+  crypto_box_BOXZEROBYTES: crypto_box_BOXZEROBYTES,
+  crypto_sign_BYTES: crypto_sign_BYTES,
+  crypto_sign_PUBLICKEYBYTES: crypto_sign_PUBLICKEYBYTES,
+  crypto_sign_SECRETKEYBYTES: crypto_sign_SECRETKEYBYTES,
+  crypto_sign_SEEDBYTES: crypto_sign_SEEDBYTES,
+  crypto_hash_BYTES: crypto_hash_BYTES,
+
+  gf: gf,
+  D: D,
+  L: L,
+  pack25519: pack25519,
+  unpack25519: unpack25519,
+  M: M,
+  A: A,
+  S: S,
+  Z: Z,
+  pow2523: pow2523,
+  add: add,
+  set25519: set25519,
+  modL: modL,
+  scalarmult: scalarmult,
+  scalarbase: scalarbase,
+};
+
+/* High-level API */
+
+function checkLengths(k, n) {
+  if (k.length !== crypto_secretbox_KEYBYTES) throw new Error('bad key size');
+  if (n.length !== crypto_secretbox_NONCEBYTES) throw new Error('bad nonce size');
+}
+
+function checkBoxLengths(pk, sk) {
+  if (pk.length !== crypto_box_PUBLICKEYBYTES) throw new Error('bad public key size');
+  if (sk.length !== crypto_box_SECRETKEYBYTES) throw new Error('bad secret key size');
+}
+
+function checkArrayTypes() {
+  for (var i = 0; i < arguments.length; i++) {
+    if (!(arguments[i] instanceof Uint8Array))
+      throw new TypeError('unexpected type, use Uint8Array');
+  }
+}
+
+function cleanup(arr) {
+  for (var i = 0; i < arr.length; i++) arr[i] = 0;
+}
+
+nacl.randomBytes = function(n) {
+  var b = new Uint8Array(n);
+  randombytes(b, n);
+  return b;
+};
+
+nacl.secretbox = function(msg, nonce, key) {
+  checkArrayTypes(msg, nonce, key);
+  checkLengths(key, nonce);
+  var m = new Uint8Array(crypto_secretbox_ZEROBYTES + msg.length);
+  var c = new Uint8Array(m.length);
+  for (var i = 0; i < msg.length; i++) m[i+crypto_secretbox_ZEROBYTES] = msg[i];
+  crypto_secretbox(c, m, m.length, nonce, key);
+  return c.subarray(crypto_secretbox_BOXZEROBYTES);
+};
+
+nacl.secretbox.open = function(box, nonce, key) {
+  checkArrayTypes(box, nonce, key);
+  checkLengths(key, nonce);
+  var c = new Uint8Array(crypto_secretbox_BOXZEROBYTES + box.length);
+  var m = new Uint8Array(c.length);
+  for (var i = 0; i < box.length; i++) c[i+crypto_secretbox_BOXZEROBYTES] = box[i];
+  if (c.length < 32) return null;
+  if (crypto_secretbox_open(m, c, c.length, nonce, key) !== 0) return null;
+  return m.subarray(crypto_secretbox_ZEROBYTES);
+};
+
+nacl.secretbox.keyLength = crypto_secretbox_KEYBYTES;
+nacl.secretbox.nonceLength = crypto_secretbox_NONCEBYTES;
+nacl.secretbox.overheadLength = crypto_secretbox_BOXZEROBYTES;
+
+nacl.scalarMult = function(n, p) {
+  checkArrayTypes(n, p);
+  if (n.length !== crypto_scalarmult_SCALARBYTES) throw new Error('bad n size');
+  if (p.length !== crypto_scalarmult_BYTES) throw new Error('bad p size');
+  var q = new Uint8Array(crypto_scalarmult_BYTES);
+  crypto_scalarmult(q, n, p);
+  return q;
+};
+
+nacl.scalarMult.base = function(n) {
+  checkArrayTypes(n);
+  if (n.length !== crypto_scalarmult_SCALARBYTES) throw new Error('bad n size');
+  var q = new Uint8Array(crypto_scalarmult_BYTES);
+  crypto_scalarmult_base(q, n);
+  return q;
+};
+
+nacl.scalarMult.scalarLength = crypto_scalarmult_SCALARBYTES;
+nacl.scalarMult.groupElementLength = crypto_scalarmult_BYTES;
+
+nacl.box = function(msg, nonce, publicKey, secretKey) {
+  var k = nacl.box.before(publicKey, secretKey);
+  return nacl.secretbox(msg, nonce, k);
+};
+
+nacl.box.before = function(publicKey, secretKey) {
+  checkArrayTypes(publicKey, secretKey);
+  checkBoxLengths(publicKey, secretKey);
+  var k = new Uint8Array(crypto_box_BEFORENMBYTES);
+  crypto_box_beforenm(k, publicKey, secretKey);
+  return k;
+};
+
+nacl.box.after = nacl.secretbox;
+
+nacl.box.open = function(msg, nonce, publicKey, secretKey) {
+  var k = nacl.box.before(publicKey, secretKey);
+  return nacl.secretbox.open(msg, nonce, k);
+};
+
+nacl.box.open.after = nacl.secretbox.open;
+
+nacl.box.keyPair = function() {
+  var pk = new Uint8Array(crypto_box_PUBLICKEYBYTES);
+  var sk = new Uint8Array(crypto_box_SECRETKEYBYTES);
+  crypto_box_keypair(pk, sk);
+  return {publicKey: pk, secretKey: sk};
+};
+
+nacl.box.keyPair.fromSecretKey = function(secretKey) {
+  checkArrayTypes(secretKey);
+  if (secretKey.length !== crypto_box_SECRETKEYBYTES)
+    throw new Error('bad secret key size');
+  var pk = new Uint8Array(crypto_box_PUBLICKEYBYTES);
+  crypto_scalarmult_base(pk, secretKey);
+  return {publicKey: pk, secretKey: new Uint8Array(secretKey)};
+};
+
+nacl.box.publicKeyLength = crypto_box_PUBLICKEYBYTES;
+nacl.box.secretKeyLength = crypto_box_SECRETKEYBYTES;
+nacl.box.sharedKeyLength = crypto_box_BEFORENMBYTES;
+nacl.box.nonceLength = crypto_box_NONCEBYTES;
+nacl.box.overheadLength = nacl.secretbox.overheadLength;
+
+nacl.sign = function(msg, secretKey) {
+  checkArrayTypes(msg, secretKey);
+  if (secretKey.length !== crypto_sign_SECRETKEYBYTES)
+    throw new Error('bad secret key size');
+  var signedMsg = new Uint8Array(crypto_sign_BYTES+msg.length);
+  crypto_sign(signedMsg, msg, msg.length, secretKey);
+  return signedMsg;
+};
+
+nacl.sign.open = function(signedMsg, publicKey) {
+  checkArrayTypes(signedMsg, publicKey);
+  if (publicKey.length !== crypto_sign_PUBLICKEYBYTES)
+    throw new Error('bad public key size');
+  var tmp = new Uint8Array(signedMsg.length);
+  var mlen = crypto_sign_open(tmp, signedMsg, signedMsg.length, publicKey);
+  if (mlen < 0) return null;
+  var m = new Uint8Array(mlen);
+  for (var i = 0; i < m.length; i++) m[i] = tmp[i];
+  return m;
+};
+
+nacl.sign.detached = function(msg, secretKey) {
+  var signedMsg = nacl.sign(msg, secretKey);
+  var sig = new Uint8Array(crypto_sign_BYTES);
+  for (var i = 0; i < sig.length; i++) sig[i] = signedMsg[i];
+  return sig;
+};
+
+nacl.sign.detached.verify = function(msg, sig, publicKey) {
+  checkArrayTypes(msg, sig, publicKey);
+  if (sig.length !== crypto_sign_BYTES)
+    throw new Error('bad signature size');
+  if (publicKey.length !== crypto_sign_PUBLICKEYBYTES)
+    throw new Error('bad public key size');
+  var sm = new Uint8Array(crypto_sign_BYTES + msg.length);
+  var m = new Uint8Array(crypto_sign_BYTES + msg.length);
+  var i;
+  for (i = 0; i < crypto_sign_BYTES; i++) sm[i] = sig[i];
+  for (i = 0; i < msg.length; i++) sm[i+crypto_sign_BYTES] = msg[i];
+  return (crypto_sign_open(m, sm, sm.length, publicKey) >= 0);
+};
+
+nacl.sign.keyPair = function() {
+  var pk = new Uint8Array(crypto_sign_PUBLICKEYBYTES);
+  var sk = new Uint8Array(crypto_sign_SECRETKEYBYTES);
+  crypto_sign_keypair(pk, sk);
+  return {publicKey: pk, secretKey: sk};
+};
+
+nacl.sign.keyPair.fromSecretKey = function(secretKey) {
+  checkArrayTypes(secretKey);
+  if (secretKey.length !== crypto_sign_SECRETKEYBYTES)
+    throw new Error('bad secret key size');
+  var pk = new Uint8Array(crypto_sign_PUBLICKEYBYTES);
+  for (var i = 0; i < pk.length; i++) pk[i] = secretKey[32+i];
+  return {publicKey: pk, secretKey: new Uint8Array(secretKey)};
+};
+
+nacl.sign.keyPair.fromSeed = function(seed) {
+  checkArrayTypes(seed);
+  if (seed.length !== crypto_sign_SEEDBYTES)
+    throw new Error('bad seed size');
+  var pk = new Uint8Array(crypto_sign_PUBLICKEYBYTES);
+  var sk = new Uint8Array(crypto_sign_SECRETKEYBYTES);
+  for (var i = 0; i < 32; i++) sk[i] = seed[i];
+  crypto_sign_keypair(pk, sk, true);
+  return {publicKey: pk, secretKey: sk};
+};
+
+nacl.sign.publicKeyLength = crypto_sign_PUBLICKEYBYTES;
+nacl.sign.secretKeyLength = crypto_sign_SECRETKEYBYTES;
+nacl.sign.seedLength = crypto_sign_SEEDBYTES;
+nacl.sign.signatureLength = crypto_sign_BYTES;
+
+nacl.hash = function(msg) {
+  checkArrayTypes(msg);
+  var h = new Uint8Array(crypto_hash_BYTES);
+  crypto_hash(h, msg, msg.length);
+  return h;
+};
+
+nacl.hash.hashLength = crypto_hash_BYTES;
+
+nacl.verify = function(x, y) {
+  checkArrayTypes(x, y);
+  // Zero length arguments are considered not equal.
+  if (x.length === 0 || y.length === 0) return false;
+  if (x.length !== y.length) return false;
+  return (vn(x, 0, y, 0, x.length) === 0) ? true : false;
+};
+
+nacl.setPRNG = function(fn) {
+  randombytes = fn;
+};
+
+(function() {
+  // Initialize PRNG if environment provides CSPRNG.
+  // If not, methods calling randombytes will throw.
+  var crypto = typeof self !== 'undefined' ? (self.crypto || self.msCrypto) : null;
+  if (crypto && crypto.getRandomValues) {
+    // Browsers.
+    var QUOTA = 65536;
+    nacl.setPRNG(function(x, n) {
+      var i, v = new Uint8Array(n);
+      for (i = 0; i < n; i += QUOTA) {
+        crypto.getRandomValues(v.subarray(i, i + Math.min(n - i, QUOTA)));
+      }
+      for (i = 0; i < n; i++) x[i] = v[i];
+      cleanup(v);
+    });
+  } else if (true) {
+    // Node.js.
+    crypto = __webpack_require__(/*! crypto */ "?dba7");
+    if (crypto && crypto.randomBytes) {
+      nacl.setPRNG(function(x, n) {
+        var i, v = crypto.randomBytes(n);
+        for (i = 0; i < n; i++) x[i] = v[i];
+        cleanup(v);
+      });
+    }
+  }
+})();
+
+})( true && module.exports ? module.exports : (self.nacl = self.nacl || {}));
+
+
+/***/ }),
+
 /***/ "./node_modules/util-deprecate/browser.js":
 /*!************************************************!*\
   !*** ./node_modules/util-deprecate/browser.js ***!
@@ -62227,6 +72538,16 @@ exports.createContext = Script.createContext = function (context) {
 /*!**********************!*\
   !*** util (ignored) ***!
   \**********************/
+/***/ (() => {
+
+/* (ignored) */
+
+/***/ }),
+
+/***/ "?dba7":
+/*!************************!*\
+  !*** crypto (ignored) ***!
+  \************************/
 /***/ (() => {
 
 /* (ignored) */
