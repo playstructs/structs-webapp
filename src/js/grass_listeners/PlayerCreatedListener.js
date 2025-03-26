@@ -15,6 +15,7 @@ export class PlayerCreatedListener extends AbstractGrassListener {
       && messageData.primary_address === this.playerAddress
     ) {
       console.log(messageData.id);
+      this.shouldUnregister = () => true;
     }
   }
 }

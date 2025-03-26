@@ -32,7 +32,7 @@ export class GrassManager {
    * @param {AbstractGrassListener} listener
    */
   registerListener(listener) {
-    this.listeners.set(listener.name, listener.handler.bind(listener));
+    this.listeners.set(listener.name, listener);
   }
 
   /**
@@ -52,6 +52,7 @@ export class GrassManager {
     }).then((nc) => {
       const subscription = nc.subscribe(`structs.>`);
       (async function () {
+
         for await (const message of subscription) {
 
           const messageData = this.getMessageData(message);
@@ -61,11 +62,17 @@ export class GrassManager {
           }
 
           this.listeners.forEach((listener) => {
-            listener(messageData);
+            listener.handler(messageData);
+
+            if (listener.shouldUnregister()) {
+              this.unregisterListener(listener.name);
+            }
           });
 
         }
+
         throw new GrassError("GRASS subscription closed unexpectedly.");
+
       }.bind(this))();
     });
   }

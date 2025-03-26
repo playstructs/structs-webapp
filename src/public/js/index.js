@@ -732,6 +732,10 @@ class AbstractGrassListener {
   handler(messageData) {
     throw new _framework_NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
   }
+  
+  shouldUnregister() {
+    return false;
+  }
 }
 
 /***/ }),
@@ -765,6 +769,7 @@ class PlayerCreatedListener extends _AbstractGrassListener__WEBPACK_IMPORTED_MOD
       && messageData.primary_address === this.playerAddress
     ) {
       console.log(messageData.id);
+      this.shouldUnregister = () => true;
     }
   }
 }
@@ -952,7 +957,7 @@ class GrassManager {
    * @param {AbstractGrassListener} listener
    */
   registerListener(listener) {
-    this.listeners.set(listener.name, listener.handler.bind(listener));
+    this.listeners.set(listener.name, listener);
   }
 
   /**
@@ -972,6 +977,7 @@ class GrassManager {
     }).then((nc) => {
       const subscription = nc.subscribe(`structs.>`);
       (async function () {
+
         for await (const message of subscription) {
 
           const messageData = this.getMessageData(message);
@@ -981,11 +987,17 @@ class GrassManager {
           }
 
           this.listeners.forEach((listener) => {
-            listener(messageData);
+            listener.handler(messageData);
+
+            if (listener.shouldUnregister()) {
+              this.unregisterListener(listener.name);
+            }
           });
 
         }
+
         throw new _errors_GrassError__WEBPACK_IMPORTED_MODULE_1__.GrassError("GRASS subscription closed unexpectedly.");
+
       }.bind(this))();
     });
   }

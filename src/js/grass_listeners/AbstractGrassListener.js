@@ -12,4 +12,8 @@ export class AbstractGrassListener {
   handler(messageData) {
     throw new NotImplementedError();
   }
+  
+  shouldUnregister() {
+    return false;
+  }
 }
