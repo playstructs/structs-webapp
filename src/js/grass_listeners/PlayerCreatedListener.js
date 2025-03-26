@@ -6,6 +6,7 @@ export class PlayerCreatedListener extends AbstractGrassListener {
     super('PLAYER_CREATED');
     this.guildId = null;
     this.playerAddress = null;
+    this.authManager = null;
   }
 
   handler(messageData) {
@@ -15,6 +16,9 @@ export class PlayerCreatedListener extends AbstractGrassListener {
       && messageData.primary_address === this.playerAddress
     ) {
       console.log(messageData.id);
+
+      this.authManager.login();
+
       this.shouldUnregister = () => true;
     }
   }

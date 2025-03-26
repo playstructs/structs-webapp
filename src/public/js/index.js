@@ -38,6 +38,17 @@ class GuildAPI {
   }
 
   /**
+   *
+   * @param {string} guildId
+   * @param {string} address
+   * @param {string} unixTimestamp
+   * @return {string}
+   */
+  buildLoginMessage(guildId, address, unixTimestamp) {
+    return `LOGIN_GUILD${guildId}ADDRESS${address}DATETIME${unixTimestamp}`;
+  }
+
+  /**
    * @return {Promise<GuildAPIResponse>}
    */
   async getThisGuild() {
@@ -48,11 +59,29 @@ class GuildAPI {
   }
 
   /**
+   * @return {Promise<string>}
+   */
+  async getTimestamp() {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/timestamp`);
+    const response = new _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__.GuildAPIResponse(jsonResponse);
+    return response.data.unix_timestamp;
+  }
+
+  /**
    * @param {SignupRequestDTO} signupRequestDTO
    * @return {Promise<GuildAPIResponse>}
    */
   async signup(signupRequestDTO) {
     const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/signup`, signupRequestDTO);
+    return new _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__.GuildAPIResponse(jsonResponse);
+  }
+
+  /**
+   * @param {LoginRequestDTO} loginRequestDTO
+   * @return {GuildAPIResponse}
+   */
+  async login(loginRequestDTO) {
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/login`, loginRequestDTO);
     return new _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__.GuildAPIResponse(jsonResponse);
   }
 }
@@ -247,6 +276,29 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   signupAwaitingId() {
     const viewModel = new _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__.AwaitingIdViewModel();
     viewModel.render();
+  }
+}
+
+/***/ }),
+
+/***/ "./js/dtos/LoginRequestDTO.js":
+/*!************************************!*\
+  !*** ./js/dtos/LoginRequestDTO.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   LoginRequestDTO: () => (/* binding */ LoginRequestDTO)
+/* harmony export */ });
+class LoginRequestDTO {
+  constructor() {
+    this.address = null;
+    this.signature = null;
+    this.pubkey = null;
+    this.guild_id = null;
+    this.unix_timestamp = null;
   }
 }
 
@@ -760,6 +812,7 @@ class PlayerCreatedListener extends _AbstractGrassListener__WEBPACK_IMPORTED_MOD
     super('PLAYER_CREATED');
     this.guildId = null;
     this.playerAddress = null;
+    this.authManager = null;
   }
 
   handler(messageData) {
@@ -769,6 +822,9 @@ class PlayerCreatedListener extends _AbstractGrassListener__WEBPACK_IMPORTED_MOD
       && messageData.primary_address === this.playerAddress
     ) {
       console.log(messageData.id);
+
+      this.authManager.login();
+
       this.shouldUnregister = () => true;
     }
   }
@@ -852,6 +908,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   AuthManager: () => (/* binding */ AuthManager)
 /* harmony export */ });
 /* harmony import */ var _grass_listeners_PlayerCreatedListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../grass_listeners/PlayerCreatedListener */ "./js/grass_listeners/PlayerCreatedListener.js");
+/* harmony import */ var _dtos_LoginRequestDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../dtos/LoginRequestDTO */ "./js/dtos/LoginRequestDTO.js");
+
 
 
 class AuthManager {
@@ -879,12 +937,13 @@ class AuthManager {
    * @return {Promise<boolean>}
    */
   async signup(mnemonic) {
-    const wallet = await this.walletManager.createWallet(mnemonic);
-    const accounts = await wallet.getAccountsWithPrivkeys();
-    const account = accounts[0];
+    this.gameState.wallet = await this.walletManager.createWallet(mnemonic);
+    const accounts = await this.gameState.wallet.getAccountsWithPrivkeys();
+    this.gameState.signingAccount = accounts[0];
+    this.gameState.pubkey = this.walletManager.bytesToHex(this.gameState.signingAccount.pubkey)
 
-    this.gameState.signupRequest.pubkey = this.walletManager.bytesToHex(account.pubkey);
-    this.gameState.signupRequest.primary_address = account.address;
+    this.gameState.signupRequest.pubkey = this.gameState.pubkey;
+    this.gameState.signupRequest.primary_address = this.gameState.signingAccount.address;
     this.gameState.signupRequest.guild_id = this.gameState.thisGuild.id;
 
     const message = this.guildApi.buildGuildMembershipJoinProxyMessage(
@@ -893,15 +952,46 @@ class AuthManager {
       0
     );
 
-    this.gameState.signupRequest.signature = await this.walletManager.createSignatureForProxyMessage(message, account.privkey);
+    this.gameState.signupRequest.signature = await this.walletManager.createSignatureForProxyMessage(
+      message,
+      this.gameState.signingAccount.privkey
+    );
 
     const playerCreatedListener = new _grass_listeners_PlayerCreatedListener__WEBPACK_IMPORTED_MODULE_0__.PlayerCreatedListener();
     playerCreatedListener.guildId = this.gameState.signupRequest.guild_id;
     playerCreatedListener.playerAddress = this.gameState.signupRequest.primary_address;
+    playerCreatedListener.authManager = this;
 
     this.grassManager.registerListener(playerCreatedListener);
 
     const response = await this.guildApi.signup(this.gameState.signupRequest);
+
+    return response.success;
+  }
+
+  async login() {
+    const timestamp = await this.guildApi.getTimestamp();
+
+    const request = new _dtos_LoginRequestDTO__WEBPACK_IMPORTED_MODULE_1__.LoginRequestDTO();
+    request.address = this.gameState.signingAccount.address;
+    request.pubkey = this.gameState.pubkey;
+    request.guild_id = this.gameState.thisGuild.id;
+    request.unix_timestamp = timestamp;
+
+    const message = this.guildApi.buildLoginMessage(
+      request.guild_id,
+      request.address,
+      timestamp
+    );
+
+    request.signature = await this.walletManager.createSignatureForProxyMessage(
+      message,
+      this.gameState.signingAccount.privkey
+    );
+
+    const response = await this.guildApi.login(request);
+
+    console.log('Login response status:', response);
 
     return response.success;
   }
@@ -1131,6 +1221,9 @@ class GameState {
   constructor() {
     this.signupRequest = new _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__.SignupRequestDTO();
     this.thisGuild = null;
+    this.wallet = null;
+    this.signingAccount = null;
+    this.pubkey = null;
   }
 }
 

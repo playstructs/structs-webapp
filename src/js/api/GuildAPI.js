@@ -21,6 +21,17 @@ export class GuildAPI {
   }
 
   /**
+   *
+   * @param {string} guildId
+   * @param {string} address
+   * @param {string} unixTimestamp
+   * @return {string}
+   */
+  buildLoginMessage(guildId, address, unixTimestamp) {
+    return `LOGIN_GUILD${guildId}ADDRESS${address}DATETIME${unixTimestamp}`;
+  }
+
+  /**
    * @return {Promise<GuildAPIResponse>}
    */
   async getThisGuild() {
@@ -31,11 +42,29 @@ export class GuildAPI {
   }
 
   /**
+   * @return {Promise<string>}
+   */
+  async getTimestamp() {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/timestamp`);
+    const response = new GuildAPIResponse(jsonResponse);
+    return response.data.unix_timestamp;
+  }
+
+  /**
    * @param {SignupRequestDTO} signupRequestDTO
    * @return {Promise<GuildAPIResponse>}
    */
   async signup(signupRequestDTO) {
     const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/signup`, signupRequestDTO);
+    return new GuildAPIResponse(jsonResponse);
+  }
+
+  /**
+   * @param {LoginRequestDTO} loginRequestDTO
+   * @return {GuildAPIResponse}
+   */
+  async login(loginRequestDTO) {
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/login`, loginRequestDTO);
     return new GuildAPIResponse(jsonResponse);
   }
 }
