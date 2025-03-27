@@ -27,8 +27,9 @@ export class NumberFormatter {
       return intString;
     }
 
-    const remainderDigits = numDigits % 3;
-    const scaleIndex = (numDigits - remainderDigits) / 3;
+    let remainderDigits = numDigits % 3;
+    remainderDigits = remainderDigits === 0 ? 3 : remainderDigits;
+    const scaleIndex = ((numDigits - remainderDigits) / 3);
     const unit = this.scale[scaleIndex];
 
     return intString.substring(0, remainderDigits) + unit;
