@@ -792,6 +792,43 @@ class AbstractGrassListener {
 
 /***/ }),
 
+/***/ "./js/grass_listeners/BlockListener.js":
+/*!*********************************************!*\
+  !*** ./js/grass_listeners/BlockListener.js ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   BlockListener: () => (/* binding */ BlockListener)
+/* harmony export */ });
+/* harmony import */ var _AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AbstractGrassListener */ "./js/grass_listeners/AbstractGrassListener.js");
+
+
+class BlockListener extends _AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    super('BLOCK');
+    this.gameState = gameState;
+  }
+
+  handler(messageData) {
+    if (
+      messageData.category === 'block'
+      && messageData.subject === 'structs.consensus'
+    ) {
+      this.gameState.currentBlockHeight = messageData.height;
+    }
+  }
+}
+
+
+/***/ }),
+
 /***/ "./js/grass_listeners/PlayerCreatedListener.js":
 /*!*****************************************************!*\
   !*** ./js/grass_listeners/PlayerCreatedListener.js ***!
@@ -849,6 +886,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./managers/AuthManager */ "./js/managers/AuthManager.js");
 /* harmony import */ var _managers_GuildManager__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./managers/GuildManager */ "./js/managers/GuildManager.js");
 /* harmony import */ var _managers_GrassManager__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./managers/GrassManager */ "./js/managers/GrassManager.js");
+/* harmony import */ var _grass_listeners_BlockListener__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./grass_listeners/BlockListener */ "./js/grass_listeners/BlockListener.js");
+
 
 
 
@@ -873,6 +912,8 @@ const authManager = new _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__.AuthM
   grassManager
 );
 
+const blockListener = new _grass_listeners_BlockListener__WEBPACK_IMPORTED_MODULE_8__.BlockListener(gameState);
+
 const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController(
   gameState,
   guildAPI,
@@ -885,6 +926,7 @@ _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
 await guildManager.getThisGuild();
 
+grassManager.registerListener(blockListener);
 grassManager.init();
 
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
@@ -1220,12 +1262,16 @@ class GameState {
 
   constructor() {
     this.signupRequest = new _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__.SignupRequestDTO();
+
     this.thisGuild = null;
     this.wallet = null;
     this.signingAccount = null;
     this.pubkey = null;
+
+    this.currentBlockHeight = null;
   }
 }
+
 
 /***/ }),
 
