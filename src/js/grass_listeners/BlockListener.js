@@ -1,4 +1,4 @@
-import {AbstractGrassListener} from "./AbstractGrassListener";
+import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 
 export class BlockListener extends AbstractGrassListener {
 

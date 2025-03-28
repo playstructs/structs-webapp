@@ -5,7 +5,7 @@ import {GuildAPI} from "./api/GuildAPI";
 import {WalletManager} from "./managers/WalletManager";
 import {AuthManager} from "./managers/AuthManager";
 import {GuildManager} from "./managers/GuildManager";
-import {GrassManager} from "./managers/GrassManager";
+import {GrassManager} from "./framework/GrassManager";
 import {BlockListener} from "./grass_listeners/BlockListener";
 
 const gameState = new GameState();
@@ -15,7 +15,10 @@ const guildAPI = new GuildAPI();
 
 const guildManager = new GuildManager(gameState, guildAPI);
 const walletManager = new WalletManager();
-const grassManager = new GrassManager(gameState);
+const grassManager = new GrassManager(
+  "ws://localhost:1443",
+  "structs.>"
+);
 const authManager = new AuthManager(
   gameState,
   guildAPI,

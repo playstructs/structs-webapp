@@ -1,13 +1,18 @@
 import * as natsCore from "@nats-io/nats-core";
-import {GrassError} from "../errors/GrassError";
+import {GrassError} from "./GrassError";
 
+/**
+ * Guild Rapid Alert System Stream
+ */
 export class GrassManager {
 
   /**
-   * @param {GameState} gameState
+   * @param {string} grassServerUrl
+   * @param {string} subject
    */
-  constructor(gameState) {
-    this.gameState = gameState;
+  constructor(grassServerUrl, subject) {
+    this.grassServerUrl = grassServerUrl;
+    this.subject = subject;
     this.listeners = new Map();
   }
 
@@ -43,14 +48,10 @@ export class GrassManager {
   }
 
   init() {
-    if (this.gameState.thisGuild === null) {
-      throw new GrassError("Init guild info before initializing GRASS. Guild info is needed for GRASS event filtering.");
-    }
-
     natsCore.wsconnect({
-      servers: "ws://localhost:1443"
+      servers: this.grassServerUrl,
     }).then((nc) => {
-      const subscription = nc.subscribe(`structs.>`);
+      const subscription = nc.subscribe(this.subject);
       (async function () {
 
         for await (const message of subscription) {

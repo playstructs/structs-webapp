@@ -349,21 +349,6 @@ class SignupRequestDTO {
 
 /***/ }),
 
-/***/ "./js/errors/GrassError.js":
-/*!*********************************!*\
-  !*** ./js/errors/GrassError.js ***!
-  \*********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   GrassError: () => (/* binding */ GrassError)
-/* harmony export */ });
-class GrassError extends Error {}
-
-/***/ }),
-
 /***/ "./js/errors/GuildAPIError.js":
 /*!************************************!*\
   !*** ./js/errors/GuildAPIError.js ***!
@@ -427,6 +412,40 @@ class AbstractController {
 
 /***/ }),
 
+/***/ "./js/framework/AbstractGrassListener.js":
+/*!***********************************************!*\
+  !*** ./js/framework/AbstractGrassListener.js ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AbstractGrassListener: () => (/* binding */ AbstractGrassListener)
+/* harmony export */ });
+/* harmony import */ var _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./NotImplementedError */ "./js/framework/NotImplementedError.js");
+
+
+class AbstractGrassListener {
+
+  /**
+   * @param {string} name
+   */
+  constructor(name) {
+    this.name = name;
+  }
+
+  handler(messageData) {
+    throw new _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
+  }
+
+  shouldUnregister() {
+    return false;
+  }
+}
+
+/***/ }),
+
 /***/ "./js/framework/AbstractViewModel.js":
 /*!*******************************************!*\
   !*** ./js/framework/AbstractViewModel.js ***!
@@ -447,6 +466,117 @@ class AbstractViewModel {
   }
 }
 
+
+/***/ }),
+
+/***/ "./js/framework/GrassError.js":
+/*!************************************!*\
+  !*** ./js/framework/GrassError.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GrassError: () => (/* binding */ GrassError)
+/* harmony export */ });
+class GrassError extends Error {}
+
+/***/ }),
+
+/***/ "./js/framework/GrassManager.js":
+/*!**************************************!*\
+  !*** ./js/framework/GrassManager.js ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GrassManager: () => (/* binding */ GrassManager)
+/* harmony export */ });
+/* harmony import */ var _nats_io_nats_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @nats-io/nats-core */ "./node_modules/@nats-io/nats-core/lib/mod.js");
+/* harmony import */ var _GrassError__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./GrassError */ "./js/framework/GrassError.js");
+
+
+
+/**
+ * Guild Rapid Alert System Stream
+ */
+class GrassManager {
+
+  /**
+   * @param {string} grassServerUrl
+   * @param {string} subject
+   */
+  constructor(grassServerUrl, subject) {
+    this.grassServerUrl = grassServerUrl;
+    this.subject = subject;
+    this.listeners = new Map();
+  }
+
+  /**
+   * @param {MsgImpl} message
+   * @return {object}
+   */
+  getMessageData(message) {
+    return message.json();
+  }
+
+  /**
+   * @param {object} messageData
+   * @return {boolean}
+   */
+  shouldIgnoreMessage(messageData) {
+    return !messageData.hasOwnProperty('subject')
+      || !messageData.hasOwnProperty('category');
+  }
+
+  /**
+   * @param {AbstractGrassListener} listener
+   */
+  registerListener(listener) {
+    this.listeners.set(listener.name, listener);
+  }
+
+  /**
+   * @param {string} name
+   */
+  unregisterListener(name) {
+    this.listeners.delete(name);
+  }
+
+  init() {
+    _nats_io_nats_core__WEBPACK_IMPORTED_MODULE_0__.wsconnect({
+      servers: this.grassServerUrl,
+    }).then((nc) => {
+      const subscription = nc.subscribe(this.subject);
+      (async function () {
+
+        for await (const message of subscription) {
+
+          const messageData = this.getMessageData(message);
+
+          if (this.shouldIgnoreMessage(messageData)) {
+            continue;
+          }
+
+          this.listeners.forEach((listener) => {
+            listener.handler(messageData);
+
+            if (listener.shouldUnregister()) {
+              this.unregisterListener(listener.name);
+            }
+          });
+
+        }
+
+        throw new _GrassError__WEBPACK_IMPORTED_MODULE_1__.GrassError("GRASS subscription closed unexpectedly.");
+
+      }.bind(this))();
+    });
+  }
+}
 
 /***/ }),
 
@@ -758,40 +888,6 @@ class NotImplementedError extends Error {
 
 /***/ }),
 
-/***/ "./js/grass_listeners/AbstractGrassListener.js":
-/*!*****************************************************!*\
-  !*** ./js/grass_listeners/AbstractGrassListener.js ***!
-  \*****************************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AbstractGrassListener: () => (/* binding */ AbstractGrassListener)
-/* harmony export */ });
-/* harmony import */ var _framework_NotImplementedError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/NotImplementedError */ "./js/framework/NotImplementedError.js");
-
-
-class AbstractGrassListener {
-
-  /**
-   * @param {string} name
-   */
-  constructor(name) {
-    this.name = name;
-  }
-
-  handler(messageData) {
-    throw new _framework_NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
-  }
-  
-  shouldUnregister() {
-    return false;
-  }
-}
-
-/***/ }),
-
 /***/ "./js/grass_listeners/BlockListener.js":
 /*!*********************************************!*\
   !*** ./js/grass_listeners/BlockListener.js ***!
@@ -803,10 +899,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   BlockListener: () => (/* binding */ BlockListener)
 /* harmony export */ });
-/* harmony import */ var _AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AbstractGrassListener */ "./js/grass_listeners/AbstractGrassListener.js");
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
 
 
-class BlockListener extends _AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+class BlockListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
 
   /**
    * @param {GameState} gameState
@@ -840,11 +936,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   PlayerCreatedListener: () => (/* binding */ PlayerCreatedListener)
 /* harmony export */ });
-/* harmony import */ var _AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AbstractGrassListener */ "./js/grass_listeners/AbstractGrassListener.js");
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
 
 
-class PlayerCreatedListener extends _AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
 
   constructor() {
     super('PLAYER_CREATED');
@@ -886,7 +982,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _managers_WalletManager__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./managers/WalletManager */ "./js/managers/WalletManager.js");
 /* harmony import */ var _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./managers/AuthManager */ "./js/managers/AuthManager.js");
 /* harmony import */ var _managers_GuildManager__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./managers/GuildManager */ "./js/managers/GuildManager.js");
-/* harmony import */ var _managers_GrassManager__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./managers/GrassManager */ "./js/managers/GrassManager.js");
+/* harmony import */ var _framework_GrassManager__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./framework/GrassManager */ "./js/framework/GrassManager.js");
 /* harmony import */ var _grass_listeners_BlockListener__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./grass_listeners/BlockListener */ "./js/grass_listeners/BlockListener.js");
 
 
@@ -905,7 +1001,10 @@ const guildAPI = new _api_GuildAPI__WEBPACK_IMPORTED_MODULE_3__.GuildAPI();
 
 const guildManager = new _managers_GuildManager__WEBPACK_IMPORTED_MODULE_6__.GuildManager(gameState, guildAPI);
 const walletManager = new _managers_WalletManager__WEBPACK_IMPORTED_MODULE_4__.WalletManager();
-const grassManager = new _managers_GrassManager__WEBPACK_IMPORTED_MODULE_7__.GrassManager(gameState);
+const grassManager = new _framework_GrassManager__WEBPACK_IMPORTED_MODULE_7__.GrassManager(
+  "ws://localhost:1443",
+  "structs.>"
+);
 const authManager = new _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__.AuthManager(
   gameState,
   guildAPI,
@@ -1040,101 +1139,6 @@ class AuthManager {
     return response.success;
   }
 
-}
-
-/***/ }),
-
-/***/ "./js/managers/GrassManager.js":
-/*!*************************************!*\
-  !*** ./js/managers/GrassManager.js ***!
-  \*************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   GrassManager: () => (/* binding */ GrassManager)
-/* harmony export */ });
-/* harmony import */ var _nats_io_nats_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @nats-io/nats-core */ "./node_modules/@nats-io/nats-core/lib/mod.js");
-/* harmony import */ var _errors_GrassError__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../errors/GrassError */ "./js/errors/GrassError.js");
-
-
-
-class GrassManager {
-
-  /**
-   * @param {GameState} gameState
-   */
-  constructor(gameState) {
-    this.gameState = gameState;
-    this.listeners = new Map();
-  }
-
-  /**
-   * @param {MsgImpl} message
-   * @return {object}
-   */
-  getMessageData(message) {
-    return message.json();
-  }
-
-  /**
-   * @param {object} messageData
-   * @return {boolean}
-   */
-  shouldIgnoreMessage(messageData) {
-    return !messageData.hasOwnProperty('subject')
-      || !messageData.hasOwnProperty('category');
-  }
-
-  /**
-   * @param {AbstractGrassListener} listener
-   */
-  registerListener(listener) {
-    this.listeners.set(listener.name, listener);
-  }
-
-  /**
-   * @param {string} name
-   */
-  unregisterListener(name) {
-    this.listeners.delete(name);
-  }
-
-  init() {
-    if (this.gameState.thisGuild === null) {
-      throw new _errors_GrassError__WEBPACK_IMPORTED_MODULE_1__.GrassError("Init guild info before initializing GRASS. Guild info is needed for GRASS event filtering.");
-    }
-
-    _nats_io_nats_core__WEBPACK_IMPORTED_MODULE_0__.wsconnect({
-      servers: "ws://localhost:1443"
-    }).then((nc) => {
-      const subscription = nc.subscribe(`structs.>`);
-      (async function () {
-
-        for await (const message of subscription) {
-
-          const messageData = this.getMessageData(message);
-
-          if (this.shouldIgnoreMessage(messageData)) {
-            continue;
-          }
-
-          this.listeners.forEach((listener) => {
-            listener.handler(messageData);
-
-            if (listener.shouldUnregister()) {
-              this.unregisterListener(listener.name);
-            }
-          });
-
-        }
-
-        throw new _errors_GrassError__WEBPACK_IMPORTED_MODULE_1__.GrassError("GRASS subscription closed unexpectedly.");
-
-      }.bind(this))();
-    });
-  }
 }
 
 /***/ }),

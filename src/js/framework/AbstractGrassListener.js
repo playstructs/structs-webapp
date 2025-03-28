@@ -1,4 +1,4 @@
-import {NotImplementedError} from "../framework/NotImplementedError";
+import {NotImplementedError} from "./NotImplementedError";
 
 export class AbstractGrassListener {
 
@@ -12,7 +12,7 @@ export class AbstractGrassListener {
   handler(messageData) {
     throw new NotImplementedError();
   }
-  
+
   shouldUnregister() {
     return false;
   }
