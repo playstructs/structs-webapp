@@ -31,6 +31,23 @@ class PlayerController extends AbstractController
     }
 
     /**
+     * @param string $player_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/player/{player_id}/action/last/block/height', name: 'api_get_player_last_action_block_height', methods: ['GET'])]
+    public function getPlayerLastActionBlockHeight(
+        string $player_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerManager = new PlayerManager($entityManager, $validator);
+        return $playerManager->getPlayerLastActionBlockHeight($player_id);
+    }
+
+    /**
      * @param Request $request
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator

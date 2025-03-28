@@ -415,4 +415,30 @@ class PlayerManager
         return new JsonResponse($responseContent, Response::HTTP_OK);
     }
 
+    /**
+     * @param string $player_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getPlayerLastActionBlockHeight(string $player_id): Response
+    {
+        $query = "
+            SELECT val AS last_action_block_height
+            FROM grid
+            WHERE object_id = :player_id
+            AND attribute_type='lastAction'
+            LIMIT 1;
+        ";
+
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
 }
