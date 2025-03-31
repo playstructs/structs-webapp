@@ -9,7 +9,9 @@ export class GameState {
     this.wallet = null;
     this.signingAccount = null;
     this.pubkey = null;
+    this.thisPlayer = null;
 
     this.currentBlockHeight = null;
+    this.lastActionBlockHeight = null;
   }
 }

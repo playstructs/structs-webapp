@@ -4,7 +4,6 @@ import {GameState} from "./models/GameState";
 import {GuildAPI} from "./api/GuildAPI";
 import {WalletManager} from "./managers/WalletManager";
 import {AuthManager} from "./managers/AuthManager";
-import {GuildManager} from "./managers/GuildManager";
 import {GrassManager} from "./framework/GrassManager";
 import {BlockListener} from "./grass_listeners/BlockListener";
 
@@ -13,7 +12,6 @@ global.gameState = gameState;
 
 const guildAPI = new GuildAPI();
 
-const guildManager = new GuildManager(gameState, guildAPI);
 const walletManager = new WalletManager();
 const grassManager = new GrassManager(
   "ws://localhost:1443",
@@ -38,7 +36,7 @@ const authController = new AuthController(
 MenuPage.router.registerController(authController);
 MenuPage.initListeners();
 
-await guildManager.getThisGuild();
+gameState.thisGuild = await guildAPI.getThisGuild();
 
 grassManager.registerListener(blockListener);
 grassManager.init();

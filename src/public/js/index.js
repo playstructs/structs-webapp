@@ -13,8 +13,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   GuildAPI: () => (/* binding */ GuildAPI)
 /* harmony export */ });
 /* harmony import */ var _framework_JsonAjaxer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/JsonAjaxer */ "./js/framework/JsonAjaxer.js");
-/* harmony import */ var _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./GuildAPIResponse */ "./js/api/GuildAPIResponse.js");
-/* harmony import */ var _factories_GuildFactory__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../factories/GuildFactory */ "./js/factories/GuildFactory.js");
+/* harmony import */ var _factories_GuildFactory__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../factories/GuildFactory */ "./js/factories/GuildFactory.js");
+/* harmony import */ var _factories_PlayerFactory__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../factories/PlayerFactory */ "./js/factories/PlayerFactory.js");
+/* harmony import */ var _factories_GuildAPIResponseFactory__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../factories/GuildAPIResponseFactory */ "./js/factories/GuildAPIResponseFactory.js");
+/* harmony import */ var _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../errors/GuildAPIError */ "./js/errors/GuildAPIError.js");
+
+
 
 
 
@@ -24,7 +28,9 @@ class GuildAPI {
   constructor() {
     this.apiUrl = '/api';
     this.ajax = new _framework_JsonAjaxer__WEBPACK_IMPORTED_MODULE_0__.JsonAjaxer();
-    this.guildFactory = new _factories_GuildFactory__WEBPACK_IMPORTED_MODULE_2__.GuildFactory();
+    this.guildAPIResponseFactory = new _factories_GuildAPIResponseFactory__WEBPACK_IMPORTED_MODULE_3__.GuildAPIResponseFactory();
+    this.guildFactory = new _factories_GuildFactory__WEBPACK_IMPORTED_MODULE_1__.GuildFactory();
+    this.playerFactory = new _factories_PlayerFactory__WEBPACK_IMPORTED_MODULE_2__.PlayerFactory();
   }
 
   /**
@@ -49,13 +55,22 @@ class GuildAPI {
   }
 
   /**
-   * @return {Promise<GuildAPIResponse>}
+   * @param {GuildAPIResponse} guildAPIResponse
+   */
+  handleResponseFailure(guildAPIResponse) {
+    if (!guildAPIResponse.success) {
+      throw new _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_4__.GuildAPIError(`Guild API request was unsuccessful. See network request for details.`);
+    }
+  }
+
+  /**
+   * @return {Promise<Guild>}
    */
   async getThisGuild() {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/this`);
-    const response = new _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__.GuildAPIResponse(jsonResponse);
-    response.data = this.guildFactory.make(response.data);
-    return response;
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.guildFactory.make(response.data);
   }
 
   /**
@@ -63,7 +78,8 @@ class GuildAPI {
    */
   async getTimestamp() {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/timestamp`);
-    const response = new _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__.GuildAPIResponse(jsonResponse);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
     return response.data.unix_timestamp;
   }
 
@@ -73,7 +89,7 @@ class GuildAPI {
    */
   async signup(signupRequestDTO) {
     const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/signup`, signupRequestDTO);
-    return new _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__.GuildAPIResponse(jsonResponse);
+    return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
   /**
@@ -82,7 +98,29 @@ class GuildAPI {
    */
   async login(loginRequestDTO) {
     const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/login`, loginRequestDTO);
-    return new _GuildAPIResponse__WEBPACK_IMPORTED_MODULE_1__.GuildAPIResponse(jsonResponse);
+    return this.guildAPIResponseFactory.make(jsonResponse);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<Player>}
+   */
+  async getPlayer(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.playerFactory.make(response.data);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<string>}
+   */
+  async getPlayerLastActionBlockHeight(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}/action/last/block/height`);
+    const response =  this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return response.data.last_action_block_height;
   }
 }
 
@@ -101,13 +139,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 class GuildAPIResponse {
 
-  /**
-   * @param {object} jsonResponse
-   */
-  constructor(jsonResponse) {
-    this.success = jsonResponse.hasOwnProperty('success') ? jsonResponse.success : false;
-    this.errors = jsonResponse.hasOwnProperty('errors') ? jsonResponse.errors : [];
-    this.data = jsonResponse.hasOwnProperty('data') ? jsonResponse.data : null;
+  constructor(
+    success = false,
+    errors = [],
+    data = null
+  ) {
+    this.success = success;
+    this.errors = errors;
+    this.data = data;
   }
 }
 
@@ -364,6 +403,43 @@ class GuildAPIError extends Error {}
 
 /***/ }),
 
+/***/ "./js/factories/GuildAPIResponseFactory.js":
+/*!*************************************************!*\
+  !*** ./js/factories/GuildAPIResponseFactory.js ***!
+  \*************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GuildAPIResponseFactory: () => (/* binding */ GuildAPIResponseFactory)
+/* harmony export */ });
+/* harmony import */ var _api_GuildAPIResponse__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../api/GuildAPIResponse */ "./js/api/GuildAPIResponse.js");
+/* harmony import */ var _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../errors/GuildAPIError */ "./js/errors/GuildAPIError.js");
+
+
+
+class GuildAPIResponseFactory {
+  make(jsonResponse) {
+    if (!jsonResponse.hasOwnProperty('success')
+      || typeof jsonResponse.success !== 'boolean'
+      || !jsonResponse.hasOwnProperty('errors')
+      || !Array.isArray(jsonResponse.errors)
+      || !jsonResponse.hasOwnProperty('data')
+    ) {
+      throw new _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_1__.GuildAPIError('Invalid response from server');
+    }
+
+    return new _api_GuildAPIResponse__WEBPACK_IMPORTED_MODULE_0__.GuildAPIResponse(
+      jsonResponse.success,
+      jsonResponse.errors,
+      jsonResponse.data
+    );
+  }
+}
+
+/***/ }),
+
 /***/ "./js/factories/GuildFactory.js":
 /*!**************************************!*\
   !*** ./js/factories/GuildFactory.js ***!
@@ -383,6 +459,30 @@ class GuildFactory {
     const guild = new _models_Guild__WEBPACK_IMPORTED_MODULE_0__.Guild();
     Object.assign(guild, obj);
     return guild;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/factories/PlayerFactory.js":
+/*!***************************************!*\
+  !*** ./js/factories/PlayerFactory.js ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlayerFactory: () => (/* binding */ PlayerFactory)
+/* harmony export */ });
+/* harmony import */ var _models_Player__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/Player */ "./js/models/Player.js");
+
+
+class PlayerFactory {
+  make(obj) {
+    const player = new _models_Player__WEBPACK_IMPORTED_MODULE_0__.Player();
+    Object.assign(player, obj);
+    return player;
   }
 }
 
@@ -947,6 +1047,8 @@ class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IM
     this.guildId = null;
     this.playerAddress = null;
     this.authManager = null;
+    this.guildAPI = null;
+    this.gameState = null;
   }
 
   handler(messageData) {
@@ -957,7 +1059,17 @@ class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IM
     ) {
       console.log(messageData.id);
 
+      const playerId = messageData.id;
+
       this.authManager.login();
+
+      this.guildAPI.getPlayer(playerId).then(function (player) {
+        this.gameState.thisPlayer = player;
+      }.bind(this));
+
+      this.guildAPI.getPlayerLastActionBlockHeight(playerId).then(function (height) {
+        this.gameState.lastActionBlockHeight = height;
+      }.bind(this));
 
       this.shouldUnregister = () => true;
     }
@@ -981,10 +1093,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _api_GuildAPI__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./api/GuildAPI */ "./js/api/GuildAPI.js");
 /* harmony import */ var _managers_WalletManager__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./managers/WalletManager */ "./js/managers/WalletManager.js");
 /* harmony import */ var _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./managers/AuthManager */ "./js/managers/AuthManager.js");
-/* harmony import */ var _managers_GuildManager__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./managers/GuildManager */ "./js/managers/GuildManager.js");
-/* harmony import */ var _framework_GrassManager__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./framework/GrassManager */ "./js/framework/GrassManager.js");
-/* harmony import */ var _grass_listeners_BlockListener__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./grass_listeners/BlockListener */ "./js/grass_listeners/BlockListener.js");
-
+/* harmony import */ var _framework_GrassManager__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./framework/GrassManager */ "./js/framework/GrassManager.js");
+/* harmony import */ var _grass_listeners_BlockListener__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./grass_listeners/BlockListener */ "./js/grass_listeners/BlockListener.js");
 
 
 
@@ -999,9 +1109,8 @@ __webpack_require__.g.gameState = gameState;
 
 const guildAPI = new _api_GuildAPI__WEBPACK_IMPORTED_MODULE_3__.GuildAPI();
 
-const guildManager = new _managers_GuildManager__WEBPACK_IMPORTED_MODULE_6__.GuildManager(gameState, guildAPI);
 const walletManager = new _managers_WalletManager__WEBPACK_IMPORTED_MODULE_4__.WalletManager();
-const grassManager = new _framework_GrassManager__WEBPACK_IMPORTED_MODULE_7__.GrassManager(
+const grassManager = new _framework_GrassManager__WEBPACK_IMPORTED_MODULE_6__.GrassManager(
   "ws://localhost:1443",
   "structs.>"
 );
@@ -1012,7 +1121,7 @@ const authManager = new _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__.AuthM
   grassManager
 );
 
-const blockListener = new _grass_listeners_BlockListener__WEBPACK_IMPORTED_MODULE_8__.BlockListener(gameState);
+const blockListener = new _grass_listeners_BlockListener__WEBPACK_IMPORTED_MODULE_7__.BlockListener(gameState);
 
 const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_1__.AuthController(
   gameState,
@@ -1024,7 +1133,7 @@ const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
-await guildManager.getThisGuild();
+gameState.thisGuild = await guildAPI.getThisGuild();
 
 grassManager.registerListener(blockListener);
 grassManager.init();
@@ -1104,6 +1213,8 @@ class AuthManager {
     playerCreatedListener.guildId = this.gameState.signupRequest.guild_id;
     playerCreatedListener.playerAddress = this.gameState.signupRequest.primary_address;
     playerCreatedListener.authManager = this;
+    playerCreatedListener.guildApi = this.guildApi;
+    playerCreatedListener.gameState = this.gameState;
 
     this.grassManager.registerListener(playerCreatedListener);
 
@@ -1137,46 +1248,6 @@ class AuthManager {
     console.log('Login response status:', response);
 
     return response.success;
-  }
-
-}
-
-/***/ }),
-
-/***/ "./js/managers/GuildManager.js":
-/*!*************************************!*\
-  !*** ./js/managers/GuildManager.js ***!
-  \*************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   GuildManager: () => (/* binding */ GuildManager)
-/* harmony export */ });
-/* harmony import */ var _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../errors/GuildAPIError */ "./js/errors/GuildAPIError.js");
-/* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
-
-
-class GuildManager {
-
-  /**
-   * @param {GameState} gameState
-   * @param {GuildAPI} guildAPI
-   */
-  constructor(gameState, guildAPI) {
-    this.gameState = gameState;
-    this.guildAPI = guildAPI;
-  }
-
-  async getThisGuild() {
-    const response = await this.guildAPI.getThisGuild();
-    if (response.success) {
-      this.gameState.thisGuild = response.data;
-    } else {
-      console.log(response.errors);
-      throw new _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_0__.GuildAPIError(`Could not get operating guild's info.`);
-    }
   }
 
 }
@@ -1274,8 +1345,10 @@ class GameState {
     this.wallet = null;
     this.signingAccount = null;
     this.pubkey = null;
+    this.thisPlayer = null;
 
     this.currentBlockHeight = null;
+    this.lastActionBlockHeight = null;
   }
 }
 
@@ -1312,6 +1385,40 @@ class Guild {
     this.website = null;
     this.this_infrastructure = true;
     this.status = null;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/models/Player.js":
+/*!*****************************!*\
+  !*** ./js/models/Player.js ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Player: () => (/* binding */ Player)
+/* harmony export */ });
+class Player {
+  constructor() {
+    this.id = null;
+    this.primary_address = null;
+    this.guild_id = null;
+    this.substation_id = null;
+    this.planet_id = null;
+    this.fleet_id = null;
+    this.username = null;
+    this.pfp = null;
+    this.guild_name = null;
+    this.tag = null;
+    this.alpha = null;
+    this.ore = null;
+    this.load = null;
+    this.structs_load = null;
+    this.capacity = null;
+    this.connection_capacity = null;
   }
 }
 

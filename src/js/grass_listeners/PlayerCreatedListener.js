@@ -7,6 +7,8 @@ export class PlayerCreatedListener extends AbstractGrassListener {
     this.guildId = null;
     this.playerAddress = null;
     this.authManager = null;
+    this.guildAPI = null;
+    this.gameState = null;
   }
 
   handler(messageData) {
@@ -17,7 +19,17 @@ export class PlayerCreatedListener extends AbstractGrassListener {
     ) {
       console.log(messageData.id);
 
+      const playerId = messageData.id;
+
       this.authManager.login();
+
+      this.guildAPI.getPlayer(playerId).then(function (player) {
+        this.gameState.thisPlayer = player;
+      }.bind(this));
+
+      this.guildAPI.getPlayerLastActionBlockHeight(playerId).then(function (height) {
+        this.gameState.lastActionBlockHeight = height;
+      }.bind(this));
 
       this.shouldUnregister = () => true;
     }

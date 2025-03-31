@@ -50,6 +50,8 @@ export class AuthManager {
     playerCreatedListener.guildId = this.gameState.signupRequest.guild_id;
     playerCreatedListener.playerAddress = this.gameState.signupRequest.primary_address;
     playerCreatedListener.authManager = this;
+    playerCreatedListener.guildApi = this.guildApi;
+    playerCreatedListener.gameState = this.gameState;
 
     this.grassManager.registerListener(playerCreatedListener);
 

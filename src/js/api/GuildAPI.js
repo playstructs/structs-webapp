@@ -1,13 +1,17 @@
 import {JsonAjaxer} from "../framework/JsonAjaxer";
-import {GuildAPIResponse} from "./GuildAPIResponse";
 import {GuildFactory} from "../factories/GuildFactory";
+import {PlayerFactory} from "../factories/PlayerFactory";
+import {GuildAPIResponseFactory} from "../factories/GuildAPIResponseFactory";
+import {GuildAPIError} from "../errors/GuildAPIError";
 
 export class GuildAPI {
 
   constructor() {
     this.apiUrl = '/api';
     this.ajax = new JsonAjaxer();
+    this.guildAPIResponseFactory = new GuildAPIResponseFactory();
     this.guildFactory = new GuildFactory();
+    this.playerFactory = new PlayerFactory();
   }
 
   /**
@@ -32,13 +36,22 @@ export class GuildAPI {
   }
 
   /**
-   * @return {Promise<GuildAPIResponse>}
+   * @param {GuildAPIResponse} guildAPIResponse
+   */
+  handleResponseFailure(guildAPIResponse) {
+    if (!guildAPIResponse.success) {
+      throw new GuildAPIError(`Guild API request was unsuccessful. See network request for details.`);
+    }
+  }
+
+  /**
+   * @return {Promise<Guild>}
    */
   async getThisGuild() {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/this`);
-    const response = new GuildAPIResponse(jsonResponse);
-    response.data = this.guildFactory.make(response.data);
-    return response;
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.guildFactory.make(response.data);
   }
 
   /**
@@ -46,7 +59,8 @@ export class GuildAPI {
    */
   async getTimestamp() {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/timestamp`);
-    const response = new GuildAPIResponse(jsonResponse);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
     return response.data.unix_timestamp;
   }
 
@@ -56,7 +70,7 @@ export class GuildAPI {
    */
   async signup(signupRequestDTO) {
     const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/signup`, signupRequestDTO);
-    return new GuildAPIResponse(jsonResponse);
+    return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
   /**
@@ -65,6 +79,28 @@ export class GuildAPI {
    */
   async login(loginRequestDTO) {
     const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/login`, loginRequestDTO);
-    return new GuildAPIResponse(jsonResponse);
+    return this.guildAPIResponseFactory.make(jsonResponse);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<Player>}
+   */
+  async getPlayer(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.playerFactory.make(response.data);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<string>}
+   */
+  async getPlayerLastActionBlockHeight(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}/action/last/block/height`);
+    const response =  this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return response.data.last_action_block_height;
   }
 }
