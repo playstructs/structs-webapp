@@ -45,6 +45,26 @@ export class GuildAPI {
   }
 
   /**
+   * @param {string} requestUrl
+   * @param {string} dataProperty
+   * @return {Promise<*>}
+   */
+  async getSingleDataValue(requestUrl, dataProperty) {
+    const jsonResponse = await this.ajax.get(requestUrl);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+
+    if (response.data === null
+      || response.data === undefined
+      || !response.data.hasOwnProperty(dataProperty)
+    ) {
+      throw new GuildAPIError(`Data does not contain required property (${dataProperty}).`);
+    }
+
+    return response.data[dataProperty];
+  }
+
+  /**
    * @return {Promise<Guild>}
    */
   async getThisGuild() {
@@ -58,10 +78,8 @@ export class GuildAPI {
    * @return {Promise<string>}
    */
   async getTimestamp() {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/timestamp`);
-    const response = this.guildAPIResponseFactory.make(jsonResponse);
-    this.handleResponseFailure(response);
-    return response.data.unix_timestamp;
+    const timestamp = await this.getSingleDataValue(`${this.apiUrl}/timestamp`, 'unix_timestamp');
+    return `${timestamp}`;
   }
 
   /**
@@ -95,12 +113,10 @@ export class GuildAPI {
 
   /**
    * @param {string} playerId
-   * @return {Promise<string>}
+   * @return {Promise<number>}
    */
   async getPlayerLastActionBlockHeight(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}/action/last/block/height`);
-    const response =  this.guildAPIResponseFactory.make(jsonResponse);
-    this.handleResponseFailure(response);
-    return response.data.last_action_block_height;
+    const lastActionBlockHeight = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/action/last/block/height`, 'last_action_block_height');
+    return parseInt(lastActionBlockHeight);
   }
 }

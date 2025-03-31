@@ -64,6 +64,26 @@ class GuildAPI {
   }
 
   /**
+   * @param {string} requestUrl
+   * @param {string} dataProperty
+   * @return {Promise<*>}
+   */
+  async getSingleDataValue(requestUrl, dataProperty) {
+    const jsonResponse = await this.ajax.get(requestUrl);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+
+    if (response.data === null
+      || response.data === undefined
+      || !response.data.hasOwnProperty(dataProperty)
+    ) {
+      throw new _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_4__.GuildAPIError(`Data does not contain required property (${dataProperty}).`);
+    }
+
+    return response.data[dataProperty];
+  }
+
+  /**
    * @return {Promise<Guild>}
    */
   async getThisGuild() {
@@ -77,10 +97,8 @@ class GuildAPI {
    * @return {Promise<string>}
    */
   async getTimestamp() {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/timestamp`);
-    const response = this.guildAPIResponseFactory.make(jsonResponse);
-    this.handleResponseFailure(response);
-    return response.data.unix_timestamp;
+    const timestamp = await this.getSingleDataValue(`${this.apiUrl}/timestamp`, 'unix_timestamp');
+    return `${timestamp}`;
   }
 
   /**
@@ -114,13 +132,11 @@ class GuildAPI {
 
   /**
    * @param {string} playerId
-   * @return {Promise<string>}
+   * @return {Promise<number>}
    */
   async getPlayerLastActionBlockHeight(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}/action/last/block/height`);
-    const response =  this.guildAPIResponseFactory.make(jsonResponse);
-    this.handleResponseFailure(response);
-    return response.data.last_action_block_height;
+    const lastActionBlockHeight = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/action/last/block/height`, 'last_action_block_height');
+    return parseInt(lastActionBlockHeight);
   }
 }
 
@@ -1168,18 +1184,18 @@ class AuthManager {
 
   /**
    * @param {GameState} gameState
-   * @param {GuildAPI} guildApi
+   * @param {GuildAPI} guildAPI
    * @param {WalletManager} walletManager
    * @param {GrassManager} grassManager
    */
   constructor(
     gameState,
-    guildApi,
+    guildAPI,
     walletManager,
     grassManager
   ) {
     this.gameState = gameState;
-    this.guildApi = guildApi;
+    this.guildAPI = guildAPI;
     this.walletManager = walletManager;
     this.grassManager = grassManager;
   }
@@ -1198,7 +1214,7 @@ class AuthManager {
     this.gameState.signupRequest.primary_address = this.gameState.signingAccount.address;
     this.gameState.signupRequest.guild_id = this.gameState.thisGuild.id;
 
-    const message = this.guildApi.buildGuildMembershipJoinProxyMessage(
+    const message = this.guildAPI.buildGuildMembershipJoinProxyMessage(
       this.gameState.signupRequest.guild_id,
       this.gameState.signupRequest.primary_address,
       0
@@ -1213,18 +1229,18 @@ class AuthManager {
     playerCreatedListener.guildId = this.gameState.signupRequest.guild_id;
     playerCreatedListener.playerAddress = this.gameState.signupRequest.primary_address;
     playerCreatedListener.authManager = this;
-    playerCreatedListener.guildApi = this.guildApi;
+    playerCreatedListener.guildAPI = this.guildAPI;
     playerCreatedListener.gameState = this.gameState;
 
     this.grassManager.registerListener(playerCreatedListener);
 
-    const response = await this.guildApi.signup(this.gameState.signupRequest);
+    const response = await this.guildAPI.signup(this.gameState.signupRequest);
 
     return response.success;
   }
 
   async login() {
-    const timestamp = await this.guildApi.getTimestamp();
+    const timestamp = await this.guildAPI.getTimestamp();
 
     const request = new _dtos_LoginRequestDTO__WEBPACK_IMPORTED_MODULE_1__.LoginRequestDTO();
     request.address = this.gameState.signingAccount.address;
@@ -1232,7 +1248,7 @@ class AuthManager {
     request.guild_id = this.gameState.thisGuild.id;
     request.unix_timestamp = timestamp;
 
-    const message = this.guildApi.buildLoginMessage(
+    const message = this.guildAPI.buildLoginMessage(
       request.guild_id,
       request.address,
       timestamp
@@ -1243,7 +1259,7 @@ class AuthManager {
       this.gameState.signingAccount.privkey
     );
 
-    const response = await this.guildApi.login(request);
+    const response = await this.guildAPI.login(request);
 
     console.log('Login response status:', response);
 
