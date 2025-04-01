@@ -1,5 +1,6 @@
 import {PlayerCreatedListener} from "../grass_listeners/PlayerCreatedListener";
 import {LoginRequestDTO} from "../dtos/LoginRequestDTO";
+import {LastActionListener} from "../grass_listeners/LastActionListener";
 
 export class AuthManager {
 
@@ -83,6 +84,10 @@ export class AuthManager {
     const response = await this.guildAPI.login(request);
 
     console.log('Login response status:', response);
+
+    if (response.success) {
+      this.grassManager.registerListener(new LastActionListener(this.gameState));
+    }
 
     return response.success;
   }

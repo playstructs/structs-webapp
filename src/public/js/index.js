@@ -1033,11 +1033,46 @@ class BlockListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_M
       messageData.category === 'block'
       && messageData.subject === 'structs.consensus'
     ) {
-      this.gameState.currentBlockHeight = messageData.height;
+      this.gameState.setCurrentBlockHeight(messageData.height);
     }
   }
 }
 
+
+/***/ }),
+
+/***/ "./js/grass_listeners/LastActionListener.js":
+/*!**************************************************!*\
+  !*** ./js/grass_listeners/LastActionListener.js ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   LastActionListener: () => (/* binding */ LastActionListener)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+
+
+class LastActionListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    super('LAST_ACTION');
+    this.gameState = gameState;
+  }
+
+  handler(messageData) {
+    if (
+      messageData.category === 'lastAction'
+      && messageData.subject === `structs.grid.player.${this.gameState.thisPlayerId}`
+    ) {
+      this.gameState.setLastActionBlockHeight(messageData.height);
+    }
+  }
+}
 
 /***/ }),
 
@@ -1075,16 +1110,16 @@ class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IM
     ) {
       console.log(messageData.id);
 
-      const playerId = messageData.id;
+      this.gameState.thisPlayerId = messageData.id;
 
       this.authManager.login();
 
-      this.guildAPI.getPlayer(playerId).then(function (player) {
+      this.guildAPI.getPlayer(messageData.id).then(function (player) {
         this.gameState.thisPlayer = player;
       }.bind(this));
 
-      this.guildAPI.getPlayerLastActionBlockHeight(playerId).then(function (height) {
-        this.gameState.lastActionBlockHeight = height;
+      this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
+        this.gameState.setLastActionBlockHeight(height);
       }.bind(this));
 
       this.shouldUnregister = () => true;
@@ -1176,7 +1211,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _grass_listeners_PlayerCreatedListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../grass_listeners/PlayerCreatedListener */ "./js/grass_listeners/PlayerCreatedListener.js");
 /* harmony import */ var _dtos_LoginRequestDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../dtos/LoginRequestDTO */ "./js/dtos/LoginRequestDTO.js");
+/* harmony import */ var _grass_listeners_LastActionListener__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../grass_listeners/LastActionListener */ "./js/grass_listeners/LastActionListener.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 
@@ -1262,6 +1299,10 @@ class AuthManager {
     const response = await this.guildAPI.login(request);
 
     console.log('Login response status:', response);
+
+    if (response.success) {
+      this.grassManager.registerListener(new _grass_listeners_LastActionListener__WEBPACK_IMPORTED_MODULE_2__.LastActionListener(this.gameState));
+    }
 
     return response.success;
   }
@@ -1350,21 +1391,45 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   GameState: () => (/* binding */ GameState)
 /* harmony export */ });
 /* harmony import */ var _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/SignupRequestDTO */ "./js/dtos/SignupRequestDTO.js");
+/* harmony import */ var _util_ChargeCalculator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../util/ChargeCalculator */ "./js/util/ChargeCalculator.js");
+/* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 class GameState {
 
   constructor() {
+    this.chargeCalculator = new _util_ChargeCalculator__WEBPACK_IMPORTED_MODULE_1__.ChargeCalculator();
     this.signupRequest = new _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__.SignupRequestDTO();
 
     this.thisGuild = null;
     this.wallet = null;
     this.signingAccount = null;
     this.pubkey = null;
+    this.thisPlayerId = null;
     this.thisPlayer = null;
 
-    this.currentBlockHeight = null;
-    this.lastActionBlockHeight = null;
+    this.currentBlockHeight = 0;
+    this.lastActionBlockHeight = 0;
+    this.chargeLevel = 0;
+  }
+
+  /**
+   * @param {number} height
+   */
+  setCurrentBlockHeight(height) {
+    this.currentBlockHeight = height;
+    this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
+    console.log(`(Block Update) Charge Level: ${this.chargeLevel}`);
+  }
+
+  /**
+   * @param {number} height
+   */
+  setLastActionBlockHeight(height) {
+    this.lastActionBlockHeight = height;
+    this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
+    console.log(`(Last Action Update) Charge Level: ${this.chargeLevel}`);
   }
 }
 
@@ -1435,6 +1500,49 @@ class Player {
     this.structs_load = null;
     this.capacity = null;
     this.connection_capacity = null;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/util/ChargeCalculator.js":
+/*!*************************************!*\
+  !*** ./js/util/ChargeCalculator.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ChargeCalculator: () => (/* binding */ ChargeCalculator)
+/* harmony export */ });
+class ChargeCalculator {
+  constructor() {
+    this.chargeLevelThresholds = [
+      0,
+      1,
+      8,
+      20,
+      39,
+      666
+    ];
+  }
+
+  /**
+   * @param {number} currentBlockHeight
+   * @param {number} lastActionBlockHeight
+   * @return {number}
+   */
+  calc(currentBlockHeight, lastActionBlockHeight) {
+    const charge = currentBlockHeight - lastActionBlockHeight;
+
+    for (let i = 0; i < this.chargeLevelThresholds.length; i++) {
+      if (charge < this.chargeLevelThresholds[i]) {
+        return i;
+      }
+    }
+
+    return this.chargeLevelThresholds.length - 1;
   }
 }
 
