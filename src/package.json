@@ -39,6 +39,6 @@
     "node-polyfill-webpack-plugin": "^1.1.4",
     "sha.js": "^2.4.11",
     "ts-loader": "^9.5.2",
-    "structs-client-ts": "file:../structs-client-ts"
+    "structs-client-ts": "file:../../structs-client-ts"
   }
 }

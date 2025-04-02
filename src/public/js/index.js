@@ -1402,6 +1402,17 @@ class GameState {
     this.chargeCalculator = new _util_ChargeCalculator__WEBPACK_IMPORTED_MODULE_1__.ChargeCalculator();
     this.signupRequest = new _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__.SignupRequestDTO();
 
+    this.server = null;
+    this.fee = {
+      amount: [
+        {
+          denom: "ualpha",
+          amount: "0",
+        },
+      ],
+      gas: "180000",
+    };
+
     this.thisGuild = null;
     this.wallet = null;
     this.signingAccount = null;

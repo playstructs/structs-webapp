@@ -7,6 +7,17 @@ export class GameState {
     this.chargeCalculator = new ChargeCalculator();
     this.signupRequest = new SignupRequestDTO();
 
+    this.server = null;
+    this.fee = {
+      amount: [
+        {
+          denom: "ualpha",
+          amount: "0",
+        },
+      ],
+      gas: "180000",
+    };
+
     this.thisGuild = null;
     this.wallet = null;
     this.signingAccount = null;
