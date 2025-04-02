@@ -214,6 +214,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _managers_AuthManager__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../managers/AuthManager */ "./js/managers/AuthManager.js");
 /* harmony import */ var _view_models_signup_Orientation1ViewModel__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../view_models/signup/Orientation1ViewModel */ "./js/view_models/signup/Orientation1ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation2ViewModel__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../view_models/signup/Orientation2ViewModel */ "./js/view_models/signup/Orientation2ViewModel.js");
+/* harmony import */ var _view_models_signup_Orientation3ViewModel__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../view_models/signup/Orientation3ViewModel */ "./js/view_models/signup/Orientation3ViewModel.js");
+
 
 
 
@@ -344,6 +346,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   orientation2() {
     const viewModel = new _view_models_signup_Orientation2ViewModel__WEBPACK_IMPORTED_MODULE_17__.Orientation2ViewModel();
+    viewModel.render();
+  }
+
+  orientation3() {
+    const viewModel = new _view_models_signup_Orientation3ViewModel__WEBPACK_IMPORTED_MODULE_18__.Orientation3ViewModel();
     viewModel.render();
   }
 }
@@ -1596,6 +1603,10 @@ __webpack_require__.r(__webpack_exports__);
 
 class SUIFeature {
 
+  init(featureElement) {
+    throw new _SUINotImplementedError_js__WEBPACK_IMPORTED_MODULE_0__.SUINotImplementedError(`init() not implemented for ${featureElement.id}`);
+  }
+
   /**
    * Auto initialize feature
    */
@@ -1833,39 +1844,7 @@ class SUITooltip extends _SUIFeature_js__WEBPACK_IMPORTED_MODULE_0__.SUIFeature 
     }
 
     tooltips.forEach(tooltipTrigger => {
-
-      const tooltipElm = this.buildTooltipHTML(tooltipTrigger);
-      tooltipTrigger.parentElement.appendChild(tooltipElm);
-
-      // To position the tooltip the parent also must have position defined.
-      if (!tooltipTrigger.parentElement.style.position) {
-        tooltipTrigger.parentElement.style.position = 'relative';
-      }
-
-      let pressedEvent = 'mousedown';
-      let releasedEvent = 'mouseup';
-
-      // Attach relevant pointer event listeners for mobile or desktop
-      if(window.matchMedia("(pointer: coarse)").matches) {
-        pressedEvent = 'touchstart';
-        releasedEvent = 'touchend';
-
-        // Press and hold on mobile also fires a contextmenu event which we need to block
-        // because it can obscure the tooltip and also cause inadvertent actions.
-        tooltipTrigger.addEventListener("contextmenu", (event) => {
-          event.preventDefault();
-        }, { passive: false });
-
-      }
-
-      tooltipTrigger.addEventListener(pressedEvent, function() {
-        this.pointerPressed(tooltipElm, tooltipTrigger);
-      }.bind(this), { passive: true });
-
-      window.addEventListener(releasedEvent, function () {
-        this.clearPointerPressedTimer(tooltipElm);
-      }.bind(this), { passive: true });
-
+      this.init(tooltipTrigger);
     });
   }
 }
@@ -2511,6 +2490,81 @@ __webpack_require__.r(__webpack_exports__);
 
 class Orientation2ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
 
+  initPageCode() {
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('structsConglomerateHint'));
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems(navItems);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+
+      <div class="common-layout-col">
+        <div class="common-group-col">
+        
+          <div id="snc-logo-wrapper" class="snc-logo-wrapper">
+            <img 
+              class="snc-logo"
+              src="/img/logo-snc.gif"
+              alt="SNC logo"
+            >
+            <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
+          </div>
+          
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(
+      `You have been contracted by SN.CORPORATION, a member of the 
+      <a 
+        id="structsConglomerateHint" 
+        class="sui-mod-secondary"
+        href="javascript: void(0)" 
+        data-sui-tooltip="A loose federation of machine states with the goal of [REDACTED]"
+      >Structs Conglomerate</a>,
+      to conduct Alpha Matter mining operations in the Milky Way Galaxy.`
+    );
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.dialogueBtnAHandler = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation3');
+    };
+
+    this.initPageCode();
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/view_models/signup/Orientation3ViewModel.js":
+/*!********************************************************!*\
+  !*** ./js/view_models/signup/Orientation3ViewModel.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Orientation3ViewModel: () => (/* binding */ Orientation3ViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class Orientation3ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
   initLottieAnimations() {
     const {lottie} = window;
     const {loadAnimation} = lottie;
@@ -2521,13 +2575,6 @@ class Orientation2ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
       autoplay: true,
       path: '/lottie/transition-scan-lines/data.json'
     });
-    loadAnimation({
-      container: document.getElementById('hrbot-talking-small'),
-      renderer: 'svg',
-      loop: true,
-      autoplay: true,
-      path: '/lottie/hr-bot/data.json'
-    });
 
     scanLines.addEventListener('complete', () => {
       document.getElementById('lottie-scan-lines').classList.add('hidden');
@@ -2535,7 +2582,7 @@ class Orientation2ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
   }
 
   initPageCode() {
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('structsConglomerateHint'));
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('dialogueAlphaMatterHint'));
   }
 
   render() {
@@ -2556,15 +2603,15 @@ class Orientation2ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
       </div>
         
       <div class="common-layout-col">
-        <div class="common-group-col">
-        
-          <div id="snc-logo-wrapper" class="snc-logo-wrapper">
-            <img 
-              class="snc-logo"
-              src="/img/logo-snc.gif"
-              alt="SNC logo"
-            >
-            <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
+        <div class="orientation-alpha-layout">
+          <div class="alpha-matter-128"></div>
+          <div class="orientation-alpha-text-group">
+            <div class="orientation-alpha-text-header">
+              <span class="sui-text-display">Alpha Matter</span>
+            </div>
+            <div class="orientation-alpha-text-body">
+              <span class="sui-text-hint">Ap - 52.456u</span>
+            </div>
           </div>
           
         </div>
@@ -2573,20 +2620,15 @@ class Orientation2ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
     </div>
     `);
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(
-      `You have been contracted by SN.CORPORATION, a member of the 
-      <a 
-        id="structsConglomerateHint" 
+      `<a 
+        id="dialogueAlphaMatterHint" 
         class="sui-mod-secondary"
         href="javascript: void(0)" 
-        data-sui-tooltip="A loose federation of machine states with the goal of [REDACTED]"
-      >Structs Conglomerate</a>,
-      to conduct Alpha Matter mining operations in the Milky Way Galaxy.`
+        data-sui-tooltip="Alpha Matter fuels faster-than-light travel and provides power to the galaxy."
+      >Alpha Matter</a>
+      is a rare and powerful substance that fuels galactic civilization. Unfortunately, it is dangerously unstable.`
     );
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnB();
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.enableDialogueBtnA();
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showDialoguePanel();
 
     this.initLottieAnimations();
     this.initPageCode();

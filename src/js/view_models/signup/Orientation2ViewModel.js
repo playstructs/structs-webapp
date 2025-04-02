@@ -4,29 +4,6 @@ import {MenuPage} from "../../framework/MenuPage";
 
 export class Orientation2ViewModel extends AbstractViewModel {
 
-  initLottieAnimations() {
-    const {lottie} = window;
-    const {loadAnimation} = lottie;
-    const scanLines = loadAnimation({
-      container: document.getElementById('lottie-scan-lines'),
-      renderer: 'svg',
-      loop: false,
-      autoplay: true,
-      path: '/lottie/transition-scan-lines/data.json'
-    });
-    loadAnimation({
-      container: document.getElementById('hrbot-talking-small'),
-      renderer: 'svg',
-      loop: true,
-      autoplay: true,
-      path: '/lottie/hr-bot/data.json'
-    });
-
-    scanLines.addEventListener('complete', () => {
-      document.getElementById('lottie-scan-lines').classList.add('hidden');
-    });
-  }
-
   initPageCode() {
     MenuPage.sui.tooltip.init(document.getElementById('structsConglomerateHint'));
   }
@@ -39,15 +16,10 @@ export class Orientation2ViewModel extends AbstractViewModel {
       )
     ];
     MenuPage.setNavItems(navItems);
-    MenuPage.disableCloseBtn();
-    MenuPage.showNav();
 
     MenuPage.setBodyContent(`
     <div class="full-screen-content-container">
-      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
-        <div id="lottie-scan-lines"></div>
-      </div>
-        
+
       <div class="common-layout-col">
         <div class="common-group-col">
         
@@ -66,7 +38,6 @@ export class Orientation2ViewModel extends AbstractViewModel {
     </div>
     `);
 
-    MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
     MenuPage.setDialogueScreenContent(
       `You have been contracted by SN.CORPORATION, a member of the 
       <a 
@@ -77,11 +48,10 @@ export class Orientation2ViewModel extends AbstractViewModel {
       >Structs Conglomerate</a>,
       to conduct Alpha Matter mining operations in the Milky Way Galaxy.`
     );
-    MenuPage.disableDialogueBtnB();
-    MenuPage.enableDialogueBtnA();
-    MenuPage.showDialoguePanel();
+    MenuPage.dialogueBtnAHandler = () => {
+      MenuPage.router.goto('Auth', 'orientation3');
+    };
 
-    this.initLottieAnimations();
     this.initPageCode();
   }
 }

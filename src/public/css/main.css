@@ -466,6 +466,47 @@ img.glitch-logo {
   justify-content: flex-end;
 }
 
+.orientation-alpha-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orientation-alpha-text-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.orientation-alpha-text-header {
+  display: flex;
+  padding: 8px var(--spacing-md);
+  border: 1px solid var(--accent-disabled);
+  align-items: center;
+  color: var(--accent-primary-active);
+}
+
+.orientation-alpha-text-body {
+  display: flex;
+  padding: 8px var(--spacing-md);
+  border-right: 1px solid var(--accent-disabled);
+  border-bottom: 1px solid var(--accent-disabled);
+  border-left: 1px solid var(--accent-disabled);
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.orientation-contract-layout i.sui-icon.sui-icon-alpha-matter {
+  width: 128px;
+  height: 128px;
+}
+
+.alpha-matter-128 {
+  width: 128px;
+  height: 128px;
+  background: url("/img/alpha-matter-16x16.png") center/cover no-repeat;
+}
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */
