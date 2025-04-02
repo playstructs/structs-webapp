@@ -14,6 +14,7 @@ import {AwaitingIdViewModel} from "../view_models/signup/AwaitingIdViewModel";
 import {RecoveryKeyFaqViewModel} from "../view_models/signup/RecoveryKeyFaqViewModel";
 import {SignupSuccessViewModel} from "../view_models/signup/SignupSuccessViewModel";
 import {AuthManager} from "../managers/AuthManager";
+import {Orientation1ViewModel} from "../view_models/signup/Orientation1ViewModel";
 
 export class AuthController extends AbstractController {
 
@@ -116,6 +117,11 @@ export class AuthController extends AbstractController {
 
   signupAwaitingId() {
     const viewModel = new AwaitingIdViewModel();
+    viewModel.render();
+  }
+
+  orientation1() {
+    const viewModel = new Orientation1ViewModel();
     viewModel.render();
   }
 }

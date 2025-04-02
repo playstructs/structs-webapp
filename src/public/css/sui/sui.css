@@ -83,6 +83,7 @@
   --icon-md: 24px;
   --icon-lg: 32px;
   --icon-xl: 48px;
+  --icon-xxl: 64px;
 
   /* -- Dimensions End -- */
 
@@ -299,6 +300,13 @@ a.sui-mod-disabled:visited {
   height: var(--icon-xl);
 
   font-size: var(--icon-xl);
+}
+
+.sui-icon-xxl {
+  width: var(--icon-xxl);
+  height: var(--icon-xxl);
+
+  font-size: var(--icon-xxl);
 }
 
 i.sui-icon {

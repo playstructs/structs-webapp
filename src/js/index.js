@@ -43,4 +43,4 @@ grassManager.init();
 
 MenuPage.router.goto('Auth', 'index');
 
-// MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
+// MenuPage.router.goto('Auth', 'orientation1');

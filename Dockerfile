@@ -57,8 +57,6 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | P
 RUN echo node > .nvmrc
 RUN nvm install 22.14.0
 
-RUN git clone https://github.com/playstructs/structs-client-ts.git
-
 WORKDIR /src
 
 # Install PHP project dependencies

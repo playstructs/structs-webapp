@@ -430,6 +430,37 @@ img.glitch-logo {
   text-align: left;
 }
 
+.orientation-contract-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--spacing-xl);
+}
+
+.orientation-contract-text-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.orientation-contract-text-header {
+  display: flex;
+  padding: 8px var(--spacing-md);
+  border: 1px solid var(--accent-disabled);
+  align-items: center;
+  color: var(--accent-primary-active);
+}
+
+.orientation-contract-text-body {
+  display: flex;
+  padding: 8px var(--spacing-md);
+  border-right: 1px solid var(--accent-disabled);
+  border-bottom: 1px solid var(--accent-disabled);
+  border-left: 1px solid var(--accent-disabled);
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */

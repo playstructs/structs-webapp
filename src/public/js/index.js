@@ -212,6 +212,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_RecoveryKeyFaqViewModel__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../view_models/signup/RecoveryKeyFaqViewModel */ "./js/view_models/signup/RecoveryKeyFaqViewModel.js");
 /* harmony import */ var _view_models_signup_SignupSuccessViewModel__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../view_models/signup/SignupSuccessViewModel */ "./js/view_models/signup/SignupSuccessViewModel.js");
 /* harmony import */ var _managers_AuthManager__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../managers/AuthManager */ "./js/managers/AuthManager.js");
+/* harmony import */ var _view_models_signup_Orientation1ViewModel__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../view_models/signup/Orientation1ViewModel */ "./js/view_models/signup/Orientation1ViewModel.js");
+
 
 
 
@@ -330,6 +332,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   signupAwaitingId() {
     const viewModel = new _view_models_signup_AwaitingIdViewModel__WEBPACK_IMPORTED_MODULE_12__.AwaitingIdViewModel();
+    viewModel.render();
+  }
+
+  orientation1() {
+    const viewModel = new _view_models_signup_Orientation1ViewModel__WEBPACK_IMPORTED_MODULE_16__.Orientation1ViewModel();
     viewModel.render();
   }
 }
@@ -1088,7 +1095,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   PlayerCreatedListener: () => (/* binding */ PlayerCreatedListener)
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
@@ -1123,6 +1132,8 @@ class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IM
       }.bind(this));
 
       this.shouldUnregister = () => true;
+
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'orientation1');
     }
   }
 }
@@ -1191,7 +1202,7 @@ grassManager.init();
 
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 
-// MenuPage.router.goto('Auth', 'signupRecoveryKeyCreation');
+// MenuPage.router.goto('Auth', 'orientation1');
 
 __webpack_async_result__();
 } catch(e) { __webpack_async_result__(e); } }, 1);
@@ -1956,6 +1967,96 @@ class IncomingCall3ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPOR
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupSetUsername');
     }
     view.render();
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/view_models/signup/Orientation1ViewModel.js":
+/*!********************************************************!*\
+  !*** ./js/view_models/signup/Orientation1ViewModel.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Orientation1ViewModel: () => (/* binding */ Orientation1ViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class Orientation1ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
+  initLottieAnimations() {
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const scanLines = loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
+    loadAnimation({
+      container: document.getElementById('hrbot-talking-small'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: '/lottie/hr-bot/data.json'
+    });
+
+    scanLines.addEventListener('complete', () => {
+      document.getElementById('lottie-scan-lines').classList.add('hidden');
+    });
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableCloseBtn();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+        
+      <div class="common-layout-col">
+        <div class="orientation-contract-layout">
+          <div class="orientation-contract-text-group">
+            <div class="orientation-contract-text-header">
+              <span class="sui-text-display">SN.CORPORATION</span>
+            </div>
+            <div class="orientation-contract-text-body">
+              <span class="sui-text-hint">Contract #8322</span>
+            </div>
+          </div>
+          <i class="sui-icon-xxl icon-success sui-text-primary"></i>
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(`Thank you. We can now begin your orientation.`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnB();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.enableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showDialoguePanel();
+
+    this.initLottieAnimations()
   }
 }
 

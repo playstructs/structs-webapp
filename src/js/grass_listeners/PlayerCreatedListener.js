@@ -1,4 +1,5 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
+import {MenuPage} from "../framework/MenuPage";
 
 export class PlayerCreatedListener extends AbstractGrassListener {
 
@@ -32,6 +33,8 @@ export class PlayerCreatedListener extends AbstractGrassListener {
       }.bind(this));
 
       this.shouldUnregister = () => true;
+
+      MenuPage.router.goto('Auth', 'orientation1');
     }
   }
 }
