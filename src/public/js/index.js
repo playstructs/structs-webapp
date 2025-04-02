@@ -213,6 +213,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_SignupSuccessViewModel__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../view_models/signup/SignupSuccessViewModel */ "./js/view_models/signup/SignupSuccessViewModel.js");
 /* harmony import */ var _managers_AuthManager__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../managers/AuthManager */ "./js/managers/AuthManager.js");
 /* harmony import */ var _view_models_signup_Orientation1ViewModel__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../view_models/signup/Orientation1ViewModel */ "./js/view_models/signup/Orientation1ViewModel.js");
+/* harmony import */ var _view_models_signup_Orientation2ViewModel__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../view_models/signup/Orientation2ViewModel */ "./js/view_models/signup/Orientation2ViewModel.js");
+
 
 
 
@@ -337,6 +339,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   orientation1() {
     const viewModel = new _view_models_signup_Orientation1ViewModel__WEBPACK_IMPORTED_MODULE_16__.Orientation1ViewModel();
+    viewModel.render();
+  }
+
+  orientation2() {
+    const viewModel = new _view_models_signup_Orientation2ViewModel__WEBPACK_IMPORTED_MODULE_17__.Orientation2ViewModel();
     viewModel.render();
   }
 }
@@ -758,6 +765,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _MenuPageRouter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPageRouter */ "./js/framework/MenuPageRouter.js");
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _sui_SUI__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../sui/SUI */ "./js/sui/SUI.js");
+
 
 
 
@@ -794,6 +803,8 @@ class MenuPage {
   /* Element IDs End */
 
   static router = new _MenuPageRouter__WEBPACK_IMPORTED_MODULE_0__.MenuPageRouter();
+
+  static sui = new _sui_SUI__WEBPACK_IMPORTED_MODULE_2__.SUI();
 
   static dialogueBtnAHandler = () => {};
 
@@ -1527,6 +1538,415 @@ class Player {
 
 /***/ }),
 
+/***/ "./js/sui/SUI.js":
+/*!***********************!*\
+  !*** ./js/sui/SUI.js ***!
+  \***********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SUI: () => (/* binding */ SUI)
+/* harmony export */ });
+/* harmony import */ var _SUIInputStepper_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./SUIInputStepper.js */ "./js/sui/SUIInputStepper.js");
+/* harmony import */ var _SUITooltip_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./SUITooltip.js */ "./js/sui/SUITooltip.js");
+
+
+
+class SUI {
+
+  constructor() {
+    this.inputStepper = new _SUIInputStepper_js__WEBPACK_IMPORTED_MODULE_0__.SUIInputStepper();
+    this.tooltip = new _SUITooltip_js__WEBPACK_IMPORTED_MODULE_1__.SUITooltip();
+
+    this.autoInitClasses = [
+      this.inputStepper,
+      this.tooltip
+    ];
+  }
+
+  /**
+   * Auto initialize all SUI features
+   */
+  autoInitAll() {
+    this.autoInitClasses.forEach(suiFeature => {
+      suiFeature.autoInitAll();
+    });
+  }
+
+}
+
+
+/***/ }),
+
+/***/ "./js/sui/SUIFeature.js":
+/*!******************************!*\
+  !*** ./js/sui/SUIFeature.js ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SUIFeature: () => (/* binding */ SUIFeature)
+/* harmony export */ });
+/* harmony import */ var _SUINotImplementedError_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./SUINotImplementedError.js */ "./js/sui/SUINotImplementedError.js");
+
+
+class SUIFeature {
+
+  /**
+   * Auto initialize feature
+   */
+  autoInitAll() {
+    throw new _SUINotImplementedError_js__WEBPACK_IMPORTED_MODULE_0__.SUINotImplementedError();
+  }
+
+}
+
+
+/***/ }),
+
+/***/ "./js/sui/SUIInputStepper.js":
+/*!***********************************!*\
+  !*** ./js/sui/SUIInputStepper.js ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SUIInputStepper: () => (/* binding */ SUIInputStepper)
+/* harmony export */ });
+/* harmony import */ var _SUIFeature_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./SUIFeature.js */ "./js/sui/SUIFeature.js");
+
+
+class SUIInputStepper extends _SUIFeature_js__WEBPACK_IMPORTED_MODULE_0__.SUIFeature {
+
+  /**
+   * Ensure that the number is a number between the min or max value or the empty string.
+   *
+   * @param {string|number} value
+   * @param {number} min
+   * @param {number} max
+   * @return {number|string}
+   */
+  filterNumberInput(value, min, max) {
+    let cleanValue = `${value}`.replace(/^[^0-9]*$/, '');
+
+    if (cleanValue === '') {
+      return cleanValue;
+    }
+
+    cleanValue = parseInt(cleanValue);
+    cleanValue = Math.max(cleanValue, min);
+    cleanValue = Math.min(cleanValue, max);
+
+    return cleanValue;
+  }
+
+  /**
+   * Initialize all input steppers on the page.
+   */
+  autoInitAll() {
+    let inputSteppers = document.querySelectorAll('.sui-input-stepper input[type=number]');
+
+    if (inputSteppers.length === 0) {
+      return;
+    }
+
+    inputSteppers.forEach(inputStepper => {
+      const decreaseBtn = inputStepper.previousElementSibling;
+      const increaseBtn = inputStepper.nextElementSibling;
+
+      const enableDisableButtons = () => {
+        decreaseBtn.disabled = inputStepper.disabled || (inputStepper.value <= inputStepper.min);
+        increaseBtn.disabled = inputStepper.disabled || (inputStepper.value >= inputStepper.max);
+      };
+
+      decreaseBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+        inputStepper.stepDown();
+        enableDisableButtons();
+      });
+
+      increaseBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+        inputStepper.stepUp();
+        enableDisableButtons();
+      });
+
+      inputStepper.addEventListener('input', function() {
+        inputStepper.value = this.filterNumberInput(inputStepper.value, inputStepper.min, inputStepper.max);
+        enableDisableButtons();
+      }.bind(this));
+
+      enableDisableButtons();
+    });
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/sui/SUINotImplementedError.js":
+/*!******************************************!*\
+  !*** ./js/sui/SUINotImplementedError.js ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SUINotImplementedError: () => (/* binding */ SUINotImplementedError)
+/* harmony export */ });
+class SUINotImplementedError extends Error {
+
+  /**
+   * @param {string} message
+   */
+  constructor(message= '') {
+    super(message);
+    this.name = "SUINotImplementedError";
+    this.message = message ? message : 'Method not implemented';
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/sui/SUITooltip.js":
+/*!******************************!*\
+  !*** ./js/sui/SUITooltip.js ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SUITooltip: () => (/* binding */ SUITooltip)
+/* harmony export */ });
+/* harmony import */ var _SUIFeature_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./SUIFeature.js */ "./js/sui/SUIFeature.js");
+/* harmony import */ var _SUIUtil_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./SUIUtil.js */ "./js/sui/SUIUtil.js");
+
+
+
+class SUITooltip extends _SUIFeature_js__WEBPACK_IMPORTED_MODULE_0__.SUIFeature {
+
+  /**
+   * Used to track how long the mouse or touch screen is pressed.
+   *
+   * @type {number|null} a timeout ID
+   */
+  static pointerPressedTimer = null;
+
+  constructor() {
+    super();
+    this.util = new _SUIUtil_js__WEBPACK_IMPORTED_MODULE_1__.SUIUtil();
+  }
+
+  /**
+   * @param {HTMLElement} trigger
+   * @return {HTMLDivElement}
+   */
+  buildTooltipHTML(trigger) {
+    const div = document.createElement('div');
+    div.id = `${trigger.id}-message`;
+    div.classList.add('sui-tooltip');
+    div.innerHTML = trigger.dataset.suiTooltip;
+    return div;
+  }
+
+  /**
+   * @param {HTMLElement} tooltipHtmlElement
+   */
+  clearPointerPressedTimer(tooltipHtmlElement) {
+    tooltipHtmlElement.classList.remove('sui-mod-show');
+    clearTimeout(SUITooltip.pointerPressedTimer);
+  }
+
+  /**
+   * @param {HTMLElement} tooltipElm
+   * @param {HTMLElement} tooltipTriggerElm
+   */
+  pointerPressed(tooltipElm, tooltipTriggerElm) {
+    clearTimeout(SUITooltip.pointerPressedTimer);
+
+    SUITooltip.pointerPressedTimer = setTimeout(function() {
+      tooltipElm.classList.add('sui-mod-show');
+
+      tooltipElm.style.position = 'absolute';
+      this.util.horizontallyCenter(tooltipElm, tooltipTriggerElm);
+
+      if (tooltipTriggerElm.dataset.suiModPlacement === 'bottom') {
+        this.util.positionBelow(tooltipElm, tooltipTriggerElm);
+      } else {
+        this.util.positionAbove(tooltipElm, tooltipTriggerElm);
+      }
+
+    }.bind(this), 100);
+  }
+
+  init(tooltipTrigger) {
+    const tooltipElm = this.buildTooltipHTML(tooltipTrigger);
+    tooltipTrigger.parentElement.appendChild(tooltipElm);
+
+    // To position the tooltip the parent also must have position defined.
+    if (!tooltipTrigger.parentElement.style.position) {
+      tooltipTrigger.parentElement.style.position = 'relative';
+    }
+
+    let pressedEvent = 'mousedown';
+    let releasedEvent = 'mouseup';
+
+    // Attach relevant pointer event listeners for mobile or desktop
+    if(window.matchMedia("(pointer: coarse)").matches) {
+      pressedEvent = 'touchstart';
+      releasedEvent = 'touchend';
+
+      // Press and hold on mobile also fires a contextmenu event which we need to block
+      // because it can obscure the tooltip and also cause inadvertent actions.
+      tooltipTrigger.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+      }, { passive: false });
+
+    }
+
+    tooltipTrigger.addEventListener(pressedEvent, function() {
+      this.pointerPressed(tooltipElm, tooltipTrigger);
+    }.bind(this), { passive: true });
+
+    window.addEventListener(releasedEvent, function () {
+      this.clearPointerPressedTimer(tooltipElm);
+    }.bind(this), { passive: true });
+  }
+
+  /**
+   * Initialize all tooltips on the page.
+   */
+  autoInitAll() {
+    let tooltips = document.querySelectorAll('[data-sui-tooltip]');
+
+    if (tooltips.length === 0) {
+      return;
+    }
+
+    tooltips.forEach(tooltipTrigger => {
+
+      const tooltipElm = this.buildTooltipHTML(tooltipTrigger);
+      tooltipTrigger.parentElement.appendChild(tooltipElm);
+
+      // To position the tooltip the parent also must have position defined.
+      if (!tooltipTrigger.parentElement.style.position) {
+        tooltipTrigger.parentElement.style.position = 'relative';
+      }
+
+      let pressedEvent = 'mousedown';
+      let releasedEvent = 'mouseup';
+
+      // Attach relevant pointer event listeners for mobile or desktop
+      if(window.matchMedia("(pointer: coarse)").matches) {
+        pressedEvent = 'touchstart';
+        releasedEvent = 'touchend';
+
+        // Press and hold on mobile also fires a contextmenu event which we need to block
+        // because it can obscure the tooltip and also cause inadvertent actions.
+        tooltipTrigger.addEventListener("contextmenu", (event) => {
+          event.preventDefault();
+        }, { passive: false });
+
+      }
+
+      tooltipTrigger.addEventListener(pressedEvent, function() {
+        this.pointerPressed(tooltipElm, tooltipTrigger);
+      }.bind(this), { passive: true });
+
+      window.addEventListener(releasedEvent, function () {
+        this.clearPointerPressedTimer(tooltipElm);
+      }.bind(this), { passive: true });
+
+    });
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/sui/SUIUtil.js":
+/*!***************************!*\
+  !*** ./js/sui/SUIUtil.js ***!
+  \***************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SUIUtil: () => (/* binding */ SUIUtil)
+/* harmony export */ });
+class SUIUtil {
+  /**
+   * @param {HTMLElement} dynamicElm
+   * @param {HTMLElement} originElm
+   */
+  positionAbove(dynamicElm, originElm) {
+    const originRect = originElm.getBoundingClientRect();
+
+    // If dynamic element would end up offscreen, place it below
+    if (
+      originRect.top < dynamicElm.offsetHeight
+      && (window.innerHeight - originRect.bottom) >= dynamicElm.offsetHeight
+    ) {
+      this.positionBelow(dynamicElm, originElm);
+    } else {
+      dynamicElm.style.top = `${originElm.offsetTop - dynamicElm.offsetHeight}px`;
+    }
+  }
+
+  /**
+   * @param {HTMLElement} dynamicElm
+   * @param {HTMLElement} originElm
+   */
+  positionBelow(dynamicElm, originElm) {
+    const originRect = originElm.getBoundingClientRect();
+
+    // If dynamic element would end up offscreen, place it above
+    if (
+      (window.innerHeight - originRect.bottom) < dynamicElm.offsetHeight
+      && originRect.top > dynamicElm.offsetHeight
+    ) {
+      this.positionAbove(dynamicElm, originElm);
+    } else {
+      dynamicElm.style.top = `${originElm.offsetTop + originElm.offsetHeight}px`;
+    }
+  }
+
+  /**
+   * @param {HTMLElement} dynamicElm
+   * @param {HTMLElement} originElm
+   */
+  horizontallyCenter(dynamicElm, originElm) {
+    const originRect = originElm.getBoundingClientRect();
+
+    // If the dynamic element will go offscreen on the left,
+    // align the dynamic element up to the left edge.
+    if (originRect.left - (originElm.offsetWidth / 2) < dynamicElm.offsetWidth / 2) {
+      dynamicElm.style.left = `${originElm.offsetLeft}px`;
+
+    // If the dynamic element will go offscreen on the right,
+    // align the dynamic element up to the right edge.
+    } else if ((originElm.offsetWidth / 2) + (window.innerWidth - originRect.right) < dynamicElm.offsetWidth / 2) {
+      dynamicElm.style.left = `${(originElm.offsetLeft + originElm.offsetWidth) - dynamicElm.offsetWidth}px`;
+
+    } else {
+      dynamicElm.style.left = `${originElm.offsetLeft - (dynamicElm.offsetWidth - originElm.offsetWidth) / 2}px`;
+    }
+  }
+}
+
+
+/***/ }),
+
 /***/ "./js/util/ChargeCalculator.js":
 /*!*************************************!*\
   !*** ./js/util/ChargeCalculator.js ***!
@@ -1961,11 +2381,16 @@ class IncomingCall3ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPOR
     const view = new _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__.HRBotTalkingTemplate();
     view.dialogueSequence = [
       `<strong>SN.CORP:</strong> Greetings, SN.CORPORATION employee. I am your designated Synthetic Resources Officer.`,
-      `I have been tasked with assisting you as you complete your <span class="sui-text-secondary">Employee Orientation.</span>`
+      `I have been tasked with assisting you as you complete your <a id="employeeOrientationHint" class="sui-mod-secondary" href="javascript: void(0)" data-sui-tooltip="Failure to complete Employee Orientation may result in serious injury or death.">Employee Orientation.</a>`
     ];
     view.actionOnSequenceEnd = () => {
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'signupSetUsername');
     }
+    view.initPageCode = function () {
+      if (this.dialogueIndex === 1) {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.sui.tooltip.init(document.getElementById('employeeOrientationHint'));
+      }
+    };
     view.render();
   }
 }
@@ -2052,11 +2477,119 @@ class Orientation1ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
 
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(`Thank you. We can now begin your orientation.`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.dialogueBtnAHandler = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation2');
+    };
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnB();
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.enableDialogueBtnA();
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showDialoguePanel();
 
     this.initLottieAnimations()
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/view_models/signup/Orientation2ViewModel.js":
+/*!********************************************************!*\
+  !*** ./js/view_models/signup/Orientation2ViewModel.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Orientation2ViewModel: () => (/* binding */ Orientation2ViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class Orientation2ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
+  initLottieAnimations() {
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const scanLines = loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
+    loadAnimation({
+      container: document.getElementById('hrbot-talking-small'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: '/lottie/hr-bot/data.json'
+    });
+
+    scanLines.addEventListener('complete', () => {
+      document.getElementById('lottie-scan-lines').classList.add('hidden');
+    });
+  }
+
+  initPageCode() {
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('structsConglomerateHint'));
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableCloseBtn();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+        
+      <div class="common-layout-col">
+        <div class="common-group-col">
+        
+          <div id="snc-logo-wrapper" class="snc-logo-wrapper">
+            <img 
+              class="snc-logo"
+              src="/img/logo-snc.gif"
+              alt="SNC logo"
+            >
+            <h2 class="sui-text-header sui-text-disabled">WE KNOW BETTER.</h2>
+          </div>
+          
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(
+      `You have been contracted by SN.CORPORATION, a member of the 
+      <a 
+        id="structsConglomerateHint" 
+        class="sui-mod-secondary"
+        href="javascript: void(0)" 
+        data-sui-tooltip="A loose federation of machine states with the goal of [REDACTED]"
+      >Structs Conglomerate</a>,
+      to conduct Alpha Matter mining operations in the Milky Way Galaxy.`
+    );
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnB();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.enableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showDialoguePanel();
+
+    this.initLottieAnimations();
+    this.initPageCode();
   }
 }
 
@@ -2725,6 +3258,7 @@ class HRBotTalkingTemplate {
     this.dialogueIndex = 0;
     this.actionOnSequenceEnd = () => {};
     this.startWithScanLines = false;
+    this.initPageCode = () => {};
   }
 
   initLottieAnimations() {
@@ -2795,6 +3329,7 @@ class HRBotTalkingTemplate {
 
       if (this.dialogueIndex < this.dialogueSequence.length) {
         _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(this.dialogueSequence[this.dialogueIndex], true);
+        this.initPageCode();
       }
 
       if (this.dialogueIndex === this.dialogueSequence.length) {
@@ -2805,6 +3340,7 @@ class HRBotTalkingTemplate {
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showDialoguePanel();
 
     this.initLottieAnimations();
+    this.initPageCode();
   }
 }
 

@@ -1,5 +1,6 @@
 import {MenuPageRouter} from "./MenuPageRouter";
 import {NavItemDTO} from "../dtos/NavItemDTO";
+import {SUI} from "../sui/SUI";
 
 export class MenuPage {
 
@@ -34,6 +35,8 @@ export class MenuPage {
   /* Element IDs End */
 
   static router = new MenuPageRouter();
+
+  static sui = new SUI();
 
   static dialogueBtnAHandler = () => {};
 

@@ -4,18 +4,21 @@ import {SUITooltip} from "./SUITooltip.js";
 export class SUI {
 
   constructor() {
+    this.inputStepper = new SUIInputStepper();
+    this.tooltip = new SUITooltip();
+
     this.autoInitClasses = [
-      new SUIInputStepper(),
-      new SUITooltip()
+      this.inputStepper,
+      this.tooltip
     ];
   }
 
   /**
    * Auto initialize all SUI features
    */
-  init() {
+  autoInitAll() {
     this.autoInitClasses.forEach(suiFeature => {
-      suiFeature.init();
+      suiFeature.autoInitAll();
     });
   }
 

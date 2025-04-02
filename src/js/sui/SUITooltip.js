@@ -57,10 +57,44 @@ export class SUITooltip extends SUIFeature {
     }.bind(this), 100);
   }
 
+  init(tooltipTrigger) {
+    const tooltipElm = this.buildTooltipHTML(tooltipTrigger);
+    tooltipTrigger.parentElement.appendChild(tooltipElm);
+
+    // To position the tooltip the parent also must have position defined.
+    if (!tooltipTrigger.parentElement.style.position) {
+      tooltipTrigger.parentElement.style.position = 'relative';
+    }
+
+    let pressedEvent = 'mousedown';
+    let releasedEvent = 'mouseup';
+
+    // Attach relevant pointer event listeners for mobile or desktop
+    if(window.matchMedia("(pointer: coarse)").matches) {
+      pressedEvent = 'touchstart';
+      releasedEvent = 'touchend';
+
+      // Press and hold on mobile also fires a contextmenu event which we need to block
+      // because it can obscure the tooltip and also cause inadvertent actions.
+      tooltipTrigger.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+      }, { passive: false });
+
+    }
+
+    tooltipTrigger.addEventListener(pressedEvent, function() {
+      this.pointerPressed(tooltipElm, tooltipTrigger);
+    }.bind(this), { passive: true });
+
+    window.addEventListener(releasedEvent, function () {
+      this.clearPointerPressedTimer(tooltipElm);
+    }.bind(this), { passive: true });
+  }
+
   /**
    * Initialize all tooltips on the page.
    */
-  init() {
+  autoInitAll() {
     let tooltips = document.querySelectorAll('[data-sui-tooltip]');
 
     if (tooltips.length === 0) {

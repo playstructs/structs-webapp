@@ -8,6 +8,7 @@ export class HRBotTalkingTemplate {
     this.dialogueIndex = 0;
     this.actionOnSequenceEnd = () => {};
     this.startWithScanLines = false;
+    this.initPageCode = () => {};
   }
 
   initLottieAnimations() {
@@ -78,6 +79,7 @@ export class HRBotTalkingTemplate {
 
       if (this.dialogueIndex < this.dialogueSequence.length) {
         MenuPage.setDialogueScreenContent(this.dialogueSequence[this.dialogueIndex], true);
+        this.initPageCode();
       }
 
       if (this.dialogueIndex === this.dialogueSequence.length) {
@@ -88,5 +90,6 @@ export class HRBotTalkingTemplate {
     MenuPage.showDialoguePanel();
 
     this.initLottieAnimations();
+    this.initPageCode();
   }
 }

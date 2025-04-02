@@ -27,7 +27,7 @@ export class SUIInputStepper extends SUIFeature {
   /**
    * Initialize all input steppers on the page.
    */
-  init() {
+  autoInitAll() {
     let inputSteppers = document.querySelectorAll('.sui-input-stepper input[type=number]');
 
     if (inputSteppers.length === 0) {

@@ -5,7 +5,7 @@ export class SUIFeature {
   /**
    * Auto initialize feature
    */
-  init() {
+  autoInitAll() {
     throw new SUINotImplementedError();
   }
 
