@@ -1218,9 +1218,9 @@ gameState.thisGuild = await guildAPI.getThisGuild();
 grassManager.registerListener(blockListener);
 grassManager.init();
 
-_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
+// MenuPage.router.goto('Auth', 'index');
 
-// MenuPage.router.goto('Auth', 'orientation1');
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'orientation1');
 
 __webpack_async_result__();
 } catch(e) { __webpack_async_result__(e); } }, 1);

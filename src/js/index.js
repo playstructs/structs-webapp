@@ -41,6 +41,6 @@ gameState.thisGuild = await guildAPI.getThisGuild();
 grassManager.registerListener(blockListener);
 grassManager.init();
 
-MenuPage.router.goto('Auth', 'index');
+// MenuPage.router.goto('Auth', 'index');
 
-// MenuPage.router.goto('Auth', 'orientation1');
+MenuPage.router.goto('Auth', 'orientation1');
