@@ -69,7 +69,7 @@ export class Orientation5ViewModel extends AbstractViewModel {
       banned sentient lifeforms from operating Alpha  mining colonies.`
     );
     MenuPage.dialogueBtnAHandler = () => {
-      MenuPage.router.goto('Auth', 'orientation5');
+      MenuPage.router.goto('Auth', 'orientation6');
     };
 
     this.initLottieAnimations();

@@ -19,6 +19,7 @@ import {Orientation2ViewModel} from "../view_models/signup/Orientation2ViewModel
 import {Orientation3ViewModel} from "../view_models/signup/Orientation3ViewModel";
 import {Orientation4ViewModel} from "../view_models/signup/Orientation4ViewModel";
 import {Orientation5ViewModel} from "../view_models/signup/Orientation5ViewModel";
+import {Orientation6ViewModel} from "../view_models/signup/Orientation6ViewModel";
 
 export class AuthController extends AbstractController {
 
@@ -146,6 +147,11 @@ export class AuthController extends AbstractController {
 
   orientation5() {
     const viewModel = new Orientation5ViewModel();
+    viewModel.render();
+  }
+
+  orientation6() {
+    const viewModel = new Orientation6ViewModel();
     viewModel.render();
   }
 }

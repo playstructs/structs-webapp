@@ -42,7 +42,7 @@ export class Orientation3ViewModel extends AbstractViewModel {
       </div>
         
       <div class="common-layout-col">
-        <div class="orientation-alpha-layout">
+        <div class="orientation-icon-text-layout">
           <div class="alpha-matter-128"></div>
           <div class="orientation-display-text-group">
             <div class="orientation-display-text-header">

@@ -217,6 +217,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_Orientation3ViewModel__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../view_models/signup/Orientation3ViewModel */ "./js/view_models/signup/Orientation3ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation4ViewModel__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ../view_models/signup/Orientation4ViewModel */ "./js/view_models/signup/Orientation4ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation5ViewModel__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ../view_models/signup/Orientation5ViewModel */ "./js/view_models/signup/Orientation5ViewModel.js");
+/* harmony import */ var _view_models_signup_Orientation6ViewModel__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ../view_models/signup/Orientation6ViewModel */ "./js/view_models/signup/Orientation6ViewModel.js");
+
 
 
 
@@ -365,6 +367,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   orientation5() {
     const viewModel = new _view_models_signup_Orientation5ViewModel__WEBPACK_IMPORTED_MODULE_20__.Orientation5ViewModel();
+    viewModel.render();
+  }
+
+  orientation6() {
+    const viewModel = new _view_models_signup_Orientation6ViewModel__WEBPACK_IMPORTED_MODULE_21__.Orientation6ViewModel();
     viewModel.render();
   }
 }
@@ -2617,7 +2624,7 @@ class Orientation3ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
       </div>
         
       <div class="common-layout-col">
-        <div class="orientation-alpha-layout">
+        <div class="orientation-icon-text-layout">
           <div class="alpha-matter-128"></div>
           <div class="orientation-display-text-group">
             <div class="orientation-display-text-header">
@@ -2842,10 +2849,93 @@ class Orientation5ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
       banned sentient lifeforms from operating Alpha  mining colonies.`
     );
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.dialogueBtnAHandler = () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation5');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation6');
     };
 
     this.initLottieAnimations();
+    this.initPageCode();
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/view_models/signup/Orientation6ViewModel.js":
+/*!********************************************************!*\
+  !*** ./js/view_models/signup/Orientation6ViewModel.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Orientation6ViewModel: () => (/* binding */ Orientation6ViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class Orientation6ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
+  initPageCode() {
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('dialogueStructsHint'));
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableCloseBtn();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+      <div class="generic-land-background">
+        <div class="common-layout-col">
+          <div class="orientation-icon-text-layout">
+            <img
+              id="orientation-struct-deployment"
+              src="/img/orientation-struct-deployment.gif"
+              alt="Deployment pod dropped from space, opening and reveal a Struct"
+            >
+            <div class="orientation-display-text-group">
+              <div class="orientation-display-text-header mod-dark-bg">
+                <span class="sui-text-display">STRUCTS</span>
+              </div>
+              <div class="orientation-display-text-body mod-dark-bg">
+                <span class="sui-text-hint">Galactic Codex Entry #2722</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(
+      `For this reason, Alpha mining operations are now conducted by a race of advanced machines knowns as
+      <a 
+        id="dialogueStructsHint" 
+        class="sui-mod-secondary"
+        href="javascript: void(0)" 
+        data-sui-tooltip="A civilization of  machines, discovered approximately 1200 years ago."
+      >Structs.</a>`
+    );
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.dialogueBtnAHandler = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation6');
+    };
+
     this.initPageCode();
   }
 }
