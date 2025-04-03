@@ -2,7 +2,7 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {NavItemDTO} from "../../dtos/NavItemDTO";
 import {MenuPage} from "../../framework/MenuPage";
 
-export class Orientation3ViewModel extends AbstractViewModel {
+export class Orientation4ViewModel extends AbstractViewModel {
 
   initLottieAnimations() {
     const {lottie} = window;
@@ -14,6 +14,17 @@ export class Orientation3ViewModel extends AbstractViewModel {
       autoplay: true,
       path: '/lottie/transition-scan-lines/data.json'
     });
+    const hoagExplosion = loadAnimation({
+      container: document.getElementById('lottie-hoag-explosion'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      path: '/lottie/hoag-explosion/data.json'
+    });
+
+    setTimeout(() => {
+      hoagExplosion.play();
+    }, 1000);
 
     scanLines.addEventListener('complete', () => {
       document.getElementById('lottie-scan-lines').classList.add('hidden');
@@ -21,7 +32,7 @@ export class Orientation3ViewModel extends AbstractViewModel {
   }
 
   initPageCode() {
-    MenuPage.sui.tooltip.init(document.getElementById('dialogueAlphaMatterHint'));
+    MenuPage.sui.tooltip.init(document.getElementById('catastrophicLossHint'));
   }
 
   render() {
@@ -40,37 +51,29 @@ export class Orientation3ViewModel extends AbstractViewModel {
       <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
         <div id="lottie-scan-lines"></div>
       </div>
-        
-      <div class="common-layout-col">
-        <div class="orientation-alpha-layout">
-          <div class="alpha-matter-128"></div>
-          <div class="orientation-alpha-text-group">
-            <div class="orientation-alpha-text-header">
-              <span class="sui-text-display">Alpha Matter</span>
-            </div>
-            <div class="orientation-alpha-text-body">
-              <span class="sui-text-hint">Ap - 52.456u</span>
+      <div class="generic-space-background">
+        <div class="common-layout-col">
+          <div id="lottie-hoag-explosion-wrapper">
+            <div id="lottie-hoag-explosion"></div>
+            <div class="hoag-planet-label-box">
+              Trydor,<br>
+              <span class="sui-text-secondary">Hoag System</span>
             </div>
           </div>
-          
         </div>
-      </div>
-        
+      </div>  
     </div>
     `);
 
     MenuPage.setDialogueScreenContent(
-      `<a 
-        id="dialogueAlphaMatterHint" 
+      `Improper handling of Alpha Matter during the Hoag Incident resulted in 
+      <a 
+        id="catastrophicLossHint" 
         class="sui-mod-secondary"
         href="javascript: void(0)" 
-        data-sui-tooltip="Alpha Matter fuels faster-than-light travel and provides power to the galaxy."
-      >Alpha Matter</a>
-      is a rare and powerful substance that fuels galactic civilization. Unfortunately, it is dangerously unstable.`
+        data-sui-tooltip="SN.CORP accepts no responsibility for employees obliterated by Alpha Matter Space Distortion Fields."
+      >catastrophic loss of life.</a>`
     );
-    MenuPage.dialogueBtnAHandler = () => {
-      MenuPage.router.goto('Auth', 'orientation4');
-    };
 
     this.initLottieAnimations();
     this.initPageCode();
