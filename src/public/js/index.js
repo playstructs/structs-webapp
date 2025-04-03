@@ -216,6 +216,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_Orientation2ViewModel__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../view_models/signup/Orientation2ViewModel */ "./js/view_models/signup/Orientation2ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation3ViewModel__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../view_models/signup/Orientation3ViewModel */ "./js/view_models/signup/Orientation3ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation4ViewModel__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ../view_models/signup/Orientation4ViewModel */ "./js/view_models/signup/Orientation4ViewModel.js");
+/* harmony import */ var _view_models_signup_Orientation5ViewModel__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ../view_models/signup/Orientation5ViewModel */ "./js/view_models/signup/Orientation5ViewModel.js");
+
 
 
 
@@ -358,6 +360,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   orientation4() {
     const viewModel = new _view_models_signup_Orientation4ViewModel__WEBPACK_IMPORTED_MODULE_19__.Orientation4ViewModel();
+    viewModel.render();
+  }
+
+  orientation5() {
+    const viewModel = new _view_models_signup_Orientation5ViewModel__WEBPACK_IMPORTED_MODULE_20__.Orientation5ViewModel();
     viewModel.render();
   }
 }
@@ -2738,6 +2745,105 @@ class Orientation4ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
         data-sui-tooltip="SN.CORP accepts no responsibility for employees obliterated by Alpha Matter Space Distortion Fields."
       >catastrophic loss of life.</a>`
     );
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.dialogueBtnAHandler = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation5');
+    };
+
+    this.initLottieAnimations();
+    this.initPageCode();
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/view_models/signup/Orientation5ViewModel.js":
+/*!********************************************************!*\
+  !*** ./js/view_models/signup/Orientation5ViewModel.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Orientation5ViewModel: () => (/* binding */ Orientation5ViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class Orientation5ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
+  initLottieAnimations() {
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const scanLines = loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
+
+    scanLines.addEventListener('complete', () => {
+      document.getElementById('lottie-scan-lines').classList.add('hidden');
+    });
+  }
+
+  initPageCode() {
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('dialogueAlphaStarCouncilHint'));
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableCloseBtn();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+        
+      <div class="common-layout-col">
+        <div class="orientation-mining-regulations-layout">
+          <i class="sui-icon-lg icon-menu sui-text-primary"></i>  
+          <div class="orientation-alpha-text-group">
+            <div class="orientation-alpha-text-header">
+              <span class="sui-text-display">Mining Regulations</span>
+            </div>
+            <div class="orientation-alpha-text-body">
+              <span class="sui-text-hint">See file: Ref_72426B.dx</span>
+            </div>
+          </div>
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(
+      `Following the incident, the 
+      <a 
+        id="dialogueAlphaStarCouncilHint" 
+        class="sui-mod-secondary"
+        href="javascript: void(0)" 
+        data-sui-tooltip="A governmental body comprised of the major space-faring races within known space."
+      >Alpha Star Council</a>
+      banned sentient lifeforms from operating Alpha  mining colonies.`
+    );
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.dialogueBtnAHandler = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation5');
+    };
 
     this.initLottieAnimations();
     this.initPageCode();

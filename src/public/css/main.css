@@ -543,6 +543,12 @@ img.glitch-logo {
   text-align: left;
 }
 
+.orientation-mining-regulations-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xl);
+}
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */
