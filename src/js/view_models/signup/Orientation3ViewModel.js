@@ -44,11 +44,11 @@ export class Orientation3ViewModel extends AbstractViewModel {
       <div class="common-layout-col">
         <div class="orientation-alpha-layout">
           <div class="alpha-matter-128"></div>
-          <div class="orientation-alpha-text-group">
-            <div class="orientation-alpha-text-header">
+          <div class="orientation-display-text-group">
+            <div class="orientation-display-text-header">
               <span class="sui-text-display">Alpha Matter</span>
             </div>
-            <div class="orientation-alpha-text-body">
+            <div class="orientation-display-text-body">
               <span class="sui-text-hint">Ap - 52.456u</span>
             </div>
           </div>

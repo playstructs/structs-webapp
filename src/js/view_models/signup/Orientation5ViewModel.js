@@ -44,11 +44,11 @@ export class Orientation5ViewModel extends AbstractViewModel {
       <div class="common-layout-col">
         <div class="orientation-mining-regulations-layout">
           <i class="sui-icon-lg icon-menu sui-text-primary"></i>  
-          <div class="orientation-alpha-text-group">
-            <div class="orientation-alpha-text-header">
+          <div class="orientation-display-text-group">
+            <div class="orientation-display-text-header">
               <span class="sui-text-display">Mining Regulations</span>
             </div>
-            <div class="orientation-alpha-text-body">
+            <div class="orientation-display-text-body">
               <span class="sui-text-hint">See file: Ref_72426B.dx</span>
             </div>
           </div>

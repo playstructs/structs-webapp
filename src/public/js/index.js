@@ -2619,11 +2619,11 @@ class Orientation3ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
       <div class="common-layout-col">
         <div class="orientation-alpha-layout">
           <div class="alpha-matter-128"></div>
-          <div class="orientation-alpha-text-group">
-            <div class="orientation-alpha-text-header">
+          <div class="orientation-display-text-group">
+            <div class="orientation-display-text-header">
               <span class="sui-text-display">Alpha Matter</span>
             </div>
-            <div class="orientation-alpha-text-body">
+            <div class="orientation-display-text-body">
               <span class="sui-text-hint">Ap - 52.456u</span>
             </div>
           </div>
@@ -2817,11 +2817,11 @@ class Orientation5ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
       <div class="common-layout-col">
         <div class="orientation-mining-regulations-layout">
           <i class="sui-icon-lg icon-menu sui-text-primary"></i>  
-          <div class="orientation-alpha-text-group">
-            <div class="orientation-alpha-text-header">
+          <div class="orientation-display-text-group">
+            <div class="orientation-display-text-header">
               <span class="sui-text-display">Mining Regulations</span>
             </div>
-            <div class="orientation-alpha-text-body">
+            <div class="orientation-display-text-body">
               <span class="sui-text-hint">See file: Ref_72426B.dx</span>
             </div>
           </div>

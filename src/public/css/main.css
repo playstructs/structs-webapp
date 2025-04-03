@@ -472,13 +472,13 @@ img.glitch-logo {
   justify-content: center;
 }
 
-.orientation-alpha-text-group {
+.orientation-display-text-group {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
-.orientation-alpha-text-header {
+.orientation-display-text-header {
   display: flex;
   padding: 8px var(--spacing-md);
   border: 1px solid var(--accent-disabled);
@@ -486,7 +486,7 @@ img.glitch-logo {
   color: var(--accent-primary-active);
 }
 
-.orientation-alpha-text-body {
+.orientation-display-text-body {
   display: flex;
   padding: 8px var(--spacing-md);
   border-right: 1px solid var(--accent-disabled);
