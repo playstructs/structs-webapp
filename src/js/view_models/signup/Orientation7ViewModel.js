@@ -63,7 +63,7 @@ export class Orientation7ViewModel extends AbstractViewModel {
     MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
     MenuPage.setDialogueScreenContent(`Your task is to deploy Structs to uncharted worlds across the galaxy and harvest Alpha Matter on behalf of SN.CORPORATION.`);
     MenuPage.dialogueBtnAHandler = () => {
-      MenuPage.router.goto('Auth', 'orientation7');
+      MenuPage.router.goto('Auth', 'orientation8');
     };
     MenuPage.disableDialogueBtnB();
     MenuPage.enableDialogueBtnA();

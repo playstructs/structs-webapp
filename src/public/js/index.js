@@ -219,6 +219,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_Orientation5ViewModel__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ../view_models/signup/Orientation5ViewModel */ "./js/view_models/signup/Orientation5ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation6ViewModel__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ../view_models/signup/Orientation6ViewModel */ "./js/view_models/signup/Orientation6ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation7ViewModel__WEBPACK_IMPORTED_MODULE_22__ = __webpack_require__(/*! ../view_models/signup/Orientation7ViewModel */ "./js/view_models/signup/Orientation7ViewModel.js");
+/* harmony import */ var _view_models_signup_Orientation8ViewModel__WEBPACK_IMPORTED_MODULE_23__ = __webpack_require__(/*! ../view_models/signup/Orientation8ViewModel */ "./js/view_models/signup/Orientation8ViewModel.js");
+
 
 
 
@@ -379,6 +381,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   orientation7() {
     const viewModel = new _view_models_signup_Orientation7ViewModel__WEBPACK_IMPORTED_MODULE_22__.Orientation7ViewModel();
+    viewModel.render();
+  }
+
+  orientation8() {
+    const viewModel = new _view_models_signup_Orientation8ViewModel__WEBPACK_IMPORTED_MODULE_23__.Orientation8ViewModel();
     viewModel.render();
   }
 }
@@ -3003,7 +3010,7 @@ class Orientation7ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(`Your task is to deploy Structs to uncharted worlds across the galaxy and harvest Alpha Matter on behalf of SN.CORPORATION.`);
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.dialogueBtnAHandler = () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation7');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation8');
     };
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnB();
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.enableDialogueBtnA();
@@ -3013,6 +3020,46 @@ class Orientation7ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
   }
 }
 
+
+/***/ }),
+
+/***/ "./js/view_models/signup/Orientation8ViewModel.js":
+/*!********************************************************!*\
+  !*** ./js/view_models/signup/Orientation8ViewModel.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Orientation8ViewModel: () => (/* binding */ Orientation8ViewModel)
+/* harmony export */ });
+/* harmony import */ var _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../templates/HRBotTalkingTemplate */ "./js/view_models/templates/HRBotTalkingTemplate.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+
+
+
+
+class Orientation8ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
+  render() {
+    const view = new _templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_0__.HRBotTalkingTemplate();
+    view.startWithScanLines = true;
+    view.dialogueSequence = [
+      `SN.CORPORATION accepts no responsibility for damages incurred during Alpha mining operations, including but not limited to...`,
+      `...piracy, corporate espionage, raids, Alpha-tear events, acts of cosmic beings, interplanetary warf... <a id="seeFullMessageHint" class="sui-mod-secondary" href="javascript: void(0)" data-sui-tooltip="Insufficient Memory.">(See full message: 602,1023 pages)</a>`
+    ];
+    view.actionOnSequenceEnd = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'orientation8');
+    }
+    view.initPageCode = function () {
+      if (this.dialogueIndex === 1) {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.sui.tooltip.init(document.getElementById('seeFullMessageHint'));
+      }
+    };
+    view.render();
+  }
+}
 
 /***/ }),
 
