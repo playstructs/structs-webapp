@@ -31,7 +31,7 @@ export class Orientation6ViewModel extends AbstractViewModel {
     };
 
     view.actionOnSequenceEnd = () => {
-      MenuPage.router.goto('Auth', 'orientation6');
+      MenuPage.router.goto('Auth', 'orientation7');
     }
 
     view.render();

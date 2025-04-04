@@ -218,6 +218,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_Orientation4ViewModel__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ../view_models/signup/Orientation4ViewModel */ "./js/view_models/signup/Orientation4ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation5ViewModel__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ../view_models/signup/Orientation5ViewModel */ "./js/view_models/signup/Orientation5ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation6ViewModel__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ../view_models/signup/Orientation6ViewModel */ "./js/view_models/signup/Orientation6ViewModel.js");
+/* harmony import */ var _view_models_signup_Orientation7ViewModel__WEBPACK_IMPORTED_MODULE_22__ = __webpack_require__(/*! ../view_models/signup/Orientation7ViewModel */ "./js/view_models/signup/Orientation7ViewModel.js");
+
 
 
 
@@ -372,6 +374,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   orientation6() {
     const viewModel = new _view_models_signup_Orientation6ViewModel__WEBPACK_IMPORTED_MODULE_21__.Orientation6ViewModel();
+    viewModel.render();
+  }
+
+  orientation7() {
+    const viewModel = new _view_models_signup_Orientation7ViewModel__WEBPACK_IMPORTED_MODULE_22__.Orientation7ViewModel();
     viewModel.render();
   }
 }
@@ -2907,10 +2914,102 @@ class Orientation6ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
     };
 
     view.actionOnSequenceEnd = () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'orientation6');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'orientation7');
     }
 
     view.render();
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/view_models/signup/Orientation7ViewModel.js":
+/*!********************************************************!*\
+  !*** ./js/view_models/signup/Orientation7ViewModel.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Orientation7ViewModel: () => (/* binding */ Orientation7ViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class Orientation7ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
+  initLottieAnimations() {
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const scanLines = loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
+    loadAnimation({
+      container: document.getElementById('hrbot-talking-small'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: '/lottie/hr-bot/data.json'
+    });
+    loadAnimation({
+      container: document.getElementById('lottie-ship-passing-planet'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/ship-passing-planet/data.json'
+    });
+
+    scanLines.addEventListener('complete', () => {
+      document.getElementById('lottie-scan-lines').classList.add('hidden');
+    });
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableCloseBtn();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+        
+      <div class="generic-space-background">
+        <div class="common-layout-col">
+          <div id="lottie-ship-passing-planet" style="height: 308px"></div>
+        </div>
+      </div>  
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(`Your task is to deploy Structs to uncharted worlds across the galaxy and harvest Alpha Matter on behalf of SN.CORPORATION.`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.dialogueBtnAHandler = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation7');
+    };
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnB();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.enableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showDialoguePanel();
+
+    this.initLottieAnimations()
   }
 }
 

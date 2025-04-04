@@ -149,6 +149,7 @@ common-group - no padding
 
 .common-layout-col {
   display: flex;
+  max-width: 100%;
   padding: var(--spacing-xl);
   flex: 1 0 0;
   flex-direction: column;
@@ -569,6 +570,14 @@ img.glitch-logo {
 #orientation-struct-deployment {
   width: 256px;
   height: 256px;
+}
+
+#lottie-ship-passing-planet {
+  min-width: 657px;
+  min-height: 308px;
+  width: 657px;
+  height: 308px;
+  margin-top: 96px;
 }
 
 /* Page Specific Styling Start */
