@@ -2872,71 +2872,45 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   Orientation6ViewModel: () => (/* binding */ Orientation6ViewModel)
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
-/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _templates_OrientationStructDeployedTemplate__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../templates/OrientationStructDeployedTemplate */ "./js/view_models/templates/OrientationStructDeployedTemplate.js");
 
 
 
 
 class Orientation6ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
 
-  initPageCode() {
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('dialogueStructsHint'));
-  }
-
   render() {
-    const navItems = [
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
-        'nav-item-text-only',
-        'SN.Corporation'
-      )
-    ];
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems(navItems);
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableCloseBtn();
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showNav();
+    const view = new _templates_OrientationStructDeployedTemplate__WEBPACK_IMPORTED_MODULE_2__.OrientationStructDeployedTemplate();
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
-    <div class="full-screen-content-container">
-      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
-        <div id="lottie-scan-lines"></div>
-      </div>
-      <div class="generic-land-background">
-        <div class="common-layout-col">
-          <div class="orientation-icon-text-layout">
-            <img
-              id="orientation-struct-deployment"
-              src="/img/orientation-struct-deployment.gif"
-              alt="Deployment pod dropped from space, opening and reveal a Struct"
-            >
-            <div class="orientation-display-text-group">
-              <div class="orientation-display-text-header mod-dark-bg">
-                <span class="sui-text-display">STRUCTS</span>
-              </div>
-              <div class="orientation-display-text-body mod-dark-bg">
-                <span class="sui-text-hint">Galactic Codex Entry #2722</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-        
-    </div>
-    `);
+    view.bodyTextSequence = {
+      0: `Galactic Codex Entry #2722`,
+      1: `Status: <span class="sui-text-destructive">DISPUTED</span>`,
+    };
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(
-      `For this reason, Alpha mining operations are now conducted by a race of advanced machines knowns as
+    view.dialogueSequence = [
+      `For this reason, Alpha mining operations are now conducted by a race of advanced machines known as
       <a 
         id="dialogueStructsHint" 
         class="sui-mod-secondary"
         href="javascript: void(0)" 
         data-sui-tooltip="A civilization of  machines, discovered approximately 1200 years ago."
-      >Structs.</a>`
-    );
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.dialogueBtnAHandler = () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'orientation6');
+      >Structs.</a>`,
+
+      `Structs are not officially recognized as sentient lifeforms by the Alpha Star Council, granting them sole access to Alpha-laced worlds.`
+    ];
+
+    view.pageCodeSequence = {
+      0: () => {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.sui.tooltip.init(document.getElementById('dialogueStructsHint'));
+      }
     };
 
-    this.initPageCode();
+    view.actionOnSequenceEnd = () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'orientation6');
+    }
+
+    view.render();
   }
 }
 
@@ -3683,6 +3657,145 @@ class HRBotTalkingTemplate {
         this.actionOnSequenceEnd();
       }
     };
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showDialoguePanel();
+
+    this.initLottieAnimations();
+    this.initPageCode();
+  }
+}
+
+/***/ }),
+
+/***/ "./js/view_models/templates/OrientationStructDeployedTemplate.js":
+/*!***********************************************************************!*\
+  !*** ./js/view_models/templates/OrientationStructDeployedTemplate.js ***!
+  \***********************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   OrientationStructDeployedTemplate: () => (/* binding */ OrientationStructDeployedTemplate)
+/* harmony export */ });
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+class OrientationStructDeployedTemplate {
+
+  constructor() {
+    this.sequenceIndex = 0;
+
+    this.dialogueSequence = []; // Dialogue always changes in the sequence index changes.
+
+    // Objects allow you to specify which indexes the body text and page code should change.
+    this.bodyTextSequence = {};
+    this.pageCodeSequence = {};
+
+    this.actionOnSequenceEnd = () => {};
+  }
+
+  initLottieAnimations() {
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const scanLines = loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
+    loadAnimation({
+      container: document.getElementById('hrbot-talking-small'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: '/lottie/hr-bot/data.json'
+    });
+
+    scanLines.addEventListener('complete', () => {
+      document.getElementById('lottie-scan-lines').classList.add('hidden');
+    });
+  }
+
+  initPageCode() {
+    if (this.pageCodeSequence[0]) {
+      this.pageCodeSequence[0]();
+    }
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableCloseBtn();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+
+      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+      
+      <div class="generic-land-background">
+        <div class="common-layout-col">
+          <div class="orientation-icon-text-layout">
+            <img
+              id="orientation-struct-deployment"
+              src="/img/orientation-struct-deployment.gif"
+              alt="Deployment pod dropped from space, opening and reveal a Struct"
+            >
+            <div class="orientation-display-text-group" style="min-width: 294px">
+              <div class="orientation-display-text-header mod-dark-bg">
+                <span class="sui-text-display">STRUCTS</span>
+              </div>
+              <div class="orientation-display-text-body mod-dark-bg">
+                <span id="orientation-struct-deployment-body-text" class="sui-text-hint">Galactic Codex Entry #2722</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(
+      `For this reason, Alpha mining operations are now conducted by a race of advanced machines knowns as
+      <a 
+        id="dialogueStructsHint" 
+        class="sui-mod-secondary"
+        href="javascript: void(0)" 
+        data-sui-tooltip="A civilization of  machines, discovered approximately 1200 years ago."
+      >Structs.</a>`
+    );
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.dialogueBtnAHandler = () => {
+      this.sequenceIndex++;
+
+      if (this.sequenceIndex < this.dialogueSequence.length) {
+        const bodyTextElm = document.getElementById('orientation-struct-deployment-body-text');
+        bodyTextElm.innerHTML = this.bodyTextSequence[this.sequenceIndex];
+
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setDialogueScreenContent(this.dialogueSequence[this.sequenceIndex], true);
+
+        if (this.pageCodeSequence[this.sequenceIndex]) {
+          this.pageCodeSequence[this.sequenceIndex]();
+        }
+      }
+
+      if (this.sequenceIndex === this.dialogueSequence.length) {
+        this.actionOnSequenceEnd();
+      }
+    };
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.disableDialogueBtnB();
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableDialogueBtnA();
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.showDialoguePanel();
 
