@@ -220,6 +220,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_Orientation6ViewModel__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ../view_models/signup/Orientation6ViewModel */ "./js/view_models/signup/Orientation6ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation7ViewModel__WEBPACK_IMPORTED_MODULE_22__ = __webpack_require__(/*! ../view_models/signup/Orientation7ViewModel */ "./js/view_models/signup/Orientation7ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation8ViewModel__WEBPACK_IMPORTED_MODULE_23__ = __webpack_require__(/*! ../view_models/signup/Orientation8ViewModel */ "./js/view_models/signup/Orientation8ViewModel.js");
+/* harmony import */ var _view_models_signup_OrientationEndViewModel__WEBPACK_IMPORTED_MODULE_24__ = __webpack_require__(/*! ../view_models/signup/OrientationEndViewModel */ "./js/view_models/signup/OrientationEndViewModel.js");
+
 
 
 
@@ -386,6 +388,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   orientation8() {
     const viewModel = new _view_models_signup_Orientation8ViewModel__WEBPACK_IMPORTED_MODULE_23__.Orientation8ViewModel();
+    viewModel.render();
+  }
+
+  orientationEnd() {
+    const viewModel = new _view_models_signup_OrientationEndViewModel__WEBPACK_IMPORTED_MODULE_24__.OrientationEndViewModel();
     viewModel.render();
   }
 }
@@ -3050,7 +3057,7 @@ class Orientation8ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
       `...piracy, corporate espionage, raids, Alpha-tear events, acts of cosmic beings, interplanetary warf... <a id="seeFullMessageHint" class="sui-mod-secondary" href="javascript: void(0)" data-sui-tooltip="Insufficient Memory.">(See full message: 602,1023 pages)</a>`
     ];
     view.actionOnSequenceEnd = () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'orientation8');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'orientationEnd');
     }
     view.initPageCode = function () {
       if (this.dialogueIndex === 1) {
@@ -3060,6 +3067,102 @@ class Orientation8ViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
     view.render();
   }
 }
+
+/***/ }),
+
+/***/ "./js/view_models/signup/OrientationEndViewModel.js":
+/*!**********************************************************!*\
+  !*** ./js/view_models/signup/OrientationEndViewModel.js ***!
+  \**********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   OrientationEndViewModel: () => (/* binding */ OrientationEndViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
+
+
+
+class OrientationEndViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
+  initLottieAnimations() {
+    const {lottie} = window;
+    const {loadAnimation} = lottie;
+    const scanLines = loadAnimation({
+      container: document.getElementById('lottie-scan-lines'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      path: '/lottie/transition-scan-lines/data.json'
+    });
+    loadAnimation({
+      container: document.getElementById('hrbot-talking-small'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: '/lottie/hr-bot/data.json'
+    });
+
+    scanLines.addEventListener('complete', () => {
+      document.getElementById('lottie-scan-lines').classList.add('hidden');
+    });
+  }
+
+  initPageCode() {
+    document.getElementById('beginOperations').addEventListener('click', () => {
+      console.log('begin operations');
+    });
+  }
+
+  render() {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'SN.Corporation'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems(navItems);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableCloseBtn();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div id="lottie-scan-lines-wrapper" class="lottie-scan-lines-wrapper">
+        <div id="lottie-scan-lines"></div>
+      </div>
+        
+      <div class="common-layout-col">
+        <div><i class="sui-icon-lg icon-success sui-text-primary"></i> Orientation Complete</div>
+        <div class="common-btn-sizing-container">
+          <div class="sui-screen-btn-flex-wrapper">
+            <a id="beginOperations" href="javascript: void(0)" class="sui-screen-btn sui-mod-primary">Begin Operations</a>
+          </div>
+        </div>
+      </div>
+        
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setDialogueScreenContent(
+      `Your orientation has now been completed. It is time for you to commence operations on your first planet.`
+    );
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.clearDialogueBtnAHandler();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.clearDialogueBtnBHandler();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnA();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableDialogueBtnB();
+
+    this.initLottieAnimations();
+    this.initPageCode();
+  }
+}
+
 
 /***/ }),
 

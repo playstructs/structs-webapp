@@ -194,6 +194,12 @@ common-group - no padding
   flex: 1 0 0;
 }
 
+.common-btn-sizing-container {
+  display: block;
+  max-width: 272px;
+  width: 100%;
+}
+
 /* Common Containers End */
 
 /* Page Specific Styling Start */

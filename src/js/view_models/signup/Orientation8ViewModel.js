@@ -11,7 +11,7 @@ export class Orientation8ViewModel extends AbstractViewModel {
       `...piracy, corporate espionage, raids, Alpha-tear events, acts of cosmic beings, interplanetary warf... <a id="seeFullMessageHint" class="sui-mod-secondary" href="javascript: void(0)" data-sui-tooltip="Insufficient Memory.">(See full message: 602,1023 pages)</a>`
     ];
     view.actionOnSequenceEnd = () => {
-      MenuPage.router.goto('Auth', 'orientation8');
+      MenuPage.router.goto('Auth', 'orientationEnd');
     }
     view.initPageCode = function () {
       if (this.dialogueIndex === 1) {
