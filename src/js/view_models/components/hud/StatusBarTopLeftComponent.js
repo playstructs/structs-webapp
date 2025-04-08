@@ -1,5 +1,6 @@
 import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../../constants/Events";
+import {MenuPage} from "../../../framework/MenuPage";
 
 export class StatusBarTopLeftComponent extends AbstractViewModelComponent {
 
@@ -7,12 +8,19 @@ export class StatusBarTopLeftComponent extends AbstractViewModelComponent {
     window.addEventListener(EVENTS.ENERGY_USAGE_CHANGED, function () {
       document.getElementById('hud-energy-usage').innerText = `${this.gameState.thisPlayer.load}/${this.gameState.thisPlayer.capacity}`;
     }.bind(this));
+
+    MenuPage.sui.tooltip.init(document.getElementById('hud-energy-usage-hint'));
   }
 
   renderHTML() {
     return `
       <div class="sui-status-bar-panel status-bar-panel-top-left">
-        <a href="javascript: void(0)" class="sui-resource">
+        <a 
+          id="hud-energy-usage-hint" 
+          class="sui-resource"
+          href="javascript: void(0)" 
+          data-sui-tooltip="Energy Supply"
+        >
           <span id="hud-energy-usage"></span>
           <i class="sui-icon sui-icon-energy"></i>
         </a>

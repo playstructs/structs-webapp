@@ -62,7 +62,8 @@ export class SUITooltip extends SUIFeature {
     tooltipTrigger.parentElement.appendChild(tooltipElm);
 
     // To position the tooltip the parent also must have position defined.
-    if (!tooltipTrigger.parentElement.style.position) {
+    const parentStyle = getComputedStyle(tooltipTrigger.parentElement);
+    if (parentStyle.getPropertyValue('position') === 'static') {
       tooltipTrigger.parentElement.style.position = 'relative';
     }
 

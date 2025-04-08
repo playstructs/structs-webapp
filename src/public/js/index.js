@@ -1931,7 +1931,8 @@ class SUITooltip extends _SUIFeature_js__WEBPACK_IMPORTED_MODULE_0__.SUIFeature 
     tooltipTrigger.parentElement.appendChild(tooltipElm);
 
     // To position the tooltip the parent also must have position defined.
-    if (!tooltipTrigger.parentElement.style.position) {
+    const parentStyle = getComputedStyle(tooltipTrigger.parentElement);
+    if (parentStyle.getPropertyValue('position') === 'static') {
       tooltipTrigger.parentElement.style.position = 'relative';
     }
 
@@ -2213,6 +2214,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
 /* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../../constants/Events */ "./js/constants/Events.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
 
 
 
@@ -2222,12 +2225,19 @@ class StatusBarTopLeftComponent extends _framework_AbstractViewModelComponent__W
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ENERGY_USAGE_CHANGED, function () {
       document.getElementById('hud-energy-usage').innerText = `${this.gameState.thisPlayer.load}/${this.gameState.thisPlayer.capacity}`;
     }.bind(this));
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('hud-energy-usage-hint'));
   }
 
   renderHTML() {
     return `
       <div class="sui-status-bar-panel status-bar-panel-top-left">
-        <a href="javascript: void(0)" class="sui-resource">
+        <a 
+          id="hud-energy-usage-hint" 
+          class="sui-resource"
+          href="javascript: void(0)" 
+          data-sui-tooltip="Energy Supply"
+        >
           <span id="hud-energy-usage"></span>
           <i class="sui-icon sui-icon-energy"></i>
         </a>
@@ -2251,6 +2261,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
 /* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../../constants/Events */ "./js/constants/Events.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
 
 
 
@@ -2264,16 +2276,29 @@ class StatusBarTopRightComponent extends _framework_AbstractViewModelComponent__
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ORE_COUNT_CHANGED, function () {
       document.getElementById('hud-ore').innerText = `${this.gameState.thisPlayer.ore}`;
     }.bind(this));
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('hud-shield-health-hint'));
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('hud-ore-hint'));
   }
 
   renderHTML() {
     return `
       <div class="sui-status-bar-panel status-bar-panel-top-right">
-        <a href="javascript: void(0)" class="sui-resource">
+        <a 
+          id="hud-shield-health-hint" 
+          class="sui-resource"
+          href="javascript: void(0)" 
+          data-sui-tooltip="Planetary Shield"
+        >
           <span id="hud-shield-health"></span>
           <i class="sui-icon sui-icon-shield-health"></i>
         </a>
-        <a href="javascript: void(0)" class="sui-resource">
+        <a 
+          id="hud-ore-hint" 
+          class="sui-resource"
+          href="javascript: void(0)" 
+          data-sui-tooltip="Alpha Ore"
+        >
           <span id="hud-ore"></span>
           <i class="sui-icon sui-icon-alpha-ore"></i>
         </a>
