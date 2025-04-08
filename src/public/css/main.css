@@ -206,13 +206,13 @@ common-group - no padding
 
 /* HUD Styling Start */
 
-.status-bar-panel-energy {
+.status-bar-panel-top-left {
   position: absolute;
   top: 2px;
   left: 2px;
 }
 
-.status-bar-panel-health-ore {
+.status-bar-panel-top-right {
   position: absolute;
   top: 2px;
   right: 2px;

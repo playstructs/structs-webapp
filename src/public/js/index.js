@@ -668,6 +668,41 @@ class AbstractViewModel {
 
 /***/ }),
 
+/***/ "./js/framework/AbstractViewModelComponent.js":
+/*!****************************************************!*\
+  !*** ./js/framework/AbstractViewModelComponent.js ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AbstractViewModelComponent: () => (/* binding */ AbstractViewModelComponent)
+/* harmony export */ });
+/* harmony import */ var _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./NotImplementedError */ "./js/framework/NotImplementedError.js");
+
+
+class AbstractViewModelComponent {
+
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    this.gameState = gameState;
+  }
+
+  initPageCode() {
+    throw new _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
+  }
+
+  renderHTML() {
+    throw new _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
+  }
+}
+
+
+/***/ }),
+
 /***/ "./js/framework/GrassError.js":
 /*!************************************!*\
   !*** ./js/framework/GrassError.js ***!
@@ -1180,9 +1215,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
-
 
 
 
@@ -1207,19 +1240,19 @@ class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IM
 
       this.gameState.thisPlayerId = messageData.id;
 
-      this.authManager.login();
+      this.authManager.login().then(function () {
+        this.guildAPI.getPlayer(messageData.id).then(function (player) {
+          this.gameState.setThisPlayer(player);
+        }.bind(this));
 
-      this.guildAPI.getPlayer(messageData.id).then(function (player) {
-        this.gameState.setThisPlayer(player);
-      }.bind(this));
+        this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
+          this.gameState.setLastActionBlockHeight(height);
+        }.bind(this));
 
-      this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
-        this.gameState.setLastActionBlockHeight(height);
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'orientation1');
       }.bind(this));
 
       this.shouldUnregister = () => true;
-
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'orientation1');
     }
   }
 }
@@ -2075,7 +2108,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   HUDViewModel: () => (/* binding */ HUDViewModel)
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
-/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+/* harmony import */ var _components_hud_StatusBarTopLeftComponent__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./components/hud/StatusBarTopLeftComponent */ "./js/view_models/components/hud/StatusBarTopLeftComponent.js");
+/* harmony import */ var _components_hud_StatusBarTopRightComponent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/hud/StatusBarTopRightComponent */ "./js/view_models/components/hud/StatusBarTopRightComponent.js");
+
 
 
 
@@ -2087,41 +2122,19 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
   constructor(gameState) {
     super();
     this.gameState = gameState;
+    this.topLeftStatusBar = new _components_hud_StatusBarTopLeftComponent__WEBPACK_IMPORTED_MODULE_1__.StatusBarTopLeftComponent(gameState);
+    this.topRightStatusBar = new _components_hud_StatusBarTopRightComponent__WEBPACK_IMPORTED_MODULE_2__.StatusBarTopRightComponent(gameState);
   }
 
   initPageCode() {
-    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ENERGY_USAGE_CHANGED, function () {
-      document.getElementById('hud-energy-usage').innerText = `${this.gameState.thisPlayer.load}/${this.gameState.thisPlayer.capacity}`;
-    }.bind(this));
-
-    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.SHIELD_HEALTH_CHANGED, function () {
-      document.getElementById('hud-shield-health').innerText = `100`; // TODO: Awaiting working stargate ts client
-    }.bind(this));
-
-    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ORE_COUNT_CHANGED, function () {
-      document.getElementById('hud-ore').innerText = `${this.gameState.thisPlayer.ore}`;
-    }.bind(this));
+    this.topLeftStatusBar.initPageCode();
+    this.topRightStatusBar.initPageCode();
   }
 
   render() {
     return `
-      <div class="sui-status-bar-panel status-bar-panel-energy">
-        <a href="javascript: void(0)" class="sui-resource">
-          <span id="hud-energy-usage"></span>
-          <i class="sui-icon sui-icon-energy"></i>
-        </a>
-      </div>
-
-      <div class="sui-status-bar-panel status-bar-panel-health-ore">
-        <a href="javascript: void(0)" class="sui-resource">
-          <span id="hud-shield-health"></span>
-          <i class="sui-icon sui-icon-shield-health"></i>
-        </a>
-        <a href="javascript: void(0)" class="sui-resource">
-          <span id="hud-ore"></span>
-          <i class="sui-icon sui-icon-alpha-ore"></i>
-        </a>
-      </div>
+      ${this.topLeftStatusBar.renderHTML()}
+      ${this.topRightStatusBar.renderHTML()}
     `;
   }
 }
@@ -2184,6 +2197,90 @@ class IndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2_
   }
 }
 
+
+/***/ }),
+
+/***/ "./js/view_models/components/hud/StatusBarTopLeftComponent.js":
+/*!********************************************************************!*\
+  !*** ./js/view_models/components/hud/StatusBarTopLeftComponent.js ***!
+  \********************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   StatusBarTopLeftComponent: () => (/* binding */ StatusBarTopLeftComponent)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../../constants/Events */ "./js/constants/Events.js");
+
+
+
+class StatusBarTopLeftComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
+
+  initPageCode() {
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ENERGY_USAGE_CHANGED, function () {
+      document.getElementById('hud-energy-usage').innerText = `${this.gameState.thisPlayer.load}/${this.gameState.thisPlayer.capacity}`;
+    }.bind(this));
+  }
+
+  renderHTML() {
+    return `
+      <div class="sui-status-bar-panel status-bar-panel-top-left">
+        <a href="javascript: void(0)" class="sui-resource">
+          <span id="hud-energy-usage"></span>
+          <i class="sui-icon sui-icon-energy"></i>
+        </a>
+      </div>
+    `;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/view_models/components/hud/StatusBarTopRightComponent.js":
+/*!*********************************************************************!*\
+  !*** ./js/view_models/components/hud/StatusBarTopRightComponent.js ***!
+  \*********************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   StatusBarTopRightComponent: () => (/* binding */ StatusBarTopRightComponent)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../../constants/Events */ "./js/constants/Events.js");
+
+
+
+class StatusBarTopRightComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
+
+  initPageCode() {
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.SHIELD_HEALTH_CHANGED, function () {
+      document.getElementById('hud-shield-health').innerText = `100`; // TODO: Awaiting working stargate ts client
+    }.bind(this));
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ORE_COUNT_CHANGED, function () {
+      document.getElementById('hud-ore').innerText = `${this.gameState.thisPlayer.ore}`;
+    }.bind(this));
+  }
+
+  renderHTML() {
+    return `
+      <div class="sui-status-bar-panel status-bar-panel-top-right">
+        <a href="javascript: void(0)" class="sui-resource">
+          <span id="hud-shield-health"></span>
+          <i class="sui-icon sui-icon-shield-health"></i>
+        </a>
+        <a href="javascript: void(0)" class="sui-resource">
+          <span id="hud-ore"></span>
+          <i class="sui-icon sui-icon-alpha-ore"></i>
+        </a>
+      </div>
+    `;
+  }
+}
 
 /***/ }),
 

@@ -1,6 +1,5 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {MenuPage} from "../framework/MenuPage";
-import {EVENTS} from "../constants/Events";
 
 export class PlayerCreatedListener extends AbstractGrassListener {
 
@@ -23,19 +22,19 @@ export class PlayerCreatedListener extends AbstractGrassListener {
 
       this.gameState.thisPlayerId = messageData.id;
 
-      this.authManager.login();
+      this.authManager.login().then(function () {
+        this.guildAPI.getPlayer(messageData.id).then(function (player) {
+          this.gameState.setThisPlayer(player);
+        }.bind(this));
 
-      this.guildAPI.getPlayer(messageData.id).then(function (player) {
-        this.gameState.setThisPlayer(player);
-      }.bind(this));
+        this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
+          this.gameState.setLastActionBlockHeight(height);
+        }.bind(this));
 
-      this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
-        this.gameState.setLastActionBlockHeight(height);
+        MenuPage.router.goto('Auth', 'orientation1');
       }.bind(this));
 
       this.shouldUnregister = () => true;
-
-      MenuPage.router.goto('Auth', 'orientation1');
     }
   }
 }
