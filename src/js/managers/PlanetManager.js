@@ -1,4 +1,4 @@
-//TODO: PlanetManager.js - Needs working stargate ts client
+//TODO: Awaiting working stargate ts client
 
 export class PlanetManager {
 

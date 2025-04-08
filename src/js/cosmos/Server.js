@@ -1,6 +1,6 @@
 import { Client } from "structs-client-ts";
 
-//TODO: Server.js - Needs working stargate ts client
+//TODO: Awaiting working stargate ts client
 /**
  * Server Client
  */

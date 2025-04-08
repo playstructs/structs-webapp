@@ -6,6 +6,7 @@ import {WalletManager} from "./managers/WalletManager";
 import {AuthManager} from "./managers/AuthManager";
 import {GrassManager} from "./framework/GrassManager";
 import {BlockListener} from "./grass_listeners/BlockListener";
+import {HUDViewModel} from "./view_models/HUDViewModel";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -41,6 +42,14 @@ gameState.thisGuild = await guildAPI.getThisGuild();
 grassManager.registerListener(blockListener);
 grassManager.init();
 
-// MenuPage.router.goto('Auth', 'index');
+MenuPage.router.goto('Auth', 'index');
 
-MenuPage.router.goto('Auth', 'orientation1');
+// MenuPage.router.goto('Auth', 'orientation1');
+
+// MenuPage.close();
+
+const hudContainer = document.getElementById('hud-container');
+
+const hud = new HUDViewModel(gameState);
+hudContainer.innerHTML = hud.render();
+hud.initPageCode();

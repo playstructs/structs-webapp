@@ -97,6 +97,8 @@ a.sui-text-secondary:hover {
 /* Menu Page Component Styling Start */
 
 #menu-page-layout {
+  position: relative;
+  z-index: 1000;
   display: flex;
   max-width: 100%;
   max-height: 100%;
@@ -201,6 +203,20 @@ common-group - no padding
 }
 
 /* Common Containers End */
+
+/* HUD Styling Start */
+
+.status-bar-panel-energy {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+}
+
+.status-bar-panel-health-ore {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+}
 
 /* Page Specific Styling Start */
 

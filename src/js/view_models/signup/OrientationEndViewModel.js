@@ -30,6 +30,7 @@ export class OrientationEndViewModel extends AbstractViewModel {
   initPageCode() {
     document.getElementById('beginOperations').addEventListener('click', () => {
       console.log('begin operations');
+      MenuPage.close();
     });
   }
 

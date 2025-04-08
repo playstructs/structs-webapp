@@ -178,6 +178,10 @@ export class MenuPage {
     document.getElementById(MenuPage.pageLayoutId).classList.add('hidden');
   }
 
+  static close() {
+    MenuPage.closeBtnHandler();
+  }
+
   static initCloseBtnListener() {
     document.getElementById(MenuPage.closeBtnId).addEventListener('click', MenuPage.closeBtnHandler);
   }

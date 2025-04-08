@@ -1,5 +1,6 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {MenuPage} from "../framework/MenuPage";
+import {EVENTS} from "../constants/Events";
 
 export class PlayerCreatedListener extends AbstractGrassListener {
 
@@ -25,7 +26,7 @@ export class PlayerCreatedListener extends AbstractGrassListener {
       this.authManager.login();
 
       this.guildAPI.getPlayer(messageData.id).then(function (player) {
-        this.gameState.thisPlayer = player;
+        this.gameState.setThisPlayer(player);
       }.bind(this));
 
       this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {

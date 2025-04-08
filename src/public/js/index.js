@@ -168,6 +168,26 @@ class GuildAPIResponse {
 
 /***/ }),
 
+/***/ "./js/constants/Events.js":
+/*!********************************!*\
+  !*** ./js/constants/Events.js ***!
+  \********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   EVENTS: () => (/* binding */ EVENTS)
+/* harmony export */ });
+const EVENTS = {
+  CHARGE_LEVEL_CHANGED: 'CHARGE_LEVEL_CHANGED',
+  ENERGY_USAGE_CHANGED: 'ENERGY_USAGE_CHANGED',
+  ORE_COUNT_CHANGED: 'ORE_COUNT_CHANGED',
+  SHIELD_HEALTH_CHANGED: 'SHIELD_HEALTH_CHANGED',
+};
+
+/***/ }),
+
 /***/ "./js/constants/RegexPattern.js":
 /*!**************************************!*\
   !*** ./js/constants/RegexPattern.js ***!
@@ -995,6 +1015,10 @@ class MenuPage {
     document.getElementById(MenuPage.pageLayoutId).classList.add('hidden');
   }
 
+  static close() {
+    MenuPage.closeBtnHandler();
+  }
+
   static initCloseBtnListener() {
     document.getElementById(MenuPage.closeBtnId).addEventListener('click', MenuPage.closeBtnHandler);
   }
@@ -1156,7 +1180,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 
@@ -1184,7 +1210,7 @@ class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IM
       this.authManager.login();
 
       this.guildAPI.getPlayer(messageData.id).then(function (player) {
-        this.gameState.thisPlayer = player;
+        this.gameState.setThisPlayer(player);
       }.bind(this));
 
       this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
@@ -1217,6 +1243,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./managers/AuthManager */ "./js/managers/AuthManager.js");
 /* harmony import */ var _framework_GrassManager__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./framework/GrassManager */ "./js/framework/GrassManager.js");
 /* harmony import */ var _grass_listeners_BlockListener__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./grass_listeners/BlockListener */ "./js/grass_listeners/BlockListener.js");
+/* harmony import */ var _view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./view_models/HUDViewModel */ "./js/view_models/HUDViewModel.js");
+
 
 
 
@@ -1260,9 +1288,17 @@ gameState.thisGuild = await guildAPI.getThisGuild();
 grassManager.registerListener(blockListener);
 grassManager.init();
 
-// MenuPage.router.goto('Auth', 'index');
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 
-_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'orientation1');
+// MenuPage.router.goto('Auth', 'orientation1');
+
+// MenuPage.close();
+
+const hudContainer = document.getElementById('hud-container');
+
+const hud = new _view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__.HUDViewModel(gameState);
+hudContainer.innerHTML = hud.render();
+hud.initPageCode();
 
 __webpack_async_result__();
 } catch(e) { __webpack_async_result__(e); } }, 1);
@@ -1463,7 +1499,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/SignupRequestDTO */ "./js/dtos/SignupRequestDTO.js");
 /* harmony import */ var _util_ChargeCalculator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../util/ChargeCalculator */ "./js/util/ChargeCalculator.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 
@@ -1502,7 +1540,9 @@ class GameState {
   setCurrentBlockHeight(height) {
     this.currentBlockHeight = height;
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
+
     console.log(`(Block Update) Charge Level: ${this.chargeLevel}`);
+    window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.CHARGE_LEVEL_CHANGED));
   }
 
   /**
@@ -1511,7 +1551,19 @@ class GameState {
   setLastActionBlockHeight(height) {
     this.lastActionBlockHeight = height;
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
+
     console.log(`(Last Action Update) Charge Level: ${this.chargeLevel}`);
+    window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.CHARGE_LEVEL_CHANGED));
+  }
+
+  /**
+   * @param {Player} player
+   */
+  setThisPlayer(player) {
+    this.thisPlayer = player;
+
+    window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
+    window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ORE_COUNT_CHANGED));
   }
 }
 
@@ -2008,6 +2060,72 @@ class ChargeCalculator {
     return this.chargeLevelThresholds.length - 1;
   }
 }
+
+/***/ }),
+
+/***/ "./js/view_models/HUDViewModel.js":
+/*!****************************************!*\
+  !*** ./js/view_models/HUDViewModel.js ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   HUDViewModel: () => (/* binding */ HUDViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+
+class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    super();
+    this.gameState = gameState;
+  }
+
+  initPageCode() {
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ENERGY_USAGE_CHANGED, function () {
+      document.getElementById('hud-energy-usage').innerText = `${this.gameState.thisPlayer.load}/${this.gameState.thisPlayer.capacity}`;
+    }.bind(this));
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.SHIELD_HEALTH_CHANGED, function () {
+      document.getElementById('hud-shield-health').innerText = `100`; // TODO: Awaiting working stargate ts client
+    }.bind(this));
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ORE_COUNT_CHANGED, function () {
+      document.getElementById('hud-ore').innerText = `${this.gameState.thisPlayer.ore}`;
+    }.bind(this));
+  }
+
+  render() {
+    return `
+      <div class="sui-status-bar-panel status-bar-panel-energy">
+        <a href="javascript: void(0)" class="sui-resource">
+          <span id="hud-energy-usage"></span>
+          <i class="sui-icon sui-icon-energy"></i>
+        </a>
+      </div>
+
+      <div class="sui-status-bar-panel status-bar-panel-health-ore">
+        <a href="javascript: void(0)" class="sui-resource">
+          <span id="hud-shield-health"></span>
+          <i class="sui-icon sui-icon-shield-health"></i>
+        </a>
+        <a href="javascript: void(0)" class="sui-resource">
+          <span id="hud-ore"></span>
+          <i class="sui-icon sui-icon-alpha-ore"></i>
+        </a>
+      </div>
+    `;
+  }
+}
+
 
 /***/ }),
 
@@ -3117,6 +3235,7 @@ class OrientationEndViewModel extends _framework_AbstractViewModel__WEBPACK_IMPO
   initPageCode() {
     document.getElementById('beginOperations').addEventListener('click', () => {
       console.log('begin operations');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.close();
     });
   }
 
