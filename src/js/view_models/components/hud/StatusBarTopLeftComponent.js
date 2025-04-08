@@ -6,7 +6,11 @@ export class StatusBarTopLeftComponent extends AbstractViewModelComponent {
 
   initPageCode() {
     window.addEventListener(EVENTS.ENERGY_USAGE_CHANGED, function () {
-      document.getElementById('hud-energy-usage').innerText = `${this.gameState.thisPlayer.load}/${this.gameState.thisPlayer.capacity}`;
+      let totalLoad = this.gameState.thisPlayer.load + this.gameState.thisPlayer.structs_load;
+      let totalCapacity = this.gameState.thisPlayer.capacity + this.gameState.thisPlayer.connection_capacity;
+      totalLoad = this.numberFormatter.format(totalLoad);
+      totalCapacity = this.numberFormatter.format(totalCapacity);
+      document.getElementById('hud-energy-usage').innerText = `${totalLoad}/${totalCapacity}`;
     }.bind(this));
 
     MenuPage.sui.tooltip.init(document.getElementById('hud-energy-usage-hint'));

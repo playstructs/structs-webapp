@@ -1,4 +1,5 @@
 import {NotImplementedError} from "./NotImplementedError";
+import {NumberFormatter} from "../util/NumberFormatter";
 
 export class AbstractViewModelComponent {
 
@@ -7,6 +8,7 @@ export class AbstractViewModelComponent {
    */
   constructor(gameState) {
     this.gameState = gameState;
+    this.numberFormatter = new NumberFormatter();
   }
 
   initPageCode() {

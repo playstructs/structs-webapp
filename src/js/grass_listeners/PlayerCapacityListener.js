@@ -1,20 +1,20 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 
-export class LastActionListener extends AbstractGrassListener {
+export class PlayerCapacityListener extends AbstractGrassListener {
   /**
    * @param {GameState} gameState
    */
   constructor(gameState) {
-    super('LAST_ACTION');
+    super('PLAYER_CAPACITY');
     this.gameState = gameState;
   }
 
   handler(messageData) {
     if (
-      messageData.category === 'lastAction'
+      messageData.category === 'capacity'
       && messageData.subject === `structs.grid.player.${this.gameState.thisPlayerId}`
     ) {
-      this.gameState.setLastActionBlockHeight(messageData.value);
+      this.gameState.setThisPlayerCapacity(messageData.value);
     }
   }
 }

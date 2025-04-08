@@ -680,6 +680,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   AbstractViewModelComponent: () => (/* binding */ AbstractViewModelComponent)
 /* harmony export */ });
 /* harmony import */ var _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./NotImplementedError */ "./js/framework/NotImplementedError.js");
+/* harmony import */ var _util_NumberFormatter__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../util/NumberFormatter */ "./js/util/NumberFormatter.js");
+
 
 
 class AbstractViewModelComponent {
@@ -689,6 +691,7 @@ class AbstractViewModelComponent {
    */
   constructor(gameState) {
     this.gameState = gameState;
+    this.numberFormatter = new _util_NumberFormatter__WEBPACK_IMPORTED_MODULE_1__.NumberFormatter();
   }
 
   initPageCode() {
@@ -1167,6 +1170,42 @@ class BlockListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_M
 
 /***/ }),
 
+/***/ "./js/grass_listeners/ConnectionCapacityListener.js":
+/*!**********************************************************!*\
+  !*** ./js/grass_listeners/ConnectionCapacityListener.js ***!
+  \**********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ConnectionCapacityListener: () => (/* binding */ ConnectionCapacityListener)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+
+
+class ConnectionCapacityListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    super('CONNECTION_CAPACITY');
+    this.gameState = gameState;
+  }
+
+  handler(messageData) {
+    if (
+      messageData.category === 'connectionCapacity'
+      && messageData.subject === `structs.grid.substation.${this.gameState.thisPlayer.substation_id}`
+    ) {
+      this.gameState.setConnectionCapacity(messageData.value);
+    }
+  }
+}
+
+
+/***/ }),
+
 /***/ "./js/grass_listeners/LastActionListener.js":
 /*!**************************************************!*\
   !*** ./js/grass_listeners/LastActionListener.js ***!
@@ -1195,10 +1234,46 @@ class LastActionListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
       messageData.category === 'lastAction'
       && messageData.subject === `structs.grid.player.${this.gameState.thisPlayerId}`
     ) {
-      this.gameState.setLastActionBlockHeight(messageData.height);
+      this.gameState.setLastActionBlockHeight(messageData.value);
     }
   }
 }
+
+/***/ }),
+
+/***/ "./js/grass_listeners/PlayerCapacityListener.js":
+/*!******************************************************!*\
+  !*** ./js/grass_listeners/PlayerCapacityListener.js ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlayerCapacityListener: () => (/* binding */ PlayerCapacityListener)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+
+
+class PlayerCapacityListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    super('PLAYER_CAPACITY');
+    this.gameState = gameState;
+  }
+
+  handler(messageData) {
+    if (
+      messageData.category === 'capacity'
+      && messageData.subject === `structs.grid.player.${this.gameState.thisPlayerId}`
+    ) {
+      this.gameState.setThisPlayerCapacity(messageData.value);
+    }
+  }
+}
+
 
 /***/ }),
 
@@ -1256,6 +1331,114 @@ class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IM
     }
   }
 }
+
+/***/ }),
+
+/***/ "./js/grass_listeners/PlayerLoadListener.js":
+/*!**************************************************!*\
+  !*** ./js/grass_listeners/PlayerLoadListener.js ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlayerLoadListener: () => (/* binding */ PlayerLoadListener)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+
+
+class PlayerLoadListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    super('PLAYER_LOAD');
+    this.gameState = gameState;
+  }
+
+  handler(messageData) {
+    if (
+      messageData.category === 'load'
+      && messageData.subject === `structs.grid.player.${this.gameState.thisPlayerId}`
+    ) {
+      this.gameState.setThisPlayerLoad(messageData.value);
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/grass_listeners/PlayerOreListener.js":
+/*!*************************************************!*\
+  !*** ./js/grass_listeners/PlayerOreListener.js ***!
+  \*************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlayerOreListener: () => (/* binding */ PlayerOreListener)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+
+
+class PlayerOreListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    super('PLAYER_ORE');
+    this.gameState = gameState;
+  }
+
+  handler(messageData) {
+    if (
+      messageData.category === 'ore'
+      && messageData.subject === `structs.grid.player.${this.gameState.thisPlayerId}`
+    ) {
+      this.gameState.setThisPlayerOre(messageData.value);
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/grass_listeners/PlayerStructsLoadListener.js":
+/*!*********************************************************!*\
+  !*** ./js/grass_listeners/PlayerStructsLoadListener.js ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlayerStructsLoadListener: () => (/* binding */ PlayerStructsLoadListener)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+
+
+class PlayerStructsLoadListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    super('PLAYER_STRUCTS_LOAD');
+    this.gameState = gameState;
+  }
+
+  handler(messageData) {
+    if (
+      messageData.category === 'structsLoad'
+      && messageData.subject === `structs.grid.player.${this.gameState.thisPlayerId}`
+    ) {
+      this.gameState.setThisPlayerStructsLoad(messageData.value);
+    }
+  }
+}
+
 
 /***/ }),
 
@@ -1352,7 +1535,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _grass_listeners_PlayerCreatedListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../grass_listeners/PlayerCreatedListener */ "./js/grass_listeners/PlayerCreatedListener.js");
 /* harmony import */ var _dtos_LoginRequestDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../dtos/LoginRequestDTO */ "./js/dtos/LoginRequestDTO.js");
 /* harmony import */ var _grass_listeners_LastActionListener__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../grass_listeners/LastActionListener */ "./js/grass_listeners/LastActionListener.js");
+/* harmony import */ var _grass_listeners_PlayerOreListener__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../grass_listeners/PlayerOreListener */ "./js/grass_listeners/PlayerOreListener.js");
+/* harmony import */ var _grass_listeners_PlayerCapacityListener__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../grass_listeners/PlayerCapacityListener */ "./js/grass_listeners/PlayerCapacityListener.js");
+/* harmony import */ var _grass_listeners_PlayerLoadListener__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../grass_listeners/PlayerLoadListener */ "./js/grass_listeners/PlayerLoadListener.js");
+/* harmony import */ var _grass_listeners_PlayerStructsLoadListener__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../grass_listeners/PlayerStructsLoadListener */ "./js/grass_listeners/PlayerStructsLoadListener.js");
+/* harmony import */ var _grass_listeners_ConnectionCapacityListener__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../grass_listeners/ConnectionCapacityListener */ "./js/grass_listeners/ConnectionCapacityListener.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
+
+
+
+
 
 
 
@@ -1442,6 +1635,11 @@ class AuthManager {
 
     if (response.success) {
       this.grassManager.registerListener(new _grass_listeners_LastActionListener__WEBPACK_IMPORTED_MODULE_2__.LastActionListener(this.gameState));
+      this.grassManager.registerListener(new _grass_listeners_PlayerOreListener__WEBPACK_IMPORTED_MODULE_3__.PlayerOreListener(this.gameState));
+      this.grassManager.registerListener(new _grass_listeners_PlayerLoadListener__WEBPACK_IMPORTED_MODULE_5__.PlayerLoadListener(this.gameState));
+      this.grassManager.registerListener(new _grass_listeners_PlayerStructsLoadListener__WEBPACK_IMPORTED_MODULE_6__.PlayerStructsLoadListener(this.gameState));
+      this.grassManager.registerListener(new _grass_listeners_PlayerCapacityListener__WEBPACK_IMPORTED_MODULE_4__.PlayerCapacityListener(this.gameState));
+      this.grassManager.registerListener(new _grass_listeners_ConnectionCapacityListener__WEBPACK_IMPORTED_MODULE_7__.ConnectionCapacityListener(this.gameState));
     }
 
     return response.success;
@@ -1597,6 +1795,59 @@ class GameState {
 
     window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
     window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ORE_COUNT_CHANGED));
+  }
+
+  /**
+   * @param {number} ore
+   */
+  setThisPlayerOre(ore) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('ore')) {
+      this.thisPlayer.ore = ore;
+
+      window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ORE_COUNT_CHANGED));
+    }
+  }
+
+  /**
+   * @param {number} capacity
+   */
+  setThisPlayerCapacity(capacity) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('capacity')) {
+      this.thisPlayer.capacity = capacity;
+
+      window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
+    }
+  }
+
+  /**
+   * @param {number} connectionCapacity
+   */
+  setConnectionCapacity(connectionCapacity) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('connection_capacity')) {
+      this.thisPlayer.connection_capacity = connectionCapacity;
+
+      window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
+    }
+  }
+
+  /**
+   * @param {number} load
+   */
+  setThisPlayerLoad(load) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('load')) {
+      this.thisPlayer.load = load;
+
+      window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
+    }
+  }
+
+  /**
+   * @param {number} structsLoad
+   */
+  setThisPlayerStructsLoad(structsLoad) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('structs_load')) {
+      this.thisPlayer.structs_load = structsLoad;
+    }
   }
 }
 
@@ -2097,6 +2348,58 @@ class ChargeCalculator {
 
 /***/ }),
 
+/***/ "./js/util/NumberFormatter.js":
+/*!************************************!*\
+  !*** ./js/util/NumberFormatter.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   NumberFormatter: () => (/* binding */ NumberFormatter)
+/* harmony export */ });
+class NumberFormatter {
+
+  constructor() {
+    this.scale = {
+      '1': 'k',
+      '2': 'M',
+      '3': 'G',
+      '4': 'T',
+      '5': 'P',
+      '6': 'E',
+      '7': 'Z',
+      '8': 'Y',
+      '9': 'R',
+      '10': 'Q'
+    }
+  }
+
+  /**
+   * @param {number|string} number
+   * @return {string}
+   */
+  format(number) {
+    const intString = `${parseInt(`${number}`)}`;
+    const numDigits = intString.length;
+
+    if (numDigits <= 3) {
+      return intString;
+    }
+
+    let remainderDigits = numDigits % 3;
+    remainderDigits = remainderDigits === 0 ? 3 : remainderDigits;
+    const scaleIndex = ((numDigits - remainderDigits) / 3);
+    const unit = this.scale[scaleIndex];
+
+    return intString.substring(0, remainderDigits) + unit;
+  }
+}
+
+
+/***/ }),
+
 /***/ "./js/view_models/HUDViewModel.js":
 /*!****************************************!*\
   !*** ./js/view_models/HUDViewModel.js ***!
@@ -2223,7 +2526,11 @@ class StatusBarTopLeftComponent extends _framework_AbstractViewModelComponent__W
 
   initPageCode() {
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ENERGY_USAGE_CHANGED, function () {
-      document.getElementById('hud-energy-usage').innerText = `${this.gameState.thisPlayer.load}/${this.gameState.thisPlayer.capacity}`;
+      let totalLoad = this.gameState.thisPlayer.load + this.gameState.thisPlayer.structs_load;
+      let totalCapacity = this.gameState.thisPlayer.capacity + this.gameState.thisPlayer.connection_capacity;
+      totalLoad = this.numberFormatter.format(totalLoad);
+      totalCapacity = this.numberFormatter.format(totalCapacity);
+      document.getElementById('hud-energy-usage').innerText = `${totalLoad}/${totalCapacity}`;
     }.bind(this));
 
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('hud-energy-usage-hint'));

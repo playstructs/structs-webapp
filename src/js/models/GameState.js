@@ -62,4 +62,57 @@ export class GameState {
     window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
     window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED));
   }
+
+  /**
+   * @param {number} ore
+   */
+  setThisPlayerOre(ore) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('ore')) {
+      this.thisPlayer.ore = ore;
+
+      window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED));
+    }
+  }
+
+  /**
+   * @param {number} capacity
+   */
+  setThisPlayerCapacity(capacity) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('capacity')) {
+      this.thisPlayer.capacity = capacity;
+
+      window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
+    }
+  }
+
+  /**
+   * @param {number} connectionCapacity
+   */
+  setConnectionCapacity(connectionCapacity) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('connection_capacity')) {
+      this.thisPlayer.connection_capacity = connectionCapacity;
+
+      window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
+    }
+  }
+
+  /**
+   * @param {number} load
+   */
+  setThisPlayerLoad(load) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('load')) {
+      this.thisPlayer.load = load;
+
+      window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
+    }
+  }
+
+  /**
+   * @param {number} structsLoad
+   */
+  setThisPlayerStructsLoad(structsLoad) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('structs_load')) {
+      this.thisPlayer.structs_load = structsLoad;
+    }
+  }
 }

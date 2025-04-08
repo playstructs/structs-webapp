@@ -1,6 +1,11 @@
 import {PlayerCreatedListener} from "../grass_listeners/PlayerCreatedListener";
 import {LoginRequestDTO} from "../dtos/LoginRequestDTO";
 import {LastActionListener} from "../grass_listeners/LastActionListener";
+import {PlayerOreListener} from "../grass_listeners/PlayerOreListener";
+import {PlayerCapacityListener} from "../grass_listeners/PlayerCapacityListener";
+import {PlayerLoadListener} from "../grass_listeners/PlayerLoadListener";
+import {PlayerStructsLoadListener} from "../grass_listeners/PlayerStructsLoadListener";
+import {ConnectionCapacityListener} from "../grass_listeners/ConnectionCapacityListener";
 
 export class AuthManager {
 
@@ -87,6 +92,11 @@ export class AuthManager {
 
     if (response.success) {
       this.grassManager.registerListener(new LastActionListener(this.gameState));
+      this.grassManager.registerListener(new PlayerOreListener(this.gameState));
+      this.grassManager.registerListener(new PlayerLoadListener(this.gameState));
+      this.grassManager.registerListener(new PlayerStructsLoadListener(this.gameState));
+      this.grassManager.registerListener(new PlayerCapacityListener(this.gameState));
+      this.grassManager.registerListener(new ConnectionCapacityListener(this.gameState));
     }
 
     return response.success;
