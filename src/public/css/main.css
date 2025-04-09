@@ -218,6 +218,18 @@ common-group - no padding
   right: 2px;
 }
 
+.action-bar-bottom-left {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.action-bar-bottom-right {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
 /* Page Specific Styling Start */
 
 .connecting-logo-swap-container {

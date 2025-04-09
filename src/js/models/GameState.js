@@ -1,6 +1,8 @@
 import {SignupRequestDTO} from "../dtos/SignupRequestDTO";
 import {ChargeCalculator} from "../util/ChargeCalculator";
 import {EVENTS} from "../constants/Events";
+import {ChargeLevelChangedEvent} from "../events/ChargeLevelChangedEvent";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class GameState {
 
@@ -25,6 +27,7 @@ export class GameState {
     this.pubkey = null;
     this.thisPlayerId = null;
     this.thisPlayer = null;
+    this.enemyPlayer = null;
 
     this.currentBlockHeight = 0;
     this.lastActionBlockHeight = 0;
@@ -39,7 +42,7 @@ export class GameState {
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
 
     console.log(`(Block Update) Charge Level: ${this.chargeLevel}`);
-    window.dispatchEvent(new CustomEvent(EVENTS.CHARGE_LEVEL_CHANGED));
+    window.dispatchEvent(new ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
   }
 
   /**
@@ -50,7 +53,7 @@ export class GameState {
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
 
     console.log(`(Last Action Update) Charge Level: ${this.chargeLevel}`);
-    window.dispatchEvent(new CustomEvent(EVENTS.CHARGE_LEVEL_CHANGED));
+    window.dispatchEvent(new ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
   }
 
   /**
@@ -114,5 +117,24 @@ export class GameState {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('structs_load')) {
       this.thisPlayer.structs_load = structsLoad;
     }
+  }
+
+  /**
+   * @param {string} type player or enemy
+   * @return {string|null}
+   */
+  getPlayerIdByType(type) {
+    if (type === PLAYER_TYPES.PLAYER) {
+      if (this.thisPlayerId) {
+        return this.thisPlayerId;
+      }
+      if (this.thisPlayer && this.thisPlayer.id) {
+        return this.thisPlayer.id;
+      }
+    } else if (type === PLAYER_TYPES.ENEMY && this.enemyPlayer && this.enemyPlayer.id) {
+      return this.enemyPlayer.id;
+    }
+
+    return null;
   }
 }

@@ -1290,7 +1290,7 @@ a.sui-screen-portrait:hover {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
 }
 
 .sui-theme-player .sui-screen-battery,

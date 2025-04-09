@@ -188,6 +188,25 @@ const EVENTS = {
 
 /***/ }),
 
+/***/ "./js/constants/PlayerTypes.js":
+/*!*************************************!*\
+  !*** ./js/constants/PlayerTypes.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PLAYER_TYPES: () => (/* binding */ PLAYER_TYPES)
+/* harmony export */ });
+const PLAYER_TYPES = {
+  PLAYER: 'player',
+  ENEMY: 'enemy'
+};
+
+
+/***/ }),
+
 /***/ "./js/constants/RegexPattern.js":
 /*!**************************************!*\
   !*** ./js/constants/RegexPattern.js ***!
@@ -499,6 +518,31 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   GuildAPIError: () => (/* binding */ GuildAPIError)
 /* harmony export */ });
 class GuildAPIError extends Error {}
+
+/***/ }),
+
+/***/ "./js/events/ChargeLevelChangedEvent.js":
+/*!**********************************************!*\
+  !*** ./js/events/ChargeLevelChangedEvent.js ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ChargeLevelChangedEvent: () => (/* binding */ ChargeLevelChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class ChargeLevelChangedEvent extends CustomEvent {
+  constructor(playerId, chargeLevel) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.CHARGE_LEVEL_CHANGED);
+    this.playerId = playerId;
+    this.chargeLevel = chargeLevel;
+  }
+}
+
 
 /***/ }),
 
@@ -1731,7 +1775,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/SignupRequestDTO */ "./js/dtos/SignupRequestDTO.js");
 /* harmony import */ var _util_ChargeCalculator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../util/ChargeCalculator */ "./js/util/ChargeCalculator.js");
 /* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+/* harmony import */ var _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../events/ChargeLevelChangedEvent */ "./js/events/ChargeLevelChangedEvent.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
+
 
 
 
@@ -1759,6 +1807,7 @@ class GameState {
     this.pubkey = null;
     this.thisPlayerId = null;
     this.thisPlayer = null;
+    this.enemyPlayer = null;
 
     this.currentBlockHeight = 0;
     this.lastActionBlockHeight = 0;
@@ -1773,7 +1822,7 @@ class GameState {
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
 
     console.log(`(Block Update) Charge Level: ${this.chargeLevel}`);
-    window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.CHARGE_LEVEL_CHANGED));
+    window.dispatchEvent(new _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_3__.ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
   }
 
   /**
@@ -1784,7 +1833,7 @@ class GameState {
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
 
     console.log(`(Last Action Update) Charge Level: ${this.chargeLevel}`);
-    window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.CHARGE_LEVEL_CHANGED));
+    window.dispatchEvent(new _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_3__.ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
   }
 
   /**
@@ -1848,6 +1897,25 @@ class GameState {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('structs_load')) {
       this.thisPlayer.structs_load = structsLoad;
     }
+  }
+
+  /**
+   * @param {string} type player or enemy
+   * @return {string|null}
+   */
+  getPlayerIdByType(type) {
+    if (type === _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER) {
+      if (this.thisPlayerId) {
+        return this.thisPlayerId;
+      }
+      if (this.thisPlayer && this.thisPlayer.id) {
+        return this.thisPlayer.id;
+      }
+    } else if (type === _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.ENEMY && this.enemyPlayer && this.enemyPlayer.id) {
+      return this.enemyPlayer.id;
+    }
+
+    return null;
   }
 }
 
@@ -2414,6 +2482,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 /* harmony import */ var _components_hud_StatusBarTopLeftComponent__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./components/hud/StatusBarTopLeftComponent */ "./js/view_models/components/hud/StatusBarTopLeftComponent.js");
 /* harmony import */ var _components_hud_StatusBarTopRightComponent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/hud/StatusBarTopRightComponent */ "./js/view_models/components/hud/StatusBarTopRightComponent.js");
+/* harmony import */ var _components_hud_ActionBarComponent__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/hud/ActionBarComponent */ "./js/view_models/components/hud/ActionBarComponent.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
+
 
 
 
@@ -2428,17 +2501,27 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
     this.gameState = gameState;
     this.topLeftStatusBar = new _components_hud_StatusBarTopLeftComponent__WEBPACK_IMPORTED_MODULE_1__.StatusBarTopLeftComponent(gameState);
     this.topRightStatusBar = new _components_hud_StatusBarTopRightComponent__WEBPACK_IMPORTED_MODULE_2__.StatusBarTopRightComponent(gameState);
+    this.bottomLeftActionBar = new _components_hud_ActionBarComponent__WEBPACK_IMPORTED_MODULE_3__.ActionBarComponent(
+      gameState,
+      _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER,
+      'left'
+    );
+    this.bottomLeftActionBar.profileClickHandler = function () {
+      console.log('Open menu');
+    };
   }
 
   initPageCode() {
     this.topLeftStatusBar.initPageCode();
     this.topRightStatusBar.initPageCode();
+    this.bottomLeftActionBar.initPageCode();
   }
 
   render() {
     return `
       ${this.topLeftStatusBar.renderHTML()}
       ${this.topRightStatusBar.renderHTML()}
+      ${this.bottomLeftActionBar.renderHTML()}
     `;
   }
 }
@@ -2501,6 +2584,107 @@ class IndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2_
   }
 }
 
+
+/***/ }),
+
+/***/ "./js/view_models/components/hud/ActionBarComponent.js":
+/*!*************************************************************!*\
+  !*** ./js/view_models/components/hud/ActionBarComponent.js ***!
+  \*************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ActionBarComponent: () => (/* binding */ ActionBarComponent)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../../constants/Events */ "./js/constants/Events.js");
+
+
+
+class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
+
+  constructor(gameState, playerType, align) {
+    super(gameState);
+
+    this.playerType = playerType;
+
+    /* IDs */
+    this.actionBarPortraitId = `${this.playerType}-screen-portrait`;
+    this.actionBarBatteryId = `${this.playerType}-screen-battery`;
+
+    /* Style */
+    this.themeClass = `sui-theme-${this.playerType}`;
+    this.align = align;
+    this.alignClass = `action-bar-bottom-${this.align}`;
+
+    /* Profile Chunk */
+    this.profileClickHandler = function () {};
+    this.batteryfilledClass = 'sui-mod-filled';
+  }
+
+  initPageCode() {
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.CHARGE_LEVEL_CHANGED, function (event) {
+      if (event.playerId === this.gameState.getPlayerIdByType(this.playerType)) {
+        this.renderChargeLevel(event.chargeLevel);
+      }
+    }.bind(this));
+
+    document.getElementById(this.actionBarPortraitId).addEventListener('click', this.profileClickHandler.bind(this));
+  }
+
+  renderChargeLevel(level) {
+    const battery = document.getElementById(this.actionBarBatteryId);
+    const batteryChunks = battery.children;
+
+    for (let i = 0; i < batteryChunks.length; i++) {
+      if (i + 1 > level) {
+        batteryChunks[i].classList.remove(this.batteryfilledClass);
+      } else {
+        batteryChunks[i].classList.add(this.batteryfilledClass);
+      }
+    }
+  }
+
+  renderPortraitChunkHTML() {
+    return `
+      <div class="sui-panel-chunk">
+  
+        <div class="sui-screen">
+          <a id="${this.actionBarPortraitId}" href="javascript: void(0)" class="sui-screen-portrait">
+            <div class="sui-screen-portrait-image"></div>
+            <i class="sui-icon-md icon-menu"></i>
+          </a>
+        </div>
+        <div class="sui-screen">
+          <div id="${this.actionBarBatteryId}" class="sui-screen-battery">
+            <div class="sui-battery-chunk"></div>
+            <div class="sui-battery-chunk"></div>
+            <div class="sui-battery-chunk"></div>
+            <div class="sui-battery-chunk"></div>
+            <div class="sui-battery-chunk"></div>
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
+
+  renderHTML() {
+    return `
+      <div class="sui-panel-wrapper-fit-content action-bar-bottom-${this.align}">
+        <div class="sui-panel ${this.themeClass}">
+          <div class="sui-panel-edge-left"></div>
+          
+            ${this.renderPortraitChunkHTML()}
+                      
+          <div class="sui-panel-edge-right"></div>
+        </div>
+      </div>
+    `;
+  }
+}
 
 /***/ }),
 
