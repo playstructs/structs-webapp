@@ -87,16 +87,16 @@ export class AuthController extends AbstractController {
   }
 
   signupRecoveryKeyCreation() {
-    if (this.mnemonic === null) {
-      this.mnemonic = this.walletManager.createMnemonic();
+    if (this.gameState.mnemonic === null) {
+      this.gameState.mnemonic = this.walletManager.createMnemonic();
     }
-    const viewModel = new RecoveryKeyCreationViewModel(this.mnemonic);
+    const viewModel = new RecoveryKeyCreationViewModel(this.gameState.mnemonic);
     viewModel.render();
   }
 
   signupRecoveryKeyConfirmation() {
     const viewModel = new RecoveryKeyConfirmationViewModel(
-      this.mnemonic,
+      this.gameState.mnemonic,
       this.authManager
     );
     viewModel.render();

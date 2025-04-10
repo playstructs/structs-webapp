@@ -349,16 +349,16 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   }
 
   signupRecoveryKeyCreation() {
-    if (this.mnemonic === null) {
-      this.mnemonic = this.walletManager.createMnemonic();
+    if (this.gameState.mnemonic === null) {
+      this.gameState.mnemonic = this.walletManager.createMnemonic();
     }
-    const viewModel = new _view_models_signup_RecoveryKeyCreationViewModel__WEBPACK_IMPORTED_MODULE_9__.RecoveryKeyCreationViewModel(this.mnemonic);
+    const viewModel = new _view_models_signup_RecoveryKeyCreationViewModel__WEBPACK_IMPORTED_MODULE_9__.RecoveryKeyCreationViewModel(this.gameState.mnemonic);
     viewModel.render();
   }
 
   signupRecoveryKeyConfirmation() {
     const viewModel = new _view_models_signup_RecoveryKeyConfirmationViewModel__WEBPACK_IMPORTED_MODULE_11__.RecoveryKeyConfirmationViewModel(
-      this.mnemonic,
+      this.gameState.mnemonic,
       this.authManager
     );
     viewModel.render();
@@ -1544,21 +1544,24 @@ _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerControl
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
 gameState.thisGuild = await guildAPI.getThisGuild();
+await gameState.load();
+
+const newGame = (gameState.lastSaveBlockHeight === 0);
 
 grassManager.registerListener(blockListener);
 grassManager.init();
-
-_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
-
-// MenuPage.router.goto('Auth', 'orientation1');
-
-// MenuPage.close();
 
 const hudContainer = document.getElementById('hud-container');
 
 const hud = new _view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__.HUDViewModel(gameState);
 hudContainer.innerHTML = hud.render();
 hud.initPageCode();
+
+if (newGame) {
+  _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
+} else {
+  _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.close();
+}
 
 __webpack_async_result__();
 } catch(e) { __webpack_async_result__(e); } }, 1);
@@ -1777,7 +1780,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
 /* harmony import */ var _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../events/ChargeLevelChangedEvent */ "./js/events/ChargeLevelChangedEvent.js");
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _managers_WalletManager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../managers/WalletManager */ "./js/managers/WalletManager.js");
+/* harmony import */ var _api_GuildAPI__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../api/GuildAPI */ "./js/api/GuildAPI.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
+
 
 
 
@@ -1789,29 +1796,63 @@ class GameState {
   constructor() {
     this.chargeCalculator = new _util_ChargeCalculator__WEBPACK_IMPORTED_MODULE_1__.ChargeCalculator();
     this.signupRequest = new _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__.SignupRequestDTO();
+    this.walletManager = new _managers_WalletManager__WEBPACK_IMPORTED_MODULE_5__.WalletManager();
+    this.guildAPI = new _api_GuildAPI__WEBPACK_IMPORTED_MODULE_6__.GuildAPI();
 
-    this.server = null;
-    this.fee = {
-      amount: [
-        {
-          denom: "ualpha",
-          amount: "0",
-        },
-      ],
-      gas: "180000",
-    };
-
-    this.thisGuild = null;
-    this.wallet = null;
-    this.signingAccount = null;
+    /* Persistent Data */
+    this.mnemonic = null;
     this.pubkey = null;
     this.thisPlayerId = null;
+    this.lastSaveBlockHeight = 0;
+    this.lastActionBlockHeight = 0;
+    this.chargeLevel = 0;
+
+    /* Must Be Re-instantiated On Load */
+    this.wallet = null;
+    this.signingAccount = null;
+    this.server = null;
+
+    /* API Primed Data */
+    this.thisGuild = null;
     this.thisPlayer = null;
     this.enemyPlayer = null;
 
+    /* GRASS Only Data */
     this.currentBlockHeight = 0;
-    this.lastActionBlockHeight = 0;
-    this.chargeLevel = 0;
+
+  }
+
+  save() {
+    this.lastSaveBlockHeight = this.currentBlockHeight;
+
+    localStorage.setItem('gameState', JSON.stringify({
+      mnemonic: this.mnemonic,
+      pubkey: this.pubkey,
+      thisPlayerId: this.thisPlayerId,
+      lastSaveBlockHeight: this.lastSaveBlockHeight,
+      lastActionBlockHeight: this.lastActionBlockHeight,
+      chargeLevel: this.chargeLevel,
+    }));
+  }
+
+  async load() {
+    const gameState = localStorage.getItem('gameState');
+
+    if (!gameState) {
+      return;
+    }
+
+    Object.assign(this, JSON.parse(gameState));
+
+    // Properties to re-instantiate
+    this.wallet = await this.walletManager.createWallet(this.mnemonic);
+    const accounts = await this.wallet.getAccountsWithPrivkeys();
+    this.signingAccount = accounts[0];
+
+    // Properties to prime with API
+    this.guildAPI.getPlayer(this.thisPlayerId).then((player) => {
+      this.setThisPlayer(player);
+    });
   }
 
   /**
@@ -1831,6 +1872,7 @@ class GameState {
   setLastActionBlockHeight(height) {
     this.lastActionBlockHeight = height;
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
+    this.save();
 
     console.log(`(Last Action Update) Charge Level: ${this.chargeLevel}`);
     window.dispatchEvent(new _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_3__.ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
@@ -1841,6 +1883,7 @@ class GameState {
    */
   setThisPlayer(player) {
     this.thisPlayer = player;
+    this.save();
 
     window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
     window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ORE_COUNT_CHANGED));
@@ -1852,6 +1895,7 @@ class GameState {
   setThisPlayerOre(ore) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('ore')) {
       this.thisPlayer.ore = ore;
+      this.save();
 
       window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ORE_COUNT_CHANGED));
     }
@@ -1863,6 +1907,7 @@ class GameState {
   setThisPlayerCapacity(capacity) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('capacity')) {
       this.thisPlayer.capacity = capacity;
+      this.save();
 
       window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
     }
@@ -1874,6 +1919,7 @@ class GameState {
   setConnectionCapacity(connectionCapacity) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('connection_capacity')) {
       this.thisPlayer.connection_capacity = connectionCapacity;
+      this.save();
 
       window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
     }
@@ -1885,6 +1931,7 @@ class GameState {
   setThisPlayerLoad(load) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('load')) {
       this.thisPlayer.load = load;
+      this.save();
 
       window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
     }
@@ -1896,6 +1943,9 @@ class GameState {
   setThisPlayerStructsLoad(structsLoad) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('structs_load')) {
       this.thisPlayer.structs_load = structsLoad;
+      this.save();
+
+      window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
     }
   }
 

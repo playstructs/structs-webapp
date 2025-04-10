@@ -1,5 +1,7 @@
 //TODO: Awaiting working stargate ts client
 
+import {FEE} from "../constants/Fee";
+
 export class PlanetManager {
 
   constructor(gameState) {
@@ -19,7 +21,7 @@ export class PlanetManager {
     return await this.gameState.server.client.signAndBroadcast(
       this.gameState.signingAccount.address,
       [msg],
-      this.gameState.fee
+      FEE
     );
   }
 }

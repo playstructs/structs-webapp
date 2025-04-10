@@ -3,35 +3,71 @@ import {ChargeCalculator} from "../util/ChargeCalculator";
 import {EVENTS} from "../constants/Events";
 import {ChargeLevelChangedEvent} from "../events/ChargeLevelChangedEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {WalletManager} from "../managers/WalletManager";
+import {GuildAPI} from "../api/GuildAPI";
 
 export class GameState {
 
   constructor() {
     this.chargeCalculator = new ChargeCalculator();
     this.signupRequest = new SignupRequestDTO();
+    this.walletManager = new WalletManager();
+    this.guildAPI = new GuildAPI();
 
-    this.server = null;
-    this.fee = {
-      amount: [
-        {
-          denom: "ualpha",
-          amount: "0",
-        },
-      ],
-      gas: "180000",
-    };
-
-    this.thisGuild = null;
-    this.wallet = null;
-    this.signingAccount = null;
+    /* Persistent Data */
+    this.mnemonic = null;
     this.pubkey = null;
     this.thisPlayerId = null;
+    this.lastSaveBlockHeight = 0;
+    this.lastActionBlockHeight = 0;
+    this.chargeLevel = 0;
+
+    /* Must Be Re-instantiated On Load */
+    this.wallet = null;
+    this.signingAccount = null;
+    this.server = null;
+
+    /* API Primed Data */
+    this.thisGuild = null;
     this.thisPlayer = null;
     this.enemyPlayer = null;
 
+    /* GRASS Only Data */
     this.currentBlockHeight = 0;
-    this.lastActionBlockHeight = 0;
-    this.chargeLevel = 0;
+
+  }
+
+  save() {
+    this.lastSaveBlockHeight = this.currentBlockHeight;
+
+    localStorage.setItem('gameState', JSON.stringify({
+      mnemonic: this.mnemonic,
+      pubkey: this.pubkey,
+      thisPlayerId: this.thisPlayerId,
+      lastSaveBlockHeight: this.lastSaveBlockHeight,
+      lastActionBlockHeight: this.lastActionBlockHeight,
+      chargeLevel: this.chargeLevel,
+    }));
+  }
+
+  async load() {
+    const gameState = localStorage.getItem('gameState');
+
+    if (!gameState) {
+      return;
+    }
+
+    Object.assign(this, JSON.parse(gameState));
+
+    // Properties to re-instantiate
+    this.wallet = await this.walletManager.createWallet(this.mnemonic);
+    const accounts = await this.wallet.getAccountsWithPrivkeys();
+    this.signingAccount = accounts[0];
+
+    // Properties to prime with API
+    this.guildAPI.getPlayer(this.thisPlayerId).then((player) => {
+      this.setThisPlayer(player);
+    });
   }
 
   /**
@@ -51,6 +87,7 @@ export class GameState {
   setLastActionBlockHeight(height) {
     this.lastActionBlockHeight = height;
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
+    this.save();
 
     console.log(`(Last Action Update) Charge Level: ${this.chargeLevel}`);
     window.dispatchEvent(new ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
@@ -61,6 +98,7 @@ export class GameState {
    */
   setThisPlayer(player) {
     this.thisPlayer = player;
+    this.save();
 
     window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
     window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED));
@@ -72,6 +110,7 @@ export class GameState {
   setThisPlayerOre(ore) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('ore')) {
       this.thisPlayer.ore = ore;
+      this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED));
     }
@@ -83,6 +122,7 @@ export class GameState {
   setThisPlayerCapacity(capacity) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('capacity')) {
       this.thisPlayer.capacity = capacity;
+      this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
     }
@@ -94,6 +134,7 @@ export class GameState {
   setConnectionCapacity(connectionCapacity) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('connection_capacity')) {
       this.thisPlayer.connection_capacity = connectionCapacity;
+      this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
     }
@@ -105,6 +146,7 @@ export class GameState {
   setThisPlayerLoad(load) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('load')) {
       this.thisPlayer.load = load;
+      this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
     }
@@ -116,6 +158,9 @@ export class GameState {
   setThisPlayerStructsLoad(structsLoad) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('structs_load')) {
       this.thisPlayer.structs_load = structsLoad;
+      this.save();
+
+      window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
     }
   }
 

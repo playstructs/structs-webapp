@@ -38,18 +38,21 @@ MenuPage.router.registerController(authController);
 MenuPage.initListeners();
 
 gameState.thisGuild = await guildAPI.getThisGuild();
+await gameState.load();
+
+const newGame = (gameState.lastSaveBlockHeight === 0);
 
 grassManager.registerListener(blockListener);
 grassManager.init();
-
-MenuPage.router.goto('Auth', 'index');
-
-// MenuPage.router.goto('Auth', 'orientation1');
-
-// MenuPage.close();
 
 const hudContainer = document.getElementById('hud-container');
 
 const hud = new HUDViewModel(gameState);
 hudContainer.innerHTML = hud.render();
 hud.initPageCode();
+
+if (newGame) {
+  MenuPage.router.goto('Auth', 'index');
+} else {
+  MenuPage.close();
+}
