@@ -358,7 +358,7 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
   signupRecoveryKeyConfirmation() {
     const viewModel = new _view_models_signup_RecoveryKeyConfirmationViewModel__WEBPACK_IMPORTED_MODULE_11__.RecoveryKeyConfirmationViewModel(
-      this.gameState.mnemonic,
+      this.gameState,
       this.authManager
     );
     viewModel.render();
@@ -1362,10 +1362,11 @@ class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IM
       this.authManager.login().then(function () {
         this.guildAPI.getPlayer(messageData.id).then(function (player) {
           this.gameState.setThisPlayer(player);
-        }.bind(this));
 
-        this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
-          this.gameState.setLastActionBlockHeight(height);
+          this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
+            this.gameState.setLastActionBlockHeight(height);
+          }.bind(this));
+
         }.bind(this));
 
         _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Auth', 'orientation1');
@@ -1514,6 +1515,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+// localStorage.clear();
+
 const gameState = new _models_GameState__WEBPACK_IMPORTED_MODULE_2__.GameState();
 __webpack_require__.g.gameState = gameState;
 
@@ -1543,11 +1546,6 @@ const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
 
-gameState.thisGuild = await guildAPI.getThisGuild();
-await gameState.load();
-
-const newGame = (gameState.lastSaveBlockHeight === 0);
-
 grassManager.registerListener(blockListener);
 grassManager.init();
 
@@ -1557,7 +1555,10 @@ const hud = new _view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__.HUDViewMo
 hudContainer.innerHTML = hud.render();
 hud.initPageCode();
 
-if (newGame) {
+await gameState.load();
+gameState.thisGuild = await guildAPI.getThisGuild();
+
+if (gameState.lastSaveBlockHeight === 0) {
   _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 } else {
   _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.close();
@@ -1862,7 +1863,7 @@ class GameState {
     this.currentBlockHeight = height;
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
 
-    console.log(`(Block Update) Charge Level: ${this.chargeLevel}`);
+    console.log(`New Block`);
     window.dispatchEvent(new _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_3__.ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
   }
 
@@ -1874,7 +1875,6 @@ class GameState {
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
     this.save();
 
-    console.log(`(Last Action Update) Charge Level: ${this.chargeLevel}`);
     window.dispatchEvent(new _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_3__.ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
   }
 
@@ -1883,7 +1883,6 @@ class GameState {
    */
   setThisPlayer(player) {
     this.thisPlayer = player;
-    this.save();
 
     window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
     window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ORE_COUNT_CHANGED));
@@ -3968,15 +3967,15 @@ __webpack_require__.r(__webpack_exports__);
 
 class RecoveryKeyConfirmationViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
   /**
-   * @param {string} mnemonic
+   * @param {GameState} gameState
    * @param {AuthManager} authManager
    */
   constructor(
-    mnemonic,
+    gameState,
     authManager
   ) {
     super();
-    this.mnemonic = mnemonic;
+    this.gameState = gameState;
     this.authManager = authManager;
   }
 
@@ -4000,14 +3999,16 @@ class RecoveryKeyConfirmationViewModel extends _framework_AbstractViewModel__WEB
       const recoveryKeyInput = document.getElementById('recovery-key-input');
       recoveryKeyInput.value = recoveryKeyInput.value.replace(/\s\s+/g, ' ');
 
-      if (recoveryKeyInput.value !== this.mnemonic) {
+      if (recoveryKeyInput.value !== this.gameState.mnemonic) {
 
         _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmFail', {view: 'CONFIRM_FAIL'});
 
       } else {
 
-        this.authManager.signup(this.mnemonic).then((success) => {
+        this.authManager.signup(this.gameState.mnemonic).then((success) => {
           if (success) {
+            this.gameState.save();
+
             _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupSuccess');
           } else {
             _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmFail', {view: 'CONFIRM_FAIL'});

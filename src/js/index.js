@@ -8,6 +8,8 @@ import {GrassManager} from "./framework/GrassManager";
 import {BlockListener} from "./grass_listeners/BlockListener";
 import {HUDViewModel} from "./view_models/HUDViewModel";
 
+// localStorage.clear();
+
 const gameState = new GameState();
 global.gameState = gameState;
 
@@ -37,11 +39,6 @@ const authController = new AuthController(
 MenuPage.router.registerController(authController);
 MenuPage.initListeners();
 
-gameState.thisGuild = await guildAPI.getThisGuild();
-await gameState.load();
-
-const newGame = (gameState.lastSaveBlockHeight === 0);
-
 grassManager.registerListener(blockListener);
 grassManager.init();
 
@@ -51,7 +48,10 @@ const hud = new HUDViewModel(gameState);
 hudContainer.innerHTML = hud.render();
 hud.initPageCode();
 
-if (newGame) {
+await gameState.load();
+gameState.thisGuild = await guildAPI.getThisGuild();
+
+if (gameState.lastSaveBlockHeight === 0) {
   MenuPage.router.goto('Auth', 'index');
 } else {
   MenuPage.close();

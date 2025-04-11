@@ -25,10 +25,11 @@ export class PlayerCreatedListener extends AbstractGrassListener {
       this.authManager.login().then(function () {
         this.guildAPI.getPlayer(messageData.id).then(function (player) {
           this.gameState.setThisPlayer(player);
-        }.bind(this));
 
-        this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
-          this.gameState.setLastActionBlockHeight(height);
+          this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
+            this.gameState.setLastActionBlockHeight(height);
+          }.bind(this));
+
         }.bind(this));
 
         MenuPage.router.goto('Auth', 'orientation1');

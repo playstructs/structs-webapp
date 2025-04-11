@@ -4,15 +4,15 @@ import {MenuPage} from "../../framework/MenuPage";
 
 export class RecoveryKeyConfirmationViewModel extends AbstractViewModel {
   /**
-   * @param {string} mnemonic
+   * @param {GameState} gameState
    * @param {AuthManager} authManager
    */
   constructor(
-    mnemonic,
+    gameState,
     authManager
   ) {
     super();
-    this.mnemonic = mnemonic;
+    this.gameState = gameState;
     this.authManager = authManager;
   }
 
@@ -36,14 +36,16 @@ export class RecoveryKeyConfirmationViewModel extends AbstractViewModel {
       const recoveryKeyInput = document.getElementById('recovery-key-input');
       recoveryKeyInput.value = recoveryKeyInput.value.replace(/\s\s+/g, ' ');
 
-      if (recoveryKeyInput.value !== this.mnemonic) {
+      if (recoveryKeyInput.value !== this.gameState.mnemonic) {
 
         MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmFail', {view: 'CONFIRM_FAIL'});
 
       } else {
 
-        this.authManager.signup(this.mnemonic).then((success) => {
+        this.authManager.signup(this.gameState.mnemonic).then((success) => {
           if (success) {
+            this.gameState.save();
+
             MenuPage.router.goto('Auth', 'signupSuccess');
           } else {
             MenuPage.router.goto('Auth', 'signupRecoveryKeyConfirmFail', {view: 'CONFIRM_FAIL'});

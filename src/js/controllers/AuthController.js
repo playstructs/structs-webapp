@@ -96,7 +96,7 @@ export class AuthController extends AbstractController {
 
   signupRecoveryKeyConfirmation() {
     const viewModel = new RecoveryKeyConfirmationViewModel(
-      this.gameState.mnemonic,
+      this.gameState,
       this.authManager
     );
     viewModel.render();

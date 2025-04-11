@@ -77,7 +77,7 @@ export class GameState {
     this.currentBlockHeight = height;
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
 
-    console.log(`(Block Update) Charge Level: ${this.chargeLevel}`);
+    console.log(`New Block`);
     window.dispatchEvent(new ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
   }
 
@@ -89,7 +89,6 @@ export class GameState {
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
     this.save();
 
-    console.log(`(Last Action Update) Charge Level: ${this.chargeLevel}`);
     window.dispatchEvent(new ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
   }
 
@@ -98,7 +97,6 @@ export class GameState {
    */
   setThisPlayer(player) {
     this.thisPlayer = player;
-    this.save();
 
     window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
     window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED));
