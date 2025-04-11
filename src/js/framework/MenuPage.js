@@ -119,6 +119,48 @@ export class MenuPage {
     }
   }
 
+  static setBodyContentWithPageTemplate(content) {
+    const pageTemplate = `
+      <div class="sui-page-body-screen-content">
+  
+        <!-- Page Header Start -->
+  
+        <div class="sui-page-header">
+          <a href="javascript: void(0)" class="sui-nav-btn">
+            <i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>
+            Member Roster
+          </a>
+  
+          <div class="sui-page-header-resources">
+            <a href="javascript: void(0)" class="sui-resource">
+              <span>32/50</span>
+              <i class="sui-icon sui-icon-energy"></i>
+            </a>
+            <a href="javascript: void(0)" class="sui-resource">
+              <span>3</span>
+              <i class="sui-icon sui-icon-alpha-matter"></i>
+            </a>
+          </div>
+        </div>
+  
+        <!-- Page Header End -->
+  
+        <!-- Screen Body Start -->
+  
+        <div class="sui-screen-body">
+  
+        <!-- Content Start -->
+        
+        ${content}
+  
+        <!-- Content End -->
+  
+        </div>
+      </div>
+    `;
+    MenuPage.setBodyContent(pageTemplate);
+  }
+
   static setDialogueScreenTheme(theme) {
     const dialogueScreen = document.getElementById(MenuPage.dialogueScreenId);
     dialogueScreen.classList.remove(...dialogueScreen.classList);
@@ -180,6 +222,10 @@ export class MenuPage {
 
   static close() {
     MenuPage.closeBtnHandler();
+  }
+
+  static open() {
+    document.getElementById(MenuPage.pageLayoutId).classList.remove('hidden');
   }
 
   static initCloseBtnListener() {

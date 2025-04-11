@@ -3,6 +3,7 @@ import {StatusBarTopLeftComponent} from "./components/hud/StatusBarTopLeftCompon
 import {StatusBarTopRightComponent} from "./components/hud/StatusBarTopRightComponent";
 import {ActionBarComponent} from "./components/hud/ActionBarComponent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {MenuPage} from "../framework/MenuPage";
 
 export class HUDViewModel extends AbstractViewModel {
 
@@ -20,7 +21,15 @@ export class HUDViewModel extends AbstractViewModel {
       'left'
     );
     this.bottomLeftActionBar.profileClickHandler = function () {
-      console.log('Open menu');
+      const allowedControllers = [
+        'Fleet',
+        'Guild',
+        'Account',
+      ];
+      if (!allowedControllers.includes(MenuPage.router.currentController)) {
+        MenuPage.router.goto('Account', 'index');
+      }
+      MenuPage.open();
     };
   }
 

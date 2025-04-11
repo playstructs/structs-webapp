@@ -7,6 +7,7 @@ import {AuthManager} from "./managers/AuthManager";
 import {GrassManager} from "./framework/GrassManager";
 import {BlockListener} from "./grass_listeners/BlockListener";
 import {HUDViewModel} from "./view_models/HUDViewModel";
+import {AccountController} from "./controllers/AccountController";
 
 // localStorage.clear();
 
@@ -35,8 +36,12 @@ const authController = new AuthController(
   walletManager,
   authManager
 );
+const accountController = new AccountController(
+  gameState
+);
 
 MenuPage.router.registerController(authController);
+MenuPage.router.registerController(accountController);
 MenuPage.initListeners();
 
 grassManager.registerListener(blockListener);
@@ -51,8 +56,10 @@ hud.initPageCode();
 await gameState.load();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
-if (gameState.lastSaveBlockHeight === 0) {
-  MenuPage.router.goto('Auth', 'index');
-} else {
-  MenuPage.close();
-}
+MenuPage.router.goto('Account', 'index');
+
+// if (gameState.lastSaveBlockHeight === 0) {
+//   MenuPage.router.goto('Auth', 'index');
+// } else {
+//   MenuPage.close();
+// }
