@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'Structicons';
-  src:  url('/fonts/Structicons.eot?1vvfuu');
-  src:  url('/fonts/Structicons.eot?1vvfuu#iefix') format('embedded-opentype'),
-  url('/fonts/Structicons.ttf?1vvfuu') format('truetype'),
-  url('/fonts/Structicons.woff?1vvfuu') format('woff'),
-  url('/fonts/Structicons.svg?1vvfuu#Structicons') format('svg');
+  src:  url('/fonts/Structicons.eot?g7eosy');
+  src:  url('/fonts/Structicons.eot?g7eosy#iefix') format('embedded-opentype'),
+  url('/fonts/Structicons.ttf?g7eosy') format('truetype'),
+  url('/fonts/Structicons.woff?g7eosy') format('woff'),
+  url('/fonts/Structicons.svg?g7eosy#Structicons') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -79,6 +79,15 @@ i, .icomoon-liga {
 }
 .icon-tip:before {
   content: "\e93d";
+}
+.icon-transfers:before {
+  content: "\e941";
+}
+.icon-Attention:before {
+  content: "\e93f";
+}
+.icon-Unpowered:before {
+  content: "\e940";
 }
 .icon-beacon:before {
   content: "\e906";

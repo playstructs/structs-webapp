@@ -2908,6 +2908,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
 /* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
 
 
 
@@ -2923,6 +2924,10 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.playerAddressCount = 0;
+    this.copyPidBtnId = 'account-menu-copy-pid';
+    this.profileBtnId = 'account-menu-profile-btn';
+    this.transfersBtnId = 'account-menu-transfers-btn';
+    this.devicesBtnId = 'account-menu-devices-btn';
   }
 
   getTag() {
@@ -2938,7 +2943,20 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
   }
 
   initPageCode() {
-
+    document.getElementById(this.copyPidBtnId).addEventListener('click', async function () {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(this.gameState.thisPlayerId);
+      }
+    }.bind(this));
+    document.getElementById(this.profileBtnId).addEventListener('click', () => {
+      console.log('Profile');
+    });
+    document.getElementById(this.transfersBtnId).addEventListener('click', () => {
+      console.log('Transfers');
+    });
+    document.getElementById(this.devicesBtnId).addEventListener('click', () => {
+      console.log('Devices');
+    });
   }
 
   render () {
@@ -2975,14 +2993,17 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
               </div>
               <div class="account-menu-index-header-player-id">
                 PID #${this.gameState.thisPlayerId}
-                <i class="sui-icon icon-copy sui-text-secondary"></i>
+                <a id="${this.copyPidBtnId}" href="javascript: void(0)">
+                  <i class="sui-icon icon-copy sui-text-secondary"></i>
+                </a>
               </div>
             </div>
             <div class="account-menu-index-header-btn-container">
               <button class="sui-screen-btn sui-mod-destructive">Log Out</button>
             </div>
           </div>
-          <div class="menu-index-btn">
+          
+          <a id="${this.profileBtnId}" class="menu-index-btn" href="javascript: void(0)">
             <i class="sui-icon sui-icon-lg icon-member sui-text-primary"></i>
             <div class="menu-index-btn-labels-container">
               <div class=menu-index-btn-nav-label>
@@ -2991,27 +3012,29 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
               </div>
               <div></div>
             </div>
-          </div>
-          <div class="menu-index-btn">
-            <i class="sui-icon sui-icon-lg icon-member sui-text-primary"></i>
+          </a>
+          
+          <a id="${this.transfersBtnId}" class="menu-index-btn" href="javascript: void(0)">
+            <i class="sui-icon sui-icon-lg icon-transfers sui-text-primary"></i>
             <div class="menu-index-btn-labels-container">
               <div class=menu-index-btn-nav-label>
                 Transfers
-                <i class="sui-icon icon-transfers sui-text-primary"></i>
+                <i class="sui-icon icon-chevron-right sui-text-primary"></i>
               </div>
               <div></div>
             </div>
-          </div>
-          <div class="menu-index-btn">
+          </a>
+          
+          <a id="${this.devicesBtnId}" class="menu-index-btn" href="javascript: void(0)">
             <i class="sui-icon sui-icon-lg icon-phone sui-text-primary"></i>
             <div class="menu-index-btn-labels-container">
               <div class=menu-index-btn-nav-label>
                 Devices
-                <i class="sui-icon icon-transfers sui-text-primary"></i>
+                <i class="sui-icon icon-chevron-right sui-text-primary"></i>
               </div>
               <div class="sui-text-secondary">${addressCount} Devices Active</div>
             </div>
-          </div>
+          </a>
         </div>
       `);
 
