@@ -34,7 +34,11 @@ export class AccountIndexView extends AbstractViewModel {
     MenuPage.setNavItems(navItems, 'nav-item-account');
     MenuPage.enableCloseBtn();
 
-    MenuPage.setBodyContentWithPageTemplate(`
+    MenuPage.enablePageTemplate();
+
+    MenuPage.setPageTemplateNavBtn('Account');
+
+    MenuPage.setPageTemplateContent(`
     <div class="sui-result-rows sui-result-table">
   
   

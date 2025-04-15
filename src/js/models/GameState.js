@@ -98,8 +98,21 @@ export class GameState {
   setThisPlayer(player) {
     this.thisPlayer = player;
 
+    window.dispatchEvent(new CustomEvent(EVENTS.ALPHA_COUNT_CHANGED));
     window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
     window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED));
+  }
+
+  /**
+   * @param {number} alpha
+   */
+  setThisPlayerAlpha(alpha) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('alpha')) {
+      this.thisPlayer.ore = alpha;
+      this.save();
+
+      window.dispatchEvent(new CustomEvent(EVENTS.ALPHA_COUNT_CHANGED));
+    }
   }
 
   /**

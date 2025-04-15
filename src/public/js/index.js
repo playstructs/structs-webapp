@@ -180,6 +180,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   EVENTS: () => (/* binding */ EVENTS)
 /* harmony export */ });
 const EVENTS = {
+  ALPHA_COUNT_CHANGED: 'ALPHA_COUNT_CHANGED',
   CHARGE_LEVEL_CHANGED: 'CHARGE_LEVEL_CHANGED',
   ENERGY_USAGE_CHANGED: 'ENERGY_USAGE_CHANGED',
   ORE_COUNT_CHANGED: 'ORE_COUNT_CHANGED',
@@ -952,11 +953,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _MenuPageRouter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPageRouter */ "./js/framework/MenuPageRouter.js");
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _sui_SUI__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../sui/SUI */ "./js/sui/SUI.js");
+/* harmony import */ var _view_models_components_EnergyUsageComponent__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../view_models/components/EnergyUsageComponent */ "./js/view_models/components/EnergyUsageComponent.js");
+/* harmony import */ var _view_models_components_AlphaOwnedComponent__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../view_models/components/AlphaOwnedComponent */ "./js/view_models/components/AlphaOwnedComponent.js");
+
+
 
 
 
 
 class MenuPage {
+
+  static gameState;
 
   /* Element IDs Start */
 
@@ -986,15 +993,29 @@ class MenuPage {
 
   static dialogueBtnBId = 'menu-page-dialogue-btn-b';
 
+  static pageTemplateNavBtnId = 'menu-page-template-nav-btn';
+
+  static resourceEnergyUsageId = 'menu-page-resource-energy-usage';
+
+  static resourceAlphaOwnedId = 'menu-page-resource-alpha-owned';
+
+  static pageTemplateContentId = 'menu-page-template-content';
+
   /* Element IDs End */
 
   static router = new _MenuPageRouter__WEBPACK_IMPORTED_MODULE_0__.MenuPageRouter();
 
   static sui = new _sui_SUI__WEBPACK_IMPORTED_MODULE_2__.SUI();
 
+  /* Dynamic Handlers Start */
+
   static dialogueBtnAHandler = () => {};
 
   static dialogueBtnBHandler = () => {};
+
+  static pageTemplateNavBtnHandler = () => {};
+
+  /* Dynamic Handlers End */
 
   /**
    * @param {NavItemDTO[]}items
@@ -1073,48 +1094,6 @@ class MenuPage {
     }
   }
 
-  static setBodyContentWithPageTemplate(content) {
-    const pageTemplate = `
-      <div class="sui-page-body-screen-content">
-  
-        <!-- Page Header Start -->
-  
-        <div class="sui-page-header">
-          <a href="javascript: void(0)" class="sui-nav-btn">
-            <i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>
-            Member Roster
-          </a>
-  
-          <div class="sui-page-header-resources">
-            <a href="javascript: void(0)" class="sui-resource">
-              <span>32/50</span>
-              <i class="sui-icon sui-icon-energy"></i>
-            </a>
-            <a href="javascript: void(0)" class="sui-resource">
-              <span>3</span>
-              <i class="sui-icon sui-icon-alpha-matter"></i>
-            </a>
-          </div>
-        </div>
-  
-        <!-- Page Header End -->
-  
-        <!-- Screen Body Start -->
-  
-        <div class="sui-screen-body">
-  
-        <!-- Content Start -->
-        
-        ${content}
-  
-        <!-- Content End -->
-  
-        </div>
-      </div>
-    `;
-    MenuPage.setBodyContent(pageTemplate);
-  }
-
   static setDialogueScreenTheme(theme) {
     const dialogueScreen = document.getElementById(MenuPage.dialogueScreenId);
     dialogueScreen.classList.remove(...dialogueScreen.classList);
@@ -1156,6 +1135,10 @@ class MenuPage {
 
   static clearDialogueBtnBHandler() {
     MenuPage.dialogueBtnBHandler = () => {};
+  }
+
+  static clearPageTemplateNavBtnHandler() {
+    MenuPage.pageTemplateNavBtnHandler = () => {};
   }
 
   static hideAndClearDialoguePanel() {
@@ -1200,10 +1183,74 @@ class MenuPage {
     });
   }
 
+  static initPageTemplateNavBtnListener() {
+    const pageTemplateNavBtn = document.getElementById(MenuPage.pageTemplateNavBtnId);
+    pageTemplateNavBtn.addEventListener('click', () => {
+      MenuPage.pageTemplateNavBtnHandler();
+    });
+  }
+
   static initListeners() {
     MenuPage.initCloseBtnListener();
     MenuPage.initDialogueBtnAListener();
     MenuPage.initDialogueBtnBListener();
+  }
+
+  static enablePageTemplate() {
+
+    const energyUsageComponent = new _view_models_components_EnergyUsageComponent__WEBPACK_IMPORTED_MODULE_3__.EnergyUsageComponent(
+      MenuPage.gameState,
+      MenuPage.resourceEnergyUsageId
+    );
+
+    const alphaOwnedComponent = new _view_models_components_AlphaOwnedComponent__WEBPACK_IMPORTED_MODULE_4__.AlphaOwnedComponent(
+      MenuPage.gameState,
+      MenuPage.resourceAlphaOwnedId,
+    );
+
+    const pageTemplate = `
+      <div class="sui-page-body-screen-content">
+  
+        <!-- Page Header Start -->
+  
+        <div class="sui-page-header">
+          <a id="${this.pageTemplateNavBtnId}" href="javascript: void(0)" class="sui-nav-btn">
+            <i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>
+            Member Roster
+          </a>
+  
+          <div class="sui-page-header-resources">
+            ${energyUsageComponent.renderHTML()}
+            ${alphaOwnedComponent.renderHTML()}
+          </div>
+        </div>
+  
+        <!-- Page Header End -->
+  
+        <div id="${this.pageTemplateContentId}" class="sui-screen-body">
+  
+          <!-- Content -->
+  
+        </div>
+      </div>
+    `;
+
+    MenuPage.setBodyContent(pageTemplate);
+
+    energyUsageComponent.initPageCode();
+    alphaOwnedComponent.initPageCode();
+
+    MenuPage.initPageTemplateNavBtnListener();
+  }
+
+  static setPageTemplateNavBtn(label, showBackIcon = false, handler = () => {}) {
+    const backIcon = showBackIcon ? '<i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>' : '';
+    document.getElementById(this.pageTemplateNavBtnId).innerHTML = `${backIcon} ${label}`;
+    this.pageTemplateNavBtnHandler = handler;
+  }
+
+  static setPageTemplateContent(content) {
+    document.getElementById(this.pageTemplateContentId).innerHTML = content;
   }
 }
 
@@ -1410,6 +1457,42 @@ class LastActionListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
     }
   }
 }
+
+/***/ }),
+
+/***/ "./js/grass_listeners/PlayerAlphaListener.js":
+/*!***************************************************!*\
+  !*** ./js/grass_listeners/PlayerAlphaListener.js ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlayerAlphaListener: () => (/* binding */ PlayerAlphaListener)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+
+
+class PlayerAlphaListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    super('PLAYER_ALPHA');
+    this.gameState = gameState;
+  }
+
+  handler(messageData) {
+    if (
+      messageData.category === 'alpha'
+      && messageData.subject === `structs.grid.player.${this.gameState.thisPlayerId}`
+    ) {
+      this.gameState.setThisPlayerAlpha(messageData.value);
+    }
+  }
+}
+
 
 /***/ }),
 
@@ -1676,6 +1759,7 @@ const accountController = new _controllers_AccountController__WEBPACK_IMPORTED_M
   gameState
 );
 
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.gameState = gameState;
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(accountController);
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.initListeners();
@@ -1694,11 +1778,11 @@ gameState.thisGuild = await guildAPI.getThisGuild();
 
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'index');
 
-// if (gameState.lastSaveBlockHeight === 0) {
-//   MenuPage.router.goto('Auth', 'index');
-// } else {
-//   MenuPage.close();
-// }
+if (gameState.lastSaveBlockHeight === 0) {
+  _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
+} else {
+  _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.close();
+}
 
 __webpack_async_result__();
 } catch(e) { __webpack_async_result__(e); } }, 1);
@@ -1724,7 +1808,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _grass_listeners_PlayerLoadListener__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../grass_listeners/PlayerLoadListener */ "./js/grass_listeners/PlayerLoadListener.js");
 /* harmony import */ var _grass_listeners_PlayerStructsLoadListener__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../grass_listeners/PlayerStructsLoadListener */ "./js/grass_listeners/PlayerStructsLoadListener.js");
 /* harmony import */ var _grass_listeners_ConnectionCapacityListener__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../grass_listeners/ConnectionCapacityListener */ "./js/grass_listeners/ConnectionCapacityListener.js");
+/* harmony import */ var _grass_listeners_PlayerAlphaListener__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../grass_listeners/PlayerAlphaListener */ "./js/grass_listeners/PlayerAlphaListener.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 
@@ -1819,6 +1905,7 @@ class AuthManager {
 
     if (response.success) {
       this.grassManager.registerListener(new _grass_listeners_LastActionListener__WEBPACK_IMPORTED_MODULE_2__.LastActionListener(this.gameState));
+      this.grassManager.registerListener(new _grass_listeners_PlayerAlphaListener__WEBPACK_IMPORTED_MODULE_8__.PlayerAlphaListener(this.gameState));
       this.grassManager.registerListener(new _grass_listeners_PlayerOreListener__WEBPACK_IMPORTED_MODULE_3__.PlayerOreListener(this.gameState));
       this.grassManager.registerListener(new _grass_listeners_PlayerLoadListener__WEBPACK_IMPORTED_MODULE_5__.PlayerLoadListener(this.gameState));
       this.grassManager.registerListener(new _grass_listeners_PlayerStructsLoadListener__WEBPACK_IMPORTED_MODULE_6__.PlayerStructsLoadListener(this.gameState));
@@ -2020,8 +2107,21 @@ class GameState {
   setThisPlayer(player) {
     this.thisPlayer = player;
 
+    window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ALPHA_COUNT_CHANGED));
     window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ENERGY_USAGE_CHANGED));
     window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ORE_COUNT_CHANGED));
+  }
+
+  /**
+   * @param {number} alpha
+   */
+  setThisPlayerAlpha(alpha) {
+    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('alpha')) {
+      this.thisPlayer.ore = alpha;
+      this.save();
+
+      window.dispatchEvent(new CustomEvent(_constants_Events__WEBPACK_IMPORTED_MODULE_2__.EVENTS.ALPHA_COUNT_CHANGED));
+    }
   }
 
   /**
@@ -2831,7 +2931,11 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems, 'nav-item-account');
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableCloseBtn();
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setBodyContentWithPageTemplate(`
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enablePageTemplate();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateNavBtn('Account');
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateContent(`
     <div class="sui-result-rows sui-result-table">
   
   
@@ -3098,6 +3202,161 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
 
 /***/ }),
 
+/***/ "./js/view_models/components/AlphaOwnedComponent.js":
+/*!**********************************************************!*\
+  !*** ./js/view_models/components/AlphaOwnedComponent.js ***!
+  \**********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AlphaOwnedComponent: () => (/* binding */ AlphaOwnedComponent)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../constants/Events */ "./js/constants/Events.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class AlphaOwnedComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
+
+  constructor(gameState, elementId) {
+    super(gameState);
+    this.elementId = elementId;
+    this.alphaOwnedClass = 'alpha-owned';
+
+    this.alphaOwnedHandler = this.alphaOwnedHandler.bind(this);
+  }
+
+  getAlphaOwned() {
+    let alpha = this.gameState.thisPlayer ? this.gameState.thisPlayer.alpha : 0;
+    return this.numberFormatter.format(alpha);
+  }
+
+  alphaOwnedHandler() {
+    const alphaOwnedLinkElm = document.getElementById(this.elementId);
+
+    if (!alphaOwnedLinkElm) {
+      window.removeEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ALPHA_COUNT_CHANGED, this.alphaOwnedHandler);
+      return;
+    }
+
+    const alphaOwnedNumbersContainer = alphaOwnedLinkElm.querySelector(`.${this.alphaOwnedClass}`);
+    alphaOwnedNumbersContainer.innerText = this.getAlphaOwned();
+  }
+
+  initPageCode() {
+    const alphaOwnedLinkElm = document.getElementById(this.elementId);
+    const alphaOwnedNumbersContainer = alphaOwnedLinkElm.querySelector(`.${this.alphaOwnedClass}`);
+    alphaOwnedNumbersContainer.innerText = this.getAlphaOwned();
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ALPHA_COUNT_CHANGED, this.alphaOwnedHandler);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById(this.elementId));
+  }
+
+  renderHTML() {
+    return `
+      <a 
+        id="${this.elementId}"
+        class="sui-resource"
+        href="javascript: void(0)" 
+        data-sui-tooltip="Alpha Matter"
+        data-sui-mod-placement="bottom"
+      >
+        <span class="${this.alphaOwnedClass}"></span>
+        <i class="sui-icon sui-icon-alpha-matter"></i>
+      </a>
+    `;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/view_models/components/EnergyUsageComponent.js":
+/*!***********************************************************!*\
+  !*** ./js/view_models/components/EnergyUsageComponent.js ***!
+  \***********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   EnergyUsageComponent: () => (/* binding */ EnergyUsageComponent)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../constants/Events */ "./js/constants/Events.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+class EnergyUsageComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
+
+  constructor(gameState, elementId) {
+    super(gameState);
+    this.elementId = elementId;
+    this.energyUsageClass = 'energy-usage';
+
+    this.energyUsageHandler = this.energyUsageHandler.bind(this);
+  }
+
+  getEnergyUsage() {
+    const load = this.gameState.thisPlayer ? this.gameState.thisPlayer.load : 0;
+    const structsLoad = this.gameState.thisPlayer ? this.gameState.thisPlayer.structs_load : 0;
+    const capacity = this.gameState.thisPlayer ? this.gameState.thisPlayer.capacity : 0;
+    const connectionCapacity = this.gameState.thisPlayer ? this.gameState.thisPlayer.connection_capacity : 0;
+
+    let totalLoad = load + structsLoad;
+    let totalCapacity = capacity + connectionCapacity;
+    totalLoad = this.numberFormatter.format(totalLoad);
+    totalCapacity = this.numberFormatter.format(totalCapacity);
+
+    return `${totalLoad}/${totalCapacity}`;
+  }
+
+  energyUsageHandler() {
+    const energyUsageLinkElm = document.getElementById(this.elementId);
+
+    if (!energyUsageLinkElm) {
+      window.removeEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ENERGY_USAGE_CHANGED, this.energyUsageHandler);
+      return;
+    }
+
+    const energyUsageNumbersContainer = energyUsageLinkElm.querySelector(`.${this.energyUsageClass}`);
+    energyUsageNumbersContainer.innerText = this.getEnergyUsage();
+  }
+
+  initPageCode() {
+    const energyUsageLinkElm = document.getElementById(this.elementId);
+    const energyUsageNumbersContainer = energyUsageLinkElm.querySelector(`.${this.energyUsageClass}`);
+    energyUsageNumbersContainer.innerText = this.getEnergyUsage();
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ENERGY_USAGE_CHANGED, this.energyUsageHandler);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById(this.elementId));
+  }
+
+  renderHTML() {
+    return `
+      <a 
+        id="${this.elementId}"
+        class="sui-resource"
+        href="javascript: void(0)" 
+        data-sui-tooltip="Energy Supply"
+        data-sui-mod-placement="bottom"
+      >
+        <span class="${this.energyUsageClass}"></span>
+        <i class="sui-icon sui-icon-energy"></i>
+      </a>
+    `;
+  }
+}
+
+/***/ }),
+
 /***/ "./js/view_models/components/hud/ActionBarComponent.js":
 /*!*************************************************************!*\
   !*** ./js/view_models/components/hud/ActionBarComponent.js ***!
@@ -3211,38 +3470,26 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   StatusBarTopLeftComponent: () => (/* binding */ StatusBarTopLeftComponent)
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
-/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../../constants/Events */ "./js/constants/Events.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../framework/MenuPage */ "./js/framework/MenuPage.js");
-
+/* harmony import */ var _EnergyUsageComponent__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../EnergyUsageComponent */ "./js/view_models/components/EnergyUsageComponent.js");
 
 
 
 class StatusBarTopLeftComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
 
-  initPageCode() {
-    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ENERGY_USAGE_CHANGED, function () {
-      let totalLoad = this.gameState.thisPlayer.load + this.gameState.thisPlayer.structs_load;
-      let totalCapacity = this.gameState.thisPlayer.capacity + this.gameState.thisPlayer.connection_capacity;
-      totalLoad = this.numberFormatter.format(totalLoad);
-      totalCapacity = this.numberFormatter.format(totalCapacity);
-      document.getElementById('hud-energy-usage').innerText = `${totalLoad}/${totalCapacity}`;
-    }.bind(this));
+  constructor(gameState) {
+    super(gameState);
+    this.energyUsageComponent = new _EnergyUsageComponent__WEBPACK_IMPORTED_MODULE_1__.EnergyUsageComponent(gameState, 'hud-energy-usage');
+  }
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.sui.tooltip.init(document.getElementById('hud-energy-usage-hint'));
+
+  initPageCode() {
+    this.energyUsageComponent.initPageCode();
   }
 
   renderHTML() {
     return `
       <div class="sui-status-bar-panel status-bar-panel-top-left">
-        <a 
-          id="hud-energy-usage-hint" 
-          class="sui-resource"
-          href="javascript: void(0)" 
-          data-sui-tooltip="Energy Supply"
-        >
-          <span id="hud-energy-usage"></span>
-          <i class="sui-icon sui-icon-energy"></i>
-        </a>
+        ${this.energyUsageComponent.renderHTML()}
       </div>
     `;
   }

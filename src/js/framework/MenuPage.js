@@ -1,8 +1,12 @@
 import {MenuPageRouter} from "./MenuPageRouter";
 import {NavItemDTO} from "../dtos/NavItemDTO";
 import {SUI} from "../sui/SUI";
+import {EnergyUsageComponent} from "../view_models/components/EnergyUsageComponent";
+import {AlphaOwnedComponent} from "../view_models/components/AlphaOwnedComponent";
 
 export class MenuPage {
+
+  static gameState;
 
   /* Element IDs Start */
 
@@ -32,15 +36,29 @@ export class MenuPage {
 
   static dialogueBtnBId = 'menu-page-dialogue-btn-b';
 
+  static pageTemplateNavBtnId = 'menu-page-template-nav-btn';
+
+  static resourceEnergyUsageId = 'menu-page-resource-energy-usage';
+
+  static resourceAlphaOwnedId = 'menu-page-resource-alpha-owned';
+
+  static pageTemplateContentId = 'menu-page-template-content';
+
   /* Element IDs End */
 
   static router = new MenuPageRouter();
 
   static sui = new SUI();
 
+  /* Dynamic Handlers Start */
+
   static dialogueBtnAHandler = () => {};
 
   static dialogueBtnBHandler = () => {};
+
+  static pageTemplateNavBtnHandler = () => {};
+
+  /* Dynamic Handlers End */
 
   /**
    * @param {NavItemDTO[]}items
@@ -119,48 +137,6 @@ export class MenuPage {
     }
   }
 
-  static setBodyContentWithPageTemplate(content) {
-    const pageTemplate = `
-      <div class="sui-page-body-screen-content">
-  
-        <!-- Page Header Start -->
-  
-        <div class="sui-page-header">
-          <a href="javascript: void(0)" class="sui-nav-btn">
-            <i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>
-            Member Roster
-          </a>
-  
-          <div class="sui-page-header-resources">
-            <a href="javascript: void(0)" class="sui-resource">
-              <span>32/50</span>
-              <i class="sui-icon sui-icon-energy"></i>
-            </a>
-            <a href="javascript: void(0)" class="sui-resource">
-              <span>3</span>
-              <i class="sui-icon sui-icon-alpha-matter"></i>
-            </a>
-          </div>
-        </div>
-  
-        <!-- Page Header End -->
-  
-        <!-- Screen Body Start -->
-  
-        <div class="sui-screen-body">
-  
-        <!-- Content Start -->
-        
-        ${content}
-  
-        <!-- Content End -->
-  
-        </div>
-      </div>
-    `;
-    MenuPage.setBodyContent(pageTemplate);
-  }
-
   static setDialogueScreenTheme(theme) {
     const dialogueScreen = document.getElementById(MenuPage.dialogueScreenId);
     dialogueScreen.classList.remove(...dialogueScreen.classList);
@@ -202,6 +178,10 @@ export class MenuPage {
 
   static clearDialogueBtnBHandler() {
     MenuPage.dialogueBtnBHandler = () => {};
+  }
+
+  static clearPageTemplateNavBtnHandler() {
+    MenuPage.pageTemplateNavBtnHandler = () => {};
   }
 
   static hideAndClearDialoguePanel() {
@@ -246,9 +226,73 @@ export class MenuPage {
     });
   }
 
+  static initPageTemplateNavBtnListener() {
+    const pageTemplateNavBtn = document.getElementById(MenuPage.pageTemplateNavBtnId);
+    pageTemplateNavBtn.addEventListener('click', () => {
+      MenuPage.pageTemplateNavBtnHandler();
+    });
+  }
+
   static initListeners() {
     MenuPage.initCloseBtnListener();
     MenuPage.initDialogueBtnAListener();
     MenuPage.initDialogueBtnBListener();
+  }
+
+  static enablePageTemplate() {
+
+    const energyUsageComponent = new EnergyUsageComponent(
+      MenuPage.gameState,
+      MenuPage.resourceEnergyUsageId
+    );
+
+    const alphaOwnedComponent = new AlphaOwnedComponent(
+      MenuPage.gameState,
+      MenuPage.resourceAlphaOwnedId,
+    );
+
+    const pageTemplate = `
+      <div class="sui-page-body-screen-content">
+  
+        <!-- Page Header Start -->
+  
+        <div class="sui-page-header">
+          <a id="${this.pageTemplateNavBtnId}" href="javascript: void(0)" class="sui-nav-btn">
+            <i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>
+            Member Roster
+          </a>
+  
+          <div class="sui-page-header-resources">
+            ${energyUsageComponent.renderHTML()}
+            ${alphaOwnedComponent.renderHTML()}
+          </div>
+        </div>
+  
+        <!-- Page Header End -->
+  
+        <div id="${this.pageTemplateContentId}" class="sui-screen-body">
+  
+          <!-- Content -->
+  
+        </div>
+      </div>
+    `;
+
+    MenuPage.setBodyContent(pageTemplate);
+
+    energyUsageComponent.initPageCode();
+    alphaOwnedComponent.initPageCode();
+
+    MenuPage.initPageTemplateNavBtnListener();
+  }
+
+  static setPageTemplateNavBtn(label, showBackIcon = false, handler = () => {}) {
+    const backIcon = showBackIcon ? '<i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>' : '';
+    document.getElementById(this.pageTemplateNavBtnId).innerHTML = `${backIcon} ${label}`;
+    this.pageTemplateNavBtnHandler = handler;
+  }
+
+  static setPageTemplateContent(content) {
+    document.getElementById(this.pageTemplateContentId).innerHTML = content;
   }
 }
