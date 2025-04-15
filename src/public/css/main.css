@@ -614,6 +614,93 @@ img.glitch-logo {
   margin-top: 96px;
 }
 
+#menu-page-template-content {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.menu-index-layout {
+  display: flex;
+  width: 100%;
+  padding: var(--spacing-xl);
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: stretch;
+  gap: var(--spacing-xl);
+}
+
+.menu-index-btn {
+  display: flex;
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border);
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  gap: var(--spacing-xl);
+}
+
+.menu-index-btn-labels-container {
+  display: flex;
+  padding: 0;
+  flex: 1 0 0;
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.menu-index-btn-nav-label {
+  display: flex;
+  padding: 0;
+  align-items: center;
+  gap: 0;
+}
+
+.account-menu-index-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: 24px var(--spacing-xxl);
+}
+
+.account-menu-index-header-player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.account-menu-index-header-player-name {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.account-menu-index-header-player-id {
+  display: flex;
+  align-items: center;
+}
+
+.account-menu-index-header-player-id .sui-icon.icon-copy {
+  display: flex;
+  padding: var(--spacing-md);
+  align-items: flex-start;
+  gap: 0;
+}
+
+.account-menu-index-header-btn-container {
+  display: flex;
+  min-width: 84px;
+  padding: 2px;
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */

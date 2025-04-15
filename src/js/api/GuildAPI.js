@@ -119,4 +119,13 @@ export class GuildAPI {
     const lastActionBlockHeight = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/action/last/block/height`, 'last_action_block_height');
     return parseInt(lastActionBlockHeight);
   }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<number>}
+   */
+  async getPlayerAddressCount(playerId) {
+    const count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
+    return parseInt(count);
+  }
 }

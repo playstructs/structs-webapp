@@ -138,6 +138,15 @@ class GuildAPI {
     const lastActionBlockHeight = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/action/last/block/height`, 'last_action_block_height');
     return parseInt(lastActionBlockHeight);
   }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<number>}
+   */
+  async getPlayerAddressCount(playerId) {
+    const count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
+    return parseInt(count);
+  }
 }
 
 /***/ }),
@@ -245,15 +254,18 @@ class AccountController extends _framework_AbstractController__WEBPACK_IMPORTED_
 
   /**
    * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
    */
   constructor(
-    gameState
+    gameState,
+    guildAPI
   ) {
     super('Account', gameState);
+    this.guildAPI = guildAPI;
   }
 
   index() {
-    const viewModel = new _view_models_account_AccountIndexViewModel__WEBPACK_IMPORTED_MODULE_1__.AccountIndexView(this.gameState);
+    const viewModel = new _view_models_account_AccountIndexViewModel__WEBPACK_IMPORTED_MODULE_1__.AccountIndexView(this.gameState, this.guildAPI);
     viewModel.render();
   }
 }
@@ -1756,7 +1768,8 @@ const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_
   authManager
 );
 const accountController = new _controllers_AccountController__WEBPACK_IMPORTED_MODULE_9__.AccountController(
-  gameState
+  gameState,
+  guildAPI
 );
 
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.gameState = gameState;
@@ -2903,10 +2916,25 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
 
   /**
    * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
    */
-  constructor(gameState) {
+  constructor(gameState, guildAPI) {
     super();
     this.gameState = gameState;
+    this.guildAPI = guildAPI;
+    this.playerAddressCount = 0;
+  }
+
+  getTag() {
+    return this.gameState.thisPlayer.tag && this.gameState.thisPlayer.tag.length > 0
+      ? `[${this.gameState.thisPlayer.tag}]`
+      : '';
+  }
+
+  getUsername() {
+    return this.gameState.thisPlayer.username && this.gameState.thisPlayer.username.length > 0
+      ? this.gameState.thisPlayer.username
+      : 'Name Redacted';
   }
 
   initPageCode() {
@@ -2914,288 +2942,84 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
   }
 
   render () {
-    const navItems = [
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
-        'nav-item-fleet',
-        'FLEET'
-      ),
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
-        'nav-item-guild',
-        'GUILD'
-      ),
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
-        'nav-item-account',
-        'ACCOUNT'
-      )
-    ];
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems, 'nav-item-account');
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableCloseBtn();
+    this.guildAPI.getPlayerAddressCount(this.gameState.thisPlayerId).then((addressCount) => {
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enablePageTemplate();
+      const navItems = [
+        new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+          'nav-item-fleet',
+          'FLEET'
+        ),
+        new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+          'nav-item-guild',
+          'GUILD'
+        ),
+        new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+          'nav-item-account',
+          'ACCOUNT'
+        )
+      ];
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems, 'nav-item-account');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableCloseBtn();
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateNavBtn('Account');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enablePageTemplate();
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateContent(`
-    <div class="sui-result-rows sui-result-table">
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> ABSTRACT<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> DETHMASHENE<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> TXUE<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> NETLAG<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> SAINT<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> ABSTRACT<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> DETHMASHENE<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> TXUE<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> NETLAG<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> SAINT<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                  </div>
-    `);
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateNavBtn('Account');
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.hideAndClearDialoguePanel();
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateContent(`
+        <div class="menu-index-layout">
+          <div class="account-menu-index-header-row">
+            <div class="account-menu-index-header-player-info">
+              <div class="account-menu-index-header-player-name">
+                <span class="sui-text-secondary">${this.getTag()}</span>
+                ${this.getUsername()}
+              </div>
+              <div class="account-menu-index-header-player-id">
+                PID #${this.gameState.thisPlayerId}
+                <i class="sui-icon icon-copy sui-text-secondary"></i>
+              </div>
+            </div>
+            <div class="account-menu-index-header-btn-container">
+              <button class="sui-screen-btn sui-mod-destructive">Log Out</button>
+            </div>
+          </div>
+          <div class="menu-index-btn">
+            <i class="sui-icon sui-icon-lg icon-member sui-text-primary"></i>
+            <div class="menu-index-btn-labels-container">
+              <div class=menu-index-btn-nav-label>
+                Profile
+                <i class="sui-icon icon-chevron-right sui-text-primary"></i>
+              </div>
+              <div></div>
+            </div>
+          </div>
+          <div class="menu-index-btn">
+            <i class="sui-icon sui-icon-lg icon-member sui-text-primary"></i>
+            <div class="menu-index-btn-labels-container">
+              <div class=menu-index-btn-nav-label>
+                Transfers
+                <i class="sui-icon icon-transfers sui-text-primary"></i>
+              </div>
+              <div></div>
+            </div>
+          </div>
+          <div class="menu-index-btn">
+            <i class="sui-icon sui-icon-lg icon-phone sui-text-primary"></i>
+            <div class="menu-index-btn-labels-container">
+              <div class=menu-index-btn-nav-label>
+                Devices
+                <i class="sui-icon icon-transfers sui-text-primary"></i>
+              </div>
+              <div class="sui-text-secondary">${addressCount} Devices Active</div>
+            </div>
+          </div>
+        </div>
+      `);
 
-    this.initPageCode();
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.hideAndClearDialoguePanel();
+
+      this.initPageCode();
+
+    });
   }
 }
 

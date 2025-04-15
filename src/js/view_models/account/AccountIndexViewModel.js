@@ -6,10 +6,25 @@ export class AccountIndexView extends AbstractViewModel {
 
   /**
    * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
    */
-  constructor(gameState) {
+  constructor(gameState, guildAPI) {
     super();
     this.gameState = gameState;
+    this.guildAPI = guildAPI;
+    this.playerAddressCount = 0;
+  }
+
+  getTag() {
+    return this.gameState.thisPlayer.tag && this.gameState.thisPlayer.tag.length > 0
+      ? `[${this.gameState.thisPlayer.tag}]`
+      : '';
+  }
+
+  getUsername() {
+    return this.gameState.thisPlayer.username && this.gameState.thisPlayer.username.length > 0
+      ? this.gameState.thisPlayer.username
+      : 'Name Redacted';
   }
 
   initPageCode() {
@@ -17,287 +32,83 @@ export class AccountIndexView extends AbstractViewModel {
   }
 
   render () {
-    const navItems = [
-      new NavItemDTO(
-        'nav-item-fleet',
-        'FLEET'
-      ),
-      new NavItemDTO(
-        'nav-item-guild',
-        'GUILD'
-      ),
-      new NavItemDTO(
-        'nav-item-account',
-        'ACCOUNT'
-      )
-    ];
-    MenuPage.setNavItems(navItems, 'nav-item-account');
-    MenuPage.enableCloseBtn();
+    this.guildAPI.getPlayerAddressCount(this.gameState.thisPlayerId).then((addressCount) => {
 
-    MenuPage.enablePageTemplate();
+      const navItems = [
+        new NavItemDTO(
+          'nav-item-fleet',
+          'FLEET'
+        ),
+        new NavItemDTO(
+          'nav-item-guild',
+          'GUILD'
+        ),
+        new NavItemDTO(
+          'nav-item-account',
+          'ACCOUNT'
+        )
+      ];
+      MenuPage.setNavItems(navItems, 'nav-item-account');
+      MenuPage.enableCloseBtn();
 
-    MenuPage.setPageTemplateNavBtn('Account');
+      MenuPage.enablePageTemplate();
 
-    MenuPage.setPageTemplateContent(`
-    <div class="sui-result-rows sui-result-table">
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> ABSTRACT<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> DETHMASHENE<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> TXUE<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> NETLAG<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> SAINT<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> ABSTRACT<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> DETHMASHENE<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> TXUE<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> NETLAG<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                    <div class="sui-result-row">
-                      <div class="sui-result-row-left-section">
-                        <div class="sui-result-row-portrait">
-                          <div class="sui-result-row-portrait-image"></div>
-                        </div>
-                        <div class="sui-result-row-player-info">
-                          <div class="sui-text-label-block">
-                            <span class="sui-mod-secondary">[TAG]</span> SAINT<br>
-                            <span class="sui-text-hint">PID #7283</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="sui-result-row-right-section">
-                        <div class="sui-result-row-resources">
-                          <div class="sui-resource">
-                            <span>01</span>
-                            <i class="sui-icon sui-icon-alpha-matter"></i>
-                          </div>
-                        </div>
-                        <a href="javascript:void(0)" class="sui-screen-btn sui-mod-secondary">View</a>
-                      </div>
-                    </div>
-  
-  
-  
-                  </div>
-    `);
+      MenuPage.setPageTemplateNavBtn('Account');
 
-    MenuPage.hideAndClearDialoguePanel();
+      MenuPage.setPageTemplateContent(`
+        <div class="menu-index-layout">
+          <div class="account-menu-index-header-row">
+            <div class="account-menu-index-header-player-info">
+              <div class="account-menu-index-header-player-name">
+                <span class="sui-text-secondary">${this.getTag()}</span>
+                ${this.getUsername()}
+              </div>
+              <div class="account-menu-index-header-player-id">
+                PID #${this.gameState.thisPlayerId}
+                <i class="sui-icon icon-copy sui-text-secondary"></i>
+              </div>
+            </div>
+            <div class="account-menu-index-header-btn-container">
+              <button class="sui-screen-btn sui-mod-destructive">Log Out</button>
+            </div>
+          </div>
+          <div class="menu-index-btn">
+            <i class="sui-icon sui-icon-lg icon-member sui-text-primary"></i>
+            <div class="menu-index-btn-labels-container">
+              <div class=menu-index-btn-nav-label>
+                Profile
+                <i class="sui-icon icon-chevron-right sui-text-primary"></i>
+              </div>
+              <div></div>
+            </div>
+          </div>
+          <div class="menu-index-btn">
+            <i class="sui-icon sui-icon-lg icon-member sui-text-primary"></i>
+            <div class="menu-index-btn-labels-container">
+              <div class=menu-index-btn-nav-label>
+                Transfers
+                <i class="sui-icon icon-transfers sui-text-primary"></i>
+              </div>
+              <div></div>
+            </div>
+          </div>
+          <div class="menu-index-btn">
+            <i class="sui-icon sui-icon-lg icon-phone sui-text-primary"></i>
+            <div class="menu-index-btn-labels-container">
+              <div class=menu-index-btn-nav-label>
+                Devices
+                <i class="sui-icon icon-transfers sui-text-primary"></i>
+              </div>
+              <div class="sui-text-secondary">${addressCount} Devices Active</div>
+            </div>
+          </div>
+        </div>
+      `);
 
-    this.initPageCode();
+      MenuPage.hideAndClearDialoguePanel();
+
+      this.initPageCode();
+
+    });
   }
 }

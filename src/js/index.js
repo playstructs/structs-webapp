@@ -37,7 +37,8 @@ const authController = new AuthController(
   authManager
 );
 const accountController = new AccountController(
-  gameState
+  gameState,
+  guildAPI
 );
 
 MenuPage.gameState = gameState;
