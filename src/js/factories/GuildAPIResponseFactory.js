@@ -6,7 +6,6 @@ export class GuildAPIResponseFactory {
     if (!jsonResponse.hasOwnProperty('success')
       || typeof jsonResponse.success !== 'boolean'
       || !jsonResponse.hasOwnProperty('errors')
-      || !Array.isArray(jsonResponse.errors)
       || !jsonResponse.hasOwnProperty('data')
     ) {
       throw new GuildAPIError('Invalid response from server');

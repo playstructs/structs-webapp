@@ -38,7 +38,8 @@ const authController = new AuthController(
 );
 const accountController = new AccountController(
   gameState,
-  guildAPI
+  guildAPI,
+  authManager
 );
 
 MenuPage.gameState = gameState;
@@ -58,10 +59,9 @@ hud.initPageCode();
 await gameState.load();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
-MenuPage.router.goto('Account', 'index');
-
 if (gameState.lastSaveBlockHeight === 0) {
   MenuPage.router.goto('Auth', 'index');
 } else {
   MenuPage.close();
+  MenuPage.router.goto('Account', 'index');
 }

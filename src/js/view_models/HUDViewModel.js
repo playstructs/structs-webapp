@@ -28,6 +28,8 @@ export class HUDViewModel extends AbstractViewModel {
       ];
       if (!allowedControllers.includes(MenuPage.router.currentController)) {
         MenuPage.router.goto('Account', 'index');
+      } else {
+        MenuPage.router.goto(MenuPage.router.currentController, MenuPage.router.currentPage, MenuPage.router.currentOptions);
       }
       MenuPage.open();
     };

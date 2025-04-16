@@ -7,16 +7,23 @@ export class AccountIndexView extends AbstractViewModel {
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
+   * @param {AuthManager} authManager
    */
-  constructor(gameState, guildAPI) {
+  constructor(
+    gameState,
+    guildAPI,
+    authManager
+  ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
+    this.authManager = authManager;
     this.playerAddressCount = 0;
     this.copyPidBtnId = 'account-menu-copy-pid';
     this.profileBtnId = 'account-menu-profile-btn';
     this.transfersBtnId = 'account-menu-transfers-btn';
     this.devicesBtnId = 'account-menu-devices-btn';
+    this.logoutBtnId = 'account-menu-logout-btn';
   }
 
   getTag() {
@@ -36,6 +43,9 @@ export class AccountIndexView extends AbstractViewModel {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(this.gameState.thisPlayerId);
       }
+    }.bind(this));
+    document.getElementById(this.logoutBtnId).addEventListener('click', function () {
+      this.authManager.logout();
     }.bind(this));
     document.getElementById(this.profileBtnId).addEventListener('click', () => {
       console.log('Profile');
@@ -88,7 +98,7 @@ export class AccountIndexView extends AbstractViewModel {
               </div>
             </div>
             <div class="account-menu-index-header-btn-container">
-              <button class="sui-screen-btn sui-mod-destructive">Log Out</button>
+              <button id="${this.logoutBtnId}" class="sui-screen-btn sui-mod-destructive">Log Out</button>
             </div>
           </div>
           

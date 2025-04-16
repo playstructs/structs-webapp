@@ -152,6 +152,11 @@ class GuildAPI {
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
+  async logout() {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/auth/logout`);
+    return this.guildAPIResponseFactory.make(jsonResponse);
+  }
+
   /**
    * @param {string} playerId
    * @return {Promise<Player>}
@@ -180,7 +185,7 @@ class GuildAPI {
   async getPlayerAddressCount(playerId, forceRefresh = false) {
     let count = this.getCachedItem('getPlayerAddressCount');
     if (count === null || forceRefresh) {
-      const count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
+      count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
       this.cacheItem('getPlayerAddressCount', count);
     }
     return parseInt(count);
@@ -293,17 +298,20 @@ class AccountController extends _framework_AbstractController__WEBPACK_IMPORTED_
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
+   * @param {AuthManager} authManager
    */
   constructor(
     gameState,
-    guildAPI
+    guildAPI,
+    authManager
   ) {
     super('Account', gameState);
     this.guildAPI = guildAPI;
+    this.authManager = authManager;
   }
 
   index() {
-    const viewModel = new _view_models_account_AccountIndexViewModel__WEBPACK_IMPORTED_MODULE_1__.AccountIndexView(this.gameState, this.guildAPI);
+    const viewModel = new _view_models_account_AccountIndexViewModel__WEBPACK_IMPORTED_MODULE_1__.AccountIndexView(this.gameState, this.guildAPI, this.authManager);
     viewModel.render();
   }
 }
@@ -673,7 +681,6 @@ class GuildAPIResponseFactory {
     if (!jsonResponse.hasOwnProperty('success')
       || typeof jsonResponse.success !== 'boolean'
       || !jsonResponse.hasOwnProperty('errors')
-      || !Array.isArray(jsonResponse.errors)
       || !jsonResponse.hasOwnProperty('data')
     ) {
       throw new _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_1__.GuildAPIError('Invalid response from server');
@@ -1827,7 +1834,8 @@ const authController = new _controllers_AuthController__WEBPACK_IMPORTED_MODULE_
 );
 const accountController = new _controllers_AccountController__WEBPACK_IMPORTED_MODULE_9__.AccountController(
   gameState,
-  guildAPI
+  guildAPI,
+  authManager
 );
 
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.gameState = gameState;
@@ -1847,12 +1855,11 @@ hud.initPageCode();
 await gameState.load();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
-_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'index');
-
 if (gameState.lastSaveBlockHeight === 0) {
   _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 } else {
   _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.close();
+  _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'index');
 }
 
 __webpack_async_result__();
@@ -1880,7 +1887,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _grass_listeners_PlayerStructsLoadListener__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../grass_listeners/PlayerStructsLoadListener */ "./js/grass_listeners/PlayerStructsLoadListener.js");
 /* harmony import */ var _grass_listeners_ConnectionCapacityListener__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../grass_listeners/ConnectionCapacityListener */ "./js/grass_listeners/ConnectionCapacityListener.js");
 /* harmony import */ var _grass_listeners_PlayerAlphaListener__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../grass_listeners/PlayerAlphaListener */ "./js/grass_listeners/PlayerAlphaListener.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 
@@ -1985,6 +1994,14 @@ class AuthManager {
     }
 
     return response.success;
+  }
+
+  logout() {
+    this.guildAPI.logout().then(() => {
+      localStorage.clear();
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_9__.MenuPage.router.goto('Auth', 'index');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_9__.MenuPage.open();
+    });
   }
 
 }
@@ -2869,6 +2886,8 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
       ];
       if (!allowedControllers.includes(_framework_MenuPage__WEBPACK_IMPORTED_MODULE_5__.MenuPage.router.currentController)) {
         _framework_MenuPage__WEBPACK_IMPORTED_MODULE_5__.MenuPage.router.goto('Account', 'index');
+      } else {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_5__.MenuPage.router.goto(_framework_MenuPage__WEBPACK_IMPORTED_MODULE_5__.MenuPage.router.currentController, _framework_MenuPage__WEBPACK_IMPORTED_MODULE_5__.MenuPage.router.currentPage, _framework_MenuPage__WEBPACK_IMPORTED_MODULE_5__.MenuPage.router.currentOptions);
       }
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_5__.MenuPage.open();
     };
@@ -2974,16 +2993,23 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
+   * @param {AuthManager} authManager
    */
-  constructor(gameState, guildAPI) {
+  constructor(
+    gameState,
+    guildAPI,
+    authManager
+  ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
+    this.authManager = authManager;
     this.playerAddressCount = 0;
     this.copyPidBtnId = 'account-menu-copy-pid';
     this.profileBtnId = 'account-menu-profile-btn';
     this.transfersBtnId = 'account-menu-transfers-btn';
     this.devicesBtnId = 'account-menu-devices-btn';
+    this.logoutBtnId = 'account-menu-logout-btn';
   }
 
   getTag() {
@@ -3003,6 +3029,9 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(this.gameState.thisPlayerId);
       }
+    }.bind(this));
+    document.getElementById(this.logoutBtnId).addEventListener('click', function () {
+      this.authManager.logout();
     }.bind(this));
     document.getElementById(this.profileBtnId).addEventListener('click', () => {
       console.log('Profile');
@@ -3055,7 +3084,7 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
               </div>
             </div>
             <div class="account-menu-index-header-btn-container">
-              <button class="sui-screen-btn sui-mod-destructive">Log Out</button>
+              <button id="${this.logoutBtnId}" class="sui-screen-btn sui-mod-destructive">Log Out</button>
             </div>
           </div>
           

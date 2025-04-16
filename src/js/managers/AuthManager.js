@@ -7,6 +7,7 @@ import {PlayerLoadListener} from "../grass_listeners/PlayerLoadListener";
 import {PlayerStructsLoadListener} from "../grass_listeners/PlayerStructsLoadListener";
 import {ConnectionCapacityListener} from "../grass_listeners/ConnectionCapacityListener";
 import {PlayerAlphaListener} from "../grass_listeners/PlayerAlphaListener";
+import {MenuPage} from "../framework/MenuPage";
 
 export class AuthManager {
 
@@ -102,6 +103,14 @@ export class AuthManager {
     }
 
     return response.success;
+  }
+
+  logout() {
+    this.guildAPI.logout().then(() => {
+      localStorage.clear();
+      MenuPage.router.goto('Auth', 'index');
+      MenuPage.open();
+    });
   }
 
 }

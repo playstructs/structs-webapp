@@ -2,12 +2,15 @@
 
 namespace App\Controller;
 
+use App\Dto\ApiResponseContentDto;
 use App\Factory\PlayerPendingFactory;
 use App\Manager\AuthManager;
 use App\Manager\SignatureValidationManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -72,5 +75,29 @@ class AuthController extends AbstractController
             new SignatureValidationManager($client)
         );
         return $authManager->login($request, $security);
+    }
+
+    /**
+     * @param Security $security
+     * @return Response
+     */
+    #[Route('/api/auth/logout', name: 'api_logout', methods: ['GET'])]
+    public function logout(
+        Security $security
+    ): Response
+    {
+        $responseContent = new ApiResponseContentDto();
+        $responseContent->success = true;
+
+        try {
+            $security->logout(false);
+        } catch (Exception $e) {
+            $responseContent->errors[] = $e->getMessage();
+        }
+
+        return new JsonResponse(
+            $responseContent,
+            Response::HTTP_OK
+        );
     }
 }

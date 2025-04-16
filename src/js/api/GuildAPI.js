@@ -132,6 +132,11 @@ export class GuildAPI {
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
+  async logout() {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/auth/logout`);
+    return this.guildAPIResponseFactory.make(jsonResponse);
+  }
+
   /**
    * @param {string} playerId
    * @return {Promise<Player>}
@@ -160,7 +165,7 @@ export class GuildAPI {
   async getPlayerAddressCount(playerId, forceRefresh = false) {
     let count = this.getCachedItem('getPlayerAddressCount');
     if (count === null || forceRefresh) {
-      const count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
+      count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
       this.cacheItem('getPlayerAddressCount', count);
     }
     return parseInt(count);
