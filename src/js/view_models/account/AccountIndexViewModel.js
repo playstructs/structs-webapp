@@ -49,6 +49,7 @@ export class AccountIndexView extends AbstractViewModel {
     }.bind(this));
     document.getElementById(this.profileBtnId).addEventListener('click', () => {
       console.log('Profile');
+      MenuPage.router.goto('Account', 'profile');
     });
     document.getElementById(this.transfersBtnId).addEventListener('click', () => {
       console.log('Transfers');

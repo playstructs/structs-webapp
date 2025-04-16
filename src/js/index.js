@@ -63,5 +63,5 @@ if (gameState.lastSaveBlockHeight === 0) {
   MenuPage.router.goto('Auth', 'index');
 } else {
   MenuPage.close();
-  MenuPage.router.goto('Account', 'index');
+  MenuPage.router.restore('Account', 'index');
 }

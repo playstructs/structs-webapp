@@ -42,19 +42,19 @@ export class MenuPageRouter {
     this.goto(this.lastController, this.lastPage, this.lastOptions);
   }
 
-  restore() {
+  restore(defaultController, defaultPage, defaultOptions = {}) {
     const lastMenuPage = JSON.parse(localStorage.getItem("lastMenuPage"));
     const currentMenuPage = JSON.parse(localStorage.getItem("currentMenuPage"));
 
     if (!currentMenuPage || !lastMenuPage) {
-      throw new Error("No stored menu page to restore from.");
+      this.goto(defaultController, defaultPage, defaultOptions);
+    } else {
+      this.currentPage = lastMenuPage.page;
+      this.currentController = lastMenuPage.controller;
+      this.currentOptions = lastMenuPage.options;
+
+      this.goto(currentMenuPage.controller, currentMenuPage.page, currentMenuPage.options);
     }
-
-    this.currentPage = lastMenuPage.page;
-    this.currentController = lastMenuPage.controller;
-    this.currentOptions = lastMenuPage.options;
-
-    this.goto(currentMenuPage.controller, currentMenuPage.page, currentMenuPage.options);
   }
 
 }

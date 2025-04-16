@@ -290,6 +290,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractController__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractController */ "./js/framework/AbstractController.js");
 /* harmony import */ var _view_models_account_AccountIndexViewModel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../view_models/account/AccountIndexViewModel */ "./js/view_models/account/AccountIndexViewModel.js");
+/* harmony import */ var _view_models_account_AccountProfileViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../view_models/account/AccountProfileViewModel */ "./js/view_models/account/AccountProfileViewModel.js");
+
 
 
 
@@ -312,6 +314,11 @@ class AccountController extends _framework_AbstractController__WEBPACK_IMPORTED_
 
   index() {
     const viewModel = new _view_models_account_AccountIndexViewModel__WEBPACK_IMPORTED_MODULE_1__.AccountIndexView(this.gameState, this.guildAPI, this.authManager);
+    viewModel.render();
+  }
+
+  profile() {
+    const viewModel = new _view_models_account_AccountProfileViewModel__WEBPACK_IMPORTED_MODULE_2__.AccountProfileView(this.gameState, this.guildAPI);
     viewModel.render();
   }
 }
@@ -1389,19 +1396,19 @@ class MenuPageRouter {
     this.goto(this.lastController, this.lastPage, this.lastOptions);
   }
 
-  restore() {
+  restore(defaultController, defaultPage, defaultOptions = {}) {
     const lastMenuPage = JSON.parse(localStorage.getItem("lastMenuPage"));
     const currentMenuPage = JSON.parse(localStorage.getItem("currentMenuPage"));
 
     if (!currentMenuPage || !lastMenuPage) {
-      throw new Error("No stored menu page to restore from.");
+      this.goto(defaultController, defaultPage, defaultOptions);
+    } else {
+      this.currentPage = lastMenuPage.page;
+      this.currentController = lastMenuPage.controller;
+      this.currentOptions = lastMenuPage.options;
+
+      this.goto(currentMenuPage.controller, currentMenuPage.page, currentMenuPage.options);
     }
-
-    this.currentPage = lastMenuPage.page;
-    this.currentController = lastMenuPage.controller;
-    this.currentOptions = lastMenuPage.options;
-
-    this.goto(currentMenuPage.controller, currentMenuPage.page, currentMenuPage.options);
   }
 
 }
@@ -1859,7 +1866,7 @@ if (gameState.lastSaveBlockHeight === 0) {
   _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 } else {
   _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.close();
-  _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'index');
+  _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.restore('Account', 'index');
 }
 
 __webpack_async_result__();
@@ -3035,6 +3042,7 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
     }.bind(this));
     document.getElementById(this.profileBtnId).addEventListener('click', () => {
       console.log('Profile');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Account', 'profile');
     });
     document.getElementById(this.transfersBtnId).addEventListener('click', () => {
       console.log('Transfers');
@@ -3128,6 +3136,164 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
       this.initPageCode();
 
     });
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/view_models/account/AccountProfileViewModel.js":
+/*!***********************************************************!*\
+  !*** ./js/view_models/account/AccountProfileViewModel.js ***!
+  \***********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AccountProfileView: () => (/* binding */ AccountProfileView)
+/* harmony export */ });
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
+
+
+
+class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
+
+  /**
+   * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
+   */
+  constructor(
+    gameState,
+    guildAPI,
+  ) {
+    super();
+    this.gameState = gameState;
+    this.guildAPI = guildAPI;
+    this.editUsernameBtnId = 'account-profile-edit-username-btn';
+    this.copyPidBtnId = 'account-profile-copy-pid-btn';
+    this.copyPidBtnId2 = 'account-profile-copy-pid-btn-2';
+    this.copyAddressBtnId = 'account-profile-copy-address-btn';
+  }
+
+  getTag() {
+    return this.gameState.thisPlayer && this.gameState.thisPlayer.tag.length > 0
+      ? `[${this.gameState.thisPlayer.tag}]`
+      : '';
+  }
+
+  getUsername() {
+    return this.gameState.thisPlayer && this.gameState.thisPlayer.username.length > 0
+      ? this.gameState.thisPlayer.username
+      : 'Name Redacted';
+  }
+
+  initPageCode() {
+    document.getElementById(this.editUsernameBtnId).addEventListener('click', function () {
+      console.log('Edit Username');
+    }.bind(this));
+    document.getElementById(this.copyPidBtnId).addEventListener('click', async function () {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(this.gameState.thisPlayerId);
+      }
+    }.bind(this));
+    document.getElementById(this.copyPidBtnId2).addEventListener('click', async function () {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(this.gameState.thisPlayerId);
+      }
+    }.bind(this));
+    document.getElementById(this.copyAddressBtnId).addEventListener('click', async function () {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(this.gameState.thisPlayer.primary_address);
+      }
+    })
+  }
+
+  render () {
+    const navItems = [
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-fleet',
+        'FLEET'
+      ),
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-guild',
+        'GUILD'
+      ),
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
+        'nav-item-account',
+        'ACCOUNT'
+      )
+    ];
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems, 'nav-item-account');
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableCloseBtn();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enablePageTemplate();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateNavBtn('Profile', true, () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Account', 'index');
+    });
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateContent(`
+      <div class="profile-layout">
+        <div class="profile-header">
+          <div class="profile-header-image-container">
+            <div class="profile-header-image"></div>
+          </div>
+          <div class="profile-header-info-container">
+            <div class="profile-header-info-name sui-text-display">
+              <span class="sui-text-secondary">${this.getTag()}</span>
+              ${this.getUsername()}
+              <a id="${this.editUsernameBtnId}" href="javascript: void(0)">
+                <i class="sui-icon icon-edit sui-text-secondary"></i>
+              </a>
+            </div>
+            <div class="profile-header-info-player-id">
+              #${this.gameState.thisPlayerId}
+              <a id="${this.copyPidBtnId}" href="javascript: void(0)">
+                <div class="icon-wrapper">
+                  <i class="sui-icon icon-copy sui-text-secondary"></i>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="profile-data-card">
+          <div class="profile-data-card-header sui-text-header">Player Details</div>
+          <div class="profile-data-card-body">
+            <div class="profile-data-card-row">
+              <div>Guild</div>
+              <div>${this.gameState.thisGuild.name}</div>
+            </div>
+            <div class="profile-data-card-row">
+              <div>Player ID</div>
+              <div>
+                #${this.gameState.thisPlayerId}
+                <a id="${this.copyPidBtnId2}" href="javascript: void(0)">
+                  <i class="sui-icon icon-copy sui-text-secondary"></i>
+                </a>
+              </div>
+            </div>
+            <div class="profile-data-card-row">
+              <div>Blockchain Address</div>
+              <div>
+                Copy Address
+                <a id="${this.copyAddressBtnId}" href="javascript:void(0)">
+                  <i class="sui-icon icon-copy sui-text-secondary"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.hideAndClearDialoguePanel();
+
+    this.initPageCode();
   }
 }
 
