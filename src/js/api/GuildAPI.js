@@ -3,6 +3,7 @@ import {GuildFactory} from "../factories/GuildFactory";
 import {PlayerFactory} from "../factories/PlayerFactory";
 import {GuildAPIResponseFactory} from "../factories/GuildAPIResponseFactory";
 import {GuildAPIError} from "../errors/GuildAPIError";
+import {GuildAPICacheItemDTO} from "../dtos/GuildAPICacheItemDTO";
 
 export class GuildAPI {
 
@@ -12,6 +13,37 @@ export class GuildAPI {
     this.guildAPIResponseFactory = new GuildAPIResponseFactory();
     this.guildFactory = new GuildFactory();
     this.playerFactory = new PlayerFactory();
+  }
+
+  /**
+   * @param {string} key
+   * @param {*} value
+   */
+  cacheItem(key, value) {
+    const item = new GuildAPICacheItemDTO(value);
+    localStorage.setItem(key, JSON.stringify(item));
+  }
+
+  /**
+   * @param {string} key
+   * @param {number} ttl
+   * @return {null|*}
+   */
+  getCachedItem(key, ttl = 1000 * 60 * 60) {
+    let item = localStorage.getItem(key);
+
+    if (item === null) {
+      return null;
+    }
+
+    item = JSON.parse(item);
+
+    if (item.timestamp + ttl < Date.now()) {
+      localStorage.removeItem(key);
+      return null;
+    }
+
+    return item.value;
   }
 
   /**
@@ -122,10 +154,15 @@ export class GuildAPI {
 
   /**
    * @param {string} playerId
+   * @param {boolean} forceRefresh
    * @return {Promise<number>}
    */
-  async getPlayerAddressCount(playerId) {
-    const count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
+  async getPlayerAddressCount(playerId, forceRefresh = false) {
+    let count = this.getCachedItem('getPlayerAddressCount');
+    if (count === null || forceRefresh) {
+      const count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
+      this.cacheItem('getPlayerAddressCount', count);
+    }
     return parseInt(count);
   }
 }

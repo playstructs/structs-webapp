@@ -17,6 +17,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _factories_PlayerFactory__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../factories/PlayerFactory */ "./js/factories/PlayerFactory.js");
 /* harmony import */ var _factories_GuildAPIResponseFactory__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../factories/GuildAPIResponseFactory */ "./js/factories/GuildAPIResponseFactory.js");
 /* harmony import */ var _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../errors/GuildAPIError */ "./js/errors/GuildAPIError.js");
+/* harmony import */ var _dtos_GuildAPICacheItemDTO__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../dtos/GuildAPICacheItemDTO */ "./js/dtos/GuildAPICacheItemDTO.js");
+
 
 
 
@@ -31,6 +33,37 @@ class GuildAPI {
     this.guildAPIResponseFactory = new _factories_GuildAPIResponseFactory__WEBPACK_IMPORTED_MODULE_3__.GuildAPIResponseFactory();
     this.guildFactory = new _factories_GuildFactory__WEBPACK_IMPORTED_MODULE_1__.GuildFactory();
     this.playerFactory = new _factories_PlayerFactory__WEBPACK_IMPORTED_MODULE_2__.PlayerFactory();
+  }
+
+  /**
+   * @param {string} key
+   * @param {*} value
+   */
+  cacheItem(key, value) {
+    const item = new _dtos_GuildAPICacheItemDTO__WEBPACK_IMPORTED_MODULE_5__.GuildAPICacheItemDTO(value);
+    localStorage.setItem(key, JSON.stringify(item));
+  }
+
+  /**
+   * @param {string} key
+   * @param {number} ttl
+   * @return {null|*}
+   */
+  getCachedItem(key, ttl = 1000 * 60 * 60) {
+    let item = localStorage.getItem(key);
+
+    if (item === null) {
+      return null;
+    }
+
+    item = JSON.parse(item);
+
+    if (item.timestamp + ttl < Date.now()) {
+      localStorage.removeItem(key);
+      return null;
+    }
+
+    return item.value;
   }
 
   /**
@@ -141,10 +174,15 @@ class GuildAPI {
 
   /**
    * @param {string} playerId
+   * @param {boolean} forceRefresh
    * @return {Promise<number>}
    */
-  async getPlayerAddressCount(playerId) {
-    const count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
+  async getPlayerAddressCount(playerId, forceRefresh = false) {
+    let count = this.getCachedItem('getPlayerAddressCount');
+    if (count === null || forceRefresh) {
+      const count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
+      this.cacheItem('getPlayerAddressCount', count);
+    }
     return parseInt(count);
   }
 }
@@ -481,6 +519,26 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   orientationEnd() {
     const viewModel = new _view_models_signup_OrientationEndViewModel__WEBPACK_IMPORTED_MODULE_24__.OrientationEndViewModel();
     viewModel.render();
+  }
+}
+
+/***/ }),
+
+/***/ "./js/dtos/GuildAPICacheItemDTO.js":
+/*!*****************************************!*\
+  !*** ./js/dtos/GuildAPICacheItemDTO.js ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GuildAPICacheItemDTO: () => (/* binding */ GuildAPICacheItemDTO)
+/* harmony export */ });
+class GuildAPICacheItemDTO {
+  constructor(value) {
+    this.value = value;
+    this.timestamp = Date.now();
   }
 }
 
@@ -2931,13 +2989,13 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
   }
 
   getTag() {
-    return this.gameState.thisPlayer.tag && this.gameState.thisPlayer.tag.length > 0
+    return this.gameState.thisPlayer && this.gameState.thisPlayer.tag.length > 0
       ? `[${this.gameState.thisPlayer.tag}]`
       : '';
   }
 
   getUsername() {
-    return this.gameState.thisPlayer.username && this.gameState.thisPlayer.username.length > 0
+    return this.gameState.thisPlayer && this.gameState.thisPlayer.username.length > 0
       ? this.gameState.thisPlayer.username
       : 'Name Redacted';
   }

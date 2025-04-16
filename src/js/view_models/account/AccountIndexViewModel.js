@@ -20,13 +20,13 @@ export class AccountIndexView extends AbstractViewModel {
   }
 
   getTag() {
-    return this.gameState.thisPlayer.tag && this.gameState.thisPlayer.tag.length > 0
+    return this.gameState.thisPlayer && this.gameState.thisPlayer.tag.length > 0
       ? `[${this.gameState.thisPlayer.tag}]`
       : '';
   }
 
   getUsername() {
-    return this.gameState.thisPlayer.username && this.gameState.thisPlayer.username.length > 0
+    return this.gameState.thisPlayer && this.gameState.thisPlayer.username.length > 0
       ? this.gameState.thisPlayer.username
       : 'Name Redacted';
   }
