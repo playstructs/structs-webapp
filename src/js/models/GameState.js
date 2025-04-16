@@ -65,9 +65,7 @@ export class GameState {
     this.signingAccount = accounts[0];
 
     // Properties to prime with API
-    this.guildAPI.getPlayer(this.thisPlayerId).then((player) => {
-      this.setThisPlayer(player);
-    });
+    this.setThisPlayer(await this.guildAPI.getPlayer(this.thisPlayerId));
   }
 
   /**
