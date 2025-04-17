@@ -20,18 +20,6 @@ export class AccountProfileView extends AbstractViewModel {
     this.copyAddressBtnId = 'account-profile-copy-address-btn';
   }
 
-  getTag() {
-    return this.gameState.thisPlayer && this.gameState.thisPlayer.tag.length > 0
-      ? `[${this.gameState.thisPlayer.tag}]`
-      : '';
-  }
-
-  getUsername() {
-    return this.gameState.thisPlayer && this.gameState.thisPlayer.username.length > 0
-      ? this.gameState.thisPlayer.username
-      : 'Name Redacted';
-  }
-
   initPageCode() {
     document.getElementById(this.editUsernameBtnId).addEventListener('click', function () {
       console.log('Edit Username');
@@ -68,8 +56,8 @@ export class AccountProfileView extends AbstractViewModel {
           </div>
           <div class="profile-header-info-container">
             <div class="profile-header-info-name sui-text-display">
-              <span class="sui-text-secondary">${this.getTag()}</span>
-              ${this.getUsername()}
+              <span class="sui-text-secondary">${this.gameState.getPlayerTag()}</span>
+              ${this.gameState.getPlayerUsername()}
               <a id="${this.editUsernameBtnId}" href="javascript: void(0)">
                 <i class="sui-icon icon-edit sui-text-secondary"></i>
               </a>

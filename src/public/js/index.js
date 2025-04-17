@@ -2319,6 +2319,24 @@ class GameState {
 
     return null;
   }
+
+  /**
+   * @return {string}
+   */
+  getPlayerTag() {
+    return this.thisPlayer && this.thisPlayer.tag.length > 0
+      ? `[${this.thisPlayer.tag}]`
+      : '';
+  }
+
+  /**
+   * @return {string}
+   */
+  getPlayerUsername() {
+    return this.thisPlayer && this.thisPlayer.username.length > 0
+      ? `${this.thisPlayer.username}`
+      : 'Name Redacted';
+  }
 }
 
 
@@ -3041,18 +3059,6 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
     this.logoutBtnId = 'account-menu-logout-btn';
   }
 
-  getTag() {
-    return this.gameState.thisPlayer && this.gameState.thisPlayer.tag.length > 0
-      ? `[${this.gameState.thisPlayer.tag}]`
-      : '';
-  }
-
-  getUsername() {
-    return this.gameState.thisPlayer && this.gameState.thisPlayer.username.length > 0
-      ? this.gameState.thisPlayer.username
-      : 'Name Redacted';
-  }
-
   initPageCode() {
     document.getElementById(this.copyPidBtnId).addEventListener('click', async function () {
       if (navigator.clipboard) {
@@ -3086,8 +3092,8 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
           <div class="account-menu-index-header-row">
             <div class="account-menu-index-header-player-info">
               <div class="account-menu-index-header-player-name">
-                <span class="sui-text-secondary">${this.getTag()}</span>
-                ${this.getUsername()}
+                <span class="sui-text-secondary">${this.gameState.getPlayerTag()}</span>
+                ${this.gameState.getPlayerUsername()}
               </div>
               <div class="account-menu-index-header-player-id">
                 PID #${this.gameState.thisPlayerId}
@@ -3183,18 +3189,6 @@ class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_
     this.copyAddressBtnId = 'account-profile-copy-address-btn';
   }
 
-  getTag() {
-    return this.gameState.thisPlayer && this.gameState.thisPlayer.tag.length > 0
-      ? `[${this.gameState.thisPlayer.tag}]`
-      : '';
-  }
-
-  getUsername() {
-    return this.gameState.thisPlayer && this.gameState.thisPlayer.username.length > 0
-      ? this.gameState.thisPlayer.username
-      : 'Name Redacted';
-  }
-
   initPageCode() {
     document.getElementById(this.editUsernameBtnId).addEventListener('click', function () {
       console.log('Edit Username');
@@ -3231,8 +3225,8 @@ class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_
           </div>
           <div class="profile-header-info-container">
             <div class="profile-header-info-name sui-text-display">
-              <span class="sui-text-secondary">${this.getTag()}</span>
-              ${this.getUsername()}
+              <span class="sui-text-secondary">${this.gameState.getPlayerTag()}</span>
+              ${this.gameState.getPlayerUsername()}
               <a id="${this.editUsernameBtnId}" href="javascript: void(0)">
                 <i class="sui-icon icon-edit sui-text-secondary"></i>
               </a>

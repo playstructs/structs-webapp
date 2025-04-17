@@ -25,18 +25,6 @@ export class AccountIndexView extends AbstractViewModel {
     this.logoutBtnId = 'account-menu-logout-btn';
   }
 
-  getTag() {
-    return this.gameState.thisPlayer && this.gameState.thisPlayer.tag.length > 0
-      ? `[${this.gameState.thisPlayer.tag}]`
-      : '';
-  }
-
-  getUsername() {
-    return this.gameState.thisPlayer && this.gameState.thisPlayer.username.length > 0
-      ? this.gameState.thisPlayer.username
-      : 'Name Redacted';
-  }
-
   initPageCode() {
     document.getElementById(this.copyPidBtnId).addEventListener('click', async function () {
       if (navigator.clipboard) {
@@ -70,8 +58,8 @@ export class AccountIndexView extends AbstractViewModel {
           <div class="account-menu-index-header-row">
             <div class="account-menu-index-header-player-info">
               <div class="account-menu-index-header-player-name">
-                <span class="sui-text-secondary">${this.getTag()}</span>
-                ${this.getUsername()}
+                <span class="sui-text-secondary">${this.gameState.getPlayerTag()}</span>
+                ${this.gameState.getPlayerUsername()}
               </div>
               <div class="account-menu-index-header-player-id">
                 PID #${this.gameState.thisPlayerId}

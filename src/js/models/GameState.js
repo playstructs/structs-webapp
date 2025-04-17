@@ -191,4 +191,22 @@ export class GameState {
 
     return null;
   }
+
+  /**
+   * @return {string}
+   */
+  getPlayerTag() {
+    return this.thisPlayer && this.thisPlayer.tag.length > 0
+      ? `[${this.thisPlayer.tag}]`
+      : '';
+  }
+
+  /**
+   * @return {string}
+   */
+  getPlayerUsername() {
+    return this.thisPlayer && this.thisPlayer.username.length > 0
+      ? `${this.thisPlayer.username}`
+      : 'Name Redacted';
+  }
 }
