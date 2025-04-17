@@ -5,6 +5,7 @@ import {GuildAPIResponseFactory} from "../factories/GuildAPIResponseFactory";
 import {GuildAPIError} from "../errors/GuildAPIError";
 import {GuildAPICacheItemDTO} from "../dtos/GuildAPICacheItemDTO";
 import {InfusionFactory} from "../factories/InfusionFactory";
+import {PlayerOreStatsFactory} from "../factories/PlayerOreStatsFactory";
 
 export class GuildAPI {
 
@@ -15,6 +16,7 @@ export class GuildAPI {
     this.guildFactory = new GuildFactory();
     this.playerFactory = new PlayerFactory();
     this.infusionFactory = new InfusionFactory();
+    this.playerOreStatsFactory = new PlayerOreStatsFactory();
   }
 
   /**
@@ -173,10 +175,43 @@ export class GuildAPI {
     return parseInt(count);
   }
 
+  /**
+   * @param {string} playerId
+   * @return {Promise<Infusion>}
+   */
   async getInfusionByPlayerId(playerId) {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/infusion/player/${playerId}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.infusionFactory.make(response.data);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<PlayerOreStats>}
+   */
+  async getPlayerOreStats(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}/ore/stats`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.playerOreStatsFactory.make(response.data, playerId);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<number>}
+   */
+  async getPlayerPlanetsCompleted(playerId) {
+    const count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/planet/completed`, 'count');
+    return parseInt(count);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<number>}
+   */
+  async getPlayerRaidsLaunched(playerId) {
+    const count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/raid/launched`, 'count');
+    return parseInt(count);
   }
 }

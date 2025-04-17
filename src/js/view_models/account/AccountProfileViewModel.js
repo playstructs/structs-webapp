@@ -22,6 +22,9 @@ export class AccountProfileView extends AbstractViewModel {
     this.copyPidBtnId2 = 'account-profile-copy-pid-btn-2';
     this.copyAddressBtnId = 'account-profile-copy-address-btn';
     this.alphaInfusedId = 'account-profile-alpha-infused';
+    this.oreMinedId = 'account-profile-ore-mined';
+    this.oreStolenId = 'account-profile-ore-stolen';
+    this.oreLostId = 'account-profile-ore-lost';
     this.alphaOwnedComponent = new AlphaOwnedComponent(gameState, 'account-profile-alpha-owned');
     this.energyUsageComponent = new EnergyUsageComponent(gameState, 'account-profile-energy-usage');
     this.genericResourceComponent = new GenericResourceComponent(gameState);
@@ -29,10 +32,17 @@ export class AccountProfileView extends AbstractViewModel {
       this.genericResourceComponent.getPageCode(this.alphaInfusedId)
     ];
     this.alphaInfused = 0;
+    this.playerOreStats = null;
+    this.playerPlanetsCompleted = 0;
+    this.playerRaidsLaunched = 0;
   }
 
   async fetchPageData() {
-    this.alphaInfusedId = await this.guildAPI.getInfusionByPlayerId(this.gameState.thisPlayerId);
+    const infusion = await this.guildAPI.getInfusionByPlayerId(this.gameState.thisPlayerId);
+    this.alphaInfused = infusion.fuel;
+    this.playerOreStats = await this.guildAPI.getPlayerOreStats(this.gameState.thisPlayerId);
+    this.playerPlanetsCompleted = await this.guildAPI.getPlayerPlanetsCompleted(this.gameState.thisPlayerId);
+    this.playerRaidsLaunched = await this.guildAPI.getPlayerRaidsLaunched(this.gameState.thisPlayerId);
   }
 
   initPageCode() {
@@ -148,6 +158,59 @@ export class AccountProfileView extends AbstractViewModel {
               <div class="profile-data-card-row">
                 <div>Energy Usage</div>
                 <div>${this.energyUsageComponent.renderHTML()}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="profile-data-card">
+            <div class="profile-data-card-header sui-text-header">Statistics</div>
+            <div class="profile-data-card-body">
+              <div class="profile-data-card-row">
+                <div>Planets Completed</div>
+                <div>${this.playerPlanetsCompleted}</div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Raids Launched</div>
+                <div>${this.playerRaidsLaunched}</div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Ore Mined</div>
+                <div>
+                  ${
+                    this.genericResourceComponent.renderHTML(
+                      this.oreMinedId,
+                      'sui-icon-alpha-ore',
+                      'Ore Mined',
+                      this.playerOreStats.mined
+                    )
+                  }
+                </div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Ore Stolen</div>
+                <div>
+                  ${
+                    this.genericResourceComponent.renderHTML(
+                      this.oreStolenId,
+                      'sui-icon-alpha-ore',
+                      'Ore Stolen',
+                      this.playerOreStats.seized
+                    )
+                  }
+                </div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Ore Lost</div>
+                <div>
+                  ${
+                    this.genericResourceComponent.renderHTML(
+                      this.oreLostId,
+                      'sui-icon-alpha-ore',
+                      'Ore Lost',
+                      this.playerOreStats.forfeited
+                    )
+                  }
+                </div>
               </div>
             </div>
           </div>

@@ -19,6 +19,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../errors/GuildAPIError */ "./js/errors/GuildAPIError.js");
 /* harmony import */ var _dtos_GuildAPICacheItemDTO__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../dtos/GuildAPICacheItemDTO */ "./js/dtos/GuildAPICacheItemDTO.js");
 /* harmony import */ var _factories_InfusionFactory__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../factories/InfusionFactory */ "./js/factories/InfusionFactory.js");
+/* harmony import */ var _factories_PlayerOreStatsFactory__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../factories/PlayerOreStatsFactory */ "./js/factories/PlayerOreStatsFactory.js");
+
 
 
 
@@ -36,6 +38,7 @@ class GuildAPI {
     this.guildFactory = new _factories_GuildFactory__WEBPACK_IMPORTED_MODULE_1__.GuildFactory();
     this.playerFactory = new _factories_PlayerFactory__WEBPACK_IMPORTED_MODULE_2__.PlayerFactory();
     this.infusionFactory = new _factories_InfusionFactory__WEBPACK_IMPORTED_MODULE_6__.InfusionFactory();
+    this.playerOreStatsFactory = new _factories_PlayerOreStatsFactory__WEBPACK_IMPORTED_MODULE_7__.PlayerOreStatsFactory();
   }
 
   /**
@@ -194,11 +197,44 @@ class GuildAPI {
     return parseInt(count);
   }
 
+  /**
+   * @param {string} playerId
+   * @return {Promise<Infusion>}
+   */
   async getInfusionByPlayerId(playerId) {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/infusion/player/${playerId}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.infusionFactory.make(response.data);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<PlayerOreStats>}
+   */
+  async getPlayerOreStats(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}/ore/stats`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.playerOreStatsFactory.make(response.data, playerId);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<number>}
+   */
+  async getPlayerPlanetsCompleted(playerId) {
+    const count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/planet/completed`, 'count');
+    return parseInt(count);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<number>}
+   */
+  async getPlayerRaidsLaunched(playerId) {
+    const count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/raid/launched`, 'count');
+    return parseInt(count);
   }
 }
 
@@ -779,6 +815,39 @@ class PlayerFactory {
   make(obj) {
     const player = new _models_Player__WEBPACK_IMPORTED_MODULE_0__.Player();
     Object.assign(player, obj);
+    return player;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/factories/PlayerOreStatsFactory.js":
+/*!***********************************************!*\
+  !*** ./js/factories/PlayerOreStatsFactory.js ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlayerOreStatsFactory: () => (/* binding */ PlayerOreStatsFactory)
+/* harmony export */ });
+/* harmony import */ var _models_PlayerOreStats__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/PlayerOreStats */ "./js/models/PlayerOreStats.js");
+
+
+class PlayerOreStatsFactory {
+  make(obj, playerId) {
+    const player = new _models_PlayerOreStats__WEBPACK_IMPORTED_MODULE_0__.PlayerOreStats();
+
+    if (!obj) {
+      player.playerId = playerId;
+      player.forfeited = 0;
+      player.mined = 0;
+      player.seized = 0;
+    } else {
+      Object.assign(player, obj);
+    }
+
     return player;
   }
 }
@@ -1876,8 +1945,11 @@ const gameState = new _models_GameState__WEBPACK_IMPORTED_MODULE_2__.GameState()
 __webpack_require__.g.gameState = gameState;
 
 const guildAPI = new _api_GuildAPI__WEBPACK_IMPORTED_MODULE_3__.GuildAPI();
+__webpack_require__.g.guildAPI = guildAPI;
 
 const walletManager = new _managers_WalletManager__WEBPACK_IMPORTED_MODULE_4__.WalletManager();
+__webpack_require__.g.walletManager = walletManager;
+
 const grassManager = new _framework_GrassManager__WEBPACK_IMPORTED_MODULE_6__.GrassManager(
   "ws://localhost:1443",
   "structs.>"
@@ -2470,6 +2542,28 @@ class Player {
     this.structs_load = null;
     this.capacity = null;
     this.connection_capacity = null;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/models/PlayerOreStats.js":
+/*!*************************************!*\
+  !*** ./js/models/PlayerOreStats.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlayerOreStats: () => (/* binding */ PlayerOreStats)
+/* harmony export */ });
+class PlayerOreStats {
+  constructor() {
+    this.player_id = null;
+    this.forfeited = null;
+    this.mined = null;
+    this.seized = null;
   }
 }
 
@@ -3258,6 +3352,9 @@ class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_
     this.copyPidBtnId2 = 'account-profile-copy-pid-btn-2';
     this.copyAddressBtnId = 'account-profile-copy-address-btn';
     this.alphaInfusedId = 'account-profile-alpha-infused';
+    this.oreMinedId = 'account-profile-ore-mined';
+    this.oreStolenId = 'account-profile-ore-stolen';
+    this.oreLostId = 'account-profile-ore-lost';
     this.alphaOwnedComponent = new _components_AlphaOwnedComponent__WEBPACK_IMPORTED_MODULE_3__.AlphaOwnedComponent(gameState, 'account-profile-alpha-owned');
     this.energyUsageComponent = new _components_EnergyUsageComponent__WEBPACK_IMPORTED_MODULE_2__.EnergyUsageComponent(gameState, 'account-profile-energy-usage');
     this.genericResourceComponent = new _components_GenericResourceComponent__WEBPACK_IMPORTED_MODULE_4__.GenericResourceComponent(gameState);
@@ -3265,10 +3362,17 @@ class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_
       this.genericResourceComponent.getPageCode(this.alphaInfusedId)
     ];
     this.alphaInfused = 0;
+    this.playerOreStats = null;
+    this.playerPlanetsCompleted = 0;
+    this.playerRaidsLaunched = 0;
   }
 
   async fetchPageData() {
-    this.alphaInfusedId = await this.guildAPI.getInfusionByPlayerId(this.gameState.thisPlayerId);
+    const infusion = await this.guildAPI.getInfusionByPlayerId(this.gameState.thisPlayerId);
+    this.alphaInfused = infusion.fuel;
+    this.playerOreStats = await this.guildAPI.getPlayerOreStats(this.gameState.thisPlayerId);
+    this.playerPlanetsCompleted = await this.guildAPI.getPlayerPlanetsCompleted(this.gameState.thisPlayerId);
+    this.playerRaidsLaunched = await this.guildAPI.getPlayerRaidsLaunched(this.gameState.thisPlayerId);
   }
 
   initPageCode() {
@@ -3384,6 +3488,59 @@ class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_
               <div class="profile-data-card-row">
                 <div>Energy Usage</div>
                 <div>${this.energyUsageComponent.renderHTML()}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="profile-data-card">
+            <div class="profile-data-card-header sui-text-header">Statistics</div>
+            <div class="profile-data-card-body">
+              <div class="profile-data-card-row">
+                <div>Planets Completed</div>
+                <div>${this.playerPlanetsCompleted}</div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Raids Launched</div>
+                <div>${this.playerRaidsLaunched}</div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Ore Mined</div>
+                <div>
+                  ${
+                    this.genericResourceComponent.renderHTML(
+                      this.oreMinedId,
+                      'sui-icon-alpha-ore',
+                      'Ore Mined',
+                      this.playerOreStats.mined
+                    )
+                  }
+                </div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Ore Stolen</div>
+                <div>
+                  ${
+                    this.genericResourceComponent.renderHTML(
+                      this.oreStolenId,
+                      'sui-icon-alpha-ore',
+                      'Ore Stolen',
+                      this.playerOreStats.seized
+                    )
+                  }
+                </div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Ore Lost</div>
+                <div>
+                  ${
+                    this.genericResourceComponent.renderHTML(
+                      this.oreLostId,
+                      'sui-icon-alpha-ore',
+                      'Ore Lost',
+                      this.playerOreStats.forfeited
+                    )
+                  }
+                </div>
               </div>
             </div>
           </div>

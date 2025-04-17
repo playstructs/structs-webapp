@@ -15,8 +15,11 @@ const gameState = new GameState();
 global.gameState = gameState;
 
 const guildAPI = new GuildAPI();
+global.guildAPI = guildAPI;
 
 const walletManager = new WalletManager();
+global.walletManager = walletManager;
+
 const grassManager = new GrassManager(
   "ws://localhost:1443",
   "structs.>"

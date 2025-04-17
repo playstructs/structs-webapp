@@ -97,4 +97,55 @@ class PlayerController extends AbstractController
         $playerManager = new PlayerManager($entityManager, $validator);
         return $playerManager->transferSearch($request);
     }
+
+    /**
+     * @param string $player_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/player/{player_id}/ore/stats', name: 'api_get_player_ore_stats', methods: ['GET'])]
+    public function getPlayerOreStats(
+        string $player_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerManager = new PlayerManager($entityManager, $validator);
+        return $playerManager->getPlayerOreStats($player_id);
+    }
+
+    /**
+     * @param string $player_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/player/{player_id}/planet/completed', name: 'api_get_player_planets_completed', methods: ['GET'])]
+    public function getPlayerPlanetsCompleted(
+        string $player_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerManager = new PlayerManager($entityManager, $validator);
+        return $playerManager->getPlayerPlanetsCompleted($player_id);
+    }
+
+    /**
+     * @param string $player_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/player/{player_id}/raid/launched', name: 'api_get_player_raids_launched', methods: ['GET'])]
+    public function getPlayerRaidsLaunched(
+        string $player_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerManager = new PlayerManager($entityManager, $validator);
+        return $playerManager->getPlayerRaidsLaunched($player_id);
+    }
 }

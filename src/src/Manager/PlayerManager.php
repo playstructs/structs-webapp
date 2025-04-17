@@ -441,4 +441,89 @@ class PlayerManager
             $requiredFields
         );
     }
+
+    /**
+     * @param string $player_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getPlayerOreStats(string $player_id): Response
+    {
+        $query = "
+            SELECT
+              object_id AS player_id,
+              COALESCE(SUM(CASE WHEN action = 'forfeited' THEN amount ELSE 0 END), 0) AS forfeited,
+              COALESCE(SUM(CASE WHEN action = 'mined' THEN amount ELSE 0 END), 0) AS mined,
+              COALESCE(SUM(CASE WHEN action = 'seized' THEN amount ELSE 0 END), 0) AS seized
+            FROM ledger
+            WHERE object_id = :player_id
+            GROUP BY object_id
+            LIMIT 1;
+        ";
+
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+
+    /**
+     * @param string $player_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getPlayerPlanetsCompleted(string $player_id): Response
+    {
+        $query = "
+            SELECT count(1) 
+            FROM planet 
+            WHERE status = 'complete' 
+              AND owner = :player_id
+        ";
+
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+
+    /**
+     * @param string $player_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getPlayerRaidsLaunched(string $player_id): Response
+    {
+        $query = "
+            SELECT count(1) 
+            FROM planet_activity pa
+            INNER JOIN planet p
+                ON pa.planet_id = p.id
+            WHERE pa.category = 'fleet_depart'
+            AND p.owner = :player_id
+        ";
+
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
 }
