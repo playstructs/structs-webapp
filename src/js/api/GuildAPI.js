@@ -4,6 +4,7 @@ import {PlayerFactory} from "../factories/PlayerFactory";
 import {GuildAPIResponseFactory} from "../factories/GuildAPIResponseFactory";
 import {GuildAPIError} from "../errors/GuildAPIError";
 import {GuildAPICacheItemDTO} from "../dtos/GuildAPICacheItemDTO";
+import {InfusionFactory} from "../factories/InfusionFactory";
 
 export class GuildAPI {
 
@@ -13,6 +14,7 @@ export class GuildAPI {
     this.guildAPIResponseFactory = new GuildAPIResponseFactory();
     this.guildFactory = new GuildFactory();
     this.playerFactory = new PlayerFactory();
+    this.infusionFactory = new InfusionFactory();
   }
 
   /**
@@ -169,5 +171,12 @@ export class GuildAPI {
       this.cacheItem('getPlayerAddressCount', count);
     }
     return parseInt(count);
+  }
+
+  async getInfusionByPlayerId(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/infusion/player/${playerId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.infusionFactory.make(response.data);
   }
 }

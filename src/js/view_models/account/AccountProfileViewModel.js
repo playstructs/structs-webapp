@@ -1,5 +1,8 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
+import {EnergyUsageComponent} from "../components/EnergyUsageComponent";
+import {AlphaOwnedComponent} from "../components/AlphaOwnedComponent";
+import {GenericResourceComponent} from "../components/GenericResourceComponent";
 
 export class AccountProfileView extends AbstractViewModel {
 
@@ -18,9 +21,28 @@ export class AccountProfileView extends AbstractViewModel {
     this.copyPidBtnId = 'account-profile-copy-pid-btn';
     this.copyPidBtnId2 = 'account-profile-copy-pid-btn-2';
     this.copyAddressBtnId = 'account-profile-copy-address-btn';
+    this.alphaInfusedId = 'account-profile-alpha-infused';
+    this.alphaOwnedComponent = new AlphaOwnedComponent(gameState, 'account-profile-alpha-owned');
+    this.energyUsageComponent = new EnergyUsageComponent(gameState, 'account-profile-energy-usage');
+    this.genericResourceComponent = new GenericResourceComponent(gameState);
+    this.genericResourcePageCode = [
+      this.genericResourceComponent.getPageCode(this.alphaInfusedId)
+    ];
+    this.alphaInfused = 0;
+  }
+
+  async fetchPageData() {
+    this.alphaInfusedId = await this.guildAPI.getInfusionByPlayerId(this.gameState.thisPlayerId);
   }
 
   initPageCode() {
+    this.alphaOwnedComponent.initPageCode();
+    this.energyUsageComponent.initPageCode();
+
+    for (let i = 0; i < this.genericResourcePageCode.length; i++) {
+      this.genericResourcePageCode[i]();
+    }
+
     document.getElementById(this.editUsernameBtnId).addEventListener('click', function () {
       console.log('Edit Username');
     }.bind(this));
@@ -42,68 +64,101 @@ export class AccountProfileView extends AbstractViewModel {
   }
 
   render () {
-    MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
+    this.fetchPageData().then(() => {
 
-    MenuPage.setPageTemplateHeaderBtn('Profile', true, () => {
-      MenuPage.router.goto('Account', 'index');
-    });
+      MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
-    MenuPage.setPageTemplateContent(`
-      <div class="profile-layout">
-        <div class="profile-header">
-          <div class="profile-header-image-container">
-            <div class="profile-header-image"></div>
-          </div>
-          <div class="profile-header-info-container">
-            <div class="profile-header-info-name sui-text-display">
-              <span class="sui-text-secondary">${this.gameState.getPlayerTag()}</span>
-              ${this.gameState.getPlayerUsername()}
-              <a id="${this.editUsernameBtnId}" href="javascript: void(0)">
-                <i class="sui-icon icon-edit sui-text-secondary"></i>
-              </a>
+      MenuPage.setPageTemplateHeaderBtn('Profile', true, () => {
+        MenuPage.router.goto('Account', 'index');
+      });
+
+      MenuPage.setPageTemplateContent(`
+        <div class="profile-layout">
+          <div class="profile-header">
+            <div class="profile-header-image-container">
+              <div class="profile-header-image"></div>
             </div>
-            <div class="profile-header-info-player-id">
-              #${this.gameState.thisPlayerId}
-              <a id="${this.copyPidBtnId}" href="javascript: void(0)">
-                <div class="icon-wrapper">
-                  <i class="sui-icon icon-copy sui-text-secondary"></i>
-                </div>
-              </a>
-            </div>
-          </div>
-        </div>
-        <div class="profile-data-card">
-          <div class="profile-data-card-header sui-text-header">Player Details</div>
-          <div class="profile-data-card-body">
-            <div class="profile-data-card-row">
-              <div>Guild</div>
-              <div>${this.gameState.thisGuild.name}</div>
-            </div>
-            <div class="profile-data-card-row">
-              <div>Player ID</div>
-              <div>
+            <div class="profile-header-info-container">
+              <div class="profile-header-info-name sui-text-display">
+                <span class="sui-text-secondary">${this.gameState.getPlayerTag()}</span>
+                ${this.gameState.getPlayerUsername()}
+                <a id="${this.editUsernameBtnId}" href="javascript: void(0)">
+                  <i class="sui-icon icon-edit sui-text-secondary"></i>
+                </a>
+              </div>
+              <div class="profile-header-info-player-id">
                 #${this.gameState.thisPlayerId}
-                <a id="${this.copyPidBtnId2}" href="javascript: void(0)">
-                  <i class="sui-icon icon-copy sui-text-secondary"></i>
-                </a>
-              </div>
-            </div>
-            <div class="profile-data-card-row">
-              <div>Blockchain Address</div>
-              <div>
-                Copy Address
-                <a id="${this.copyAddressBtnId}" href="javascript:void(0)">
-                  <i class="sui-icon icon-copy sui-text-secondary"></i>
+                <a id="${this.copyPidBtnId}" href="javascript: void(0)">
+                  <div class="icon-wrapper">
+                    <i class="sui-icon icon-copy sui-text-secondary"></i>
+                  </div>
                 </a>
               </div>
             </div>
           </div>
+          
+          <div class="profile-data-card">
+            <div class="profile-data-card-header sui-text-header">Player Details</div>
+            <div class="profile-data-card-body">
+              <div class="profile-data-card-row">
+                <div>Guild</div>
+                <div>${this.gameState.thisGuild.name}</div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Player ID</div>
+                <div>
+                  #${this.gameState.thisPlayerId}
+                  <a id="${this.copyPidBtnId2}" href="javascript: void(0)">
+                    <i class="sui-icon icon-copy sui-text-secondary"></i>
+                  </a>
+                </div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Blockchain Address</div>
+                <div>
+                  Copy Address
+                  <a id="${this.copyAddressBtnId}" href="javascript:void(0)">
+                    <i class="sui-icon icon-copy sui-text-secondary"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="profile-data-card">
+            <div class="profile-data-card-header sui-text-header">Power</div>
+            <div class="profile-data-card-body">
+              <div class="profile-data-card-row">
+                <div>Alpha Matter</div>
+                <div>${this.alphaOwnedComponent.renderHTML()}</div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Alpha Infused</div>
+                <div>
+                  ${
+                    this.genericResourceComponent.renderHTML(
+                      this.alphaInfusedId, 
+                      'sui-icon-alpha-matter', 
+                      'Alpha Infused', 
+                      this.alphaInfused
+                    )
+                  }
+                </div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Energy Usage</div>
+                <div>${this.energyUsageComponent.renderHTML()}</div>
+              </div>
+            </div>
+          </div>
+          
         </div>
-      </div>
-    `);
+      `);
 
-    MenuPage.hideAndClearDialoguePanel();
+      MenuPage.hideAndClearDialoguePanel();
 
-    this.initPageCode();
+      this.initPageCode();
+
+    });
   }
 }

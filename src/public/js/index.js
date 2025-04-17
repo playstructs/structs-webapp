@@ -18,6 +18,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _factories_GuildAPIResponseFactory__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../factories/GuildAPIResponseFactory */ "./js/factories/GuildAPIResponseFactory.js");
 /* harmony import */ var _errors_GuildAPIError__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../errors/GuildAPIError */ "./js/errors/GuildAPIError.js");
 /* harmony import */ var _dtos_GuildAPICacheItemDTO__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../dtos/GuildAPICacheItemDTO */ "./js/dtos/GuildAPICacheItemDTO.js");
+/* harmony import */ var _factories_InfusionFactory__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../factories/InfusionFactory */ "./js/factories/InfusionFactory.js");
+
 
 
 
@@ -33,6 +35,7 @@ class GuildAPI {
     this.guildAPIResponseFactory = new _factories_GuildAPIResponseFactory__WEBPACK_IMPORTED_MODULE_3__.GuildAPIResponseFactory();
     this.guildFactory = new _factories_GuildFactory__WEBPACK_IMPORTED_MODULE_1__.GuildFactory();
     this.playerFactory = new _factories_PlayerFactory__WEBPACK_IMPORTED_MODULE_2__.PlayerFactory();
+    this.infusionFactory = new _factories_InfusionFactory__WEBPACK_IMPORTED_MODULE_6__.InfusionFactory();
   }
 
   /**
@@ -189,6 +192,13 @@ class GuildAPI {
       this.cacheItem('getPlayerAddressCount', count);
     }
     return parseInt(count);
+  }
+
+  async getInfusionByPlayerId(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/infusion/player/${playerId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.infusionFactory.make(response.data);
   }
 }
 
@@ -722,6 +732,30 @@ class GuildFactory {
     const guild = new _models_Guild__WEBPACK_IMPORTED_MODULE_0__.Guild();
     Object.assign(guild, obj);
     return guild;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/factories/InfusionFactory.js":
+/*!*****************************************!*\
+  !*** ./js/factories/InfusionFactory.js ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   InfusionFactory: () => (/* binding */ InfusionFactory)
+/* harmony export */ });
+/* harmony import */ var _models_Infusion__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/Infusion */ "./js/models/Infusion.js");
+
+
+class InfusionFactory {
+  make(obj) {
+    const infusion = new _models_Infusion__WEBPACK_IMPORTED_MODULE_0__.Infusion();
+    Object.assign(infusion, obj);
+    return infusion;
   }
 }
 
@@ -2377,6 +2411,36 @@ class Guild {
 
 /***/ }),
 
+/***/ "./js/models/Infusion.js":
+/*!*******************************!*\
+  !*** ./js/models/Infusion.js ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Infusion: () => (/* binding */ Infusion)
+/* harmony export */ });
+class Infusion {
+  constructor() {
+    this.destination_id = null;
+    this.address = null;
+    this.destination_type = null;
+    this.player_id = null;
+    this.fuel = null;
+    this.defusing = null;
+    this.power = null;
+    this.ratio = null;
+    this.commission = null;
+    this.created_at = null;
+    this.updated_at = null;
+    this.join_infusion_minimum = null;
+  }
+}
+
+/***/ }),
+
 /***/ "./js/models/Player.js":
 /*!*****************************!*\
   !*** ./js/models/Player.js ***!
@@ -3166,7 +3230,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
 /* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _components_EnergyUsageComponent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../components/EnergyUsageComponent */ "./js/view_models/components/EnergyUsageComponent.js");
+/* harmony import */ var _components_AlphaOwnedComponent__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../components/AlphaOwnedComponent */ "./js/view_models/components/AlphaOwnedComponent.js");
+/* harmony import */ var _components_GenericResourceComponent__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../components/GenericResourceComponent */ "./js/view_models/components/GenericResourceComponent.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
+
+
 
 
 
@@ -3187,9 +3257,28 @@ class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_
     this.copyPidBtnId = 'account-profile-copy-pid-btn';
     this.copyPidBtnId2 = 'account-profile-copy-pid-btn-2';
     this.copyAddressBtnId = 'account-profile-copy-address-btn';
+    this.alphaInfusedId = 'account-profile-alpha-infused';
+    this.alphaOwnedComponent = new _components_AlphaOwnedComponent__WEBPACK_IMPORTED_MODULE_3__.AlphaOwnedComponent(gameState, 'account-profile-alpha-owned');
+    this.energyUsageComponent = new _components_EnergyUsageComponent__WEBPACK_IMPORTED_MODULE_2__.EnergyUsageComponent(gameState, 'account-profile-energy-usage');
+    this.genericResourceComponent = new _components_GenericResourceComponent__WEBPACK_IMPORTED_MODULE_4__.GenericResourceComponent(gameState);
+    this.genericResourcePageCode = [
+      this.genericResourceComponent.getPageCode(this.alphaInfusedId)
+    ];
+    this.alphaInfused = 0;
+  }
+
+  async fetchPageData() {
+    this.alphaInfusedId = await this.guildAPI.getInfusionByPlayerId(this.gameState.thisPlayerId);
   }
 
   initPageCode() {
+    this.alphaOwnedComponent.initPageCode();
+    this.energyUsageComponent.initPageCode();
+
+    for (let i = 0; i < this.genericResourcePageCode.length; i++) {
+      this.genericResourcePageCode[i]();
+    }
+
     document.getElementById(this.editUsernameBtnId).addEventListener('click', function () {
       console.log('Edit Username');
     }.bind(this));
@@ -3211,69 +3300,102 @@ class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_
   }
 
   render () {
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enablePageTemplate(_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.navItemAccountId);
+    this.fetchPageData().then(() => {
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setPageTemplateHeaderBtn('Profile', true, () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'index');
-    });
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enablePageTemplate(_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.navItemAccountId);
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setPageTemplateContent(`
-      <div class="profile-layout">
-        <div class="profile-header">
-          <div class="profile-header-image-container">
-            <div class="profile-header-image"></div>
-          </div>
-          <div class="profile-header-info-container">
-            <div class="profile-header-info-name sui-text-display">
-              <span class="sui-text-secondary">${this.gameState.getPlayerTag()}</span>
-              ${this.gameState.getPlayerUsername()}
-              <a id="${this.editUsernameBtnId}" href="javascript: void(0)">
-                <i class="sui-icon icon-edit sui-text-secondary"></i>
-              </a>
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setPageTemplateHeaderBtn('Profile', true, () => {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'index');
+      });
+
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setPageTemplateContent(`
+        <div class="profile-layout">
+          <div class="profile-header">
+            <div class="profile-header-image-container">
+              <div class="profile-header-image"></div>
             </div>
-            <div class="profile-header-info-player-id">
-              #${this.gameState.thisPlayerId}
-              <a id="${this.copyPidBtnId}" href="javascript: void(0)">
-                <div class="icon-wrapper">
-                  <i class="sui-icon icon-copy sui-text-secondary"></i>
-                </div>
-              </a>
-            </div>
-          </div>
-        </div>
-        <div class="profile-data-card">
-          <div class="profile-data-card-header sui-text-header">Player Details</div>
-          <div class="profile-data-card-body">
-            <div class="profile-data-card-row">
-              <div>Guild</div>
-              <div>${this.gameState.thisGuild.name}</div>
-            </div>
-            <div class="profile-data-card-row">
-              <div>Player ID</div>
-              <div>
+            <div class="profile-header-info-container">
+              <div class="profile-header-info-name sui-text-display">
+                <span class="sui-text-secondary">${this.gameState.getPlayerTag()}</span>
+                ${this.gameState.getPlayerUsername()}
+                <a id="${this.editUsernameBtnId}" href="javascript: void(0)">
+                  <i class="sui-icon icon-edit sui-text-secondary"></i>
+                </a>
+              </div>
+              <div class="profile-header-info-player-id">
                 #${this.gameState.thisPlayerId}
-                <a id="${this.copyPidBtnId2}" href="javascript: void(0)">
-                  <i class="sui-icon icon-copy sui-text-secondary"></i>
-                </a>
-              </div>
-            </div>
-            <div class="profile-data-card-row">
-              <div>Blockchain Address</div>
-              <div>
-                Copy Address
-                <a id="${this.copyAddressBtnId}" href="javascript:void(0)">
-                  <i class="sui-icon icon-copy sui-text-secondary"></i>
+                <a id="${this.copyPidBtnId}" href="javascript: void(0)">
+                  <div class="icon-wrapper">
+                    <i class="sui-icon icon-copy sui-text-secondary"></i>
+                  </div>
                 </a>
               </div>
             </div>
           </div>
+          
+          <div class="profile-data-card">
+            <div class="profile-data-card-header sui-text-header">Player Details</div>
+            <div class="profile-data-card-body">
+              <div class="profile-data-card-row">
+                <div>Guild</div>
+                <div>${this.gameState.thisGuild.name}</div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Player ID</div>
+                <div>
+                  #${this.gameState.thisPlayerId}
+                  <a id="${this.copyPidBtnId2}" href="javascript: void(0)">
+                    <i class="sui-icon icon-copy sui-text-secondary"></i>
+                  </a>
+                </div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Blockchain Address</div>
+                <div>
+                  Copy Address
+                  <a id="${this.copyAddressBtnId}" href="javascript:void(0)">
+                    <i class="sui-icon icon-copy sui-text-secondary"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="profile-data-card">
+            <div class="profile-data-card-header sui-text-header">Power</div>
+            <div class="profile-data-card-body">
+              <div class="profile-data-card-row">
+                <div>Alpha Matter</div>
+                <div>${this.alphaOwnedComponent.renderHTML()}</div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Alpha Infused</div>
+                <div>
+                  ${
+                    this.genericResourceComponent.renderHTML(
+                      this.alphaInfusedId, 
+                      'sui-icon-alpha-matter', 
+                      'Alpha Infused', 
+                      this.alphaInfused
+                    )
+                  }
+                </div>
+              </div>
+              <div class="profile-data-card-row">
+                <div>Energy Usage</div>
+                <div>${this.energyUsageComponent.renderHTML()}</div>
+              </div>
+            </div>
+          </div>
+          
         </div>
-      </div>
-    `);
+      `);
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
 
-    this.initPageCode();
+      this.initPageCode();
+
+    });
   }
 }
 
@@ -3428,6 +3550,57 @@ class EnergyUsageComponent extends _framework_AbstractViewModelComponent__WEBPAC
       >
         <span class="${this.energyUsageClass}"></span>
         <i class="sui-icon sui-icon-energy"></i>
+      </a>
+    `;
+  }
+}
+
+/***/ }),
+
+/***/ "./js/view_models/components/GenericResourceComponent.js":
+/*!***************************************************************!*\
+  !*** ./js/view_models/components/GenericResourceComponent.js ***!
+  \***************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GenericResourceComponent: () => (/* binding */ GenericResourceComponent)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+class GenericResourceComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
+
+  constructor(gameState) {
+    super(gameState);
+  }
+
+  getPageCode(elementId) {
+    return () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.sui.tooltip.init(document.getElementById(elementId));
+    }
+  }
+
+  renderHTML(
+    elementId,
+    iconClass,
+    toolTipText,
+    value
+  ) {
+    return `
+      <a 
+        id="${elementId}"
+        class="sui-resource"
+        href="javascript: void(0)" 
+        data-sui-tooltip="${toolTipText}"
+        data-sui-mod-placement="bottom"
+      >
+        <span>${value}</span>
+        <i class="sui-icon ${iconClass}"></i>
       </a>
     `;
   }
