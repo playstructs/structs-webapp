@@ -1,4 +1,3 @@
-import {NavItemDTO} from "../../dtos/NavItemDTO";
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 
@@ -62,26 +61,9 @@ export class AccountIndexView extends AbstractViewModel {
   render () {
     this.guildAPI.getPlayerAddressCount(this.gameState.thisPlayerId).then((addressCount) => {
 
-      const navItems = [
-        new NavItemDTO(
-          'nav-item-fleet',
-          'FLEET'
-        ),
-        new NavItemDTO(
-          'nav-item-guild',
-          'GUILD'
-        ),
-        new NavItemDTO(
-          'nav-item-account',
-          'ACCOUNT'
-        )
-      ];
-      MenuPage.setNavItems(navItems, 'nav-item-account');
-      MenuPage.enableCloseBtn();
+      MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
-      MenuPage.enablePageTemplate();
-
-      MenuPage.setPageTemplateNavBtn('Account');
+      MenuPage.setPageTemplateHeaderBtn('Account');
 
       MenuPage.setPageTemplateContent(`
         <div class="menu-index-layout">

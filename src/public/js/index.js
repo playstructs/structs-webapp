@@ -1085,11 +1085,32 @@ class MenuPage {
 
   static pageTemplateContentId = 'menu-page-template-content';
 
+  static navItemFleetId = 'nav-item-fleet';
+
+  static navItemGuildId = 'nav-item-guild';
+
+  static navItemAccountId = 'nav-item-Account';
+
   /* Element IDs End */
 
   static router = new _MenuPageRouter__WEBPACK_IMPORTED_MODULE_0__.MenuPageRouter();
 
   static sui = new _sui_SUI__WEBPACK_IMPORTED_MODULE_2__.SUI();
+
+  static menuNavItems = [
+    new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+      MenuPage.navItemFleetId,
+      'FLEET'
+    ),
+    new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+      MenuPage.navItemGuildId,
+      'GUILD'
+    ),
+    new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+      MenuPage.navItemAccountId,
+      'ACCOUNT'
+    )
+  ];
 
   /* Dynamic Handlers Start */
 
@@ -1280,7 +1301,10 @@ class MenuPage {
     MenuPage.initDialogueBtnBListener();
   }
 
-  static enablePageTemplate() {
+  static enablePageTemplate(activeNavItemId = null) {
+
+    MenuPage.setNavItems(MenuPage.menuNavItems, activeNavItemId);
+    MenuPage.enableCloseBtn();
 
     const energyUsageComponent = new _view_models_components_EnergyUsageComponent__WEBPACK_IMPORTED_MODULE_3__.EnergyUsageComponent(
       MenuPage.gameState,
@@ -1327,7 +1351,7 @@ class MenuPage {
     MenuPage.initPageTemplateNavBtnListener();
   }
 
-  static setPageTemplateNavBtn(label, showBackIcon = false, handler = () => {}) {
+  static setPageTemplateHeaderBtn(label, showBackIcon = false, handler = () => {}) {
     const backIcon = showBackIcon ? '<i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>' : '';
     document.getElementById(this.pageTemplateNavBtnId).innerHTML = `${backIcon} ${label}`;
     this.pageTemplateNavBtnHandler = handler;
@@ -2987,15 +3011,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   AccountIndexView: () => (/* binding */ AccountIndexView)
 /* harmony export */ });
-/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
 
 
 
-
-class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
+class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__.AbstractViewModel {
 
   /**
    * @param {GameState} gameState
@@ -3042,7 +3064,7 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
     }.bind(this));
     document.getElementById(this.profileBtnId).addEventListener('click', () => {
       console.log('Profile');
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Account', 'profile');
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'profile');
     });
     document.getElementById(this.transfersBtnId).addEventListener('click', () => {
       console.log('Transfers');
@@ -3055,28 +3077,11 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
   render () {
     this.guildAPI.getPlayerAddressCount(this.gameState.thisPlayerId).then((addressCount) => {
 
-      const navItems = [
-        new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
-          'nav-item-fleet',
-          'FLEET'
-        ),
-        new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
-          'nav-item-guild',
-          'GUILD'
-        ),
-        new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
-          'nav-item-account',
-          'ACCOUNT'
-        )
-      ];
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems, 'nav-item-account');
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableCloseBtn();
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enablePageTemplate(_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.navItemAccountId);
 
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enablePageTemplate();
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setPageTemplateHeaderBtn('Account');
 
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateNavBtn('Account');
-
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateContent(`
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setPageTemplateContent(`
         <div class="menu-index-layout">
           <div class="account-menu-index-header-row">
             <div class="account-menu-index-header-player-info">
@@ -3131,7 +3136,7 @@ class AccountIndexView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
         </div>
       `);
 
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.hideAndClearDialoguePanel();
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
 
       this.initPageCode();
 
@@ -3153,15 +3158,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   AccountProfileView: () => (/* binding */ AccountProfileView)
 /* harmony export */ });
-/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
 
 
 
-
-class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_2__.AbstractViewModel {
+class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__.AbstractViewModel {
 
   /**
    * @param {GameState} gameState
@@ -3214,30 +3217,13 @@ class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_
   }
 
   render () {
-    const navItems = [
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
-        'nav-item-fleet',
-        'FLEET'
-      ),
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
-        'nav-item-guild',
-        'GUILD'
-      ),
-      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_0__.NavItemDTO(
-        'nav-item-account',
-        'ACCOUNT'
-      )
-    ];
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setNavItems(navItems, 'nav-item-account');
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enableCloseBtn();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enablePageTemplate(_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.navItemAccountId);
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.enablePageTemplate();
-
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateNavBtn('Profile', true, () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Account', 'index');
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setPageTemplateHeaderBtn('Profile', true, () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'index');
     });
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.setPageTemplateContent(`
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setPageTemplateContent(`
       <div class="profile-layout">
         <div class="profile-header">
           <div class="profile-header-image-container">
@@ -3291,7 +3277,7 @@ class AccountProfileView extends _framework_AbstractViewModel__WEBPACK_IMPORTED_
       </div>
     `);
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.hideAndClearDialoguePanel();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
 
     this.initPageCode();
   }

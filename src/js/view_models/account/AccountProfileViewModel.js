@@ -1,4 +1,3 @@
-import {NavItemDTO} from "../../dtos/NavItemDTO";
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 
@@ -55,26 +54,9 @@ export class AccountProfileView extends AbstractViewModel {
   }
 
   render () {
-    const navItems = [
-      new NavItemDTO(
-        'nav-item-fleet',
-        'FLEET'
-      ),
-      new NavItemDTO(
-        'nav-item-guild',
-        'GUILD'
-      ),
-      new NavItemDTO(
-        'nav-item-account',
-        'ACCOUNT'
-      )
-    ];
-    MenuPage.setNavItems(navItems, 'nav-item-account');
-    MenuPage.enableCloseBtn();
+    MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
-    MenuPage.enablePageTemplate();
-
-    MenuPage.setPageTemplateNavBtn('Profile', true, () => {
+    MenuPage.setPageTemplateHeaderBtn('Profile', true, () => {
       MenuPage.router.goto('Account', 'index');
     });
 

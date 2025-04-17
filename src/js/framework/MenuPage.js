@@ -44,11 +44,32 @@ export class MenuPage {
 
   static pageTemplateContentId = 'menu-page-template-content';
 
+  static navItemFleetId = 'nav-item-fleet';
+
+  static navItemGuildId = 'nav-item-guild';
+
+  static navItemAccountId = 'nav-item-Account';
+
   /* Element IDs End */
 
   static router = new MenuPageRouter();
 
   static sui = new SUI();
+
+  static menuNavItems = [
+    new NavItemDTO(
+      MenuPage.navItemFleetId,
+      'FLEET'
+    ),
+    new NavItemDTO(
+      MenuPage.navItemGuildId,
+      'GUILD'
+    ),
+    new NavItemDTO(
+      MenuPage.navItemAccountId,
+      'ACCOUNT'
+    )
+  ];
 
   /* Dynamic Handlers Start */
 
@@ -239,7 +260,10 @@ export class MenuPage {
     MenuPage.initDialogueBtnBListener();
   }
 
-  static enablePageTemplate() {
+  static enablePageTemplate(activeNavItemId = null) {
+
+    MenuPage.setNavItems(MenuPage.menuNavItems, activeNavItemId);
+    MenuPage.enableCloseBtn();
 
     const energyUsageComponent = new EnergyUsageComponent(
       MenuPage.gameState,
@@ -286,7 +310,7 @@ export class MenuPage {
     MenuPage.initPageTemplateNavBtnListener();
   }
 
-  static setPageTemplateNavBtn(label, showBackIcon = false, handler = () => {}) {
+  static setPageTemplateHeaderBtn(label, showBackIcon = false, handler = () => {}) {
     const backIcon = showBackIcon ? '<i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>' : '';
     document.getElementById(this.pageTemplateNavBtnId).innerHTML = `${backIcon} ${label}`;
     this.pageTemplateNavBtnHandler = handler;
