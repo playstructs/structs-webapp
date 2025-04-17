@@ -188,30 +188,45 @@ export class GuildAPI {
 
   /**
    * @param {string} playerId
+   * @param {boolean} forceRefresh
    * @return {Promise<PlayerOreStats>}
    */
-  async getPlayerOreStats(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}/ore/stats`);
-    const response = this.guildAPIResponseFactory.make(jsonResponse);
-    this.handleResponseFailure(response);
+  async getPlayerOreStats(playerId, forceRefresh = false) {
+    let response = this.getCachedItem('getPlayerOreStats');
+    if (response === null || forceRefresh) {
+      const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}/ore/stats`);
+      response = this.guildAPIResponseFactory.make(jsonResponse);
+      this.handleResponseFailure(response);
+      this.cacheItem('getPlayerOreStats', response);
+    }
     return this.playerOreStatsFactory.make(response.data, playerId);
   }
 
   /**
    * @param {string} playerId
+   * @param {boolean} forceRefresh
    * @return {Promise<number>}
    */
-  async getPlayerPlanetsCompleted(playerId) {
-    const count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/planet/completed`, 'count');
+  async getPlayerPlanetsCompleted(playerId, forceRefresh = false) {
+    let count = this.getCachedItem('getPlayerPlanetsCompleted');
+    if (count === null || forceRefresh) {
+      const count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/planet/completed`, 'count');
+      this.cacheItem('getPlayerPlanetsCompleted', count);
+    }
     return parseInt(count);
   }
 
   /**
    * @param {string} playerId
+   * @param {boolean} forceRefresh
    * @return {Promise<number>}
    */
-  async getPlayerRaidsLaunched(playerId) {
-    const count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/raid/launched`, 'count');
+  async getPlayerRaidsLaunched(playerId, forceRefresh = false) {
+    let count = this.getCachedItem('getPlayerRaidsLaunched');
+    if (count === null || forceRefresh) {
+      const count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/raid/launched`, 'count');
+      this.cacheItem('getPlayerRaidsLaunched', count);
+    }
     return parseInt(count);
   }
 }
