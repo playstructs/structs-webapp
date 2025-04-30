@@ -4,21 +4,22 @@ import {FEE} from "../constants/Fee";
 
 export class PlanetManager {
 
-  constructor(gameState) {
+  /**
+   * @param {GameState} gameState
+   * @param {SigningClientManager} signingClientManager
+   */
+  constructor(gameState, signingClientManager) {
     this.gameState = gameState;
+    this.signingClientManager = signingClientManager;
   }
 
   async findNewPlanet() {
+    const msg = this.signingClientManager.createMsgPlanetExplore(
+      this.gameState.thisPlayer.primary_address,
+      this.gameState.thisPlayerId
+    );
 
-    const msg = {
-      typeUrl: "/di.MsgPlanetExplore",
-      value: {
-        creator: this.gameState.thisPlayer.primary_address,
-        playerId: this.gameState.thisPlayerId
-      }
-    };
-
-    return await this.gameState.server.client.signAndBroadcast(
+    return await this.gameState.signingClient.signAndBroadcast(
       this.gameState.signingAccount.address,
       [msg],
       FEE

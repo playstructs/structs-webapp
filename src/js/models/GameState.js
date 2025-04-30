@@ -25,7 +25,7 @@ export class GameState {
     /* Must Be Re-instantiated On Load */
     this.wallet = null;
     this.signingAccount = null;
-    this.server = null;
+    this.signingClient = null;
 
     /* API Primed Data */
     this.thisGuild = null;

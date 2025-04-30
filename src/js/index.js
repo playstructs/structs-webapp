@@ -9,13 +9,8 @@ import {BlockListener} from "./grass_listeners/BlockListener";
 import {HUDViewModel} from "./view_models/HUDViewModel";
 import {AccountController} from "./controllers/AccountController";
 
-import { MsgPlanetExplore } from "./ts/structs.structs/types/structs/structs/tx";
-import {SigningStargateClient} from "@cosmjs/stargate";
-import { defaultRegistryTypes } from '@cosmjs/stargate';
-import {Registry} from "@cosmjs/proto-signing";
-// noinspection ES6PreferShortImport
-import { msgTypes } from './ts/structs.structs/registry';
-import { FEE } from "./constants/Fee";
+import {SigningClientManager} from "./factories/SigningClientManager";
+import {PlanetManager} from "./managers/PlanetManager";
 
 
 // localStorage.clear();
@@ -53,6 +48,7 @@ const accountController = new AccountController(
   guildAPI,
   authManager
 );
+const signingClientFactory = new SigningClientManager();
 
 MenuPage.gameState = gameState;
 MenuPage.router.registerController(authController);
@@ -74,81 +70,14 @@ gameState.thisGuild = await guildAPI.getThisGuild();
 if (gameState.lastSaveBlockHeight === 0) {
   MenuPage.router.goto('Auth', 'index');
 } else {
+  signingClientFactory.createClient(gameState.wallet).then(async client => {
+    gameState.signingClient = client;
+
+    // TODO: Move planet creation to proper place
+    const planetManager = new PlanetManager(gameState, signingClientFactory);
+    await planetManager.findNewPlanet();
+  });
+
   MenuPage.close();
   MenuPage.router.restore('Account', 'index');
-
-  // TODO: Create separate signer class
-  let wsUrl;
-  let registry;
-  let client;
-
-  try {
-
-    wsUrl = `ws://${window.location.hostname}:26657`;
-    console.log("🌐 Connecting to chain at:", {wsUrl});
-
-    console.log("✅ Tendermint client created");
-
-    console.log('Creating registry...')
-    registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
-    console.log('✅ Registry created')
-
-    console.log("✍️ Creating signing client...");
-    client = await SigningStargateClient.connectWithSigner(
-      wsUrl,
-      gameState.wallet,
-      {
-        registry,
-      },
-    );
-    console.log("✅ Signing client created");
-  } catch (error) {
-    console.error("❌ Error during connection:", error);
-    console.error("Error details:", {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
-  }
-
-  try {
-
-    console.log("🔄 Creating message...");
-    const msg = {
-      typeUrl: '/structs.structs.MsgPlanetExplore',
-      value: MsgPlanetExplore.fromPartial({
-        creator: gameState.thisPlayer.primary_address,
-        playerId: gameState.thisPlayerId
-      }),
-    }
-
-    console.log("📡 Broadcasting transaction...");
-    console.log("Transaction details:", {
-      address: gameState.thisPlayer.primary_address,
-      message: msg,
-      FEE
-    });
-
-    const result = await client.signAndBroadcast(
-      gameState.thisPlayer.primary_address,
-      [msg],
-      FEE
-    );
-
-    console.log("✅ Transaction successful!");
-    console.log("📋 Transaction result:", {
-      transactionHash: result.transactionHash,
-      height: result.height,
-      gasUsed: result.gasUsed,
-      gasWanted: result.gasWanted
-    });
-
-  } catch (error) {
-    console.error("❌ Error during signing/broadcasting:", error);
-    console.error("Error details:", {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
-  }
 }
