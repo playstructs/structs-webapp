@@ -19,10 +19,14 @@ export class PlanetManager {
       this.gameState.thisPlayerId
     );
 
-    return await this.gameState.signingClient.signAndBroadcast(
-      this.gameState.signingAccount.address,
-      [msg],
-      FEE
-    );
+    try {
+      await this.gameState.signingClient.signAndBroadcast(
+        this.gameState.signingAccount.address,
+        [msg],
+        FEE
+      );
+    } catch (error) {
+      console.log('Sign and Broadcast Error:', error);
+    }
   }
 }

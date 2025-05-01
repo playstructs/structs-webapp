@@ -21,6 +21,7 @@ export class GameState {
     this.lastSaveBlockHeight = 0;
     this.lastActionBlockHeight = 0;
     this.chargeLevel = 0;
+    this.planet = null;
 
     /* Must Be Re-instantiated On Load */
     this.wallet = null;
@@ -47,6 +48,7 @@ export class GameState {
       lastSaveBlockHeight: this.lastSaveBlockHeight,
       lastActionBlockHeight: this.lastActionBlockHeight,
       chargeLevel: this.chargeLevel,
+      planet: this.planet,
     }));
   }
 
@@ -170,6 +172,13 @@ export class GameState {
       this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
+    }
+  }
+
+  setPlanet(planet) {
+    if (planet) {
+      this.planet = planet;
+      this.save();
     }
   }
 

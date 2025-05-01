@@ -23,19 +23,42 @@ export class PlayerCreatedListener extends AbstractGrassListener {
 
       this.gameState.thisPlayerId = messageData.id;
 
-      this.authManager.login().then(function () {
-        this.guildAPI.getPlayer(messageData.id).then(function (player) {
+      this.authManager.login().then(async function () {
+        await this.planetManager.findNewPlanet();
+
+        const height = await this.guildAPI.getPlayerLastActionBlockHeight(messageData.id);
+        this.gameState.setLastActionBlockHeight(height);
+
+        const player = await this.guildAPI.getPlayer(messageData.id);
+        this.gameState.setThisPlayer(player);
+
+        let maxLongPollTime = 60 * 1000;
+        const longPollInterval = 5 * 1000;
+
+        const longPollForPlanetId = async function() {
+          const player = await this.guildAPI.getPlayer(messageData.id);
           this.gameState.setThisPlayer(player);
 
-          this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
-            this.gameState.setLastActionBlockHeight(height);
-          }.bind(this));
+          if (player.planet_id) {
+            const planet = await this.guildAPI.getPlanet(player.planet_id);
+            this.gameState.setPlanet(planet);
+            console.log(planet);
 
-          this.planetManager.findNewPlanet();
+            MenuPage.router.goto('Auth', 'orientation1');
 
-        }.bind(this));
+            return;
+          }
 
-        MenuPage.router.goto('Auth', 'orientation1');
+          maxLongPollTime -= longPollInterval;
+          if (maxLongPollTime <= 0) {
+            MenuPage.setDialogueIndicatorContent(`<i class="sui-icon-md icon-alert sui-text-warning"></i>`, true);
+            MenuPage.setDialogueScreenContent(`<strong>Error:</strong> Could not find planet. Contact support.`, true);
+          } else {
+            setTimeout(longPollForPlanetId, longPollInterval);
+          }
+        }.bind(this);
+
+        setTimeout(longPollForPlanetId, longPollInterval);
       }.bind(this));
 
       this.shouldUnregister = () => true;

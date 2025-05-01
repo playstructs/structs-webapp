@@ -6,6 +6,7 @@ import {GuildAPIError} from "../errors/GuildAPIError";
 import {GuildAPICacheItemDTO} from "../dtos/GuildAPICacheItemDTO";
 import {InfusionFactory} from "../factories/InfusionFactory";
 import {PlayerOreStatsFactory} from "../factories/PlayerOreStatsFactory";
+import {PlanetFactory} from "../factories/PlanetFactory";
 
 export class GuildAPI {
 
@@ -17,6 +18,7 @@ export class GuildAPI {
     this.playerFactory = new PlayerFactory();
     this.infusionFactory = new InfusionFactory();
     this.playerOreStatsFactory = new PlayerOreStatsFactory();
+    this.planetFactory = new PlanetFactory();
   }
 
   /**
@@ -228,5 +230,16 @@ export class GuildAPI {
       this.cacheItem('getPlayerRaidsLaunched', count);
     }
     return parseInt(count);
+  }
+
+  /**
+   * @param {string} planetId
+   * @return {Promise<Planet>}
+   */
+  async getPlanet(planetId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/planet/${planetId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.planetFactory.make(response.data);
   }
 }
