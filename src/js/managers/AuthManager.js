@@ -8,6 +8,7 @@ import {PlayerStructsLoadListener} from "../grass_listeners/PlayerStructsLoadLis
 import {ConnectionCapacityListener} from "../grass_listeners/ConnectionCapacityListener";
 import {PlayerAlphaListener} from "../grass_listeners/PlayerAlphaListener";
 import {MenuPage} from "../framework/MenuPage";
+import {PlanetManager} from "./PlanetManager";
 
 export class AuthManager {
 
@@ -16,17 +17,23 @@ export class AuthManager {
    * @param {GuildAPI} guildAPI
    * @param {WalletManager} walletManager
    * @param {GrassManager} grassManager
+   * @param {SigningClientManager} signingClientManager
+   * @param {PlanetManager} planetManager
    */
   constructor(
     gameState,
     guildAPI,
     walletManager,
-    grassManager
+    grassManager,
+    signingClientManager,
+    planetManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.walletManager = walletManager;
     this.grassManager = grassManager;
+    this.signingClientManager = signingClientManager;
+    this.planetManager = planetManager;
   }
 
   /**
@@ -60,6 +67,8 @@ export class AuthManager {
     playerCreatedListener.authManager = this;
     playerCreatedListener.guildAPI = this.guildAPI;
     playerCreatedListener.gameState = this.gameState;
+    playerCreatedListener.grassManager = this.grassManager;
+    playerCreatedListener.planetManager = new PlanetManager(this.gameState, this.signingClientManager);
 
     this.grassManager.registerListener(playerCreatedListener);
 
@@ -100,6 +109,8 @@ export class AuthManager {
       this.grassManager.registerListener(new PlayerStructsLoadListener(this.gameState));
       this.grassManager.registerListener(new PlayerCapacityListener(this.gameState));
       this.grassManager.registerListener(new ConnectionCapacityListener(this.gameState));
+
+      await this.signingClientManager.initSigningClient(this.gameState.wallet);
     }
 
     return response.success;

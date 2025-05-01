@@ -10,6 +10,7 @@ export class PlayerCreatedListener extends AbstractGrassListener {
     this.authManager = null;
     this.guildAPI = null;
     this.gameState = null;
+    this.planetManager = null;
   }
 
   handler(messageData) {
@@ -29,6 +30,8 @@ export class PlayerCreatedListener extends AbstractGrassListener {
           this.guildAPI.getPlayerLastActionBlockHeight(messageData.id).then(function (height) {
             this.gameState.setLastActionBlockHeight(height);
           }.bind(this));
+
+          this.planetManager.findNewPlanet();
 
         }.bind(this));
 

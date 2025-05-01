@@ -6,26 +6,36 @@ import {MsgPlanetExplore} from "../ts/structs.structs/types/structs/structs/tx";
 
 export class SigningClientManager {
 
-  constructor() {
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    this.gameState = gameState;
     this.wsUrl = `ws://${window.location.hostname}:26657`;
     this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
   }
 
-  async createClient(wallet) {
-
-    console.log("Attempting to create signing client...");
-    let client = await SigningStargateClient.connectWithSigner(
+  /**
+   * @param {DirectSecp256k1HdWallet} wallet
+   * @return {Promise<void>}
+   */
+  async initSigningClient(wallet) {
+    console.log("Initializing signing client...");
+    this.gameState.signingClient = await SigningStargateClient.connectWithSigner(
       this.wsUrl,
       wallet,
       {
         registry: this.registry,
       },
     );
-    console.log("Signing client created");
-
-    return client;
+    console.log("Signing client initialized.");
   }
 
+  /**
+   * @param {string} playerAddress
+   * @param {string} playerId
+   * @return {{typeUrl: string, value: MsgPlanetExplore}}
+   */
   createMsgPlanetExplore(playerAddress, playerId) {
     return {
       typeUrl: '/structs.structs.MsgPlanetExplore',

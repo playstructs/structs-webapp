@@ -15,7 +15,7 @@ export class PlanetManager {
 
   async findNewPlanet() {
     const msg = this.signingClientManager.createMsgPlanetExplore(
-      this.gameState.thisPlayer.primary_address,
+      this.gameState.signingAccount.address,
       this.gameState.thisPlayerId
     );
 

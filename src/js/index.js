@@ -8,12 +8,8 @@ import {GrassManager} from "./framework/GrassManager";
 import {BlockListener} from "./grass_listeners/BlockListener";
 import {HUDViewModel} from "./view_models/HUDViewModel";
 import {AccountController} from "./controllers/AccountController";
-
 import {SigningClientManager} from "./factories/SigningClientManager";
 import {PlanetManager} from "./managers/PlanetManager";
-
-
-// localStorage.clear();
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -28,11 +24,18 @@ const grassManager = new GrassManager(
   "ws://localhost:1443",
   "structs.>"
 );
+
+const signingClientManager = new SigningClientManager(gameState);
+
+const planetManager = new PlanetManager(gameState, signingClientManager);
+
 const authManager = new AuthManager(
   gameState,
   guildAPI,
   walletManager,
-  grassManager
+  grassManager,
+  signingClientManager,
+  planetManager
 );
 
 const blockListener = new BlockListener(gameState);
@@ -48,7 +51,6 @@ const accountController = new AccountController(
   guildAPI,
   authManager
 );
-const signingClientFactory = new SigningClientManager();
 
 MenuPage.gameState = gameState;
 MenuPage.router.registerController(authController);
@@ -70,13 +72,7 @@ gameState.thisGuild = await guildAPI.getThisGuild();
 if (gameState.lastSaveBlockHeight === 0) {
   MenuPage.router.goto('Auth', 'index');
 } else {
-  signingClientFactory.createClient(gameState.wallet).then(async client => {
-    gameState.signingClient = client;
-
-    // TODO: Move planet creation to proper place
-    const planetManager = new PlanetManager(gameState, signingClientFactory);
-    await planetManager.findNewPlanet();
-  });
+  await signingClientManager.initSigningClient(gameState.wallet);
 
   MenuPage.close();
   MenuPage.router.restore('Account', 'index');
