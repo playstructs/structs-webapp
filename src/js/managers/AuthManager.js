@@ -9,6 +9,7 @@ import {ConnectionCapacityListener} from "../grass_listeners/ConnectionCapacityL
 import {PlayerAlphaListener} from "../grass_listeners/PlayerAlphaListener";
 import {MenuPage} from "../framework/MenuPage";
 import {PlanetManager} from "./PlanetManager";
+import {FirstPlanetListener} from "../grass_listeners/FirstPlanetListener";
 
 export class AuthManager {
 
@@ -69,6 +70,11 @@ export class AuthManager {
     playerCreatedListener.gameState = this.gameState;
     playerCreatedListener.grassManager = this.grassManager;
     playerCreatedListener.planetManager = new PlanetManager(this.gameState, this.signingClientManager);
+
+    const firstPlanetListener = new FirstPlanetListener(this.gameState, this.guildAPI);
+
+    // Needs to be registered first because it listens for planet_id whose creation is trigger by playerCreatedListener.
+    this.grassManager.registerListener(firstPlanetListener);
 
     this.grassManager.registerListener(playerCreatedListener);
 
