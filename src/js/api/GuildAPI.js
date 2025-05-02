@@ -242,4 +242,13 @@ export class GuildAPI {
     this.handleResponseFailure(response);
     return this.planetFactory.make(response.data);
   }
+
+  /**
+   * @param {string} planetId
+   * @return {Promise<number>}
+   */
+  async getPlanetShieldHealth(planetId) {
+    const health = await this.getSingleDataValue(`${this.apiUrl}/planet/${planetId}/shield/health`, 'health');
+    return parseInt(health);
+  }
 }

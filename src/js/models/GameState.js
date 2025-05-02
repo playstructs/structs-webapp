@@ -21,7 +21,6 @@ export class GameState {
     this.lastSaveBlockHeight = 0;
     this.lastActionBlockHeight = 0;
     this.chargeLevel = 0;
-    this.planet = null;
 
     /* Must Be Re-instantiated On Load */
     this.wallet = null;
@@ -32,10 +31,11 @@ export class GameState {
     this.thisGuild = null;
     this.thisPlayer = null;
     this.enemyPlayer = null;
+    this.planet = null;
+    this.planetShieldHealth = 100;
 
     /* GRASS Only Data */
     this.currentBlockHeight = 0;
-
   }
 
   save() {
@@ -47,8 +47,7 @@ export class GameState {
       thisPlayerId: this.thisPlayerId,
       lastSaveBlockHeight: this.lastSaveBlockHeight,
       lastActionBlockHeight: this.lastActionBlockHeight,
-      chargeLevel: this.chargeLevel,
-      planet: this.planet,
+      chargeLevel: this.chargeLevel
     }));
   }
 
@@ -68,6 +67,8 @@ export class GameState {
 
     // Properties to prime with API
     this.setThisPlayer(await this.guildAPI.getPlayer(this.thisPlayerId));
+    this.setPlanet(await this.guildAPI.getPlanet(this.thisPlayer.planet_id));
+    this.setPlanetShieldHealth(await this.guildAPI.getPlanet);
   }
 
   /**
@@ -176,10 +177,13 @@ export class GameState {
   }
 
   setPlanet(planet) {
-    if (planet) {
-      this.planet = planet;
-      this.save();
-    }
+    this.planet = planet;
+  }
+
+  setPlanetShieldHealth(health) {
+    this.planetShieldHealth = health;
+
+    window.dispatchEvent(new CustomEvent(EVENTS.SHIELD_HEALTH_CHANGED));
   }
 
   /**

@@ -23,7 +23,7 @@ export class FirstPlanetListener extends AbstractGrassListener {
       this.gameState.thisPlayer.planet_id = messageData.planet_id;
       this.guildAPI.getPlanet(messageData.planet_id).then((planet) => {
         this.gameState.setPlanet(planet);
-        console.log(planet);
+        this.gameState.setPlanetShieldHealth(100);
 
         MenuPage.router.goto('Auth', 'orientation1');
       });
