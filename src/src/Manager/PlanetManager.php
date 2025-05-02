@@ -102,17 +102,20 @@ class PlanetManager
     {
         $query = '
             SELECT
-              pa_ps.val AS planetary_shield ,
-              pa_bsr.val AS block_start_raid,
+              p.id AS planet_id,
+              COALESCE(pa_ps.val, 100) AS planetary_shield,
+              COALESCE(pa_bsr.val, cb.height) AS block_start_raid,
               cb.height AS current_block
-            FROM planet_attribute pa_ps
-            INNER JOIN planet_attribute pa_bsr
+            FROM planet p
+            LEFT JOIN planet_attribute pa_ps
+              ON pa_ps.object_id = p.id
+              AND pa_ps.attribute_type = \'planetaryShield\'
+            LEFT JOIN planet_attribute pa_bsr
               ON pa_ps.object_id= pa_bsr.object_id
+              AND pa_bsr.attribute_type = \'blockStartRaid\'
             CROSS JOIN current_block cb
             WHERE 
-              pa_ps.object_id = :planet_id
-              AND pa_ps.attribute_type = \'planetaryShield\'
-              AND pa_bsr.attribute_type = \'blockStartRaid\'
+              p.id = :planet_id
         ';
 
         $requestParams = [ApiParameters::PLANET_ID => $planet_id];
