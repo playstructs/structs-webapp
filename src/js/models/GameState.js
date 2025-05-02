@@ -68,7 +68,7 @@ export class GameState {
     // Properties to prime with API
     this.setThisPlayer(await this.guildAPI.getPlayer(this.thisPlayerId));
     this.setPlanet(await this.guildAPI.getPlanet(this.thisPlayer.planet_id));
-    this.setPlanetShieldHealth(await this.guildAPI.getPlanet);
+    this.setPlanetShieldHealth(await this.guildAPI.getPlanetShieldHealth(this.thisPlayer.planet_id));
   }
 
   /**

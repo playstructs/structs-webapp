@@ -212,7 +212,7 @@ export class GuildAPI {
   async getPlayerPlanetsCompleted(playerId, forceRefresh = false) {
     let count = this.getCachedItem('getPlayerPlanetsCompleted');
     if (count === null || forceRefresh) {
-      const count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/planet/completed`, 'count');
+      count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/planet/completed`, 'count');
       this.cacheItem('getPlayerPlanetsCompleted', count);
     }
     return parseInt(count);
@@ -226,7 +226,7 @@ export class GuildAPI {
   async getPlayerRaidsLaunched(playerId, forceRefresh = false) {
     let count = this.getCachedItem('getPlayerRaidsLaunched');
     if (count === null || forceRefresh) {
-      const count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/raid/launched`, 'count');
+      count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/raid/launched`, 'count');
       this.cacheItem('getPlayerRaidsLaunched', count);
     }
     return parseInt(count);
