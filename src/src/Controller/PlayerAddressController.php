@@ -66,6 +66,29 @@ class PlayerAddressController extends AbstractController
         );
     }
 
+    /**
+     * @param Request $request
+     * @param ValidatorInterface $validator
+     * @param EntityManagerInterface $entityManager
+     * @return Response
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     */
+    #[Route(
+        '/api/player-address/meta',
+        name: 'api_add_player_address_meta',
+        methods: ['POST']
+    )]
+    public function addPlayerAddressMeta(
+        Request $request,
+        ValidatorInterface $validator,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
+        return $playerAddressManager->addPlayerAddressMeta($request);
+    }
+
     #[Route(
         '/api/player-address/code/{code}',
         name: 'api_get_pending_address_by_code',

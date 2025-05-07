@@ -10,6 +10,7 @@ import {HUDViewModel} from "./view_models/HUDViewModel";
 import {AccountController} from "./controllers/AccountController";
 import {SigningClientManager} from "./factories/SigningClientManager";
 import {PlanetManager} from "./managers/PlanetManager";
+import {PlayerAddressManager} from "./managers/PlayerAddressManager";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -29,13 +30,16 @@ const signingClientManager = new SigningClientManager(gameState);
 
 const planetManager = new PlanetManager(gameState, signingClientManager);
 
+const playerAddressManager = new PlayerAddressManager(gameState, guildAPI);
+
 const authManager = new AuthManager(
   gameState,
   guildAPI,
   walletManager,
   grassManager,
   signingClientManager,
-  planetManager
+  planetManager,
+  playerAddressManager
 );
 
 const blockListener = new BlockListener(gameState);
@@ -73,6 +77,7 @@ if (gameState.lastSaveBlockHeight === 0) {
   MenuPage.router.goto('Auth', 'index');
 } else {
   await signingClientManager.initSigningClient(gameState.wallet);
+  playerAddressManager.addPlayerAddressMeta();
 
   MenuPage.close();
   MenuPage.router.restore('Account', 'index');

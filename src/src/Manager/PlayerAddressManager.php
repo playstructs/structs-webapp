@@ -5,8 +5,10 @@ namespace App\Manager;
 use App\Constant\ApiParameters;
 use App\Dto\ApiResponseContentDto;
 use App\Entity\PlayerAddress;
+use App\Entity\PlayerAddressMeta;
 use App\Entity\PlayerAddressPending;
 use App\Factory\PlayerAddressPendingFactory;
+use App\Repository\PlayerAddressMetaRepository;
 use App\Repository\PlayerAddressRepository;
 use App\Trait\ApiSqlQueryTrait;
 use App\Trait\ApiFetchEntityTrait;
@@ -269,6 +271,79 @@ class PlayerAddressManager
             $query,
             $requestParams,
             $requiredFields
+        );
+    }
+
+    /**
+     * @param Request $request
+     * @return Response
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     */
+    public function addPlayerAddressMeta(
+        Request $request
+    ): Response {
+        $responseContent = new ApiResponseContentDto();
+
+        /** @var PlayerAddressMetaRepository $playerAddressMetaRepository */
+        $playerAddressMetaRepository = $this->entityManager->getRepository(PlayerAddressMeta::class);
+
+        /** @var PlayerAddressRepository $playerAddressRepository */
+        $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
+
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
+            ApiParameters::ADDRESS,
+            ApiParameters::GUILD_ID
+        ], [
+            ApiParameters::USER_AGENT
+        ]);
+
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse(
+                $responseContent,
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        if (
+            !$playerAddressRepository->findApprovedByAddressAndGuild(
+                $parsedRequest->params->address,
+                $parsedRequest->params->guild_id
+            )
+        ) {
+            $responseContent->errors = ['address_does_not_exist' => 'Address does not exist'];
+
+            return new JsonResponse(
+                $responseContent,
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        $playerAddressMeta = $playerAddressMetaRepository->find($parsedRequest->params->address);
+        $isNew = !$playerAddressMeta;
+
+        if ($isNew) {
+            $playerAddressMeta = new PlayerAddressMeta();
+            $playerAddressMeta->setAddress($parsedRequest->params->address);
+        }
+
+        $playerAddressMeta->setIp($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR']);
+        $playerAddressMeta->setUserAgent($parsedRequest->params->user_agent);
+
+        if ($isNew) {
+            $this->entityManager->persist($playerAddressMeta);
+        }
+
+        $this->entityManager->flush();
+
+        $responseContent->success = true;
+
+        return new JsonResponse(
+            $responseContent,
+            Response::HTTP_CREATED
         );
     }
 }

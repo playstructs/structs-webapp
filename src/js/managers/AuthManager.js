@@ -20,6 +20,7 @@ export class AuthManager {
    * @param {GrassManager} grassManager
    * @param {SigningClientManager} signingClientManager
    * @param {PlanetManager} planetManager
+   * @param {PlayerAddressManager} playerAddressManager
    */
   constructor(
     gameState,
@@ -27,7 +28,8 @@ export class AuthManager {
     walletManager,
     grassManager,
     signingClientManager,
-    planetManager
+    planetManager,
+    playerAddressManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -35,6 +37,7 @@ export class AuthManager {
     this.grassManager = grassManager;
     this.signingClientManager = signingClientManager;
     this.planetManager = planetManager;
+    this.playerAddressManager = playerAddressManager;
   }
 
   /**
@@ -117,6 +120,7 @@ export class AuthManager {
       this.grassManager.registerListener(new ConnectionCapacityListener(this.gameState));
 
       await this.signingClientManager.initSigningClient(this.gameState.wallet);
+      this.playerAddressManager.addPlayerAddressMeta();
     }
 
     return response.success;

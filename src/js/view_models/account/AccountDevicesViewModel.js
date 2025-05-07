@@ -88,23 +88,6 @@ export class AccountDevicesViewModel extends AbstractViewModel {
   render () {
     this.guildAPI.getPlayerAddressList(this.gameState.thisPlayerId).then((playerAddresses) => {
 
-      playerAddresses[0].ip = '127.0.0.1';
-      playerAddresses[0].user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36';
-
-      const testAddress = new PlayerAddress();
-      testAddress.address = 'structs1p9yhypq9ae2kp4zq7dunww0n2qaxjpufuabcde';
-      testAddress.ip = '255.255.255.255';
-      testAddress.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:138.0) Gecko/20100101 Firefox/138.';
-      testAddress.block_time = '2025-05-02 16:07:19.151527+00';
-      playerAddresses.push(testAddress);
-
-      const testAddress2 = new PlayerAddress();
-      testAddress2.address = 'structs1p9yhypq9ae2kp4zq7dunww0n2qaxjpufufghij';
-      testAddress2.ip = '255.255.255.255';
-      testAddress2.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15';
-      testAddress2.block_time = '2025-05-02 16:07:19.151527+00';
-      playerAddresses.push(testAddress2);
-
       const deviceListHtml = playerAddresses.reduce((html, playerAddress) => {
         return html + this.renderDevice(playerAddress)
       }, '');

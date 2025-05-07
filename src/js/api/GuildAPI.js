@@ -264,4 +264,13 @@ export class GuildAPI {
     this.handleResponseFailure(response);
     return this.playerAddressFactory.parseList(response.data);
   }
+
+  /**
+   * @param {AddPlayerAddressMetaRequestDTO} addPlayerAddressMetaRequestDTO
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async addPlayerAddressMeta(addPlayerAddressMetaRequestDTO) {
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/player-address/meta`, addPlayerAddressMetaRequestDTO);
+    return this.guildAPIResponseFactory.make(jsonResponse);
+  }
 }
