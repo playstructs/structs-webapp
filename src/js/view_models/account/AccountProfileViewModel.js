@@ -4,7 +4,7 @@ import {EnergyUsageComponent} from "../components/EnergyUsageComponent";
 import {AlphaOwnedComponent} from "../components/AlphaOwnedComponent";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 
-export class AccountProfileView extends AbstractViewModel {
+export class AccountProfileViewModel extends AbstractViewModel {
 
   /**
    * @param {GameState} gameState

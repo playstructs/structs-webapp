@@ -7,6 +7,7 @@ import {GuildAPICacheItemDTO} from "../dtos/GuildAPICacheItemDTO";
 import {InfusionFactory} from "../factories/InfusionFactory";
 import {PlayerOreStatsFactory} from "../factories/PlayerOreStatsFactory";
 import {PlanetFactory} from "../factories/PlanetFactory";
+import {PlayerAddressFactory} from "../factories/PlayerAddressFactory";
 
 export class GuildAPI {
 
@@ -19,6 +20,7 @@ export class GuildAPI {
     this.infusionFactory = new InfusionFactory();
     this.playerOreStatsFactory = new PlayerOreStatsFactory();
     this.planetFactory = new PlanetFactory();
+    this.playerAddressFactory = new PlayerAddressFactory();
   }
 
   /**
@@ -250,5 +252,16 @@ export class GuildAPI {
   async getPlanetShieldHealth(planetId) {
     const health = await this.getSingleDataValue(`${this.apiUrl}/planet/${planetId}/shield/health`, 'health');
     return parseInt(health);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<PlayerAddress[]>}
+   */
+  async getPlayerAddressList(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/player/${playerId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.playerAddressFactory.parseList(response.data);
   }
 }

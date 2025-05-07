@@ -1,7 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 
-export class AccountIndexView extends AbstractViewModel {
+export class AccountIndexViewModel extends AbstractViewModel {
 
   /**
    * @param {GameState} gameState
@@ -35,14 +35,13 @@ export class AccountIndexView extends AbstractViewModel {
       this.authManager.logout();
     }.bind(this));
     document.getElementById(this.profileBtnId).addEventListener('click', () => {
-      console.log('Profile');
       MenuPage.router.goto('Account', 'profile');
     });
     document.getElementById(this.transfersBtnId).addEventListener('click', () => {
       console.log('Transfers');
     });
     document.getElementById(this.devicesBtnId).addEventListener('click', () => {
-      console.log('Devices');
+      MenuPage.router.goto('Account', 'devices');
     });
   }
 

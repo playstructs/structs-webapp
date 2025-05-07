@@ -799,6 +799,41 @@ img.glitch-logo {
   gap: 0;
 }
 
+.device-index-row {
+  display: flex;
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border);
+  align-items: start;
+  align-self: stretch;
+  justify-content: center;
+  gap: var(--spacing-xl);
+}
+
+.device-index-row a {
+  align-self: center;
+}
+
+.device-index-row-details-container {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xl);
+  flex: 1 0 0;
+}
+
+.device-index-row-info-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.device-index-row-info-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  text-align: left;
+}
 
 /* Page Specific Styling Start */
 
