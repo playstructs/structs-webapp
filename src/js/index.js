@@ -26,6 +26,11 @@ const grassManager = new GrassManager(
   "structs.>"
 );
 
+const blockGrassManager = new GrassManager(
+  "ws://localhost:1443",
+  "consensus"
+);
+
 const signingClientManager = new SigningClientManager(gameState);
 
 const planetManager = new PlanetManager(gameState, signingClientManager);
@@ -61,8 +66,9 @@ MenuPage.router.registerController(authController);
 MenuPage.router.registerController(accountController);
 MenuPage.initListeners();
 
-grassManager.registerListener(blockListener);
 grassManager.init();
+blockGrassManager.registerListener(blockListener);
+blockGrassManager.init();
 
 const hudContainer = document.getElementById('hud-container');
 

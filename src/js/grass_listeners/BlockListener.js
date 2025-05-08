@@ -13,7 +13,7 @@ export class BlockListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'block'
-      && messageData.subject === 'structs.consensus'
+      && messageData.subject === 'consensus'
     ) {
       this.gameState.setCurrentBlockHeight(messageData.height);
     }
