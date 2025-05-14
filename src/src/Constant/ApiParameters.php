@@ -14,6 +14,8 @@ class ApiParameters
 
     const string IP = 'ip';
 
+    const string LOGGED_IN_ADDRESS = 'logged_in_address';
+
     const string MIN_ORE = 'min_ore';
 
     const string PFP = 'pfp';

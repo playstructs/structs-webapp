@@ -27,7 +27,7 @@ export class AccountDevicesViewModel extends AbstractViewModel {
 
   initPageCode() {
     document.getElementById(this.activateNewDeviceBtnId).addEventListener('click', () => {
-      console.log(`Activate New Device`);
+      MenuPage.router.goto('Account', 'newDeviceCode');
     });
     this.deviceBlockies.forEach((blockie, address) => {
       document.getElementById(`device-${address}`).append(blockie);

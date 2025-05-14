@@ -29,6 +29,9 @@ class PlayerAddressPending extends AbstractEntity
     #[ORM\Column]
     public ?string $user_agent = null;
 
+    #[ORM\Column]
+    private ?int $permissions = null;
+
     public function getAddress(): ?string
     {
         return $this->address;
@@ -97,6 +100,18 @@ class PlayerAddressPending extends AbstractEntity
     public function setUserAgent(?string $user_agent): static
     {
         $this->user_agent = $user_agent;
+
+        return $this;
+    }
+
+    public function getPermissions(): ?int
+    {
+        return $this->permissions;
+    }
+
+    public function setPermissions(?int $permissions): static
+    {
+        $this->permissions = $permissions;
 
         return $this;
     }

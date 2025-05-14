@@ -8,6 +8,7 @@ use App\Manager\SignatureValidationManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -87,6 +88,32 @@ class PlayerAddressController extends AbstractController
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
         return $playerAddressManager->addPlayerAddressMeta($request);
+    }
+
+    /**
+     * @param Request $request
+     * @param ValidatorInterface $validator
+     * @param EntityManagerInterface $entityManager
+     * @param Security $security
+     * @return Response
+     * @throws ClientExceptionInterface
+     * @throws Exception
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     */
+    #[Route(
+        '/api/player-address/activation-code',
+        name: 'api_create_player_address_activation_code',
+        methods: ['POST']
+    )]
+    public function createPlayerAddressActivationCode(
+        Request $request,
+        ValidatorInterface $validator,
+        EntityManagerInterface $entityManager,
+        Security $security
+    ): Response {
+        $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
+        return $playerAddressManager->createPlayerAddressActivationCode($request, $security);
     }
 
     #[Route(

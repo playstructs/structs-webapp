@@ -2,6 +2,7 @@ import {AbstractController} from "../framework/AbstractController";
 import {AccountIndexViewModel} from "../view_models/account/AccountIndexViewModel";
 import {AccountProfileViewModel} from "../view_models/account/AccountProfileViewModel";
 import {AccountDevicesViewModel} from "../view_models/account/AccountDevicesViewModel";
+import {AccountNewDeviceCodeViewModel} from "../view_models/account/AccountNewDeviceCodeViewModel";
 
 export class AccountController extends AbstractController {
 
@@ -32,6 +33,11 @@ export class AccountController extends AbstractController {
 
   devices() {
     const viewModel = new AccountDevicesViewModel(this.gameState, this.guildAPI, this.authManager);
+    viewModel.render();
+  }
+
+  newDeviceCode() {
+    const viewModel = new AccountNewDeviceCodeViewModel(this.gameState, this.guildAPI, this.authManager);
     viewModel.render();
   }
 }

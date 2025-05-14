@@ -4,10 +4,13 @@ namespace App\Manager;
 
 use App\Constant\ApiParameters;
 use App\Dto\ApiResponseContentDto;
+use App\Entity\Player;
 use App\Entity\PlayerAddress;
+use App\Entity\PlayerAddressActivationCode;
 use App\Entity\PlayerAddressMeta;
 use App\Entity\PlayerAddressPending;
 use App\Factory\PlayerAddressPendingFactory;
+use App\Repository\PlayerAddressActivationCodeRepository;
 use App\Repository\PlayerAddressMetaRepository;
 use App\Repository\PlayerAddressRepository;
 use App\Trait\ApiSqlQueryTrait;
@@ -15,6 +18,7 @@ use App\Trait\ApiFetchEntityTrait;
 use App\Util\ConstraintViolationUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -340,6 +344,99 @@ class PlayerAddressManager
         $this->entityManager->flush();
 
         $responseContent->success = true;
+
+        return new JsonResponse(
+            $responseContent,
+            Response::HTTP_CREATED
+        );
+    }
+
+    /**
+     * @param Request $request
+     * @param Security $security
+     * @return Response
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws Exception
+     */
+    public function createPlayerAddressActivationCode(
+        Request $request,
+        Security $security
+    ): Response {
+        $responseContent = new ApiResponseContentDto();
+
+        /** @var PlayerAddressActivationCodeRepository $playerAddressActivationCodeRepository */
+        $playerAddressActivationCodeRepository = $this->entityManager->getRepository(PlayerAddressActivationCode::class);
+
+        /** @var PlayerAddressRepository $playerAddressRepository */
+        $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
+
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
+            ApiParameters::LOGGED_IN_ADDRESS,
+            ApiParameters::GUILD_ID
+        ]);
+
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (
+            count($responseContent->errors) > 0
+            || !$playerAddressRepository->findApprovedByAddressAndGuild(
+                $parsedRequest->params->logged_in_address,
+                $parsedRequest->params->guild_id
+            )
+        ) {
+            return new JsonResponse(
+                $responseContent,
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        /** @var Player $player */
+        $player = $security->getUser();
+        $player_id = $player->getId();
+
+        $oldActivationCode = $playerAddressActivationCodeRepository->findOneBy([
+            'player_id' => $player_id,
+            'logged_in_address' => $parsedRequest->params->logged_in_address
+        ]);
+
+        if ($oldActivationCode) {
+            $this->entityManager->remove($oldActivationCode);
+            $this->entityManager->flush();
+        }
+
+        $db = $this->entityManager->getConnection();
+        $db->executeStatement(
+            'INSERT INTO player_address_activation_code (player_id, logged_in_address)
+            VALUES (:player_id, :logged_in_address)',
+            [
+                'player_id' => $player_id,
+                'logged_in_address' => $parsedRequest->params->logged_in_address
+            ]
+        );
+
+        $result = $db->fetchAssociative(
+            'SELECT code, created_at
+            FROM player_address_activation_code
+            WHERE player_id = :player_id
+            AND logged_in_address = :logged_in_address',
+            [
+                'player_id' => $player_id,
+                'logged_in_address' => $parsedRequest->params->logged_in_address
+            ]
+        );
+
+        if ($result === false) {
+            $responseContent->errors = ['failed_to_create_activation_code' => 'Failed to create activation code'];
+            return new JsonResponse(
+                $responseContent,
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+
+        $responseContent->success = true;
+        $responseContent->data = $result;
 
         return new JsonResponse(
             $responseContent,

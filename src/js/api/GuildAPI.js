@@ -273,4 +273,13 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.post(`${this.apiUrl}/player-address/meta`, addPlayerAddressMetaRequestDTO);
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
+
+  /**
+   * @param {CreateActivationCodeRequestDTO} createActivationCodeRequestDTO
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async createActivationCode(createActivationCodeRequestDTO) {
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/player-address/activation-code`, createActivationCodeRequestDTO);
+    return this.guildAPIResponseFactory.make(jsonResponse);
+  }
 }

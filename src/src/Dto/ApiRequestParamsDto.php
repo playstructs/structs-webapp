@@ -22,6 +22,9 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::INET)]
     public ?string $ip = null;
 
+    #[Assert\Regex(RegexPattern::ADDRESS)]
+    public ?string $logged_in_address = null;
+
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $min_ore = null;
 
