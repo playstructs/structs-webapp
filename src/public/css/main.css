@@ -963,6 +963,22 @@ img.glitch-logo {
   gap: 16px;
 }
 
+.device-activation-cancelled-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  gap: var(--spacing-md);
+}
+
+.device-activation-btn-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+}
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */

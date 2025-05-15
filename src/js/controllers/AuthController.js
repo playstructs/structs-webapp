@@ -26,6 +26,7 @@ import {OrientationEndViewModel} from "../view_models/signup/OrientationEndViewM
 import {ActivateDeviceViewModel} from "../view_models/login/ActivateDeviceViewModel";
 import {ActivateDeviceVerifyViewModel} from "../view_models/login/ActivateDeviceVerifyViewModel";
 import {ActivationCodeInfoDTO} from "../dtos/ActivationCodeInfoDTO";
+import {ActivateDeviceCancelledViewModel} from "../view_models/login/ActivateDeviceCancelledViewModel";
 
 export class AuthController extends AbstractController {
 
@@ -194,6 +195,11 @@ export class AuthController extends AbstractController {
       this.guildAPI,
       activationCodeInfoDTO
     );
+    viewModel.render();
+  }
+
+  loginActivateDeviceCancelled() {
+    const viewModel = new ActivateDeviceCancelledViewModel();
     viewModel.render();
   }
 }

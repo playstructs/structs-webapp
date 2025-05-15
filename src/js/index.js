@@ -80,7 +80,7 @@ await gameState.load();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
 if (gameState.lastSaveBlockHeight === 0) {
-  MenuPage.router.goto('Auth', 'index');
+  MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
   // MenuPage.router.goto('Auth', 'loginActivateDeviceVerify');
 } else {
   await signingClientManager.initSigningClient(gameState.wallet);
