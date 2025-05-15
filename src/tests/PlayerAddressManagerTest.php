@@ -290,15 +290,50 @@ class PlayerAddressManagerTest extends KernelTestCase
                 1,
                 null
             ],
+            'too long' => [
+                'ZBS6UEC24Z',
+                false,
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
+            'invalid character 1' => [
+                '1BS6U',
+                false,
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
+            'invalid character I' => [
+                'ZIS6U',
+                false,
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
+            'invalid character 0' => [
+                'ZBS0U',
+                false,
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
+            'invalid character O' => [
+                'Z1BSO',
+                false,
+                Response::HTTP_BAD_REQUEST,
+                1,
+                null
+            ],
             'resource not found' => [
-                "ZBS6UEC24Z",
+                "ZBS6U",
                 false,
                 Response::HTTP_OK,
                 0,
                 null
             ],
             'valid' => [
-                "ZBS6UEC24Z",
+                "ZBS6U",
                 true,
                 Response::HTTP_OK,
                 0,
@@ -306,7 +341,7 @@ class PlayerAddressManagerTest extends KernelTestCase
                     'address' => 'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
                     'signature' => '6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601',
                     'pubkey' => '036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222',
-                    'code' => 'ZBS6UEC24Z',
+                    'code' => 'ZBS6U',
                     'ip' => '127.0.0.1',
                     'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0'
                 ]

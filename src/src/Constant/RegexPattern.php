@@ -6,7 +6,7 @@ class RegexPattern
 {
     public const string ADDRESS = '/^[a-zA-Z0-9]+$/';
 
-    public const string CODE = '/^[a-zA-Z0-9]+$/';
+    public const string CODE = '/^[A-HJ-NP-Z2-9]{5}$/';
 
     public const string ID = '/^[a-zA-Z0-9\-]+$/';
 

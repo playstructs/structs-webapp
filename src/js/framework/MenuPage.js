@@ -260,20 +260,35 @@ export class MenuPage {
     MenuPage.initDialogueBtnBListener();
   }
 
-  static enablePageTemplate(activeNavItemId = null) {
+  static enablePageTemplate(activeNavItemId = null, showResources = true) {
 
     MenuPage.setNavItems(MenuPage.menuNavItems, activeNavItemId);
     MenuPage.enableCloseBtn();
 
-    const energyUsageComponent = new EnergyUsageComponent(
-      MenuPage.gameState,
-      MenuPage.resourceEnergyUsageId
-    );
+    let headerResourcesHTML = '';
+    let energyUsageComponent;
+    let alphaOwnedComponent;
 
-    const alphaOwnedComponent = new AlphaOwnedComponent(
-      MenuPage.gameState,
-      MenuPage.resourceAlphaOwnedId,
-    );
+    if (showResources) {
+
+      energyUsageComponent = new EnergyUsageComponent(
+        MenuPage.gameState,
+        MenuPage.resourceEnergyUsageId
+      );
+
+      alphaOwnedComponent = new AlphaOwnedComponent(
+        MenuPage.gameState,
+        MenuPage.resourceAlphaOwnedId,
+      );
+
+      headerResourcesHTML = `
+        <div class="sui-page-header-resources">
+          ${energyUsageComponent.renderHTML()}
+          ${alphaOwnedComponent.renderHTML()}
+        </div>
+      `;
+
+    }
 
     const pageTemplate = `
       <div class="sui-page-body-screen-content">
@@ -286,10 +301,7 @@ export class MenuPage {
             Member Roster
           </a>
   
-          <div class="sui-page-header-resources">
-            ${energyUsageComponent.renderHTML()}
-            ${alphaOwnedComponent.renderHTML()}
-          </div>
+          ${headerResourcesHTML}
         </div>
   
         <!-- Page Header End -->
@@ -304,8 +316,10 @@ export class MenuPage {
 
     MenuPage.setBodyContent(pageTemplate);
 
-    energyUsageComponent.initPageCode();
-    alphaOwnedComponent.initPageCode();
+    if (showResources) {
+      energyUsageComponent.initPageCode();
+      alphaOwnedComponent.initPageCode();
+    }
 
     MenuPage.initPageTemplateNavBtnListener();
   }

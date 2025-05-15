@@ -100,4 +100,31 @@ class AuthController extends AbstractController
             Response::HTTP_OK
         );
     }
+
+    /**
+     * @param string $code
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @param HttpClientInterface $client
+     * @return Response
+     * @throws \Doctrine\DBAL\Exception
+     */
+    #[Route(
+        '/api/auth/activation-code/{code}',
+        name: 'api_get_activation_code_info',
+        methods: ['GET']
+    )]
+    public function getActivationCodeInfo(
+        string $code,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator,
+        HttpClientInterface $client
+    ): Response {
+        $authManager = new AuthManager(
+            $validator,
+            $entityManager,
+            new SignatureValidationManager($client)
+        );
+        return $authManager->getActivationCodeInfo($code);
+    }
 }

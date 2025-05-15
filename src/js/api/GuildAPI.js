@@ -8,6 +8,8 @@ import {InfusionFactory} from "../factories/InfusionFactory";
 import {PlayerOreStatsFactory} from "../factories/PlayerOreStatsFactory";
 import {PlanetFactory} from "../factories/PlanetFactory";
 import {PlayerAddressFactory} from "../factories/PlayerAddressFactory";
+import {Guild} from "../models/Guild";
+import {ActivationCodeInfoDTO} from "../dtos/ActivationCodeInfoDTO";
 
 export class GuildAPI {
 
@@ -281,5 +283,24 @@ export class GuildAPI {
   async createActivationCode(createActivationCodeRequestDTO) {
     const jsonResponse = await this.ajax.post(`${this.apiUrl}/player-address/activation-code`, createActivationCodeRequestDTO);
     return this.guildAPIResponseFactory.make(jsonResponse);
+  }
+
+  /**
+   * @param {string} activationCode
+   * @return {Promise<ActivationCodeInfoDTO|null>}
+   */
+  async getActivationCodeInfo(activationCode) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/auth/activation-code/${activationCode}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+
+    if (response.data === null) {
+      return null;
+    }
+
+    const info = new ActivationCodeInfoDTO();
+    Object.assign(info, response.data);
+
+    return info;
   }
 }

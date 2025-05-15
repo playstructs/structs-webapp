@@ -9,7 +9,7 @@ export class IndexView extends AbstractViewModel {
       MenuPage.router.goto('Auth', 'signupConnectingToCorporate1');
     });
     document.getElementById('returning-player-btn').addEventListener('click', () => {
-      console.log('Returning Player');
+      MenuPage.router.goto('Auth', 'loginActivateDevice');
     });
   }
 

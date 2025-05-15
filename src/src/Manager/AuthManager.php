@@ -10,7 +10,9 @@ use App\Entity\PlayerPending;
 use App\Factory\PlayerPendingFactory;
 use App\Repository\PlayerAddressRepository;
 use App\Security\PlayerAuthenticator;
+use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
+use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -25,6 +27,8 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class AuthManager
 {
+    use ApiSqlQueryTrait;
+
     public EntityManagerInterface $entityManager;
 
     public ValidatorInterface $validator;
@@ -245,6 +249,40 @@ class AuthManager
         return new JsonResponse(
             $responseContent,
             Response::HTTP_OK
+        );
+    }
+
+    /**
+     * @param string $code
+     * @return Response
+     * @throws Exception
+     */
+    public function getActivationCodeInfo(string $code): Response {
+        $query = '
+            SELECT
+              pa.player_id,
+              gm.tag,
+              pm.username,
+              pm.pfp
+            FROM player_address_activation_code paac
+            INNER JOIN player_address pa
+              ON pa.address = paac.logged_in_address
+            INNER JOIN guild_meta gm
+              ON pa.guild_id = gm.id
+            INNER JOIN player_meta pm
+              ON pa.player_id = pm.id
+            WHERE paac.code = :code;
+        ';
+
+        $requestParams = [ApiParameters::CODE => $code];
+        $requiredFields = [ApiParameters::CODE];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
         );
     }
 }

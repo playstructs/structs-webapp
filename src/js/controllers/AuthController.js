@@ -23,6 +23,7 @@ import {Orientation6ViewModel} from "../view_models/signup/Orientation6ViewModel
 import {Orientation7ViewModel} from "../view_models/signup/Orientation7ViewModel";
 import {Orientation8ViewModel} from "../view_models/signup/Orientation8ViewModel";
 import {OrientationEndViewModel} from "../view_models/signup/OrientationEndViewModel";
+import {LoginActivateDeviceViewModel} from "../view_models/login/LoginActivateDeviceViewModel";
 
 export class AuthController extends AbstractController {
 
@@ -170,6 +171,15 @@ export class AuthController extends AbstractController {
 
   orientationEnd() {
     const viewModel = new OrientationEndViewModel();
+    viewModel.render();
+  }
+
+  loginActivateDevice() {
+    const viewModel = new LoginActivateDeviceViewModel(
+      this.gameState,
+      this.guildAPI,
+      this.authManager
+    );
     viewModel.render();
   }
 }
