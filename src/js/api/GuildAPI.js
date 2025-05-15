@@ -299,6 +299,7 @@ export class GuildAPI {
     }
 
     const info = new ActivationCodeInfoDTO();
+    info.code = activationCode;
     Object.assign(info, response.data);
 
     return info;

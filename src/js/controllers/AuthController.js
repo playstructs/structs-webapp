@@ -23,7 +23,9 @@ import {Orientation6ViewModel} from "../view_models/signup/Orientation6ViewModel
 import {Orientation7ViewModel} from "../view_models/signup/Orientation7ViewModel";
 import {Orientation8ViewModel} from "../view_models/signup/Orientation8ViewModel";
 import {OrientationEndViewModel} from "../view_models/signup/OrientationEndViewModel";
-import {LoginActivateDeviceViewModel} from "../view_models/login/LoginActivateDeviceViewModel";
+import {ActivateDeviceViewModel} from "../view_models/login/ActivateDeviceViewModel";
+import {ActivateDeviceVerifyViewModel} from "../view_models/login/ActivateDeviceVerifyViewModel";
+import {ActivationCodeInfoDTO} from "../dtos/ActivationCodeInfoDTO";
 
 export class AuthController extends AbstractController {
 
@@ -175,10 +177,22 @@ export class AuthController extends AbstractController {
   }
 
   loginActivateDevice() {
-    const viewModel = new LoginActivateDeviceViewModel(
-      this.gameState,
+    const viewModel = new ActivateDeviceViewModel(this.guildAPI);
+    viewModel.render();
+  }
+
+  /**
+   * @param {ActivationCodeInfoDTO|null} activationCodeInfoDTO
+   */
+  loginActivateDeviceVerify(activationCodeInfoDTO= null) {
+    // activationCodeInfoDTO = activationCodeInfoDTO || new ActivationCodeInfoDTO();
+    // activationCodeInfoDTO.code = "BN3QQ";
+    // activationCodeInfoDTO.player_id = "1-324";
+    // activationCodeInfoDTO.tag = "ONE";
+    // activationCodeInfoDTO.username = "Zero.Cool";
+    const viewModel = new ActivateDeviceVerifyViewModel(
       this.guildAPI,
-      this.authManager
+      activationCodeInfoDTO
     );
     viewModel.render();
   }
