@@ -979,6 +979,45 @@ img.glitch-logo {
   gap: var(--spacing-xl);
 }
 
+.login-activate-device-waiting-for-approval-box {
+  display: flex;
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border);
+  align-items: flex-start;
+  align-self: stretch;
+  gap: var(--spacing-xl);
+  text-align: left;
+}
+
+.login-activate-device-waiting-for-approval-box .device-seal-container {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xl);
+}
+
+.login-activate-device-waiting-for-approval-box .device-seal-text-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+img.loading-3-dots {
+  width: 60px;
+}
+
+.login-activating-device-layout {
+  display: flex;
+  padding: var(--spacing-xxxl);
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  gap: var(--spacing-xxxl);
+}
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */

@@ -72,6 +72,15 @@ export class GameState {
   }
 
   /**
+   * @param {string} id
+   */
+  setThisPlayerId(id) {
+    this.thisPlayerId = id;
+
+    this.save();
+  }
+
+  /**
    * @param {number} height
    */
   setCurrentBlockHeight(height) {

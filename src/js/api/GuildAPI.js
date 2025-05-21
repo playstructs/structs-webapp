@@ -59,6 +59,15 @@ export class GuildAPI {
   /**
    * @param {string} guildId
    * @param {string} address
+   * @return {string}
+   */
+  buildAddPendingAddressMessage(guildId, address) {
+    return `ADD_PENDING_ADDRESS$${address}GUILD${guildId}`;
+  }
+
+  /**
+   * @param {string} guildId
+   * @param {string} address
    * @param {number} nonce
    * @return {string}
    */
@@ -303,5 +312,14 @@ export class GuildAPI {
     Object.assign(info, response.data);
 
     return info;
+  }
+
+  /**
+   * @param {AddPendingAddressRequestDTO} addPendingAddressRequestDTO
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async addPendingAddress(addPendingAddressRequestDTO) {
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/player-address`, addPendingAddressRequestDTO);
+    return this.guildAPIResponseFactory.make(jsonResponse);
   }
 }

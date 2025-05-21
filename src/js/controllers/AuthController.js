@@ -27,6 +27,11 @@ import {ActivateDeviceViewModel} from "../view_models/login/ActivateDeviceViewMo
 import {ActivateDeviceVerifyViewModel} from "../view_models/login/ActivateDeviceVerifyViewModel";
 import {ActivationCodeInfoDTO} from "../dtos/ActivationCodeInfoDTO";
 import {ActivateDeviceCancelledViewModel} from "../view_models/login/ActivateDeviceCancelledViewModel";
+import {
+  ActivateDeviceWaitingForApprovalViewModel
+} from "../view_models/login/ActivateDeviceWaitingForApprovalViewModel";
+import {ActivatingDeviceViewModel} from "../view_models/login/ActivatingDeviceViewModel";
+import {ActivateDeviceCompleteViewModel} from "../view_models/login/ActivateDeviceCompleteViewModel";
 
 export class AuthController extends AbstractController {
 
@@ -185,14 +190,9 @@ export class AuthController extends AbstractController {
   /**
    * @param {ActivationCodeInfoDTO|null} activationCodeInfoDTO
    */
-  loginActivateDeviceVerify(activationCodeInfoDTO= null) {
-    // activationCodeInfoDTO = activationCodeInfoDTO || new ActivationCodeInfoDTO();
-    // activationCodeInfoDTO.code = "BN3QQ";
-    // activationCodeInfoDTO.player_id = "1-324";
-    // activationCodeInfoDTO.tag = "ONE";
-    // activationCodeInfoDTO.username = "Zero.Cool";
+  loginActivateDeviceVerify(activationCodeInfoDTO = null) {
     const viewModel = new ActivateDeviceVerifyViewModel(
-      this.guildAPI,
+      this.authManager,
       activationCodeInfoDTO
     );
     viewModel.render();
@@ -200,6 +200,34 @@ export class AuthController extends AbstractController {
 
   loginActivateDeviceCancelled() {
     const viewModel = new ActivateDeviceCancelledViewModel();
+    viewModel.render();
+  }
+
+  /**
+   * @param {ActivationCodeInfoDTO|null} activationCodeInfoDTO
+   */
+  loginActivateDeviceWaitingForApproval(activationCodeInfoDTO = null) {
+    const viewModel = new ActivateDeviceWaitingForApprovalViewModel(
+      this.gameState,
+      activationCodeInfoDTO
+    );
+    viewModel.render();
+  }
+
+  /**
+   * @param {ActivationCodeInfoDTO|null} activationCodeInfoDTO
+   */
+  loginActivatingDevice(activationCodeInfoDTO) {
+    const viewModel = new ActivatingDeviceViewModel(
+      this.gameState,
+      this.authManager,
+      activationCodeInfoDTO
+    );
+    viewModel.render();
+  }
+
+  loginActivateDeviceComplete() {
+    const viewModel = new ActivateDeviceCompleteViewModel(this.gameState);
     viewModel.render();
   }
 }

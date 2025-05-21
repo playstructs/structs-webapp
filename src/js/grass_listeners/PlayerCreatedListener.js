@@ -20,7 +20,7 @@ export class PlayerCreatedListener extends AbstractGrassListener {
     ) {
       console.log(messageData.id);
 
-      this.gameState.thisPlayerId = messageData.id;
+      this.gameState.setThisPlayerId(messageData.id);
 
       this.authManager.login().then(async function () {
         const player = await this.guildAPI.getPlayer(messageData.id);

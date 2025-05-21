@@ -10,6 +10,8 @@ import {PlayerAlphaListener} from "../grass_listeners/PlayerAlphaListener";
 import {MenuPage} from "../framework/MenuPage";
 import {PlanetManager} from "./PlanetManager";
 import {FirstPlanetListener} from "../grass_listeners/FirstPlanetListener";
+import {AddPendingAddressRequestDTO} from "../dtos/AddPendingAddressRequestDTO";
+import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApprovedListener";
 
 export class AuthManager {
 
@@ -42,13 +44,21 @@ export class AuthManager {
 
   /**
    * @param {string} mnemonic
-   * @return {Promise<boolean>}
+   * @return {Promise<void>}
    */
-  async signup(mnemonic) {
+  async initWallet(mnemonic) {
     this.gameState.wallet = await this.walletManager.createWallet(mnemonic);
     const accounts = await this.gameState.wallet.getAccountsWithPrivkeys();
     this.gameState.signingAccount = accounts[0];
-    this.gameState.pubkey = this.walletManager.bytesToHex(this.gameState.signingAccount.pubkey)
+    this.gameState.pubkey = this.walletManager.bytesToHex(this.gameState.signingAccount.pubkey);
+  }
+
+  /**
+   * @param {string} mnemonic
+   * @return {Promise<boolean>}
+   */
+  async signup(mnemonic) {
+    await this.initWallet(mnemonic);
 
     this.gameState.signupRequest.pubkey = this.gameState.pubkey;
     this.gameState.signupRequest.primary_address = this.gameState.signingAccount.address;
@@ -132,6 +142,45 @@ export class AuthManager {
       MenuPage.router.goto('Auth', 'index');
       MenuPage.open();
     });
+  }
+
+  /**
+   * @param {ActivationCodeInfoDTO} activationCodeInfo
+   * @return {Promise<boolean>}
+   */
+  async addNewDevice(activationCodeInfo) {
+    this.gameState.mnemonic = this.walletManager.createMnemonic();
+
+    await this.initWallet(this.gameState.mnemonic);
+
+    const message = this.guildAPI.buildAddPendingAddressMessage(
+      this.gameState.thisGuild.id,
+      this.gameState.signingAccount.address
+    );
+
+    const signature = await this.walletManager.createSignatureForProxyMessage(
+      message,
+      this.gameState.signingAccount.privkey
+    );
+
+    const request = new AddPendingAddressRequestDTO();
+    request.code = activationCodeInfo.code;
+    request.address = this.gameState.signingAccount.address;
+    request.signature = signature;
+    request.pubkey = this.gameState.pubkey;
+    request.guild_id = this.gameState.thisGuild.id;
+    request.user_agent = window.navigator.userAgent;
+
+    const playerAddressApproved = new PlayerAddressApprovedListener(
+      this.gameState,
+      activationCodeInfo
+    );
+
+    this.grassManager.registerListener(playerAddressApproved);
+
+    const response = await this.guildAPI.addPendingAddress(request);
+
+    return response.success;
   }
 
 }

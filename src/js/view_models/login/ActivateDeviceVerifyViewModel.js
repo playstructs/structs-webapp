@@ -5,15 +5,15 @@ import {ActivationCodeInfoDTO} from "../../dtos/ActivationCodeInfoDTO";
 export class ActivateDeviceVerifyViewModel extends AbstractViewModel {
 
   /**
-   * @param {GuildAPI} guildAPI
+   * @param {AuthManager} authManager
    * @param {ActivationCodeInfoDTO | null} activationCodeInfo
    */
   constructor(
-    guildAPI,
+    authManager,
     activationCodeInfo
   ) {
     super();
-    this.guildAPI = guildAPI;
+    this.authManager = authManager;
     this.activationCodeInfo = activationCodeInfo;
     this.yesBtnId = 'yes-btn';
     this.noBtnId = 'no-btn';
@@ -24,7 +24,19 @@ export class ActivateDeviceVerifyViewModel extends AbstractViewModel {
       MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
     });
     document.getElementById(this.yesBtnId).addEventListener('click', () => {
-      console.log('Yes, this is me', this.activationCodeInfo.code);
+      this.authManager.addNewDevice(this.activationCodeInfo).then(success => {
+        if (success) {
+          MenuPage.router.goto(
+            'Auth',
+            'loginActivateDeviceWaitingForApproval',
+            this.activationCodeInfo
+          );
+        } else {
+          MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
+        }
+      }).catch(() => {
+        MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
+      });
     });
   }
 

@@ -12,6 +12,7 @@ use App\Entity\PlayerAddressPending;
 use App\Factory\PlayerAddressPendingFactory;
 use App\Repository\PlayerAddressActivationCodeRepository;
 use App\Repository\PlayerAddressMetaRepository;
+use App\Repository\PlayerAddressPendingRepository;
 use App\Repository\PlayerAddressRepository;
 use App\Trait\ApiSqlQueryTrait;
 use App\Trait\ApiFetchEntityTrait;
@@ -101,20 +102,20 @@ class PlayerAddressManager
         SignatureValidationManager $signatureValidationManager
     ): Response {
         $responseContent = new ApiResponseContentDto();
+
+        /** @var PlayerAddressPendingRepository $playerAddressPendingRepository */
         $playerAddressPendingRepository = $this->entityManager->getRepository(PlayerAddressPending::class);
 
         /** @var PlayerAddressRepository $playerAddressRepository */
         $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
 
-        // TODO: Code should now be automatically generate by the db
-
         $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
+            ApiParameters::CODE,
             ApiParameters::ADDRESS,
             ApiParameters::SIGNATURE,
             ApiParameters::PUBKEY,
             ApiParameters::GUILD_ID
         ], [
-            ApiParameters::IP,
             ApiParameters::USER_AGENT
         ]);
 
@@ -128,6 +129,7 @@ class PlayerAddressManager
         }
 
         $playerAddressPending = $playerAddressPendingFactory->makeFromRequestParams($parsedRequest->params);
+        $playerAddressPending->setIp($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null);
 
         if (!$signatureValidationManager->validate(
             $playerAddressPending->getAddress(),
@@ -334,7 +336,7 @@ class PlayerAddressManager
             $playerAddressMeta->setAddress($parsedRequest->params->address);
         }
 
-        $playerAddressMeta->setIp($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR']);
+        $playerAddressMeta->setIp($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null);
         $playerAddressMeta->setUserAgent($parsedRequest->params->user_agent);
 
         if ($isNew) {
