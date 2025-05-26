@@ -12,6 +12,10 @@ import {PlanetManager} from "./PlanetManager";
 import {FirstPlanetListener} from "../grass_listeners/FirstPlanetListener";
 import {AddPendingAddressRequestDTO} from "../dtos/AddPendingAddressRequestDTO";
 import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApprovedListener";
+import {PlayerAddressPendingCreatedListener} from "../grass_listeners/PlayerAddressPendingCreatedListener";
+import {PlayerAddressPendingFactory} from "../factories/PlayerAddressPendingFactory";
+import {SetPendingAddressPermissionsRequestDTO} from "../dtos/SetPendingAddressPermissionsRequestDTO";
+import {FEE} from "../constants/Fee";
 
 export class AuthManager {
 
@@ -23,6 +27,7 @@ export class AuthManager {
    * @param {SigningClientManager} signingClientManager
    * @param {PlanetManager} planetManager
    * @param {PlayerAddressManager} playerAddressManager
+   * @param {PlayerAddressPendingFactory} playerAddressPendingFactory
    */
   constructor(
     gameState,
@@ -31,7 +36,8 @@ export class AuthManager {
     grassManager,
     signingClientManager,
     planetManager,
-    playerAddressManager
+    playerAddressManager,
+    playerAddressPendingFactory
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -40,6 +46,7 @@ export class AuthManager {
     this.signingClientManager = signingClientManager;
     this.planetManager = planetManager;
     this.playerAddressManager = playerAddressManager;
+    this.playerAddressPendingFactory = playerAddressPendingFactory;
   }
 
   /**
@@ -96,7 +103,11 @@ export class AuthManager {
     return response.success;
   }
 
-  async login() {
+  /**
+   * @param {string} playerId
+   * @return {Promise<boolean>}
+   */
+  async login(playerId) {
     const timestamp = await this.guildAPI.getTimestamp();
 
     const request = new LoginRequestDTO();
@@ -131,6 +142,14 @@ export class AuthManager {
 
       await this.signingClientManager.initSigningClient(this.gameState.wallet);
       this.playerAddressManager.addPlayerAddressMeta();
+
+      this.gameState.setThisPlayerId(playerId);
+
+      const player = await this.guildAPI.getPlayer(playerId);
+      this.gameState.setThisPlayer(player);
+
+      const height = await this.guildAPI.getPlayerLastActionBlockHeight(playerId);
+      this.gameState.setLastActionBlockHeight(height);
     }
 
     return response.success;
@@ -153,8 +172,8 @@ export class AuthManager {
 
     await this.initWallet(this.gameState.mnemonic);
 
-    const message = this.guildAPI.buildAddPendingAddressMessage(
-      this.gameState.thisGuild.id,
+    const message = this.guildAPI.buildAddressRegisterMessage(
+      activationCodeInfo.player_id,
       this.gameState.signingAccount.address
     );
 
@@ -164,11 +183,12 @@ export class AuthManager {
     );
 
     const request = new AddPendingAddressRequestDTO();
+    request.player_id = activationCodeInfo.player_id;
+    request.guild_id = this.gameState.thisGuild.id;
     request.code = activationCodeInfo.code;
     request.address = this.gameState.signingAccount.address;
     request.signature = signature;
     request.pubkey = this.gameState.pubkey;
-    request.guild_id = this.gameState.thisGuild.id;
     request.user_agent = window.navigator.userAgent;
 
     const playerAddressApproved = new PlayerAddressApprovedListener(
@@ -181,6 +201,67 @@ export class AuthManager {
     const response = await this.guildAPI.addPendingAddress(request);
 
     return response.success;
+  }
+
+  /**
+   * @param {CreateActivationCodeRequestDTO} request
+   * @return {Promise<string>}
+   */
+  async createActivationCode(request) {
+    const response = await this.guildAPI.createActivationCode(request);
+
+    let code = 'ERROR';
+
+    if (response.success) {
+      code = response.data.code;
+
+      this.grassManager.registerListener(new PlayerAddressPendingCreatedListener(
+        this.playerAddressPendingFactory,
+        code
+      ));
+    }
+
+    return code;
+  }
+
+  /**
+   * @param {PlayerAddressPending} playerAddressPending
+   * @return {Promise<boolean>}
+   */
+  async activateDevice(playerAddressPending) {
+    const setPermissionsRequest = new SetPendingAddressPermissionsRequestDTO();
+    setPermissionsRequest.code = playerAddressPending.code;
+    setPermissionsRequest.address = playerAddressPending.address;
+    setPermissionsRequest.permissions = playerAddressPending.permissions;
+
+    const response = await this.guildAPI.setPendingAddressPermissions(setPermissionsRequest);
+
+    if (!response.success) {
+      return false;
+    }
+
+    const msg = this.signingClientManager.createMsgAddressRegister(
+      this.gameState.signingAccount.address,
+      this.gameState.thisPlayerId,
+      playerAddressPending.address,
+      playerAddressPending.pubkey,
+      playerAddressPending.signature,
+      playerAddressPending.permissions
+    );
+
+    try {
+      await this.gameState.signingClient.signAndBroadcast(
+        this.gameState.signingAccount.address,
+        [msg],
+        FEE
+      );
+    } catch (error) {
+      console.log('Sign and Broadcast Error:', error);
+    }
+
+    await this.guildAPI.deleteActivationCode(playerAddressPending.code);
+
+    return true;
   }
 
 }

@@ -11,6 +11,8 @@ import {AccountController} from "./controllers/AccountController";
 import {SigningClientManager} from "./factories/SigningClientManager";
 import {PlanetManager} from "./managers/PlanetManager";
 import {PlayerAddressManager} from "./managers/PlayerAddressManager";
+import {PermissionManager} from "./managers/PermissionManager";
+import {PlayerAddressPendingFactory} from "./factories/PlayerAddressPendingFactory";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -37,6 +39,10 @@ const planetManager = new PlanetManager(gameState, signingClientManager);
 
 const playerAddressManager = new PlayerAddressManager(gameState, guildAPI);
 
+const permissionManager = new PermissionManager();
+
+const playerAddressPendingFactory = new PlayerAddressPendingFactory();
+
 const authManager = new AuthManager(
   gameState,
   guildAPI,
@@ -44,7 +50,8 @@ const authManager = new AuthManager(
   grassManager,
   signingClientManager,
   planetManager,
-  playerAddressManager
+  playerAddressManager,
+  playerAddressPendingFactory
 );
 
 const blockListener = new BlockListener(gameState);
@@ -58,7 +65,8 @@ const authController = new AuthController(
 const accountController = new AccountController(
   gameState,
   guildAPI,
-  authManager
+  authManager,
+  permissionManager
 );
 
 MenuPage.gameState = gameState;
@@ -86,5 +94,7 @@ if (gameState.lastSaveBlockHeight === 0) {
   playerAddressManager.addPlayerAddressMeta();
 
   MenuPage.close();
-  MenuPage.router.restore('Account', 'index');
+  // MenuPage.router.goto('Account', 'approveNewDevice');
+  // MenuPage.router.restore('Account', 'index');
+  MenuPage.router.goto('Account', 'index');
 }

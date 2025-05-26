@@ -1,0 +1,9 @@
+export const PERMISSIONS = {
+  PLAY: 1,
+  UPDATE: 2,
+  DELETE: 4,
+  ASSETS: 8,
+  ASSOCIATIONS: 16,
+  GRID: 32,
+  PERMISSIONS: 64
+};

@@ -110,11 +110,12 @@ class PlayerAddressManager
         $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
 
         $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
+            ApiParameters::PLAYER_ID,
+            ApiParameters::GUILD_ID,
             ApiParameters::CODE,
             ApiParameters::ADDRESS,
             ApiParameters::SIGNATURE,
-            ApiParameters::PUBKEY,
-            ApiParameters::GUILD_ID
+            ApiParameters::PUBKEY
         ], [
             ApiParameters::USER_AGENT
         ]);
@@ -135,8 +136,8 @@ class PlayerAddressManager
             $playerAddressPending->getAddress(),
             $playerAddressPending->getPubkey(),
             $playerAddressPending->getSignature(),
-            $signatureValidationManager->buildAddPendingAddressMessage(
-                $parsedRequest->params->guild_id,
+            $signatureValidationManager->buildAddressRegisterMessage(
+                $parsedRequest->params->player_id,
                 $playerAddressPending->getAddress()
             )
         )) {
@@ -444,5 +445,95 @@ class PlayerAddressManager
             $responseContent,
             Response::HTTP_CREATED
         );
+    }
+
+    /**
+     * @param Request $request
+     * @return Response
+     * @throws Exception
+     */
+    public function setPendingAddressPermissions(Request $request): Response {
+        $responseContent = new ApiResponseContentDto();
+
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest(
+            $request,
+            [
+                ApiParameters::CODE,
+                ApiParameters::ADDRESS,
+                ApiParameters::PERMISSIONS
+            ]
+        );
+
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $query = '
+            UPDATE player_address_pending
+            SET permissions = :permissions
+            WHERE code = :code
+            AND address = :address;
+        ';
+
+        $db = $this->entityManager->getConnection();
+        $rowsAffected = $db->executeStatement($query, [
+            'permissions' => intval($parsedRequest->params->permissions),
+            'code' => $parsedRequest->params->code,
+            'address' => $parsedRequest->params->address
+        ]);
+
+        $responseContent->data = ['rows_affected' => $rowsAffected];
+        $responseContent->success = $rowsAffected > 0;
+        $status = Response::HTTP_OK;
+
+        if (!$responseContent->success) {
+            $responseContent->errors = ['not_found' => 'Pending address not found in DB.'];
+            $status = Response::HTTP_INTERNAL_SERVER_ERROR;
+        }
+
+        return new JsonResponse($responseContent, $status);
+    }
+
+    /**
+     * @param string $code
+     * @param Security $security
+     * @return Response
+     * @throws Exception
+     */
+    public function deleteActivationCode(
+        string $code,
+        Security $security
+    ): Response
+    {
+        /** @var Player $player */
+        $player = $security->getUser();
+        $player_id = $player->getId();
+
+        $query = '
+            DELETE 
+            FROM player_address_activation_code
+            WHERE player_id = :player_id 
+            AND code = :code;
+        ';
+
+        $db = $this->entityManager->getConnection();
+        $rowsAffected = $db->executeStatement($query, [
+            'player_id' => $player_id,
+            'code' => $code
+        ]);
+
+        $responseContent = new ApiResponseContentDto();
+        $responseContent->data = ['rows_affected' => $rowsAffected];
+        $responseContent->success = $rowsAffected > 0;
+        $status = Response::HTTP_OK;
+
+        if (!$responseContent->success) {
+            $responseContent->errors = ['not_found' => 'Activation code not found in DB.'];
+            $status = Response::HTTP_INTERNAL_SERVER_ERROR;
+        }
+
+        return new JsonResponse($responseContent, $status);
     }
 }

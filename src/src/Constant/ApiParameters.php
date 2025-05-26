@@ -18,6 +18,8 @@ class ApiParameters
 
     const string MIN_ORE = 'min_ore';
 
+    const string PERMISSIONS = 'permissions';
+
     const string PFP = 'pfp';
 
     const string PLANET_ID = 'planet_id';

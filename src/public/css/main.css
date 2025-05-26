@@ -1018,6 +1018,76 @@ img.loading-3-dots {
   gap: var(--spacing-xxxl);
 }
 
+.account-approve-new-device-layout {
+  display: flex;
+  padding: var(--spacing-xl, 16px);
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xxxl, 32px);
+  align-self: stretch;
+  text-align: left;
+}
+
+.account-new-device-info-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: var(--spacing-xl);
+}
+
+.account-new-device-info-box {
+  display: flex;
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: center;
+  align-self: stretch;
+  justify-content: flex-end;
+  gap: var(--spacing-xl) 16px;
+}
+
+.account-new-device-info-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.account-new-device-info-seal-group {
+  display: flex;
+  flex: 1 0 0;
+  align-items: flex-start;
+  gap: var(--spacing-xl);
+}
+
+.account-new-device-info-seal-text {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+}
+
+.account-new-device-permissions-section {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.account-new-device-cta-btn-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+
+
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */

@@ -3,6 +3,10 @@ import {AccountIndexViewModel} from "../view_models/account/AccountIndexViewMode
 import {AccountProfileViewModel} from "../view_models/account/AccountProfileViewModel";
 import {AccountDevicesViewModel} from "../view_models/account/AccountDevicesViewModel";
 import {AccountNewDeviceCodeViewModel} from "../view_models/account/AccountNewDeviceCodeViewModel";
+import {AccountApproveNewDeviceViewModel} from "../view_models/account/AccountApproveNewDeviceViewModel";
+import {AccountActivatingDeviceViewModel} from "../view_models/account/AccountActivatingDeviceViewModel";
+import {AccountDeviceActivationComplete} from "../view_models/account/AccountDeviceActivationComplete";
+import {AccountDeviceActivationCancelled} from "../view_models/account/AccountDeviceActivationCancelled";
 
 export class AccountController extends AbstractController {
 
@@ -10,15 +14,18 @@ export class AccountController extends AbstractController {
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    * @param {AuthManager} authManager
+   * @param {PermissionManager} permissionManager
    */
   constructor(
     gameState,
     guildAPI,
-    authManager
+    authManager,
+    permissionManager
   ) {
     super('Account', gameState);
     this.guildAPI = guildAPI;
     this.authManager = authManager;
+    this.permissionManager = permissionManager;
   }
 
   index() {
@@ -38,6 +45,40 @@ export class AccountController extends AbstractController {
 
   newDeviceCode() {
     const viewModel = new AccountNewDeviceCodeViewModel(this.gameState, this.guildAPI, this.authManager);
+    viewModel.render();
+  }
+
+  /**
+   * @param {PlayerAddressPending} playerAddressPending
+   */
+  approveNewDevice(playerAddressPending) {
+    const viewModel = new AccountApproveNewDeviceViewModel(
+      this.gameState,
+      this.permissionManager,
+      playerAddressPending
+    );
+    viewModel.render();
+  }
+
+  /**
+   * @param {PlayerAddressPending} playerAddressPending
+   */
+  activatingDevice(playerAddressPending) {
+    const viewModel = new AccountActivatingDeviceViewModel(
+      this.gameState,
+      this.authManager,
+      playerAddressPending
+    );
+    viewModel.render();
+  }
+
+  deviceActivationComplete() {
+    const viewModel = new AccountDeviceActivationComplete();
+    viewModel.render();
+  }
+
+  deviceActivationCancelled() {
+    const viewModel = new AccountDeviceActivationCancelled();
     viewModel.render();
   }
 }

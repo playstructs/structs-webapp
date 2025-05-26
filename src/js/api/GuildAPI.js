@@ -57,12 +57,12 @@ export class GuildAPI {
   }
 
   /**
-   * @param {string} guildId
+   * @param {string} playerId
    * @param {string} address
    * @return {string}
    */
-  buildAddPendingAddressMessage(guildId, address) {
-    return `ADD_PENDING_ADDRESS$${address}GUILD${guildId}`;
+  buildAddressRegisterMessage(playerId, address) {
+    return `PLAYER${playerId}ADDRESS${address}`;
   }
 
   /**
@@ -319,7 +319,25 @@ export class GuildAPI {
    * @return {Promise<GuildAPIResponse>}
    */
   async addPendingAddress(addPendingAddressRequestDTO) {
-    const jsonResponse = await this.ajax.post(`${this.apiUrl}/player-address`, addPendingAddressRequestDTO);
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/player-address`, addPendingAddressRequestDTO);
+    return this.guildAPIResponseFactory.make(jsonResponse);
+  }
+
+  /**
+   * @param {SetPendingAddressPermissionsRequestDTO} setPendingAddressPermissionsRequestDTO
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async setPendingAddressPermissions(setPendingAddressPermissionsRequestDTO) {
+    const jsonResponse = await this.ajax.put(`${this.apiUrl}/player-address/pending/permissions`, setPendingAddressPermissionsRequestDTO);
+    return this.guildAPIResponseFactory.make(jsonResponse);
+  }
+
+  /**
+   * @param {string} activationCode
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async deleteActivationCode(activationCode) {
+    const jsonResponse = await this.ajax.delete(`${this.apiUrl}/player-address/activation-code/${activationCode}`);
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 }

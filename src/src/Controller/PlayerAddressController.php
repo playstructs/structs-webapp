@@ -48,7 +48,7 @@ class PlayerAddressController extends AbstractController
      * @throws TransportExceptionInterface
      */
     #[Route(
-        '/api/player-address',
+        '/api/auth/player-address',
         name: 'api_add_player_pending_address',
         methods: ['POST']
     )]
@@ -116,6 +116,32 @@ class PlayerAddressController extends AbstractController
         return $playerAddressManager->createPlayerAddressActivationCode($request, $security);
     }
 
+    /**
+     * @param string $code
+     * @param ValidatorInterface $validator
+     * @param EntityManagerInterface $entityManager
+     * @param Security $security
+     * @return Response
+     * @throws ClientExceptionInterface
+     * @throws Exception
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     */
+    #[Route(
+        '/api/player-address/activation-code/{code}',
+        name: 'api_delete_player_address_activation_code',
+        methods: ['DELETE']
+    )]
+    public function deletePlayerAddressActivationCode(
+        string $code,
+        ValidatorInterface $validator,
+        EntityManagerInterface $entityManager,
+        Security $security
+    ): Response {
+        $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
+        return $playerAddressManager->deleteActivationCode($code, $security);
+    }
+
     #[Route(
         '/api/player-address/code/{code}',
         name: 'api_get_pending_address_by_code',
@@ -170,6 +196,27 @@ class PlayerAddressController extends AbstractController
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
         return $playerAddressManager->getAddressList($player_id);
+    }
+
+    /**
+     * @param Request $request
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route(
+        '/api/player-address/pending/permissions',
+        name: 'api_set_pending_address_permissions',
+        methods: ['PUT']
+    )]
+    public function setPendingAddressPermissions(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
+        return $playerAddressManager->setPendingAddressPermissions($request);
     }
 
     /**

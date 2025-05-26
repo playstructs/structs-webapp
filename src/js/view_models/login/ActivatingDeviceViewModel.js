@@ -20,22 +20,14 @@ export class ActivatingDeviceViewModel extends AbstractViewModel {
   }
 
   initPageCode() {
-    this.authManager.login().then(async function (success) {
-      if (!success) {
+    this.authManager.login(this.activationCodeInfo.player_id).then(async function (success) {
+      if (success) {
+        MenuPage.router.goto('Auth', 'loginActivateDeviceComplete');
+      } else {
         MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
-        return;
       }
-
-      this.gameState.setThisPlayerId(this.activationCodeInfo.player_id);
-
-      const player = await this.guildAPI.getPlayer(this.activationCodeInfo.player_id);
-      this.gameState.setThisPlayer(player);
-
-      const height = await this.guildAPI.getPlayerLastActionBlockHeight(this.activationCodeInfo.player_id);
-      this.gameState.setLastActionBlockHeight(height);
-
-      MenuPage.router.goto('Auth', 'loginActivateDeviceComplete');
-    }.bind(this)).catch(() => {
+    }.bind(this)).catch((e) => {
+      console.log(e);
       MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
     });
   }

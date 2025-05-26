@@ -33,8 +33,8 @@ export class AccountNewDeviceCodeViewModel extends AbstractViewModel {
       request.logged_in_address = this.gameState.signingAccount.address;
       request.guild_id = this.gameState.thisGuild.id;
 
-      this.guildAPI.createActivationCode(request).then((response) => {
-        document.getElementById(this.activationCodeDisplay).innerHTML = response.success ? response.data.code : 'ERROR';
+      this.authManager.createActivationCode(request).then((code) => {
+        document.getElementById(this.activationCodeDisplay).innerHTML = code;
         generatedActivationCodeElm.classList.add('hidden');
         document.getElementById(this.activationCodeWrapper).classList.remove('hidden');
       });
@@ -47,8 +47,8 @@ export class AccountNewDeviceCodeViewModel extends AbstractViewModel {
       request.logged_in_address = this.gameState.signingAccount.address;
       request.guild_id = this.gameState.thisGuild.id;
 
-      this.guildAPI.createActivationCode(request).then((response) => {
-        document.getElementById(this.activationCodeDisplay).innerHTML = response.success ? response.data.code : 'ERROR';
+      this.authManager.createActivationCode(request).then((code) => {
+        document.getElementById(this.activationCodeDisplay).innerHTML = code;
       });
 
     });

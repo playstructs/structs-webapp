@@ -1,6 +1,29 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./js/constants/Permissions.js":
+/*!*************************************!*\
+  !*** ./js/constants/Permissions.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PERMISSIONS: () => (/* binding */ PERMISSIONS)
+/* harmony export */ });
+const PERMISSIONS = {
+  PLAY: 1,
+  UPDATE: 2,
+  DELETE: 4,
+  ASSETS: 8,
+  ASSOCIATIONS: 16,
+  GRID: 32,
+  PERMISSIONS: 64
+};
+
+/***/ }),
+
 /***/ "./js/framework/DTestFramework.js":
 /*!****************************************!*\
   !*** ./js/framework/DTestFramework.js ***!
@@ -136,6 +159,65 @@ class DTestSuite {
 
 /***/ }),
 
+/***/ "./js/managers/PermissionManager.js":
+/*!******************************************!*\
+  !*** ./js/managers/PermissionManager.js ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PermissionManager: () => (/* binding */ PermissionManager)
+/* harmony export */ });
+/* harmony import */ var _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Permissions */ "./js/constants/Permissions.js");
+
+
+class PermissionManager {
+
+  /**
+   * @return {number}
+   */
+  getDefaultPlayerPermissions() {
+    return _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.PLAY
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.ASSOCIATIONS
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GRID;
+  }
+
+  /**
+   * @return {number}
+   */
+  getManageDevicesPermissions() {
+    return _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.UPDATE
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.DELETE
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.PERMISSIONS;
+  }
+
+  /**
+   * @param {number} initialPermissions
+   * @param {array} permissionsToAdd
+   * @return {number}
+   */
+  addPermissions(initialPermissions, permissionsToAdd) {
+    return permissionsToAdd.reduce((permissions, permissionToAdd) =>
+      permissions | permissionToAdd
+    , initialPermissions);
+  }
+
+  /**
+   * @param initialPermissions
+   * @param permissionsToRemove
+   * @return {*}
+   */
+  removePermissions(initialPermissions, permissionsToRemove) {
+    return permissionsToRemove.reduce((permissions, permissionToRemove) =>
+      permissions & ~permissionToRemove
+    , initialPermissions);
+  }
+}
+
+/***/ }),
+
 /***/ "./js/tests/NumberFormatterTest.js":
 /*!*****************************************!*\
   !*** ./js/tests/NumberFormatterTest.js ***!
@@ -183,6 +265,125 @@ class NumberFormatterTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MO
         number: `1234567801`,
         expected: `1G`
       },
+    ];
+  });
+}
+
+
+/***/ }),
+
+/***/ "./js/tests/PermissionManagerTest.js":
+/*!*******************************************!*\
+  !*** ./js/tests/PermissionManagerTest.js ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PermissionManagerTest: () => (/* binding */ PermissionManagerTest)
+/* harmony export */ });
+/* harmony import */ var _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/DTestFramework */ "./js/framework/DTestFramework.js");
+/* harmony import */ var _managers_PermissionManager__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../managers/PermissionManager */ "./js/managers/PermissionManager.js");
+/* harmony import */ var _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/Permissions */ "./js/constants/Permissions.js");
+
+
+
+
+class PermissionManagerTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTestSuite {
+
+  constructor() {
+    super('PermissionManagerTest');
+  }
+
+  addPermissionsTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('addPermissionsTest', function(params) {
+    const permissionManager = new _managers_PermissionManager__WEBPACK_IMPORTED_MODULE_1__.PermissionManager();
+    this.assertEquals(
+      permissionManager.addPermissions(
+        permissionManager.getDefaultPlayerPermissions(),
+        params.permissionsToAdd
+      ),
+      params.expected
+    );
+  }, function() {
+    return [
+      {
+        permissionsToAdd: [],
+        expected: 49
+      },
+      {
+        permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY],
+        expected: 49
+      },
+      {
+        permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS],
+        expected: 57
+      },
+      {
+        permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PERMISSIONS],
+        expected: 113
+      },
+      {
+        permissionsToAdd: [
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PERMISSIONS
+        ],
+        expected: 121
+      },
+      {
+        permissionsToAdd: [
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PERMISSIONS,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.UPDATE,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.DELETE
+        ],
+        expected: 127
+      },
+    ];
+  });
+
+  removePermissionsTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('removePermissionsTest', function(params) {
+    const permissionManager = new _managers_PermissionManager__WEBPACK_IMPORTED_MODULE_1__.PermissionManager();
+    this.assertEquals(
+      permissionManager.removePermissions(
+        params.initialPermissions,
+        params.permissionsToRemove
+      ),
+      params.expected
+    );
+  }, function() {
+    return [
+      {
+        initialPermissions: 49,
+        permissionsToRemove: [],
+        expected: 49
+      },
+      {
+        initialPermissions: _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSOCIATIONS
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GRID,
+        permissionsToRemove: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSOCIATIONS],
+        expected: _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GRID
+      },
+      {
+        initialPermissions: _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.UPDATE
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.DELETE
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSOCIATIONS
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GRID
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PERMISSIONS,
+        permissionsToRemove: [
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.UPDATE,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GRID,
+        ],
+        expected: _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.DELETE
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSOCIATIONS
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PERMISSIONS
+      }
     ];
   });
 }
@@ -6160,9 +6361,12 @@ var __webpack_exports__ = {};
   \**************************/
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _NumberFormatterTest__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./NumberFormatterTest */ "./js/tests/NumberFormatterTest.js");
+/* harmony import */ var _PermissionManagerTest__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./PermissionManagerTest */ "./js/tests/PermissionManagerTest.js");
+
 
 
 (new _NumberFormatterTest__WEBPACK_IMPORTED_MODULE_0__.NumberFormatterTest()).run();
+(new _PermissionManagerTest__WEBPACK_IMPORTED_MODULE_1__.PermissionManagerTest()).run();
 
 })();
 

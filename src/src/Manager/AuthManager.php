@@ -243,6 +243,7 @@ class AuthManager
 
         $session = $request->getSession();
         $session->set('player_id', $player->getId());
+        $session->set('guild_id', $parsedRequest->params->guild_id);
 
         $responseContent->success = true;
 

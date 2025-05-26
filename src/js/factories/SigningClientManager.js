@@ -2,7 +2,7 @@ import {Registry} from "@cosmjs/proto-signing";
 import {defaultRegistryTypes, SigningStargateClient} from "@cosmjs/stargate";
 // noinspection ES6PreferShortImport
 import {msgTypes} from "../ts/structs.structs/registry";
-import {MsgPlanetExplore} from "../ts/structs.structs/types/structs/structs/tx";
+import {MsgAddressRegister, MsgPlanetExplore} from "../ts/structs.structs/types/structs/structs/tx";
 
 export class SigningClientManager {
 
@@ -42,6 +42,29 @@ export class SigningClientManager {
       value: MsgPlanetExplore.fromPartial({
         creator: playerAddress,
         playerId: playerId
+      }),
+    }
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} playerId
+   * @param {string} addressToRegister
+   * @param {string} proofPubKey
+   * @param {string} proofSignature
+   * @param {number} permissions
+   * @return {{typeUrl: string, value: MsgAddressRegister}}
+   */
+  createMsgAddressRegister(creatorAddress, playerId, addressToRegister, proofPubKey, proofSignature, permissions) {
+    return {
+      typeUrl: '/structs.structs.MsgAddressRegister',
+      value: MsgAddressRegister.fromPartial({
+        creator: creatorAddress,
+        playerId: playerId,
+        address: addressToRegister,
+        proofPubKey: proofPubKey,
+        proofSignature: proofSignature,
+        permissions: permissions
       }),
     }
   }

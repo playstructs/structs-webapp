@@ -43,8 +43,8 @@ class SignatureValidationManager
         return "LOGIN_GUILD{$guildId}ADDRESS{$address}DATETIME{$timestamp}";
     }
 
-    public function buildAddPendingAddressMessage(string $guildId, string $address):string {
-        return "ADD_PENDING_ADDRESS{$address}GUILD{$guildId}";
+    public function buildAddressRegisterMessage(string $playerId, string $address):string {
+        return "PLAYER{$playerId}ADDRESS{$address}";
     }
 
     public function isMessageTimeValid(string $messageTimestamp): bool {

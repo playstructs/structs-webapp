@@ -20,15 +20,7 @@ export class PlayerCreatedListener extends AbstractGrassListener {
     ) {
       console.log(messageData.id);
 
-      this.gameState.setThisPlayerId(messageData.id);
-
-      this.authManager.login().then(async function () {
-        const player = await this.guildAPI.getPlayer(messageData.id);
-        this.gameState.setThisPlayer(player);
-
-        const height = await this.guildAPI.getPlayerLastActionBlockHeight(messageData.id);
-        this.gameState.setLastActionBlockHeight(height);
-
+      this.authManager.login(messageData.id).then(async function () {
         await this.planetManager.findNewPlanet();
       }.bind(this));
 
