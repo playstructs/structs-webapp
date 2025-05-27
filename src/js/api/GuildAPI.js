@@ -372,4 +372,16 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.delete(`${this.apiUrl}/player-address/activation-code/${activationCode}`);
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
+
+  /**
+   * @param address
+   * @param guildId
+   * @return {Promise<string>}
+   */
+  async getPlayerIdByAddressAndGuild(address, guildId) {
+    return await this.getSingleDataValue(
+      `${this.apiUrl}/auth/player-address/${address}/guild/${guildId}/player-id`,
+      'player_id'
+    );
+  }
 }

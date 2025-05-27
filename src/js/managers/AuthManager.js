@@ -164,6 +164,26 @@ export class AuthManager {
     return response.success;
   }
 
+  /**
+   * @param {string} mnemonic
+   * @return {Promise<boolean>}
+   */
+  async loginWithMnemonic(mnemonic) {
+    try {
+      await this.initWallet(mnemonic);
+
+      const playerId = await this.guildAPI.getPlayerIdByAddressAndGuild(
+        this.gameState.signingAccount.address,
+        this.gameState.thisGuild.id
+      );
+
+      return this.login(playerId);
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  }
+
   logout() {
     this.guildAPI.logout().then(() => {
       localStorage.clear();

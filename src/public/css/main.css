@@ -161,6 +161,10 @@ common-group - no padding
   gap: var(--spacing-xxxl);
 }
 
+.common-layout-col.mod-justify-start {
+  justify-content: flex-start;
+}
+
 .common-group-col {
   position: relative;
   display: flex;
@@ -1083,6 +1087,14 @@ img.loading-3-dots {
   display: flex;
   align-items: flex-start;
   gap: 16px;
+}
+
+.recover-account-start-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  align-self: stretch;
 }
 
 

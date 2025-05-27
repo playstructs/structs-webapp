@@ -47,7 +47,7 @@ export class ActivateDeviceViewModel extends AbstractViewModel {
     });
 
     document.getElementById(this.logInWithRecoveryKeyBtnId).addEventListener('click', () => {
-      console.log('Log in with recovery key');
+      MenuPage.router.goto('Auth', 'loginRecoverAccountStart');
     })
   }
 

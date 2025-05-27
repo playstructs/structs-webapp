@@ -32,6 +32,9 @@ import {
 } from "../view_models/login/ActivateDeviceWaitingForApprovalViewModel";
 import {ActivatingDeviceViewModel} from "../view_models/login/ActivatingDeviceViewModel";
 import {ActivateDeviceCompleteViewModel} from "../view_models/login/ActivateDeviceCompleteViewModel";
+import {RecoverAccountStartViewModel} from "../view_models/login/RecoverAccountStartViewModel";
+import {RecoverAccountSuccessViewModel} from "../view_models/login/RecoverAccountSuccessViewModel";
+import {RecoverAccountFailViewModel} from "../view_models/login/RecoverAccountFailViewModel";
 
 export class AuthController extends AbstractController {
 
@@ -228,6 +231,21 @@ export class AuthController extends AbstractController {
 
   loginActivateDeviceComplete() {
     const viewModel = new ActivateDeviceCompleteViewModel(this.gameState);
+    viewModel.render();
+  }
+
+  loginRecoverAccountStart() {
+    const viewModel = new RecoverAccountStartViewModel(this.gameState, this.authManager);
+    viewModel.render();
+  }
+
+  loginRecoverAccountSuccess() {
+    const viewModel = new RecoverAccountSuccessViewModel();
+    viewModel.render();
+  }
+
+  loginRecoverAccountFail() {
+    const viewModel = new RecoverAccountFailViewModel();
     viewModel.render();
   }
 }

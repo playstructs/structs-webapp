@@ -22,7 +22,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class PlayerAddressController extends AbstractController
 {
     #[Route(
-        '/api/player-address/{address}/guild/{guild_id}/player-id',
+        '/api/auth/player-address/{address}/guild/{guild_id}/player-id',
         name: 'api_get_player_id_by_address_and_guild',
         methods: ['GET']
     )]

@@ -14,7 +14,7 @@ export class ActivateDeviceCancelledViewModel extends AbstractViewModel {
       MenuPage.router.goto('Auth', 'loginActivateDevice');
     });
     document.getElementById(this.logInWithRecoveryKeyBtnId).addEventListener('click', () => {
-      console.log('Log in with recovery key');
+      MenuPage.router.goto('Auth', 'loginRecoverAccountStart');
     });
   }
 

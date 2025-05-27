@@ -5,11 +5,11 @@ export class ActivateDeviceCompleteViewModel extends AbstractViewModel {
 
   constructor() {
     super();
-    this.playerStructsBtnId = 'player-structs-btn';
+    this.playStructsBtnId = 'play-structs-btn';
   }
 
   initPageCode() {
-    document.getElementById(this.playerStructsBtnId).addEventListener('click', () => {
+    document.getElementById(this.playStructsBtnId).addEventListener('click', () => {
       MenuPage.close();
     });
   }
@@ -31,7 +31,7 @@ export class ActivateDeviceCompleteViewModel extends AbstractViewModel {
         </div>        
         
         <div class="device-activation-btn-container">
-          <button id="${this.playerStructsBtnId}" class="sui-screen-btn sui-mod-primary">Play Structs</button>
+          <button id="${this.playStructsBtnId}" class="sui-screen-btn sui-mod-primary">Play Structs</button>
         </div>
 
       </div>
