@@ -21,12 +21,10 @@ export class AccountActivatingDeviceViewModel extends AbstractViewModel {
 
   initPageCode() {
     this.authManager.activateDevice(this.playerAddressPending).then(async function (success) {
-      if (success) {
-        MenuPage.router.goto('Account', 'deviceActivationComplete');
-      } else {
+      if (!success) {
         MenuPage.router.goto('Account', 'deviceActivationCancelled');
       }
-    }.bind(this)).catch(() => {
+    }).catch(() => {
       MenuPage.router.goto('Account', 'deviceActivationCancelled');
     });
   }

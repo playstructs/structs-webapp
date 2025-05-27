@@ -178,14 +178,22 @@ export class GuildAPI {
 
   /**
    * @param {string} playerId
+   * @return {string}
+   */
+  getPlayerAddressCountCacheKey(playerId) {
+    return `getPlayerAddressCount::${playerId}`;
+  }
+
+  /**
+   * @param {string} playerId
    * @param {boolean} forceRefresh
    * @return {Promise<number>}
    */
   async getPlayerAddressCount(playerId, forceRefresh = false) {
-    let count = this.getCachedItem('getPlayerAddressCount');
+    let count = this.getCachedItem(this.getPlayerAddressCountCacheKey(playerId));
     if (count === null || forceRefresh) {
       count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
-      this.cacheItem('getPlayerAddressCount', count);
+      this.cacheItem(this.getPlayerAddressCountCacheKey(playerId), count);
     }
     return parseInt(count);
   }
@@ -203,18 +211,34 @@ export class GuildAPI {
 
   /**
    * @param {string} playerId
+   * @return {string}
+   */
+  getPlayerOreStatsCacheKey(playerId) {
+    return `getPlayerOreStats::${playerId}`;
+  }
+
+  /**
+   * @param {string} playerId
    * @param {boolean} forceRefresh
    * @return {Promise<PlayerOreStats>}
    */
   async getPlayerOreStats(playerId, forceRefresh = false) {
-    let response = this.getCachedItem('getPlayerOreStats');
+    let response = this.getCachedItem(this.getPlayerOreStatsCacheKey(playerId));
     if (response === null || forceRefresh) {
       const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}/ore/stats`);
       response = this.guildAPIResponseFactory.make(jsonResponse);
       this.handleResponseFailure(response);
-      this.cacheItem('getPlayerOreStats', response);
+      this.cacheItem(this.getPlayerOreStatsCacheKey(playerId), response);
     }
     return this.playerOreStatsFactory.make(response.data, playerId);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {string}
+   */
+  getPlayerPlanetsCompletedCacheKey(playerId) {
+    return `getPlayerPlanetsCompleted::${playerId}`;
   }
 
   /**
@@ -223,12 +247,20 @@ export class GuildAPI {
    * @return {Promise<number>}
    */
   async getPlayerPlanetsCompleted(playerId, forceRefresh = false) {
-    let count = this.getCachedItem('getPlayerPlanetsCompleted');
+    let count = this.getCachedItem(this.getPlayerPlanetsCompletedCacheKey(playerId));
     if (count === null || forceRefresh) {
       count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/planet/completed`, 'count');
-      this.cacheItem('getPlayerPlanetsCompleted', count);
+      this.cacheItem(this.getPlayerPlanetsCompletedCacheKey(playerId), count);
     }
     return parseInt(count);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {string}
+   */
+  getPlayerRaidsLaunchedCacheKey(playerId) {
+    return `getPlayerRaidsLaunched::${playerId}`;
   }
 
   /**
@@ -237,10 +269,10 @@ export class GuildAPI {
    * @return {Promise<number>}
    */
   async getPlayerRaidsLaunched(playerId, forceRefresh = false) {
-    let count = this.getCachedItem('getPlayerRaidsLaunched');
+    let count = this.getCachedItem(this.getPlayerRaidsLaunchedCacheKey(playerId));
     if (count === null || forceRefresh) {
       count = await this.getSingleDataValue(`${this.apiUrl}/player/${playerId}/raid/launched`, 'count');
-      this.cacheItem('getPlayerRaidsLaunched', count);
+      this.cacheItem(this.getPlayerRaidsLaunchedCacheKey(playerId), count);
     }
     return parseInt(count);
   }

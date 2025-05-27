@@ -20,6 +20,8 @@ export class FirstPlanetListener extends AbstractGrassListener {
       && messageData.subject === `structs.player.${this.gameState.thisGuild.id}.${this.gameState.thisPlayerId}`
       && messageData.planet_id
     ) {
+      this.shouldUnregister = () => true;
+
       this.gameState.thisPlayer.planet_id = messageData.planet_id;
       this.guildAPI.getPlanet(messageData.planet_id).then((planet) => {
         this.gameState.setPlanet(planet);

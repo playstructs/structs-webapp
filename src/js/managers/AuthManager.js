@@ -11,11 +11,12 @@ import {MenuPage} from "../framework/MenuPage";
 import {PlanetManager} from "./PlanetManager";
 import {FirstPlanetListener} from "../grass_listeners/FirstPlanetListener";
 import {AddPendingAddressRequestDTO} from "../dtos/AddPendingAddressRequestDTO";
-import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApprovedListener";
+import {PlayerAddressApprovedLoginListener} from "../grass_listeners/PlayerAddressApprovedLoginListener";
 import {PlayerAddressPendingCreatedListener} from "../grass_listeners/PlayerAddressPendingCreatedListener";
 import {PlayerAddressPendingFactory} from "../factories/PlayerAddressPendingFactory";
 import {SetPendingAddressPermissionsRequestDTO} from "../dtos/SetPendingAddressPermissionsRequestDTO";
 import {FEE} from "../constants/Fee";
+import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApprovedListener";
 
 export class AuthManager {
 
@@ -150,6 +151,14 @@ export class AuthManager {
 
       const height = await this.guildAPI.getPlayerLastActionBlockHeight(playerId);
       this.gameState.setLastActionBlockHeight(height);
+
+      if (this.gameState.thisPlayer.planet_id) {
+        const planet = await this.guildAPI.getPlanet(this.gameState.thisPlayer.planet_id);
+        this.gameState.setPlanet(planet);
+
+        const shieldHealth = await this.guildAPI.getPlanetShieldHealth(this.gameState.thisPlayer.planet_id);
+        this.gameState.setPlanetShieldHealth(shieldHealth);
+      }
     }
 
     return response.success;
@@ -191,12 +200,11 @@ export class AuthManager {
     request.pubkey = this.gameState.pubkey;
     request.user_agent = window.navigator.userAgent;
 
-    const playerAddressApproved = new PlayerAddressApprovedListener(
+    const playerAddressApprovedLoginListener = new PlayerAddressApprovedLoginListener(
       this.gameState,
       activationCodeInfo
     );
-
-    this.grassManager.registerListener(playerAddressApproved);
+    this.grassManager.registerListener(playerAddressApprovedLoginListener);
 
     const response = await this.guildAPI.addPendingAddress(request);
 
@@ -239,6 +247,13 @@ export class AuthManager {
     if (!response.success) {
       return false;
     }
+
+    const playerAddressApprovedListener = new PlayerAddressApprovedListener(
+      this.gameState,
+      this.guildAPI,
+      playerAddressPending
+    );
+    this.grassManager.registerListener(playerAddressApprovedListener);
 
     const msg = this.signingClientManager.createMsgAddressRegister(
       this.gameState.signingAccount.address,
