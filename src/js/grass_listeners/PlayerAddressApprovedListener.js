@@ -5,27 +5,33 @@ export class PlayerAddressApprovedListener extends AbstractGrassListener {
 
   /**
    * @param {GameState} gameState
-   * @param {ActivationCodeInfoDTO} activationCodeInfo
+   * @param {GuildAPI} guildAPI
+   * @param {PlayerAddressPending} playerAddressPending
    */
   constructor(
     gameState,
-    activationCodeInfo
+    guildAPI,
+    playerAddressPending
   ) {
     super('PLAYER_ADDRESS_APPROVED');
     this.gameState = gameState;
-    this.activationCodeInfo = activationCodeInfo;
+    this.guildAPI = guildAPI;
+    this.playerAddressPending = playerAddressPending;
   }
 
   handler(messageData) {
     if (
       messageData.category === 'player_address'
-      && messageData.subject === `structs.player.${this.gameState.thisGuild.id}.${this.activationCodeInfo.player_id}`
+      && messageData.subject === `structs.player.${this.gameState.thisGuild.id}.${this.gameState.thisPlayerId}`
       && messageData.status === 'approved'
-      && messageData.address === this.gameState.signingAccount.address
+      && messageData.address === this.playerAddressPending.address
     ) {
       this.shouldUnregister = () => true;
 
-      MenuPage.router.goto('Auth', 'loginActivatingDevice', this.activationCodeInfo);
+      // Refresh device count cache
+      this.guildAPI.getPlayerAddressCount(this.gameState.thisPlayerId, true).then();
+
+      MenuPage.router.goto('Account', 'deviceActivationComplete');
     }
   }
 }
