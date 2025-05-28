@@ -220,6 +220,29 @@ class PlayerAddressController extends AbstractController
     }
 
     /**
+     * @param Request $request
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @param Security $security
+     * @return Response
+     * @throws Exception
+     */
+    #[Route(
+        '/api/player-address/permissions',
+        name: 'api_set_address_permissions',
+        methods: ['PUT']
+    )]
+    public function setAddressPermissions(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator,
+        Security $security
+    ): Response {
+        $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
+        return $playerAddressManager->setAddressPermissions($request, $security);
+    }
+
+    /**
      * @param string $address
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator

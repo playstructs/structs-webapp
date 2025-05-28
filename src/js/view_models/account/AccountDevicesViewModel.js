@@ -32,7 +32,7 @@ export class AccountDevicesViewModel extends AbstractViewModel {
     this.deviceBlockies.forEach((blockie, address) => {
       document.getElementById(`device-${address}`).append(blockie);
       document.getElementById(`manage-${address}`).addEventListener('click', () => {
-        console.log(`Manage ${address}`);
+         MenuPage.router.goto('Account', 'manageDevice', address);
       });
     })
   }

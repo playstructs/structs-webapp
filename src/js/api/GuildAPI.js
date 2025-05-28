@@ -384,4 +384,24 @@ export class GuildAPI {
       'player_id'
     );
   }
+
+  /**
+   * @param {string} address
+   * @return {Promise<PlayerAddress>}
+   */
+  async getPlayerAddress(address) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/${address}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.playerAddressFactory.make(response.data);
+  }
+
+  /**
+   * @param {SetAddressPermissionsRequestDTO} setAddressPermissionsRequestDTO
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async setAddressPermissions(setAddressPermissionsRequestDTO) {
+    const jsonResponse = await this.ajax.put(`${this.apiUrl}/player-address/permissions`, setAddressPermissionsRequestDTO);
+    return this.guildAPIResponseFactory.make(jsonResponse);
+  }
 }

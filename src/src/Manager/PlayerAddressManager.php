@@ -257,16 +257,30 @@ class PlayerAddressManager
      */
     public function getAddressDetails(string $address): Response
     {
-        $query = '
-            SELECT pa.address, pa.player_id, pam.ip, pam.user_agent, vpa.permission_assets, vpa.permissions
+        $query = "
+            SELECT
+              pa.address,
+              pa.player_id,
+              pa.guild_id,
+              pa.status,
+              pam.ip, 
+              pam.user_agent,
+              paa.block_time,
+              p.val AS permissions
             FROM player_address pa
             LEFT JOIN player_address_meta pam
               ON pa.address = pam.address
-            LEFT JOIN view.permission_address vpa
-              ON pa.address = vpa.address
+            LEFT JOIN player_address_activity paa
+              ON pa.address = paa.address
+            LEFT JOIN permission p
+              ON pa.player_id = p.player_id
+              AND pa.address = p.object_index
+              AND p.object_type = 'address'
+              AND p.object_id = p.player_id
             WHERE pa.address = :address
+            AND pa.status = 'approved'
             LIMIT 1;
-        ';
+        ";
         // TODO: Will need to get the location associated with the IP address when GeoIP DB added
 
         $requestParams = [ApiParameters::ADDRESS => $address];
@@ -490,6 +504,64 @@ class PlayerAddressManager
 
         if (!$responseContent->success) {
             $responseContent->errors = ['not_found' => 'Pending address not found in DB.'];
+            $status = Response::HTTP_INTERNAL_SERVER_ERROR;
+        }
+
+        return new JsonResponse($responseContent, $status);
+    }
+
+    /**
+     * @param Request $request
+     * @param Security $security
+     * @return Response
+     * @throws Exception
+     */
+    public function setAddressPermissions(
+        Request $request,
+        Security $security
+    ): Response {
+        /** @var Player $player */
+        $player = $security->getUser();
+        $player_id = $player->getId();
+
+        $responseContent = new ApiResponseContentDto();
+
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest(
+            $request,
+            [
+                ApiParameters::ADDRESS,
+                ApiParameters::PERMISSIONS
+            ]
+        );
+
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $query = "
+            UPDATE permission
+            SET val = :permissions
+            WHERE player_id = :player_id
+            AND object_id = :player_id
+            AND object_type = 'address'
+            AND object_index = :address;
+        ";
+
+        $db = $this->entityManager->getConnection();
+        $rowsAffected = $db->executeStatement($query, [
+            'permissions' => intval($parsedRequest->params->permissions),
+            'player_id' => $player_id,
+            'address' => $parsedRequest->params->address
+        ]);
+
+        $responseContent->data = ['rows_affected' => $rowsAffected];
+        $responseContent->success = $rowsAffected > 0;
+        $status = Response::HTTP_OK;
+
+        if (!$responseContent->success) {
+            $responseContent->errors = ['not_found' => 'Address not found in DB.'];
             $status = Response::HTTP_INTERNAL_SERVER_ERROR;
         }
 

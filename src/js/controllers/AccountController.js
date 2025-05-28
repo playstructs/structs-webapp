@@ -7,6 +7,7 @@ import {AccountApproveNewDeviceViewModel} from "../view_models/account/AccountAp
 import {AccountActivatingDeviceViewModel} from "../view_models/account/AccountActivatingDeviceViewModel";
 import {AccountDeviceActivationComplete} from "../view_models/account/AccountDeviceActivationComplete";
 import {AccountDeviceActivationCancelled} from "../view_models/account/AccountDeviceActivationCancelled";
+import {AccountDeviceViewModel} from "../view_models/account/AccountDeviceViewModel";
 
 export class AccountController extends AbstractController {
 
@@ -79,6 +80,19 @@ export class AccountController extends AbstractController {
 
   deviceActivationCancelled() {
     const viewModel = new AccountDeviceActivationCancelled();
+    viewModel.render();
+  }
+
+  /**
+   * @param {string} deviceAddress
+   */
+  manageDevice(deviceAddress) {
+    const viewModel = new AccountDeviceViewModel(
+      this.gameState,
+      this.guildAPI,
+      this.permissionManager,
+      deviceAddress
+    );
     viewModel.render();
   }
 }
