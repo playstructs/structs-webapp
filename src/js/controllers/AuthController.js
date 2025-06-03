@@ -254,15 +254,17 @@ export class AuthController extends AbstractController {
   }
 
   /**
-   * @param {string|null} addressToRevoke
+   * @param {object} options
    */
-  logout(addressToRevoke = null) {
+  logout(options) {
 
-    const options = new MenuWaitingOptions();
-    options.headerBtnLabel = 'Logout';
-    options.waitingMessage = 'Logging out.';
+    const addressToRevoke = options.hasOwnProperty('address') ? options.address : null;
 
-    MenuPage.router.goto('Generic', 'menuWaiting', options);
+    const menuWaitingOptions = new MenuWaitingOptions();
+    menuWaitingOptions.headerBtnLabel = 'Logout';
+    menuWaitingOptions.waitingMessage = 'Logging out.';
+
+    MenuPage.router.goto('Generic', 'menuWaiting', menuWaitingOptions);
 
     if (addressToRevoke) {
       this.authManager.revokeAddress(addressToRevoke).then();
