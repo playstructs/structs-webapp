@@ -10,7 +10,7 @@ import {RecoveryKeyIntroViewModel} from "../view_models/signup/RecoveryKeyIntroV
 import {RecoveryKeyCreationViewModel} from "../view_models/signup/RecoveryKeyCreationViewModel";
 import {WalletManager} from "../managers/WalletManager";
 import {RecoveryKeyConfirmationViewModel} from "../view_models/signup/RecoveryKeyConfirmationViewModel";
-import {AwaitingIdViewModel} from "../view_models/signup/AwaitingIdViewModel";
+import {LoggingInViewModel} from "../view_models/login/LoggingInViewModel";
 import {RecoveryKeyFaqViewModel} from "../view_models/signup/RecoveryKeyFaqViewModel";
 import {SignupSuccessViewModel} from "../view_models/signup/SignupSuccessViewModel";
 import {AuthManager} from "../managers/AuthManager";
@@ -35,6 +35,10 @@ import {ActivateDeviceCompleteViewModel} from "../view_models/login/ActivateDevi
 import {RecoverAccountStartViewModel} from "../view_models/login/RecoverAccountStartViewModel";
 import {RecoverAccountSuccessViewModel} from "../view_models/login/RecoverAccountSuccessViewModel";
 import {RecoverAccountFailViewModel} from "../view_models/login/RecoverAccountFailViewModel";
+import {LogoutPermissionsWarningViewModel} from "../view_models/logout/LogoutPermissionsWarningViewModel";
+import {LogoutAssetsWarningViewModel} from "../view_models/logout/LogoutAssetsWarningViewModel";
+import {MenuPage} from "../framework/MenuPage";
+import {MenuWaitingOptions} from "../options/MenuWaitingOptions";
 
 export class AuthController extends AbstractController {
 
@@ -135,8 +139,8 @@ export class AuthController extends AbstractController {
     viewModel.render();
   }
 
-  signupAwaitingId() {
-    const viewModel = new AwaitingIdViewModel();
+  loggingIn() {
+    const viewModel = new LoggingInViewModel();
     viewModel.render();
   }
 
@@ -246,6 +250,40 @@ export class AuthController extends AbstractController {
 
   loginRecoverAccountFail() {
     const viewModel = new RecoverAccountFailViewModel();
+    viewModel.render();
+  }
+
+  /**
+   * @param {string|null} addressToRevoke
+   */
+  logout(addressToRevoke = null) {
+
+    const options = new MenuWaitingOptions();
+    options.headerBtnLabel = 'Logout';
+    options.waitingMessage = 'Logging out.';
+
+    MenuPage.router.goto('Generic', 'menuWaiting', options);
+
+    if (addressToRevoke) {
+      this.authManager.revokeAddress(addressToRevoke).then();
+    } else {
+      this.authManager.logout();
+    }
+  }
+
+  /**
+   * @param {PlayerAddress} playerAddress
+   */
+  logoutAssetsWarning(playerAddress) {
+    const viewModel = new LogoutAssetsWarningViewModel(this.gameState, playerAddress);
+    viewModel.render();
+  }
+
+  /**
+   * @param {PlayerAddress} playerAddress
+   */
+  logoutPermissionsWarning(playerAddress) {
+    const viewModel = new LogoutPermissionsWarningViewModel(this.gameState, playerAddress);
     viewModel.render();
   }
 }

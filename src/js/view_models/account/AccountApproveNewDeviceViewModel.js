@@ -27,12 +27,6 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
     this.approveDeviceBtnId = 'approveDeviceBtn';
     this.denyDeviceBtnId = 'denyDeviceBtn';
     this.newDeviceBlockieId = 'newDeviceBlockie';
-
-    // this.playerAddressPending = new PlayerAddressPending();
-    // this.playerAddressPending.code = 'ABCDE';
-    // this.playerAddressPending.address = 'structs1lng996s8ae76rwwv0slzvzgt6gjltcypluk2x0';
-    // this.playerAddressPending.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36';
-    // this.playerAddressPending.ip = '127.0.0.1';
   }
 
   initPageCode() {
@@ -64,22 +58,22 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
     MenuPage.setPageTemplateHeaderBtn('Activate New Device');
 
     MenuPage.setPageTemplateContent(`
-      <div class="account-approve-new-device-layout">
+      <div class="account-manage-device-layout">
       
         <div class="account-new-device-info-section">
           <div>The following device is requesting access to your account:</div>
-          <div class="account-new-device-info-box">
-            <div class="account-new-device-info-details">
-              <div class="sui-text-primary">New Device</div>
+          <div class="account-manage-device-info-box">
+            <div class="account-manage-device-info-details">
+              <div class="sui-text-header sui-text-primary">New Device</div>
               <div class="device-index-row-info-list">
                 <div>${location}</div>
                 <div>${userAgent.getBrowser()} Browser</div>
                 <div>${userAgent.getDeviceTypeAndOS()}</div>
               </div>
             </div>
-            <div class="account-new-device-info-seal-group">
+            <div class="account-manage-device-info-icon-group">
               <div id="${this.newDeviceBlockieId}"></div>
-              <div class="account-new-device-info-seal-text">
+              <div class="account-manage-device-info-icon-text">
                 <div class="sui-text-header">Device Seal</div>
                 <div class="sui-text-ticker sui-text-hint">Ensure this image matches the one shown on the device to be activated.</div>
               </div>
@@ -87,7 +81,7 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
           </div>
         </div>
         
-        <div class="account-new-device-permissions-section">
+        <div class="account-manage-device-permissions-section">
           <div>Set permissions for the new device:</div>
           <div class="sui-checkbox-container">
             <input 

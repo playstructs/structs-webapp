@@ -226,16 +226,26 @@ class PlayerAddressManager
      */
     public function getAddressList(string $player_id): Response
     {
-        $query = '
-            SELECT pa.address, paa.block_time, pam.ip, pam.user_agent
+        $query = "
+            SELECT 
+              pa.address, 
+              paa.block_time, 
+              pam.ip,
+              pam.user_agent,
+              p.val AS permissions
             FROM player_address pa
             LEFT JOIN player_address_activity paa
               ON pa.address = paa.address
             LEFT JOIN player_address_meta pam
               ON pa.address = pam.address
+            LEFT JOIN permission p
+              ON pa.player_id = p.player_id
+              AND pa.address = p.object_index
+              AND pa.player_id = p.object_id
+              AND p.object_type = 'address'
             WHERE pa.player_id = :player_id
-            AND pa.status = \'approved\';
-        ';
+            AND pa.status = 'approved';
+        ";
         //TODO: Will need to get the location associated with the IP address when GeoIP DB added
 
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
@@ -266,7 +276,8 @@ class PlayerAddressManager
               pam.ip, 
               pam.user_agent,
               paa.block_time,
-              p.val AS permissions
+              p.val AS permissions,
+              ai.balance AS alpha
             FROM player_address pa
             LEFT JOIN player_address_meta pam
               ON pa.address = pam.address
@@ -275,8 +286,11 @@ class PlayerAddressManager
             LEFT JOIN permission p
               ON pa.player_id = p.player_id
               AND pa.address = p.object_index
+              AND pa.player_id = p.object_id
               AND p.object_type = 'address'
-              AND p.object_id = p.player_id
+            LEFT JOIN view.address_inventory ai
+              ON pa.address = ai.address
+                AND ai.denom = 'alpha'
             WHERE pa.address = :address
             AND pa.status = 'approved'
             LIMIT 1;

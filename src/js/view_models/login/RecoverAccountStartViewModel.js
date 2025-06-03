@@ -37,6 +37,8 @@ export class RecoverAccountStartViewModel extends AbstractViewModel {
       const recoveryKeyInput = document.getElementById('recovery-key-input');
       recoveryKeyInput.value = recoveryKeyInput.value.replace(/\s\s+/g, ' ');
 
+      MenuPage.router.goto('Auth', 'loggingIn');
+
       this.authManager.loginWithMnemonic(recoveryKeyInput.value).then(async (success) => {
         if (success) {
           MenuPage.router.goto('Auth', 'loginRecoverAccountSuccess');

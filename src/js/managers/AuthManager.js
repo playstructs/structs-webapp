@@ -17,6 +17,7 @@ import {PlayerAddressPendingFactory} from "../factories/PlayerAddressPendingFact
 import {SetPendingAddressPermissionsRequestDTO} from "../dtos/SetPendingAddressPermissionsRequestDTO";
 import {FEE} from "../constants/Fee";
 import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApprovedListener";
+import {PlayerAddressRevokedListener} from "../grass_listeners/PlayerAddressRevokedListener";
 
 export class AuthManager {
 
@@ -133,6 +134,8 @@ export class AuthManager {
     console.log('Login response status:', response);
 
     if (response.success) {
+      this.gameState.setThisPlayerId(playerId); // Must be set before registering many GRASS listeners
+
       this.grassManager.registerListener(new LastActionListener(this.gameState));
       this.grassManager.registerListener(new PlayerAlphaListener(this.gameState));
       this.grassManager.registerListener(new PlayerOreListener(this.gameState));
@@ -140,11 +143,10 @@ export class AuthManager {
       this.grassManager.registerListener(new PlayerStructsLoadListener(this.gameState));
       this.grassManager.registerListener(new PlayerCapacityListener(this.gameState));
       this.grassManager.registerListener(new ConnectionCapacityListener(this.gameState));
+      this.grassManager.registerListener(new PlayerAddressRevokedListener(this.gameState));
 
       await this.signingClientManager.initSigningClient(this.gameState.wallet);
       this.playerAddressManager.addPlayerAddressMeta();
-
-      this.gameState.setThisPlayerId(playerId);
 
       const player = await this.guildAPI.getPlayer(playerId);
       this.gameState.setThisPlayer(player);
@@ -184,11 +186,34 @@ export class AuthManager {
     }
   }
 
+  /**
+   * @param {string|null} addressToRevoke
+   */
+  async revokeAddress(addressToRevoke) {
+    const msg = this.signingClientManager.createMsgAddressRevoke(
+      this.gameState.signingAccount.address,
+      addressToRevoke
+    );
+
+    try {
+      await this.gameState.signingClient.signAndBroadcast(
+        this.gameState.signingAccount.address,
+        [msg],
+        FEE
+      );
+    } catch (error) {
+      console.log('Sign and Broadcast Error:', error);
+    }
+
+    MenuPage.router.goto('Account', 'devices');
+  }
+
   logout() {
     this.guildAPI.logout().then(() => {
       localStorage.clear();
       MenuPage.router.goto('Auth', 'index');
       MenuPage.open();
+      window.location.reload();
     });
   }
 

@@ -40,7 +40,12 @@ export class AccountController extends AbstractController {
   }
 
   devices() {
-    const viewModel = new AccountDevicesViewModel(this.gameState, this.guildAPI, this.authManager);
+    const viewModel = new AccountDevicesViewModel(
+      this.gameState,
+      this.guildAPI,
+      this.authManager,
+      this.permissionManager
+    );
     viewModel.render();
   }
 
@@ -84,7 +89,7 @@ export class AccountController extends AbstractController {
   }
 
   /**
-   * @param {string} deviceAddress
+   * @param {PlayerAddress} deviceAddress
    */
   manageDevice(deviceAddress) {
     const viewModel = new AccountDeviceViewModel(

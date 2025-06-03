@@ -13,6 +13,7 @@ import {PlanetManager} from "./managers/PlanetManager";
 import {PlayerAddressManager} from "./managers/PlayerAddressManager";
 import {PermissionManager} from "./managers/PermissionManager";
 import {PlayerAddressPendingFactory} from "./factories/PlayerAddressPendingFactory";
+import {GenericController} from "./controllers/GenericController";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -68,10 +69,14 @@ const accountController = new AccountController(
   authManager,
   permissionManager
 );
+const genericController = new GenericController(
+  gameState
+);
 
 MenuPage.gameState = gameState;
 MenuPage.router.registerController(authController);
 MenuPage.router.registerController(accountController);
+MenuPage.router.registerController(genericController);
 MenuPage.initListeners();
 
 grassManager.init();
@@ -94,7 +99,7 @@ if (gameState.lastSaveBlockHeight === 0) {
   playerAddressManager.addPlayerAddressMeta();
 
   MenuPage.close();
-  // MenuPage.router.goto('Account', 'approveNewDevice');
-  // MenuPage.router.restore('Account', 'index');
-  MenuPage.router.goto('Account', 'index');
+  // MenuPage.router.goto('Account', 'index');
+  MenuPage.router.restore('Account', 'index');
+  // MenuPage.router.goto('Account', 'logoutPermissionsWarning');
 }

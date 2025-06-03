@@ -10,29 +10,44 @@ export class AccountDevicesViewModel extends AbstractViewModel {
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    * @param {AuthManager} authManager
+   * @param {PermissionManager} permissionManager
    */
   constructor(
     gameState,
     guildAPI,
-    authManager
+    authManager,
+    permissionManager
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.authManager = authManager;
+    this.permissionManager = permissionManager;
     this.activateNewDeviceBtnId = 'activate-new-device';
     this.blockies = new Blockies();
-    this.deviceBlockies = new Map();
+    this.devices = new Map();
   }
 
   initPageCode() {
     document.getElementById(this.activateNewDeviceBtnId).addEventListener('click', () => {
       MenuPage.router.goto('Account', 'newDeviceCode');
     });
-    this.deviceBlockies.forEach((blockie, address) => {
-      document.getElementById(`device-${address}`).append(blockie);
+
+    let numManagingDevices = 0;
+    this.devices.forEach((device) => {
+      numManagingDevices += ((parseInt(device.playerAddress.permissions) & this.permissionManager.getManageDevicesPermissions()) === this.permissionManager.getManageDevicesPermissions()) ? 1 : 0;
+    });
+
+    this.devices.forEach((device, address) => {
+      document.getElementById(`device-${address}`).append(device.blockieElm);
       document.getElementById(`manage-${address}`).addEventListener('click', () => {
-         MenuPage.router.goto('Account', 'manageDevice', address);
+        if (
+          numManagingDevices === 1
+          && ((parseInt(device.playerAddress.permissions) & this.permissionManager.getManageDevicesPermissions()) === this.permissionManager.getManageDevicesPermissions())
+        ) {
+          device.playerAddress.isOnlyManagingDevice = true;
+        }
+        MenuPage.router.goto('Account', 'manageDevice', device.playerAddress);
       });
     })
   }
@@ -42,9 +57,18 @@ export class AccountDevicesViewModel extends AbstractViewModel {
    * @return {string}
    */
   renderDevice(playerAddress) {
-    this.deviceBlockies.set(playerAddress.address, this.blockies.createBlockie(playerAddress.address));
+    this.devices.set(playerAddress.address, {
+      playerAddress: playerAddress,
+      blockieElm: this.blockies.createBlockie(playerAddress.address)
+    });
     const userAgent = new UserAgent(playerAddress.user_agent);
-    const location = playerAddress.ip; // TODO: When geoip data is added, use that field if set
+
+    let location = playerAddress.ip; // TODO: When geoip data is added, use that field if set
+
+    if (this.gameState.thisPlayer.primary_address === playerAddress.address) {
+      location = `[Primary Device]<br>${location}`;
+    }
+
     const lastActivity = new Date(playerAddress.block_time).toLocaleDateString(
       'default',
       {
