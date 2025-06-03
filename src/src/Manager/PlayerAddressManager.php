@@ -201,11 +201,12 @@ class PlayerAddressManager
      */
     public function countPlayerAddresses(string $player_id): Response
     {
-        $countQuery = '
-            SELECT COUNT(*) AS "count"
+        $countQuery = "
+            SELECT COUNT(*) AS count
             FROM player_address
             WHERE player_id = :player_id
-        ';
+            AND status = 'approved';
+        ";
 
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
         $requiredFields = [ApiParameters::PLAYER_ID];

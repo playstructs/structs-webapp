@@ -143,7 +143,11 @@ export class AuthManager {
       this.grassManager.registerListener(new PlayerStructsLoadListener(this.gameState));
       this.grassManager.registerListener(new PlayerCapacityListener(this.gameState));
       this.grassManager.registerListener(new ConnectionCapacityListener(this.gameState));
-      this.grassManager.registerListener(new PlayerAddressRevokedListener(this.gameState));
+      this.grassManager.registerListener(new PlayerAddressRevokedListener(
+        this.gameState,
+        this.guildAPI,
+        this.gameState.signingAccount.address
+      ));
 
       await this.signingClientManager.initSigningClient(this.gameState.wallet);
       this.playerAddressManager.addPlayerAddressMeta();
@@ -190,6 +194,12 @@ export class AuthManager {
    * @param {string|null} addressToRevoke
    */
   async revokeAddress(addressToRevoke) {
+    this.grassManager.registerListener(new PlayerAddressRevokedListener(
+      this.gameState,
+      this.guildAPI,
+      addressToRevoke
+    ));
+
     const msg = this.signingClientManager.createMsgAddressRevoke(
       this.gameState.signingAccount.address,
       addressToRevoke
@@ -204,8 +214,6 @@ export class AuthManager {
     } catch (error) {
       console.log('Sign and Broadcast Error:', error);
     }
-
-    MenuPage.router.goto('Account', 'devices');
   }
 
   logout() {
