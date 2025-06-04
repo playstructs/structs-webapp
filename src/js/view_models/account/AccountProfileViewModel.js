@@ -54,8 +54,8 @@ export class AccountProfileViewModel extends AbstractViewModel {
     }
 
     document.getElementById(this.editUsernameBtnId).addEventListener('click', function () {
-      console.log('Edit Username');
-    }.bind(this));
+      MenuPage.router.goto('Account', 'changeUsername');
+    });
     document.getElementById(this.copyPidBtnId).addEventListener('click', async function () {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(this.gameState.thisPlayerId);

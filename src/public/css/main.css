@@ -206,6 +206,43 @@ common-group - no padding
   width: 100%;
 }
 
+.common-inline-text-input-group-container {
+  display: flex;
+  max-width: 100%;
+  width: 100%;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  align-self: stretch;
+  justify-content: flex-start;
+  gap: 0;
+}
+.common-inline-text-input-controls-container {
+  display: flex;
+  max-width: 100%;
+  width: 100%;
+  flex-wrap: nowrap;
+  align-content: flex-end;
+  align-items: flex-end;
+  align-self: stretch;
+  justify-content: center;
+  gap: var(--spacing-xl);
+}
+.common-inline-text-input-error-container {
+  display: flex;
+  max-width: 100%;
+  width: 100%;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  align-self: stretch;
+  text-align: left;
+}
+.common-inline-text-input-error-container .sui-input-text-warning {
+  flex-wrap: wrap;
+}
+
 /* Common Containers End */
 
 /* HUD Styling Start */
@@ -1120,6 +1157,17 @@ img.loading-3-dots {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-xl);
+}
+
+.change-username-layout {
+  display: flex;
+  max-width: 100%;
+  width: 100%;
+  padding: var(--spacing-xxxl);
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
   gap: var(--spacing-xl);
 }
 

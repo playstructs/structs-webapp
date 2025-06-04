@@ -404,4 +404,13 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.put(`${this.apiUrl}/player-address/permissions`, setAddressPermissionsRequestDTO);
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
+
+  /**
+   * @param {string} username
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async setUsername(username) {
+    const jsonResponse = await this.ajax.put(`${this.apiUrl}/player/username`, {username});
+    return this.guildAPIResponseFactory.make(jsonResponse);
+  }
 }

@@ -8,6 +8,7 @@ import {AccountActivatingDeviceViewModel} from "../view_models/account/AccountAc
 import {AccountDeviceActivationComplete} from "../view_models/account/AccountDeviceActivationComplete";
 import {AccountDeviceActivationCancelled} from "../view_models/account/AccountDeviceActivationCancelled";
 import {AccountDeviceViewModel} from "../view_models/account/AccountDeviceViewModel";
+import {AccountChangeUsername} from "../view_models/account/AccountChangeUsername";
 
 export class AccountController extends AbstractController {
 
@@ -98,6 +99,11 @@ export class AccountController extends AbstractController {
       this.permissionManager,
       deviceAddress
     );
+    viewModel.render();
+  }
+
+  changeUsername() {
+    const viewModel = new AccountChangeUsername(this.gameState, this.guildAPI);
     viewModel.render();
   }
 }
