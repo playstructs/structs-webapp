@@ -9,6 +9,7 @@ import {AccountDeviceActivationComplete} from "../view_models/account/AccountDev
 import {AccountDeviceActivationCancelled} from "../view_models/account/AccountDeviceActivationCancelled";
 import {AccountDeviceViewModel} from "../view_models/account/AccountDeviceViewModel";
 import {AccountChangeUsername} from "../view_models/account/AccountChangeUsername";
+import {AccountTransfersViewModel} from "../view_models/account/AccountTransfersViewModel";
 
 export class AccountController extends AbstractController {
 
@@ -104,6 +105,11 @@ export class AccountController extends AbstractController {
 
   changeUsername() {
     const viewModel = new AccountChangeUsername(this.gameState, this.guildAPI);
+    viewModel.render();
+  }
+
+  transfers() {
+    const viewModel = new AccountTransfersViewModel();
     viewModel.render();
   }
 }

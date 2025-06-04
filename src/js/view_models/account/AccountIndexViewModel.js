@@ -38,7 +38,7 @@ export class AccountIndexViewModel extends AbstractViewModel {
       MenuPage.router.goto('Account', 'profile');
     });
     document.getElementById(this.transfersBtnId).addEventListener('click', () => {
-      console.log('Transfers');
+      MenuPage.router.goto('Account', 'transfers');
     });
     document.getElementById(this.devicesBtnId).addEventListener('click', () => {
       MenuPage.router.goto('Account', 'devices');
@@ -76,7 +76,7 @@ export class AccountIndexViewModel extends AbstractViewModel {
             <i class="sui-icon sui-icon-lg icon-member sui-text-primary"></i>
             <div class="menu-index-btn-labels-container">
               <div class=menu-index-btn-nav-label>
-                Profile
+                <span class="sui-text-header">Profile</span>
                 <i class="sui-icon icon-chevron-right sui-text-primary"></i>
               </div>
               <div></div>
@@ -87,7 +87,7 @@ export class AccountIndexViewModel extends AbstractViewModel {
             <i class="sui-icon sui-icon-lg icon-transfers sui-text-primary"></i>
             <div class="menu-index-btn-labels-container">
               <div class=menu-index-btn-nav-label>
-                Transfers
+                <span class="sui-text-header">Transfers</span>
                 <i class="sui-icon icon-chevron-right sui-text-primary"></i>
               </div>
               <div></div>
@@ -98,7 +98,7 @@ export class AccountIndexViewModel extends AbstractViewModel {
             <i class="sui-icon sui-icon-lg icon-phone sui-text-primary"></i>
             <div class="menu-index-btn-labels-container">
               <div class=menu-index-btn-nav-label>
-                Devices
+                <span class="sui-text-header">Devices</span>
                 <i class="sui-icon icon-chevron-right sui-text-primary"></i>
               </div>
               <div class="sui-text-secondary">${addressCount} Devices Active</div>
