@@ -18,6 +18,8 @@ class ApiParameters
 
     const string MIN_ORE = 'min_ore';
 
+    const string OFFSET = 'offset';
+
     const string PERMISSIONS = 'permissions';
 
     const string PFP = 'pfp';

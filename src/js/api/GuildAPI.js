@@ -10,6 +10,7 @@ import {PlanetFactory} from "../factories/PlanetFactory";
 import {PlayerAddressFactory} from "../factories/PlayerAddressFactory";
 import {Guild} from "../models/Guild";
 import {ActivationCodeInfoDTO} from "../dtos/ActivationCodeInfoDTO";
+import {TransactionFactory} from "../factories/TransactionFactory";
 
 export class GuildAPI {
 
@@ -23,6 +24,7 @@ export class GuildAPI {
     this.playerOreStatsFactory = new PlayerOreStatsFactory();
     this.planetFactory = new PlanetFactory();
     this.playerAddressFactory = new PlayerAddressFactory();
+    this.transactionFactory = new TransactionFactory();
   }
 
   /**
@@ -412,5 +414,26 @@ export class GuildAPI {
   async setUsername(username) {
     const jsonResponse = await this.ajax.put(`${this.apiUrl}/player/username`, {username});
     return this.guildAPIResponseFactory.make(jsonResponse);
+  }
+
+  /**
+   * @param {string} playerId
+   * @param {number} page
+   * @return {Promise<Transaction[]>}
+   */
+  async getTransactions(playerId, page) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/player/${playerId}/page/${page}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.transactionFactory.parseList(response.data);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<number>}
+   */
+  async countTransactions(playerId) {
+    const count = await this.getSingleDataValue(`${this.apiUrl}/ledger/player/${playerId}/count`, 'count');
+    return parseInt(count);
   }
 }

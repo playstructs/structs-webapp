@@ -28,6 +28,9 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $min_ore = null;
 
+    #[Assert\Regex(RegexPattern::INT)]
+    public ?string $offset = null;
+
     #[Assert\Regex(RegexPattern::PERMISSIONS)]
     public ?string $permissions = null;
 

@@ -10,6 +10,7 @@ import {AccountDeviceActivationCancelled} from "../view_models/account/AccountDe
 import {AccountDeviceViewModel} from "../view_models/account/AccountDeviceViewModel";
 import {AccountChangeUsername} from "../view_models/account/AccountChangeUsername";
 import {AccountTransfersViewModel} from "../view_models/account/AccountTransfersViewModel";
+import {AccountTransactionHistory} from "../view_models/account/AccountTransactionHistory";
 
 export class AccountController extends AbstractController {
 
@@ -110,6 +111,19 @@ export class AccountController extends AbstractController {
 
   transfers() {
     const viewModel = new AccountTransfersViewModel();
+    viewModel.render();
+  }
+
+  /**
+   * @param {object} options
+   */
+  transactionHistory(options) {
+    const page = options.hasOwnProperty('page') ? options.page : 1;
+    const viewModel = new AccountTransactionHistory(
+      this.gameState,
+      this.guildAPI,
+      page
+    );
     viewModel.render();
   }
 }

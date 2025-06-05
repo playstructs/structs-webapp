@@ -1868,6 +1868,40 @@ label.sui-input-text input[type=text]:disabled::placeholder {
 
 /* ---- Input Stepper End ---- */
 
+/* ---- Pagination Start ---- */
+
+.sui-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.sui-pagination .sui-icon {
+  color: var(--accent-secondary);
+}
+
+.sui-pagination-numbers {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sui-pagination-number {
+  display: flex;
+  min-width: 40px;
+  height: 40px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sui-pagination-number.sui-mod-active {
+  border-bottom: 2px solid var(--accent-secondary);
+}
+
+
+/* ---- Pagination End ---- */
+
 
 /* ---- Page Layout Start ---- */
 

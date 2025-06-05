@@ -8,7 +8,7 @@ import {GrassManager} from "./framework/GrassManager";
 import {BlockListener} from "./grass_listeners/BlockListener";
 import {HUDViewModel} from "./view_models/HUDViewModel";
 import {AccountController} from "./controllers/AccountController";
-import {SigningClientManager} from "./factories/SigningClientManager";
+import {SigningClientManager} from "./managers/SigningClientManager";
 import {PlanetManager} from "./managers/PlanetManager";
 import {PlayerAddressManager} from "./managers/PlayerAddressManager";
 import {PermissionManager} from "./managers/PermissionManager";

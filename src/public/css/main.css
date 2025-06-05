@@ -243,6 +243,22 @@ common-group - no padding
   flex-wrap: wrap;
 }
 
+.common-result-table-layout {
+  display: flex;
+  max-width: 100%;
+  width: 100%;
+  padding: var(--spacing-xl);
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  justify-content: flex-start;
+  gap: var(--spacing-xl);
+}
+.common-result-table-layout .sui-result-table {
+  max-width: 100%;
+  width: 100%;
+}
+
 /* Common Containers End */
 
 /* HUD Styling Start */

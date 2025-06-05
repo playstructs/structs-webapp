@@ -3,6 +3,7 @@
 namespace App\Manager;
 
 use App\Constant\ApiParameters;
+use App\Constant\PaginationLimits;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
 use Doctrine\DBAL\Exception;
@@ -37,12 +38,18 @@ class LedgerManager
 
     /**
      * @param string $player_id
+     * @param int $page
      * @return Response
      * @throws Exception
      */
-    public function getTransactions(string $player_id): Response
-    {
-        $query = '
+    public function getTransactions(
+        string $player_id,
+        int $page
+    ): Response {
+        $limit = PaginationLimits::DEFAULT;
+        $offset = ($page - 1) * $limit;
+
+        $query = "
             SELECT
               l.id,
               l.address,
@@ -56,18 +63,59 @@ class LedgerManager
             INNER JOIN player_address pa
               ON l.address = pa.address
             WHERE pa.player_id = :player_id
-            AND l.action IN (\'sent\', \'received\')
-            AND l.denom = \'alpha\'
-            ORDER BY l.time DESC;
-        ';
+            AND pa.status = 'approved'
+            AND l.action IN ('sent', 'received')
+            AND l.denom = 'ualpha'
+            AND l.amount > 0
+            ORDER BY l.time DESC
+            LIMIT $limit
+            OFFSET :offset;
+        ";
 
-        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
-        $requiredFields = [ApiParameters::PLAYER_ID];
+        $requestParams = [
+            ApiParameters::PLAYER_ID => $player_id,
+            ApiParameters::OFFSET => $offset
+        ];
+        $requiredFields = [
+            ApiParameters::PLAYER_ID,
+            ApiParameters::OFFSET
+        ];
 
         return $this->queryAll(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+
+    /**
+     * @param string $player_id
+     * @return Response
+     * @throws Exception
+     */
+    public function countTransactions(string $player_id): Response
+    {
+        $countQuery = "
+            SELECT COUNT(*) AS count
+            FROM ledger l
+            INNER JOIN player_address pa
+              ON l.address = pa.address
+            WHERE pa.player_id = :player_id
+            AND pa.status = 'approved'
+            AND l.action IN ('sent', 'received')
+            AND l.denom = 'ualpha'
+            AND l.amount > 0;
+        ";
+
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $countQuery,
             $requestParams,
             $requiredFields
         );

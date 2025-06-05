@@ -15,8 +15,8 @@ export class AccountTransfersViewModel extends AbstractViewModel {
       // MenuPage.router.goto('Account', 'sendAlpha');
     });
     document.getElementById(this.transactionHistoryBtnId).addEventListener('click', () => {
-      console.log('Transaction History');
-      // MenuPage.router.goto('Account', 'transactionHistory');
+      // console.log('Transaction History');
+      MenuPage.router.goto('Account', 'transactionHistory');
     });
   }
 
