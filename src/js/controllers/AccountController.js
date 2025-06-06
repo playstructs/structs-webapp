@@ -11,6 +11,7 @@ import {AccountDeviceViewModel} from "../view_models/account/AccountDeviceViewMo
 import {AccountChangeUsername} from "../view_models/account/AccountChangeUsername";
 import {AccountTransfersViewModel} from "../view_models/account/AccountTransfersViewModel";
 import {AccountTransactionHistory} from "../view_models/account/AccountTransactionHistory";
+import {AccountTransactionViewModel} from "../view_models/account/AccountTransactionViewModel";
 
 export class AccountController extends AbstractController {
 
@@ -123,6 +124,19 @@ export class AccountController extends AbstractController {
       this.gameState,
       this.guildAPI,
       page
+    );
+    viewModel.render();
+  }
+
+  /**
+   * @param {object} options
+   */
+  transaction(options) {
+    const viewModel = new AccountTransactionViewModel(
+      this.gameState,
+      this.guildAPI,
+      options.txId,
+      options.comingFromPage
     );
     viewModel.render();
   }

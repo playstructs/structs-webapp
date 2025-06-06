@@ -810,45 +810,6 @@ img.glitch-logo {
   align-items: center;
 }
 
-.profile-data-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  align-self: stretch;
-  gap: -1px;
-}
-
-.profile-data-card-header {
-  display: flex;
-  padding: 0 var(--spacing-md);
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  background: var(--surface-player-inverted);
-  color: var(--text-player-inverted);
-}
-
-.profile-data-card-body {
-  display: flex;
-  padding: var(--spacing-md) var(--spacing-xl);
-  border: 1px solid var(--border);
-  flex-direction: column;
-  align-items: flex-start;
-  align-self: stretch;
-  gap: 0;
-}
-
-.profile-data-card-row {
-  display: flex;
-  min-height: 36px;
-  padding: var(--spacing-xs) 0;
-  flex-wrap: wrap;
-  align-content: center;
-  align-items: center;
-  align-self: stretch;
-  justify-content: space-between;
-}
-
 .icon-wrapper {
   display: flex;
   padding: var(--spacing-md);
@@ -1184,6 +1145,18 @@ img.loading-3-dots {
   flex-direction: column;
   align-items: flex-start;
   align-self: stretch;
+  gap: var(--spacing-xl);
+}
+
+.transaction-details-layout {
+  display: flex;
+  max-width: 100%;
+  width: 100%;
+  padding: var(--spacing-xl);
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  justify-content: flex-start;
   gap: var(--spacing-xl);
 }
 

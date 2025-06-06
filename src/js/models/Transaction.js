@@ -5,6 +5,8 @@ export class Transaction {
     this.object_id = null;
     this.address = null;
     this.counterparty = null;
+    this.counterparty_player_id = null;
+    this.counterparty_username = null;
     this.amount = null;
     this.amount_p = null;
     this.block_height = null;

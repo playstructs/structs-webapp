@@ -436,4 +436,15 @@ export class GuildAPI {
     const count = await this.getSingleDataValue(`${this.apiUrl}/ledger/player/${playerId}/count`, 'count');
     return parseInt(count);
   }
+
+  /**
+   * @param {number} txId
+   * @return {Promise<Transaction>}
+   */
+  async getTransaction(txId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/${txId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.transactionFactory.make(response.data);
+  }
 }

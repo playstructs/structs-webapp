@@ -29,8 +29,14 @@ export class AccountTransactionHistory extends AbstractViewModel {
   initPageCode() {
     this.transactions.forEach((transaction) => {
       document.getElementById(`transaction-${transaction.id}`).addEventListener('click', () => {
-        console.log(transaction);
-        // MenuPage.router.goto('Account', 'transaction', transaction);
+        MenuPage.router.goto(
+          'Account',
+          'transaction',
+          {
+            txId: transaction.id,
+            comingFromPage: this.page
+          }
+        );
       });
     })
   }

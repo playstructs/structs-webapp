@@ -107,14 +107,14 @@ export class AccountProfileViewModel extends AbstractViewModel {
             </div>
           </div>
           
-          <div class="profile-data-card">
-            <div class="profile-data-card-header sui-text-header">Player Details</div>
-            <div class="profile-data-card-body">
-              <div class="profile-data-card-row">
+          <div class="sui-data-card">
+            <div class="sui-data-card-header sui-text-header">Player Details</div>
+            <div class="sui-data-card-body">
+              <div class="sui-data-card-row">
                 <div>Guild</div>
                 <div>${this.gameState.thisGuild.name}</div>
               </div>
-              <div class="profile-data-card-row">
+              <div class="sui-data-card-row">
                 <div>Player ID</div>
                 <div>
                   #${this.gameState.thisPlayerId}
@@ -123,7 +123,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
                   </a>
                 </div>
               </div>
-              <div class="profile-data-card-row">
+              <div class="sui-data-card-row">
                 <div>Blockchain Address</div>
                 <div>
                   Copy Address
@@ -135,14 +135,14 @@ export class AccountProfileViewModel extends AbstractViewModel {
             </div>
           </div>
           
-          <div class="profile-data-card">
-            <div class="profile-data-card-header sui-text-header">Power</div>
-            <div class="profile-data-card-body">
-              <div class="profile-data-card-row">
+          <div class="sui-data-card">
+            <div class="sui-data-card-header sui-text-header">Power</div>
+            <div class="sui-data-card-body">
+              <div class="sui-data-card-row">
                 <div>Alpha Matter</div>
                 <div>${this.alphaOwnedComponent.renderHTML()}</div>
               </div>
-              <div class="profile-data-card-row">
+              <div class="sui-data-card-row">
                 <div>Alpha Infused</div>
                 <div>
                   ${
@@ -155,25 +155,25 @@ export class AccountProfileViewModel extends AbstractViewModel {
                   }
                 </div>
               </div>
-              <div class="profile-data-card-row">
+              <div class="sui-data-card-row">
                 <div>Energy Usage</div>
                 <div>${this.energyUsageComponent.renderHTML()}</div>
               </div>
             </div>
           </div>
           
-          <div class="profile-data-card">
-            <div class="profile-data-card-header sui-text-header">Statistics</div>
-            <div class="profile-data-card-body">
-              <div class="profile-data-card-row">
+          <div class="sui-data-card">
+            <div class="sui-data-card-header sui-text-header">Statistics</div>
+            <div class="sui-data-card-body">
+              <div class="sui-data-card-row">
                 <div>Planets Completed</div>
                 <div>${this.playerPlanetsCompleted}</div>
               </div>
-              <div class="profile-data-card-row">
+              <div class="sui-data-card-row">
                 <div>Raids Launched</div>
                 <div>${this.playerRaidsLaunched}</div>
               </div>
-              <div class="profile-data-card-row">
+              <div class="sui-data-card-row">
                 <div>Ore Mined</div>
                 <div>
                   ${
@@ -186,7 +186,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
                   }
                 </div>
               </div>
-              <div class="profile-data-card-row">
+              <div class="sui-data-card-row">
                 <div>Ore Stolen</div>
                 <div>
                   ${
@@ -199,7 +199,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
                   }
                 </div>
               </div>
-              <div class="profile-data-card-row">
+              <div class="sui-data-card-row">
                 <div>Ore Lost</div>
                 <div>
                   ${

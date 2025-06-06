@@ -130,16 +130,22 @@ class LedgerManager
     {
         $query = '
             SELECT
-              id,
-              address,
-              counterparty,
-              amount,
-              denom, 
-              "action",
-              direction,
-              "time"
-            FROM ledger
-            WHERE id = :tx_id
+              l.id,
+              l.address,
+              l.counterparty,
+              l.amount,
+              l.denom, 
+              l.action,
+              l.direction,
+              l.time,
+              pa.player_id AS counterparty_player_id,
+              pm.username AS counterparty_username
+            FROM ledger l
+            LEFT JOIN player_address pa
+              ON l.counterparty = pa.address
+            LEFT JOIN player_meta pm
+              ON pa.player_id = pm.id
+            WHERE l.id = :tx_id
             LIMIT 1;
         ';
 
