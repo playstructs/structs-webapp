@@ -10,9 +10,12 @@ export class GameState {
 
   constructor() {
     this.chargeCalculator = new ChargeCalculator();
-    this.signupRequest = new SignupRequestDTO();
     this.walletManager = new WalletManager();
     this.guildAPI = new GuildAPI();
+
+    /* Multistep Request Data */
+    this.signupRequest = new SignupRequestDTO();
+    this.transferAmount = 0;
 
     /* Persistent Data */
     this.mnemonic = null;
@@ -41,13 +44,18 @@ export class GameState {
   save() {
     this.lastSaveBlockHeight = this.currentBlockHeight;
 
+    if (!this.mnemonic) {
+      console.error('Nullifying mnemonic!', this);
+    }
+
     localStorage.setItem('gameState', JSON.stringify({
       mnemonic: this.mnemonic,
       pubkey: this.pubkey,
       thisPlayerId: this.thisPlayerId,
       lastSaveBlockHeight: this.lastSaveBlockHeight,
       lastActionBlockHeight: this.lastActionBlockHeight,
-      chargeLevel: this.chargeLevel
+      chargeLevel: this.chargeLevel,
+      transferAmount: this.transferAmount,
     }));
   }
 
@@ -64,11 +72,6 @@ export class GameState {
     this.wallet = await this.walletManager.createWallet(this.mnemonic);
     const accounts = await this.wallet.getAccountsWithPrivkeys();
     this.signingAccount = accounts[0];
-
-    // Properties to prime with API
-    this.setThisPlayer(await this.guildAPI.getPlayer(this.thisPlayerId));
-    this.setPlanet(await this.guildAPI.getPlanet(this.thisPlayer.planet_id));
-    this.setPlanetShieldHealth(await this.guildAPI.getPlanetShieldHealth(this.thisPlayer.planet_id));
   }
 
   /**
@@ -118,7 +121,7 @@ export class GameState {
    */
   setThisPlayerAlpha(alpha) {
     if (this.thisPlayer && this.thisPlayer.hasOwnProperty('alpha')) {
-      this.thisPlayer.ore = alpha;
+      this.thisPlayer.alpha = alpha;
       this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ALPHA_COUNT_CHANGED));
@@ -230,5 +233,13 @@ export class GameState {
     return this.thisPlayer && this.thisPlayer.username.length > 0
       ? `${this.thisPlayer.username}`
       : 'Name Redacted';
+  }
+
+  /**
+   * @param {number} amount
+   */
+  setTransferAmount(amount) {
+    this.transferAmount = amount;
+    this.save();
   }
 }

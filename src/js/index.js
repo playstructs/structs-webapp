@@ -14,6 +14,8 @@ import {PlayerAddressManager} from "./managers/PlayerAddressManager";
 import {PermissionManager} from "./managers/PermissionManager";
 import {PlayerAddressPendingFactory} from "./factories/PlayerAddressPendingFactory";
 import {GenericController} from "./controllers/GenericController";
+import {AlphaManager} from "./managers/AlphaManager";
+import {MenuWaitingOptions} from "./options/MenuWaitingOptions";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -55,6 +57,8 @@ const authManager = new AuthManager(
   playerAddressPendingFactory
 );
 
+const alphaManager = new AlphaManager(gameState);
+
 const blockListener = new BlockListener(gameState);
 
 const authController = new AuthController(
@@ -67,7 +71,9 @@ const accountController = new AccountController(
   gameState,
   guildAPI,
   authManager,
-  permissionManager
+  permissionManager,
+  alphaManager,
+  grassManager
 );
 const genericController = new GenericController(
   gameState
@@ -92,14 +98,21 @@ hud.initPageCode();
 await gameState.load();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
-if (gameState.lastSaveBlockHeight === 0) {
+if (!gameState.thisPlayerId) {
   MenuPage.router.goto('Auth', 'index');
 } else {
-  await signingClientManager.initSigningClient(gameState.wallet);
-  playerAddressManager.addPlayerAddressMeta();
+  authManager.login(gameState.thisPlayerId).then(() => {
+    // await signingClientManager.initSigningClient(gameState.wallet);
+    playerAddressManager.addPlayerAddressMeta();
 
-  MenuPage.close();
-  // MenuPage.router.goto('Account', 'index');
-  MenuPage.router.restore('Account', 'index');
-  // MenuPage.router.goto('Account', 'logoutPermissionsWarning');
+    MenuPage.close();
+    // MenuPage.router.goto('Account', 'index');
+    MenuPage.router.restore('Account', 'index');
+    // const options = new MenuWaitingOptions();
+    // options.headerBtnLabel = 'Transferring...';
+    // options.waitingAnimation = 'ALPHA_TRANSFER';
+    // options.hasDoNotCloseMessage = false;
+    // MenuPage.router.goto('Generic', 'menuWaiting', options);
+    // MenuPage.open();
+  });
 }

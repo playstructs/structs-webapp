@@ -11,12 +11,14 @@ export class AccountTransactionViewModel extends AbstractViewModel {
    * @param {GuildAPI} guildAPI
    * @param {number} txId
    * @param {number} comingFromPage
+   * @param {boolean} hasBackToAccountBtn
    */
   constructor(
     gameState,
     guildAPI,
     txId,
-    comingFromPage
+    comingFromPage,
+    hasBackToAccountBtn = false
   ) {
     super();
     this.gameState = gameState;
@@ -29,15 +31,20 @@ export class AccountTransactionViewModel extends AbstractViewModel {
     this.amountId = 'transaction-resource-amount';
     this.counterpartyLinkId = 'transaction-counterparty-link';
     this.transaction = null;
-    this.genericResourcePageCode = [
-      this.genericResourceComponent.getPageCode(this.amountId)
-    ];
+    this.hasBackToAccountBtn = hasBackToAccountBtn;
+    this.backToAccountBtnId = 'transaction-back-to-account-btn';
   }
 
   initPageCode() {
     if (this.transaction.counterparty_player_id) {
       document.getElementById(this.counterpartyLinkId).addEventListener('click',  () => {
         console.log(this.transaction.counterparty_player_id);
+      });
+    }
+
+    if (this.hasBackToAccountBtn) {
+      document.getElementById(this.backToAccountBtnId).addEventListener('click', () => {
+        MenuPage.router.goto('Account', 'index');
       });
     }
   }
@@ -54,12 +61,27 @@ export class AccountTransactionViewModel extends AbstractViewModel {
     return `${this.transaction.counterparty}`;
   }
 
+  renderBackToAccountBtn() {
+    return this.hasBackToAccountBtn
+      ? `
+        <div class="sui-screen-btn-flex-wrapper">
+          <a 
+            id="${this.backToAccountBtnId}" 
+            href="javascript: void(0)" 
+            class="sui-screen-btn sui-mod-secondary"
+          >Back To Account</a>
+        </div>
+      `
+      : '';
+  }
+
   render () {
     this.guildAPI.getTransaction(this.txId).then((transaction) => {
 
       this.transaction = transaction;
 
       const counterpartyLabel = transaction.action === 'sent' ? 'Recipient' : 'Sender';
+      const backToAccountBtn = this.renderBackToAccountBtn();
 
       MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
@@ -112,6 +134,8 @@ export class AccountTransactionViewModel extends AbstractViewModel {
               </div>
             </div>
           </div>
+          
+          ${backToAccountBtn}
 
         </div>
       `);

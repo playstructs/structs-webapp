@@ -12,6 +12,11 @@ import {AccountChangeUsername} from "../view_models/account/AccountChangeUsernam
 import {AccountTransfersViewModel} from "../view_models/account/AccountTransfersViewModel";
 import {AccountTransactionHistory} from "../view_models/account/AccountTransactionHistory";
 import {AccountTransactionViewModel} from "../view_models/account/AccountTransactionViewModel";
+import {AccountTransferAmountViewModel} from "../view_models/account/AccountTransferAmountViewModel";
+import {AccountRecipientSearchViewModel} from "../view_models/account/AccountRecipientSearchViewModel";
+import {AccountRecipientSearchResults} from "../view_models/account/AccountRecipientSearchResults";
+import {AccountRecipientViewModel} from "../view_models/account/AccountRecipientViewModel";
+import {AccountConfirmTransfer} from "../view_models/account/AccountConfirmTransfer";
 
 export class AccountController extends AbstractController {
 
@@ -20,17 +25,23 @@ export class AccountController extends AbstractController {
    * @param {GuildAPI} guildAPI
    * @param {AuthManager} authManager
    * @param {PermissionManager} permissionManager
+   * @param {AlphaManager} alphaManager
+   * @param {GrassManager} grassManager
    */
   constructor(
     gameState,
     guildAPI,
     authManager,
-    permissionManager
+    permissionManager,
+    alphaManager,
+    grassManager
   ) {
     super('Account', gameState);
     this.guildAPI = guildAPI;
     this.authManager = authManager;
     this.permissionManager = permissionManager;
+    this.alphaManager = alphaManager;
+    this.grassManager = grassManager;
   }
 
   index() {
@@ -136,7 +147,48 @@ export class AccountController extends AbstractController {
       this.gameState,
       this.guildAPI,
       options.txId,
-      options.comingFromPage
+      options.comingFromPage,
+      options.hasOwnProperty('hasBackToAccountBtn') ? options.hasBackToAccountBtn : false,
+    );
+    viewModel.render();
+  }
+
+  transferAmount() {
+    const viewModel = new AccountTransferAmountViewModel(this.gameState);
+    viewModel.render();
+  }
+
+  recipientSearch() {
+    const viewModel = new AccountRecipientSearchViewModel(this.gameState, this.guildAPI);
+    viewModel.render();
+  }
+
+  /**
+   * @param {object} options
+   */
+  recipientSearchResults(options) {
+    const viewModel = new AccountRecipientSearchResults(this.gameState, this.guildAPI, options)
+    viewModel.render();
+  }
+
+  /**
+   * @param {object} options
+   */
+  recipient(options) {
+    const viewModel = new AccountRecipientViewModel(this.gameState, this.guildAPI, options);
+    viewModel.render();
+  }
+
+  /**
+   * @param {object} options
+   */
+  confirmTransfer(options) {
+    const viewModel = new AccountConfirmTransfer(
+      this.gameState,
+      this.guildAPI,
+      this.alphaManager,
+      this.grassManager,
+      options
     );
     viewModel.render();
   }

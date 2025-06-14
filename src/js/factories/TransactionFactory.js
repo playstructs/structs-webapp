@@ -1,6 +1,7 @@
 import {Transaction} from "../models/Transaction";
+import {AbstractFactory} from "../framework/AbstractFactory";
 
-export class TransactionFactory {
+export class TransactionFactory extends AbstractFactory {
 
   /**
    * @param {object} obj
@@ -10,13 +11,5 @@ export class TransactionFactory {
     const transaction = new Transaction();
     Object.assign(transaction, obj);
     return transaction;
-  }
-
-  /**
-   * @param {Object[]}list
-   * @return {Transaction[]}
-   */
-  parseList(list) {
-    return list.map(this.make);
   }
 }

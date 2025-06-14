@@ -18,6 +18,7 @@ import {SetPendingAddressPermissionsRequestDTO} from "../dtos/SetPendingAddressP
 import {FEE} from "../constants/Fee";
 import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApprovedListener";
 import {PlayerAddressRevokedListener} from "../grass_listeners/PlayerAddressRevokedListener";
+import {AlphaChangeListener} from "../grass_listeners/AlphaChangeListener";
 
 export class AuthManager {
 
@@ -148,6 +149,7 @@ export class AuthManager {
         this.guildAPI,
         this.gameState.signingAccount.address
       ));
+      this.grassManager.registerListener(new AlphaChangeListener(this.gameState, this.guildAPI));
 
       await this.signingClientManager.initSigningClient(this.gameState.wallet);
       this.playerAddressManager.addPlayerAddressMeta();
@@ -176,6 +178,7 @@ export class AuthManager {
    */
   async loginWithMnemonic(mnemonic) {
     try {
+      this.gameState.mnemonic = mnemonic;
       await this.initWallet(mnemonic);
 
       const playerId = await this.guildAPI.getPlayerIdByAddressAndGuild(

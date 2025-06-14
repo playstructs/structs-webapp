@@ -22,7 +22,7 @@ export class AccountTransactionHistory extends AbstractViewModel {
     this.numberFormatter = new NumberFormatter();
     this.page = page;
     this.playerId = this.gameState.thisPlayerId;
-    this.playerId = '1-1';
+    // this.playerId = '1-1';
     this.transactions = [];
   }
 

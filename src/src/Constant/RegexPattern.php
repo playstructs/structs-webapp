@@ -18,7 +18,7 @@ class RegexPattern
 
     public const string PUBKEY = '/^[a-zA-Z0-9]+$/';
 
-    public const string SEARCH_STRING = '/^[\p{L}0-9-_]+$/';
+    public const string SEARCH_STRING = '/^[\p{L}0-9-_]{3,}$/';
 
     public const string SEARCH_STRING_FILTER = '/[^\p{L}0-9-_]+/';
 

@@ -199,7 +199,7 @@ class PlayerManager
               pm.pfp,
               gm.name AS guild_name,
               gm.tag,
-              f.status,
+              f.status AS fleet_status,
               COALESCE(planet_ore.val, 0) AS undiscovered_ore,
               COALESCE(player_ore.val, 0) AS ore
             FROM player p
@@ -348,7 +348,6 @@ class PlayerManager
         }
 
         $queryParams = [
-            'search_string' => $parsedRequest->params->search_string,
             'like_search_string' => '%' . $parsedRequest->params->search_string . '%'
         ];
 
@@ -379,8 +378,8 @@ class PlayerManager
             LEFT JOIN view.player_inventory vpi
               ON p.id = vpi.player_id
               AND vpi.denom = 'alpha'
-            WHERE
-              pa.address = :search_string
+            WHERE pa.status = 'approved'
+              AND pa.address ILIKE :like_search_string
               $queryGuildIdFilter
             UNION
             SELECT
@@ -400,10 +399,10 @@ class PlayerManager
             LEFT JOIN view.player_inventory vpi
               ON p.id = vpi.player_id
               AND vpi.denom = 'alpha'
-            WHERE
-              p.id = :search_string
+            WHERE p.id ILIKE :like_search_string
               OR pm.username ILIKE :like_search_string
               $queryGuildIdFilter
+            LIMIT 25;
         ";
 
         $db = $this->entityManager->getConnection();

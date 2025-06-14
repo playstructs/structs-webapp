@@ -222,11 +222,11 @@ common-group - no padding
   display: flex;
   max-width: 100%;
   width: 100%;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-content: flex-end;
   align-items: flex-end;
   align-self: stretch;
-  justify-content: center;
+  justify-content: flex-end;
   gap: var(--spacing-xl);
 }
 .common-inline-text-input-error-container {
@@ -241,6 +241,20 @@ common-group - no padding
 }
 .common-inline-text-input-error-container .sui-input-text-warning {
   flex-wrap: wrap;
+}
+
+.common-inline-text-input-controls-container label:nth-child(n+2) {
+  flex: 2 0 0;
+  min-width: 150px;
+}
+.common-inline-text-input-controls-container select {
+  width: 100%;
+}
+.common-inline-text-input-controls-container label:first-child {
+  flex: 4 0 0;
+}
+.common-inline-text-input-controls-container button {
+  flex: 0 0 0;
 }
 
 .common-result-table-layout {
@@ -763,7 +777,7 @@ img.glitch-logo {
   flex-direction: column;
   align-items: flex-start;
   align-self: stretch;
-  gap: var(--spacing-xxxl);
+  gap: var(--spacing-xxl);
 }
 
 .profile-header {
@@ -1024,6 +1038,11 @@ img.glitch-logo {
 
 img.loading-3-dots {
   width: 60px;
+}
+
+img.alpha-transfer-animation {
+  width: 384px;
+  max-width: 100%;
 }
 
 .login-activating-device-layout {

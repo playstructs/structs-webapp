@@ -58,6 +58,8 @@ export class GrassManager {
 
           const messageData = this.getMessageData(message);
 
+          console.log(messageData);
+
           if (this.shouldIgnoreMessage(messageData)) {
             continue;
           }

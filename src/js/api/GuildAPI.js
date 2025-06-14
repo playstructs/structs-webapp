@@ -11,6 +11,7 @@ import {PlayerAddressFactory} from "../factories/PlayerAddressFactory";
 import {Guild} from "../models/Guild";
 import {ActivationCodeInfoDTO} from "../dtos/ActivationCodeInfoDTO";
 import {TransactionFactory} from "../factories/TransactionFactory";
+import {PlayerSearchResultDTOFactory} from "../factories/PlayerSearchResultDTOFactory";
 
 export class GuildAPI {
 
@@ -25,6 +26,7 @@ export class GuildAPI {
     this.planetFactory = new PlanetFactory();
     this.playerAddressFactory = new PlayerAddressFactory();
     this.transactionFactory = new TransactionFactory();
+    this.playerSearchResultDTOFactory = new PlayerSearchResultDTOFactory();
   }
 
   /**
@@ -446,5 +448,28 @@ export class GuildAPI {
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.transactionFactory.make(response.data);
+  }
+
+  /**
+   * @return {Promise<Guild[]>}
+   */
+  async getGuildFilterList() {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/name`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.guildFactory.parseList(response.data);
+  }
+
+  /**
+   * @param transferSearchRequestDTO
+   * @return {Promise<PlayerSearchResultDTO[]>}
+   */
+  async transferSearch(transferSearchRequestDTO) {
+    const searchStringParam = `search_string=${transferSearchRequestDTO.search_string}`;
+    const guildIdParam = transferSearchRequestDTO.guild_id ? `&guild_id=${transferSearchRequestDTO.guild_id}` : '';
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/transfer/search?${searchStringParam}${guildIdParam}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.playerSearchResultDTOFactory.parseList(response.data);
   }
 }

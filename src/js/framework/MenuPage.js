@@ -67,7 +67,8 @@ export class MenuPage {
     ),
     new NavItemDTO(
       MenuPage.navItemAccountId,
-      'ACCOUNT'
+      'ACCOUNT',
+      () => { MenuPage.router.goto('Account', 'index') }
     )
   ];
 

@@ -11,6 +11,25 @@ export class MenuWaitingViewModel extends AbstractViewModel {
     this.options = options;
   }
 
+  renderWaitingAnimation() {
+    switch (this.options.waitingAnimation) {
+      case 'ALPHA_TRANSFER':
+        return `<img src="/img/alpha-transfer.gif" class="alpha-transfer-animation"  alt="alpha transferring from one player to another animation"/>`;
+      default:
+        return `<img src="/img/loading-3-dots.gif" class="loading-3-dots"  alt="3 dots loading animation"/>`;
+    }
+  }
+
+  renderWaitingMessage() {
+    return this.options.waitingMessage ? this.options.waitingMessage : '';
+  }
+
+  renderDoNotCloseWarning() {
+    return this.options.hasDoNotCloseMessage
+      ? `<span class="sui-text-warning">Do not close this screen.</span>`
+      : '';
+  }
+
   render () {
     MenuPage.enablePageTemplate(MenuPage.navItemAccountId, false);
 
@@ -20,13 +39,17 @@ export class MenuWaitingViewModel extends AbstractViewModel {
       this.options.headerBtnHandler
     );
 
+    const waitingAnimation = this.renderWaitingAnimation();
+    const waitingMessage = this.renderWaitingMessage();
+    const doNotCloseWarning = this.renderDoNotCloseWarning();
+
     MenuPage.setPageTemplateContent(`
       <div class="login-activating-device-layout">
-        <img src="/img/loading-3-dots.gif" class="loading-3-dots"  alt="3 dots loading animation"/>
+        ${waitingAnimation}
         <div>
-          ${this.options.waitingMessage}<br>
-          <br>
-          <span class="sui-text-warning">Do not close this screen.</span>
+          ${waitingMessage}
+          ${(waitingMessage && doNotCloseWarning) ? `<br><br>` : ''}
+          ${doNotCloseWarning}
         </div>
       </div>
     `);
