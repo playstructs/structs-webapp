@@ -472,4 +472,44 @@ export class GuildAPI {
     this.handleResponseFailure(response);
     return this.playerSearchResultDTOFactory.parseList(response.data);
   }
+
+  /**
+   * @return {string}
+   */
+  getCountGuildMembersCacheKey(guildId) {
+    return `countGuildMembers::${guildId}`;
+  }
+
+  /**
+   * @param {number} guildId
+   * @param {boolean} forceRefresh
+   * @return {Promise<number>}
+   */
+  async countGuildMembers(guildId, forceRefresh = false) {
+    let count = this.getCachedItem(this.getCountGuildMembersCacheKey(guildId));
+    if (count === null || forceRefresh) {
+      count = await this.getSingleDataValue(`${this.apiUrl}/guild/${guildId}/members/count`, 'count');
+      this.cacheItem(this.getCountGuildMembersCacheKey(guildId), count);
+    }
+    return parseInt(count);
+  }
+
+  /**
+   * @return {string}
+   */
+  getCountGuildsCacheKey() {
+    return `countGuilds`;
+  }
+
+  /**
+   * @return {Promise<number>}
+   */
+  async countGuilds(forceRefresh = false) {
+    let count = this.getCachedItem(this.getCountGuildsCacheKey());
+    if (count === null || forceRefresh) {
+      count = await this.getSingleDataValue(`${this.apiUrl}/guild/count`, 'count');
+      this.cacheItem(this.getCountGuildsCacheKey(), count);
+    }
+    return parseInt(count);
+  }
 }

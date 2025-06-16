@@ -121,10 +121,8 @@ class GuildManager
     public function countGuilds(): Response
     {
         $query = '
-            SELECT n_live_tup AS "count"
-            FROM pg_stat_all_tables
-            WHERE relname = \'guild\'
-            LIMIT 1;
+            SELECT count(*)
+            FROM guild;
         ';
 
         return $this->queryOne(

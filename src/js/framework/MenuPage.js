@@ -63,7 +63,8 @@ export class MenuPage {
     ),
     new NavItemDTO(
       MenuPage.navItemGuildId,
-      'GUILD'
+      'GUILD',
+      () => { MenuPage.router.goto('Guild', 'index') }
     ),
     new NavItemDTO(
       MenuPage.navItemAccountId,

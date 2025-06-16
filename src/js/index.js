@@ -15,7 +15,7 @@ import {PermissionManager} from "./managers/PermissionManager";
 import {PlayerAddressPendingFactory} from "./factories/PlayerAddressPendingFactory";
 import {GenericController} from "./controllers/GenericController";
 import {AlphaManager} from "./managers/AlphaManager";
-import {MenuWaitingOptions} from "./options/MenuWaitingOptions";
+import {GuildController} from "./controllers/GuildController";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -78,11 +78,16 @@ const accountController = new AccountController(
 const genericController = new GenericController(
   gameState
 );
+const guildController = new GuildController(
+  gameState,
+  guildAPI
+);
 
 MenuPage.gameState = gameState;
 MenuPage.router.registerController(authController);
 MenuPage.router.registerController(accountController);
 MenuPage.router.registerController(genericController);
+MenuPage.router.registerController(guildController);
 MenuPage.initListeners();
 
 grassManager.init();
@@ -102,17 +107,12 @@ if (!gameState.thisPlayerId) {
   MenuPage.router.goto('Auth', 'index');
 } else {
   authManager.login(gameState.thisPlayerId).then(() => {
-    // await signingClientManager.initSigningClient(gameState.wallet);
+
     playerAddressManager.addPlayerAddressMeta();
 
     MenuPage.close();
     // MenuPage.router.goto('Account', 'index');
     MenuPage.router.restore('Account', 'index');
-    // const options = new MenuWaitingOptions();
-    // options.headerBtnLabel = 'Transferring...';
-    // options.waitingAnimation = 'ALPHA_TRANSFER';
-    // options.hasDoNotCloseMessage = false;
-    // MenuPage.router.goto('Generic', 'menuWaiting', options);
-    // MenuPage.open();
+
   });
 }
