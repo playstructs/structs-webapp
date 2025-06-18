@@ -12,6 +12,7 @@ import {Guild} from "../models/Guild";
 import {ActivationCodeInfoDTO} from "../dtos/ActivationCodeInfoDTO";
 import {TransactionFactory} from "../factories/TransactionFactory";
 import {PlayerSearchResultDTOFactory} from "../factories/PlayerSearchResultDTOFactory";
+import {GuildPowerStatsDTOFactory} from "../factories/GuildPowerStatsDTOFactory";
 
 export class GuildAPI {
 
@@ -27,6 +28,7 @@ export class GuildAPI {
     this.playerAddressFactory = new PlayerAddressFactory();
     this.transactionFactory = new TransactionFactory();
     this.playerSearchResultDTOFactory = new PlayerSearchResultDTOFactory();
+    this.guildPowerStatsDTOFactory = new GuildPowerStatsDTOFactory();
   }
 
   /**
@@ -481,7 +483,7 @@ export class GuildAPI {
   }
 
   /**
-   * @param {number} guildId
+   * @param {string} guildId
    * @param {boolean} forceRefresh
    * @return {Promise<number>}
    */
@@ -509,6 +511,62 @@ export class GuildAPI {
     if (count === null || forceRefresh) {
       count = await this.getSingleDataValue(`${this.apiUrl}/guild/count`, 'count');
       this.cacheItem(this.getCountGuildsCacheKey(), count);
+    }
+    return parseInt(count);
+  }
+
+  /**
+   * @param {string} guildId
+   * @return {Promise<Guild>}
+   */
+  async getGuild(guildId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/${guildId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.guildFactory.make(response.data);
+  }
+
+  /**
+   * @param {string} guildId
+   * @return {string}
+   */
+  getGuildPowerStatsCacheKey(guildId) {
+    return `getGuildPowerStats::${guildId}`;
+  }
+
+  /**
+   * @param {string} guildId
+   * @param {boolean} forceRefresh
+   * @return {Promise<GuildPowerStatsDTO>}
+   */
+  async getGuildPowerStats(guildId, forceRefresh = false) {
+    let stats = this.getCachedItem(this.getGuildPowerStatsCacheKey(guildId));
+    if (stats === null || forceRefresh) {
+      const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/${guildId}/power/stats`);
+      const response = this.guildAPIResponseFactory.make(jsonResponse);
+      this.handleResponseFailure(response);
+      stats = this.guildPowerStatsDTOFactory.make(response.data);
+      this.cacheItem(this.getGuildPowerStatsCacheKey(guildId), stats);
+    }
+    return stats;
+  }
+
+  /**
+   * @param {string} guildId
+   * @return {string}
+   */
+  countGuildPlanetsCompletedCacheKey(guildId) {
+    return `countGuildPlanetsCompleted::${guildId}`;
+  }
+
+  /**
+   * @return {Promise<number>}
+   */
+  async countGuildPlanetsCompleted(guildId, forceRefresh = false) {
+    let count = this.getCachedItem(this.countGuildPlanetsCompletedCacheKey(guildId));
+    if (count === null || forceRefresh) {
+      count = await this.getSingleDataValue(`${this.apiUrl}/guild/${guildId}/planet/complete/count`, 'count');
+      this.cacheItem(this.countGuildPlanetsCompletedCacheKey(guildId), count);
     }
     return parseInt(count);
   }

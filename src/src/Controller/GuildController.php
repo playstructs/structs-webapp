@@ -141,4 +141,21 @@ class GuildController extends AbstractController
         $guildManager = new GuildManager($entityManager, $validator);
         return $guildManager->getGuildRoster($guild_id);
     }
+
+    /**
+     * @param string $guild_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/guild/{guild_id}/planet/complete/count', name: 'api_count_guild_planets_completed', methods: ['GET'])]
+    public function countGuildPlanetsCompleted(
+        string $guild_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $guildManager = new GuildManager($entityManager, $validator);
+        return $guildManager->countGuildPlanetsCompleted($guild_id);
+    }
 }

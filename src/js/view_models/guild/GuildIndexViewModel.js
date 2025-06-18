@@ -25,7 +25,7 @@ export class GuildIndexViewModel extends AbstractViewModel {
       console.log('Alpha Reactor');
     });
     document.getElementById(this.guildProfileBtnId).addEventListener('click', () => {
-      console.log('Profile');
+      MenuPage.router.goto('Guild', 'profile', {guildId: this.gameState.thisGuild.id});
     });
     document.getElementById(this.memberRosterBtnId).addEventListener('click', () => {
       console.log('Member Roster');

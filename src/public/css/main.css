@@ -432,7 +432,7 @@ img.glitch-logo {
   height: 72px;
   align-items: center;
   justify-content: center;
-  background-image: url("/img/sui/mock/mock-droid-360.png");
+  background-image: url("/img/portrait-placeholder.png");
   background-repeat: no-repeat;
   box-shadow: -2px 0 0 0 var(--text-player-highlight), 2px 0 0 0 var(--text-player-highlight), 0 -2px 0 0 var(--text-player-highlight), 0 2px 0 0 var(--text-player-highlight);
 }
@@ -801,7 +801,7 @@ img.glitch-logo {
 .profile-header-image {
   width: 100%;
   height: 100%;
-  background-image: url(/img/sui/mock/mock-droid-360.png);
+  background-image: url(/img/portrait-placeholder.png);
 }
 
 .profile-header-info-container {

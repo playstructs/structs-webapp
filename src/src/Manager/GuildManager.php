@@ -188,23 +188,71 @@ class GuildManager
     {
         $query = '
             SELECT
-              p.guild_id,
-              floor(sum(i.fuel)) as total_fuel,
-              floor(avg(i.power)) as avg_power,
-              floor(avg(i.power)) as total_power,
-              floor(avg(i.ratio) * 100) as avg_ratio,
-              floor(avg(i.commission) * 100) as avg_commission
-            FROM player p
-            INNER JOIN guild g
-              ON p.guild_id = g.id
-            INNER JOIN infusion i
-              ON g.primary_reactor_id = i.destination_id
-              AND p.id = i.player_id
-            WHERE p.guild_Id = :guild_id
-            GROUP BY p.guild_id;
+              ratio,
+              commission,
+              total_fuel,
+              total_load,
+              total_capacity,
+              avg_connection_capacity
+            FROM (
+              SELECT
+                p.guild_id,
+                floor(r.default_commission * 100) as commission,
+                sum(COALESCE(i.fuel, 0)) as total_fuel,
+                sum(COALESCE(vp.total_load, 0)) as total_load,
+                sum(COALESCE(vp.total_capacity, 0)) as total_capacity,
+                floor(avg(COALESCE(vp.connection_capacity, 0))) as avg_connection_capacity
+              FROM player p
+              LEFT JOIN view.player vp
+                ON vp.player_id = p.id
+              INNER JOIN guild g
+                ON p.guild_id = g.id
+              INNER JOIN reactor r
+                ON g.primary_reactor_id = r.id
+              LEFT JOIN infusion i
+                ON g.primary_reactor_id = i.destination_id
+                AND p.id = i.player_id
+                AND i.destination_type = \'reactor\'
+              WHERE p.guild_id = :guild_id
+              GROUP BY p.guild_id, r.default_commission
+              LIMIT 1
+            ) AS guild_power_stats
+            CROSS JOIN (
+              SELECT s.value AS ratio
+              FROM setting s
+              WHERE s.name = \'REACTOR_RATIO\'
+              LIMIT 1
+            ) AS ratio_settings
+            LIMIT 1;
         ';
 
-        // TODO: Add guild aggregate load when aggregate stats added
+        $requestParams = [ApiParameters::GUILD_ID => $guild_id];
+        $requiredFields = [ApiParameters::GUILD_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+
+    /**
+     * @param string $guild_id
+     * @return Response
+     * @throws Exception
+     */
+    public function countGuildPlanetsCompleted(string $guild_id): Response
+    {
+        $query = '
+            SELECT count(1) 
+            FROM planet
+            INNER JOIN player
+              ON player.id = planet.owner
+            WHERE planet.status = \'complete\' 
+            AND player.guild_id = :guild_id;
+        ';
 
         $requestParams = [ApiParameters::GUILD_ID => $guild_id];
         $requiredFields = [ApiParameters::GUILD_ID];
