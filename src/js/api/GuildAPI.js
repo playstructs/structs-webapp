@@ -570,4 +570,15 @@ export class GuildAPI {
     }
     return parseInt(count);
   }
+
+  /**
+   * @param {string} guildId
+   * @return {Promise<PlayerSearchResultDTO[]>}
+   */
+  async getGuildRoster(guildId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/${guildId}/roster`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.playerSearchResultDTOFactory.parseList(response.data);
+  }
 }
