@@ -1,7 +1,13 @@
 import {Guild} from "../models/Guild";
 import {AbstractFactory} from "../framework/AbstractFactory";
+import {SocialsDTOFactory} from "./SocialsDTOFactory";
 
 export class GuildFactory extends AbstractFactory {
+
+  constructor() {
+    super();
+    this.socialsDTOFactory = new SocialsDTOFactory();
+  }
 
   /**
    * @param {object} obj
@@ -10,6 +16,7 @@ export class GuildFactory extends AbstractFactory {
   make(obj) {
     const guild = new Guild();
     Object.assign(guild, obj);
+    guild.socials = this.socialsDTOFactory.make(JSON.parse(guild.socials));
     return guild;
   }
 }

@@ -69,6 +69,41 @@ export class GuildProfileViewModel extends AbstractViewModel {
     }.bind(this));
   }
 
+  renderJoinBtnsHTML() {
+    let discordBtn = '';
+    let guildBtn = '';
+
+    if (this.guild.socials.discord_server) {
+      discordBtn = `
+        <a 
+          href="${this.guild.socials.discord_server}" 
+          class="sui-screen-btn sui-mod-secondary"
+          target="_blank"
+        >Join Discord</a>
+      `;
+    }
+
+    if (this.guild.id !== this.gameState.thisGuild.id) {
+      guildBtn = `
+        <a 
+          href="javascript: void(0)" 
+          class="sui-screen-btn sui-mod-primary"
+        >Join Guild</a>
+      `;
+    }
+
+    if (discordBtn === '' && guildBtn === '') {
+      return '';
+    }
+
+    return `
+      <div class="sui-screen-btn-flex-wrapper">
+        ${discordBtn}
+        ${guildBtn}
+      </div>
+    `;
+  }
+
   render () {
     this.fetchPageData().then(() => {
 
@@ -108,6 +143,8 @@ export class GuildProfileViewModel extends AbstractViewModel {
               </div>
             </div>
           </div>
+          
+          ${this.renderJoinBtnsHTML()}
           
           <div class="sui-data-card">
             <div class="sui-data-card-header sui-text-header">Guild Power</div>
