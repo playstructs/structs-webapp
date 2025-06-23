@@ -54,6 +54,16 @@ class PlayerManager
               p.substation_id,
               p.planet_id,
               p.fleet_id,
+              (
+                SELECT row_to_json(ft) as fleet
+                FROM (
+                    SELECT * 
+                    FROM fleet 
+                    WHERE id = p.fleet_id
+                    LIMIT 1
+                ) ft 
+                LIMIT 1
+              ) as fleet,
               pm.username,
               pm.pfp,
               gm.name AS guild_name,

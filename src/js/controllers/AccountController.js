@@ -49,8 +49,18 @@ export class AccountController extends AbstractController {
     viewModel.render();
   }
 
-  profile() {
-    const viewModel = new AccountProfileViewModel(this.gameState, this.guildAPI);
+  /**
+   * @param {object} options
+   */
+  profile(options) {
+    const playerId = (options.hasOwnProperty('playerId') && options.playerId)
+      ? options.playerId
+      : this.gameState.thisPlayerId;
+    const viewModel = new AccountProfileViewModel(
+      this.gameState,
+      this.guildAPI,
+      playerId
+    );
     viewModel.render();
   }
 

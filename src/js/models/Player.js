@@ -17,4 +17,18 @@ export class Player {
     this.capacity = null;
     this.connection_capacity = null;
   }
+
+  /**
+   * @return {string}
+   */
+  getTag() {
+    return this.tag.length > 0 ? `[${this.tag}]` : '';
+  }
+
+  /**
+   * @return {string}
+   */
+  getUsername() {
+    return this.username.length > 0 ? `${this.username}` : 'Name Redacted';
+  }
 }

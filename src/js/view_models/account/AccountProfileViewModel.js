@@ -1,35 +1,42 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {EnergyUsageComponent} from "../components/EnergyUsageComponent";
-import {AlphaOwnedComponent} from "../components/AlphaOwnedComponent";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
+import {NumberFormatter} from "../../util/NumberFormatter";
 
 export class AccountProfileViewModel extends AbstractViewModel {
 
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
+   * @param {string} playerId
    */
   constructor(
     gameState,
     guildAPI,
+    playerId
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
+    this.playerId = playerId;
+    this.player = null;
+    this.guild = null;
+    this.isOwnProfile = (this.playerId === this.gameState.thisPlayerId);
+    this.numberFormatter = new NumberFormatter();
     this.editUsernameBtnId = 'account-profile-edit-username-btn';
     this.copyPidBtnId = 'account-profile-copy-pid-btn';
     this.copyPidBtnId2 = 'account-profile-copy-pid-btn-2';
     this.copyAddressBtnId = 'account-profile-copy-address-btn';
+    this.alphaMatterId = 'account-profile-alpha-matter';
     this.alphaInfusedId = 'account-profile-alpha-infused';
+    this.energyUsageId = 'account-profile-energy-usage';
     this.oreMinedId = 'account-profile-ore-mined';
     this.oreStolenId = 'account-profile-ore-stolen';
     this.oreLostId = 'account-profile-ore-lost';
-    this.alphaOwnedComponent = new AlphaOwnedComponent(gameState, 'account-profile-alpha-owned');
-    this.energyUsageComponent = new EnergyUsageComponent(gameState, 'account-profile-energy-usage');
     this.genericResourceComponent = new GenericResourceComponent(gameState);
     this.genericResourcePageCode = [
-      this.genericResourceComponent.getPageCode(this.alphaInfusedId)
+      this.genericResourceComponent.getPageCode(this.alphaMatterId),
+      this.genericResourceComponent.getPageCode(this.alphaInfusedId),
     ];
     this.alphaInfused = 0;
     this.playerOreStats = null;
@@ -38,49 +45,104 @@ export class AccountProfileViewModel extends AbstractViewModel {
   }
 
   async fetchPageData() {
-    const infusion = await this.guildAPI.getInfusionByPlayerId(this.gameState.thisPlayerId);
+
+    if (this.isOwnProfile) {
+      this.player = this.gameState.thisPlayer;
+      this.guild = this.gameState.thisGuild;
+    } else {
+      this.player = await this.guildAPI.getPlayer(this.playerId);
+      this.guild = await this.guildAPI.getGuild(this.player.guild_id);
+    }
+
+    const [
+      infusion,
+      playerOreStats,
+      playerPlanetsCompleted,
+      playerRaidsLaunched
+    ] = await Promise.all([
+      this.guildAPI.getInfusionByPlayerId(this.playerId),
+      this.guildAPI.getPlayerOreStats(this.playerId),
+      this.guildAPI.getPlayerPlanetsCompleted(this.playerId),
+      this.guildAPI.getPlayerRaidsLaunched(this.playerId)
+    ])
+
     this.alphaInfused = infusion.fuel;
-    this.playerOreStats = await this.guildAPI.getPlayerOreStats(this.gameState.thisPlayerId);
-    this.playerPlanetsCompleted = await this.guildAPI.getPlayerPlanetsCompleted(this.gameState.thisPlayerId);
-    this.playerRaidsLaunched = await this.guildAPI.getPlayerRaidsLaunched(this.gameState.thisPlayerId);
+    this.playerOreStats = playerOreStats;
+    this.playerPlanetsCompleted = playerPlanetsCompleted;
+    this.playerRaidsLaunched = playerRaidsLaunched;
   }
 
   initPageCode() {
-    this.alphaOwnedComponent.initPageCode();
-    this.energyUsageComponent.initPageCode();
 
     for (let i = 0; i < this.genericResourcePageCode.length; i++) {
       this.genericResourcePageCode[i]();
     }
 
-    document.getElementById(this.editUsernameBtnId).addEventListener('click', function () {
-      MenuPage.router.goto('Account', 'changeUsername');
-    });
+    if (this.isOwnProfile) {
+      document.getElementById(this.editUsernameBtnId).addEventListener('click', function () {
+        MenuPage.router.goto('Account', 'changeUsername');
+      });
+    }
+
     document.getElementById(this.copyPidBtnId).addEventListener('click', async function () {
       if (navigator.clipboard) {
-        await navigator.clipboard.writeText(this.gameState.thisPlayerId);
+        await navigator.clipboard.writeText(this.playerId);
       }
     }.bind(this));
     document.getElementById(this.copyPidBtnId2).addEventListener('click', async function () {
       if (navigator.clipboard) {
-        await navigator.clipboard.writeText(this.gameState.thisPlayerId);
+        await navigator.clipboard.writeText(this.playerId);
       }
     }.bind(this));
     document.getElementById(this.copyAddressBtnId).addEventListener('click', async function () {
       if (navigator.clipboard) {
-        await navigator.clipboard.writeText(this.gameState.thisPlayer.primary_address);
+        await navigator.clipboard.writeText(this.player.primary_address);
       }
     })
+  }
+
+  renderEditUsernameBtnHTML() {
+    return this.isOwnProfile
+      ? `
+        <a id="${this.editUsernameBtnId}" href="javascript: void(0)">
+          <i class="sui-icon icon-edit sui-text-secondary"></i>
+        </a>
+      `
+      : '' ;
+  }
+
+  getEnergyUsage() {
+    const load = this.player.load ? this.player.load : 0;
+    const structsLoad = this.player.structs_load ? this.player.structs_load : 0;
+    const capacity = this.player.capacity ? this.player.capacity : 0;
+    const connectionCapacity = this.player.connection_capacity ? this.player.connection_capacity : 0;
+
+    let totalLoad = load + structsLoad;
+    let totalCapacity = capacity + connectionCapacity;
+    totalLoad = this.numberFormatter.format(totalLoad);
+    totalCapacity = this.numberFormatter.format(totalCapacity);
+
+    return `${totalLoad}/${totalCapacity}`;
   }
 
   render () {
     this.fetchPageData().then(() => {
 
-      MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
+      const editUsernameBtn = this.renderEditUsernameBtnHTML();
 
-      MenuPage.setPageTemplateHeaderBtn('Profile', true, () => {
-        MenuPage.router.goto('Account', 'index');
-      });
+      if (this.isOwnProfile) {
+        MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
+
+        MenuPage.setPageTemplateHeaderBtn('Profile', true, () => {
+          MenuPage.router.goto('Account', 'index');
+        });
+      } else {
+        MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
+
+        MenuPage.setPageTemplateHeaderBtn('Guild Profile', true, () => {
+          MenuPage.router.back();
+        });
+      }
 
       MenuPage.setPageTemplateContent(`
         <div class="profile-layout">
@@ -90,14 +152,12 @@ export class AccountProfileViewModel extends AbstractViewModel {
             </div>
             <div class="profile-header-info-container">
               <div class="profile-header-info-name sui-text-display">
-                <span class="sui-text-secondary">${this.gameState.getPlayerTag()}</span>
-                ${this.gameState.getPlayerUsername()}
-                <a id="${this.editUsernameBtnId}" href="javascript: void(0)">
-                  <i class="sui-icon icon-edit sui-text-secondary"></i>
-                </a>
+                <span class="sui-text-secondary">${this.player.getTag()}</span>
+                ${this.player.getUsername()}
+                ${editUsernameBtn}
               </div>
               <div class="profile-header-info-player-id">
-                #${this.gameState.thisPlayerId}
+                #${this.playerId}
                 <a id="${this.copyPidBtnId}" href="javascript: void(0)">
                   <div class="icon-wrapper">
                     <i class="sui-icon icon-copy sui-text-secondary"></i>
@@ -112,12 +172,12 @@ export class AccountProfileViewModel extends AbstractViewModel {
             <div class="sui-data-card-body">
               <div class="sui-data-card-row">
                 <div>Guild</div>
-                <div>${this.gameState.thisGuild.name}</div>
+                <div>${this.guild.name}</div>
               </div>
               <div class="sui-data-card-row">
                 <div>Player ID</div>
                 <div>
-                  #${this.gameState.thisPlayerId}
+                  #${this.playerId}
                   <a id="${this.copyPidBtnId2}" href="javascript: void(0)">
                     <i class="sui-icon icon-copy sui-text-secondary"></i>
                   </a>
@@ -140,7 +200,16 @@ export class AccountProfileViewModel extends AbstractViewModel {
             <div class="sui-data-card-body">
               <div class="sui-data-card-row">
                 <div>Alpha Matter</div>
-                <div>${this.alphaOwnedComponent.renderHTML()}</div>
+                <div>
+                ${
+                  this.genericResourceComponent.renderHTML(
+                    this.alphaMatterId,
+                    'sui-icon-alpha-matter',
+                    'Alpha Matter',
+                    this.numberFormatter.format(this.player.alpha)
+                  )
+                }
+                </div>
               </div>
               <div class="sui-data-card-row">
                 <div>Alpha Infused</div>
@@ -157,7 +226,16 @@ export class AccountProfileViewModel extends AbstractViewModel {
               </div>
               <div class="sui-data-card-row">
                 <div>Energy Usage</div>
-                <div>${this.energyUsageComponent.renderHTML()}</div>
+                <div>
+                  ${
+                    this.genericResourceComponent.renderHTML(
+                      this.energyUsageId,
+                      'sui-icon-energy',
+                      'Energy usage',
+                      this.getEnergyUsage()
+                    )
+                  }
+                </div>
               </div>
             </div>
           </div>

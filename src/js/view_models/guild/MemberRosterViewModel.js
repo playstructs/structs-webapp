@@ -25,7 +25,7 @@ export class MemberRosterViewModel extends AbstractViewModel {
   initPageCode() {
     this.players.forEach((player) => {
       document.getElementById(`player-search-result-${player.id}`).addEventListener('click', () => {
-        console.log('view player', player);
+        MenuPage.router.goto('Account', 'profile', {playerId: player.id})
       });
     })
   }
