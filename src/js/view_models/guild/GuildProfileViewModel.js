@@ -110,7 +110,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
       MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
 
       MenuPage.setPageTemplateHeaderBtn('Guild Profile', true, () => {
-        MenuPage.router.goto('Guild', 'index');
+        MenuPage.router.back();
       });
 
       MenuPage.setPageTemplateContent(`
@@ -122,7 +122,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
             <div class="profile-header-info-container">
               <div class="profile-header-info-name sui-text-display">
                 ${this.guild.name ? this.guild.name : 'Name Redacted'}
-                <span class="sui-text-secondary">${this.guild.tag}</span>
+                <span class="sui-text-secondary">${this.guild.tag ? "[" + this.guild.tag + "]" : ''}</span>
               </div>
               <div class="profile-header-info-player-id">
                 Guild ID #${this.guild.id}

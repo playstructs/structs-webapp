@@ -1942,6 +1942,7 @@ label.sui-input-text input[type=text]:disabled::placeholder {
   align-items: center;
   align-self: stretch;
   justify-content: space-between;
+  text-align: left;
 }
 
 /* ---- Data Card End ---- */

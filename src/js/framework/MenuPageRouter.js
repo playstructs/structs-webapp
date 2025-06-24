@@ -16,13 +16,19 @@ export class MenuPageRouter {
   }
 
   goto(controllerName, pageName, options = {}) {
-    this.lastController = this.currentController;
-    this.lastPage = this.currentPage;
-    this.lastOptions = this.currentOptions;
+    if (!(
+      this.currentController === controllerName
+      && this.currentPage === pageName
+      && JSON.stringify(this.currentOptions) === JSON.stringify(options)
+    )) {
+      this.lastController = this.currentController;
+      this.lastPage = this.currentPage;
+      this.lastOptions = this.currentOptions;
 
-    this.currentController = controllerName;
-    this.currentPage = pageName;
-    this.currentOptions = options;
+      this.currentController = controllerName;
+      this.currentPage = pageName;
+      this.currentOptions = options;
+    }
 
     localStorage.setItem("lastMenuPage", JSON.stringify({
       controller: this.lastController,
