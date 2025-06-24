@@ -13,6 +13,7 @@ import {ActivationCodeInfoDTO} from "../dtos/ActivationCodeInfoDTO";
 import {TransactionFactory} from "../factories/TransactionFactory";
 import {PlayerSearchResultDTOFactory} from "../factories/PlayerSearchResultDTOFactory";
 import {GuildPowerStatsDTOFactory} from "../factories/GuildPowerStatsDTOFactory";
+import {GuildSearchResultDTOFactory} from "../factories/GuildSearchResultDTOFactory";
 
 export class GuildAPI {
 
@@ -29,6 +30,7 @@ export class GuildAPI {
     this.transactionFactory = new TransactionFactory();
     this.playerSearchResultDTOFactory = new PlayerSearchResultDTOFactory();
     this.guildPowerStatsDTOFactory = new GuildPowerStatsDTOFactory();
+    this.guildSearchResultDTOFactory = new GuildSearchResultDTOFactory();
   }
 
   /**
@@ -580,5 +582,28 @@ export class GuildAPI {
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.playerSearchResultDTOFactory.parseList(response.data);
+  }
+
+  /**
+   * @return {string}
+   */
+  getGuildsDirectoryCacheKey() {
+    return `getGuildsDirectory`;
+  }
+
+  /**
+   * @param {boolean} forceRefresh
+   * @return {Promise<GuildSearchResultDTO[]>}
+   */
+  async getGuildsDirectory(forceRefresh = false) {
+    let guilds = this.getCachedItem(this.getGuildsDirectoryCacheKey());
+    if (guilds === null || forceRefresh) {
+      const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/directory`);
+      const response = this.guildAPIResponseFactory.make(jsonResponse);
+      this.handleResponseFailure(response);
+      guilds = this.guildSearchResultDTOFactory.parseList(response.data);
+      this.cacheItem(this.getGuildsDirectoryCacheKey(), guilds);
+    }
+    return guilds;
   }
 }

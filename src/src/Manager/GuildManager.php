@@ -353,4 +353,41 @@ class GuildManager
             []
         );
     }
+
+    /**
+     * @return Response
+     * @throws Exception
+     */
+    public function getGuildsDirectory(): Response
+    {
+        $query = '
+            SELECT
+              p.guild_id,
+              gm.name,
+              gm.logo,
+              COALESCE(gf.fuel, 0) AS alpha,
+              COUNT(1) AS members
+            FROM player p
+            INNER JOIN guild_meta gm
+              ON p.guild_id = gm.id
+            LEFT JOIN (
+              SELECT
+                vr.guild_id,
+                SUM(COALESCE(vr.fuel, 0)) AS fuel
+              FROM view.reactor vr
+              GROUP BY vr.guild_id
+            ) AS gf
+              ON gm.id = gf.guild_id
+            GROUP BY p.guild_id, gm.name, gm.logo, alpha
+            ORDER BY members DESC, alpha DESC, gm.name;
+        ';
+
+        return $this->queryAll(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            [],
+            []
+        );
+    }
 }

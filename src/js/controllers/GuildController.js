@@ -2,6 +2,7 @@ import {AbstractController} from "../framework/AbstractController";
 import {GuildIndexViewModel} from "../view_models/guild/GuildIndexViewModel";
 import {GuildProfileViewModel} from "../view_models/guild/GuildProfileViewModel";
 import {MemberRosterViewModel} from "../view_models/guild/MemberRosterViewModel";
+import {GuildsDirectoryViewModel} from "../view_models/guild/GuildsDirectoryViewModel";
 
 export class GuildController extends AbstractController {
 
@@ -35,6 +36,11 @@ export class GuildController extends AbstractController {
    */
   roster(options) {
     const viewModel = new MemberRosterViewModel(this.gameState, this.guildAPI, options.guildId);
+    viewModel.render();
+  }
+
+  directory() {
+    const viewModel = new GuildsDirectoryViewModel(this.gameState, this.guildAPI);
     viewModel.render();
   }
 }

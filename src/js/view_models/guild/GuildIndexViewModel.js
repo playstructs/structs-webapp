@@ -31,7 +31,7 @@ export class GuildIndexViewModel extends AbstractViewModel {
       MenuPage.router.goto('Guild', 'roster', {guildId: this.gameState.thisGuild.id});
     });
     document.getElementById(this.guildsDirectoryBtnId).addEventListener('click', () => {
-      console.log('Guilds Directory');
+      MenuPage.router.goto('Guild', 'directory');
     });
   }
 

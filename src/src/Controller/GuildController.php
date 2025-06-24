@@ -92,6 +92,21 @@ class GuildController extends AbstractController
     }
 
     /**
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/guild/directory', name: 'api_get_guilds_directory', methods: ['GET'])]
+    public function getGuildsDirectory(
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $guildManager = new GuildManager($entityManager, $validator);
+        return $guildManager->getGuildsDirectory();
+    }
+
+    /**
      * @param string $guild_id
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator
