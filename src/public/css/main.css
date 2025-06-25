@@ -1179,6 +1179,45 @@ img.alpha-transfer-animation {
   gap: var(--spacing-xl);
 }
 
+.guild-reactor-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  align-self: stretch;
+  justify-content: center;
+  gap: 32px var(--spacing-xxxl);
+}
+
+.guild-reactor-section-right {
+  display: flex;
+  min-width: 256px;
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-xxl);
+}
+
+.guild-reactor-info-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: var(--spacing-lg);
+}
+
+.guild-reactor-info-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+}
+
+img.guild-reactor-img {
+  width: 128px;
+  height: 184px;
+}
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */

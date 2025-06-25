@@ -22,7 +22,7 @@ export class GuildIndexViewModel extends AbstractViewModel {
 
   initPageCode() {
     document.getElementById(this.alphaReactorBtnId).addEventListener('click', () => {
-      console.log('Alpha Reactor');
+      MenuPage.router.goto('Guild', 'reactor');
     });
     document.getElementById(this.guildProfileBtnId).addEventListener('click', () => {
       MenuPage.router.goto('Guild', 'profile', {guildId: this.gameState.thisGuild.id});

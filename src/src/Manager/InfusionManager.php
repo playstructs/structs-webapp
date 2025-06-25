@@ -61,7 +61,8 @@ class InfusionManager
               ON p.guild_id = g.id
             LEFT JOIN infusion i
               ON g.primary_reactor_id = i.destination_id
-              AND p.id = i.player_id 
+              AND p.id = i.player_id
+              AND i.destination_type = \'reactor\'
             WHERE p.id = :player_id
             LIMIT 1;
         ';

@@ -3,6 +3,7 @@ import {GuildIndexViewModel} from "../view_models/guild/GuildIndexViewModel";
 import {GuildProfileViewModel} from "../view_models/guild/GuildProfileViewModel";
 import {MemberRosterViewModel} from "../view_models/guild/MemberRosterViewModel";
 import {GuildsDirectoryViewModel} from "../view_models/guild/GuildsDirectoryViewModel";
+import {ReactorViewModel} from "../view_models/guild/ReactorViewModel";
 
 export class GuildController extends AbstractController {
 
@@ -41,6 +42,11 @@ export class GuildController extends AbstractController {
 
   directory() {
     const viewModel = new GuildsDirectoryViewModel(this.gameState, this.guildAPI);
+    viewModel.render();
+  }
+
+  reactor() {
+    const viewModel = new ReactorViewModel(this.gameState, this.guildAPI);
     viewModel.render();
   }
 }
