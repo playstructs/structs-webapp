@@ -1218,6 +1218,55 @@ img.guild-reactor-img {
   height: 184px;
 }
 
+.manage-alpha-layout {
+  display: flex;
+  max-width: 100%;
+  width: 100%;
+  padding: var(--spacing-xl);
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  justify-content: flex-start;
+  gap: var(--spacing-xl);
+}
+
+.manage-alpha-toggle-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.manage-alpha-toggle-group img {
+  width: 128px;
+  height: 184px;
+  flex-shrink: 0;
+}
+
+.manage-alpha-amounts {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  gap: 16px;
+}
+
+.manage-alpha-error {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  gap: 8px;
+}
+
+.manage-alpha-cta-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */

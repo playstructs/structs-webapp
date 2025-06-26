@@ -21,15 +21,14 @@ export class ReactorViewModel extends AbstractViewModel {
     this.numberFormatter = new NumberFormatter();
 
     this.guildMinimumId = 'guild-profile-guild-minimum';
-    this.baseEnergySupplyId = 'guild-profile-base-energy-supply';
     this.commissionId = 'guild-profile-commission';
     this.alphaInfusedId = 'guild-profile-alpha-infused';
     this.defusingId = 'guild-profile-defusing';
     this.totalSupplyId = 'guild-profile-total-supply';
+    this.manageAlphaBtnId = 'guild-reactor-manage-alpha-btn';
 
     this.genericResourcePageCode = [
       this.genericResourceComponent.getPageCode(this.guildMinimumId),
-      this.genericResourceComponent.getPageCode(this.baseEnergySupplyId),
       this.genericResourceComponent.getPageCode(this.commissionId),
       this.genericResourceComponent.getPageCode(this.alphaInfusedId),
       this.genericResourceComponent.getPageCode(this.defusingId),
@@ -37,20 +36,17 @@ export class ReactorViewModel extends AbstractViewModel {
     ];
 
     this.guild = null;
-    this.powerStats = 0;
     this.infusion = null;
   }
 
   async fetchPageData() {
 
-    const [guild, powerStats, infusion] = await Promise.all([
+    const [guild, infusion] = await Promise.all([
       this.guildAPI.getGuild(this.guildId),
-      this.guildAPI.getGuildPowerStats(this.guildId),
       this.guildAPI.getInfusionByPlayerId(this.gameState.thisPlayerId)
     ]);
 
     this.guild = guild;
-    this.powerStats = powerStats;
     this.infusion = infusion;
   }
 
@@ -58,12 +54,20 @@ export class ReactorViewModel extends AbstractViewModel {
     for (let i = 0; i < this.genericResourcePageCode.length; i++) {
       this.genericResourcePageCode[i]();
     }
+
+    document.getElementById(this.manageAlphaBtnId).addEventListener('click', () => {
+      MenuPage.router.goto('Guild', 'manageAlpha', this.infusion);
+    });
   }
 
   render () {
     this.fetchPageData().then(() => {
 
       MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
+
+      MenuPage.setPageTemplateHeaderBtn('Guild Reactor', true, () => {
+        MenuPage.router.goto('Guild', 'index');
+      });
 
       MenuPage.setPageTemplateContent(`
         <div class="profile-layout">
@@ -130,7 +134,11 @@ export class ReactorViewModel extends AbstractViewModel {
               </div>
               
               <div class="sui-screen-btn-flex-wrapper">
-                <a href="javascript: void(0)" class="sui-screen-btn sui-mod-primary">Manage Alpha</a>
+                <a 
+                  href="javascript: void(0)" 
+                  id="${this.manageAlphaBtnId}" 
+                  class="sui-screen-btn sui-mod-primary"
+                >Manage Alpha</a>
               </div>
               
             </div>
@@ -154,22 +162,9 @@ export class ReactorViewModel extends AbstractViewModel {
                 </div>
               </div>
               <div class="sui-data-card-row">
-                <div>Avg. Base Energy Supply</div>
-                <div>
-                  ${
-                    this.genericResourceComponent.renderHTML(
-                      this.baseEnergySupplyId,
-                      'sui-icon-energy',
-                      'Average energy supplied to guild members',
-                      this.numberFormatter.format(this.powerStats.avg_connection_capacity)
-                    )
-                  }
-                </div>
-              </div>
-              <div class="sui-data-card-row">
                 <div>Reactor Efficiency</div>
                 <div>
-                  ${this.numberFormatter.format(this.powerStats.ratio)} <i class="sui-icon sui-icon-md sui-icon-energy"></i> /
+                  ${this.numberFormatter.format(this.guild.reactor_ratio)} <i class="sui-icon sui-icon-md sui-icon-energy"></i> /
                   1 <i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>
                 </div>
               </div>
@@ -181,7 +176,7 @@ export class ReactorViewModel extends AbstractViewModel {
                       this.commissionId,
                       'sui-icon-energy',
                       'The guild\'s cut',
-                      this.powerStats.commission + '%'
+                      Math.floor(this.guild.default_commission * 100) + '%'
                     )
                   }
                 </div>
@@ -192,10 +187,6 @@ export class ReactorViewModel extends AbstractViewModel {
           
         </div>
       `);
-
-      MenuPage.setPageTemplateHeaderBtn('Guild Reactor', true, () => {
-        MenuPage.router.back();
-      });
 
       MenuPage.hideAndClearDialoguePanel();
 

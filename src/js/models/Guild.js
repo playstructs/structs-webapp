@@ -17,5 +17,7 @@ export class Guild {
     this.website = null;
     this.this_infrastructure = true;
     this.status = null;
+    this.reactor_ratio = null;
+    this.default_commission = null;
   }
 }

@@ -27,7 +27,7 @@ export class GenericResourceComponent extends AbstractViewModelComponent {
         data-sui-tooltip="${toolTipText}"
         data-sui-mod-placement="bottom"
       >
-        <span>${value}</span>
+        <span id="${elementId}-value">${value}</span>
         <i class="sui-icon ${iconClass}"></i>
       </a>
     `;

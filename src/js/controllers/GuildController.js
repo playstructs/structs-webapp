@@ -4,6 +4,7 @@ import {GuildProfileViewModel} from "../view_models/guild/GuildProfileViewModel"
 import {MemberRosterViewModel} from "../view_models/guild/MemberRosterViewModel";
 import {GuildsDirectoryViewModel} from "../view_models/guild/GuildsDirectoryViewModel";
 import {ReactorViewModel} from "../view_models/guild/ReactorViewModel";
+import {ManageAlphaViewModel} from "../view_models/guild/ManageAlphaViewModel";
 
 export class GuildController extends AbstractController {
 
@@ -47,6 +48,14 @@ export class GuildController extends AbstractController {
 
   reactor() {
     const viewModel = new ReactorViewModel(this.gameState, this.guildAPI);
+    viewModel.render();
+  }
+
+  /**
+   * @param {object} options
+   */
+  manageAlpha(options) {
+    const viewModel = new ManageAlphaViewModel(this.gameState, this.guildAPI, options);
     viewModel.render();
   }
 }

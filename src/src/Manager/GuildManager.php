@@ -159,8 +159,17 @@ class GuildManager
               gm.socials,
               gm.website,
               gm.this_infrastructure,
-              gm.status
-            FROM guild g
+              gm.status,
+              r.default_commission,
+              (
+                SELECT "value" 
+                FROM setting 
+                WHERE name = \'REACTOR_RATIO\'
+                LIMIT 1
+              ) AS reactor_ratio
+            FROM guild g 
+            INNER JOIN reactor r
+              ON g.primary_reactor_id = r.id
             LEFT JOIN guild_meta gm
               ON g.id = gm.id
             WHERE g.id = :guild_id
@@ -187,43 +196,26 @@ class GuildManager
     public function getGuildPowerStats(string $guild_id): Response
     {
         $query = '
-            SELECT
-              ratio,
-              commission,
-              total_fuel,
-              total_load,
-              total_capacity,
-              avg_connection_capacity
-            FROM (
-              SELECT
-                p.guild_id,
-                floor(r.default_commission * 100) as commission,
-                sum(COALESCE(i.fuel, 0)) as total_fuel,
-                sum(COALESCE(vp.total_load, 0)) as total_load,
-                sum(COALESCE(vp.total_capacity, 0)) as total_capacity,
-                floor(avg(COALESCE(vp.connection_capacity, 0))) as avg_connection_capacity
-              FROM player p
-              LEFT JOIN view.player vp
-                ON vp.player_id = p.id
-              INNER JOIN guild g
-                ON p.guild_id = g.id
-              INNER JOIN reactor r
-                ON g.primary_reactor_id = r.id
-              LEFT JOIN infusion i
-                ON g.primary_reactor_id = i.destination_id
-                AND p.id = i.player_id
-                AND i.destination_type = \'reactor\'
-              WHERE p.guild_id = :guild_id
-              GROUP BY p.guild_id, r.default_commission
-              LIMIT 1
-            ) AS guild_power_stats
-            CROSS JOIN (
-              SELECT s.value AS ratio
-              FROM setting s
-              WHERE s.name = \'REACTOR_RATIO\'
-              LIMIT 1
-            ) AS ratio_settings
-            LIMIT 1;
+          SELECT
+            p.guild_id,
+            sum(COALESCE(i.fuel, 0)) as total_fuel,
+            sum(COALESCE(vp.total_load, 0)) as total_load,
+            sum(COALESCE(vp.total_capacity, 0)) as total_capacity,
+            floor(avg(COALESCE(vp.connection_capacity, 0))) as avg_connection_capacity
+          FROM player p
+          LEFT JOIN view.player vp
+            ON vp.player_id = p.id
+          INNER JOIN guild g
+            ON p.guild_id = g.id
+          INNER JOIN reactor r
+            ON g.primary_reactor_id = r.id
+          LEFT JOIN infusion i
+            ON g.primary_reactor_id = i.destination_id
+            AND p.id = i.player_id
+            AND i.destination_type = \'reactor\'
+          WHERE p.guild_id = :guild_id
+          GROUP BY p.guild_id, r.default_commission
+          LIMIT 1
         ';
 
         $requestParams = [ApiParameters::GUILD_ID => $guild_id];
@@ -337,8 +329,17 @@ class GuildManager
               gm.socials,
               gm.website,
               gm.this_infrastructure,
-              gm.status
-            FROM guild g
+              gm.status,
+              r.default_commission,
+              (
+                SELECT "value" 
+                FROM setting 
+                WHERE name = \'REACTOR_RATIO\'
+                LIMIT 1
+              ) AS reactor_ratio
+            FROM guild g 
+            INNER JOIN reactor r
+              ON g.primary_reactor_id = r.id
             LEFT JOIN guild_meta gm
               ON g.id = gm.id
             WHERE gm.this_infrastructure = TRUE

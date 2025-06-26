@@ -178,7 +178,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
               <div class="sui-data-card-row">
                 <div>Alpha Efficiency</div>
                 <div>
-                  ${this.numberFormatter.format(this.powerStats.ratio)} <i class="sui-icon sui-icon-md sui-icon-energy"></i> /
+                  ${this.numberFormatter.format(this.guild.reactor_ratio)} <i class="sui-icon sui-icon-md sui-icon-energy"></i> /
                   1 <i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>
                 </div>
               </div>
@@ -190,7 +190,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
                       this.commissionId,
                       'sui-icon-energy',
                       'The guild\'s cut',
-                      this.powerStats.commission + '%'
+                      Math.floor(this.guild.default_commission * 100) + '%'
                     )
                   }
                 </div>
