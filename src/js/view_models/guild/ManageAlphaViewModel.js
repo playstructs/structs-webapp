@@ -2,6 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {NumberFormatter} from "../../util/NumberFormatter";
+import {SystemModal} from "../templates/partials/SystemModal";
 
 export class ManageAlphaViewModel extends AbstractViewModel {
 
@@ -21,6 +22,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     this.infusion = infusion;
     this.genericResourceComponent = new GenericResourceComponent(gameState);
     this.numberFormatter = new NumberFormatter();
+    this.systemModal = new SystemModal();
 
     this.alphaToInfuse = this.infusion.fuel;
     this.joinInfusionMinimum = this.gameState.thisGuild.join_infusion_minimum;
@@ -88,6 +90,8 @@ export class ManageAlphaViewModel extends AbstractViewModel {
   }
 
   initPageCode() {
+    this.systemModal.init();
+
     for (let i = 0; i < this.genericResourcePageCode.length; i++) {
       this.genericResourcePageCode[i]();
     }
@@ -116,13 +120,18 @@ export class ManageAlphaViewModel extends AbstractViewModel {
       MenuPage.router.goto('Guild', 'reactor');
     });
     document.getElementById(this.saveChangesBtnId).addEventListener('click', () => {
-      console.log('save changes');
+      this.systemModal.show();
     });
 
     this.postToggleRender();
   }
 
   render () {
+
+    this.systemModal.iconClasses = `sui-icon-alpha-matter`;
+    this.systemModal.messageHTML = `Alpha will be removed from your inventory and added to the reactor.`;
+    const modalHTML = this.systemModal.render();
+
     MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
 
     MenuPage.setPageTemplateHeaderBtn('Manage Alpha', true, () => {
@@ -171,6 +180,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
           <a href="javascript: void(0)" id="${this.saveChangesBtnId}" class="sui-screen-btn sui-mod-primary">Save Changes</a>
         </div>
         
+        ${modalHTML}
       </div>
     `);
 
