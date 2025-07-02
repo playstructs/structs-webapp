@@ -3,7 +3,7 @@ export class SystemModal {
   constructor() {
     this.systemModalId = 'system-modal';
     this.iconClasses = 'icon-deploy';
-    this.messageHTML = '';
+    this.messageId = 'system-modal-message';
     this.cancelBtnId = 'system-modal-cancel-btn';
     this.confirmBtnId = 'system-modal-confirm-btn';
     this.cancelBtnHandler = () => {
@@ -41,9 +41,7 @@ export class SystemModal {
             </div>
             <div class="sui-message-system-modal-frame-left-bottom"></div>
           </div>
-          <div class="sui-message-system-model-frame-center">
-            ${this.messageHTML}
-          </div>
+          <div id="${this.messageId}" class="sui-message-system-model-frame-center"></div>
         </div>
         <div class="sui-message-system-modal-cta">
           <div class="sui-message-system-modal-cta-btn-wrapper">

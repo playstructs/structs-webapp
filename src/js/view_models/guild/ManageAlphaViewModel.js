@@ -3,22 +3,30 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {NumberFormatter} from "../../util/NumberFormatter";
 import {SystemModal} from "../templates/partials/SystemModal";
+import {AlphaInfusedChangeListener} from "../../grass_listeners/AlphaInfusedChangeListener";
+import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
 
 export class ManageAlphaViewModel extends AbstractViewModel {
 
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
+   * @param {GrassManager} grassManager
+   * @param {AlphaManager} alphaManager
    * @param {Infusion|object} infusion
    */
   constructor(
     gameState,
     guildAPI,
+    grassManager,
+    alphaManager,
     infusion
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
+    this.grassManager = grassManager;
+    this.alphaManager = alphaManager;
     this.infusion = infusion;
     this.genericResourceComponent = new GenericResourceComponent(gameState);
     this.numberFormatter = new NumberFormatter();
@@ -40,6 +48,9 @@ export class ManageAlphaViewModel extends AbstractViewModel {
       this.genericResourceComponent.getPageCode(this.alphaInfusedId),
       this.genericResourceComponent.getPageCode(this.energyId),
     ];
+
+    this.infusionWarning = `Alpha will be removed from your inventory and added to the reactor.`;
+    this.defusionWarning = `Alpha will be removed from the reactor and put on cooldown.`;
   }
 
   calculateEnergy() {
@@ -71,7 +82,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     }
 
     if (
-      this.alphaToInfuse !== this.gameState.thisPlayer.alpha
+      this.alphaToInfuse !== this.infusion.fuel
       && this.alphaToInfuse >= this.joinInfusionMinimum
     ) {
       ctaBtns.classList.remove('hidden');
@@ -87,6 +98,18 @@ export class ManageAlphaViewModel extends AbstractViewModel {
 
     alphaInfusedValue.innerText = this.alphaToInfuse;
     energyValue.innerHTML = `${this.calculateEnergy()}`;
+  }
+
+  infuse() {
+    const alphaDiff = this.alphaToInfuse - this.infusion.fuel;
+    this.grassManager.registerListener(new AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'infused'));
+    this.alphaManager.infuse(alphaDiff).then();
+  }
+
+  defuse() {
+    const alphaDiff = this.infusion.fuel - this.alphaToInfuse;
+    this.grassManager.registerListener(new AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'defused'));
+    this.alphaManager.defuse(alphaDiff).then();
   }
 
   initPageCode() {
@@ -120,6 +143,11 @@ export class ManageAlphaViewModel extends AbstractViewModel {
       MenuPage.router.goto('Guild', 'reactor');
     });
     document.getElementById(this.saveChangesBtnId).addEventListener('click', () => {
+
+      document.getElementById(this.systemModal.messageId).innerHTML = (this.alphaToInfuse > this.infusion.fuel)
+        ? this.infusionWarning
+        : this.defusionWarning;
+
       this.systemModal.show();
     });
 
@@ -129,7 +157,25 @@ export class ManageAlphaViewModel extends AbstractViewModel {
   render () {
 
     this.systemModal.iconClasses = `sui-icon-alpha-matter`;
-    this.systemModal.messageHTML = `Alpha will be removed from your inventory and added to the reactor.`;
+    this.systemModal.confirmBtnHandler = () => {
+      const options = new MenuWaitingOptions();
+      options.navItemId = MenuPage.navItemGuildId;
+      options.hasDoNotCloseMessage = false;
+
+      if (this.alphaToInfuse > this.infusion.fuel) {
+        this.infuse();
+
+        options.headerBtnLabel = 'Infusing...';
+        options.waitingAnimation = 'INFUSE';
+      } else {
+        this.defuse();
+
+        options.headerBtnLabel = 'Defusing...';
+        options.waitingAnimation = 'DEFUSE';
+      }
+
+      MenuPage.router.goto('Generic', 'menuWaiting', options);
+    };
     const modalHTML = this.systemModal.render();
 
     MenuPage.enablePageTemplate(MenuPage.navItemGuildId);

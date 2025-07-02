@@ -4,9 +4,11 @@ export class AlphaManager {
 
   /**
    * @param gameState
+   * @param {SigningClientManager} signingClientManager
    */
-  constructor(gameState) {
+  constructor(gameState, signingClientManager) {
     this.gameState = gameState;
+    this.signingClientManager = signingClientManager;
   }
 
   /**
@@ -30,6 +32,38 @@ export class AlphaManager {
         denom: "ualpha",
         amount: this.convertAlphaToUAlpha(alphaAmount),
       }],
+      FEE
+    );
+  }
+
+  /**
+   * @param {number} alphaAmount
+   * @return {Promise<void>}
+   */
+  async infuse(alphaAmount) {
+    await this.gameState.signingClient.delegateTokens(
+      gameState.signingAccount.address,
+      this.gameState.thisGuild.validator,
+      {
+        denom: "ualpha",
+        amount: this.convertAlphaToUAlpha(alphaAmount),
+      },
+      FEE
+    );
+  }
+
+  /**
+   * @param {number} alphaAmount
+   * @return {Promise<void>}
+   */
+  async defuse(alphaAmount) {
+    await this.gameState.signingClient.undelegateTokens(
+      gameState.signingAccount.address,
+      this.gameState.thisGuild.validator,
+      {
+        denom: "ualpha",
+        amount: this.convertAlphaToUAlpha(alphaAmount),
+      },
       FEE
     );
   }

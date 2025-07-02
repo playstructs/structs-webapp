@@ -57,7 +57,7 @@ const authManager = new AuthManager(
   playerAddressPendingFactory
 );
 
-const alphaManager = new AlphaManager(gameState);
+const alphaManager = new AlphaManager(gameState, signingClientManager);
 
 const blockListener = new BlockListener(gameState);
 
@@ -80,7 +80,9 @@ const genericController = new GenericController(
 );
 const guildController = new GuildController(
   gameState,
-  guildAPI
+  guildAPI,
+  grassManager,
+  alphaManager
 );
 
 MenuPage.gameState = gameState;

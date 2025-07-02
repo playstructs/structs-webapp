@@ -15,6 +15,10 @@ export class MenuWaitingViewModel extends AbstractViewModel {
     switch (this.options.waitingAnimation) {
       case 'ALPHA_TRANSFER':
         return `<img src="/img/alpha-transfer.gif" class="alpha-transfer-animation"  alt="alpha transferring from one player to another animation"/>`;
+      case 'INFUSE':
+        return `<img src="/img/alpha-infusing.gif" class="alpha-transfer-animation"  alt="alpha going into the reactor animation"/>`;
+      case 'DEFUSE':
+        return `<img src="/img/alpha-defusing.gif" class="alpha-transfer-animation"  alt="alpha be removed from the reactor animation"/>`;
       default:
         return `<img src="/img/loading-3-dots.gif" class="loading-3-dots"  alt="3 dots loading animation"/>`;
     }
@@ -31,7 +35,7 @@ export class MenuWaitingViewModel extends AbstractViewModel {
   }
 
   render () {
-    MenuPage.enablePageTemplate(MenuPage.navItemAccountId, false);
+    MenuPage.enablePageTemplate(this.options.navItemId, false);
 
     MenuPage.setPageTemplateHeaderBtn(
       this.options.headerBtnLabel,

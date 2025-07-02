@@ -11,13 +11,19 @@ export class GuildController extends AbstractController {
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
+   * @param {GrassManager} grassManager
+   * @param {AlphaManager} alphaManager
    */
   constructor(
     gameState,
-    guildAPI
+    guildAPI,
+    grassManager,
+    alphaManager
   ) {
     super('Guild', gameState);
     this.guildAPI = guildAPI;
+    this.grassManager = grassManager;
+    this.alphaManager = alphaManager;
   }
 
   index() {
@@ -55,7 +61,13 @@ export class GuildController extends AbstractController {
    * @param {object} options
    */
   manageAlpha(options) {
-    const viewModel = new ManageAlphaViewModel(this.gameState, this.guildAPI, options);
+    const viewModel = new ManageAlphaViewModel(
+      this.gameState,
+      this.guildAPI,
+      this.grassManager,
+      this.alphaManager,
+      options
+    );
     viewModel.render();
   }
 }

@@ -161,6 +161,7 @@ class GuildManager
               gm.this_infrastructure,
               gm.status,
               r.default_commission,
+              r.validator,
               (
                 SELECT "value" 
                 FROM setting 
@@ -331,6 +332,7 @@ class GuildManager
               gm.this_infrastructure,
               gm.status,
               r.default_commission,
+              r.validator,
               (
                 SELECT "value" 
                 FROM setting 

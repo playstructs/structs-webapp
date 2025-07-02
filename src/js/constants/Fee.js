@@ -5,5 +5,5 @@ export const FEE = {
       amount: "0",
     },
   ],
-  gas: "180000",
+  gas: "500000",
 };

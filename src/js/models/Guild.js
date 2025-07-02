@@ -19,5 +19,6 @@ export class Guild {
     this.status = null;
     this.reactor_ratio = null;
     this.default_commission = null;
+    this.validator = null;
   }
 }
