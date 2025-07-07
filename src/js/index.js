@@ -16,6 +16,7 @@ import {PlayerAddressPendingFactory} from "./factories/PlayerAddressPendingFacto
 import {GenericController} from "./controllers/GenericController";
 import {AlphaManager} from "./managers/AlphaManager";
 import {GuildController} from "./controllers/GuildController";
+import {FleetController} from "./controllers/FleetController";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -84,12 +85,18 @@ const guildController = new GuildController(
   grassManager,
   alphaManager
 );
+const fleetController = new FleetController(
+  gameState,
+  guildAPI,
+  grassManager
+);
 
 MenuPage.gameState = gameState;
 MenuPage.router.registerController(authController);
 MenuPage.router.registerController(accountController);
 MenuPage.router.registerController(genericController);
 MenuPage.router.registerController(guildController);
+MenuPage.router.registerController(fleetController);
 MenuPage.initListeners();
 
 grassManager.init();

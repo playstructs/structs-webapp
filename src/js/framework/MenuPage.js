@@ -59,7 +59,8 @@ export class MenuPage {
   static menuNavItems = [
     new NavItemDTO(
       MenuPage.navItemFleetId,
-      'FLEET'
+      'FLEET',
+      () => { MenuPage.router.goto('Fleet', 'index') }
     ),
     new NavItemDTO(
       MenuPage.navItemGuildId,
