@@ -5,6 +5,8 @@ import {ChargeLevelChangedEvent} from "../events/ChargeLevelChangedEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {WalletManager} from "../managers/WalletManager";
 import {GuildAPI} from "../api/GuildAPI";
+import {ShieldHealthCalculator} from "../util/ShieldHealthCalculator";
+import {PlanetaryShieldInfoDTO} from "../dtos/PlanetaryShieldInfoDTO";
 
 export class GameState {
 
@@ -12,6 +14,7 @@ export class GameState {
     this.chargeCalculator = new ChargeCalculator();
     this.walletManager = new WalletManager();
     this.guildAPI = new GuildAPI();
+    this.shieldHealthCalculator = new ShieldHealthCalculator();
 
     /* Multistep Request Data */
     this.signupRequest = new SignupRequestDTO();
@@ -36,6 +39,7 @@ export class GameState {
     this.enemyPlayer = null;
     this.planet = null;
     this.planetShieldHealth = 100;
+    this.planetShieldInfo = new PlanetaryShieldInfoDTO();
 
     /* GRASS Only Data */
     this.currentBlockHeight = 0;
@@ -89,8 +93,9 @@ export class GameState {
   setCurrentBlockHeight(height) {
     this.currentBlockHeight = height;
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
+    this.setPlanetShieldHealth();
 
-    console.log(`New Block`);
+    console.log(`New Block ${height}`);
     window.dispatchEvent(new ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
   }
 
@@ -192,10 +197,29 @@ export class GameState {
     this.planet = planet;
   }
 
-  setPlanetShieldHealth(health) {
+  setPlanetShieldHealth() {
+    let health = 100;
+
+    if (this.currentBlockHeight && this.planetShieldInfo.block_start_raid) {
+      health = this.shieldHealthCalculator.calc(
+        this.planetShieldInfo.planetary_shield,
+        this.planetShieldInfo.block_start_raid,
+        this.currentBlockHeight
+      );
+    }
+
     this.planetShieldHealth = health;
 
     window.dispatchEvent(new CustomEvent(EVENTS.SHIELD_HEALTH_CHANGED));
+  }
+
+  /**
+   * @param {PlanetaryShieldInfoDTO} info
+   */
+  setPlanetShieldInfo(info) {
+    this.planetShieldInfo = info;
+
+    this.setPlanetShieldHealth();
   }
 
   /**

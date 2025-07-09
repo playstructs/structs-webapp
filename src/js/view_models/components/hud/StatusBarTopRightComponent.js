@@ -6,7 +6,7 @@ export class StatusBarTopRightComponent extends AbstractViewModelComponent {
 
   initPageCode() {
     window.addEventListener(EVENTS.SHIELD_HEALTH_CHANGED, function () {
-      document.getElementById('hud-shield-health').innerText = `100`; // TODO: Awaiting working stargate ts client
+      document.getElementById('hud-shield-health').innerText = this.gameState.planetShieldHealth;
     }.bind(this));
 
     window.addEventListener(EVENTS.ORE_COUNT_CHANGED, function () {

@@ -147,4 +147,38 @@ class PlanetManager
 
         return $response;
     }
+
+    /**
+     * @param string $planet_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getPlanetaryShieldInfo(string $planet_id): Response
+    {
+        $query = '
+            SELECT
+              p.id AS planet_id,
+              pa_ps.val AS planetary_shield,
+              pa_bsr.val AS block_start_raid
+            FROM planet p
+            LEFT JOIN planet_attribute pa_ps
+              ON pa_ps.object_id = p.id
+              AND pa_ps.attribute_type = \'planetaryShield\'
+            LEFT JOIN planet_attribute pa_bsr
+              ON pa_ps.object_id= pa_bsr.object_id
+              AND pa_bsr.attribute_type = \'blockStartRaid\'
+            WHERE p.id = :planet_id
+        ';
+
+        $requestParams = [ApiParameters::PLANET_ID => $planet_id];
+        $requiredFields = [ApiParameters::PLANET_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
 }

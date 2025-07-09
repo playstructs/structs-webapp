@@ -154,18 +154,29 @@ export class AuthManager {
       await this.signingClientManager.initSigningClient(this.gameState.wallet);
       this.playerAddressManager.addPlayerAddressMeta();
 
-      const player = await this.guildAPI.getPlayer(playerId);
-      this.gameState.setThisPlayer(player);
+      const [
+        player,
+        height
+      ] = await Promise.all([
+        this.guildAPI.getPlayer(playerId),
+        this.guildAPI.getPlayerLastActionBlockHeight(playerId),
+      ]);
 
-      const height = await this.guildAPI.getPlayerLastActionBlockHeight(playerId);
+      this.gameState.setThisPlayer(player);
       this.gameState.setLastActionBlockHeight(height);
 
       if (this.gameState.thisPlayer.planet_id) {
-        const planet = await this.guildAPI.getPlanet(this.gameState.thisPlayer.planet_id);
-        this.gameState.setPlanet(planet);
 
-        const shieldHealth = await this.guildAPI.getPlanetShieldHealth(this.gameState.thisPlayer.planet_id);
-        this.gameState.setPlanetShieldHealth(shieldHealth);
+        const [
+          planet,
+          shieldInfo
+        ] = await Promise.all([
+          this.guildAPI.getPlanet(this.gameState.thisPlayer.planet_id),
+          this.guildAPI.getPlanetaryShieldInfo(this.gameState.thisPlayer.planet_id)
+        ]);
+
+        this.gameState.setPlanet(planet);
+        this.gameState.setPlanetShieldInfo(shieldInfo);
       }
     }
 

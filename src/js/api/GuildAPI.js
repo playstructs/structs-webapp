@@ -14,6 +14,7 @@ import {TransactionFactory} from "../factories/TransactionFactory";
 import {PlayerSearchResultDTOFactory} from "../factories/PlayerSearchResultDTOFactory";
 import {GuildPowerStatsDTOFactory} from "../factories/GuildPowerStatsDTOFactory";
 import {GuildSearchResultDTOFactory} from "../factories/GuildSearchResultDTOFactory";
+import {PlanetaryShieldInfoDTOFactory} from "../factories/PlanetaryShieldInfoDTOFactory";
 
 export class GuildAPI {
 
@@ -31,6 +32,7 @@ export class GuildAPI {
     this.playerSearchResultDTOFactory = new PlayerSearchResultDTOFactory();
     this.guildPowerStatsDTOFactory = new GuildPowerStatsDTOFactory();
     this.guildSearchResultDTOFactory = new GuildSearchResultDTOFactory();
+    this.planetaryShieldInfoDTOFactory = new PlanetaryShieldInfoDTOFactory();
   }
 
   /**
@@ -605,5 +607,16 @@ export class GuildAPI {
       this.cacheItem(this.getGuildsDirectoryCacheKey(), guilds);
     }
     return guilds;
+  }
+
+  /**
+   * @param {string} planetId
+   * @return {Promise<PlanetaryShieldInfoDTO>}
+   */
+  async getPlanetaryShieldInfo(planetId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/planet/${planetId}/shield`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.planetaryShieldInfoDTOFactory.make(response.data);
   }
 }
