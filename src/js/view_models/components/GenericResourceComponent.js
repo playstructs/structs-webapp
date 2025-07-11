@@ -17,8 +17,17 @@ export class GenericResourceComponent extends AbstractViewModelComponent {
     elementId,
     iconClass,
     toolTipText,
-    value
+    value,
+    iconFirst = false
   ) {
+    let iconPos1 = '';
+    let iconPos2 = `<i class="sui-icon ${iconClass}"></i>`;
+
+    if (iconFirst) {
+      iconPos1 = iconPos2;
+      iconPos2 = '';
+    }
+
     return `
       <a 
         id="${elementId}"
@@ -27,8 +36,9 @@ export class GenericResourceComponent extends AbstractViewModelComponent {
         data-sui-tooltip="${toolTipText}"
         data-sui-mod-placement="bottom"
       >
+        ${iconPos1}
         <span id="${elementId}-value">${value}</span>
-        <i class="sui-icon ${iconClass}"></i>
+        ${iconPos2}
       </a>
     `;
   }

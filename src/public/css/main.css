@@ -1289,94 +1289,11 @@ img.guild-reactor-img {
 
 .fleet-card-wrapper {
   display: flex;
-  flex: 1 0 0;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.fleet-card {
-  display: flex;
   min-width: 256px;
-  flex-direction: column;
-  align-items: center;
-  align-self: stretch;
-  justify-content: center;
-  gap: 0;
-}
-
-.fleet-card-header {
-  display: flex;
-  padding: 8px;
-  border-top: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  border-left: 1px solid var(--border);
-  align-items: flex-start;
-  align-self: stretch;
-  justify-content: space-between;
-}
-
-.fleet-card-header-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fleet-card-header-label-title {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.fleet-card-body {
-  display: flex;
-  padding: var(--spacing-xl);
-  border: 1px solid var(--border);
-  flex-direction: column;
-  align-items: center;
-  align-self: stretch;
-  justify-content: center;
-  gap: var(--spacing-xl);
-}
-
-.fleet-card-body-content {
-  display: flex;
-  min-height: 72px;
-  flex-direction: column;
-  align-items: center;
-  align-self: stretch;
-  justify-content: center;
-  gap: 16px;
-}
-
-.fleet-card-status-group {
-  display: flex;
-  min-height: 72px;
-  padding: 0;
-  justify-content: center;
-  align-items: center;
-  align-content: center;
-  gap: var(--spacing-md);
-  align-self: stretch;
-  flex-wrap: wrap;
-}
-
-.fleet-card-status-group-col {
-  display: flex;
-  padding: 0;
   flex: 1 0 0;
   flex-direction: column;
-  align-items: flex-start;
-  gap: var(--spacing-md);
-}
-
-.fleet-card-card-message {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  align-self: stretch;
   justify-content: center;
-  gap: var(--spacing-xl);
 }
 
 .fleet-card-log-btn {

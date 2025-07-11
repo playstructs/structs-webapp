@@ -195,6 +195,8 @@ export class GameState {
 
   setPlanet(planet) {
     this.planet = planet;
+
+    window.dispatchEvent(new CustomEvent(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED));
   }
 
   setPlanetShieldHealth() {

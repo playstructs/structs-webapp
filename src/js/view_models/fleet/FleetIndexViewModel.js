@@ -1,5 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
+import {PlanetCardComponent} from "../components/PlanetCardComponent";
 
 export class FleetIndexViewModel extends AbstractViewModel {
 
@@ -14,13 +15,54 @@ export class FleetIndexViewModel extends AbstractViewModel {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
+
+    this.alphaBaseCard = new PlanetCardComponent(
+      this.gameState,
+      'alpha-base',
+      false
+    );
+    this.raidCard = new PlanetCardComponent(
+      this.gameState,
+      'raid',
+      true
+    )
   }
 
   initPageCode() {
-
+    this.alphaBaseCard.initPageCode();
+    this.raidCard.initPageCode();
   }
 
-  render () {
+  renderAlphaBaseCardHTML() {
+    this.alphaBaseCard.hasStatusGroup = true;
+    this.alphaBaseCard.undiscoveredOre = this.gameState.planet.undiscovered_ore;
+    this.alphaBaseCard.alphaOre = this.gameState.thisPlayer.ore;
+    this.alphaBaseCard.shieldHealth = this.gameState.planetShieldHealth;
+
+    this.alphaBaseCard.hasPrimaryBtn = true;
+    this.alphaBaseCard.primaryBtnLabel = 'Command';
+    this.alphaBaseCard.primaryBtnHandler = () => {
+      console.log('Command');
+    }
+
+    return this.alphaBaseCard.renderHTML();
+  }
+
+  renderRaidCardHTML() {
+    this.raidCard.hasGeneralMessage = true;
+    this.raidCard.generalMessageIconClass = 'hidden';
+    this.raidCard.generalMessage = 'No Raid active.';
+
+    this.raidCard.hasSecondaryBtn = true;
+    this.raidCard.secondaryBtnLabel = 'Scan';
+    this.raidCard.secondaryBtnHandler = () => {
+      console.log('Scan');
+    }
+
+    return this.raidCard.renderHTML();
+  }
+
+  render() {
 
     MenuPage.enablePageTemplate(MenuPage.navItemFleetId);
 
@@ -33,52 +75,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
         
           <div class="fleet-card-wrapper">
           
-            <div class="fleet-card">
-            
-              <div class="fleet-card-header">
-                <div class="fleet-card-header-label">
-                  <i class="sui-icon sui-icon-md icon-planet sui-text-primary"></i>
-                  <div class="fleet-card-header-label-title sui-text-header">
-                    <span class="sui-text-primary">ALPHA BASE</span>
-                    <span>[Base Planet]</span>
-                  </div>  
-                </div>
-                <span class="sui-badge sui-mod-solid">Fleet</span>
-              </div>
-            
-              <div class="fleet-card-body">
-                <div class="fleet-card-body-content">
-                  <div class="fleet-card-status-group">
-                    <div class="fleet-card-status-group-col">
-                      <a href="javascript: void(0)" class="sui-resource">
-                        <i class="sui-icon sui-icon-undiscovered-ore"></i>
-                        <span>00</span>
-                      </a>
-                      <a href="javascript: void(0)" class="sui-resource">
-                        <i class="sui-icon sui-icon-alpha-ore"></i>
-                        <span>01</span>
-                      </a>
-                    </div>
-                    <div class="fleet-card-status-group-col">
-                      <a href="javascript: void(0)" class="sui-resource">
-                        <i class="sui-icon sui-icon-shield-health"></i>
-                        <span>100%</span>
-                      </a>
-                      <a href="javascript: void(0)" class="sui-resource">
-                        <i class="sui-icon sui-icon-deployed-structs"></i>
-                        <span>12+04</span>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sui-screen-btn-flex-wrapper">
-                  <button class="sui-screen-btn sui-mod-primary">Command</button>
-                </div>
-                
-              </div>
-              
-            </div>
+            ${this.renderAlphaBaseCardHTML()}
             
             <div>
               <a href="javascript: void(0)" class="fleet-card-log-btn">
@@ -93,33 +90,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
           
           <div class="fleet-card-wrapper">
             
-            <div class="fleet-card">
-            
-              <div class="fleet-card-header">
-                <div class="fleet-card-header-label">
-                  <i class="sui-icon sui-icon-md icon-raid sui-text-primary"></i>
-                  <div class="fleet-card-header-label-title sui-text-header">
-                    <span class="sui-text-primary">Raid</span>
-                  </div>  
-                </div>
-              </div>
-            
-              <div class="fleet-card-body">
-                <div class="fleet-card-body-content">
-                  <div class="fleet-card-status-group">
-                    <div class="fleet-card-card-message">
-                      No Raid active.
-                    </div>
-                  </div>
-                </div>
-
-                <div class="sui-screen-btn-flex-wrapper">
-                  <button class="sui-screen-btn sui-mod-secondary">Scan</button>
-                </div>
-                
-              </div>
-              
-            </div>
+            ${this.renderRaidCardHTML()}
             
           </div>
           

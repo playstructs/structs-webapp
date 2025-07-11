@@ -139,7 +139,7 @@ export class AuthManager {
 
       this.grassManager.registerListener(new LastActionListener(this.gameState));
       this.grassManager.registerListener(new PlayerAlphaListener(this.gameState));
-      this.grassManager.registerListener(new PlayerOreListener(this.gameState));
+      this.grassManager.registerListener(new PlayerOreListener(this.gameState, this.guildAPI));
       this.grassManager.registerListener(new PlayerLoadListener(this.gameState));
       this.grassManager.registerListener(new PlayerStructsLoadListener(this.gameState));
       this.grassManager.registerListener(new PlayerCapacityListener(this.gameState));
