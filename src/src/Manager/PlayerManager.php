@@ -460,14 +460,16 @@ class PlayerManager
     {
         $query = "
             SELECT
-              object_id AS player_id,
+              player_address.player_id,
               COALESCE(SUM(CASE WHEN action = 'forfeited' THEN amount ELSE 0 END), 0) AS forfeited,
               COALESCE(SUM(CASE WHEN action = 'mined' THEN amount ELSE 0 END), 0) AS mined,
               COALESCE(SUM(CASE WHEN action = 'seized' THEN amount ELSE 0 END), 0) AS seized
             FROM ledger
-            WHERE object_id = :player_id
-            GROUP BY object_id
-            LIMIT 1;
+            LEFT JOIN player_address
+            ON player_address.address = ledger.address
+            WHERE player_address.player_id = :player_id
+            GROUP BY player_address.player_id
+            LIMIT 1
         ";
 
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];

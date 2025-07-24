@@ -16,7 +16,9 @@ export class GuildFactory extends AbstractFactory {
   make(obj) {
     const guild = new Guild();
     Object.assign(guild, obj);
-    guild.socials = this.socialsDTOFactory.make(JSON.parse(guild.socials));
+    if (guild.hasOwnProperty('socials') && guild.socials !== null) {
+      guild.socials = this.socialsDTOFactory.make(JSON.parse(guild.socials));
+    }
     return guild;
   }
 }

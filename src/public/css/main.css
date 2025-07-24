@@ -1311,6 +1311,19 @@ img.guild-reactor-img {
   gap: 0;
 }
 
+.scan-layout {
+  display: flex;
+  max-width: 100%;
+  width: 100%;
+  padding: var(--spacing-xl);
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: var(--spacing-xl);
+}
+
+
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */

@@ -737,6 +737,10 @@ a.sui-screen-btn:visited {
   text-transform: uppercase;
 }
 
+.sui-screen-btn.sui-mod-align-flex-end {
+  align-self: flex-end;
+}
+
 .sui-screen-btn.sui-mod-primary {
   box-shadow: 0 2px 0 0 var(--accent-primary), 0 -2px 0 0 var(--accent-primary), 2px 0 0 0 var(--accent-primary), -2px 0 0 0 var(--accent-primary);
 }
@@ -1869,6 +1873,25 @@ label.sui-input-text input[type=text]:disabled::placeholder {
 /* ---- Input Stepper End ---- */
 
 
+/* ---- Form Element Label Start ---- */
+
+.sui-form-element-label-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: 4px;
+}
+
+label.sui-form-element-group-label {
+  display: flex;
+  min-height: 32px;
+  align-items: flex-start;
+}
+
+/* ---- Form Element Label End ---- */
+
+
 /* ---- Pagination Start ---- */
 
 .sui-pagination {
@@ -1931,6 +1954,11 @@ label.sui-input-text input[type=text]:disabled::placeholder {
   align-items: flex-start;
   align-self: stretch;
   gap: 0;
+}
+
+.sui-data-card-body.sui-mod-spacing-xl {
+  padding: var(--spacing-xl);
+  gap: var(--spacing-xl);
 }
 
 .sui-data-card-row {

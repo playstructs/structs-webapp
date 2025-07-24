@@ -56,7 +56,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
     this.raidCard.hasSecondaryBtn = true;
     this.raidCard.secondaryBtnLabel = 'Scan';
     this.raidCard.secondaryBtnHandler = () => {
-      console.log('Scan');
+      MenuPage.router.goto('Fleet', 'scan');
     }
 
     return this.raidCard.renderHTML();
