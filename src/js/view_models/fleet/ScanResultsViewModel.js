@@ -27,7 +27,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
   initPageCode() {
     this.players.forEach((player) => {
       document.getElementById(`scan-${player.id}`).addEventListener('click', () => {
-        console.log('view player:', player.id);
+        console.log('Raid planet:', player.planet_id);
         // MenuPage.router.goto('Fleet', 'scan', player)
       });
     })
@@ -111,7 +111,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
             id="${btnId}"
             href="javascript:void(0)"
             class="sui-screen-btn sui-mod-secondary"
-          >View</a>
+          >Launch Fleet</a>
         </div>
       </div>
     `;

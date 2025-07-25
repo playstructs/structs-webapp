@@ -10,5 +10,6 @@ export class PlayerSearchResultDTO {
     this.alpha = null;
     this.undiscovered_ore = null;
     this.ore = null;
+    this.planet_id = null;
   }
 }

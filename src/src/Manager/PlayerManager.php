@@ -181,7 +181,12 @@ class PlayerManager
         $page = !empty($parsedRequest->params->page) ? $parsedRequest->params->page : 1;
         $offset = ($page - 1) * $limit;
 
-        $queryParams = ['min_ore' => $parsedRequest->params->min_ore ?? 0];
+        $session = $request->getSession();
+        $player_id = $session->get('player_id');
+
+        $queryParams = ['player_id' => $player_id];
+
+        $queryParams['min_ore'] = $parsedRequest->params->min_ore ?? 0;
 
         if (isset($parsedRequest->params->guild_id)) {
             $queryParams['guild_id'] = $parsedRequest->params->guild_id;
@@ -213,6 +218,7 @@ class PlayerManager
         $query = "
             SELECT
               p.id,
+              p.planet_id,
               pm.username,
               pm.pfp,
               gm.name AS guild_name,
@@ -221,6 +227,8 @@ class PlayerManager
               COALESCE(planet_ore.val, 0) AS undiscovered_ore,
               COALESCE(player_ore.val, 0) AS ore
             FROM player p
+            INNER JOIN planet
+              ON p.planet_id = planet.id
             LEFT JOIN player_address pa
               ON p.id = pa.player_id
             LEFT JOIN fleet f
@@ -237,7 +245,8 @@ class PlayerManager
               ON player_ore.object_id = p.id
               AND player_ore.attribute_type='ore'
             WHERE
-              (
+              p.id <> :player_id
+              AND (
                   player_ore.val >= :min_ore
                   OR (player_ore.val IS NULL AND 0 = :min_ore)
               )
@@ -264,6 +273,8 @@ class PlayerManager
                     SELECT
                       p.id
                     FROM player p
+                    INNER JOIN planet
+                      ON p.planet_id = planet.id
                     LEFT JOIN player_address pa
                       ON p.id = pa.player_id
                     LEFT JOIN fleet f
@@ -280,7 +291,8 @@ class PlayerManager
                       ON player_ore.object_id = p.id
                       AND player_ore.attribute_type='ore'
                     WHERE
-                      (
+                      p.id <> :player_id
+                      AND (
                           player_ore.val >= :min_ore
                           OR (player_ore.val IS NULL AND 0 = :min_ore)
                       )
