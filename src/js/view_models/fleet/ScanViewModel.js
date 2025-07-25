@@ -43,7 +43,7 @@ export class ScanViewModel extends AbstractViewModel {
       raidSearchRequest.guild_id = document.getElementById(this.guildFilterSelectId).value;
       raidSearchRequest.fleet_away_only = document.getElementById(this.fleetStatusId).checked;
 
-      console.log('Searching by status:', raidSearchRequest);
+      MenuPage.router.goto('Fleet', 'scanResults', raidSearchRequest);
     });
 
     // Search By Player Input Checker
@@ -74,9 +74,7 @@ export class ScanViewModel extends AbstractViewModel {
         const raidSearchRequest = new RaidSearchRequestDTO();
         raidSearchRequest.search_string = playerSearchInput.value;
 
-        console.log('Searching by player:', raidSearchRequest);
-
-        // MenuPage.router.goto('Account', 'recipientSearchResults', transferSearchRequest);
+        MenuPage.router.goto('Fleet', 'scanResults', raidSearchRequest);
       }
     });
   }

@@ -3,6 +3,7 @@
 namespace App\Manager;
 
 use App\Constant\ApiParameters;
+use App\Constant\PaginationLimits;
 use App\Constant\RegexPattern;
 use App\Dto\ApiResponseContentDto;
 use App\Trait\ApiSqlQueryTrait;
@@ -147,13 +148,17 @@ class PlayerManager
             ApiParameters::MIN_ORE => $request->query->get(ApiParameters::MIN_ORE),
             ApiParameters::SEARCH_STRING => $request->query->get(ApiParameters::SEARCH_STRING),
             ApiParameters::FLEET_AWAY_ONLY => $request->query->get(ApiParameters::FLEET_AWAY_ONLY),
+            ApiParameters::COUNT_ONLY => $request->query->get(ApiParameters::COUNT_ONLY),
+            ApiParameters::PAGE => $request->query->get(ApiParameters::PAGE),
         ];
         $apiRequiredParams = [];
         $apiOptionalParams = [
             ApiParameters::GUILD_ID,
             ApiParameters::MIN_ORE,
             ApiParameters::SEARCH_STRING,
-            ApiParameters::FLEET_AWAY_ONLY
+            ApiParameters::FLEET_AWAY_ONLY,
+            ApiParameters::COUNT_ONLY,
+            ApiParameters::PAGE
         ];
 
         $parsedRequest = $this->apiRequestParsingManager->parse(
@@ -172,6 +177,9 @@ class PlayerManager
         $queryGuildIdFilter = '';
         $queryFleetAwayFilter = '';
         $querySearchFilter = '';
+        $limit = PaginationLimits::DEFAULT;
+        $page = !empty($parsedRequest->params->page) ? $parsedRequest->params->page : 1;
+        $offset = ($page - 1) * $limit;
 
         $queryParams = ['min_ore' => $parsedRequest->params->min_ore ?? 0];
 
@@ -231,7 +239,7 @@ class PlayerManager
             WHERE
               (
                   player_ore.val >= :min_ore
-                  OR (planet_ore.val IS NULL AND 0 = :min_ore)
+                  OR (player_ore.val IS NULL AND 0 = :min_ore)
               )
               $queryGuildIdFilter
               $queryFleetAwayFilter
@@ -245,7 +253,46 @@ class PlayerManager
               f.status,
               undiscovered_ore,
               ore
+            LIMIT $limit
+            OFFSET $offset;
         ";
+
+        if ($parsedRequest->params->count_only) {
+            $query = "
+                SELECT COUNT(1)
+                FROM (
+                    SELECT
+                      p.id
+                    FROM player p
+                    LEFT JOIN player_address pa
+                      ON p.id = pa.player_id
+                    LEFT JOIN fleet f
+                      ON p.fleet_id = f.id
+                    LEFT JOIN player_meta pm
+                      ON p.id = pm.id
+                      AND p.guild_id = pm.guild_id
+                    LEFT JOIN guild_meta gm
+                      ON p.guild_id = gm.id
+                    LEFT JOIN grid AS planet_ore
+                      ON planet_ore.object_id = p.planet_id
+                      AND planet_ore.attribute_type='ore'
+                    LEFT JOIN grid AS player_ore
+                      ON player_ore.object_id = p.id
+                      AND player_ore.attribute_type='ore'
+                    WHERE
+                      (
+                          player_ore.val >= :min_ore
+                          OR (player_ore.val IS NULL AND 0 = :min_ore)
+                      )
+                      $queryGuildIdFilter
+                      $queryFleetAwayFilter
+                      $querySearchFilter
+                    GROUP BY
+                      p.id
+                ) AS search_results
+                LIMIT 1;
+            ";
+        }
 
         $db = $this->entityManager->getConnection();
         $result = $db->fetchAllAssociative($query, $queryParams);

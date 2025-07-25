@@ -14,6 +14,9 @@ class ApiRequestParamsDto
     public ?string $code = null;
 
     #[Assert\Choice(['0', '1'])]
+    public ?string $count_only = null;
+
+    #[Assert\Choice(['0', '1'])]
     public ?string $fleet_away_only = null;
 
     #[Assert\Regex(RegexPattern::ID)]
@@ -30,6 +33,9 @@ class ApiRequestParamsDto
 
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $offset = null;
+
+    #[Assert\Regex(RegexPattern::INT)]
+    public ?string $page = null;
 
     #[Assert\Regex(RegexPattern::PERMISSIONS)]
     public ?string $permissions = null;

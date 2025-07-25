@@ -619,4 +619,41 @@ export class GuildAPI {
     this.handleResponseFailure(response);
     return this.planetaryShieldInfoDTOFactory.make(response.data);
   }
+
+  /**
+   * @param {RaidSearchRequestDTO} raidSearchRequestDTO
+   * @return {Promise<PlayerSearchResultDTO[]>}
+   */
+  async raidSearch(raidSearchRequestDTO) {
+    const searchStringParam = raidSearchRequestDTO.search_string ? `search_string=${raidSearchRequestDTO.search_string}` : '';
+    const guildIdParam = raidSearchRequestDTO.guild_id ? `&guild_id=${raidSearchRequestDTO.guild_id}` : '';
+    const minOreParam = `&min_ore=${raidSearchRequestDTO.min_ore}`;
+    const fleetAwayOnlyParam = `&fleet_away_only=${raidSearchRequestDTO.fleet_away_only ? 1 : 0}`;
+    const pageParam = `&page=${raidSearchRequestDTO.page}`;
+
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/raid/search?${searchStringParam}${guildIdParam}${minOreParam}${fleetAwayOnlyParam}${pageParam}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.playerSearchResultDTOFactory.parseList(response.data);
+  }
+
+  /**
+   * @param {RaidSearchRequestDTO} raidSearchRequestDTO
+   * @return {Promise<number>}
+   */
+  async raidSearchCount(raidSearchRequestDTO) {
+    const count_only = `count_only=1`;
+    const searchStringParam = raidSearchRequestDTO.search_string ? `&search_string=${raidSearchRequestDTO.search_string}` : '';
+    const guildIdParam = raidSearchRequestDTO.guild_id ? `&guild_id=${raidSearchRequestDTO.guild_id}` : '';
+    const minOreParam = `&min_ore=${raidSearchRequestDTO.min_ore}`;
+    const fleetAwayOnlyParam = `&fleet_away_only=${raidSearchRequestDTO.fleet_away_only ? 1 : 0}`;
+
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/raid/search?${count_only}${searchStringParam}${guildIdParam}${minOreParam}${fleetAwayOnlyParam}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+
+    return (response.data.hasOwnProperty('length') && response.data.length === 1 && response.data[0].hasOwnProperty('count'))
+      ? parseInt(response.data[0].count)
+      : 0;
+  }
 }

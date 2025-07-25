@@ -8,6 +8,8 @@ class ApiParameters
 
     const string CODE = 'code';
 
+    const string COUNT_ONLY = 'count_only';
+
     const string FLEET_AWAY_ONLY = 'fleet_away_only';
 
     const string GUILD_ID = 'guild_id';
@@ -19,6 +21,8 @@ class ApiParameters
     const string MIN_ORE = 'min_ore';
 
     const string OFFSET = 'offset';
+
+    const string PAGE = 'page';
 
     const string PERMISSIONS = 'permissions';
 

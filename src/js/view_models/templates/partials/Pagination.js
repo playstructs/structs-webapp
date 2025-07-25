@@ -8,7 +8,8 @@ export class Pagination {
     totalResults,
     idPrefix,
     targetController,
-    targetAction
+    targetAction,
+    options = {}
   ) {
     this.currentPage = currentPage;
     this.resultsPerPage = resultsPerPage;
@@ -18,24 +19,25 @@ export class Pagination {
     this.targetController = targetController;
     this.targetAction = targetAction;
     this.pageBtns = [];
+    this.options = options;
   }
 
   init() {
     if (this.currentPage > 1) {
       document.getElementById(`${this.idPrefix}-pagi-prev-btn`).addEventListener('click', () => {
-        MenuPage.router.goto(this.targetController, this.targetAction, {page: this.currentPage - 1});
+        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, page: this.currentPage - 1});
       });
     }
 
     if (this.currentPage < this.totalPages) {
       document.getElementById(`${this.idPrefix}-pagi-next-btn`).addEventListener('click', () => {
-        MenuPage.router.goto(this.targetController, this.targetAction, {page: this.currentPage + 1});
+        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, page: this.currentPage + 1});
       });
     }
 
     this.pageBtns.forEach((pageBtnNumber) => {
       document.getElementById(`${this.idPrefix}-pagi-${pageBtnNumber}-btn`).addEventListener('click', () => {
-        MenuPage.router.goto(this.targetController, this.targetAction, {page: pageBtnNumber});
+        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, page: pageBtnNumber});
       });
     });
   }
