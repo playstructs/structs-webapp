@@ -17,6 +17,8 @@ import {GenericController} from "./controllers/GenericController";
 import {AlphaManager} from "./managers/AlphaManager";
 import {GuildController} from "./controllers/GuildController";
 import {FleetController} from "./controllers/FleetController";
+import {FleetManager} from "./managers/FleetManager";
+import {PlayerManager} from "./managers/PlayerManager";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -60,6 +62,10 @@ const authManager = new AuthManager(
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);
 
+const fleetManager = new FleetManager(gameState, signingClientManager);
+
+const playerManager = new PlayerManager(gameState, guildAPI, grassManager);
+
 const blockListener = new BlockListener(gameState);
 
 const authController = new AuthController(
@@ -88,7 +94,9 @@ const guildController = new GuildController(
 const fleetController = new FleetController(
   gameState,
   guildAPI,
-  grassManager
+  grassManager,
+  fleetManager,
+  playerManager
 );
 
 MenuPage.gameState = gameState;

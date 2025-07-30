@@ -10,19 +10,31 @@ export class FleetController extends AbstractController {
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    * @param {GrassManager} grassManager
+   * @param {FleetManager} fleetManager
+   * @param {PlayerManager} playerManager
    */
   constructor(
     gameState,
     guildAPI,
-    grassManager
+    grassManager,
+    fleetManager,
+    playerManager
   ) {
     super('Fleet', gameState);
     this.guildAPI = guildAPI;
     this.grassManager = grassManager;
+    this.fleetManager = fleetManager;
+    this.playerManager = playerManager;
   }
 
   index() {
-    const viewModel = new FleetIndexViewModel(this.gameState, this.guildAPI);
+    const viewModel = new FleetIndexViewModel(
+      this.gameState,
+      this.guildAPI,
+      this.fleetManager,
+      this.playerManager,
+      this.grassManager
+    );
     viewModel.render();
   }
 

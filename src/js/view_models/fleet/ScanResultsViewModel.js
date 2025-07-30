@@ -3,6 +3,7 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {NumberFormatter} from "../../util/NumberFormatter";
 import {Pagination} from "../templates/partials/Pagination";
 import {PAGINATION_LIMITS} from "../../constants/PaginationLimits";
+import {RAID_STATUS} from "../../constants/RaidStatus";
 
 export class ScanResultsViewModel extends AbstractViewModel {
 
@@ -28,7 +29,12 @@ export class ScanResultsViewModel extends AbstractViewModel {
     this.players.forEach((player) => {
       document.getElementById(`scan-${player.id}`).addEventListener('click', () => {
         console.log('Raid planet:', player.planet_id);
-        // MenuPage.router.goto('Fleet', 'scan', player)
+
+        this.gameState.setRaidEnemyId(player.id);
+        this.gameState.setRaidPlanetId(player.planet_id);
+        this.gameState.setRaidStatus(RAID_STATUS.REQUESTED);
+
+        MenuPage.router.goto('Fleet', 'index');
       });
     })
   }

@@ -1,6 +1,7 @@
 import {AbstractViewModelComponent} from "../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../constants/Events";
 import {GenericResourceComponent} from "./GenericResourceComponent";
+import {MenuPage} from "../../framework/MenuPage";
 
 export class PlanetCardComponent extends AbstractViewModelComponent {
 
@@ -69,6 +70,77 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
       this.genericResourceComponent.getPageCode(this.shieldHealthId),
       this.genericResourceComponent.getPageCode(this.deployedStructsId)
     ];
+  }
+
+  resetBody() {
+    this.hasStatusGroup = false;
+    this.hasAlert = false;
+    this.hasGeneralMessage = false;
+    this.hasPrimaryBtn = false;
+    this.hasSecondaryBtn = false;
+  }
+
+  useScanBodyPreset() {
+    this.resetBody();
+
+    this.hasGeneralMessage = true;
+    this.generalMessageIconClass = 'hidden';
+    this.generalMessage = 'No Raid active.';
+
+    this.hasSecondaryBtn = true;
+    this.secondaryBtnLabel = 'Scan';
+    this.secondaryBtnHandler = () => {
+      MenuPage.router.goto('Fleet', 'scan');
+    }
+  }
+
+  useLoadingBodyPreset() {
+    this.resetBody();
+
+    this.hasGeneralMessage = true;
+    this.generalMessageIconClass = 'hidden';
+    this.generalMessage = `<img src="/img/loading-3-dots.gif" class="loading-3-dots" alt="3 dots loading animation">`;
+  }
+
+  useRaidStartedBodyPreset() {
+    this.resetBody();
+
+    this.hasGeneralMessage = true;
+    this.generalMessageIconClass = 'icon-raid';
+    this.generalMessage = `Fleet has begun raid on ${this.gameState.getRaidEnemyUsername()}.`;
+
+    this.hasPrimaryBtn = true;
+    this.primaryBtnLabel = 'View';
+    this.primaryBtnHandler = () => {
+      console.log('view');
+    }
+
+    this.hasSecondaryBtn = true;
+    this.secondaryBtnLabel = 'Dismiss';
+    this.secondaryBtnHandler = () => {
+      console.log('dismiss');
+    }
+  }
+
+  useRaidActiveBodyPreset() {
+    this.resetBody();
+
+    this.hasStatusGroup = true;
+    this.undiscoveredOre = this.gameState.raidPlanet.undiscovered_ore;
+    this.alphaOre = this.gameState.raidEnemy.ore;
+    this.shieldHealth = this.gameState.raidPlanetShieldHealth;
+
+    this.hasPrimaryBtn = true;
+    this.primaryBtnLabel = 'Command';
+    this.primaryBtnHandler = () => {
+      console.log('command');
+    }
+
+    this.hasSecondaryBtn = true;
+    this.secondaryBtnLabel = 'Retreat';
+    this.secondaryBtnHandler = () => {
+      console.log('retreat');
+    }
   }
 
   initPageCode() {
