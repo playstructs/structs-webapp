@@ -11,29 +11,36 @@ export class FleetController extends AbstractController {
    * @param {GuildAPI} guildAPI
    * @param {GrassManager} grassManager
    * @param {FleetManager} fleetManager
-   * @param {PlayerManager} playerManager
+   * @param {RaidManager} raidManager
    */
   constructor(
     gameState,
     guildAPI,
     grassManager,
     fleetManager,
-    playerManager
+    raidManager
   ) {
     super('Fleet', gameState);
     this.guildAPI = guildAPI;
     this.grassManager = grassManager;
     this.fleetManager = fleetManager;
-    this.playerManager = playerManager;
+    this.raidManager = raidManager;
   }
 
-  index() {
+  /**
+   * @param {Object} options
+   */
+  index(options = {}) {
+    const planetCardType = options.hasOwnProperty('planetCardType') ? options.planetCardType : null;
+    const raidCardType = options.hasOwnProperty('raidCardType') ? options.raidCardType : null;
+
     const viewModel = new FleetIndexViewModel(
       this.gameState,
       this.guildAPI,
       this.fleetManager,
-      this.playerManager,
-      this.grassManager
+      this.grassManager,
+      planetCardType,
+      raidCardType
     );
     viewModel.render();
   }
@@ -50,6 +57,9 @@ export class FleetController extends AbstractController {
     const viewModel = new ScanResultsViewModel(
       this.gameState,
       this.guildAPI,
+      this.fleetManager,
+      this.grassManager,
+      this.raidManager,
       options
     );
     viewModel.render();

@@ -4,23 +4,35 @@ import {NumberFormatter} from "../../util/NumberFormatter";
 import {Pagination} from "../templates/partials/Pagination";
 import {PAGINATION_LIMITS} from "../../constants/PaginationLimits";
 import {RAID_STATUS} from "../../constants/RaidStatus";
+import {RaidStatusListener} from "../../grass_listeners/RaidStatusListener";
+import {PlanetRaidFactory} from "../../factories/PlanetRaidFactory";
 
 export class ScanResultsViewModel extends AbstractViewModel {
 
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
+   * @param {FleetManager} fleetManager
+   * @param {GrassManager} grassManager
+   * @param {RaidManager} raidManager
    * @param {RaidSearchRequestDTO|object} raidSearchRequest
    */
   constructor(
     gameState,
     guildAPI,
+    fleetManager,
+    grassManager,
+    raidManager,
     raidSearchRequest
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
+    this.fleetManager = fleetManager;
+    this.grassManager = grassManager;
+    this.raidManager = raidManager;
     this.raidSearchRequest = raidSearchRequest;
+    this.planetRaidFactory = new PlanetRaidFactory();
     this.numberFormatter = new NumberFormatter();
     this.players = [];
   }
@@ -28,13 +40,21 @@ export class ScanResultsViewModel extends AbstractViewModel {
   initPageCode() {
     this.players.forEach((player) => {
       document.getElementById(`scan-${player.id}`).addEventListener('click', () => {
-        console.log('Raid planet:', player.planet_id);
 
-        this.gameState.setRaidEnemyId(player.id);
-        this.gameState.setRaidPlanetId(player.planet_id);
-        this.gameState.setRaidStatus(RAID_STATUS.REQUESTED);
+        const planetRaid = this.planetRaidFactory.make({
+          fleet_id: this.gameState.thisPlayer.fleet_id,
+          planet_id: player.planet_id,
+          planet_owner: player.id,
+          status: RAID_STATUS.REQUESTED
+        });
 
-        MenuPage.router.goto('Fleet', 'index');
+        this.gameState.setRaidPlanetRaidInfo(planetRaid);
+
+        this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager));
+
+        this.fleetManager.moveFleet(this.gameState.raidPlanetRaidInfo.planet_id).then(() => {
+          MenuPage.router.goto('Fleet', 'index');
+        });
       });
     })
   }

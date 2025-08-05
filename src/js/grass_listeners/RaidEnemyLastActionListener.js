@@ -14,14 +14,14 @@ export class RaidEnemyLastActionListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'lastAction'
-      && messageData.subject === `structs.grid.player.${this.gameState.raidEnemyId}`
+      && messageData.subject === `structs.grid.player.${this.gameState.getRaidEnemyId()}`
     ) {
       this.gameState.setRaidEnemyLastActionBlockHeight(messageData.value);
     }
 
     if (
       messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.raidPlanetId}`
+      && messageData.subject === `structs.planet.${this.gameState.raidPlanetRaidInfo.planet_id}`
       && this.raidStatusUtil.hasRaidEnded(messageData.status)
     ) {
       this.shouldUnregister = () => true;

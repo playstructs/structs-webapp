@@ -181,4 +181,76 @@ class PlanetManager
             $requiredFields
         );
     }
+
+    /**
+     * @param string $planet_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getActivePlanetRaidByPlanetId(string $planet_id): Response
+    {
+        $query = '
+            SELECT
+              pr.id,
+              pr.fleet_id,
+              pr.planet_id,
+              pr.status,
+              pr.created_at,
+              f.owner AS fleet_owner
+            FROM planet_raid pr
+            INNER JOIN fleet f
+              ON pr.fleet_id = f.id
+            WHERE pr.planet_id = :planet_id
+            AND pr.status IN (\'initiated\', \'ongoing\')
+            ORDER BY pr.created_at DESC
+            LIMIT 1;
+        ';
+
+        $requestParams = [ApiParameters::PLANET_ID => $planet_id];
+        $requiredFields = [ApiParameters::PLANET_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+
+    /**
+     * @param string $fleet_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getActivePlanetRaidByFleetId(string $fleet_id): Response
+    {
+        $query = '
+            SELECT
+              pr.id,
+              pr.fleet_id,
+              pr.planet_id,
+              pr.status,
+              pr.created_at,
+              p.owner AS planet_owner
+            FROM planet_raid pr
+            INNER JOIN planet p
+              ON pr.planet_id = p.id
+            WHERE pr.fleet_id = :fleet_id
+            AND pr.status IN (\'initiated\', \'ongoing\')
+            ORDER BY pr.created_at DESC
+            LIMIT 1;
+        ';
+
+        $requestParams = [ApiParameters::FLEET_ID => $fleet_id];
+        $requiredFields = [ApiParameters::FLEET_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
 }

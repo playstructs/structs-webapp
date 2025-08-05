@@ -18,7 +18,7 @@ import {AlphaManager} from "./managers/AlphaManager";
 import {GuildController} from "./controllers/GuildController";
 import {FleetController} from "./controllers/FleetController";
 import {FleetManager} from "./managers/FleetManager";
-import {PlayerManager} from "./managers/PlayerManager";
+import {RaidManager} from "./managers/RaidManager";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -49,6 +49,8 @@ const permissionManager = new PermissionManager();
 
 const playerAddressPendingFactory = new PlayerAddressPendingFactory();
 
+const raidManager = new RaidManager(gameState, guildAPI, grassManager);
+
 const authManager = new AuthManager(
   gameState,
   guildAPI,
@@ -57,14 +59,13 @@ const authManager = new AuthManager(
   signingClientManager,
   planetManager,
   playerAddressManager,
-  playerAddressPendingFactory
+  playerAddressPendingFactory,
+  raidManager
 );
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);
 
 const fleetManager = new FleetManager(gameState, signingClientManager);
-
-const playerManager = new PlayerManager(gameState, guildAPI, grassManager);
 
 const blockListener = new BlockListener(gameState);
 
@@ -96,7 +97,7 @@ const fleetController = new FleetController(
   guildAPI,
   grassManager,
   fleetManager,
-  playerManager
+  raidManager
 );
 
 MenuPage.gameState = gameState;

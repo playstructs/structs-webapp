@@ -70,13 +70,30 @@ class PlanetController extends AbstractController
      * @return Response
      * @throws Exception
      */
-    #[Route('/api/planet/{planet_id}', name: 'api_get_planet', methods: ['GET'])]
-    public function getPlanetRaid(
+    #[Route('/api/planet/{planet_id}/raid/active', name: 'api_get_active_planet_raid_by_planet_id', methods: ['GET'])]
+    public function getActivePlanetRaidByPlanetId(
         string $planet_id,
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
     ): Response {
         $planetManager = new PlanetManager($entityManager, $validator);
-        return $planetManager->getPlanet($planet_id);
+        return $planetManager->getActivePlanetRaidByPlanetId($planet_id);
+    }
+
+    /**
+     * @param string $fleet_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/planet/raid/active/fleet/{fleet_id}', name: 'api_get_active_planet_raid_by_fleet_id', methods: ['GET'])]
+    public function getActivePlanetRaidByFleetId(
+        string $fleet_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $planetManager = new PlanetManager($entityManager, $validator);
+        return $planetManager->getActivePlanetRaidByFleetId($fleet_id);
     }
 }

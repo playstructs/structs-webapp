@@ -31,6 +31,7 @@ export class AuthManager {
    * @param {PlanetManager} planetManager
    * @param {PlayerAddressManager} playerAddressManager
    * @param {PlayerAddressPendingFactory} playerAddressPendingFactory
+   * @param {RaidManager} raidManager
    */
   constructor(
     gameState,
@@ -40,7 +41,8 @@ export class AuthManager {
     signingClientManager,
     planetManager,
     playerAddressManager,
-    playerAddressPendingFactory
+    playerAddressPendingFactory,
+    raidManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -50,6 +52,7 @@ export class AuthManager {
     this.planetManager = planetManager;
     this.playerAddressManager = playerAddressManager;
     this.playerAddressPendingFactory = playerAddressPendingFactory;
+    this.raidManager = raidManager;
   }
 
   /**
@@ -169,14 +172,25 @@ export class AuthManager {
 
         const [
           planet,
-          shieldInfo
+          shieldInfo,
+          planetPlanetRaidInfo,
+          raidPlanetRaidInfo
         ] = await Promise.all([
           this.guildAPI.getPlanet(this.gameState.thisPlayer.planet_id),
-          this.guildAPI.getPlanetaryShieldInfo(this.gameState.thisPlayer.planet_id)
+          this.guildAPI.getPlanetaryShieldInfo(this.gameState.thisPlayer.planet_id),
+          this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.thisPlayer.planet_id),
+          this.guildAPI.getActivePlanetRaidByFleetId(this.gameState.thisPlayer.fleet_id)
         ]);
 
         this.gameState.setPlanet(planet);
         this.gameState.setPlanetShieldInfo(shieldInfo);
+        this.gameState.setPlanetPlanetRaidInfo(planetPlanetRaidInfo);
+        this.gameState.setRaidPlanetRaidInfo(raidPlanetRaidInfo);
+
+        await Promise.all([
+          this.raidManager.initPlanetRaider(),
+          this.raidManager.initRaidEnemy()
+        ]);
       }
     }
 

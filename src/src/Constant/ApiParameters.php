@@ -12,6 +12,8 @@ class ApiParameters
 
     const string FLEET_AWAY_ONLY = 'fleet_away_only';
 
+    const string FLEET_ID = 'fleet_id';
+
     const string GUILD_ID = 'guild_id';
 
     const string IP = 'ip';

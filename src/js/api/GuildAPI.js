@@ -15,6 +15,7 @@ import {PlayerSearchResultDTOFactory} from "../factories/PlayerSearchResultDTOFa
 import {GuildPowerStatsDTOFactory} from "../factories/GuildPowerStatsDTOFactory";
 import {GuildSearchResultDTOFactory} from "../factories/GuildSearchResultDTOFactory";
 import {PlanetaryShieldInfoDTOFactory} from "../factories/PlanetaryShieldInfoDTOFactory";
+import {PlanetRaidFactory} from "../factories/PlanetRaidFactory";
 
 export class GuildAPI {
 
@@ -33,6 +34,7 @@ export class GuildAPI {
     this.guildPowerStatsDTOFactory = new GuildPowerStatsDTOFactory();
     this.guildSearchResultDTOFactory = new GuildSearchResultDTOFactory();
     this.planetaryShieldInfoDTOFactory = new PlanetaryShieldInfoDTOFactory();
+    this.planetRaidFactory = new PlanetRaidFactory();
   }
 
   /**
@@ -655,5 +657,27 @@ export class GuildAPI {
     return (response.data.hasOwnProperty('length') && response.data.length === 1 && response.data[0].hasOwnProperty('count'))
       ? parseInt(response.data[0].count)
       : 0;
+  }
+
+  /**
+   * @param {string} planetId
+   * @return {Promise<PlanetRaid>}
+   */
+  async getActivePlanetRaidByPlanetId(planetId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/planet/${planetId}/raid/active`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.planetRaidFactory.make(response.data);
+  }
+
+  /**
+   * @param {string} fleetId
+   * @return {Promise<PlanetRaid>}
+   */
+  async getActivePlanetRaidByFleetId(fleetId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/planet/raid/active/fleet/${fleetId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.planetRaidFactory.make(response.data);
   }
 }

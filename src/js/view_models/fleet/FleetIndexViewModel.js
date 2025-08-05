@@ -1,10 +1,9 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {PlanetCardComponent} from "../components/PlanetCardComponent";
-import {RAID_STATUS} from "../../constants/RaidStatus";
 import {RaidStatusUtil} from "../../util/RaidStatusUtil";
+import {PlanetCardBuilder} from "../../builders/PlanetCardBuilder";
+import {PLANET_CARD_TYPES} from "../../constants/PlanetCardTypes";
 import {EVENTS} from "../../constants/Events";
-import {RaidStatusListener} from "../../grass_listeners/RaidStatusListener";
 
 export class FleetIndexViewModel extends AbstractViewModel {
 
@@ -12,103 +11,42 @@ export class FleetIndexViewModel extends AbstractViewModel {
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    * @param {FleetManager} fleetManager
-   * @param {PlayerManager} playerManager
    * @param {GrassManager} grassManager
+   * @param {string|null} planetCardType
+   * @param {string|null} raidCardType
    */
   constructor(
     gameState,
     guildAPI,
     fleetManager,
-    playerManager,
-    grassManager
+    grassManager,
+    planetCardType = PLANET_CARD_TYPES.ALPHA_BASE_ACTIVE,
+    raidCardType= null
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.fleetManager = fleetManager;
-    this.playerManager = playerManager;
     this.grassManager = grassManager;
+    this.planetCardType = planetCardType;
+    this.raidCardType = raidCardType;
+
     this.raidStatusUtil = new RaidStatusUtil();
     this.raidCardContainerId = 'raid-card-container';
 
-    this.alphaBaseCard = new PlanetCardComponent(
-      this.gameState,
-      'alpha-base',
-      false
-    );
-    this.raidCard = new PlanetCardComponent(
-      this.gameState,
-      'raid',
-      true
-    )
-  }
-
-  handleRaidRequested() {
-    if (this.gameState.raidStatus !== RAID_STATUS.REQUESTED) {
-      return;
-    }
-
-    // Listen for the raid to actually start
-    this.grassManager.registerListener(new RaidStatusListener(
-      this.gameState,
-      (status) => {
-        if (status === RAID_STATUS.INITIATED) {
-          this.playerManager.initRaidEnemy().then(() => {
-            this.raidCard.useRaidStartedBodyPreset();
-            this.raidCard.secondaryBtnHandler = () => {
-              this.raidCard.useRaidActiveBodyPreset();
-
-              this.rerenderRaidCard();
-            }
-
-            this.rerenderRaidCard();
-          });
-        }
-      }
-    ));
-
-    this.fleetManager.moveFleet(this.gameState.raidPlanetId).then(() => {
-      console.log('Fleet move request sent');
-    });
+    this.planetCardBuilder = new PlanetCardBuilder(gameState, fleetManager);
+    this.alphaBaseCard = this.planetCardBuilder.build(false, this.planetCardType);
+    this.raidCard = this.planetCardBuilder.build(true, this.raidCardType);
   }
 
   initPageCode() {
     this.alphaBaseCard.initPageCode();
     this.raidCard.initPageCode();
-    this.handleRaidRequested();
-  }
 
-  renderAlphaBaseCardHTML() {
-    this.alphaBaseCard.hasStatusGroup = true;
-    this.alphaBaseCard.undiscoveredOre = this.gameState.planet.undiscovered_ore;
-    this.alphaBaseCard.alphaOre = this.gameState.thisPlayer.ore;
-    this.alphaBaseCard.shieldHealth = this.gameState.planetShieldHealth;
-
-    this.alphaBaseCard.hasPrimaryBtn = true;
-    this.alphaBaseCard.primaryBtnLabel = 'Command';
-    this.alphaBaseCard.primaryBtnHandler = () => {
-      console.log('Command');
-    }
-
-    return this.alphaBaseCard.renderHTML();
-  }
-
-  renderRaidCardHTML() {
-    if (this.gameState.raidStatus === RAID_STATUS.REQUESTED) {
-      this.raidCard.useLoadingBodyPreset();
-    } else if (this.gameState.raidStatus === RAID_STATUS.INITIATED) {
-      this.raidCard.useRaidActiveBodyPreset();
-    } else {
-      this.raidCard.useScanBodyPreset();
-    }
-
-    return this.raidCard.renderHTML();
-  }
-
-  rerenderRaidCard() {
-    document.getElementById(this.raidCardContainerId).innerHTML = this.raidCard.renderHTML();
-
-    this.raidCard.initPageCode();
+    window.addEventListener(EVENTS.RAID_STATUS_CHANGED, () => {
+      this.render();
+      this.initPageCode();
+    })
   }
 
   render() {
@@ -124,7 +62,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
         
           <div class="fleet-card-wrapper">
           
-            ${this.renderAlphaBaseCardHTML()}
+            ${this.alphaBaseCard.renderHTML()}
             
             <div>
               <a href="javascript: void(0)" class="fleet-card-log-btn">
@@ -139,7 +77,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
           
           <div id="${this.raidCardContainerId}" class="fleet-card-wrapper">
             
-            ${this.renderRaidCardHTML()}
+            ${this.raidCard.renderHTML()}
             
           </div>
           

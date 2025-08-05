@@ -7,6 +7,7 @@ import {WalletManager} from "../managers/WalletManager";
 import {GuildAPI} from "../api/GuildAPI";
 import {ShieldHealthCalculator} from "../util/ShieldHealthCalculator";
 import {PlanetaryShieldInfoDTO} from "../dtos/PlanetaryShieldInfoDTO";
+import {PlanetRaid} from "./PlanetRaid";
 
 export class GameState {
 
@@ -24,9 +25,6 @@ export class GameState {
     this.mnemonic = null;
     this.pubkey = null;
     this.thisPlayerId = null;
-    this.planetRaiderId = null;
-    this.raidEnemyId = null;
-    this.raidPlanetId = null;
     this.lastSaveBlockHeight = 0;
     this.lastActionBlockHeight = 0;
     this.planetRaiderLastActionBlockHeight = 0;
@@ -44,14 +42,14 @@ export class GameState {
     this.planet = null;
     this.planetShieldHealth = 100;
     this.planetShieldInfo = new PlanetaryShieldInfoDTO();
-    this.planetRaidStatus = null;
 
+    this.planetPlanetRaidInfo = new PlanetRaid();
     this.planetRaider = null;
 
+    this.raidPlanetRaidInfo = new PlanetRaid();
     this.raidEnemy = null;
     this.raidPlanet = null;
     this.raidPlanetShieldInfo = new PlanetaryShieldInfoDTO();
-    this.raidStatus = null;
 
     /* GRASS Only Data */
     this.currentBlockHeight = 0;
@@ -68,9 +66,6 @@ export class GameState {
       mnemonic: this.mnemonic,
       pubkey: this.pubkey,
       thisPlayerId: this.thisPlayerId,
-      planetRaiderId: this.planetRaiderId,
-      raidEnemyId: this.raidEnemyId,
-      raidPlanetId: this.raidPlanetId,
       lastSaveBlockHeight: this.lastSaveBlockHeight,
       lastActionBlockHeight: this.lastActionBlockHeight,
       planetRaiderLastActionBlockHeight: this.planetRaiderLastActionBlockHeight,
@@ -100,24 +95,6 @@ export class GameState {
    */
   setThisPlayerId(id) {
     this.thisPlayerId = id;
-
-    this.save();
-  }
-
-  setPlanetRaiderId(id) {
-    this.planetRaiderId = id;
-
-    this.save();
-  }
-
-  setRaidEnemyId(id) {
-    this.raidEnemyId = id;
-
-    this.save();
-  }
-
-  setRaidPlanetId(id) {
-    this.raidPlanetId = id;
 
     this.save();
   }
@@ -153,7 +130,7 @@ export class GameState {
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.planetRaiderLastActionBlockHeight);
     this.save();
 
-    window.dispatchEvent(new ChargeLevelChangedEvent(this.planetRaiderId, this.chargeLevel));
+    window.dispatchEvent(new ChargeLevelChangedEvent(this.getPlanetRaiderId(), this.chargeLevel));
   }
 
   setRaidEnemyLastActionBlockHeight(height) {
@@ -161,7 +138,7 @@ export class GameState {
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.raidEnemyLastActionBlockHeight);
     this.save();
 
-    window.dispatchEvent(new ChargeLevelChangedEvent(this.raidEnemyId, this.chargeLevel));
+    window.dispatchEvent(new ChargeLevelChangedEvent(this.getRaidEnemyId(), this.chargeLevel));
   }
 
   /**
@@ -338,21 +315,29 @@ export class GameState {
   }
 
   /**
-   * @param {string} status
+   * @param {PlanetRaid} info
+   * @param dispatchEvent
    */
-  setPlanetRaidStatus(status) {
-    this.planetRaidStatus = status;
+  setPlanetPlanetRaidInfo(info, dispatchEvent = true) {
+    this.planetPlanetRaidInfo = info;
+    this.save();
 
-    window.dispatchEvent(new CustomEvent(EVENTS.PLANET_RAID_STATUS_CHANGED));
+    if (dispatchEvent) {
+      window.dispatchEvent(new CustomEvent(EVENTS.PLANET_RAID_STATUS_CHANGED));
+    }
   }
 
   /**
-   * @param {string} status
+   * @param {PlanetRaid} info
+   * @param dispatchEvent
    */
-  setRaidStatus(status) {
-    this.raidStatus = status;
+  setRaidPlanetRaidInfo(info, dispatchEvent = true) {
+    this.raidPlanetRaidInfo = info;
+    this.save();
 
-    window.dispatchEvent(new CustomEvent(EVENTS.RAID_STATUS_CHANGED));
+    if (dispatchEvent) {
+      window.dispatchEvent(new CustomEvent(EVENTS.RAID_STATUS_CHANGED));
+    }
   }
 
   /**
@@ -397,16 +382,30 @@ export class GameState {
       : 'Name Redacted';
   }
 
-  getRaidEnemyUsername() {
-    return this.raidEnemy && this.raidEnemy.username.length > 0
-      ? `${this.raidEnemy.username}`
-      : `PID# ${this.raidEnemyId}`;
+  /**
+   * @return {null|string}
+   */
+  getPlanetRaiderId() {
+    return this.planetPlanetRaidInfo.fleet_owner
+  }
+
+  /**
+   * @return {null|string}
+   */
+  getRaidEnemyId() {
+    return this.raidPlanetRaidInfo.planet_owner
   }
 
   getPlanetRaiderUsername() {
     return this.planetRaider && this.planetRaider.username.length > 0
       ? `${this.planetRaider.username}`
-      : `PID# ${this.planetRaiderId}`;
+      : `PID# ${this.getPlanetRaiderId()}`;
+  }
+
+  getRaidEnemyUsername() {
+    return this.raidEnemy && this.raidEnemy.username.length > 0
+      ? `${this.raidEnemy.username}`
+      : `PID# ${this.getRaidEnemyId()}`;
   }
 
   /**

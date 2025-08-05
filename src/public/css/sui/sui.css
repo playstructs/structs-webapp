@@ -414,6 +414,13 @@ i.sui-icon-electronic-warfare-system {
   background-image: url("/img/sui/icon/icon-electronic-warfare-system.png");
 }
 
+i.sui-icon-enemy-deployed-structs {
+  width: var(--icon-md);
+  height: var(--icon-md);
+
+  background-image: url("/img/sui/icon/icon-enemy-deployed-structs.png");
+}
+
 i.sui-icon-enemy-indicator {
   width: var(--icon-xs);
   height: var(--icon-xs);

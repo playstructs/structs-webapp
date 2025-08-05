@@ -20,6 +20,9 @@ class ApiRequestParamsDto
     public ?string $fleet_away_only = null;
 
     #[Assert\Regex(RegexPattern::ID)]
+    public ?string $fleet_id = null;
+
+    #[Assert\Regex(RegexPattern::ID)]
     public ?string $guild_id = null;
 
     #[Assert\Regex(RegexPattern::INET)]
