@@ -50,11 +50,10 @@ export class ScanResultsViewModel extends AbstractViewModel {
 
         this.gameState.setRaidPlanetRaidInfo(planetRaid);
 
-        this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager));
+        MenuPage.router.goto('Fleet', 'index');
 
-        this.fleetManager.moveFleet(this.gameState.raidPlanetRaidInfo.planet_id).then(() => {
-          MenuPage.router.goto('Fleet', 'index');
-        });
+        this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager));
+        this.fleetManager.moveFleet(this.gameState.raidPlanetRaidInfo.planet_id).then();
       });
     })
   }

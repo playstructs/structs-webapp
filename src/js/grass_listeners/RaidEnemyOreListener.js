@@ -27,7 +27,7 @@ export class RaidEnemyOreListener extends AbstractGrassListener {
     if (
       messageData.category === 'raid_status'
       && messageData.subject === `structs.planet.${this.raidPlanetRaidInfo.planet_id}`
-      && this.raidStatusUtil.hasRaidEnded(messageData.status)
+      && this.raidStatusUtil.hasRaidEnded(messageData.detail.status)
     ) {
       this.shouldUnregister = () => true;
     }

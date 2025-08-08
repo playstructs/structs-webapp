@@ -1,9 +1,9 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {RAID_STATUS} from "../constants/RaidStatus";
 import {RaidStatusUtil} from "../util/RaidStatusUtil";
-import {PlanetRaidFactory} from "../factories/PlanetRaidFactory";
 import {MenuPage} from "../framework/MenuPage";
 import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
+import {PlanetRaid} from "../models/PlanetRaid";
 
 export class RaidStatusListener extends AbstractGrassListener {
   /**
@@ -15,7 +15,6 @@ export class RaidStatusListener extends AbstractGrassListener {
     this.gameState = gameState;
     this.raidManager = raidManager;
     this.raidStatusUtil = new RaidStatusUtil();
-    this.planetRaidFactory = new PlanetRaidFactory();
   }
 
   handler(messageData) {
@@ -23,18 +22,34 @@ export class RaidStatusListener extends AbstractGrassListener {
       messageData.category === 'raid_status'
       && messageData.subject === `structs.planet.${this.gameState.raidPlanetRaidInfo.planet_id}`
     ) {
-      const planetRaid = this.planetRaidFactory.make(messageData);
+      console.log('RAID STATUS LISTENER', messageData);
 
-      if (planetRaid.status === RAID_STATUS.INITIATED) {
-        this.gameState.setRaidPlanetRaidInfo(planetRaid, false);
+      if (messageData.detail.status === RAID_STATUS.INITIATED) {
+
+        console.log('RAID INITIATED HANDLER');
+
+        // Don't dispatch as we need to wait for the raid enemy info
+        this.gameState.setRaidPlanetRaidStatus(messageData.detail.status, false);
+
         this.raidManager.initRaidEnemy().then(() => {
+          console.log('RAID ENEMY INITIATED DONE');
           MenuPage.router.goto('Fleet', 'index', {'raidCardType': PLANET_CARD_TYPES.RAID_STARTED});
         });
-      } else {
-        this.gameState.setRaidPlanetRaidInfo(planetRaid);
-      }
 
-      if (this.raidStatusUtil.hasRaidEnded(messageData.status)) {
+      } else if (messageData.detail.status === RAID_STATUS.ONGOING) {
+
+        console.log('RAID ONGOING HANDLER');
+
+        this.gameState.setRaidPlanetRaidStatus(messageData.detail.status);
+
+      } else if (this.raidStatusUtil.hasRaidEnded(messageData.detail.status)) {
+
+        console.log('RAID HAS ENDED HANDLER');
+
+        // Clear the planet raid info
+        // TODO: Change raid ended handling when map and structs added
+        this.gameState.setRaidPlanetRaidInfo(new PlanetRaid());
+
         this.shouldUnregister = () => true;
       }
     }

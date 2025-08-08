@@ -341,6 +341,32 @@ export class GameState {
   }
 
   /**
+   * @param {string} status
+   * @param dispatchEvent
+   */
+  setPlanetPlanetRaidStatus(status, dispatchEvent = true) {
+    this.planetPlanetRaidInfo.status = status;
+    this.save();
+
+    if (dispatchEvent) {
+      window.dispatchEvent(new CustomEvent(EVENTS.PLANET_RAID_STATUS_CHANGED));
+    }
+  }
+
+  /**
+   * @param {string} status
+   * @param dispatchEvent
+   */
+  setRaidPlanetRaidStatus(status, dispatchEvent = true) {
+    this.raidPlanetRaidInfo.status = status;
+    this.save();
+
+    if (dispatchEvent) {
+      window.dispatchEvent(new CustomEvent(EVENTS.RAID_STATUS_CHANGED));
+    }
+  }
+
+  /**
    * @param {string} type player or enemy
    * @return {string|null}
    */

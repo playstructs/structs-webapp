@@ -47,6 +47,7 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
 
     this.hasAlert = false;
     this.alertIconClass = "icon-alert";
+    this.alertIconColorClass = "sui-text-warning";
     this.alertMessage = "";
 
     this.hasGeneralMessage = false;
@@ -170,7 +171,7 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
 
     return `
       <div class="sui-planet-card-alert">
-        <i class="sui-icon sui-icon-lg ${this.alertIconClass} sui-text-warning"></i>
+        <i class="sui-icon sui-icon-lg ${this.alertIconClass} ${this.alertIconColorClass}"></i>
         ${this.alertMessage}
       </div>
     `;

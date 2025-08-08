@@ -14,7 +14,7 @@ export class PlanetRaiderLastActionListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'lastAction'
-      && messageData.subject === `structs.grid.player.${this.gameState.planetRaiderId}`
+      && messageData.subject === `structs.grid.player.${this.gameState.planetPlanetRaidInfo.fleet_owner}`
     ) {
       this.gameState.setPlanetRaiderLastActionBlockHeight(messageData.value);
     }
@@ -22,7 +22,7 @@ export class PlanetRaiderLastActionListener extends AbstractGrassListener {
     if (
       messageData.category === 'raid_status'
       && messageData.subject === `structs.planet.${this.gameState.thisPlayer.planetId}`
-      && this.raidStatusUtil.hasRaidEnded(messageData.status)
+      && this.raidStatusUtil.hasRaidEnded(messageData.detail.status)
     ) {
       this.shouldUnregister = () => true;
     }

@@ -1,5 +1,4 @@
 import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
-import {NotImplementedError} from "../framework/NotImplementedError";
 import {PlanetCardComponent} from "../view_models/components/PlanetCardComponent";
 import {MenuPage} from "../framework/MenuPage";
 import {RAID_STATUS} from "../constants/RaidStatus";
@@ -42,7 +41,9 @@ export class PlanetCardBuilder {
       return;
     }
 
-    throw new NotImplementedError(PLANET_CARD_TYPES.ALPHA_BASE_LOADING);
+    alphaBaseCard.hasGeneralMessage = true;
+    alphaBaseCard.generalMessageIconClass = 'hidden';
+    alphaBaseCard.generalMessage = `<img src="/img/loading-3-dots.gif" class="loading-3-dots" alt="3 dots loading animation">`;
   }
 
   /**
@@ -53,6 +54,8 @@ export class PlanetCardBuilder {
     if (type !== PLANET_CARD_TYPES.ALPHA_BASE_ACTIVE) {
       return;
     }
+
+    alphaBaseCard.planetName = this.gameState.planet.name;
 
     alphaBaseCard.hasStatusGroup = true;
     alphaBaseCard.undiscoveredOre = this.gameState.planet.undiscovered_ore;
@@ -71,7 +74,28 @@ export class PlanetCardBuilder {
       return;
     }
 
-    throw new NotImplementedError(PLANET_CARD_TYPES.ALPHA_BASE_COMPLETED);
+    alphaBaseCard.planetName = this.gameState.planet.name;
+
+    alphaBaseCard.hasStatusGroup = true;
+    alphaBaseCard.undiscoveredOre = this.gameState.planet.undiscovered_ore;
+    alphaBaseCard.alphaOre = this.gameState.thisPlayer.ore;
+    alphaBaseCard.shieldHealth = this.gameState.planetShieldHealth;
+
+    alphaBaseCard.hasAlert = true;
+    alphaBaseCard.alertIconColorClass = 'sui-text-primary';
+    alphaBaseCard.alertMessage = 'All Alpha recovered.';
+
+    alphaBaseCard.hasPrimaryBtn = true;
+    alphaBaseCard.primaryBtnLabel = 'Command';
+    alphaBaseCard.primaryBtnHandler = () => {
+      console.log('Command');
+    }
+
+    alphaBaseCard.hasSecondaryBtn = true;
+    alphaBaseCard.secondaryBtnLabel = 'Depart';
+    alphaBaseCard.secondaryBtnHandler = () => {
+      console.log('Depart');
+    }
   }
 
   buildAlphaBaseDepart(alphaBaseCard, type) {
@@ -79,7 +103,26 @@ export class PlanetCardBuilder {
       return;
     }
 
-    throw new NotImplementedError(PLANET_CARD_TYPES.ALPHA_BASE_DEPART);
+    alphaBaseCard.planetName = this.gameState.planet.name;
+
+    alphaBaseCard.hasAlert = true;
+    alphaBaseCard.alertMessage = 'Depart planet?';
+
+    alphaBaseCard.hasGeneralMessage = true;
+    alphaBaseCard.generalMessageIconClass = 'hidden';
+    alphaBaseCard.generalMessage = `Fleet will travel to an undiscovered world.`;
+
+    alphaBaseCard.hasPrimaryBtn = true;
+    alphaBaseCard.primaryBtnLabel = 'Confirm';
+    alphaBaseCard.primaryBtnHandler = () => {
+      console.log('Confirm');
+    }
+
+    alphaBaseCard.hasSecondaryBtn = true;
+    alphaBaseCard.secondaryBtnLabel = 'Cancel';
+    alphaBaseCard.secondaryBtnHandler = () => {
+      MenuPage.router.goto('Fleet', 'index');
+    }
   }
 
   buildAlphaBaseArrived(alphaBaseCard, type) {
@@ -87,7 +130,23 @@ export class PlanetCardBuilder {
       return;
     }
 
-    throw new NotImplementedError(PLANET_CARD_TYPES.ALPHA_BASE_ARRIVED);
+    alphaBaseCard.planetName = this.gameState.planet.name;
+
+    alphaBaseCard.hasGeneralMessage = true;
+    alphaBaseCard.generalMessageIconClass = 'icon-planet';
+    alphaBaseCard.generalMessage = `Fleet has arrived at ${this.gameState.planet.name}.`;
+
+    alphaBaseCard.hasPrimaryBtn = true;
+    alphaBaseCard.primaryBtnLabel = 'View';
+    alphaBaseCard.primaryBtnHandler = () => {
+      console.log('View');
+    }
+
+    alphaBaseCard.hasSecondaryBtn = true;
+    alphaBaseCard.secondaryBtnLabel = 'Dismiss';
+    alphaBaseCard.secondaryBtnHandler = () => {
+      MenuPage.router.goto('Fleet', 'index');
+    }
   }
 
   /**
