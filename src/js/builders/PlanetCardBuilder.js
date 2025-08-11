@@ -261,9 +261,8 @@ export class PlanetCardBuilder {
     raidCard.hasPrimaryBtn = true;
     raidCard.primaryBtnLabel = 'Confirm';
     raidCard.primaryBtnHandler = () => {
-      this.fleetManager.moveFleet(this.gameState.planet.id).then(() => {
-        MenuPage.router.goto('Fleet', 'index', {raidCardType: PLANET_CARD_TYPES.RAID_LOADING})
-      });
+      MenuPage.router.goto('Fleet', 'index', {raidCardType: PLANET_CARD_TYPES.RAID_LOADING})
+      this.fleetManager.moveFleet(this.gameState.planet.id).then();
     }
 
     raidCard.hasSecondaryBtn = true;

@@ -336,6 +336,7 @@ export class GameState {
     this.save();
 
     if (dispatchEvent) {
+      console.log('Raid Planet Raid Info Changed', info);
       window.dispatchEvent(new CustomEvent(EVENTS.RAID_STATUS_CHANGED));
     }
   }

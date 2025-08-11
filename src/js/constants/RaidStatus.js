@@ -3,6 +3,7 @@ export const RAID_STATUS = {
   INITIATED: 'initiated',
   ONGOING: 'ongoing',
   ATTACKER_DEFEATED: 'attackerDefeated',
+  ATTACKER_RETREATED: 'attackerRetreated',
   RAID_SUCCESSFUL: 'raidSuccessful',
   DEMILITARIZED: 'demilitarized',
 };

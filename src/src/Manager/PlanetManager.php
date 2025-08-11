@@ -191,18 +191,17 @@ class PlanetManager
     {
         $query = '
             SELECT
-              pr.id,
-              pr.fleet_id,
               pr.planet_id,
+              pr.fleet_id,
               pr.status,
-              pr.created_at,
+              pr.updated_at,
               f.owner AS fleet_owner
             FROM planet_raid pr
             INNER JOIN fleet f
               ON pr.fleet_id = f.id
             WHERE pr.planet_id = :planet_id
             AND pr.status IN (\'initiated\', \'ongoing\')
-            ORDER BY pr.created_at DESC
+            ORDER BY pr.updated_at DESC
             LIMIT 1;
         ';
 
@@ -227,18 +226,17 @@ class PlanetManager
     {
         $query = '
             SELECT
-              pr.id,
-              pr.fleet_id,
               pr.planet_id,
+              pr.fleet_id,
               pr.status,
-              pr.created_at,
+              pr.updated_at,
               p.owner AS planet_owner
             FROM planet_raid pr
             INNER JOIN planet p
               ON pr.planet_id = p.id
             WHERE pr.fleet_id = :fleet_id
             AND pr.status IN (\'initiated\', \'ongoing\')
-            ORDER BY pr.created_at DESC
+            ORDER BY pr.updated_at DESC
             LIMIT 1;
         ';
 

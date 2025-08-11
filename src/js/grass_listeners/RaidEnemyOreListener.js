@@ -1,4 +1,5 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
+import {RaidStatusUtil} from "../util/RaidStatusUtil";
 
 export class RaidEnemyOreListener extends AbstractGrassListener {
   /**
@@ -9,6 +10,7 @@ export class RaidEnemyOreListener extends AbstractGrassListener {
     super('RAID_ENEMY_ORE');
     this.gameState = gameState;
     this.guildAPI = guildAPI;
+    this.raidStatusUtil = new RaidStatusUtil();
   }
 
   handler(messageData) {
@@ -26,7 +28,7 @@ export class RaidEnemyOreListener extends AbstractGrassListener {
 
     if (
       messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.raidPlanetRaidInfo.planet_id}`
+      && messageData.subject === `structs.planet.${this.gameState.raidPlanetRaidInfo.planet_id}`
       && this.raidStatusUtil.hasRaidEnded(messageData.detail.status)
     ) {
       this.shouldUnregister = () => true;

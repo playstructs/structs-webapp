@@ -11,6 +11,7 @@ export class RaidStatusUtil {
       raidStatus === RAID_STATUS.ATTACKER_DEFEATED
       || raidStatus === RAID_STATUS.RAID_SUCCESSFUL
       || raidStatus === RAID_STATUS.DEMILITARIZED
+      || raidStatus === RAID_STATUS.ATTACKER_RETREATED
     );
   }
 }

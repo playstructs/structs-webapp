@@ -44,8 +44,8 @@ export class FleetIndexViewModel extends AbstractViewModel {
     this.raidCard.initPageCode();
 
     window.addEventListener(EVENTS.RAID_STATUS_CHANGED, () => {
-      this.render();
-      this.initPageCode();
+      console.log('RAID STATUS CHANGED');
+      MenuPage.router.goto('Fleet', 'index');
     })
   }
 
