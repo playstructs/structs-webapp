@@ -2,16 +2,29 @@ import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
 import {PlanetCardComponent} from "../view_models/components/PlanetCardComponent";
 import {MenuPage} from "../framework/MenuPage";
 import {RAID_STATUS} from "../constants/RaidStatus";
+import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 
 export class PlanetCardBuilder {
 
   /**
    * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
+   * @param {GrassManager} grassManager
    * @param {FleetManager} fleetManager
+   * @param {PlanetManager} planetManager
    */
-  constructor(gameState, fleetManager) {
+  constructor(
+    gameState,
+    guildAPI,
+    grassManager,
+    fleetManager,
+    planetManager,
+  ) {
     this.gameState = gameState;
+    this.guildAPI = guildAPI;
+    this.grassManager = grassManager;
     this.fleetManager = fleetManager;
+    this.planetManager = planetManager;
   }
 
   /**
@@ -94,7 +107,9 @@ export class PlanetCardBuilder {
     alphaBaseCard.hasSecondaryBtn = true;
     alphaBaseCard.secondaryBtnLabel = 'Depart';
     alphaBaseCard.secondaryBtnHandler = () => {
-      console.log('Depart');
+      MenuPage.router.goto('Fleet', 'index', {
+        planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_DEPART
+      });
     }
   }
 
@@ -115,7 +130,13 @@ export class PlanetCardBuilder {
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'Confirm';
     alphaBaseCard.primaryBtnHandler = () => {
-      console.log('Confirm');
+      MenuPage.router.goto('Fleet', 'index', {planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_LOADING})
+
+      const newPlanetListener = new NewPlanetListener(this.gameState, this.guildAPI);
+
+      this.grassManager.registerListener(newPlanetListener);
+
+      this.planetManager.findNewPlanet().then();
     }
 
     alphaBaseCard.hasSecondaryBtn = true;
@@ -276,10 +297,25 @@ export class PlanetCardBuilder {
    * @param {string|null} selectedType
    */
   determineAlphaBaseCardType(selectedType = null) {
+
+    const selectAlphaBaseTypes = [
+      PLANET_CARD_TYPES.ALPHA_BASE_LOADING,
+      PLANET_CARD_TYPES.ALPHA_BASE_ACTIVE,
+      PLANET_CARD_TYPES.ALPHA_BASE_COMPLETED,
+      PLANET_CARD_TYPES.ALPHA_BASE_DEPART,
+      PLANET_CARD_TYPES.ALPHA_BASE_ARRIVED
+    ];
+
     let type = PLANET_CARD_TYPES.ALPHA_BASE_ACTIVE;
 
-    if (selectedType === PLANET_CARD_TYPES.ALPHA_BASE_LOADING) {
-      type = PLANET_CARD_TYPES.ALPHA_BASE_LOADING;
+    if (selectAlphaBaseTypes.includes(selectedType)) {
+
+      type = selectedType;
+
+    } else if (this.gameState.planet.undiscovered_ore === 0) {
+
+      type = PLANET_CARD_TYPES.ALPHA_BASE_COMPLETED;
+
     }
 
     return type;
@@ -290,12 +326,20 @@ export class PlanetCardBuilder {
    * @return {string}
    */
   determineRaidCardType(selectedType = null) {
+    const selectRaidTypes = [
+      PLANET_CARD_TYPES.RAID_LOADING,
+      PLANET_CARD_TYPES.RAID_NONE,
+      PLANET_CARD_TYPES.RAID_ACTIVE,
+      PLANET_CARD_TYPES.RAID_RETREAT
+    ];
+
     let type = PLANET_CARD_TYPES.RAID_NONE;
 
-    if (
-      selectedType === PLANET_CARD_TYPES.RAID_LOADING
-      || this.gameState.raidPlanetRaidInfo.status === RAID_STATUS.REQUESTED
-    ) {
+    if (selectRaidTypes.includes(selectedType)) {
+
+      type = selectedType;
+
+    } else if (this.gameState.raidPlanetRaidInfo.status === RAID_STATUS.REQUESTED) {
 
       type = PLANET_CARD_TYPES.RAID_LOADING;
 
@@ -305,12 +349,6 @@ export class PlanetCardBuilder {
     ) {
 
       type = PLANET_CARD_TYPES.RAID_STARTED;
-
-    } else if (
-      selectedType === PLANET_CARD_TYPES.RAID_RETREAT
-    ) {
-
-      type = PLANET_CARD_TYPES.RAID_RETREAT;
 
     } else if (
       this.gameState.raidPlanetRaidInfo.status === RAID_STATUS.INITIATED
@@ -332,6 +370,7 @@ export class PlanetCardBuilder {
     let planetCard = this.createAlphaBasePlanetCard();
 
     const type = this.determineAlphaBaseCardType(selectedType);
+    console.log(type);
 
     this.buildAlphaBaseLoading(planetCard, type);
     this.buildAlphaBaseActive(planetCard, type);

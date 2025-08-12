@@ -97,7 +97,8 @@ const fleetController = new FleetController(
   guildAPI,
   grassManager,
   fleetManager,
-  raidManager
+  raidManager,
+  planetManager
 );
 
 MenuPage.gameState = gameState;

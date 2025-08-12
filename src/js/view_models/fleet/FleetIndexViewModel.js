@@ -2,7 +2,6 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {RaidStatusUtil} from "../../util/RaidStatusUtil";
 import {PlanetCardBuilder} from "../../builders/PlanetCardBuilder";
-import {PLANET_CARD_TYPES} from "../../constants/PlanetCardTypes";
 import {EVENTS} from "../../constants/Events";
 
 export class FleetIndexViewModel extends AbstractViewModel {
@@ -12,6 +11,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
    * @param {GuildAPI} guildAPI
    * @param {FleetManager} fleetManager
    * @param {GrassManager} grassManager
+   * @param {PlanetManager} planetManager
    * @param {string|null} planetCardType
    * @param {string|null} raidCardType
    */
@@ -20,7 +20,8 @@ export class FleetIndexViewModel extends AbstractViewModel {
     guildAPI,
     fleetManager,
     grassManager,
-    planetCardType = PLANET_CARD_TYPES.ALPHA_BASE_ACTIVE,
+    planetManager,
+    planetCardType = null,
     raidCardType= null
   ) {
     super();
@@ -28,13 +29,20 @@ export class FleetIndexViewModel extends AbstractViewModel {
     this.guildAPI = guildAPI;
     this.fleetManager = fleetManager;
     this.grassManager = grassManager;
+    this.planetManager = planetManager;
     this.planetCardType = planetCardType;
     this.raidCardType = raidCardType;
 
     this.raidStatusUtil = new RaidStatusUtil();
     this.raidCardContainerId = 'raid-card-container';
 
-    this.planetCardBuilder = new PlanetCardBuilder(gameState, fleetManager);
+    this.planetCardBuilder = new PlanetCardBuilder(
+      gameState,
+      guildAPI,
+      grassManager,
+      fleetManager,
+      planetManager
+    );
     this.alphaBaseCard = this.planetCardBuilder.build(false, this.planetCardType);
     this.raidCard = this.planetCardBuilder.build(true, this.raidCardType);
   }
@@ -44,7 +52,6 @@ export class FleetIndexViewModel extends AbstractViewModel {
     this.raidCard.initPageCode();
 
     window.addEventListener(EVENTS.RAID_STATUS_CHANGED, () => {
-      console.log('RAID STATUS CHANGED');
       MenuPage.router.goto('Fleet', 'index');
     })
   }

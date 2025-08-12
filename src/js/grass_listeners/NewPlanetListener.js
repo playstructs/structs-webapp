@@ -1,16 +1,20 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {MenuPage} from "../framework/MenuPage";
+import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
 
-export class FirstPlanetListener extends AbstractGrassListener {
+export class NewPlanetListener extends AbstractGrassListener {
 
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    */
   constructor(gameState, guildAPI) {
-    super('FIRST_PLANET');
+    super('NEW_PLANET');
     this.gameState = gameState;
     this.guildAPI = guildAPI;
+    this.redirectControllerName = 'Fleet';
+    this.redirectPageName = 'index';
+    this.redirectOptions = {planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_ARRIVED};
   }
 
   handler(messageData) {
@@ -27,7 +31,7 @@ export class FirstPlanetListener extends AbstractGrassListener {
         this.gameState.setPlanet(planet);
         this.gameState.setPlanetShieldHealth(100);
 
-        MenuPage.router.goto('Auth', 'orientation1');
+        MenuPage.router.goto(this.redirectControllerName, this.redirectPageName, this.redirectOptions);
       });
     }
   }

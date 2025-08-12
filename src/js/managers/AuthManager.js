@@ -9,7 +9,7 @@ import {ConnectionCapacityListener} from "../grass_listeners/ConnectionCapacityL
 import {PlayerAlphaListener} from "../grass_listeners/PlayerAlphaListener";
 import {MenuPage} from "../framework/MenuPage";
 import {PlanetManager} from "./PlanetManager";
-import {FirstPlanetListener} from "../grass_listeners/FirstPlanetListener";
+import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {AddPendingAddressRequestDTO} from "../dtos/AddPendingAddressRequestDTO";
 import {PlayerAddressApprovedLoginListener} from "../grass_listeners/PlayerAddressApprovedLoginListener";
 import {PlayerAddressPendingCreatedListener} from "../grass_listeners/PlayerAddressPendingCreatedListener";
@@ -97,10 +97,12 @@ export class AuthManager {
     playerCreatedListener.grassManager = this.grassManager;
     playerCreatedListener.planetManager = new PlanetManager(this.gameState, this.signingClientManager);
 
-    const firstPlanetListener = new FirstPlanetListener(this.gameState, this.guildAPI);
+    const newPlanetListener = new NewPlanetListener(this.gameState, this.guildAPI);
+    newPlanetListener.redirectControllerName = 'Auth';
+    newPlanetListener.redirectPageName = 'orientation1';
 
     // Needs to be registered first because it listens for planet_id whose creation is trigger by playerCreatedListener.
-    this.grassManager.registerListener(firstPlanetListener);
+    this.grassManager.registerListener(newPlanetListener);
 
     this.grassManager.registerListener(playerCreatedListener);
 
