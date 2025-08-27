@@ -1,0 +1,4 @@
+export const MAP_PERSPECTIVES = {
+  ATTACKER: 'ATTACKER',
+  DEFENDER: 'DEFENDER'
+};
