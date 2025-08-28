@@ -35,6 +35,7 @@ export class GameState {
     this.wallet = null;
     this.signingAccount = null;
     this.signingClient = null;
+    this.alphaBaseMap = null;
 
     /* API Primed Data */
     this.thisGuild = null;

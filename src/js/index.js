@@ -19,6 +19,7 @@ import {GuildController} from "./controllers/GuildController";
 import {FleetController} from "./controllers/FleetController";
 import {FleetManager} from "./managers/FleetManager";
 import {RaidManager} from "./managers/RaidManager";
+import {MapComponent} from "./view_models/components/map/MapComponent";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -99,6 +100,12 @@ const fleetController = new FleetController(
   fleetManager,
   raidManager,
   planetManager
+);
+
+gameState.alphaBaseMap = new MapComponent(
+  gameState,
+  'alpha-base-map-container',
+  'alpha-base'
 );
 
 MenuPage.gameState = gameState;

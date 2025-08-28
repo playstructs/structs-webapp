@@ -317,7 +317,9 @@ a.sui-text-secondary:hover {
 }
 
 .map-terrain {
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 .map-terrain-ambit {
   display: inline-block;
@@ -457,6 +459,14 @@ a.sui-text-secondary:hover {
   flex-grow: 1;
 }
 
+#alpha-base-map-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: var(--alpha-base-map-z-index);
+  width: 1152px;
+}
+
 .layer-0 {
   z-index: 0;
 }
@@ -493,8 +503,8 @@ a.sui-text-secondary:hover {
 /* Menu Page Component Styling Start */
 
 #menu-page-layout {
-  position: relative;
-  z-index: 1000;
+  position: fixed;
+  z-index: var(--menu-page-z-index);
   display: flex;
   max-width: 100%;
   max-height: 100%;
@@ -672,6 +682,15 @@ common-group - no padding
 /* Common Containers End */
 
 /* HUD Styling Start */
+
+#hud-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--hud-z-index);
+  width: 100vw;
+  height: 100vh;
+}
 
 .status-bar-panel-top-left {
   position: absolute;

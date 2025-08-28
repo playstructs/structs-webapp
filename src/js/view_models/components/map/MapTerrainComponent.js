@@ -112,7 +112,7 @@ export class MapTerrainComponent extends AbstractViewModelComponent {
    *
    * @return {string} html
    */
-  render() {
+  renderHTML() {
     let html = '';
     let lastAmbit = '';
     const ambits = this.planet.getAmbits();

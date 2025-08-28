@@ -193,6 +193,9 @@ export class AuthManager {
           this.raidManager.initPlanetRaider(),
           this.raidManager.initRaidEnemy()
         ]);
+
+        this.gameState.alphaBaseMap.setPlanet(planet);
+        this.gameState.alphaBaseMap.render();
       }
     }
 
