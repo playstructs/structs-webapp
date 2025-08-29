@@ -1784,20 +1784,32 @@ img.guild-reactor-img {
 
 @media only screen and (min-width: 1152px),
 only screen and (min-height: 1024px) {
-  html {
-    width: 50%;
-    height: 50%;
+  #menu-page-layout,
+  #hud-container,
+  #alpha-base-map-container {
     transform: scale(2);
     transform-origin: 0 0;
+  }
+
+  #menu-page-layout,
+  #hud-container {
+    width: 50vw;
+    height: 50vh;
   }
 }
 @media only screen and (min-width: 2304px),
 only screen and (min-height: 2048px) {
-  html {
-    width: 25%;
-    height: 25%;
+  #menu-page-layout,
+  #hud-container,
+  #alpha-base-map-container {
     transform: scale(4);
     transform-origin: 0 0;
+  }
+
+  #menu-page-layout,
+  #hud-container {
+    width: 25vw;
+    height: 25vh;
   }
 }
 
