@@ -68,7 +68,7 @@ export class MapFogOfWarComponent extends AbstractViewModelComponent {
     const widthFromDivider = this.calcWidthFromMapDividerToRightEdge();
     const mapHeight = this.calcMapHeight();
     return `
-        <div class="map-fog-of-war" style="left:${leftPosFogOfWar}; width:${widthFromDivider} ; height:${mapHeight}">
+        <div class="map-fog-of-war" style="left:${leftPosFogOfWar}px; width:${widthFromDivider}px ; height:${mapHeight}px">
           <div class="map-fog-of-war-left-edge"></div>
           <div class="map-fog-of-war-body"></div>
         </div>

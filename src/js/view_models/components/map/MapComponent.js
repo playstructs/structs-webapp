@@ -48,11 +48,22 @@ export class MapComponent extends AbstractViewModelComponent {
     this.tileClassNameUtil = new TileClassNameUtil();
     this.transitionLayerFactory = new MapTransitionLayerComponentFactory(this.tileClassNameUtil);
     this.transitionBuilder = new MapTransitionComponentBuilder(gameState, this.transitionLayerFactory);
+
+    /** @type {MapTerrainComponent|null} */
     this.mapTerrain = null;
+
+    /** @type {MapOrnamentComponentBuilder|null} */
     this.mapOrnamentBuilder = null;
+
+    /** @type {MapOrnamentsComponent|null} */
     this.mapOrnaments = null;
+
+    /** @type {MapTileMarkersComponent|null} */
     this.mapTileMarkers = null;
+
+    /** @type {MapFogOfWarComponent|null} */
     this.mapFogOfWar = null;
+
     this.displayFogOfWar = true;
   }
 
