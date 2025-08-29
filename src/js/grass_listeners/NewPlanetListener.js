@@ -30,6 +30,8 @@ export class NewPlanetListener extends AbstractGrassListener {
       this.guildAPI.getPlanet(messageData.planet_id).then((planet) => {
         this.gameState.setPlanet(planet);
         this.gameState.setPlanetShieldHealth(100);
+        this.gameState.alphaBaseMap.setPlanet(this.gameState.planet);
+        this.gameState.alphaBaseMap.render();
 
         MenuPage.router.goto(this.redirectControllerName, this.redirectPageName, this.redirectOptions);
       });

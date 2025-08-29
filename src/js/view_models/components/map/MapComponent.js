@@ -56,6 +56,9 @@ export class MapComponent extends AbstractViewModelComponent {
     this.displayFogOfWar = true;
   }
 
+  /**
+   * @param {Planet} planet
+   */
   setPlanet(planet) {
     this.planet = planet;
   }
@@ -121,6 +124,9 @@ export class MapComponent extends AbstractViewModelComponent {
     );
   }
 
+  /**
+   * @return {string}
+   */
   renderHTML() {
     return `
       <div id="${this.mapId}" class="map">

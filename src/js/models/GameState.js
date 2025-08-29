@@ -35,21 +35,38 @@ export class GameState {
     this.wallet = null;
     this.signingAccount = null;
     this.signingClient = null;
+
+    /** @type {MapComponent|null} */
     this.alphaBaseMap = null;
 
     /* API Primed Data */
+
+    /** @type {Guild|null} */
     this.thisGuild = null;
+
+    /** @type {Player|null} */
     this.thisPlayer = null;
+
+    /** @type {Planet|null} */
     this.planet = null;
+
     this.planetShieldHealth = 100;
+
     this.planetShieldInfo = new PlanetaryShieldInfoDTO();
 
     this.planetPlanetRaidInfo = new PlanetRaid();
+
+    /** @type {Player|null} */
     this.planetRaider = null;
 
     this.raidPlanetRaidInfo = new PlanetRaid();
+
+    /** @type {Player|null} */
     this.raidEnemy = null;
+
+    /** @type {Planet|null} */
     this.raidPlanet = null;
+
     this.raidPlanetShieldInfo = new PlanetaryShieldInfoDTO();
 
     /* GRASS Only Data */
