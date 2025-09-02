@@ -32,6 +32,7 @@ export class AuthManager {
    * @param {PlayerAddressManager} playerAddressManager
    * @param {PlayerAddressPendingFactory} playerAddressPendingFactory
    * @param {RaidManager} raidManager
+   * @param {MapManager} mapManager
    */
   constructor(
     gameState,
@@ -42,7 +43,8 @@ export class AuthManager {
     planetManager,
     playerAddressManager,
     playerAddressPendingFactory,
-    raidManager
+    raidManager,
+    mapManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -53,6 +55,7 @@ export class AuthManager {
     this.playerAddressManager = playerAddressManager;
     this.playerAddressPendingFactory = playerAddressPendingFactory;
     this.raidManager = raidManager;
+    this.mapManager = mapManager;
   }
 
   /**
@@ -97,7 +100,7 @@ export class AuthManager {
     playerCreatedListener.grassManager = this.grassManager;
     playerCreatedListener.planetManager = new PlanetManager(this.gameState, this.signingClientManager);
 
-    const newPlanetListener = new NewPlanetListener(this.gameState, this.guildAPI);
+    const newPlanetListener = new NewPlanetListener(this.gameState, this.guildAPI, this.mapManager);
     newPlanetListener.redirectControllerName = 'Auth';
     newPlanetListener.redirectPageName = 'orientation1';
 
@@ -194,7 +197,7 @@ export class AuthManager {
           this.raidManager.initRaidEnemy()
         ]);
 
-        this.gameState.alphaBaseMap.setPlanet(planet);
+        this.mapManager.configureAlphaBase();
         this.gameState.alphaBaseMap.render();
       }
     }

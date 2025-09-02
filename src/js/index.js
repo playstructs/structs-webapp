@@ -20,6 +20,7 @@ import {FleetController} from "./controllers/FleetController";
 import {FleetManager} from "./managers/FleetManager";
 import {RaidManager} from "./managers/RaidManager";
 import {MapComponent} from "./view_models/components/map/MapComponent";
+import {MapManager} from "./managers/MapMananger";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -52,6 +53,8 @@ const playerAddressPendingFactory = new PlayerAddressPendingFactory();
 
 const raidManager = new RaidManager(gameState, guildAPI, grassManager);
 
+const mapManager = new MapManager(gameState);
+
 const authManager = new AuthManager(
   gameState,
   guildAPI,
@@ -61,7 +64,8 @@ const authManager = new AuthManager(
   planetManager,
   playerAddressManager,
   playerAddressPendingFactory,
-  raidManager
+  raidManager,
+  mapManager
 );
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);
@@ -99,7 +103,8 @@ const fleetController = new FleetController(
   grassManager,
   fleetManager,
   raidManager,
-  planetManager
+  planetManager,
+  mapManager
 );
 
 gameState.alphaBaseMap = new MapComponent(

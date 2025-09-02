@@ -8,6 +8,8 @@ import {MapOrnamentsComponent} from "./MapOrnamentsComponent";
 import {MapTileMarkersComponent} from "./MapTileMarkersComponent";
 import {MapFogOfWarComponent} from "./MapFogOfWarComponent";
 import {MAP_ORNAMENTS} from "../../../constants/MapConstants";
+import {PLAYER_MAP_ROLES} from "../../../constants/PlayerMapRoles";
+import {MAP_PERSPECTIVES} from "../../../constants/MapPerspectives";
 
 export class MapComponent extends AbstractViewModelComponent {
 
@@ -63,8 +65,6 @@ export class MapComponent extends AbstractViewModelComponent {
 
     /** @type {MapFogOfWarComponent|null} */
     this.mapFogOfWar = null;
-
-    this.displayFogOfWar = true;
   }
 
   /**
@@ -74,18 +74,51 @@ export class MapComponent extends AbstractViewModelComponent {
     this.planet = planet;
   }
 
+  /**
+   * @param {Player} player
+   */
+  setDefender(player) {
+    this.defender = player;
+  }
+
+  /**
+   * @param {Player} player
+   */
+  setAttacker(player) {
+    this.attacker = player;
+  }
+
+  /**
+   * @param {string} role
+   */
+  setPlayerMapRole(role) {
+    if(!Object.values(PLAYER_MAP_ROLES).includes(role)) {
+      throw new Error(`Invalid player map role: ${role}`);
+    }
+
+    switch (role) {
+      case PLAYER_MAP_ROLES.ATTACKER:
+        this.perspective = MAP_PERSPECTIVES.ATTACKER;
+        break;
+      case PLAYER_MAP_ROLES.DEFENDER:
+        this.perspective = MAP_PERSPECTIVES.DEFENDER;
+        break;
+      case PLAYER_MAP_ROLES.SPECTATOR:
+        this.perspective = MAP_PERSPECTIVES.ATTACKER;
+        break;
+    }
+  }
+
+  shouldDisplayFogOfWar() {
+    return !this.attacker && (this.perspective === MAP_PERSPECTIVES.DEFENDER);
+  }
+
   initMapComponents() {
     /**
      * URL parameter parsing for testing different scenarios.
-     * URL param syntax: view=/(ATTACKER)?/&enemy=/1?/&[ornament(/[a-zA-Z_]+/)]=[space|air|land|water]
+     * URL param syntax: ?[ornament(/[a-zA-Z_]+/)]=[space|air|land|water]
      * */
     const urlParams = new URLSearchParams(document.location.search);
-
-    const planetOwnerView = !(urlParams.get("view") === 'attacker');
-
-    const enemyPresent = urlParams.get("enemy") === '1';
-
-    this.displayFogOfWar = !enemyPresent && planetOwnerView;
 
     Object.keys(MAP_ORNAMENTS).forEach((ornamentKey) => {
       let ornamentAmbit = urlParams.get(ornamentKey.toLowerCase());
@@ -120,7 +153,7 @@ export class MapComponent extends AbstractViewModelComponent {
       this.planet
     );
 
-    const mapColBreakdown = this.mapTerrain.getMapColBreakdown(planetOwnerView);
+    const mapColBreakdown = this.mapTerrain.getMapColBreakdown(this.perspective === MAP_PERSPECTIVES.DEFENDER);
     this.mapTileMarkers = new MapTileMarkersComponent(
       this.gameState,
       this.tileClassNameUtil,
@@ -160,7 +193,7 @@ export class MapComponent extends AbstractViewModelComponent {
 
     document.getElementById(this.markersId).innerHTML = this.mapTileMarkers.renderHTML();
 
-    if (this.displayFogOfWar) {
+    if (this.shouldDisplayFogOfWar()) {
       document.getElementById(this.fogOfWarId).innerHTML = this.mapFogOfWar.renderHTML();
     }
   }

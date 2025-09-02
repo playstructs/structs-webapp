@@ -7,11 +7,13 @@ export class NewPlanetListener extends AbstractGrassListener {
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
+   * @param {MapManager} mapManager
    */
-  constructor(gameState, guildAPI) {
+  constructor(gameState, guildAPI, mapManager) {
     super('NEW_PLANET');
     this.gameState = gameState;
     this.guildAPI = guildAPI;
+    this.mapManager = mapManager;
     this.redirectControllerName = 'Fleet';
     this.redirectPageName = 'index';
     this.redirectOptions = {planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_ARRIVED};
@@ -30,7 +32,7 @@ export class NewPlanetListener extends AbstractGrassListener {
       this.guildAPI.getPlanet(messageData.planet_id).then((planet) => {
         this.gameState.setPlanet(planet);
         this.gameState.setPlanetShieldHealth(100);
-        this.gameState.alphaBaseMap.setPlanet(this.gameState.planet);
+        this.mapManager.configureAlphaBase();
         this.gameState.alphaBaseMap.render();
 
         MenuPage.router.goto(this.redirectControllerName, this.redirectPageName, this.redirectOptions);

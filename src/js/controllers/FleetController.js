@@ -2,7 +2,7 @@ import {AbstractController} from "../framework/AbstractController";
 import {FleetIndexViewModel} from "../view_models/fleet/FleetIndexViewModel";
 import {ScanViewModel} from "../view_models/fleet/ScanViewModel";
 import {ScanResultsViewModel} from "../view_models/fleet/ScanResultsViewModel";
-import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
+import {MapManager} from "../managers/MapMananger";
 
 
 export class FleetController extends AbstractController {
@@ -14,6 +14,7 @@ export class FleetController extends AbstractController {
    * @param {FleetManager} fleetManager
    * @param {RaidManager} raidManager
    * @param {PlanetManager} planetManager
+   * @param {MapManager} mapManager
    */
   constructor(
     gameState,
@@ -21,7 +22,8 @@ export class FleetController extends AbstractController {
     grassManager,
     fleetManager,
     raidManager,
-    planetManager
+    planetManager,
+    mapManager
   ) {
     super('Fleet', gameState);
     this.guildAPI = guildAPI;
@@ -29,6 +31,7 @@ export class FleetController extends AbstractController {
     this.fleetManager = fleetManager;
     this.raidManager = raidManager;
     this.planetManager = planetManager;
+    this.mapManager = mapManager;
   }
 
   /**
@@ -45,6 +48,7 @@ export class FleetController extends AbstractController {
       this.fleetManager,
       this.grassManager,
       this.planetManager,
+      this.mapManager,
       planetCardType,
       raidCardType
     );
