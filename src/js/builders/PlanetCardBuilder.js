@@ -13,6 +13,7 @@ export class PlanetCardBuilder {
    * @param {FleetManager} fleetManager
    * @param {PlanetManager} planetManager
    * @param {MapManager} mapManager
+   * @param {RaidManager} raidManager
    */
   constructor(
     gameState,
@@ -20,7 +21,8 @@ export class PlanetCardBuilder {
     grassManager,
     fleetManager,
     planetManager,
-    mapManager
+    mapManager,
+    raidManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -28,6 +30,7 @@ export class PlanetCardBuilder {
     this.fleetManager = fleetManager;
     this.planetManager = planetManager;
     this.mapManager = mapManager;
+    this.raidManager = raidManager;
   }
 
   /**
@@ -135,7 +138,13 @@ export class PlanetCardBuilder {
     alphaBaseCard.primaryBtnHandler = () => {
       MenuPage.router.goto('Fleet', 'index', {planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_LOADING})
 
-      const newPlanetListener = new NewPlanetListener(this.gameState, this.guildAPI, this.mapManager);
+      const newPlanetListener = new NewPlanetListener(
+        this.gameState,
+        this.guildAPI,
+        this.mapManager,
+        this.grassManager,
+        this.raidManager
+      );
 
       this.grassManager.registerListener(newPlanetListener);
 

@@ -82,7 +82,7 @@ export class MapComponent extends AbstractViewModelComponent {
   }
 
   /**
-   * @param {Player} player
+   * @param {Player|null} player
    */
   setAttacker(player) {
     this.attacker = player;

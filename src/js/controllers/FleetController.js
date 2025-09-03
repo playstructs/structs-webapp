@@ -49,6 +49,7 @@ export class FleetController extends AbstractController {
       this.grassManager,
       this.planetManager,
       this.mapManager,
+      this.raidManager,
       planetCardType,
       raidCardType
     );

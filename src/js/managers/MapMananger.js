@@ -12,11 +12,7 @@ export class MapManager {
   configureAlphaBase() {
     this.gameState.alphaBaseMap.setPlanet(this.gameState.planet);
     this.gameState.alphaBaseMap.setDefender(this.gameState.thisPlayer);
-
-    if (this.gameState.planetPlanetRaidInfo.isRaidActive() && this.gameState.planetRaider) {
-      this.gameState.alphaBaseMap.setAttacker(this.gameState.planetRaider);
-    }
-
+    this.gameState.alphaBaseMap.setAttacker(this.gameState.planetRaider);
     this.gameState.alphaBaseMap.setPlayerMapRole(PLAYER_MAP_ROLES.DEFENDER);
   }
 }

@@ -19,6 +19,7 @@ import {FEE} from "../constants/Fee";
 import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApprovedListener";
 import {PlayerAddressRevokedListener} from "../grass_listeners/PlayerAddressRevokedListener";
 import {AlphaChangeListener} from "../grass_listeners/AlphaChangeListener";
+import {PlanetRaidStatusListener} from "../grass_listeners/PlanetRaidStatusListener";
 
 export class AuthManager {
 
@@ -100,7 +101,13 @@ export class AuthManager {
     playerCreatedListener.grassManager = this.grassManager;
     playerCreatedListener.planetManager = new PlanetManager(this.gameState, this.signingClientManager);
 
-    const newPlanetListener = new NewPlanetListener(this.gameState, this.guildAPI, this.mapManager);
+    const newPlanetListener = new NewPlanetListener(
+      this.gameState,
+      this.guildAPI,
+      this.mapManager,
+      this.grassManager,
+      this.raidManager
+    );
     newPlanetListener.redirectControllerName = 'Auth';
     newPlanetListener.redirectPageName = 'orientation1';
 
@@ -196,6 +203,13 @@ export class AuthManager {
           this.raidManager.initPlanetRaider(),
           this.raidManager.initRaidEnemy()
         ]);
+
+        this.grassManager.registerListener(new PlanetRaidStatusListener(
+          this.gameState,
+          this.guildAPI,
+          this.raidManager,
+          this.mapManager
+        ));
 
         this.mapManager.configureAlphaBase();
         this.gameState.alphaBaseMap.render();

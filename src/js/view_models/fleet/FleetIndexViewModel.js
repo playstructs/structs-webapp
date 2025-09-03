@@ -13,6 +13,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
    * @param {GrassManager} grassManager
    * @param {PlanetManager} planetManager
    * @param {MapManager} mapManager
+   * @param {RaidManager} raidManager
    * @param {string|null} planetCardType
    * @param {string|null} raidCardType
    */
@@ -23,6 +24,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
     grassManager,
     planetManager,
     mapManager,
+    raidManager,
     planetCardType = null,
     raidCardType= null
   ) {
@@ -46,6 +48,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
       fleetManager,
       planetManager,
       mapManager,
+      raidManager
     );
     this.alphaBaseCard = this.planetCardBuilder.build(false, this.planetCardType);
     this.raidCard = this.planetCardBuilder.build(true, this.raidCardType);
