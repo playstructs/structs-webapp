@@ -1,7 +1,6 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {RAID_STATUS} from "../constants/RaidStatus";
 import {RaidStatusUtil} from "../util/RaidStatusUtil";
-import {PlanetRaid} from "../models/PlanetRaid";
 
 export class PlanetRaidStatusListener extends AbstractGrassListener {
   /**
@@ -41,7 +40,7 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
           this.raidManager.initPlanetRaider().then(() => {
             console.log('PLANET RAID ENEMY INITIATED DONE');
 
-            this.mapManager.configureAlphaBase()
+            this.mapManager.configureAlphaBaseMap()
             this.gameState.alphaBaseMap.render();
           });
         });
@@ -56,12 +55,10 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
 
         console.log('PLANET RAID HAS ENDED HANDLER');
 
-        // Clear the planet raid info
         // TODO: Change raid ended handling when map and structs added
-        this.gameState.setPlanetPlanetRaidInfo(new PlanetRaid());
-        this.gameState.planetRaider = null;
+        this.gameState.clearPlanetRaidData();
 
-        this.mapManager.configureAlphaBase()
+        this.mapManager.configureAlphaBaseMap()
         this.gameState.alphaBaseMap.render();
 
         this.shouldUnregister = () => true;

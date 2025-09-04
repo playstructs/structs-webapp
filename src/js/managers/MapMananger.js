@@ -9,10 +9,17 @@ export class MapManager {
     this.gameState = gameState;
   }
 
-  configureAlphaBase() {
+  configureAlphaBaseMap() {
     this.gameState.alphaBaseMap.setPlanet(this.gameState.planet);
     this.gameState.alphaBaseMap.setDefender(this.gameState.thisPlayer);
     this.gameState.alphaBaseMap.setAttacker(this.gameState.planetRaider);
     this.gameState.alphaBaseMap.setPlayerMapRole(PLAYER_MAP_ROLES.DEFENDER);
+  }
+
+  configureRaidMap() {
+    this.gameState.raidMap.setPlanet(this.gameState.raidPlanet);
+    this.gameState.raidMap.setDefender(this.gameState.raidEnemy);
+    this.gameState.raidMap.setAttacker(this.gameState.thisPlayer);
+    this.gameState.raidMap.setPlayerMapRole(PLAYER_MAP_ROLES.ATTACKER);
   }
 }

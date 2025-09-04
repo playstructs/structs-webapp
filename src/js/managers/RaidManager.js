@@ -9,15 +9,18 @@ export class RaidManager {
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    * @param {GrassManager} grassManager
+   * @param {MapManager} mapManager
    */
   constructor(
     gameState,
     guildAPI,
-    grassManager
+    grassManager,
+    mapManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.grassManager = grassManager;
+    this.mapManager = mapManager;
   }
 
   /**
@@ -28,7 +31,7 @@ export class RaidManager {
       return;
     }
 
-    this.grassManager.registerListener(new RaidStatusListener(this.gameState, this));
+    this.grassManager.registerListener(new RaidStatusListener(this.gameState, this, this.mapManager));
     this.grassManager.registerListener(new RaidEnemyLastActionListener(this.gameState));
     this.grassManager.registerListener(new RaidEnemyOreListener(this.gameState, this.guildAPI));
 

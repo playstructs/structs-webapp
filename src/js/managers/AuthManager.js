@@ -211,8 +211,11 @@ export class AuthManager {
           this.mapManager
         ));
 
-        this.mapManager.configureAlphaBase();
+        this.mapManager.configureAlphaBaseMap();
         this.gameState.alphaBaseMap.render();
+
+        this.mapManager.configureRaidMap();
+        this.gameState.raidMap.render();
       }
     }
 

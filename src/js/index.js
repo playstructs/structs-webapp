@@ -51,9 +51,9 @@ const permissionManager = new PermissionManager();
 
 const playerAddressPendingFactory = new PlayerAddressPendingFactory();
 
-const raidManager = new RaidManager(gameState, guildAPI, grassManager);
-
 const mapManager = new MapManager(gameState);
+
+const raidManager = new RaidManager(gameState, guildAPI, grassManager, mapManager);
 
 const authManager = new AuthManager(
   gameState,
@@ -111,6 +111,11 @@ gameState.alphaBaseMap = new MapComponent(
   gameState,
   'alpha-base-map-container',
   'alpha-base'
+);
+gameState.raidMap = new MapComponent(
+  gameState,
+  'raid-map-container',
+  'raid'
 );
 
 MenuPage.gameState = gameState;

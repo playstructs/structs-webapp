@@ -71,6 +71,7 @@ export class FleetController extends AbstractController {
       this.fleetManager,
       this.grassManager,
       this.raidManager,
+      this.mapManager,
       options
     );
     viewModel.render();

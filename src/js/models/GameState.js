@@ -39,6 +39,9 @@ export class GameState {
     /** @type {MapComponent|null} */
     this.alphaBaseMap = null;
 
+    /** @type {MapComponent|null} */
+    this.raidMap = null;
+
     /* API Primed Data */
 
     /** @type {Guild|null} */
@@ -285,7 +288,11 @@ export class GameState {
   setPlanetShieldHealth() {
     let health = 100;
 
-    if (this.currentBlockHeight && this.planetShieldInfo.block_start_raid) {
+    if (
+      this.planetPlanetRaidInfo.isRaidActive()
+      && this.currentBlockHeight
+      && this.planetShieldInfo.block_start_raid
+    ) {
       health = this.shieldHealthCalculator.calc(
         this.planetShieldInfo.planetary_shield,
         this.planetShieldInfo.block_start_raid,
@@ -383,6 +390,24 @@ export class GameState {
     if (dispatchEvent) {
       window.dispatchEvent(new CustomEvent(EVENTS.RAID_STATUS_CHANGED));
     }
+  }
+
+  clearPlanetRaidData() {
+    this.planetPlanetRaidInfo = new PlanetRaid();
+    this.planetRaider = null;
+    this.planetRaiderLastActionBlockHeight = 0;
+    this.setPlanetShieldHealth();
+
+    this.save();
+  }
+
+  clearRaidData() {
+    this.raidEnemy = null;
+    this.raidEnemyLastActionBlockHeight = 0;
+    this.raidPlanet = null;
+    this.setRaidPlanetRaidInfo(new PlanetRaid());
+
+    this.save();
   }
 
   /**

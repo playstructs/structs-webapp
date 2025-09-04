@@ -183,9 +183,13 @@ export class MapComponent extends AbstractViewModelComponent {
   }
 
   render() {
-    this.initMapComponents();
-
     document.getElementById(this.containerId).innerHTML = this.renderHTML();
+
+    if (this.planet === null) {
+      return;
+    }
+
+    this.initMapComponents();
 
     document.getElementById(this.terrainId).innerHTML = this.mapTerrain.renderHTML();
 

@@ -15,6 +15,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
    * @param {FleetManager} fleetManager
    * @param {GrassManager} grassManager
    * @param {RaidManager} raidManager
+   * @param {MapManager} mapManager
    * @param {RaidSearchRequestDTO|object} raidSearchRequest
    */
   constructor(
@@ -23,6 +24,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
     fleetManager,
     grassManager,
     raidManager,
+    mapManager,
     raidSearchRequest
   ) {
     super();
@@ -31,6 +33,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
     this.fleetManager = fleetManager;
     this.grassManager = grassManager;
     this.raidManager = raidManager;
+    this.mapManager = mapManager;
     this.raidSearchRequest = raidSearchRequest;
     this.planetRaidFactory = new PlanetRaidFactory();
     this.numberFormatter = new NumberFormatter();
@@ -52,7 +55,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
 
         MenuPage.router.goto('Fleet', 'index');
 
-        this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager));
+        this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager, this.mapManager));
         this.fleetManager.moveFleet(this.gameState.raidPlanetRaidInfo.planet_id).then();
       });
     })

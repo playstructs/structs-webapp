@@ -49,7 +49,7 @@ export class NewPlanetListener extends AbstractGrassListener {
           this.raidManager,
           this.mapManager
         ));
-        this.mapManager.configureAlphaBase();
+        this.mapManager.configureAlphaBaseMap();
         this.gameState.alphaBaseMap.render();
 
         MenuPage.router.goto(this.redirectControllerName, this.redirectPageName, this.redirectOptions);

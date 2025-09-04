@@ -3,17 +3,22 @@ import {RAID_STATUS} from "../constants/RaidStatus";
 import {RaidStatusUtil} from "../util/RaidStatusUtil";
 import {MenuPage} from "../framework/MenuPage";
 import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
-import {PlanetRaid} from "../models/PlanetRaid";
 
 export class RaidStatusListener extends AbstractGrassListener {
   /**
    * @param {GameState} gameState
    * @param {RaidManager} raidManager
+   * @param {MapManager} mapManager
    */
-  constructor(gameState, raidManager) {
+  constructor(
+    gameState,
+    raidManager,
+    mapManager
+  ) {
     super('RAID_STATUS');
     this.gameState = gameState;
     this.raidManager = raidManager;
+    this.mapManager = mapManager;
     this.raidStatusUtil = new RaidStatusUtil();
   }
 
@@ -33,6 +38,10 @@ export class RaidStatusListener extends AbstractGrassListener {
 
         this.raidManager.initRaidEnemy().then(() => {
           console.log('RAID ENEMY INITIATED DONE');
+
+          this.mapManager.configureRaidMap();
+          this.gameState.raidMap.render();
+
           MenuPage.router.goto('Fleet', 'index', {'raidCardType': PLANET_CARD_TYPES.RAID_STARTED});
         });
 
@@ -48,7 +57,10 @@ export class RaidStatusListener extends AbstractGrassListener {
 
         // Clear the planet raid info
         // TODO: Change raid ended handling when map and structs added
-        this.gameState.setRaidPlanetRaidInfo(new PlanetRaid());
+        this.gameState.clearRaidData();
+
+        this.mapManager.configureRaidMap();
+        this.gameState.raidMap.render();
 
         this.shouldUnregister = () => true;
       }
