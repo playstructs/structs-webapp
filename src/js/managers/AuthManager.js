@@ -216,6 +216,8 @@ export class AuthManager {
 
         this.mapManager.configureRaidMap();
         this.gameState.raidMap.render();
+
+        this.mapManager.showActiveMap();
       }
     }
 

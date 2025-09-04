@@ -22,4 +22,18 @@ export class MapManager {
     this.gameState.raidMap.setAttacker(this.gameState.thisPlayer);
     this.gameState.raidMap.setPlayerMapRole(PLAYER_MAP_ROLES.ATTACKER);
   }
+
+  /**
+   * @param {string} mapContainerId
+   */
+  showMap(mapContainerId) {
+    document.querySelectorAll('.map-container').forEach(mapContainer => {
+      mapContainer.classList.add('hidden');
+    });
+    document.getElementById(mapContainerId).classList.remove('hidden');
+  }
+
+  showActiveMap() {
+    this.showMap(this.gameState.activeMapContainerId);
+  }
 }

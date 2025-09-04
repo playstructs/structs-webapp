@@ -459,11 +459,11 @@ a.sui-text-secondary:hover {
   flex-grow: 1;
 }
 
-#alpha-base-map-container {
+.map-container {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: var(--alpha-base-map-z-index);
+  z-index: var(--map-z-index);
   width: 1152px;
 }
 

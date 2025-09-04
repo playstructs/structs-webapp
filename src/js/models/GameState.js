@@ -8,6 +8,7 @@ import {GuildAPI} from "../api/GuildAPI";
 import {ShieldHealthCalculator} from "../util/ShieldHealthCalculator";
 import {PlanetaryShieldInfoDTO} from "../dtos/PlanetaryShieldInfoDTO";
 import {PlanetRaid} from "./PlanetRaid";
+import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 
 export class GameState {
 
@@ -30,6 +31,7 @@ export class GameState {
     this.planetRaiderLastActionBlockHeight = 0;
     this.raidEnemyLastActionBlockHeight = 0;
     this.chargeLevel = 0;
+    this.activeMapContainerId = MAP_CONTAINER_IDS.ALPHA_BASE;
 
     /* Must Be Re-instantiated On Load */
     this.wallet = null;
@@ -93,6 +95,7 @@ export class GameState {
       raidEnemyLastActionBlockHeight: this.raidEnemyLastActionBlockHeight,
       chargeLevel: this.chargeLevel,
       transferAmount: this.transferAmount,
+      activeMapContainerId: this.activeMapContainerId
     }));
   }
 
@@ -483,6 +486,14 @@ export class GameState {
    */
   setTransferAmount(amount) {
     this.transferAmount = amount;
+    this.save();
+  }
+
+  /**
+   * @param {string} id
+   */
+  setActiveMapContainerId(id) {
+    this.activeMapContainerId = id;
     this.save();
   }
 }

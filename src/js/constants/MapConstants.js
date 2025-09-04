@@ -42,6 +42,10 @@ export const
   MAP_ORNAMENTS = {
     ENTERPRISE: 'ENTERPRISE',
     SPACE_MONSTER: 'SPACE_MONSTER'
-  }
+  },
 
+  MAP_CONTAINER_IDS = {
+    ALPHA_BASE: 'alpha-base-map-container',
+    RAID: 'raid-map-container'
+  }
 ;

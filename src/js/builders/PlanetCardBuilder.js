@@ -3,6 +3,7 @@ import {PlanetCardComponent} from "../view_models/components/PlanetCardComponent
 import {MenuPage} from "../framework/MenuPage";
 import {RAID_STATUS} from "../constants/RaidStatus";
 import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
+import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 
 export class PlanetCardBuilder {
 
@@ -55,6 +56,18 @@ export class PlanetCardBuilder {
     )
   }
 
+  showAlphaBaseMap() {
+    this.gameState.setActiveMapContainerId(MAP_CONTAINER_IDS.ALPHA_BASE);
+    this.mapManager.showMap(MAP_CONTAINER_IDS.ALPHA_BASE);
+    MenuPage.close();
+  }
+
+  showRaidMap() {
+    this.gameState.setActiveMapContainerId(MAP_CONTAINER_IDS.RAID);
+    this.mapManager.showMap(MAP_CONTAINER_IDS.RAID);
+    MenuPage.close();
+  }
+
   buildAlphaBaseLoading(alphaBaseCard, type) {
     if (type !== PLANET_CARD_TYPES.ALPHA_BASE_LOADING) {
       return;
@@ -84,7 +97,7 @@ export class PlanetCardBuilder {
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'Command';
     alphaBaseCard.primaryBtnHandler = () => {
-      console.log('Command');
+      this.showAlphaBaseMap();
     }
   }
 
@@ -107,7 +120,7 @@ export class PlanetCardBuilder {
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'Command';
     alphaBaseCard.primaryBtnHandler = () => {
-      console.log('Command');
+      this.showAlphaBaseMap();
     }
 
     alphaBaseCard.hasSecondaryBtn = true;
@@ -172,7 +185,7 @@ export class PlanetCardBuilder {
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'View';
     alphaBaseCard.primaryBtnHandler = () => {
-      console.log('View');
+      this.showAlphaBaseMap();
     }
 
     alphaBaseCard.hasSecondaryBtn = true;
@@ -234,7 +247,7 @@ export class PlanetCardBuilder {
     raidCard.hasPrimaryBtn = true;
     raidCard.primaryBtnLabel = 'View';
     raidCard.primaryBtnHandler = () => {
-      console.log('view');
+      this.showRaidMap();
     }
 
     raidCard.hasSecondaryBtn = true;
@@ -263,7 +276,7 @@ export class PlanetCardBuilder {
     raidCard.hasPrimaryBtn = true;
     raidCard.primaryBtnLabel = 'Command';
     raidCard.primaryBtnHandler = () => {
-      console.log('command');
+      this.showRaidMap();
     }
 
     raidCard.hasSecondaryBtn = true;

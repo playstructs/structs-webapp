@@ -91,12 +91,11 @@
 
   /* -- Positioning Start -- */
 
-  --alpha-base-map-z-index: 10;
+  --map-z-index: 10;
   --hud-z-index: 50;
   --menu-z-index: 10;
   --menu-page-z-index: 1000;
   --popup-z-index: 100;
-  --raid-map-z-index: 11;
 
   /* -- Positioning End */
 
