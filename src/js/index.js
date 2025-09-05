@@ -132,12 +132,12 @@ blockGrassManager.init();
 
 const hudContainer = document.getElementById('hud-container');
 
+await gameState.load();
+gameState.thisGuild = await guildAPI.getThisGuild();
+
 const hud = new HUDViewModel(gameState);
 hudContainer.innerHTML = hud.render();
 hud.initPageCode();
-
-await gameState.load();
-gameState.thisGuild = await guildAPI.getThisGuild();
 
 if (!gameState.thisPlayerId) {
   MenuPage.router.goto('Auth', 'index');

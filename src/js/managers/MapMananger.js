@@ -1,4 +1,6 @@
 import {PLAYER_MAP_ROLES} from "../constants/PlayerMapRoles";
+import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
+import {STATUS_BAR_TOP_RIGHT_IDS} from "../constants/StatusBarTopRightConstants";
 
 export class MapManager {
 
@@ -27,6 +29,15 @@ export class MapManager {
    * @param {string} mapContainerId
    */
   showMap(mapContainerId) {
+    document.querySelectorAll('.status-bar-panel-top-right').forEach(panel => {
+      panel.classList.add('hidden');
+    });
+    if (mapContainerId === MAP_CONTAINER_IDS.RAID) {
+      document.getElementById(STATUS_BAR_TOP_RIGHT_IDS.RAID).classList.remove('hidden');
+    } else {
+      document.getElementById(STATUS_BAR_TOP_RIGHT_IDS.ALPHA_BASE).classList.remove('hidden');
+    }
+
     document.querySelectorAll('.map-container').forEach(mapContainer => {
       mapContainer.classList.add('hidden');
     });

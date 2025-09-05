@@ -4,6 +4,7 @@ import {StatusBarTopRightComponent} from "./components/hud/StatusBarTopRightComp
 import {ActionBarComponent} from "./components/hud/ActionBarComponent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {MenuPage} from "../framework/MenuPage";
+import {STATUS_BAR_TOP_RIGHT_IDS} from "../constants/StatusBarTopRightConstants";
 
 export class HUDViewModel extends AbstractViewModel {
 
@@ -14,7 +15,16 @@ export class HUDViewModel extends AbstractViewModel {
     super();
     this.gameState = gameState;
     this.topLeftStatusBar = new StatusBarTopLeftComponent(gameState);
-    this.topRightStatusBar = new StatusBarTopRightComponent(gameState);
+    this.topRightStatusBarAlphaBase = new StatusBarTopRightComponent(
+      gameState,
+      false,
+      STATUS_BAR_TOP_RIGHT_IDS.ALPHA_BASE
+    );
+    this.topRightStatusBarRaid = new StatusBarTopRightComponent(
+      gameState,
+      true,
+      STATUS_BAR_TOP_RIGHT_IDS.RAID
+    );
     this.bottomLeftActionBar = new ActionBarComponent(
       gameState,
       PLAYER_TYPES.PLAYER,
@@ -37,14 +47,16 @@ export class HUDViewModel extends AbstractViewModel {
 
   initPageCode() {
     this.topLeftStatusBar.initPageCode();
-    this.topRightStatusBar.initPageCode();
+    this.topRightStatusBarAlphaBase.initPageCode();
+    this.topRightStatusBarRaid.initPageCode();
     this.bottomLeftActionBar.initPageCode();
   }
 
   render() {
     return `
       ${this.topLeftStatusBar.renderHTML()}
-      ${this.topRightStatusBar.renderHTML()}
+      ${this.topRightStatusBarAlphaBase.renderHTML()}
+      ${this.topRightStatusBarRaid.renderHTML()}
       ${this.bottomLeftActionBar.renderHTML()}
     `;
   }
