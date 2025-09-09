@@ -21,6 +21,7 @@ import {FleetManager} from "./managers/FleetManager";
 import {RaidManager} from "./managers/RaidManager";
 import {MapComponent} from "./view_models/components/map/MapComponent";
 import {MapManager} from "./managers/MapMananger";
+import {MAP_CONTAINER_IDS} from "./constants/MapConstants";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -109,16 +110,22 @@ const fleetController = new FleetController(
 
 gameState.alphaBaseMap = new MapComponent(
   gameState,
-  'alpha-base-map-container',
+  MAP_CONTAINER_IDS.ALPHA_BASE,
   'alpha-base'
 );
 gameState.raidMap = new MapComponent(
   gameState,
-  'raid-map-container',
+  MAP_CONTAINER_IDS.RAID,
   'raid'
+);
+gameState.previewMap = new MapComponent(
+  gameState,
+  MAP_CONTAINER_IDS.PREVIEW,
+  'preview'
 );
 
 MenuPage.gameState = gameState;
+MenuPage.mapManager = mapManager;
 MenuPage.router.registerController(authController);
 MenuPage.router.registerController(accountController);
 MenuPage.router.registerController(genericController);

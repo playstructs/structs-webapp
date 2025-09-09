@@ -95,6 +95,7 @@
   --hud-z-index: 50;
   --menu-z-index: 10;
   --menu-page-z-index: 1000;
+  --menu-page-fill-background-z-index: -1; /* Relative to --menu-page-z-index */
   --popup-z-index: 100;
 
   /* -- Positioning End */
@@ -899,6 +900,32 @@ a.sui-nav-btn:visited {
   background-clip: padding-box;
 }
 
+.sui-panel-top-fill-background {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  z-index: var(--menu-page-fill-background-z-index);
+  width: 100%;
+  height: 50px;
+}
+
+.sui-panel-bottom-fill-background {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  z-index: var(--menu-page-fill-background-z-index);
+  width: 100%;
+  height: 4px;
+}
+
+.sui-theme-player .sui-panel-top-fill-background {
+  background-color: var(--surface-panel);
+}
+
+.sui-theme-player .sui-panel-bottom-fill-background {
+  background-color: var(--surface-panel);
+}
+
 .sui-theme-player .sui-panel-edge-left,
 div.sui-panel-edge-left.sui-theme-player {
   border-image: url("/img/sui/panel/panel-edge-left-default.png") 6 0 12 6 / 6px 0 12px 6px;
@@ -919,6 +946,14 @@ div.sui-panel-chunk.sui-theme-player {
 .sui-theme-player .sui-panel-connector,
 div.sui-panel-connector.sui-theme-player {
   border-image: url("/img/sui/panel/panel-connector-default.png") 6 0 8 0 fill / 6px 0 8px 0;
+}
+
+.sui-theme-enemy .sui-panel-top-fill-background {
+  background-color: var(--surface-panel-medium);
+}
+
+.sui-theme-enemy .sui-panel-bottom-fill-background {
+  background-color: var(--surface-panel-medium);
 }
 
 .sui-theme-enemy .sui-panel-edge-left,
@@ -1446,6 +1481,7 @@ a.sui-screen-portrait:hover {
   border-bottom: 1px solid var(--border-subtle);
   align-items: center;
   justify-content: space-between;
+  background: var(--surface-player-body);
 }
 
 .sui-page-header-resources {

@@ -1101,6 +1101,7 @@ img.glitch-logo {
 }
 
 #menu-page-template-content {
+  position: relative;
   display: flex;
   box-sizing: border-box;
   width: 100%;
@@ -1737,7 +1738,15 @@ img.guild-reactor-img {
   gap: var(--spacing-xl);
 }
 
-
+.preview-map-btn-container {
+  position: absolute;
+  display: flex;
+  margin-bottom: 30px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  inset: 0;
+}
 
 /* Page Specific Styling Start */
 
@@ -1776,6 +1785,10 @@ img.guild-reactor-img {
 
 .hidden {
   display: none !important;
+}
+
+.hidden-background {
+  background: transparent !important;
 }
 
 /* Utility Classes End */

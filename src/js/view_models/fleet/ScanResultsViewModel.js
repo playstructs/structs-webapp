@@ -3,8 +3,6 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {NumberFormatter} from "../../util/NumberFormatter";
 import {Pagination} from "../templates/partials/Pagination";
 import {PAGINATION_LIMITS} from "../../constants/PaginationLimits";
-import {RAID_STATUS} from "../../constants/RaidStatus";
-import {RaidStatusListener} from "../../grass_listeners/RaidStatusListener";
 import {PlanetRaidFactory} from "../../factories/PlanetRaidFactory";
 
 export class ScanResultsViewModel extends AbstractViewModel {
@@ -44,19 +42,29 @@ export class ScanResultsViewModel extends AbstractViewModel {
     this.players.forEach((player) => {
       document.getElementById(`scan-${player.id}`).addEventListener('click', () => {
 
-        const planetRaid = this.planetRaidFactory.make({
-          fleet_id: this.gameState.thisPlayer.fleet_id,
-          planet_id: player.planet_id,
-          planet_owner: player.id,
-          status: RAID_STATUS.REQUESTED
-        });
+        this.guildAPI.getActivePlanetRaidByPlanetId(player.planet_id).then(
+          planetRaid => {
+            MenuPage.router.goto('Fleet', 'preview', {
+              planet_id: player.planet_id,
+              defender_id: player.id,
+              attacker_id: planetRaid.isRaidActive() ? planetRaid.fleet_owner : null
+            });
+          }
+        );
 
-        this.gameState.setRaidPlanetRaidInfo(planetRaid);
-
-        MenuPage.router.goto('Fleet', 'index');
-
-        this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager, this.mapManager));
-        this.fleetManager.moveFleet(this.gameState.raidPlanetRaidInfo.planet_id).then();
+        // const planetRaid = this.planetRaidFactory.make({
+        //   fleet_id: this.gameState.thisPlayer.fleet_id,
+        //   planet_id: player.planet_id,
+        //   planet_owner: player.id,
+        //   status: RAID_STATUS.REQUESTED
+        // });
+        //
+        // this.gameState.setRaidPlanetRaidInfo(planetRaid);
+        //
+        // MenuPage.router.goto('Fleet', 'index');
+        //
+        // this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager, this.mapManager));
+        // this.fleetManager.moveFleet(this.gameState.raidPlanetRaidInfo.planet_id).then();
       });
     })
   }
@@ -139,7 +147,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
             id="${btnId}"
             href="javascript:void(0)"
             class="sui-screen-btn sui-mod-secondary"
-          >Launch Fleet</a>
+          >View</a>
         </div>
       </div>
     `;

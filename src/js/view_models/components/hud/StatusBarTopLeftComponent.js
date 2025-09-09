@@ -3,8 +3,13 @@ import {EnergyUsageComponent} from "../EnergyUsageComponent";
 
 export class StatusBarTopLeftComponent extends AbstractViewModelComponent {
 
-  constructor(gameState) {
+  /**
+   * @param {GameState} gameState
+   * @param {string} id
+   */
+  constructor(gameState, id) {
     super(gameState);
+    this.id = id;
     this.energyUsageComponent = new EnergyUsageComponent(gameState, 'hud-energy-usage');
   }
 
@@ -15,7 +20,7 @@ export class StatusBarTopLeftComponent extends AbstractViewModelComponent {
 
   renderHTML() {
     return `
-      <div class="sui-status-bar-panel status-bar-panel-top-left">
+      <div id="${this.id}" class="sui-status-bar-panel status-bar-panel-top-left">
         ${this.energyUsageComponent.renderHTML()}
       </div>
     `;

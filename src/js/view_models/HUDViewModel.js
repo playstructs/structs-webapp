@@ -4,7 +4,7 @@ import {StatusBarTopRightComponent} from "./components/hud/StatusBarTopRightComp
 import {ActionBarComponent} from "./components/hud/ActionBarComponent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {MenuPage} from "../framework/MenuPage";
-import {STATUS_BAR_TOP_RIGHT_IDS} from "../constants/StatusBarTopRightConstants";
+import {HUD_IDS} from "../constants/HUDConstants";
 
 export class HUDViewModel extends AbstractViewModel {
 
@@ -14,21 +14,25 @@ export class HUDViewModel extends AbstractViewModel {
   constructor(gameState) {
     super();
     this.gameState = gameState;
-    this.topLeftStatusBar = new StatusBarTopLeftComponent(gameState);
+    this.topLeftStatusBar = new StatusBarTopLeftComponent(
+      gameState,
+      HUD_IDS.STATUS_BAR_TOP_LEFT
+    );
     this.topRightStatusBarAlphaBase = new StatusBarTopRightComponent(
       gameState,
       false,
-      STATUS_BAR_TOP_RIGHT_IDS.ALPHA_BASE
+      HUD_IDS.STATUS_BAR_TOP_RIGHT_ALPHA_BASE
     );
     this.topRightStatusBarRaid = new StatusBarTopRightComponent(
       gameState,
       true,
-      STATUS_BAR_TOP_RIGHT_IDS.RAID
+      HUD_IDS.STATUS_BAR_TOP_RIGHT_RAID
     );
     this.bottomLeftActionBar = new ActionBarComponent(
       gameState,
       PLAYER_TYPES.PLAYER,
-      'left'
+      'left',
+      HUD_IDS.ACTION_BAR_PLAYER
     );
     this.bottomLeftActionBar.profileClickHandler = function () {
       const allowedControllers = [

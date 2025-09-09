@@ -1,6 +1,6 @@
 import {PLAYER_MAP_ROLES} from "../constants/PlayerMapRoles";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
-import {STATUS_BAR_TOP_RIGHT_IDS} from "../constants/StatusBarTopRightConstants";
+import {HUD_IDS} from "../constants/HUDConstants";
 
 export class MapManager {
 
@@ -26,17 +26,46 @@ export class MapManager {
   }
 
   /**
+   * @param {Planet} planet
+   * @param {Player} defender
+   * @param {Player} attacker
+   */
+  configurePreviewMap(planet, defender, attacker) {
+    this.gameState.previewMap.setPlanet(planet);
+    this.gameState.previewMap.setDefender(defender);
+    this.gameState.previewMap.setAttacker(attacker);
+    this.gameState.previewMap.setPlayerMapRole(PLAYER_MAP_ROLES.SPECTATOR);
+  }
+
+  hideHUD() {
+    Object.values(HUD_IDS).forEach(id => {
+      document.getElementById(id).classList.add('hidden');
+    });
+  }
+
+  showHUDForMap(mapContainerId) {
+    this.hideHUD();
+
+    if (mapContainerId === MAP_CONTAINER_IDS.RAID) {
+      document.getElementById(HUD_IDS.STATUS_BAR_TOP_RIGHT_RAID).classList.remove('hidden');
+    } else if (mapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE) {
+      document.getElementById(HUD_IDS.STATUS_BAR_TOP_RIGHT_ALPHA_BASE).classList.remove('hidden');
+    }
+
+    if (
+      mapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE
+      || mapContainerId === MAP_CONTAINER_IDS.RAID
+    ) {
+      document.getElementById(HUD_IDS.STATUS_BAR_TOP_LEFT).classList.remove('hidden');
+      document.getElementById(HUD_IDS.ACTION_BAR_PLAYER).classList.remove('hidden');
+    }
+  }
+
+  /**
    * @param {string} mapContainerId
    */
   showMap(mapContainerId) {
-    document.querySelectorAll('.status-bar-panel-top-right').forEach(panel => {
-      panel.classList.add('hidden');
-    });
-    if (mapContainerId === MAP_CONTAINER_IDS.RAID) {
-      document.getElementById(STATUS_BAR_TOP_RIGHT_IDS.RAID).classList.remove('hidden');
-    } else {
-      document.getElementById(STATUS_BAR_TOP_RIGHT_IDS.ALPHA_BASE).classList.remove('hidden');
-    }
+    this.showHUDForMap(mapContainerId);
 
     document.querySelectorAll('.map-container').forEach(mapContainer => {
       mapContainer.classList.add('hidden');

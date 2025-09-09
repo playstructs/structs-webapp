@@ -44,6 +44,9 @@ export class GameState {
     /** @type {MapComponent|null} */
     this.raidMap = null;
 
+    /** @type {MapComponent|null} */
+    this.previewMap = null;
+
     /* API Primed Data */
 
     /** @type {Guild|null} */

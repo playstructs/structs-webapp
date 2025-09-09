@@ -3,12 +3,19 @@ import {EVENTS} from "../../../constants/Events";
 
 export class ActionBarComponent extends AbstractViewModelComponent {
 
-  constructor(gameState, playerType, align) {
+  /**
+   * @param {GameState} gameState
+   * @param {string} playerType
+   * @param {string} align left or right
+   * @param {string} id
+   */
+  constructor(gameState, playerType, align, id) {
     super(gameState);
 
     this.playerType = playerType;
 
     /* IDs */
+    this.id = id;
     this.actionBarPortraitId = `${this.playerType}-screen-portrait`;
     this.actionBarBatteryId = `${this.playerType}-screen-battery`;
 
@@ -47,7 +54,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
   renderPortraitChunkHTML() {
     return `
-      <div class="sui-panel-chunk">
+      <div id="${this.id}" class="sui-panel-chunk">
   
         <div class="sui-screen">
           <a id="${this.actionBarPortraitId}" href="javascript: void(0)" class="sui-screen-portrait">

@@ -3,6 +3,7 @@ import {FleetIndexViewModel} from "../view_models/fleet/FleetIndexViewModel";
 import {ScanViewModel} from "../view_models/fleet/ScanViewModel";
 import {ScanResultsViewModel} from "../view_models/fleet/ScanResultsViewModel";
 import {MapManager} from "../managers/MapMananger";
+import {PreviewViewModel} from "../view_models/fleet/PreviewViewModel";
 
 
 export class FleetController extends AbstractController {
@@ -73,6 +74,24 @@ export class FleetController extends AbstractController {
       this.raidManager,
       this.mapManager,
       options
+    );
+    viewModel.render();
+  }
+
+  /**
+   * @param {Object} options
+   */
+  preview(options) {
+    const viewModel = new PreviewViewModel(
+      this.gameState,
+      this.guildAPI,
+      this.fleetManager,
+      this.grassManager,
+      this.raidManager,
+      this.mapManager,
+      options.planet_id,
+      options.defender_id,
+      options.attacker_id
     );
     viewModel.render();
   }

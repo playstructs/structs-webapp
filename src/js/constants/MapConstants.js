@@ -46,6 +46,7 @@ export const
 
   MAP_CONTAINER_IDS = {
     ALPHA_BASE: 'alpha-base-map-container',
-    RAID: 'raid-map-container'
+    RAID: 'raid-map-container',
+    PREVIEW: 'preview-map-container'
   }
 ;

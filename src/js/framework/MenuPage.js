@@ -6,17 +6,25 @@ import {AlphaOwnedComponent} from "../view_models/components/AlphaOwnedComponent
 
 export class MenuPage {
 
+  /** @type {GameState} */
   static gameState;
+
+  /** @type {MapManager} */
+  static mapManager;
 
   /* Element IDs Start */
 
   static pageLayoutId = 'menu-page-layout';
+
+  static panelChunkId = 'menu-page-panel-chunk';
 
   static navId = 'menu-page-nav';
 
   static navItemsId = 'menu-page-nav-items';
 
   static closeBtnId = 'menu-page-nav-close';
+
+  static screenBodyId = 'menu-page-screen-body';
 
   static bodyId = 'menu-page-body-content';
 
@@ -225,6 +233,8 @@ export class MenuPage {
   }
 
   static close() {
+    MenuPage.mapManager.showActiveMap();
+    console.log(MenuPage.gameState.activeMapContainerId)
     MenuPage.closeBtnHandler();
   }
 
@@ -233,7 +243,7 @@ export class MenuPage {
   }
 
   static initCloseBtnListener() {
-    document.getElementById(MenuPage.closeBtnId).addEventListener('click', MenuPage.closeBtnHandler);
+    document.getElementById(MenuPage.closeBtnId).addEventListener('click', MenuPage.close);
   }
 
   static initDialogueBtnAListener() {
@@ -263,7 +273,11 @@ export class MenuPage {
     MenuPage.initDialogueBtnBListener();
   }
 
-  static enablePageTemplate(activeNavItemId = null, showResources = true) {
+  static enablePageTemplate(
+    activeNavItemId = null,
+    showResources = true,
+    useTransparentBackground = false
+  ) {
 
     MenuPage.setNavItems(MenuPage.menuNavItems, activeNavItemId);
     MenuPage.enableCloseBtn();
@@ -319,6 +333,12 @@ export class MenuPage {
 
     MenuPage.setBodyContent(pageTemplate);
 
+    MenuPage.useOpaqueBackground();
+
+    if (useTransparentBackground) {
+      MenuPage.useTransparentBackground();
+    }
+
     if (showResources) {
       energyUsageComponent.initPageCode();
       alphaOwnedComponent.initPageCode();
@@ -335,5 +355,15 @@ export class MenuPage {
 
   static setPageTemplateContent(content) {
     document.getElementById(this.pageTemplateContentId).innerHTML = content;
+  }
+
+  static useTransparentBackground() {
+    document.getElementById(this.screenBodyId).classList.add('hidden-background');
+    document.getElementById(this.panelChunkId).classList.add('hidden-background');
+  }
+
+  static useOpaqueBackground() {
+    document.getElementById(this.screenBodyId).classList.remove('hidden-background');
+    document.getElementById(this.panelChunkId).classList.remove('hidden-background');
   }
 }
