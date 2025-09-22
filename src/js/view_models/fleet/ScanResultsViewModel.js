@@ -46,25 +46,13 @@ export class ScanResultsViewModel extends AbstractViewModel {
           planetRaid => {
             MenuPage.router.goto('Fleet', 'preview', {
               planet_id: player.planet_id,
+              planet_undiscovered_ore: player.undiscovered_ore ? player.undiscovered_ore : 0,
               defender_id: player.id,
+              defender_ore: player.ore ? player.ore : 0,
               attacker_id: planetRaid.isRaidActive() ? planetRaid.fleet_owner : null
             });
           }
         );
-
-        // const planetRaid = this.planetRaidFactory.make({
-        //   fleet_id: this.gameState.thisPlayer.fleet_id,
-        //   planet_id: player.planet_id,
-        //   planet_owner: player.id,
-        //   status: RAID_STATUS.REQUESTED
-        // });
-        //
-        // this.gameState.setRaidPlanetRaidInfo(planetRaid);
-        //
-        // MenuPage.router.goto('Fleet', 'index');
-        //
-        // this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager, this.mapManager));
-        // this.fleetManager.moveFleet(this.gameState.raidPlanetRaidInfo.planet_id).then();
       });
     })
   }

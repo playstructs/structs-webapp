@@ -276,17 +276,20 @@ export class MenuPage {
   static enablePageTemplate(
     activeNavItemId = null,
     showResources = true,
-    useTransparentBackground = false
+    useTransparentBackground = false,
+    useCustomResources = false,
+    customResourcesHTML = '',
+    initCustomPageTemplateCode = () => {}
   ) {
 
     MenuPage.setNavItems(MenuPage.menuNavItems, activeNavItemId);
     MenuPage.enableCloseBtn();
 
-    let headerResourcesHTML = '';
+    let headerResourcesHTML = useCustomResources ? customResourcesHTML : '';
     let energyUsageComponent;
     let alphaOwnedComponent;
 
-    if (showResources) {
+    if (!useCustomResources && showResources) {
 
       energyUsageComponent = new EnergyUsageComponent(
         MenuPage.gameState,
@@ -339,12 +342,14 @@ export class MenuPage {
       MenuPage.useTransparentBackground();
     }
 
-    if (showResources) {
+    if (!useCustomResources && showResources) {
       energyUsageComponent.initPageCode();
       alphaOwnedComponent.initPageCode();
     }
 
     MenuPage.initPageTemplateNavBtnListener();
+
+    initCustomPageTemplateCode();
   }
 
   static setPageTemplateHeaderBtn(label, showBackIcon = false, handler = () => {}) {

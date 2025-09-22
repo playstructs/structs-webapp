@@ -5,6 +5,7 @@ import {RAID_STATUS} from "../../constants/RaidStatus";
 import {RaidStatusListener} from "../../grass_listeners/RaidStatusListener";
 import {MAP_CONTAINER_IDS} from "../../constants/MapConstants";
 import {PlanetRaidFactory} from "../../factories/PlanetRaidFactory";
+import {GenericResourceComponent} from "../components/GenericResourceComponent";
 
 export class PreviewViewModel extends AbstractViewModel {
 
@@ -16,7 +17,9 @@ export class PreviewViewModel extends AbstractViewModel {
    * @param {RaidManager} raidManager
    * @param {MapManager} mapManager
    * @param {string} planet_id
+   * @param {number} planet_undiscovered_ore
    * @param {string} defender_id
+   * @param {number} defender_ore
    * @param {string|null} attacker_id
    */
   constructor(
@@ -27,7 +30,9 @@ export class PreviewViewModel extends AbstractViewModel {
     raidManager,
     mapManager,
     planet_id,
+    planet_undiscovered_ore,
     defender_id,
+    defender_ore,
     attacker_id = null
   ) {
     super();
@@ -38,11 +43,15 @@ export class PreviewViewModel extends AbstractViewModel {
     this.raidManager = raidManager;
     this.mapManager = mapManager;
     this.planet_id = planet_id;
+    this.planet_undiscovered_ore = planet_undiscovered_ore;
     this.defender_id = defender_id;
+    this.defender_ore = defender_ore;
     this.attacker_id = attacker_id;
     this.numberFormatter = new NumberFormatter();
     this.planetRaidFactory = new PlanetRaidFactory();
     this.launchFleetBtnId = 'launch-fleet';
+    this.undiscoveredOreId = 'preview-planet-undiscovered-ore';
+    this.alphaOreId = 'preview-defender-ore-mined';
   }
 
   initPageCode() {
@@ -102,7 +111,40 @@ export class PreviewViewModel extends AbstractViewModel {
         this.mapManager.showMap(MAP_CONTAINER_IDS.PREVIEW);
         this.gameState.previewMap.render();
 
-        MenuPage.enablePageTemplate(MenuPage.navItemFleetId, true, true);
+        const genericResourceComponent = new GenericResourceComponent(MenuPage.gameState);
+
+        const headerResourcesHTML = `
+          <div class="sui-page-header-resources">
+            ${
+              genericResourceComponent.renderHTML(
+                this.undiscoveredOreId,
+                'sui-icon-undiscovered-ore',
+                'Undiscovered Ore',
+                this.numberFormatter.format(this.planet_undiscovered_ore)
+              )
+            }
+            ${
+              genericResourceComponent.renderHTML(
+                this.alphaOreId,
+                'sui-icon-alpha-ore',
+                'Ore Mined',
+                this.numberFormatter.format(this.defender_ore)
+              )
+            }
+          </div>
+        `;
+
+        MenuPage.enablePageTemplate(
+          MenuPage.navItemFleetId,
+          false,
+          true,
+          true,
+            headerResourcesHTML,
+            () => {
+              (genericResourceComponent.getPageCode(this.undiscoveredOreId))();
+              (genericResourceComponent.getPageCode(this.alphaOreId))();
+            }
+        );
 
         MenuPage.setPageTemplateHeaderBtn(this.renderUsernameHTML(defender), true, () => {
           MenuPage.router.back();

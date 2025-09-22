@@ -90,7 +90,9 @@ export class FleetController extends AbstractController {
       this.raidManager,
       this.mapManager,
       options.planet_id,
+      options.planet_undiscovered_ore,
       options.defender_id,
+      options.defender_ore,
       options.attacker_id
     );
     viewModel.render();
