@@ -4,6 +4,7 @@ import {NumberFormatter} from "../../util/NumberFormatter";
 import {RAID_STATUS} from "../../constants/RaidStatus";
 import {RaidStatusListener} from "../../grass_listeners/RaidStatusListener";
 import {MAP_CONTAINER_IDS} from "../../constants/MapConstants";
+import {PlanetRaidFactory} from "../../factories/PlanetRaidFactory";
 
 export class PreviewViewModel extends AbstractViewModel {
 
@@ -40,6 +41,7 @@ export class PreviewViewModel extends AbstractViewModel {
     this.defender_id = defender_id;
     this.attacker_id = attacker_id;
     this.numberFormatter = new NumberFormatter();
+    this.planetRaidFactory = new PlanetRaidFactory();
     this.launchFleetBtnId = 'launch-fleet';
   }
 
