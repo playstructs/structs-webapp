@@ -41,7 +41,7 @@ export class HUDViewModel extends AbstractViewModel {
         'Account',
       ];
       if (!allowedControllers.includes(MenuPage.router.currentController)) {
-        MenuPage.router.goto('Account', 'index');
+        MenuPage.router.goto('Fleet', 'index');
       } else {
         MenuPage.router.goto(MenuPage.router.currentController, MenuPage.router.currentPage, MenuPage.router.currentOptions);
       }
