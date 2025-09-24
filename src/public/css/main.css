@@ -1827,13 +1827,17 @@ img.guild-reactor-img {
 only screen and (min-height: 1024px) {
   #menu-page-layout,
   #hud-container,
-  #alpha-base-map-container {
+  #alpha-base-map-container,
+  #raid-map-container,
+  #preview-map-container,
+  #loading-screen {
     transform: scale(2);
     transform-origin: 0 0;
   }
 
   #menu-page-layout,
-  #hud-container {
+  #hud-container,
+  #loading-screen {
     width: 50vw;
     height: 50vh;
   }
@@ -1842,13 +1846,17 @@ only screen and (min-height: 1024px) {
 only screen and (min-height: 2048px) {
   #menu-page-layout,
   #hud-container,
-  #alpha-base-map-container {
+  #alpha-base-map-container,
+  #raid-map-container,
+  #preview-map-container,
+  #loading-screen {
     transform: scale(4);
     transform-origin: 0 0;
   }
 
   #menu-page-layout,
-  #hud-container {
+  #hud-container,
+  #loading-screen {
     width: 25vw;
     height: 25vh;
   }
