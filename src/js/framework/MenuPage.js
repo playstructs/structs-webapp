@@ -58,6 +58,8 @@ export class MenuPage {
 
   static navItemAccountId = 'nav-item-Account';
 
+  static loadingScreenId = 'loading-screen';
+
   /* Element IDs End */
 
   static router = new MenuPageRouter();
@@ -370,5 +372,9 @@ export class MenuPage {
   static useOpaqueBackground() {
     document.getElementById(this.screenBodyId).classList.remove('hidden-background');
     document.getElementById(this.panelChunkId).classList.remove('hidden-background');
+  }
+
+  static hideLoadingScreen() {
+    document.getElementById(MenuPage.loadingScreenId).classList.add('hidden');
   }
 }

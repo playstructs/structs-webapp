@@ -91,12 +91,13 @@
 
   /* -- Positioning Start -- */
 
-  --map-z-index: 10;
-  --hud-z-index: 50;
-  --menu-z-index: 10;
+  --loading-screen-z-index: 10000;
   --menu-page-z-index: 1000;
-  --menu-page-fill-background-z-index: -1; /* Relative to --menu-page-z-index */
   --popup-z-index: 100;
+  --hud-z-index: 50;
+  --map-z-index: 10;
+  --menu-z-index: 10;
+  --menu-page-fill-background-z-index: -1; /* Relative to --menu-page-z-index */
 
   /* -- Positioning End */
 

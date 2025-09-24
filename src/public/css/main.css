@@ -546,6 +546,34 @@ a.sui-text-secondary:hover {
 
 /* Menu Page Component Styling End */
 
+/* Loading Screen Start */
+
+#loading-screen {
+  position: fixed;
+  z-index: var(--loading-screen-z-index);
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  background: url("/img/sui/page/page-background.png") repeat var(--page-background);
+}
+
+img.loading-assets {
+  width: 128px;
+}
+
+#loading-screen h1 {
+  margin: 0;
+  font-size: 8px;
+}
+
+/* Loading Screen End */
+
 /* Common Containers Start */
 
 /*

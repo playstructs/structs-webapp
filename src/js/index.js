@@ -148,6 +148,8 @@ hud.initPageCode();
 
 if (!gameState.thisPlayerId) {
   MenuPage.router.goto('Auth', 'index');
+
+  MenuPage.hideLoadingScreen();
 } else {
   authManager.login(gameState.thisPlayerId).then(() => {
 
@@ -155,7 +157,8 @@ if (!gameState.thisPlayerId) {
 
     MenuPage.close();
     // MenuPage.router.goto('Account', 'index');
-    MenuPage.router.restore('Account', 'index');
+    MenuPage.router.restore('Fleet', 'index');
 
+    MenuPage.hideLoadingScreen();
   });
 }
