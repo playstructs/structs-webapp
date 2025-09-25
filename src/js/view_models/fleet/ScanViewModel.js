@@ -86,7 +86,7 @@ export class ScanViewModel extends AbstractViewModel {
           options + `<option value="${guild.id}">${guild.name ? guild.name : guild.id}</option>`
         , '');
 
-      MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
+      MenuPage.enablePageTemplate(MenuPage.navItemFleetId);
 
       MenuPage.setPageTemplateHeaderBtn(
         'Scan',
