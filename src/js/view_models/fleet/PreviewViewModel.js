@@ -89,7 +89,7 @@ export class PreviewViewModel extends AbstractViewModel {
       : `PID #${player.id}`;
 
 
-    return `${tag} ${username}`;
+    return `<span>${tag} ${username}</span>`;
   }
 
   render() {
