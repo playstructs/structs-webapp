@@ -42,14 +42,25 @@ export class GuildsDirectoryViewModel extends AbstractViewModel {
   }
 
   /**
+   * @param {GuildSearchResultDTO} guildSearchResultDTO
    * @return {string}
    */
-  renderIconHTML() {
-    return `
-      <div class="sui-result-row-portrait">
-        <div class="sui-result-row-portrait-image"></div>
+  renderIconHTML(guildSearchResultDTO) {
+    let html = `
+      <div class="sui-result-row-portrait-icon sui-text-secondary">
+        <i class="sui-icon sui-icon-md icon-unknown"></i>
       </div>
     `;
+
+    if (guildSearchResultDTO.logo) {
+      html = `
+        <div class="sui-result-row-portrait">
+          <img src="${guildSearchResultDTO.logo}" alt="Guild ${guildSearchResultDTO.name}'s logo">
+        </div>
+      `;
+    }
+
+    return html;
   }
 
   /**
@@ -76,7 +87,7 @@ export class GuildsDirectoryViewModel extends AbstractViewModel {
    */
   renderResultRowHTML(guildSearchResultDTO) {
 
-    const iconHTML = this.renderIconHTML();
+    const iconHTML = this.renderIconHTML(guildSearchResultDTO);
     const guildInfoHTML = this.renderGuildInfoHTML(guildSearchResultDTO);
     const btnId = `guild-search-result-${guildSearchResultDTO.guild_id}`;
 

@@ -58,25 +58,14 @@ export class ScanResultsViewModel extends AbstractViewModel {
   }
 
   /**
-   * @param {PlayerSearchResultDTO} playerSearchResultDTO
    * @return {string}
    */
-  renderIconHTML(playerSearchResultDTO) {
-    let html = `
+  renderIconHTML() {
+    return `
       <div class="sui-result-row-portrait">
         <div class="sui-result-row-portrait-image"></div>
       </div>
     `;
-
-    if (!playerSearchResultDTO.pfp) {
-      html = `
-        <div class="sui-result-row-portrait-icon sui-text-secondary">
-          <i class="sui-icon sui-icon-md icon-unknown"></i>
-        </div>
-      `;
-    }
-
-    return html;
   }
 
   /**
@@ -110,7 +99,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
    */
   renderResultRowHTML(playerSearchResultDTO) {
 
-    const iconHTML = this.renderIconHTML(playerSearchResultDTO);
+    const iconHTML = this.renderIconHTML();
     const playerInfoHTML = this.renderPlayerInfoHTML(playerSearchResultDTO);
     const btnId = `scan-${playerSearchResultDTO.id}`;
 

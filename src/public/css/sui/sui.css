@@ -1612,6 +1612,12 @@ a.sui-resource:visited {
   justify-content: center;
 }
 
+.sui-result-row-portrait img {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+}
+
 .sui-result-row-portrait-image {
   box-sizing: border-box;
   width: 44px;
