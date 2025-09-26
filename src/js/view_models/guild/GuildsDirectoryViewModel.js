@@ -103,7 +103,7 @@ export class GuildsDirectoryViewModel extends AbstractViewModel {
               ${
                 this.genericResourceComponent.renderHTML(
                   this.membersId,
-                  'icon-member',
+                  'sui-icon-players',
                   'Number of members in the guild',
                   this.numberFormatter.format(guildSearchResultDTO.members)
                 )
