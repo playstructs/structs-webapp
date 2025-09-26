@@ -2240,9 +2240,11 @@ label.sui-form-element-group-label {
 .sui-message-inline-alert-text {
   display: flex;
   padding: var(--spacing-xs) 0;
+  flex-direction: column;
   align-items: flex-start;
-
+  gap: var(--spacing-md);
   color: var(--text-body);
+  text-align: left;
 }
 
 /* ---- Messages End ---- */

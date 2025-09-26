@@ -69,6 +69,34 @@ export class GuildProfileViewModel extends AbstractViewModel {
     }.bind(this));
   }
 
+  renderJoinWarningHTML() {
+    if (this.guild.id === this.gameState.thisGuild.id) {
+      return '';
+    }
+
+    let guildWebsiteLink = '';
+
+    if (this.guild.website) {
+      guildWebsiteLink = `
+        <a 
+          href="${this.guild.website}" 
+          class="sui-mod-secondary"
+          target="_blank"
+        >Visit the ${this.guild.name} Guild Site <i class="sui-icon sui-icon-sm icon-link-out"></i></a>
+      `;
+    }
+
+    return `
+      <div class="sui-message-inline-alert sui-mod-warning">
+        <i class="sui-icon sui-icon-md icon-info"></i>
+        <div class="sui-message-inline-alert-text">
+          Players joining a Guild are required to play Structs through that Guild’s external game client.
+          ${guildWebsiteLink}
+        </div>
+      </div>
+    `;
+  }
+
   renderJoinBtnsHTML() {
     let discordBtn = '';
     let guildBtn = '';
@@ -143,6 +171,8 @@ export class GuildProfileViewModel extends AbstractViewModel {
               </div>
             </div>
           </div>
+          
+          ${this.renderJoinWarningHTML()}
           
           ${this.renderJoinBtnsHTML()}
           
