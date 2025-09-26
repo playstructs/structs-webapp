@@ -63,6 +63,26 @@ export class FleetIndexViewModel extends AbstractViewModel {
     })
   }
 
+  renderRaidLogBtnHTML() {
+    if (
+      this.gameState.raidPlanetRaidInfo === null
+      || !this.gameState.raidPlanetRaidInfo.isRaidActive()
+    ) {
+      return '';
+    }
+
+    return `
+      <div>
+        <a href="javascript: void(0)" class="fleet-card-log-btn">
+          <div class="fleet-card-log-btn-icon-wrapper">
+            <i class="sui-icon sui-icon-sm icon-combat-log sui-text-secondary"></i>
+          </div>
+          <span class="sui-text-header">Raid Log</span>
+        </a>
+      </div>
+    `;
+  }
+
   render() {
 
     MenuPage.enablePageTemplate(MenuPage.navItemFleetId);
@@ -92,6 +112,8 @@ export class FleetIndexViewModel extends AbstractViewModel {
           <div id="${this.raidCardContainerId}" class="fleet-card-wrapper">
             
             ${this.raidCard.renderHTML()}
+            
+            ${this.renderRaidLogBtnHTML()}
             
           </div>
           
