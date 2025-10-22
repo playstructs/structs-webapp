@@ -10,6 +10,7 @@ import {MapFogOfWarComponent} from "./MapFogOfWarComponent";
 import {MAP_ORNAMENTS} from "../../../constants/MapConstants";
 import {PLAYER_MAP_ROLES} from "../../../constants/PlayerMapRoles";
 import {MAP_PERSPECTIVES} from "../../../constants/MapPerspectives";
+import {MapTileSelectionComponent} from "./MapTileSelectionComponent";
 
 export class MapComponent extends AbstractViewModelComponent {
 
@@ -34,6 +35,7 @@ export class MapComponent extends AbstractViewModelComponent {
     this.ornamentsId = `${this.idPrefix}-map-ornaments`;
     this.markersId = `${this.idPrefix}-map-markers`;
     this.fogOfWarId = `${this.idPrefix}-map-fog-of-war`;
+    this.tileSelectionId = `${this.idPrefix}-map-tile-selection`;
 
     /** @type {Planet|null} */
     this.planet = null;
@@ -65,6 +67,9 @@ export class MapComponent extends AbstractViewModelComponent {
 
     /** @type {MapFogOfWarComponent|null} */
     this.mapFogOfWar = null;
+
+    /** @type {MapTileSelectionComponent|null} */
+    this.mapTileSelection = null;
   }
 
   /**
@@ -166,6 +171,14 @@ export class MapComponent extends AbstractViewModelComponent {
       mapColBreakdown,
       this.planet
     );
+
+    this.mapTileSelection = new MapTileSelectionComponent(
+      this.gameState,
+      mapColBreakdown,
+      this.planet,
+      this.defender,
+      this.attacker
+    )
   }
 
   /**
@@ -178,6 +191,7 @@ export class MapComponent extends AbstractViewModelComponent {
         <div id="${this.ornamentsId}" class="map-ornaments"></div>
         <div id="${this.markersId}" class="map-markers"></div>
         <div id="${this.fogOfWarId}" class="map-fog-of-war-anchor"></div>
+        <div id="${this.tileSelectionId}" class="map-tile-selection"></div>
       </div>
     `;
   }
@@ -200,5 +214,8 @@ export class MapComponent extends AbstractViewModelComponent {
     if (this.shouldDisplayFogOfWar()) {
       document.getElementById(this.fogOfWarId).innerHTML = this.mapFogOfWar.renderHTML();
     }
+
+    document.getElementById(this.tileSelectionId).innerHTML = this.mapTileSelection.renderHTML();
+    this.mapTileSelection.initPageCode();
   }
 }

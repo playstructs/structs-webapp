@@ -90,8 +90,8 @@ export class MapTileMarkersComponent extends AbstractViewModelComponent {
 
       for (let r = 0; r < MAP_TILE_ROWS_PER_AMBIT; r++) {
 
-        let colLoopInit = this.mapColBreakdown.length;
-        let colLoopTest = c => c > 0;
+        let colLoopInit = this.mapColBreakdown.length - 1;
+        let colLoopTest = c => c >= 0;
         let colLoopAdvance = c => c - 1;
 
         // If it's the view is from the attacker's perspective
