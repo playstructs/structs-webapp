@@ -254,6 +254,26 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * @param {string} mapColType
+   * @param {string} ambit
+   * @return {string}
+   */
+  renderDividerTileHTML(
+    mapColType,
+    ambit
+  ) {
+    if (mapColType !== MAP_COL_DIVIDER) {
+      return '';
+    }
+
+    return this.renderSelectionTileHTML(
+      MAP_TILE_TYPES.DIVIDER,
+      '',
+      ambit
+    );
+  }
+
+  /**
    * @param {string} targetColType
    * @return {{first: null|number, last: null|number}}
    */
@@ -344,6 +364,8 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
           const mapColType = this.mapColBreakdown[c];
 
+          // TODO: Missing divider tile
+
           html += this.renderFogOfWarTileHTML(mapColType)
             || this.renderCommandTileHTML(mapColType, currentAmbit)
             || this.renderPlanetaryTileHTML(
@@ -360,7 +382,9 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
               mapColType,
               currentAmbit,
               this.calcSlotNumber(MAP_COL_ATTACKER_FLEET, r, c, totalFleetSlotsPerAmbitPerPlayer)
-            );
+            )
+            || this.renderDividerTileHTML(mapColType, currentAmbit)
+          ;
         }
 
         html += `</div>`;
