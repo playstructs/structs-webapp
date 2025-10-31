@@ -1,0 +1,4 @@
+export const MENU_PAGE_ROUTER_MODES = {
+  DEFAULT: 'DEFAULT',
+  PREVIEW: 'PREVIEW'
+};

@@ -1,3 +1,5 @@
+import {MENU_PAGE_ROUTER_MODES} from "../constants/MenuPageRouterModes";
+
 export class MenuPageRouter {
   constructor() {
     this.controllers = new Map();
@@ -9,6 +11,8 @@ export class MenuPageRouter {
     this.lastController = null;
     this.lastPage = null;
     this.lastOptions = {};
+
+    this.mode = MENU_PAGE_ROUTER_MODES.DEFAULT;
   }
 
   registerController(controller) {
@@ -16,30 +20,32 @@ export class MenuPageRouter {
   }
 
   goto(controllerName, pageName, options = {}) {
-    if (!(
-      this.currentController === controllerName
-      && this.currentPage === pageName
-      && JSON.stringify(this.currentOptions) === JSON.stringify(options)
-    )) {
-      this.lastController = this.currentController;
-      this.lastPage = this.currentPage;
-      this.lastOptions = this.currentOptions;
+    if (this.mode !== MENU_PAGE_ROUTER_MODES.PREVIEW) {
+      if (!(
+        this.currentController === controllerName
+        && this.currentPage === pageName
+        && JSON.stringify(this.currentOptions) === JSON.stringify(options)
+      )) {
+        this.lastController = this.currentController;
+        this.lastPage = this.currentPage;
+        this.lastOptions = this.currentOptions;
 
-      this.currentController = controllerName;
-      this.currentPage = pageName;
-      this.currentOptions = options;
+        this.currentController = controllerName;
+        this.currentPage = pageName;
+        this.currentOptions = options;
+      }
+
+      localStorage.setItem("lastMenuPage", JSON.stringify({
+        controller: this.lastController,
+        page: this.lastPage,
+        options: this.lastOptions
+      }))
+      localStorage.setItem("currentMenuPage", JSON.stringify({
+        controller: controllerName,
+        page: pageName,
+        options: options
+      }));
     }
-
-    localStorage.setItem("lastMenuPage", JSON.stringify({
-      controller: this.lastController,
-      page: this.lastPage,
-      options: this.lastOptions
-    }))
-    localStorage.setItem("currentMenuPage", JSON.stringify({
-      controller: controllerName,
-      page: pageName,
-      options: options
-    }));
 
     this.controllers.get(controllerName)[pageName](options);
   }
@@ -61,6 +67,14 @@ export class MenuPageRouter {
 
       this.goto(currentMenuPage.controller, currentMenuPage.page, currentMenuPage.options);
     }
+  }
+
+  enablePreviewMode() {
+    this.mode = MENU_PAGE_ROUTER_MODES.PREVIEW;
+  }
+
+  enableDefaultMode() {
+    this.mode = MENU_PAGE_ROUTER_MODES.DEFAULT;
   }
 
 }

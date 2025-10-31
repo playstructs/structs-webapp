@@ -6,6 +6,7 @@ import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {MenuPage} from "../framework/MenuPage";
 import {HUD_IDS} from "../constants/HUDConstants";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
+import {MENU_PAGE_ROUTER_MODES} from "../constants/MenuPageRouterModes";
 
 export class HUDViewModel extends AbstractViewModel {
 
@@ -83,17 +84,24 @@ export class HUDViewModel extends AbstractViewModel {
       if (!allowedControllers.includes(MenuPage.router.currentController)) {
         MenuPage.router.goto('Fleet', 'index');
       } else {
+        if (MenuPage.router.mode !== MENU_PAGE_ROUTER_MODES.DEFAULT) {
+          MenuPage.router.enableDefaultMode();
+        }
         MenuPage.router.goto(MenuPage.router.currentController, MenuPage.router.currentPage, MenuPage.router.currentOptions);
       }
       MenuPage.open();
     };
 
-    HUDViewModel.bottomRightActionBarAlphaBase.profileClickHandler = function () {
-      console.log('Open MenuPage to the alpha base enemy profile');
+    HUDViewModel.bottomRightActionBarAlphaBase.profileClickHandler = () => {
+      MenuPage.router.enablePreviewMode();
+      MenuPage.router.goto('Account', 'profile', {playerId: this.gameState.planetRaider.id});
+      MenuPage.open();
     };
 
-    HUDViewModel.bottomRightActionBarRaid.profileClickHandler = function () {
-      console.log('Open MenuPage to the raid enemy profile');
+    HUDViewModel.bottomRightActionBarRaid.profileClickHandler = () => {
+      MenuPage.router.enablePreviewMode();
+      MenuPage.router.goto('Account', 'profile', {playerId: this.gameState.raidEnemy.id});
+      MenuPage.open();
     };
   }
 

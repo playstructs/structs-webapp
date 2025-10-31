@@ -3,6 +3,7 @@ import {NavItemDTO} from "../dtos/NavItemDTO";
 import {SUI} from "../sui/SUI";
 import {EnergyUsageComponent} from "../view_models/components/EnergyUsageComponent";
 import {AlphaOwnedComponent} from "../view_models/components/AlphaOwnedComponent";
+import {MENU_PAGE_ROUTER_MODES} from "../constants/MenuPageRouterModes";
 
 export class MenuPage {
 
@@ -101,20 +102,29 @@ export class MenuPage {
   static setNavItems(items, activeId = null) {
 
     let itemsHtml = '';
+    const isPreviewMode = MenuPage.router.mode === MENU_PAGE_ROUTER_MODES.PREVIEW;
+    let activeNavItemIndex = 0;
 
     for (let i = 0; i < items.length; i++) {
-      const activeClass= (activeId === items[i].id || (!activeId && i === 0)) ? 'sui-mod-active' : '';
+      let activeClass= '';
 
-      itemsHtml += `<a 
-        id="${items[i].id}"
-        class="sui-screen-nav-item ${activeClass}"
-        href="javascript:void(0)"
-      >${items[i].label}</a>`;
+      if (activeId === items[i].id || (!activeId && i === 0)) {
+        activeClass = 'sui-mod-active';
+        activeNavItemIndex = i;
+      }
+
+      if (!isPreviewMode || activeClass) {
+        itemsHtml += `<a 
+          id="${items[i].id}"
+          class="sui-screen-nav-item ${activeClass}"
+          href="javascript:void(0)"
+        >${items[i].label}</a>`;
+      }
     }
 
     document.getElementById(MenuPage.navItemsId).innerHTML = itemsHtml;
 
-    for (let i = 0; i < items.length; i++) {
+    for (let i = 0; !isPreviewMode && (i < items.length); i++) {
       document.getElementById(items[i].id).addEventListener('click', items[i].actionHandler);
     }
   }
@@ -290,6 +300,9 @@ export class MenuPage {
     let headerResourcesHTML = useCustomResources ? customResourcesHTML : '';
     let energyUsageComponent;
     let alphaOwnedComponent;
+    const isPreviewMode = MenuPage.router.mode === MENU_PAGE_ROUTER_MODES.PREVIEW;
+
+    showResources = !isPreviewMode && showResources;
 
     if (!useCustomResources && showResources) {
 
@@ -355,6 +368,11 @@ export class MenuPage {
   }
 
   static setPageTemplateHeaderBtn(label, showBackIcon = false, handler = () => {}) {
+    if (MenuPage.router.mode === MENU_PAGE_ROUTER_MODES.PREVIEW) {
+      showBackIcon = false;
+      handler = () => {};
+    }
+
     const backIcon = showBackIcon ? '<i class="sui-icon-sm icon-chevron-left sui-text-secondary"></i>' : '';
     document.getElementById(this.pageTemplateNavBtnId).innerHTML = `${backIcon} ${label}`;
     this.pageTemplateNavBtnHandler = handler;
