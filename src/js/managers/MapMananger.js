@@ -48,8 +48,12 @@ export class MapManager {
 
     if (mapContainerId === MAP_CONTAINER_IDS.RAID) {
       document.getElementById(HUD_IDS.STATUS_BAR_TOP_RIGHT_RAID).classList.remove('hidden');
+      document.getElementById(HUD_IDS.ACTION_BAR_RAID_ENEMY).classList.remove('hidden');
     } else if (mapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE) {
       document.getElementById(HUD_IDS.STATUS_BAR_TOP_RIGHT_ALPHA_BASE).classList.remove('hidden');
+      if (this.gameState.planetRaider) {
+        document.getElementById(HUD_IDS.ACTION_BAR_ALPHA_BASE_ENEMY).classList.remove('hidden');
+      }
     }
 
     if (

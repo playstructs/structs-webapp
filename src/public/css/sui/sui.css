@@ -994,6 +994,7 @@ div.sui-panel-connector.sui-theme-enemy {
 
 .sui-screen {
   display: inline-block;
+  width: 100%;
   box-sizing: border-box;
   border-color: transparent;
   border-style: solid;
@@ -1404,6 +1405,7 @@ a.sui-screen-portrait:hover {
   display: flex;
   padding: 0;
   align-items: flex-start;
+  align-self: stretch;
   gap: 0;
 }
 
@@ -1411,6 +1413,7 @@ a.sui-screen-portrait:hover {
   display: flex;
   height: 48px;
   align-items: flex-start;
+  align-self: stretch;
   gap: var(--spacing-xs);
 }
 

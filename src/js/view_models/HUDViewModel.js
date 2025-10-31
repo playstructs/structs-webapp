@@ -5,36 +5,76 @@ import {ActionBarComponent} from "./components/hud/ActionBarComponent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {MenuPage} from "../framework/MenuPage";
 import {HUD_IDS} from "../constants/HUDConstants";
+import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 
 export class HUDViewModel extends AbstractViewModel {
 
+  /** @type {GameState} */
+  static gameState;
+
+  /** @type {StatusBarTopLeftComponent} */
+  static topLeftStatusBar;
+
+  /** @type {StatusBarTopRightComponent} */
+  static topRightStatusBarAlphaBase;
+
+  /** @type {StatusBarTopRightComponent} */
+  static topRightStatusBarRaid;
+
+  /** @type {ActionBarComponent} */
+  static bottomLeftActionBar;
+
+  /** @type {ActionBarComponent} */
+  static bottomRightActionBarAlphaBase;
+
+  /** @type {ActionBarComponent} */
+  static bottomRightActionBarRaid;
+
   /**
-   * @param {GameState} gameState
+   * @param gameState
    */
-  constructor(gameState) {
-    super();
-    this.gameState = gameState;
-    this.topLeftStatusBar = new StatusBarTopLeftComponent(
+  static init(gameState) {
+    HUDViewModel.gameState = gameState;
+
+    HUDViewModel.topLeftStatusBar = new StatusBarTopLeftComponent(
       gameState,
       HUD_IDS.STATUS_BAR_TOP_LEFT
     );
-    this.topRightStatusBarAlphaBase = new StatusBarTopRightComponent(
+
+    HUDViewModel.topRightStatusBarAlphaBase = new StatusBarTopRightComponent(
       gameState,
       false,
       HUD_IDS.STATUS_BAR_TOP_RIGHT_ALPHA_BASE
     );
-    this.topRightStatusBarRaid = new StatusBarTopRightComponent(
+
+    HUDViewModel.topRightStatusBarRaid = new StatusBarTopRightComponent(
       gameState,
       true,
       HUD_IDS.STATUS_BAR_TOP_RIGHT_RAID
     );
-    this.bottomLeftActionBar = new ActionBarComponent(
+
+    HUDViewModel.bottomLeftActionBar = new ActionBarComponent(
       gameState,
       PLAYER_TYPES.PLAYER,
       'left',
       HUD_IDS.ACTION_BAR_PLAYER
     );
-    this.bottomLeftActionBar.profileClickHandler = function () {
+
+    HUDViewModel.bottomRightActionBarAlphaBase = new ActionBarComponent(
+      gameState,
+      PLAYER_TYPES.PLANET_RAIDER,
+      'right',
+      HUD_IDS.ACTION_BAR_ALPHA_BASE_ENEMY
+    );
+
+    HUDViewModel.bottomRightActionBarRaid = new ActionBarComponent(
+      gameState,
+      PLAYER_TYPES.RAID_ENEMY,
+      'right',
+      HUD_IDS.ACTION_BAR_RAID_ENEMY
+    );
+
+    HUDViewModel.bottomLeftActionBar.profileClickHandler = function () {
       const allowedControllers = [
         'Fleet',
         'Guild',
@@ -47,21 +87,77 @@ export class HUDViewModel extends AbstractViewModel {
       }
       MenuPage.open();
     };
+
+    HUDViewModel.bottomRightActionBarAlphaBase.profileClickHandler = function () {
+      console.log('Open MenuPage to the alpha base enemy profile');
+    };
+
+    HUDViewModel.bottomRightActionBarRaid.profileClickHandler = function () {
+      console.log('Open MenuPage to the raid enemy profile');
+    };
   }
 
-  initPageCode() {
-    this.topLeftStatusBar.initPageCode();
-    this.topRightStatusBarAlphaBase.initPageCode();
-    this.topRightStatusBarRaid.initPageCode();
-    this.bottomLeftActionBar.initPageCode();
+  static initPageCode() {
+    HUDViewModel.topLeftStatusBar.initPageCode();
+    HUDViewModel.topRightStatusBarAlphaBase.initPageCode();
+    HUDViewModel.topRightStatusBarRaid.initPageCode();
+    HUDViewModel.bottomLeftActionBar.initPageCode();
+    HUDViewModel.bottomRightActionBarAlphaBase.initPageCode();
+    HUDViewModel.bottomRightActionBarRaid.initPageCode();
   }
 
-  render() {
+  static render() {
     return `
-      ${this.topLeftStatusBar.renderHTML()}
-      ${this.topRightStatusBarAlphaBase.renderHTML()}
-      ${this.topRightStatusBarRaid.renderHTML()}
-      ${this.bottomLeftActionBar.renderHTML()}
+      ${HUDViewModel.topLeftStatusBar.renderHTML()}
+      ${HUDViewModel.topRightStatusBarAlphaBase.renderHTML()}
+      ${HUDViewModel.topRightStatusBarRaid.renderHTML()}
+      ${HUDViewModel.bottomLeftActionBar.renderHTML()}
+      ${HUDViewModel.bottomRightActionBarAlphaBase.renderHTML()}
+      ${HUDViewModel.bottomRightActionBarRaid.renderHTML()}
     `;
+  }
+
+  /**
+   * @param {string} sideClicked left or right or empty string
+   * @return {string}
+   */
+  static whichActionBar(sideClicked) {
+    let actionBar = 'bottomLeftActionBar';
+
+    if (sideClicked === 'right') {
+      if (this.gameState.activeMapContainerId === MAP_CONTAINER_IDS.RAID) {
+        actionBar = 'bottomRightActionBarRaid';
+      }
+      if (
+        this.gameState.activeMapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE
+        && this.gameState.planetRaider
+      ) {
+        actionBar = 'bottomRightActionBarAlphaBase';
+      }
+    }
+
+    return actionBar;
+  }
+
+  static hideActionBarActionChunks() {
+    HUDViewModel.bottomLeftActionBar.hideActionChunk();
+    HUDViewModel.bottomRightActionBarAlphaBase.hideActionChunk();
+    HUDViewModel.bottomRightActionBarRaid.hideActionChunk();
+  }
+
+  /**
+   * @param {HTMLElement|object} clickedDomElement
+   */
+  static showActionBar(clickedDomElement) {
+    HUDViewModel.hideActionBarActionChunks();
+
+    const actionBar = HUDViewModel.whichActionBar(clickedDomElement.dataset.side);
+
+    if (!clickedDomElement.dataset.structId) {
+      HUDViewModel[actionBar].showEmptyTile(
+        clickedDomElement.dataset.tileType,
+        clickedDomElement.dataset.tileLabel || clickedDomElement.dataset.ambit,
+      );
+    }
   }
 }

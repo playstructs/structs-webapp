@@ -142,9 +142,9 @@ const hudContainer = document.getElementById('hud-container');
 await gameState.load();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
-const hud = new HUDViewModel(gameState);
-hudContainer.innerHTML = hud.render();
-hud.initPageCode();
+HUDViewModel.init(gameState);
+hudContainer.innerHTML = HUDViewModel.render();
+HUDViewModel.initPageCode();
 
 if (!gameState.thisPlayerId) {
   MenuPage.router.goto('Auth', 'index');

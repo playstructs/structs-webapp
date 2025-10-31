@@ -55,6 +55,17 @@ export const
     DIVIDER: 'DIVIDER',
   },
 
+  MAP_TILE_TYPE_ICONS = {
+    FOG_OF_WAR: 'icon-unknown-territory',
+    TRANSITION: 'icon-blocked',
+    COMMAND: 'icon-cmd-post',
+    PLANETARY_SLOT: 'icon-beacon',
+    PLANETARY_BLOCKED: 'icon-blocked',
+    FLEET: 'icon-fleet-tile',
+    DIVIDER: 'icon-blocked',
+    ENEMY_TERRITORY: 'icon-enemy-tile',
+  },
+
   MAP_ORNAMENTS = {
     ENTERPRISE: 'ENTERPRISE',
     SPACE_MONSTER: 'SPACE_MONSTER'

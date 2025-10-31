@@ -5,6 +5,7 @@ import {
   MAP_TILE_ROWS_PER_AMBIT, MAP_TILE_TYPES, MAP_TRANSITION_TILE_LABELS
 } from "../../../constants/MapConstants";
 import {AMBITS} from "../../../constants/Ambits";
+import {HUDViewModel} from "../../HUDViewModel";
 
 export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
@@ -24,13 +25,29 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
   ) {
     super(gameState);
     this.mapColBreakdown = mapColBreakdown;
+    this.dividerIndex = this.mapColBreakdown.lastIndexOf(MAP_COL_DIVIDER);
     this.planet = planet;
     this.defender = defender;
     this.attacker = attacker;
   }
 
   /**
+   * @param {number} col
+   * @return {string}
+   */
+  getTileSide(col) {
+    if (col < this.dividerIndex) {
+      return 'left';
+    } else if (col === this.dividerIndex) {
+      return '';
+    } else {
+      return 'right';
+    }
+  }
+
+  /**
    * @param {string} tileType the tile type. See MAP_TILE_TYPES constant array.
+   * @param {string} side the side of the map the tile is on
    * @param {string} playerId the ID of the player that owns the tile or empty if no one does such as a transition tile.
    * @param {string} ambit the ambit the tile is in or empty if it's a transition tile.
    * @param {string|number} slot the planetary or fleet slot number. Empty if it's not a command, planetary, fleet or command tile.
@@ -40,6 +57,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
    */
   renderSelectionTileHTML(
     tileType,
+    side = "",
     playerId = "",
     ambit = "",
     slot = "",
@@ -50,6 +68,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       <a
         class="map-tile-selection-tile"
         data-tile-type="${tileType}"
+        data-side="${side}"
         data-player-id="${playerId}"
         data-ambit="${ambit}"
         data-slot="${slot}"
@@ -81,7 +100,13 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       || (attackerSide === 'LEFT' && mapColTypeLastIndex < dividerIndex)
     ) {
       return this.renderSelectionTileHTML(
-        MAP_TILE_TYPES.FOG_OF_WAR
+        MAP_TILE_TYPES.FOG_OF_WAR,
+        attackerSide.toLowerCase(),
+        '',
+        '',
+        '',
+        '',
+        'Unknown Territory'
       );
     }
 
@@ -147,7 +172,15 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     for (let c = 0; c < this.mapColBreakdown.length; c++) {
       tiles += this.renderFogOfWarTileHTML(this.mapColBreakdown[c])
-        || this.renderSelectionTileHTML(MAP_TILE_TYPES.TRANSITION, '', '', '', '', tileLabel);
+        || this.renderSelectionTileHTML(
+          MAP_TILE_TYPES.TRANSITION,
+          this.getTileSide(c),
+          '',
+          '',
+          '',
+          '',
+          tileLabel
+        );
     }
 
     return `
@@ -159,10 +192,15 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
   /**
    * @param {string} mapColType
+   * @param {string} side
    * @param {string} ambit
    * @return {string}
    */
-  renderCommandTileHTML(mapColType, ambit) {
+  renderCommandTileHTML(
+    mapColType,
+    side,
+    ambit
+  ) {
     let playerId = '';
 
     if (mapColType === MAP_COL_DEFENDER_COMMAND) {
@@ -175,6 +213,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     return this.renderSelectionTileHTML(
       MAP_TILE_TYPES.COMMAND,
+      side,
       playerId,
       ambit
     );
@@ -182,12 +221,14 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
   /**
    * @param {string} mapColType
+   * @param {string} side
    * @param {string} ambit
    * @param {string} slot
    * @return {string}
    */
   renderPlanetaryTileHTML(
     mapColType,
+    side,
     ambit,
     slot
   ) {
@@ -201,6 +242,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     return this.renderSelectionTileHTML(
       tileType,
+      side,
       this.defender.id,
       ambit,
       slot
@@ -209,12 +251,14 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
   /**
    * @param {string} mapColType
+   * @param {string} side
    * @param {string} ambit
    * @param {string} slot
    * @return {string}
    */
   renderDefenderFleetTileHTML(
     mapColType,
+    side,
     ambit,
     slot
   ) {
@@ -224,6 +268,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     return this.renderSelectionTileHTML(
       MAP_TILE_TYPES.FLEET,
+      side,
       this.defender.id,
       ambit,
       slot
@@ -232,12 +277,14 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
   /**
    * @param {string} mapColType
+   * @param {string} side
    * @param {string} ambit
    * @param {string} slot
    * @return {string}
    */
   renderAttackerFleetTileHTML(
     mapColType,
+    side,
     ambit,
     slot
   ) {
@@ -247,6 +294,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     return this.renderSelectionTileHTML(
       MAP_TILE_TYPES.FLEET,
+      side,
       this.attacker.id,
       ambit,
       slot
@@ -268,6 +316,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     return this.renderSelectionTileHTML(
       MAP_TILE_TYPES.DIVIDER,
+      '',
       '',
       ambit
     );
@@ -334,6 +383,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
   initPageCode() {
     document.querySelectorAll('a.map-tile-selection-tile').forEach(tile => {
       tile.addEventListener('click', (e) => {
+        HUDViewModel.showActionBar(e.currentTarget);
         console.log(e.currentTarget);
       });
     });
@@ -363,23 +413,25 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
         for (let c = 0; c < this.mapColBreakdown.length; c++) {
 
           const mapColType = this.mapColBreakdown[c];
-
-          // TODO: Missing divider tile
+          let side = this.getTileSide(c);
 
           html += this.renderFogOfWarTileHTML(mapColType)
-            || this.renderCommandTileHTML(mapColType, currentAmbit)
+            || this.renderCommandTileHTML(mapColType, side, currentAmbit)
             || this.renderPlanetaryTileHTML(
               mapColType,
+              side,
               currentAmbit,
               this.calcSlotNumber(MAP_COL_DEFENDER_PLANETARY, r, c, numPlanetarySlots)
             )
             || this.renderDefenderFleetTileHTML(
               mapColType,
+              side,
               currentAmbit,
               this.calcSlotNumber(MAP_COL_DEFENDER_FLEET, r, c, totalFleetSlotsPerAmbitPerPlayer)
             )
             || this.renderAttackerFleetTileHTML(
               mapColType,
+              side,
               currentAmbit,
               this.calcSlotNumber(MAP_COL_ATTACKER_FLEET, r, c, totalFleetSlotsPerAmbitPerPlayer)
             )
