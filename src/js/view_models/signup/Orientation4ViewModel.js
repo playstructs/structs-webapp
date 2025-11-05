@@ -31,10 +31,6 @@ export class Orientation4ViewModel extends AbstractViewModel {
     });
   }
 
-  initPageCode() {
-    MenuPage.sui.tooltip.init(document.getElementById('catastrophicLossHint'));
-  }
-
   render() {
     const navItems = [
       new NavItemDTO(
@@ -79,6 +75,5 @@ export class Orientation4ViewModel extends AbstractViewModel {
     };
 
     this.initLottieAnimations();
-    this.initPageCode();
   }
 }

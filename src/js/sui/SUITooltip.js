@@ -16,22 +16,16 @@ export class SUITooltip extends SUIFeature {
   }
 
   /**
-   * @param {HTMLElement} trigger
-   * @return {HTMLDivElement}
-   */
-  buildTooltipHTML(trigger) {
-    const div = document.createElement('div');
-    div.id = `${trigger.id}-message`;
-    div.classList.add('sui-tooltip');
-    div.innerHTML = trigger.dataset.suiTooltip;
-    return div;
-  }
-
-  /**
    * @param {HTMLElement} tooltipHtmlElement
    */
   clearPointerPressedTimer(tooltipHtmlElement) {
     tooltipHtmlElement.classList.remove('sui-mod-show');
+
+    // If there is an existing tooltip, remove it.
+    if (tooltipHtmlElement.parentElement) {
+      tooltipHtmlElement.parentElement.removeChild(tooltipHtmlElement);
+    }
+
     clearTimeout(SUITooltip.pointerPressedTimer);
   }
 
@@ -42,10 +36,28 @@ export class SUITooltip extends SUIFeature {
   pointerPressed(tooltipElm, tooltipTriggerElm) {
     clearTimeout(SUITooltip.pointerPressedTimer);
 
+    // If there is an existing tooltip, remove it.
+    if (tooltipElm.parentElement) {
+      tooltipElm.parentElement.removeChild(tooltipElm);
+    }
+
     SUITooltip.pointerPressedTimer = setTimeout(function() {
+
+      // To position the tooltip the parent also must have position defined.
+      const parentStyle = getComputedStyle(tooltipTriggerElm.parentElement);
+      if (parentStyle.getPropertyValue('position') === 'static') {
+        tooltipTriggerElm.parentElement.style.position = 'relative';
+      }
+
+      // Add the tooltip to the triggering element's parent, so that the tool tip stays relative to the target.
+      tooltipTriggerElm.parentElement.appendChild(tooltipElm);
+
+      // Set the tooltip content based on the triggering elements data attribute
+      tooltipElm.innerHTML = tooltipTriggerElm.dataset.suiTooltip;
+
+      // Show the tool tip
       tooltipElm.classList.add('sui-mod-show');
 
-      tooltipElm.style.position = 'absolute';
       this.util.horizontallyCenter(tooltipElm, tooltipTriggerElm);
 
       if (tooltipTriggerElm.dataset.suiModPlacement === 'bottom') {
@@ -57,53 +69,44 @@ export class SUITooltip extends SUIFeature {
     }.bind(this), 100);
   }
 
-  init(tooltipTrigger) {
-    const tooltipElm = this.buildTooltipHTML(tooltipTrigger);
-    tooltipTrigger.parentElement.appendChild(tooltipElm);
+  /**
+   * Initialize all tooltips on the page.
+   */
+  autoInitAll() {
 
-    // To position the tooltip the parent also must have position defined.
-    const parentStyle = getComputedStyle(tooltipTrigger.parentElement);
-    if (parentStyle.getPropertyValue('position') === 'static') {
-      tooltipTrigger.parentElement.style.position = 'relative';
-    }
+    const tooltipElm = document.createElement('div');
+    tooltipElm.id = `sui-tooltip-container`;
+    tooltipElm.classList.add('sui-tooltip');
+    tooltipElm.style.position = 'absolute';
 
     let pressedEvent = 'mousedown';
     let releasedEvent = 'mouseup';
 
-    // Attach relevant pointer event listeners for mobile or desktop
-    if(window.matchMedia("(pointer: coarse)").matches) {
+    if (window.matchMedia("(pointer: coarse)").matches) {
       pressedEvent = 'touchstart';
       releasedEvent = 'touchend';
 
       // Press and hold on mobile also fires a contextmenu event which we need to block
       // because it can obscure the tooltip and also cause inadvertent actions.
-      tooltipTrigger.addEventListener("contextmenu", (event) => {
-        event.preventDefault();
+      document.body.addEventListener('contextmenu', (e) => {
+        if (e.target.parentElement.matches('[data-sui-tooltip]')) {
+          e.preventDefault();
+        }
       }, { passive: false });
-
     }
 
-    tooltipTrigger.addEventListener(pressedEvent, function() {
-      this.pointerPressed(tooltipElm, tooltipTrigger);
+    document.body.addEventListener(pressedEvent, function (e) {
+      if (e.target.matches('[data-sui-tooltip]')) {
+        this.pointerPressed(tooltipElm, e.target);
+      }
+      if (e.target.parentElement.matches('[data-sui-tooltip]')) {
+        this.pointerPressed(tooltipElm, e.target.parentElement);
+      }
+
     }.bind(this), { passive: true });
 
     window.addEventListener(releasedEvent, function () {
       this.clearPointerPressedTimer(tooltipElm);
     }.bind(this), { passive: true });
-  }
-
-  /**
-   * Initialize all tooltips on the page.
-   */
-  autoInitAll() {
-    let tooltips = document.querySelectorAll('[data-sui-tooltip]');
-
-    if (tooltips.length === 0) {
-      return;
-    }
-
-    tooltips.forEach(tooltipTrigger => {
-      this.init(tooltipTrigger);
-    });
   }
 }

@@ -13,11 +13,6 @@ export class Orientation8ViewModel extends AbstractViewModel {
     view.actionOnSequenceEnd = () => {
       MenuPage.router.goto('Auth', 'orientationEnd');
     }
-    view.initPageCode = function () {
-      if (this.dialogueIndex === 1) {
-        MenuPage.sui.tooltip.init(document.getElementById('seeFullMessageHint'));
-      }
-    };
     view.render();
   }
 }

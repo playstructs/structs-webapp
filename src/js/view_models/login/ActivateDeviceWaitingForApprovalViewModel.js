@@ -21,7 +21,6 @@ export class ActivateDeviceWaitingForApprovalViewModel extends AbstractViewModel
     document.getElementById(this.blockieWrapperId).append(
       this.blockies.createBlockie(this.gameState.signingAccount.address)
     );
-    MenuPage.sui.tooltip.init(document.getElementById(this.deviceSealHintId));
   }
 
   render () {

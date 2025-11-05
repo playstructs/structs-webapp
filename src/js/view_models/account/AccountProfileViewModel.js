@@ -34,10 +34,6 @@ export class AccountProfileViewModel extends AbstractViewModel {
     this.oreStolenId = 'account-profile-ore-stolen';
     this.oreLostId = 'account-profile-ore-lost';
     this.genericResourceComponent = new GenericResourceComponent(gameState);
-    this.genericResourcePageCode = [
-      this.genericResourceComponent.getPageCode(this.alphaMatterId),
-      this.genericResourceComponent.getPageCode(this.alphaInfusedId),
-    ];
     this.alphaInfused = 0;
     this.playerOreStats = null;
     this.playerPlanetsCompleted = 0;
@@ -73,11 +69,6 @@ export class AccountProfileViewModel extends AbstractViewModel {
   }
 
   initPageCode() {
-
-    for (let i = 0; i < this.genericResourcePageCode.length; i++) {
-      this.genericResourcePageCode[i]();
-    }
-
     if (this.isOwnProfile) {
       document.getElementById(this.editUsernameBtnId).addEventListener('click', function () {
         MenuPage.router.goto('Account', 'changeUsername');

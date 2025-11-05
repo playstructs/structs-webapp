@@ -1,6 +1,5 @@
 import {AbstractViewModelComponent} from "../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../constants/Events";
-import {MenuPage} from "../../framework/MenuPage";
 
 export class EnergyUsageComponent extends AbstractViewModelComponent {
 
@@ -44,8 +43,6 @@ export class EnergyUsageComponent extends AbstractViewModelComponent {
     energyUsageNumbersContainer.innerText = this.getEnergyUsage();
 
     window.addEventListener(EVENTS.ENERGY_USAGE_CHANGED, this.energyUsageHandler);
-
-    MenuPage.sui.tooltip.init(document.getElementById(this.elementId));
   }
 
   renderHTML() {

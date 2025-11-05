@@ -24,12 +24,6 @@ export class Orientation6ViewModel extends AbstractViewModel {
       `Structs are not officially recognized as sentient lifeforms by the Alpha Star Council, granting them sole access to Alpha-laced worlds.`
     ];
 
-    view.pageCodeSequence = {
-      0: () => {
-        MenuPage.sui.tooltip.init(document.getElementById('dialogueStructsHint'));
-      }
-    };
-
     view.actionOnSequenceEnd = () => {
       MenuPage.router.goto('Auth', 'orientation7');
     }

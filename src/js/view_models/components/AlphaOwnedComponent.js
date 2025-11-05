@@ -1,6 +1,5 @@
 import {AbstractViewModelComponent} from "../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../constants/Events";
-import {MenuPage} from "../../framework/MenuPage";
 
 export class AlphaOwnedComponent extends AbstractViewModelComponent {
 
@@ -35,8 +34,6 @@ export class AlphaOwnedComponent extends AbstractViewModelComponent {
     alphaOwnedNumbersContainer.innerText = this.getAlphaOwned();
 
     window.addEventListener(EVENTS.ALPHA_COUNT_CHANGED, this.alphaOwnedHandler);
-
-    MenuPage.sui.tooltip.init(document.getElementById(this.elementId));
   }
 
   renderHTML() {

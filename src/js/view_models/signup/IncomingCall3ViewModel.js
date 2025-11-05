@@ -12,11 +12,6 @@ export class IncomingCall3ViewModel extends AbstractViewModel {
     view.actionOnSequenceEnd = () => {
       MenuPage.router.goto('Auth', 'signupSetUsername');
     }
-    view.initPageCode = function () {
-      if (this.dialogueIndex === 1) {
-        MenuPage.sui.tooltip.init(document.getElementById('employeeOrientationHint'));
-      }
-    };
     view.render();
   }
 }

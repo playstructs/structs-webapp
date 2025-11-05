@@ -29,14 +29,6 @@ export class GuildProfileViewModel extends AbstractViewModel {
     this.alphaInfusedId = 'guild-profile-alpha-infused';
     this.energyUsageId = 'guild-profile-energy-usage';
 
-    this.genericResourcePageCode = [
-      this.genericResourceComponent.getPageCode(this.guildMinimumId),
-      this.genericResourceComponent.getPageCode(this.baseEnergySupplyId),
-      this.genericResourceComponent.getPageCode(this.commissionId),
-      this.genericResourceComponent.getPageCode(this.alphaInfusedId),
-      this.genericResourceComponent.getPageCode(this.energyUsageId),
-    ];
-
     this.guild = null;
     this.powerStats = 0;
     this.membersCount = null;
@@ -59,9 +51,6 @@ export class GuildProfileViewModel extends AbstractViewModel {
   }
 
   initPageCode() {
-    for (let i = 0; i < this.genericResourcePageCode.length; i++) {
-      this.genericResourcePageCode[i]();
-    }
     document.getElementById(this.copyGidBtnId).addEventListener('click', async function () {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(this.guild.id);

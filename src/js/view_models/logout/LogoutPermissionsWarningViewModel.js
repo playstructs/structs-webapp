@@ -41,8 +41,6 @@ export class LogoutPermissionsWarningViewModel extends AbstractViewModel {
     view.confirmBtn2ColorClass = 'sui-mod-destructive';
 
     view.initPageCode = () => {
-      MenuPage.sui.tooltip.init(document.getElementById('recovery-key-hint'));
-
       document.getElementById(view.confirmBtn1Id).addEventListener('click', () => {
         if (this.isPrimaryDevice) {
           MenuPage.router.goto('Auth', 'logout');

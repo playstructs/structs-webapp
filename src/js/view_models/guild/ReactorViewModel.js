@@ -27,14 +27,6 @@ export class ReactorViewModel extends AbstractViewModel {
     this.totalSupplyId = 'guild-profile-total-supply';
     this.manageAlphaBtnId = 'guild-reactor-manage-alpha-btn';
 
-    this.genericResourcePageCode = [
-      this.genericResourceComponent.getPageCode(this.guildMinimumId),
-      this.genericResourceComponent.getPageCode(this.commissionId),
-      this.genericResourceComponent.getPageCode(this.alphaInfusedId),
-      this.genericResourceComponent.getPageCode(this.defusingId),
-      this.genericResourceComponent.getPageCode(this.totalSupplyId),
-    ];
-
     this.guild = null;
     this.infusion = null;
   }
@@ -51,10 +43,6 @@ export class ReactorViewModel extends AbstractViewModel {
   }
 
   initPageCode() {
-    for (let i = 0; i < this.genericResourcePageCode.length; i++) {
-      this.genericResourcePageCode[i]();
-    }
-
     document.getElementById(this.manageAlphaBtnId).addEventListener('click', () => {
       MenuPage.router.goto('Guild', 'manageAlpha', this.infusion);
     });

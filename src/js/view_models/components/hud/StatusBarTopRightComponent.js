@@ -1,6 +1,5 @@
 import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../../constants/Events";
-import {MenuPage} from "../../../framework/MenuPage";
 import {MAP_CONTAINER_IDS} from "../../../constants/MapConstants";
 
 export class StatusBarTopRightComponent extends AbstractViewModelComponent {
@@ -51,9 +50,6 @@ export class StatusBarTopRightComponent extends AbstractViewModelComponent {
         document.getElementById(this.hudOreValueId).innerText = `${this.gameState.thisPlayer.ore}`;
       }
     }.bind(this));
-
-    MenuPage.sui.tooltip.init(document.getElementById(this.hudShieldHealthHintId));
-    MenuPage.sui.tooltip.init(document.getElementById(this.hudOreHintId));
   }
 
   renderHTML() {

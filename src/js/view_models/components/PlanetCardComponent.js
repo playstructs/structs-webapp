@@ -63,23 +63,11 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
     this.secondaryBtnId = `${this.idPrefix}-planet-card-secondary-btn`;
     this.secondaryBtnLabel = "";
     this.secondaryBtnHandler = () => {};
-
-    this.genericResourcePageCode = [
-      this.genericResourceComponent.getPageCode(this.undiscoveredOreId),
-      this.genericResourceComponent.getPageCode(this.alphaOreId),
-      this.genericResourceComponent.getPageCode(this.shieldHealthId),
-      this.genericResourceComponent.getPageCode(this.deployedStructsId)
-    ];
   }
 
   initPageCode() {
 
     if (this.hasStatusGroup) {
-
-      for (let i = 0; i < this.genericResourcePageCode.length; i++) {
-        this.genericResourcePageCode[i]();
-      }
-
       window.addEventListener(this.undiscoveredOreEvent, this.undiscoveredOreUpdateHandler.bind(this));
       window.addEventListener(this.alphaOreEvent, this.alphaOreUpdateHandler.bind(this));
       window.addEventListener(this.shieldHealthEvent, this.shieldHealthUpdateHandler.bind(this));

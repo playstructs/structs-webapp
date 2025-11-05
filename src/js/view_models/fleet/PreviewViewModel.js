@@ -139,11 +139,7 @@ export class PreviewViewModel extends AbstractViewModel {
           false,
           true,
           true,
-            headerResourcesHTML,
-            () => {
-              (genericResourceComponent.getPageCode(this.undiscoveredOreId))();
-              (genericResourceComponent.getPageCode(this.alphaOreId))();
-            }
+          headerResourcesHTML
         );
 
         MenuPage.setPageTemplateHeaderBtn(this.renderUsernameHTML(defender), true, () => {

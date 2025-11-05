@@ -20,10 +20,6 @@ export class Orientation3ViewModel extends AbstractViewModel {
     });
   }
 
-  initPageCode() {
-    MenuPage.sui.tooltip.init(document.getElementById('dialogueAlphaMatterHint'));
-  }
-
   render() {
     const navItems = [
       new NavItemDTO(
@@ -73,6 +69,5 @@ export class Orientation3ViewModel extends AbstractViewModel {
     };
 
     this.initLottieAnimations();
-    this.initPageCode();
   }
 }

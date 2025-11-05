@@ -44,11 +44,6 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     this.cancelBtnId = 'manage-alpha-cancel';
     this.saveChangesBtnId = 'manage-alpha-save-changes';
 
-    this.genericResourcePageCode = [
-      this.genericResourceComponent.getPageCode(this.alphaInfusedId),
-      this.genericResourceComponent.getPageCode(this.energyId),
-    ];
-
     this.infusionWarning = `Alpha will be removed from your inventory and added to the reactor.`;
     this.defusionWarning = `Alpha will be removed from the reactor and put on cooldown.`;
   }
@@ -114,10 +109,6 @@ export class ManageAlphaViewModel extends AbstractViewModel {
 
   initPageCode() {
     this.systemModal.init();
-
-    for (let i = 0; i < this.genericResourcePageCode.length; i++) {
-      this.genericResourcePageCode[i]();
-    }
 
     document.getElementById(this.subtractBtnId).addEventListener('click', (event) => {
       event.preventDefault();

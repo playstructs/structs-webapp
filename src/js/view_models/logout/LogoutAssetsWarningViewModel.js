@@ -53,9 +53,6 @@ export class LogoutAssetsWarningViewModel extends AbstractViewModel {
     view.confirmBtn2ColorClass = 'sui-mod-destructive';
 
     view.initPageCode = () => {
-      MenuPage.sui.tooltip.init(document.getElementById('recovery-key-hint'));
-      MenuPage.sui.tooltip.init(document.getElementById('assets-warning-alpha'));
-
       document.getElementById(view.confirmBtn1Id).addEventListener('click', () => {
         MenuPage.router.back();
       });

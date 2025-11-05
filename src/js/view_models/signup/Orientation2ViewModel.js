@@ -4,10 +4,6 @@ import {MenuPage} from "../../framework/MenuPage";
 
 export class Orientation2ViewModel extends AbstractViewModel {
 
-  initPageCode() {
-    MenuPage.sui.tooltip.init(document.getElementById('structsConglomerateHint'));
-  }
-
   render() {
     const navItems = [
       new NavItemDTO(
@@ -51,7 +47,5 @@ export class Orientation2ViewModel extends AbstractViewModel {
     MenuPage.dialogueBtnAHandler = () => {
       MenuPage.router.goto('Auth', 'orientation3');
     };
-
-    this.initPageCode();
   }
 }

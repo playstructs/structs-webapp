@@ -22,18 +22,9 @@ export class GuildsDirectoryViewModel extends AbstractViewModel {
 
     this.membersId = 'guild-dir-members';
     this.alphaInfusedId = 'guild-dir-alpha-infused';
-
-    this.genericResourcePageCode = [
-      this.genericResourceComponent.getPageCode(this.membersId),
-      this.genericResourceComponent.getPageCode(this.alphaInfusedId),
-    ];
   }
 
   initPageCode() {
-    for (let i = 0; i < this.genericResourcePageCode.length; i++) {
-      this.genericResourcePageCode[i]();
-    }
-
     this.guilds.forEach((guild) => {
       document.getElementById(`guild-search-result-${guild.guild_id}`).addEventListener('click', () => {
         MenuPage.router.goto('Guild', 'profile', {guildId: guild.guild_id})

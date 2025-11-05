@@ -1,16 +1,9 @@
 import {AbstractViewModelComponent} from "../../framework/AbstractViewModelComponent";
-import {MenuPage} from "../../framework/MenuPage";
 
 export class GenericResourceComponent extends AbstractViewModelComponent {
 
   constructor(gameState) {
     super(gameState);
-  }
-
-  getPageCode(elementId) {
-    return () => {
-      MenuPage.sui.tooltip.init(document.getElementById(elementId));
-    }
   }
 
   renderHTML(

@@ -20,10 +20,6 @@ export class Orientation5ViewModel extends AbstractViewModel {
     });
   }
 
-  initPageCode() {
-    MenuPage.sui.tooltip.init(document.getElementById('dialogueAlphaStarCouncilHint'));
-  }
-
   render() {
     const navItems = [
       new NavItemDTO(
@@ -73,6 +69,5 @@ export class Orientation5ViewModel extends AbstractViewModel {
     };
 
     this.initLottieAnimations();
-    this.initPageCode();
   }
 }
