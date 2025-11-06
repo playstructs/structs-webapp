@@ -675,6 +675,13 @@ a.sui-panel-btn.sui-mod-disabled-active {
   text-align: left;
 }
 
+.sui-cheatsheet-contextual-message {
+  max-width: 256px;
+  color: var(--accent-destructive);
+
+  text-align: left;
+}
+
 .sui-cheatsheet-property-section {
   display: flex;
   align-items: flex-start;

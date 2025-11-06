@@ -159,7 +159,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
         <div id="${this.propertiesScreenId}" class="sui-screen">
           <div class="sui-screen-properties">
-            <a id="${propertyIconLinkId}" href="javascript: void(0)">
+            <a id="${propertyIconLinkId}" href="javascript: void(0)" data-sui-cheatsheet="${propertyIcon}">
               <i class="sui-icon-md ${propertyIcon}"></i>
             </a>
           </div>

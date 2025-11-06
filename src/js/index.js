@@ -22,6 +22,7 @@ import {RaidManager} from "./managers/RaidManager";
 import {MapComponent} from "./view_models/components/map/MapComponent";
 import {MapManager} from "./managers/MapMananger";
 import {MAP_CONTAINER_IDS} from "./constants/MapConstants";
+import {CheatsheetContentBuilder} from "./builders/CheatsheetContentBuilder";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -132,6 +133,7 @@ MenuPage.router.registerController(genericController);
 MenuPage.router.registerController(guildController);
 MenuPage.router.registerController(fleetController);
 MenuPage.initListeners();
+MenuPage.sui.cheatsheet.setContentBuilder(new CheatsheetContentBuilder());
 
 grassManager.init();
 blockGrassManager.registerListener(blockListener);
@@ -147,6 +149,7 @@ hudContainer.innerHTML = HUDViewModel.render();
 HUDViewModel.initPageCode();
 
 MenuPage.sui.tooltip.autoInitAll();
+MenuPage.sui.cheatsheet.autoInitAll();
 
 if (!gameState.thisPlayerId) {
   MenuPage.router.goto('Auth', 'index');

@@ -89,7 +89,10 @@ export class SUITooltip extends SUIFeature {
       // Press and hold on mobile also fires a contextmenu event which we need to block
       // because it can obscure the tooltip and also cause inadvertent actions.
       document.body.addEventListener('contextmenu', (e) => {
-        if (e.target.parentElement.matches('[data-sui-tooltip]')) {
+        if (
+          e.target.matches('[data-sui-tooltip]')
+          || e.target.parentElement.matches('[data-sui-tooltip]')
+        ) {
           e.preventDefault();
         }
       }, { passive: false });
