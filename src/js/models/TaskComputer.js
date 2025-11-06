@@ -95,7 +95,6 @@ export class TaskComputer {
       task_running_count++;
       task_processes[pid].resume();
     }
-
   }
 
   message(pid, msg) {
@@ -105,9 +104,9 @@ export class TaskComputer {
   }
 
   messageAll(msg) {
-    for (let i = 0; i < task_processes[i].length; i++) {
-      if (task_processes[i].isRunning()) {
-        task_processes[i].sendMessage(msg);
+    for (let i = 0; i < task_running_queue.length; i++) {
+      if (task_processes[task_running_queue[i]].isRunning()) {
+        task_processes[task_running_queue[i]].sendMessage(msg);
       }
     }
   }
