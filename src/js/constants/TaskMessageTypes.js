@@ -1,5 +1,9 @@
 export const TASK_MESSAGE_TYPES = {
   START: 'start',
-  PAUSE_AND_EXPORT: 'pause_and_export',
+  STARTED: 'started',
+  PAUSE: 'pause',
+  PAUSED: 'paused',
+  COMMIT: 'commit',
   COMPLETED: 'completed',
+  BLOCK_UPDATE: 'block_update',
 };

@@ -1,7 +1,6 @@
 
 export class TaskState {
   constructor() {
-    this.pid = null;
     this.prefix = null; // Entire string up to NONCE
     this.postfix = null; // Optional IDENTITY
     this.nonce_start = null;
@@ -13,5 +12,9 @@ export class TaskState {
     this.result_nonce = null;
     this.created_at = null;
     this.updated_at = null;
+  }
+
+  toLog(){
+    return JSON.stringify(this, null, 2);
   }
 }
