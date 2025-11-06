@@ -1,39 +1,40 @@
+
+export var task_processes = [];
+export var next_task_process_id = 0;
+
 export class TaskComputer {
-  constructor() {
-    this.processes = null;
-    this.next_pid = null;
-  }
+  constructor() {}
 
   start(task_process) {
-    const pid = this.next_pid++;
-    this.processes[pid] = task_process;
-    this.processes[pid].startWorker();
+    const pid = next_task_process_id++;
+    task_processes[pid] = task_process;
+    task_processes[pid].start();
     return pid;
   }
 
   terminate(pid) {
-    this.processes[pid].stopWorker();
-    this.processes[pid] = null;
+    task_processes[pid].terminate();
+    task_processes[pid] = null;
   }
 
   pause(pid) {
-    this.processes[pid].stopWorker();
+    task_processes[pid].pause();
   }
 
   resume(pid) {
-    this.processes[pid].startWorker();
+    task_processes[pid].resume();
   }
 
   message(pid, msg) {
-    if (this.processes[pid].isRunning()) {
-      this.processes[pid].sendMessage(msg);
+    if (task_processes[pid].isRunning()) {
+      task_processes[pid].sendMessage(msg);
     }
   }
 
   messageAll(msg) {
-    for (let i = 0; i < this.processes[i].length; i++) {
-      if (this.processes[i].isRunning()) {
-        this.processes[i].sendMessage(msg);
+    for (let i = 0; i < task_processes[i].length; i++) {
+      if (task_processes[i].isRunning()) {
+        task_processes[i].sendMessage(msg);
       }
     }
   }

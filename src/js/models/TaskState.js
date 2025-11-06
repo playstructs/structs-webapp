@@ -1,6 +1,7 @@
 
 export class TaskState {
   constructor() {
+    this.pid = null;
     this.prefix = null; // Entire string up to NONCE
     this.postfix = null; // Optional IDENTITY
     this.nonce_start = null;
