@@ -31,22 +31,28 @@ export class TaskProcess {
     return this.status === TASK_STATUS.TERMINATED;
   }
 
-  start() {
-    if(!this.hasWorker()) {
+  start(pid) {
+    if (!this.hasWorker()) {
       this.worker = new Worker(TASK.WORKER_PATH);
 
       // TODO
       // Deal with the Results handler
       this.worker.onmessage = async function (result) {
-        console.log('Received from action worker [Process ID #' + result.data[0].id + ']...');
+        console.log('Received from action worker [Process ID #' + result.data[0].pid + ']...');
       }
+    }
+
+    if (!this.isRunning()) {
+      this.state.pid = pid
 
       // Send the initial state to the Worker
       this.worker.postMessage([this.state]);
-    }
-    this.worker.start()
 
-    this.status = TASK_STATUS.RUNNING;
+      this.status = TASK_STATUS.RUNNING;
+
+    } else {
+      console.log("Trying to start an already running process?");
+    }
   }
 
   pause() {
@@ -56,6 +62,7 @@ export class TaskProcess {
 
   terminate() {
     this.worker.terminate()
+    this.worker = null;
     this.status = TASK_STATUS.TERMINATED;
   }
 

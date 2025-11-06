@@ -1,3 +1,6 @@
 export const TASK = {
   WORKER_PATH: '/js/compute_worker-bundle.js',
+  MAX_CONCURRENT_PROCESSES: 5,
+  CHECKPOINT_COMMIT: 500000,
+
 };
