@@ -55,11 +55,18 @@ export class TaskComputer {
   }
 
   terminate(pid) {
-    task_running_count--;
+    if (task_processes[pid].isRunning()){
+      task_running_count--;
 
-    const index = task_running_queue.indexOf(pid);
-    if (index !== -1) {
-      task_running_queue.splice(index, 1);
+      const index = task_running_queue.indexOf(pid);
+      if (index !== -1) {
+        task_running_queue.splice(index, 1);
+      }
+    } else {
+      const index = task_waiting_queue.indexOf(pid);
+      if (index !== -1) {
+        task_waiting_queue.splice(index, 1);
+      }
     }
 
     task_processes[pid].terminate();
@@ -69,17 +76,19 @@ export class TaskComputer {
   }
 
   pause(pid) {
-    const index = task_running_queue.indexOf(pid);
-    if (index !== -1) {
-      task_running_queue.splice(index, 1);
+    if (task_processes[pid].isRunning()){
+      const index = task_running_queue.indexOf(pid);
+      if (index !== -1) {
+        task_running_queue.splice(index, 1);
+      }
+
+      task_waiting_queue.push(pid);
+
+      task_running_count--;
+      task_processes[pid].pause();
+
+      this.runNext();
     }
-
-    task_waiting_queue.push(pid);
-
-    task_running_count--;
-    task_processes[pid].pause();
-
-    this.runNext();
   }
 
   resume(pid) {
@@ -123,10 +132,10 @@ export class TaskComputer {
   }
 
   setStatus(pid, new_status){
-    task_processes[pid].status = new_status
+    task_processes[pid].setStatus(new_status);
   }
 
   setState(pid, new_state) {
-    task_processes[pid].status = new_state;
+    task_processes[pid].setState(new_state);
   }
 }
