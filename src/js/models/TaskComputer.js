@@ -12,13 +12,34 @@ export class TaskComputer {
   start(task_process) {
     const pid = next_task_process_id++;
     task_processes[pid] = task_process;
+
+    if (task_running_count > TASK.MAX_CONCURRENT_PROCESSES) {
+      const sleep_pid = task_running_queue[0];
+      this.pause(sleep_pid);
+    }
+
+    task_processes[pid].start(pid);
+    task_running_queue.push(pid);
+    task_running_count++;
+
+    return pid;
+  }
+
+  queue(task_process) {
+    const pid = next_task_process_id++;
+    task_processes[pid] = task_process;
+
     if (task_running_count < TASK.MAX_CONCURRENT_PROCESSES) {
       task_processes[pid].start(pid);
       task_running_queue.push(pid);
       task_running_count++;
+    } else {
+      task_waiting_queue.push(pid);
     }
+
     return pid;
   }
+
 
   runNext() {
     if (task_running_count < TASK.MAX_CONCURRENT_PROCESSES) {
