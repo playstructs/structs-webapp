@@ -148,8 +148,7 @@ HUDViewModel.init(gameState);
 hudContainer.innerHTML = HUDViewModel.render();
 HUDViewModel.initPageCode();
 
-MenuPage.sui.tooltip.autoInitAll();
-MenuPage.sui.cheatsheet.autoInitAll();
+MenuPage.sui.autoInitAll();
 
 if (!gameState.thisPlayerId) {
   MenuPage.router.goto('Auth', 'index');
