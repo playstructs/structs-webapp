@@ -585,17 +585,19 @@ a.sui-panel-btn.sui-mod-disabled-active {
 
 .sui-cheatsheet {
   display: inline-flex;
+  min-width: 200px;
+  border-top: 2px solid var(--border);
+  border-right: 2px solid var(--border);
   border-bottom: 2px solid var(--border);
   border-left: 0 none;
   border-radius: 0;
-  border-right: 2px solid var(--border);
-  border-top: 2px solid var(--border);
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-end;
   gap: 8px;
 
   background: var(--surface-default);
+  color: var(--text-body);
 }
 
 .sui-cheatsheet-top-frame {
@@ -621,6 +623,7 @@ a.sui-panel-btn.sui-mod-disabled-active {
   align-items: center;
   align-self: stretch;
   justify-content: space-between;
+  white-space: nowrap;
 }
 
 .sui-theme-enemy .sui-cheatsheet-title,
