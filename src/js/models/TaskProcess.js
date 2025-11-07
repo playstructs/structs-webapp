@@ -6,20 +6,19 @@ import {TaskComputer} from "./TaskComputer";
 import {TaskState} from "./TaskState";
 
 export class TaskProcess {
-  constructor() {
-    this.state = null;
+  constructor(_state, _callback_completed) {
+    this.status = TASK_STATUS.INITIATED;
     this.worker = null;
-    this.status = TASK_STATUS.NEW;
-
-    this.success_callback = null;
+    this.state = _state;
+    this.callback_completed = _callback_completed;
   }
 
   hasWorker() {
     return (this.worker !== undefined) && (this.worker !== null) && (this.worker !== "");
   }
 
-  isNew() {
-    return this.status === TASK_STATUS.NEW;
+  isInitiated() {
+    return this.status === TASK_STATUS.INITIATED;
   }
 
   isStarting() {
@@ -42,7 +41,7 @@ export class TaskProcess {
     return this.status === TASK_STATUS.COMPLETED;
   }
 
-  start(pid) {
+  start() {
     if (!this.hasWorker()) {
       this.worker = new Worker(TASK.WORKER_PATH);
 
@@ -55,8 +54,9 @@ export class TaskProcess {
       this.worker.onmessage = async function (result) {
         const msg_pid   = result.data[0];
         const msg_type  = result.data[1];
-
+        let new_state = null;
         let computer = new TaskComputer();
+        let taskStateFactory = new TaskStateFactory();
 
         console.debug('[' + msg_pid + '] Task Worker Message: ' + msg_type );
         switch (msg_type) {
@@ -67,13 +67,16 @@ export class TaskProcess {
             computer.setStatus(msg_pid, TASK_STATUS.PAUSED);
             break;
           case TASK_MESSAGE_TYPES.COMMIT:
-            let taskStateFactory = new TaskStateFactory();
-            let new_state = taskStateFactory.make(result.data[2]);
-            console.log(new_state.toLog());
-            computer.setStatus(msg_pid, new_state);
+            new_state = taskStateFactory.make(result.data[2]);
+            computer.setState(msg_pid, new_state);
             break;
           case TASK_MESSAGE_TYPES.COMPLETED:
             computer.setStatus(msg_pid, TASK_STATUS.COMPLETED);
+
+            new_state = taskStateFactory.make(result.data[2]);
+            computer.setState(msg_pid, new_state);
+
+            computer.complete(msg_pid)
             // TODO Do something with this data like either create a transaction or hit an API endpoint
             break;
           default:
@@ -86,7 +89,7 @@ export class TaskProcess {
       this.status = TASK_STATUS.STARTING;
 
       // Send the initial state to the Worker
-      this.worker.postMessage([TASK_MESSAGE_TYPES.START, pid, this.state]);
+      this.worker.postMessage([TASK_MESSAGE_TYPES.START, this.state]);
 
     } else {
       console.log("Trying to start an already running process?");
@@ -102,6 +105,18 @@ export class TaskProcess {
     this.worker.terminate()
     this.worker = null;
     this.status = TASK_STATUS.TERMINATED;
+  }
+
+  complete() {
+    this.worker.terminate()
+    this.worker = null;
+    this.status = TASK_STATUS.COMPLETED;
+
+    console.log(this.state.toLog());
+  }
+
+  getPID(){
+    return this.state.getObjectId();
   }
 
   sendMessage(msg_type, payload) {

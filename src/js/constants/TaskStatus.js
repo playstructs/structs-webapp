@@ -1,5 +1,5 @@
 export const TASK_STATUS = {
-  NEW: 'new',
+  INITIATED: 'initiated',
   STARTING: 'starting',
   RUNNING: 'running',
   PAUSING: 'pausing',
