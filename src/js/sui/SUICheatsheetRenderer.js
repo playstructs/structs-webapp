@@ -25,7 +25,7 @@ export class SUICheatsheetRenderer {
     }
 
     return `
-     <div class="sui-theme-player sui-battery">
+     <div class="sui-battery">
        ${batteryChunks}
      </div>
     `;
