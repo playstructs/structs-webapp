@@ -460,11 +460,6 @@ a.sui-text-secondary:hover {
 }
 
 .map-tile-selection {
-  /* TODO: Remove color after testing */
-  background: rgba(100, 0, 0, 0.2);
-  box-sizing: border-box;
-  border: 1px solid rgba(100, 0, 0, 0.5);
-
   position: absolute;
   top: 0;
   left: 0;
@@ -479,11 +474,6 @@ a.sui-text-secondary:hover {
 }
 
 .map-tile-selection-row {
-  /* TODO: Remove color after testing */
-  background: rgba(0, 100, 0, 0.2);
-  box-sizing: border-box;
-  border: 1px solid rgba(0, 100, 0, 0.5);
-
   position: relative;
   display: flex;
   width: 100%;
@@ -496,15 +486,22 @@ a.sui-text-secondary:hover {
 }
 
 .map-tile-selection-tile {
-  /* TODO: Remove color after testing */
-  background: rgba(0, 0, 100, 0.2);
-  box-sizing: border-box;
-  border: 1px solid rgba(0, 0, 100, 0.5);
-
   position: relative;
   display: flex;
   width: var(--tile-width);
   height: var(--tile-height);
+}
+
+.map-tile-selection-tile.focus-friendly {
+  background: url("/img/focus/focus-friendly.png") no-repeat center;
+}
+
+.map-tile-selection-tile.focus-neutral {
+  background: url("/img/focus/focus-neutral.png") no-repeat center;
+}
+
+.map-tile-selection-tile.focus-enemy {
+  background: url("/img/focus/focus-enemy.png") no-repeat center;
 }
 
 .map-container {

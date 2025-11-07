@@ -380,9 +380,36 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     return (slotNumber >= totalSlots) ? '' : `${slotNumber}`;
   }
 
+  /**
+   * Add the relevant focus cursor to a selected tile.
+   * Use this when you select a tile without an action engaged.
+   *
+   * @param {HTMLElement|object} tile
+   */
+  addFocusToSourceTile(tile) {
+    document.querySelectorAll('a.map-tile-selection-tile.focus-source').forEach(focusedTile => {
+      focusedTile.classList.remove('focus-source');
+      focusedTile.classList.remove('focus-friendly');
+      focusedTile.classList.remove('focus-neutral');
+      focusedTile.classList.remove('focus-enemy');
+    });
+
+    tile.classList.add('focus-source');
+
+    if (tile.dataset.side === 'left' && tile.dataset.playerId) {
+      tile.classList.add('focus-friendly');
+    } else if (tile.dataset.side === 'right' && tile.dataset.playerId) {
+      tile.classList.add('focus-enemy');
+    } else {
+      tile.classList.add('focus-neutral');
+    }
+  }
+
   initPageCode() {
     document.querySelectorAll('a.map-tile-selection-tile').forEach(tile => {
       tile.addEventListener('click', (e) => {
+        //TODO: When actions are engaged, need to use a different function for focus
+        this.addFocusToSourceTile(e.currentTarget);
         HUDViewModel.showActionBar(e.currentTarget);
         console.log(e.currentTarget);
       });
