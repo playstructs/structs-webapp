@@ -17,9 +17,10 @@ onmessage =  function(process_request) {
 
     switch (msg_type) {
         case TASK_MESSAGE_TYPES.START:
-            pid = process_request.data[1];
-            state = taskStateFactory.make(process_request.data[2]);
-            config = process_request.data[3];
+            state = taskStateFactory.make(process_request.data[1]);
+            config = process_request.data[2];
+
+            pid = state.getPID();
 
             postMessage([pid, TASK_MESSAGE_TYPES.STARTED]);
             work();
@@ -47,7 +48,7 @@ onmessage =  function(process_request) {
 function work() {
     // TODO work in the target difficulty start parameter, but this might be better outside the worker.
 
-    while (true) {
+    while (!state.isCompleted()) {
         sha256().then(hashCheck);
     }
 }
@@ -84,6 +85,8 @@ const hashCheck = function (hash_result) {
         }
     }
 
-    postMessage([pid, TASK_MESSAGE_TYPES.COMPLETED, hash_result.nonce]);
+    state.setResult(hash_result)
+
+    postMessage([pid, TASK_MESSAGE_TYPES.COMPLETED, state]);
 };
 

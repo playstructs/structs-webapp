@@ -3,7 +3,6 @@ import {TASK} from "../constants/TaskConstants";
 export var task_processes = [];
 export var task_waiting_queue = [];
 export var task_running_queue = [];
-export var next_task_process_id = 0;
 export var task_running_count = 0;
 
 /*
@@ -14,7 +13,7 @@ export class TaskComputer {
   constructor() {}
 
   start(task_process) {
-    const pid = next_task_process_id++;
+    const pid = task_process.getPID();
     task_processes[pid] = task_process;
 
     if (task_running_count > TASK.MAX_CONCURRENT_PROCESSES) {
@@ -30,7 +29,7 @@ export class TaskComputer {
   }
 
   queue(task_process) {
-    const pid = next_task_process_id++;
+    const pid = task_process.getPID();
     task_processes[pid] = task_process;
 
     if (task_running_count < TASK.MAX_CONCURRENT_PROCESSES) {
@@ -75,6 +74,27 @@ export class TaskComputer {
     this.runNext();
   }
 
+  complete(pid) {
+    if (task_processes[pid].isRunning()){
+      task_running_count--;
+
+      const index = task_running_queue.indexOf(pid);
+      if (index !== -1) {
+        task_running_queue.splice(index, 1);
+      }
+    } else {
+      const index = task_waiting_queue.indexOf(pid);
+      if (index !== -1) {
+        task_waiting_queue.splice(index, 1);
+      }
+    }
+
+    task_processes[pid].terminate();
+    task_processes[pid] = null;
+
+    this.runNext();
+  }
+
   pause(pid) {
     if (task_processes[pid].isRunning()){
       const index = task_running_queue.indexOf(pid);
@@ -92,7 +112,7 @@ export class TaskComputer {
   }
 
   resume(pid) {
-    if (!task_processes[pid].isRunning()){
+    if (!task_processes[pid].isRunning() && !task_processes[pid].isCompleted()){
 
       // Pull it out of the waiting queue
       const index = task_waiting_queue.indexOf(pid);
@@ -138,4 +158,13 @@ export class TaskComputer {
   setState(pid, new_state) {
     task_processes[pid].setState(new_state);
   }
+
+  getProcessPercentCompleteEstimate(pid) {
+    return task_processes[pid].state.getPercentCompleteEstimate();
+  }
+
+  getProcessTimeRemainingEstimate(pid) {
+    return task_processes[pid].state.getTimeRemainingEstimate();
+  }
+
 }

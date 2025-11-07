@@ -1,9 +1,12 @@
+import {task_processes} from "./TaskComputer";
 
 export class TaskState {
   constructor() {
     this.object_id = null;
+    this.target_id = null;
     this.object_type = null;
     this.task_type = null;
+    this.identity = null;
 
     this.prefix = null; // Entire string up to NONCE
     this.postfix = null; // Optional IDENTITY
@@ -13,9 +16,13 @@ export class TaskState {
     this.difficulty_target = null;
     this.block_start = null;
     this.block_current = null;
-    this.result_hash = null;
-    this.result_nonce = null;
+    this.completed_hash_result = null;
+    this.completed = false;
 
+  }
+
+  isCompleted() {
+    return this.completed;
   }
 
   toLog(){
@@ -26,10 +33,32 @@ export class TaskState {
     this.block_current = block;
   }
 
+  setResult(hash_result) {
+    this.completed = true;
+    this.completed_hash_result = hash_result;
+  }
+
   getNextNonce() {
     return this.nonce_current++
   }
 
+  getObjectId() {
+    return this.object_id;
+  }
+
+  getPID() {
+    return this.object_id;
+  }
+
+  getPercentCompleteEstimate() {
+    return 0.5 // TODO
+  }
+
+  getTimeRemainingEstimate() {
+    return 60 // TODO
+  }
+
+  // TODO clean up relating to identity being optional
   getMessage(nonce) {
     return this.prefix + nonce + this.postfix;
   }
