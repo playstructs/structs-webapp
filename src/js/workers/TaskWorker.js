@@ -10,7 +10,6 @@ let pid = null;
 
 const taskStateFactory = new TaskStateFactory();
 
-
 onmessage =  function(process_request) {
     console.log('New Process Request');
 
@@ -45,9 +44,20 @@ onmessage =  function(process_request) {
     }
 }
 
+function work() {
+    // TODO work in the target difficulty start parameter, but this might be better outside the worker.
 
+    while (true) {
+        sha256().then(hashCheck);
+    }
+}
 
-async function sha256(message) {
+async function sha256() {
+    const nonce = state.getNextNonce();
+    const message = state.getMessage(nonce);
+
+    /* unapologetic slop */
+
     // Encode as UTF-8
     const msgBuffer = new TextEncoder().encode(message);
 
@@ -60,17 +70,20 @@ async function sha256(message) {
     // Convert bytes to hex string
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    const result = { "hash": hashHex };
-    return result;
+    return { "nonce":nonce, "message":message, "hash": hashHex };
 }
 
 const hashCheck = function (hash_result) {
-    console.log(hash_result.hash);
+    console.log(hash_result);
+
+    const difficulty = state.getCurrentDifficulty()
+
+    for (let position = 1; position <= difficulty; position++) {
+        if (hash_result.hash[position - 1] !== "0") {
+            return false;
+        }
+    }
+
+    postMessage([pid, TASK_MESSAGE_TYPES.COMPLETED, hash_result.nonce]);
 };
 
-
-function work() {
-    while (true) {
-        sha256(state.getNextWork()).then(hashCheck);
-    }
-}
