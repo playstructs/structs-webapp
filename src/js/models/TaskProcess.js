@@ -6,11 +6,11 @@ import {TaskComputer} from "./TaskComputer";
 import {TaskState} from "./TaskState";
 
 export class TaskProcess {
-  constructor(_state, _callback_completed) {
+  constructor(_state, _callback) {
     this.status = TASK_STATUS.INITIATED;
     this.worker = null;
     this.state = _state;
-    this.callback_completed = _callback_completed;
+    this.callback = _callback;
   }
 
   hasWorker() {
@@ -78,6 +78,9 @@ export class TaskProcess {
 
             computer.complete(msg_pid)
             // TODO Do something with this data like either create a transaction or hit an API endpoint
+            if (this.callback !== null) {
+              this.callback(new_state);
+            }
             break;
           default:
             console.debug('[' + msg_pid + '] Why is this in my response?');
@@ -129,5 +132,9 @@ export class TaskProcess {
 
   setState(new_state) {
     this.state = new_state;
+  }
+
+  setCallback(_callback) {
+    this.callback = _callback;
   }
 }
