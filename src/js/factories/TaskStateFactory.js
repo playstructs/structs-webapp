@@ -4,6 +4,7 @@ import {TASK} from "../constants/TaskConstants";
 import {TASK_MESSAGE_TYPES} from "../constants/TaskMessageTypes";
 import {TASK_STATUS} from "../constants/TaskStatus";
 import {TASK_TYPES} from "../constants/TaskTypes";
+import {OBJECT_TYPES as OBJECT_TYPE} from "../constants/ObjectTypes";
 
 export class TaskStateFactory extends AbstractFactory {
 
@@ -29,11 +30,13 @@ export class TaskStateFactory extends AbstractFactory {
     /* build the prefix */
     switch (task_state.task_type) {
       case TASK_TYPES.RAID:
+        task_state.object_type = OBJECT_TYPE.FLEET
         task_state.prefix = task_state.object_id + TASK.TARGET_DELIMITER + task_state.target_id + task_state.task_type + task_state.block_start + TASK.NONCE_PREFIX;
         break;
       case TASK_TYPES.BUILD:
       case TASK_TYPES.MINE:
       case TASK_TYPES.REFINE:
+        task_state.object_type = OBJECT_TYPE.STRUCT
         task_state.prefix = task_state.object_id  + task_state.task_type + task_state.block_start + TASK.NONCE_PREFIX;
         break;
     }

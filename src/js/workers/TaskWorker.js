@@ -26,7 +26,7 @@ onmessage =  function(process_request) {
             break;
 
         default:
-            console.debug('[' + pid + '] Why is this in my worker?');
+            console.debug('[' + pid + '] Why is this message (' +msg_type+ ') in my worker?');
     }
 }
 

@@ -106,8 +106,9 @@ export class TaskProcess {
   }
 
   pause() {
-    this.worker.postMessage([TASK_MESSAGE_TYPES.PAUSE]);
-    this.status = TASK_STATUS.PAUSING;
+    this.worker.terminate();
+    this.worker = null;
+    this.status = TASK_STATUS.PAUSED;
   }
 
   terminate() {
@@ -126,16 +127,6 @@ export class TaskProcess {
 
   getPID(){
     return this.state.getObjectId();
-  }
-
-  sendMessage(msg_type, payload) {
-    this.worker.postMessage([msg_type, payload]);
-  }
-
-  commit() {
-    console.log("sending a commit");
-    console.log(this.worker);
-    this.worker.postMessage([TASK_MESSAGE_TYPES.COMMIT]);
   }
 
   setStatus(new_status) {
