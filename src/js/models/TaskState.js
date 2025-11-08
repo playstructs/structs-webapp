@@ -1,4 +1,5 @@
 import {task_processes} from "./TaskComputer";
+import {TASK} from "../constants/TaskConstants";
 
 export class TaskState {
   constructor() {
@@ -16,7 +17,9 @@ export class TaskState {
     this.difficulty_start = null;
     this.difficulty_target = null;
     this.block_start = null;
-    this.block_current = null;
+    this.block_checkpoint = null;
+    this.block_checkpoint_time = null;
+    this.block_current_estimated = null;
     this.result_message = null;
     this.result_nonce = null;
     this.result_hash = null;
@@ -32,8 +35,10 @@ export class TaskState {
     return JSON.stringify(this, null, 2);
   }
 
-  setBlockCurrent(block) {
-    this.block_current = block;
+  setBlockCheckpoint(block) {
+    this.block_checkpoint_time = new Date();
+    this.block_checkpoint = block;
+    this.block_current_estimated = block;
   }
 
   setResult(nonce, message, hash) {
@@ -64,18 +69,20 @@ export class TaskState {
     return 60 // TODO
   }
 
-  // TODO clean up relating to identity being optional
   getMessage(nonce) {
     return this.prefix + nonce + this.postfix;
   }
 
-  getCurrentAge() {
-    console.log('current ' + this.block_current + ' start '+  this.block_start )
-    return this.block_current - this.block_start;
+  getCurrentAgeEstimate() {
+    const current_time = new Date();
+    const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / TASK.ESTIMATED_BLOCK_TIME);
+    this.block_current_estimated = Math.floor(this.block_checkpoint + estimated_blocks_past);
+
+    return this.block_current_estimated - this.block_start;
   }
 
   getCurrentDifficulty(){
-    const age = this.getCurrentAge();
+    const age = this.getCurrentAgeEstimate();
 
     if (age <= 1) {
       return 64;
@@ -87,7 +94,7 @@ export class TaskState {
     if (difficulty < 1) {
       return 1;
     }
-    console.log("Current difficulty:" + difficulty);
+    console.log("Current Difficulty:" + difficulty);
     return difficulty;
   }
 }

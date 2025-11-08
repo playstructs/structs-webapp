@@ -48,10 +48,10 @@ const TASK = {
   CHECKPOINT_COMMIT: 5000000,
   DIFFICULTY_RECALCULATE: 5000000,
   CHECKPOINT_BLOCK: 10,
+  ESTIMATED_BLOCK_TIME: 7000,
   IDENTITY_PREFIX: "IDENTITY",
   NONCE_PREFIX: "NONCE",
   TARGET_DELIMITER: "@",
-
 };
 
 
@@ -443,7 +443,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   TaskState: () => (/* binding */ TaskState)
 /* harmony export */ });
 /* harmony import */ var _TaskComputer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./TaskComputer */ "./js/models/TaskComputer.js");
+/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 class TaskState {
@@ -462,7 +464,9 @@ class TaskState {
     this.difficulty_start = null;
     this.difficulty_target = null;
     this.block_start = null;
-    this.block_current = null;
+    this.block_checkpoint = null;
+    this.block_checkpoint_time = null;
+    this.block_current_estimated = null;
     this.result_message = null;
     this.result_nonce = null;
     this.result_hash = null;
@@ -478,8 +482,10 @@ class TaskState {
     return JSON.stringify(this, null, 2);
   }
 
-  setBlockCurrent(block) {
-    this.block_current = block;
+  setBlockCheckpoint(block) {
+    this.block_checkpoint_time = new Date();
+    this.block_checkpoint = block;
+    this.block_current_estimated = block;
   }
 
   setResult(nonce, message, hash) {
@@ -510,18 +516,20 @@ class TaskState {
     return 60 // TODO
   }
 
-  // TODO clean up relating to identity being optional
   getMessage(nonce) {
     return this.prefix + nonce + this.postfix;
   }
 
-  getCurrentAge() {
-    console.log('current ' + this.block_current + ' start '+  this.block_start )
-    return this.block_current - this.block_start;
+  getCurrentAgeEstimate() {
+    const current_time = new Date();
+    const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_1__.TASK.ESTIMATED_BLOCK_TIME);
+    this.block_current_estimated = Math.floor(this.block_checkpoint + estimated_blocks_past);
+
+    return this.block_current_estimated - this.block_start;
   }
 
   getCurrentDifficulty(){
-    const age = this.getCurrentAge();
+    const age = this.getCurrentAgeEstimate();
 
     if (age <= 1) {
       return 64;
@@ -533,7 +541,7 @@ class TaskState {
     if (difficulty < 1) {
       return 1;
     }
-    console.log("Current difficulty:" + difficulty);
+    console.log("Current Difficulty:" + difficulty);
     return difficulty;
   }
 }
@@ -7050,7 +7058,6 @@ __webpack_require__.r(__webpack_exports__);
 
 let state = null;
 let pid = null;
-let ready = false;
 
 const taskStateFactory = new _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_2__.TaskStateFactory();
 
@@ -7059,12 +7066,12 @@ onmessage =  function(process_request) {
     switch (msg_type) {
         case _constants_TaskMessageTypes__WEBPACK_IMPORTED_MODULE_0__.TASK_MESSAGE_TYPES.START:
             state = taskStateFactory.make(process_request.data[1]);
-
             pid = state.getPID();
+
             console.log('Start Process Request ' + pid);
             postMessage([pid, _constants_TaskMessageTypes__WEBPACK_IMPORTED_MODULE_0__.TASK_MESSAGE_TYPES.STARTED]);
-
             work();
+
             break;
 
         default:

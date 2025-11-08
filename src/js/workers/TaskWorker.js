@@ -8,7 +8,6 @@ import {TASK as TASKS} from "../constants/TaskConstants";
 
 let state = null;
 let pid = null;
-let ready = false;
 
 const taskStateFactory = new TaskStateFactory();
 
@@ -17,12 +16,12 @@ onmessage =  function(process_request) {
     switch (msg_type) {
         case TASK_MESSAGE_TYPES.START:
             state = taskStateFactory.make(process_request.data[1]);
-
             pid = state.getPID();
+
             console.log('Start Process Request ' + pid);
             postMessage([pid, TASK_MESSAGE_TYPES.STARTED]);
-
             work();
+
             break;
 
         default:
