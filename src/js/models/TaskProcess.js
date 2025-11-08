@@ -29,10 +29,6 @@ export class TaskProcess {
     return this.status === TASK_STATUS.RUNNING;
   }
 
-  isPaused() {
-    return this.status === TASK_STATUS.PAUSING || this.status === TASK_STATUS.PAUSED;
-  }
-
   isTerminated() {
     return this.status === TASK_STATUS.TERMINATED;
   }
@@ -42,67 +38,67 @@ export class TaskProcess {
   }
 
   start() {
-    console.log("Now we're in the process");
-    if (!this.hasWorker()) {
-      console.log("Creating the worker ");
+    if (this.isCompleted()){
+      console.log('Cannot start Completed state');
+      return false;
+    }
 
-      this.worker = new Worker(TASK.WORKER_PATH);
-      console.log(this.worker);
-      /*
-        result object format
-          result.data[0] = pid
-          result.data[1] = message type
-          result.data[3] = payload (optional)
-       */
-      this.worker.onmessage = async function (result) {
-        const msg_pid   = result.data[0];
-        const msg_type  = result.data[1];
-        let new_state = null;
-        let computer = new TaskComputer();
-        let taskStateFactory = new TaskStateFactory();
+    if (this.isTerminated()){
+      console.log('Cannot start Terminated state');
+      return false;
+    }
 
-        console.log('[' + msg_pid + '] Task Worker Message: ' + msg_type );
-        switch (msg_type) {
-          case TASK_MESSAGE_TYPES.STARTED:
-            console.log('Started Process Request ' + msg_pid);
-            computer.setStatus(msg_pid, TASK_STATUS.RUNNING);
-            break;
-          case TASK_MESSAGE_TYPES.PAUSED:
-            computer.setStatus(msg_pid, TASK_STATUS.PAUSED);
-            break;
-          case TASK_MESSAGE_TYPES.COMMIT:
-            new_state = taskStateFactory.make(result.data[2]);
-            computer.setState(msg_pid, new_state);
-            break;
-          case TASK_MESSAGE_TYPES.COMPLETED:
-            computer.setStatus(msg_pid, TASK_STATUS.COMPLETED);
+    if (this.hasWorker()) {
+      this.worker.terminate();
+    }
 
-            new_state = taskStateFactory.make(result.data[2]);
-            computer.setState(msg_pid, new_state);
+    this.worker = new Worker(TASK.WORKER_PATH);
+    /*
+      result object format
+        result.data[0] = pid
+        result.data[1] = message type
+        result.data[3] = payload (optional)
+     */
+    this.worker.onmessage = async function (result) {
+      const msg_pid   = result.data[0];
+      const msg_type  = result.data[1];
+      let new_state = null;
+      let computer = new TaskComputer();
+      let taskStateFactory = new TaskStateFactory();
 
-            console.log(new_state.toLog());
+      console.log('[' + msg_pid + '] Task Worker Message: ' + msg_type );
+      switch (msg_type) {
+        case TASK_MESSAGE_TYPES.STARTED:
+          console.log('Started Process Request ' + msg_pid);
+          computer.setStatus(msg_pid, TASK_STATUS.RUNNING);
+          break;
+        case TASK_MESSAGE_TYPES.COMMIT:
+          new_state = taskStateFactory.make(result.data[2]);
+          computer.setState(msg_pid, new_state);
+          break;
+        case TASK_MESSAGE_TYPES.COMPLETED:
+          computer.setStatus(msg_pid, TASK_STATUS.COMPLETED);
 
-            computer.complete(msg_pid)
-            // TODO Do something with this data like either create a transaction or hit an API endpoint
-            if ((this.callback !== undefined) && (this.callback !== null) && (this.callback !== "")) {
-              this.callback(new_state);
-            }
-            break;
-          default:
-            console.debug('[' + msg_pid + '] Why is this in my response?');
-        }
+          new_state = taskStateFactory.make(result.data[2]);
+          computer.setState(msg_pid, new_state);
+
+          console.log(new_state.toLog());
+
+          computer.complete(msg_pid)
+          // TODO Do something with this data like either create a transaction or hit an API endpoint
+          if ((this.callback !== undefined) && (this.callback !== null) && (this.callback !== "")) {
+            this.callback(new_state);
+          }
+          break;
+        default:
+          console.debug('[' + msg_pid + '] Why is this in my response?');
       }
     }
 
-    if (!this.isStarting() && !this.isRunning()) {
-      this.status = TASK_STATUS.STARTING;
-
-      // Send the initial state to the Worker
-      this.worker.postMessage([TASK_MESSAGE_TYPES.START, this.state]);
-
-    } else {
-      console.log("Trying to start an already running process?");
-    }
+    // Send the initial state to the Worker
+    this.status = TASK_STATUS.STARTING;
+    this.worker.postMessage([TASK_MESSAGE_TYPES.START, this.state]);
+    return true
   }
 
   pause() {
