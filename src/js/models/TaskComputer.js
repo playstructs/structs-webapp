@@ -10,9 +10,11 @@ export var task_running_count = 0;
  This format allows fo the Web Worker callback functions to easily write to their processes.
  */
 export class TaskComputer {
-  constructor() {}
-
-  start(task_process) {
+  constructor() {
+  }
+}
+TaskComputer.prototype.start = function(task_process) {
+    console.log("New Process");
     const pid = task_process.getPID();
     task_processes[pid] = task_process;
 
@@ -20,7 +22,7 @@ export class TaskComputer {
       const sleep_pid = task_running_queue[0];
       this.pause(sleep_pid);
     }
-
+    console.log("Going to try and start");
     task_processes[pid].start(pid);
     task_running_queue.push(pid);
     task_running_count++;
@@ -28,7 +30,7 @@ export class TaskComputer {
     return pid;
   }
 
-  queue(task_process) {
+TaskComputer.prototype.queue = function(task_process) {
     const pid = task_process.getPID();
     task_processes[pid] = task_process;
 
@@ -44,16 +46,19 @@ export class TaskComputer {
   }
 
 
-  runNext() {
+TaskComputer.prototype.runNext = function() {
     if (task_running_count < TASK.MAX_CONCURRENT_PROCESSES) {
       const next_pid = task_waiting_queue.pop()
-      task_processes[next_pid].start(next_pid);
-      task_running_count++;
-      task_running_queue.push(next_pid);
+      if ((next_pid !== undefined) && (next_pid !== null) && (next_pid !== "")) {
+        console.log(next_pid)
+        task_processes[next_pid].start(next_pid);
+        task_running_count++;
+        task_running_queue.push(next_pid);
+      }
     }
   }
 
-  terminate(pid) {
+TaskComputer.prototype.terminate = function(pid) {
     if (task_processes[pid].isRunning()){
       task_running_count--;
 
@@ -74,7 +79,7 @@ export class TaskComputer {
     this.runNext();
   }
 
-  complete(pid) {
+TaskComputer.prototype.complete = function(pid) {
     if (task_processes[pid].isRunning()){
       task_running_count--;
 
@@ -95,7 +100,7 @@ export class TaskComputer {
     this.runNext();
   }
 
-  pause(pid) {
+TaskComputer.prototype.pause = function(pid) {
     if (task_processes[pid].isRunning()){
       const index = task_running_queue.indexOf(pid);
       if (index !== -1) {
@@ -111,7 +116,7 @@ export class TaskComputer {
     }
   }
 
-  resume(pid) {
+TaskComputer.prototype.resume = function(pid) {
     if (!task_processes[pid].isRunning() && !task_processes[pid].isCompleted()){
 
       // Pull it out of the waiting queue
@@ -137,13 +142,13 @@ export class TaskComputer {
     }
   }
 
-  message(pid, msg_type, payload) {
+TaskComputer.prototype.message = function(pid, msg_type, payload) {
     if (task_processes[pid].isRunning()) {
       task_processes[pid].sendMessage(msg_type, payload);
     }
   }
 
-  messageAll(msg_type, payload) {
+TaskComputer.prototype.messageAll = function(msg_type, payload) {
     for (let i = 0; i < task_running_queue.length; i++) {
       if (task_processes[task_running_queue[i]].isRunning()) {
         task_processes[task_running_queue[i]].sendMessage(msg_type, payload);
@@ -151,20 +156,28 @@ export class TaskComputer {
     }
   }
 
-  setStatus(pid, new_status){
+TaskComputer.prototype.setStatus = function(pid, new_status){
+    console.log("Updating " + pid + " to status " + new_status);
     task_processes[pid].setStatus(new_status);
   }
 
-  setState(pid, new_state) {
+TaskComputer.prototype.setState = function(pid, new_state) {
     task_processes[pid].setState(new_state);
   }
 
-  getProcessPercentCompleteEstimate(pid) {
+TaskComputer.prototype.getProcessPercentCompleteEstimate = function(pid) {
     return task_processes[pid].state.getPercentCompleteEstimate();
   }
 
-  getProcessTimeRemainingEstimate(pid) {
+TaskComputer.prototype.getProcessTimeRemainingEstimate = function(pid) {
     return task_processes[pid].state.getTimeRemainingEstimate();
   }
 
-}
+TaskComputer.prototype.commitAll = function() {
+    for (let i = 0; i < task_running_queue.length; i++) {
+      if (task_processes[task_running_queue[i]].isRunning()) {
+        task_processes[task_running_queue[i]].commit();
+      }
+    }
+  }
+

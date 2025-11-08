@@ -42,9 +42,12 @@ export class TaskProcess {
   }
 
   start() {
+    console.log("Now we're in the process");
     if (!this.hasWorker()) {
-      this.worker = new Worker(TASK.WORKER_PATH);
+      console.log("Creating the worker ");
 
+      this.worker = new Worker(TASK.WORKER_PATH);
+      console.log(this.worker);
       /*
         result object format
           result.data[0] = pid
@@ -58,10 +61,11 @@ export class TaskProcess {
         let computer = new TaskComputer();
         let taskStateFactory = new TaskStateFactory();
 
-        console.debug('[' + msg_pid + '] Task Worker Message: ' + msg_type );
+        console.log('[' + msg_pid + '] Task Worker Message: ' + msg_type );
         switch (msg_type) {
           case TASK_MESSAGE_TYPES.STARTED:
-            computer.setStatus(msg_pid, TASK_STATUS.STARTING);
+            console.log('Started Process Request ' + msg_pid);
+            computer.setStatus(msg_pid, TASK_STATUS.RUNNING);
             break;
           case TASK_MESSAGE_TYPES.PAUSED:
             computer.setStatus(msg_pid, TASK_STATUS.PAUSED);
@@ -76,9 +80,11 @@ export class TaskProcess {
             new_state = taskStateFactory.make(result.data[2]);
             computer.setState(msg_pid, new_state);
 
+            console.log(new_state.toLog());
+
             computer.complete(msg_pid)
             // TODO Do something with this data like either create a transaction or hit an API endpoint
-            if (this.callback !== null) {
+            if ((this.callback !== undefined) && (this.callback !== null) && (this.callback !== "")) {
               this.callback(new_state);
             }
             break;
@@ -124,6 +130,12 @@ export class TaskProcess {
 
   sendMessage(msg_type, payload) {
     this.worker.postMessage([msg_type, payload]);
+  }
+
+  commit() {
+    console.log("sending a commit");
+    console.log(this.worker);
+    this.worker.postMessage([TASK_MESSAGE_TYPES.COMMIT]);
   }
 
   setStatus(new_status) {

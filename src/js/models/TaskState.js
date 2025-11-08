@@ -12,11 +12,14 @@ export class TaskState {
     this.postfix = null; // Optional IDENTITY
     this.nonce_start = Math.floor(Math.random() * 10000000000);
     this.nonce_current = this.nonce_start;
+    this.iterations = 0;
     this.difficulty_start = null;
     this.difficulty_target = null;
     this.block_start = null;
     this.block_current = null;
-    this.completed_hash_result = null;
+    this.result_message = null;
+    this.result_nonce = null;
+    this.result_hash = null;
     this.completed = false;
 
   }
@@ -33,13 +36,16 @@ export class TaskState {
     this.block_current = block;
   }
 
-  setResult(hash_result) {
+  setResult(nonce, message, hash) {
     this.completed = true;
-    this.completed_hash_result = hash_result;
+    this.result_message = message;
+    this.result_nonce = nonce + this.postfix;
+    this.result_hash = hash;
   }
 
   getNextNonce() {
-    return this.nonce_current++
+    this.iterations++;
+    return ++this.nonce_current;
   }
 
   getObjectId() {
@@ -64,6 +70,7 @@ export class TaskState {
   }
 
   getCurrentAge() {
+    console.log('current ' + this.block_current + ' start '+  this.block_start )
     return this.block_current - this.block_start;
   }
 
@@ -80,7 +87,7 @@ export class TaskState {
     if (difficulty < 1) {
       return 1;
     }
-
+    console.log("Current difficulty:" + difficulty);
     return difficulty;
   }
 }
