@@ -14,7 +14,6 @@ export class TaskComputer {
     }
 
     start(task_process) {
-        console.log("New Process");
         const pid = task_process.getPID();
         task_processes[pid] = task_process;
 

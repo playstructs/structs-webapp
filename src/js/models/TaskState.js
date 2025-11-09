@@ -94,7 +94,7 @@ export class TaskState {
     if (difficulty < 1) {
       return 1;
     }
-    console.log("Current Difficulty:" + difficulty);
+
     return difficulty;
   }
 }
