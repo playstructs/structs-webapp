@@ -289,7 +289,7 @@ class TaskComputer {
             const sleep_pid = task_running_queue[0];
             this.pause(sleep_pid);
         }
-        console.log("Going to try and start");
+
         task_processes[pid].start(pid);
         task_running_queue.push(pid);
         task_running_count++;
@@ -325,43 +325,35 @@ class TaskComputer {
     }
 
     terminate(pid) {
-        if (task_processes[pid].isRunning()) {
+        const running_index = task_running_queue.indexOf(pid);
+        if (running_index !== -1) {
+            task_running_queue.splice(running_index, 1);
             task_running_count--;
+        }
 
-            const index = task_running_queue.indexOf(pid);
-            if (index !== -1) {
-                task_running_queue.splice(index, 1);
-            }
-        } else {
-            const index = task_waiting_queue.indexOf(pid);
-            if (index !== -1) {
-                task_waiting_queue.splice(index, 1);
-            }
+        const waiting_index = task_waiting_queue.indexOf(pid);
+        if (waiting_index !== -1) {
+            task_waiting_queue.splice(waiting_index, 1);
         }
 
         task_processes[pid].terminate();
-        task_processes[pid] = null;
 
         this.runNext();
     }
 
    complete(pid) {
-        if (task_processes[pid].isRunning()) {
+        const running_index = task_running_queue.indexOf(pid);
+        if (running_index !== -1) {
+            task_running_queue.splice(running_index, 1);
             task_running_count--;
-
-            const index = task_running_queue.indexOf(pid);
-            if (index !== -1) {
-                task_running_queue.splice(index, 1);
-            }
-        } else {
-            const index = task_waiting_queue.indexOf(pid);
-            if (index !== -1) {
-                task_waiting_queue.splice(index, 1);
-            }
         }
 
-        task_processes[pid].terminate();
-        task_processes[pid] = null;
+        const waiting_index = task_waiting_queue.indexOf(pid);
+        if (waiting_index !== -1) {
+            task_waiting_queue.splice(waiting_index, 1);
+        }
+
+        task_processes[pid].complete();
 
         this.runNext();
     }

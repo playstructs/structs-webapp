@@ -77,8 +77,6 @@ export class TaskProcess {
           computer.setState(msg_pid, new_state);
           break;
         case TASK_MESSAGE_TYPES.COMPLETED:
-          computer.setStatus(msg_pid, TASK_STATUS.COMPLETED);
-
           new_state = taskStateFactory.make(result.data[2]);
           computer.setState(msg_pid, new_state);
 
@@ -117,8 +115,6 @@ export class TaskProcess {
     this.worker.terminate()
     this.worker = null;
     this.status = TASK_STATUS.COMPLETED;
-
-    console.log(this.state.toLog());
   }
 
   getPID(){
