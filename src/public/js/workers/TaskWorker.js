@@ -281,7 +281,6 @@ class TaskComputer {
     }
 
     start(task_process) {
-        console.log("New Process");
         const pid = task_process.getPID();
         task_processes[pid] = task_process;
 
@@ -414,9 +413,44 @@ class TaskComputer {
         return task_processes[pid].state.getPercentCompleteEstimate();
     }
 
+    getProcessPercentCompleteEstimateAll() {
+        let i = 0;
+        let avg_complete = 0.0;
+        for (const key in task_processes) {
+            i++
+            avg_complete += task_processes[key].state.getPercentCompleteEstimate();
+        }
+        return avg_complete / (i);
+    }
+
     getProcessTimeRemainingEstimate(pid) {
         return task_processes[pid].state.getTimeRemainingEstimate();
     }
+
+    getProcessTimeRemainingEstimateAll() {
+        let longest = 0;
+        for (const key in task_processes) {
+             const estimate = task_processes[key].state.getTimeRemainingEstimate();
+             if (estimate > longest) {
+                 longest = estimate;
+             }
+        }
+        return longest;
+    }
+
+    getProcessHashrate(pid) {
+        return task_processes[pid].state.getHashrate();
+    }
+
+    getProceessHashrateAll() {
+        let total = 0;
+
+        for (const key in task_processes) {
+            total += task_processes[key].state.getHashrate();
+        }
+        return total;
+    }
+
 
 }
 
@@ -436,7 +470,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _TaskComputer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./TaskComputer */ "./js/models/TaskComputer.js");
 /* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
-/* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
 
 
 
@@ -453,6 +486,8 @@ class TaskState {
     this.nonce_start = Math.floor(Math.random() * 10000000000);
     this.nonce_current = this.nonce_start;
     this.iterations = 0;
+    this.process_start_time = new Date();
+    this.process_end_time = null;
     this.difficulty_start = null;
     this.difficulty_target = null;
     this.block_start = null;
@@ -482,6 +517,7 @@ class TaskState {
 
   setResult(nonce, message, hash) {
     this.completed = true;
+    this.process_end_time = new Date();
     this.result_message = message;
     this.result_nonce = nonce + this.postfix;
     this.result_hash = hash;
@@ -501,11 +537,28 @@ class TaskState {
   }
 
   getPercentCompleteEstimate() {
-    return 0.5 // TODO
+    if (this.completed) {
+      return 1;
+    }
+    return 1.0-(this.getCurrentDifficulty()/100) // TODO better
   }
 
   getTimeRemainingEstimate() {
-    return 60 // TODO
+    if (this.completed) {
+      return 0.0;
+    }
+
+    const hash_scope = 2.0 ** (this.getCurrentDifficulty() * 4);
+    return hash_scope / this.getHashrate()
+  }
+
+  getHashrate() {
+    if (this.completed) {
+      return 0.0;
+    }
+
+    const current_time = new Date();
+    return this.iterations / (Math.floor((current_time - this.process_start_time)) * 1);
   }
 
   getMessage(nonce) {
@@ -533,7 +586,7 @@ class TaskState {
     if (difficulty < 1) {
       return 1;
     }
-    console.log("Current Difficulty:" + difficulty);
+
     return difficulty;
   }
 }

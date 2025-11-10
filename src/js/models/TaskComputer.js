@@ -146,8 +146,43 @@ export class TaskComputer {
         return task_processes[pid].state.getPercentCompleteEstimate();
     }
 
+    getProcessPercentCompleteEstimateAll() {
+        let i = 0;
+        let avg_complete = 0.0;
+        for (const key in task_processes) {
+            i++
+            avg_complete += task_processes[key].state.getPercentCompleteEstimate();
+        }
+        return avg_complete / (i);
+    }
+
     getProcessTimeRemainingEstimate(pid) {
         return task_processes[pid].state.getTimeRemainingEstimate();
     }
+
+    getProcessTimeRemainingEstimateAll() {
+        let longest = 0;
+        for (const key in task_processes) {
+             const estimate = task_processes[key].state.getTimeRemainingEstimate();
+             if (estimate > longest) {
+                 longest = estimate;
+             }
+        }
+        return longest;
+    }
+
+    getProcessHashrate(pid) {
+        return task_processes[pid].state.getHashrate();
+    }
+
+    getProceessHashrateAll() {
+        let total = 0;
+
+        for (const key in task_processes) {
+            total += task_processes[key].state.getHashrate();
+        }
+        return total;
+    }
+
 
 }
