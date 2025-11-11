@@ -1,8 +1,10 @@
 import {task_processes} from "./TaskComputer";
 import {TASK} from "../constants/TaskConstants";
+import {TASK_STATUS} from "../constants/TaskStatus";
 
 export class TaskState {
   constructor() {
+    this.status = TASK_STATUS.INITIATED;
     this.object_id = null;
     this.target_id = null;
     this.object_type = null;
@@ -25,12 +27,11 @@ export class TaskState {
     this.result_message = null;
     this.result_nonce = null;
     this.result_hash = null;
-    this.completed = false;
 
   }
 
   isCompleted() {
-    return this.completed;
+    return this.status === TASK_STATUS.COMPLETED;
   }
 
   toLog(){
@@ -43,8 +44,12 @@ export class TaskState {
     this.block_current_estimated = block;
   }
 
+  setStatus(status) {
+    this.status = status
+  }
+
   setResult(nonce, message, hash) {
-    this.completed = true;
+    this.status = TASK_STATUS.COMPLETED;
     this.process_end_time = new Date();
     this.result_message = message;
     this.result_nonce = nonce + this.postfix;
@@ -65,14 +70,14 @@ export class TaskState {
   }
 
   getPercentCompleteEstimate() {
-    if (this.completed) {
+    if (this.isCompleted()) {
       return 1;
     }
     return 1.0-(this.getCurrentDifficulty()/100) // TODO better
   }
 
   getTimeRemainingEstimate() {
-    if (this.completed) {
+    if (this.isCompleted()) {
       return 0.0;
     }
 
@@ -81,7 +86,7 @@ export class TaskState {
   }
 
   getHashrate() {
-    if (this.completed) {
+    if (this.isCompleted()) {
       return 0.0;
     }
 

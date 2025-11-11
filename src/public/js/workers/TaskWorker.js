@@ -470,11 +470,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _TaskComputer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./TaskComputer */ "./js/models/TaskComputer.js");
 /* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
+/* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
+
 
 
 
 class TaskState {
   constructor() {
+    this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_2__.TASK_STATUS.INITIATED;
     this.object_id = null;
     this.target_id = null;
     this.object_type = null;
@@ -497,12 +500,11 @@ class TaskState {
     this.result_message = null;
     this.result_nonce = null;
     this.result_hash = null;
-    this.completed = false;
 
   }
 
   isCompleted() {
-    return this.completed;
+    return this.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_2__.TASK_STATUS.COMPLETED;
   }
 
   toLog(){
@@ -515,8 +517,12 @@ class TaskState {
     this.block_current_estimated = block;
   }
 
+  setStatus(status) {
+    this.status = status
+  }
+
   setResult(nonce, message, hash) {
-    this.completed = true;
+    this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_2__.TASK_STATUS.COMPLETED;
     this.process_end_time = new Date();
     this.result_message = message;
     this.result_nonce = nonce + this.postfix;
@@ -537,14 +543,14 @@ class TaskState {
   }
 
   getPercentCompleteEstimate() {
-    if (this.completed) {
+    if (this.isCompleted()) {
       return 1;
     }
     return 1.0-(this.getCurrentDifficulty()/100) // TODO better
   }
 
   getTimeRemainingEstimate() {
-    if (this.completed) {
+    if (this.isCompleted()) {
       return 0.0;
     }
 
@@ -553,7 +559,7 @@ class TaskState {
   }
 
   getHashrate() {
-    if (this.completed) {
+    if (this.isCompleted()) {
       return 0.0;
     }
 
@@ -7102,26 +7108,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 let state = null;
-let pid = null;
 
 const taskStateFactory = new _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_2__.TaskStateFactory();
 
 onmessage =  function(process_request) {
-    const msg_type = process_request.data[0];
-    switch (msg_type) {
-        case _constants_TaskMessageTypes__WEBPACK_IMPORTED_MODULE_0__.TASK_MESSAGE_TYPES.START:
-            state = taskStateFactory.make(process_request.data[1]);
-            pid = state.getPID();
-
-            console.log('Start Process Request ' + pid);
-            postMessage([pid, _constants_TaskMessageTypes__WEBPACK_IMPORTED_MODULE_0__.TASK_MESSAGE_TYPES.STARTED]);
-            work();
-
-            break;
-
-        default:
-            console.debug('[' + pid + '] Why is this message (' +msg_type+ ') in my worker?');
-    }
+    state = taskStateFactory.make(process_request.data[0]);
+    state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.RUNNING)
+    console.log('Start Process Request ' + state.getPID());
+    work();
 }
 
 function work() {
@@ -7134,12 +7128,12 @@ function work() {
 
         if (difficultyCheck(hash, difficulty)){
             state.setResult(nonce, message, hash);
-            postMessage([pid, _constants_TaskMessageTypes__WEBPACK_IMPORTED_MODULE_0__.TASK_MESSAGE_TYPES.COMPLETED, state]);
+            postMessage([state]);
             break;
         }
 
         if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__.TASK.CHECKPOINT_COMMIT === 0) {
-            postMessage([pid, _constants_TaskMessageTypes__WEBPACK_IMPORTED_MODULE_0__.TASK_MESSAGE_TYPES.COMMIT, state]);
+            postMessage([state]);
         }
 
         if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__.TASK.DIFFICULTY_RECALCULATE === 0) {
