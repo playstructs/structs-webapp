@@ -2,6 +2,7 @@ import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelCo
 import {EVENTS} from "../../../constants/Events";
 import {MAP_TILE_TYPE_ICONS, MAP_TILE_TYPES} from "../../../constants/MapConstants";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
+import {MenuPage} from "../../../framework/MenuPage";
 
 export class ActionBarComponent extends AbstractViewModelComponent {
 
@@ -137,7 +138,12 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     if (hasDeployButton) {
       deployBtn = `
         <div class="sui-action-bar-btn-group">
-          <a id="${deployBtnId}" href="javascript: void(0)" class="sui-panel-btn sui-mod-default">
+          <a 
+            id="${deployBtnId}"
+            href="javascript: void(0)"
+            class="sui-panel-btn sui-mod-default"
+            data-sui-offcanvas="deploy"
+          >
             <i class="sui-icon-md icon-deploy"></i>
           </a>
         </div>
@@ -146,6 +152,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       attachDeployBtnHandler = () => {
         document.getElementById(deployBtnId).addEventListener('click', function () {
           console.log('Deploy button clicked');
+          MenuPage.sui.offcanvas.setHeader('Select Struct')
+          MenuPage.sui.offcanvas.setContent('Structs to Select')
+          MenuPage.sui.offcanvas.open();
         });
       };
     }

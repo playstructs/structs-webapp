@@ -1880,15 +1880,24 @@ only screen and (min-height: 1024px) {
   #alpha-base-map-container,
   #raid-map-container,
   #preview-map-container,
-  #loading-screen {
+  #loading-screen,
+  #sui-offcanvas {
     transform: scale(2);
     transform-origin: 0 0;
+  }
+
+  #sui-offcanvas.sui-mod-right {
+    transform-origin: top right;
   }
 
   #menu-page-layout,
   #hud-container,
   #loading-screen {
     width: 50vw;
+    height: 50vh;
+  }
+
+  #sui-offcanvas {
     height: 50vh;
   }
 }
@@ -1904,10 +1913,18 @@ only screen and (min-height: 2048px) {
     transform-origin: 0 0;
   }
 
+  #sui-offcanvas.sui-mod-right {
+    transform-origin: top right;
+  }
+
   #menu-page-layout,
   #hud-container,
   #loading-screen {
     width: 25vw;
+    height: 25vh;
+  }
+
+  #sui-offcanvas {
     height: 25vh;
   }
 }

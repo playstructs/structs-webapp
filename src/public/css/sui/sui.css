@@ -92,8 +92,8 @@
   /* -- Positioning Start -- */
 
   --loading-screen-z-index: 10000;
-  --menu-page-z-index: 1000;
   --popup-z-index: 2000;
+  --menu-page-z-index: 1000;
   --hud-z-index: 50;
   --map-z-index: 10;
   --menu-z-index: 10;
@@ -1079,6 +1079,10 @@ a.sui-screen-nav-item:visited {
   white-space: nowrap;
 }
 
+.sui-screen-nav-item.sui-mod-header {
+  color: var(--text-player-highlight)
+}
+
 .sui-mod-active {
   border-bottom: 2px solid var(--accent-primary-active);
 }
@@ -1112,6 +1116,14 @@ a.sui-screen-nav-item:visited {
 .sui-theme-player a.sui-screen-nav-close:hover,
 .sui-theme-player a.sui-screen-nav-close:active {
   color: var(--accent-primary-active);
+}
+
+.sui-theme-player .sui-screen-nav-item.sui-mod-header {
+  color: var(--text-player-highlight);
+}
+
+.sui-theme-enemy .sui-screen-nav-item.sui-mod-header {
+  color: var(--text-enemy-highlight);
 }
 
 .sui-screen-properties {
@@ -2515,6 +2527,30 @@ label.sui-form-element-group-label {
 }
 
 /* ---- HUD Elements End ---- */
+
+
+/* ---- Offcanvas Start ---- */
+
+#sui-offcanvas {
+  position: fixed;
+  z-index: var(--popup-z-index);
+}
+
+#sui-offcanvas.sui-mod-left {
+  top: 0;
+  left: 0;
+  min-width: 260px;
+  height: 100vh;
+}
+
+#sui-offcanvas.sui-mod-right {
+  top: 0;
+  right: 0;
+  min-width: 260px;
+  height: 100vh;
+}
+
+/* ---- Offcanvas End ---- */
 
 
 /* ---- Utility Classes Start ---- */
