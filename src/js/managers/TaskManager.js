@@ -1,6 +1,7 @@
 import {TASK} from "../constants/TaskConstants";
 import {EVENTS} from "../constants/Events";
 import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
+import {FEE} from "../constants/Fee";
 
 
 /*
@@ -34,10 +35,38 @@ export class TaskManager {
 
         window.addEventListener(EVENTS.TASK_COMPLETED, function (event) {
             console.log('It is done!' + event.state.toLog());
+
+            // TODO - More complex result handling
+            // If the Task belongs to this user
+                // Create a transactions
+            // else
+                // submit to guild
+
+            // StructBuildComplete
+            // StructOreMinerComplete
+            // StructOreRefineryComplete
+            // PlanetRaidComplete
+
+            /*
+            const msg = this.signingClientManager.createMsgAddressRevoke(
+                this.gameState.signingAccount.address,
+                addressToRevoke
+            );
+
+            try {
+                await this.gameState.signingClient.signAndBroadcast(
+                    this.gameState.signingAccount.address,
+                    [msg],
+                    FEE
+                );
+            } catch (error) {
+                console.log('Sign and Broadcast Error:', error);
+            }
+            */
+             */
         }.bind(this));
+
     }
-
-
 
     start(task_process) {
         const pid = task_process.getPID();
@@ -73,7 +102,10 @@ export class TaskManager {
     runNext() {
         if (this.running_count < TASK.MAX_CONCURRENT_PROCESSES) {
             const next_pid = this.waiting_queue.pop()
-            if ((next_pid !== undefined) && (next_pid !== null) && (next_pid !== "")) {
+            if ((next_pid !== undefined)
+                && (next_pid !== null)
+                && (next_pid !== "")
+            ) {
                 console.log(next_pid)
                 this.processes[next_pid].start(next_pid);
                 this.running_count++;
@@ -130,8 +162,9 @@ export class TaskManager {
     }
 
     resume(pid) {
-        if (!this.processes[pid].isRunning() && !this.processes[pid].isCompleted()) {
-
+        if (!this.processes[pid].isRunning()
+            && !this.processes[pid].isCompleted()
+        ) {
             // Pull it out of the waiting queue
             this.waitingQueueRemove(pid)
 
@@ -202,5 +235,4 @@ export class TaskManager {
         }
         return total;
     }
-
 }
