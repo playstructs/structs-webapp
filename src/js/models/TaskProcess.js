@@ -2,7 +2,6 @@ import {TASK} from "../constants/TaskConstants";
 import {TASK_STATUS} from "../constants/TaskStatus";
 import {TASK_MESSAGE_TYPES} from "../constants/TaskMessageTypes";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
-import {TaskComputer} from "./TaskComputer";
 import {TaskState} from "./TaskState";
 import {TaskProgressEvent} from "../events/TaskProgressEvent";
 

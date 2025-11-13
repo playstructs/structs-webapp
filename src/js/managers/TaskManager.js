@@ -33,6 +33,10 @@ export class TaskManager {
             }
         }.bind(this));
 
+        window.addEventListener(EVENTS.TASK_SPAWN, function (event) {
+            // TODO
+        }.bind(this));
+
         window.addEventListener(EVENTS.TASK_COMPLETED, function (event) {
             console.log('It is done!' + event.state.toLog());
 
