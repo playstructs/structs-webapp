@@ -63,7 +63,7 @@ export class TaskManager {
                 console.log('Sign and Broadcast Error:', error);
             }
             */
-             */
+
         }.bind(this));
 
     }
