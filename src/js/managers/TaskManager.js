@@ -2,6 +2,7 @@ import {TASK} from "../constants/TaskConstants";
 import {EVENTS} from "../constants/Events";
 import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
 import {FEE} from "../constants/Fee";
+import {TaskProcess} from "../models/TaskProcess";
 
 
 /*
@@ -34,7 +35,18 @@ export class TaskManager {
         }.bind(this));
 
         window.addEventListener(EVENTS.TASK_SPAWN, function (event) {
-            // TODO
+            if ((this.processes[event.state.getPID()] !== undefined)
+                && (this.processes[event.state.getPID()] !== null)
+                && (this.processes[event.state.getPID()] !== "")
+            ) {
+                if (event.state.block_start > this.processes[event.state.getPID()].state.block_start) {
+                    let process = new TaskProcess(event.state);
+                    this.queue(process);
+                }
+            } else {
+                let process = new TaskProcess(event.state);
+                this.queue(process);
+            }
         }.bind(this));
 
         window.addEventListener(EVENTS.TASK_COMPLETED, function (event) {
