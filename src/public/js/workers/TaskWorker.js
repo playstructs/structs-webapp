@@ -248,215 +248,6 @@ class NotImplementedError extends Error {
 
 /***/ }),
 
-/***/ "./js/models/TaskComputer.js":
-/*!***********************************!*\
-  !*** ./js/models/TaskComputer.js ***!
-  \***********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   TaskComputer: () => (/* binding */ TaskComputer),
-/* harmony export */   task_processes: () => (/* binding */ task_processes),
-/* harmony export */   task_running_count: () => (/* binding */ task_running_count),
-/* harmony export */   task_running_queue: () => (/* binding */ task_running_queue),
-/* harmony export */   task_waiting_queue: () => (/* binding */ task_waiting_queue)
-/* harmony export */ });
-/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
-/* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
-
-
-var task_processes = [];
-var task_waiting_queue = [];
-var task_running_queue = [];
-var task_running_count = 0;
-
-/*
- The Task Computer is an interface for interacting with the global task variables.
- This format allows fo the Web Worker callback functions to easily write to their processes.
- */
-class TaskComputer {
-    constructor() {
-    }
-
-    start(task_process) {
-        const pid = task_process.getPID();
-        task_processes[pid] = task_process;
-
-        if (task_running_count > _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.MAX_CONCURRENT_PROCESSES) {
-            const sleep_pid = task_running_queue[0];
-            this.pause(sleep_pid);
-        }
-
-        task_processes[pid].start(pid);
-        task_running_queue.push(pid);
-        task_running_count++;
-
-        return pid;
-    }
-
-    queue(task_process) {
-        const pid = task_process.getPID();
-        task_processes[pid] = task_process;
-
-        if (task_running_count < _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.MAX_CONCURRENT_PROCESSES) {
-            task_processes[pid].start(pid);
-            task_running_queue.push(pid);
-            task_running_count++;
-        } else {
-            task_waiting_queue.push(pid);
-        }
-
-        return pid;
-    }
-
-    runNext() {
-        if (task_running_count < _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.MAX_CONCURRENT_PROCESSES) {
-            const next_pid = task_waiting_queue.pop()
-            if ((next_pid !== undefined) && (next_pid !== null) && (next_pid !== "")) {
-                console.log(next_pid)
-                task_processes[next_pid].start(next_pid);
-                task_running_count++;
-                task_running_queue.push(next_pid);
-            }
-        }
-    }
-
-    terminate(pid) {
-        const running_index = task_running_queue.indexOf(pid);
-        if (running_index !== -1) {
-            task_running_queue.splice(running_index, 1);
-            task_running_count--;
-        }
-
-        const waiting_index = task_waiting_queue.indexOf(pid);
-        if (waiting_index !== -1) {
-            task_waiting_queue.splice(waiting_index, 1);
-        }
-
-        task_processes[pid].terminate();
-
-        this.runNext();
-    }
-
-   complete(pid) {
-        const running_index = task_running_queue.indexOf(pid);
-        if (running_index !== -1) {
-            task_running_queue.splice(running_index, 1);
-            task_running_count--;
-        }
-
-        const waiting_index = task_waiting_queue.indexOf(pid);
-        if (waiting_index !== -1) {
-            task_waiting_queue.splice(waiting_index, 1);
-        }
-
-        task_processes[pid].complete();
-
-        this.runNext();
-    }
-
-    pause(pid) {
-        if (task_processes[pid].isRunning()) {
-            const index = task_running_queue.indexOf(pid);
-            if (index !== -1) {
-                task_running_queue.splice(index, 1);
-            }
-
-            task_waiting_queue.push(pid);
-
-            task_running_count--;
-            task_processes[pid].pause();
-
-            this.runNext();
-        }
-    }
-
-    resume(pid) {
-        if (!task_processes[pid].isRunning() && !task_processes[pid].isCompleted()) {
-
-            // Pull it out of the waiting queue
-            const index = task_waiting_queue.indexOf(pid);
-            if (index !== -1) {
-                task_waiting_queue.splice(index, 1);
-            }
-
-            if (task_running_count < _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.MAX_CONCURRENT_PROCESSES) {
-                task_running_queue.push(pid);
-                task_processes[pid].start(pid);
-                task_running_count++;
-
-            } else {
-                // Add back to the next position of the waiting queue
-                task_waiting_queue.push(pid);
-
-                // Sleep the oldest
-                // Which will automatically run the next in the queue after
-                const sleep_pid = task_running_queue[0];
-                this.pause(sleep_pid);
-            }
-        }
-    }
-
-
-    setStatus(pid, new_status) {
-        console.log("Updating " + pid + " to status " + new_status);
-        task_processes[pid].setStatus(new_status);
-    }
-
-    setState(pid, new_state) {
-        task_processes[pid].setState(new_state);
-    }
-
-    getProcessPercentCompleteEstimate(pid) {
-        return task_processes[pid].state.getPercentCompleteEstimate();
-    }
-
-    getProcessPercentCompleteEstimateAll() {
-        let i = 0;
-        let avg_complete = 0.0;
-        for (const key in task_processes) {
-            i++
-            avg_complete += task_processes[key].state.getPercentCompleteEstimate();
-        }
-        return avg_complete / (i);
-    }
-
-    getProcessTimeRemainingEstimate(pid) {
-        return task_processes[pid].state.getTimeRemainingEstimate();
-    }
-
-    getProcessTimeRemainingEstimateAll() {
-        let longest = 0;
-        for (const key in task_processes) {
-             const estimate = task_processes[key].state.getTimeRemainingEstimate();
-             if (estimate > longest) {
-                 longest = estimate;
-             }
-        }
-        return longest;
-    }
-
-    getProcessHashrate(pid) {
-        return task_processes[pid].state.getHashrate();
-    }
-
-    getProceessHashrateAll() {
-        let total = 0;
-
-        for (const key in task_processes) {
-            total += task_processes[key].state.getHashrate();
-        }
-        return total;
-    }
-
-
-}
-
-
-/***/ }),
-
 /***/ "./js/models/TaskState.js":
 /*!********************************!*\
   !*** ./js/models/TaskState.js ***!
@@ -468,16 +259,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   TaskState: () => (/* binding */ TaskState)
 /* harmony export */ });
-/* harmony import */ var _TaskComputer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./TaskComputer */ "./js/models/TaskComputer.js");
-/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
-/* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
-
+/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
+/* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
 
 
 
 class TaskState {
   constructor() {
-    this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_2__.TASK_STATUS.INITIATED;
+    this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.INITIATED;
     this.object_id = null;
     this.target_id = null;
     this.object_type = null;
@@ -504,7 +293,7 @@ class TaskState {
   }
 
   isCompleted() {
-    return this.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_2__.TASK_STATUS.COMPLETED;
+    return this.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.COMPLETED;
   }
 
   toLog(){
@@ -522,7 +311,7 @@ class TaskState {
   }
 
   setResult(nonce, message, hash) {
-    this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_2__.TASK_STATUS.COMPLETED;
+    this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.COMPLETED;
     this.process_end_time = new Date();
     this.result_message = message;
     this.result_nonce = nonce + this.postfix;
@@ -573,7 +362,7 @@ class TaskState {
 
   getCurrentAgeEstimate() {
     const current_time = new Date();
-    const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_1__.TASK.ESTIMATED_BLOCK_TIME);
+    const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.ESTIMATED_BLOCK_TIME);
     this.block_current_estimated = Math.floor(this.block_checkpoint + estimated_blocks_past);
 
     return this.block_current_estimated - this.block_start;
