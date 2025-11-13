@@ -4,21 +4,27 @@ import {TASK_STATUS} from "../constants/TaskStatus";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TaskState} from "../models/TaskState"
 import { sha256 } from "js-sha256";
-import {TASK as TASKS} from "../constants/TaskConstants";
+import {TASK} from "../constants/TaskConstants";
 
 let state = null;
 
 const taskStateFactory = new TaskStateFactory();
 
-onmessage =  function(process_request) {
+onmessage =  async function(process_request) {
     state = taskStateFactory.make(process_request.data[0]);
     state.setStatus(TASK_STATUS.RUNNING)
     console.log('Start Process Request ' + state.getPID());
-    work();
+    await work();
 }
 
-function work() {
+async function work() {
     let difficulty = state.getCurrentDifficulty();
+
+    while (difficulty > TASK.DIFFICULTY_START) {
+        console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + TASK.DIFFICULTY_START);
+        await new Promise(r => setTimeout(r, TASK.DIFFICULTY_START_SLEEP_DELAY));
+        difficulty = state.getCurrentDifficulty();
+    }
 
     while (true) {
         const nonce = state.getNextNonce();
@@ -31,11 +37,11 @@ function work() {
             break;
         }
 
-        if (state.iterations % TASKS.CHECKPOINT_COMMIT === 0) {
+        if (state.iterations % TASK.CHECKPOINT_COMMIT === 0) {
             postMessage([state]);
         }
 
-        if (state.iterations % TASKS.DIFFICULTY_RECALCULATE === 0) {
+        if (state.iterations % TASK.DIFFICULTY_RECALCULATE === 0) {
             difficulty = state.getCurrentDifficulty();
         }
     }

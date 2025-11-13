@@ -27,6 +27,12 @@ export class TaskManager {
         this.running_queue = [];
         this.running_count = 0;
 
+        /*
+            TASK_PROGRESS used to propagate task state throughout. Can be
+            used by UI elements for updating progress bars and estimates.
+
+            Only Web Worker message handlers should dispatch this event.
+         */
         window.addEventListener(EVENTS.TASK_PROGRESS, function (event) {
             this.processes[event.state.getPID()].state = event.state;
             if (event.state.isCompleted()) {
@@ -34,14 +40,21 @@ export class TaskManager {
             }
         }.bind(this));
 
+        /*
+            TASK_SPAWN can be dispatched anywhere to execute new tasks.
+
+
+         */
         window.addEventListener(EVENTS.TASK_SPAWN, function (event) {
+
+            event.state.setBlockCheckpoint(this.gameState.currentBlockHeight);
+
             if ((this.processes[event.state.getPID()] !== undefined)
                 && (this.processes[event.state.getPID()] !== null)
                 && (this.processes[event.state.getPID()] !== "")
             ) {
-                if (event.state.block_start > this.processes[event.state.getPID()].state.block_start) {
-                    let process = new TaskProcess(event.state);
-                    this.queue(process);
+                if (event.state.block_start >= this.processes[event.state.getPID()].state.block_start) {
+                    this.processes[event.state.getPID()].replaceState(event.state);
                 }
             } else {
                 let process = new TaskProcess(event.state);
@@ -93,6 +106,7 @@ export class TaskManager {
             this.pause(sleep_pid);
         }
 
+        this.processes[pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
         this.processes[pid].start(pid);
         this.running_queue.push(pid);
         this.running_count++;
@@ -105,6 +119,7 @@ export class TaskManager {
         this.processes[pid] = task_process;
 
         if (this.running_count < TASK.MAX_CONCURRENT_PROCESSES) {
+            this.processes[pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
             this.processes[pid].start(pid);
             this.running_queue.push(pid);
             this.running_count++;
@@ -123,6 +138,7 @@ export class TaskManager {
                 && (next_pid !== "")
             ) {
                 console.log(next_pid)
+                this.processes[next_pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
                 this.processes[next_pid].start(next_pid);
                 this.running_count++;
                 this.running_queue.push(next_pid);
@@ -186,6 +202,7 @@ export class TaskManager {
 
             if (this.running_count < TASK.MAX_CONCURRENT_PROCESSES) {
                 this.running_queue.push(pid);
+                this.processes[pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
                 this.processes[pid].start(pid);
                 this.running_count++;
 

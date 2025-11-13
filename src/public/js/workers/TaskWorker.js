@@ -47,6 +47,8 @@ const TASK = {
   MAX_CONCURRENT_PROCESSES: 5,
   CHECKPOINT_COMMIT: 5000000,
   DIFFICULTY_RECALCULATE: 5000000,
+  DIFFICULTY_START: 10,
+  DIFFICULTY_START_SLEEP_DELAY: 10000,
   CHECKPOINT_BLOCK: 10,
   ESTIMATED_BLOCK_TIME: 7000,
   IDENTITY_PREFIX: "IDENTITY",
@@ -164,37 +166,56 @@ class TaskStateFactory extends _framework_AbstractFactory__WEBPACK_IMPORTED_MODU
     return task_state;
   }
 
+
   /**
-   * @param {object} obj
+   * @param {string} fleet_id
+   * @param {string} planet_id
+   * @param {number} block_start
+   * @param {number} difficulty_target
    * @return {TaskState}
    */
-  init(obj) {
+  initRaidTask(fleet_id, planet_id, block_start, difficulty_target){
+
     const task_state = new _models_TaskState__WEBPACK_IMPORTED_MODULE_0__.TaskState();
-    Object.assign(task_state, obj);
 
-    /* build the prefix */
-    switch (task_state.task_type) {
-      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_5__.TASK_TYPES.RAID:
-        task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_6__.OBJECT_TYPES.FLEET
-        task_state.prefix = task_state.object_id + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.TARGET_DELIMITER + task_state.target_id + task_state.task_type + task_state.block_start + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.NONCE_PREFIX;
-        break;
-      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_5__.TASK_TYPES.BUILD:
-      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_5__.TASK_TYPES.MINE:
-      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_5__.TASK_TYPES.REFINE:
-        task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_6__.OBJECT_TYPES.STRUCT
-        task_state.prefix = task_state.object_id  + task_state.task_type + task_state.block_start + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.NONCE_PREFIX;
-        break;
-    }
+    task_state.task_type = _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_5__.TASK_TYPES.RAID;
+    task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_6__.OBJECT_TYPES.FLEET;
+    task_state.object_id = fleet_id;
+    task_state.target_id = planet_id;
+    task_state.block_start = block_start;
+    task_state.difficulty_target = difficulty_target;
 
-    /* Set the Identity Postfix */
-    if ((task_state.identity !== undefined) && (task_state.identity !== null) && (task_state.identity !== "")) {
-      task_state.postfix = _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.IDENTITY_PREFIX + task_state.identity;
-    } else {
-      task_state.postfix = '';
-    }
+    task_state.prefix = task_state.object_id + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.TARGET_DELIMITER + task_state.target_id + task_state.task_type + task_state.block_start + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.NONCE_PREFIX;
+    task_state.postfix = '';
 
     return task_state;
   }
+
+
+
+  /**
+   * @param {string} struct_id
+   * @param {string} task_type
+   * @param {number} block_start
+   * @param {number} difficulty_target
+   * @return {TaskState}
+   */
+  initStructTask(struct_id, task_type, block_start, difficulty_target){
+
+    const task_state = new _models_TaskState__WEBPACK_IMPORTED_MODULE_0__.TaskState();
+
+    task_state.task_type = task_type;
+    task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_6__.OBJECT_TYPES.STRUCT;
+    task_state.object_id = struct_id;
+    task_state.block_start = block_start;
+    task_state.difficulty_target = difficulty_target;
+
+    task_state.prefix = task_state.object_id  + task_state.task_type + task_state.block_start + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.NONCE_PREFIX;
+    task_state.postfix = '';
+
+    return task_state;
+}
+
 
 }
 
@@ -261,6 +282,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
 /* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
+/* harmony import */ var _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../factories/TaskStateFactory */ "./js/factories/TaskStateFactory.js");
+/* harmony import */ var _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/TaskTypes */ "./js/constants/TaskTypes.js");
+
+
 
 
 
@@ -6900,15 +6925,21 @@ let state = null;
 
 const taskStateFactory = new _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_2__.TaskStateFactory();
 
-onmessage =  function(process_request) {
+onmessage =  async function(process_request) {
     state = taskStateFactory.make(process_request.data[0]);
     state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.RUNNING)
     console.log('Start Process Request ' + state.getPID());
-    work();
+    await work();
 }
 
-function work() {
+async function work() {
     let difficulty = state.getCurrentDifficulty();
+
+    while (difficulty > _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__.TASK.DIFFICULTY_START) {
+        console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__.TASK.DIFFICULTY_START);
+        await new Promise(r => setTimeout(r, _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__.TASK.DIFFICULTY_START_SLEEP_DELAY));
+        difficulty = state.getCurrentDifficulty();
+    }
 
     while (true) {
         const nonce = state.getNextNonce();

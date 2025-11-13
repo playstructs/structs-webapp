@@ -40,6 +40,26 @@ export class TaskProcess {
     return true
   }
 
+  replaceState(new_state) {
+    switch (this.state.status) {
+      case TASK_STATUS.INITIATED:
+      case TASK_STATUS.PAUSED:
+        this.state = new_state;
+        break;
+
+      case TASK_STATUS.STARTING:
+      case TASK_STATUS.RUNNING:
+      case TASK_STATUS.TERMINATED:
+        this.state = new_state;
+        this.start();
+        break;
+
+      case TASK_STATUS.COMPLETED:
+        console.log("Tried to spawn new state over completed task " + this.state.getPID());
+        break;
+    }
+  }
+
   pause() {
     this.clearWorker();
     this.state.status = TASK_STATUS.PAUSED;

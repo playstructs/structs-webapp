@@ -19,36 +19,55 @@ export class TaskStateFactory extends AbstractFactory {
     return task_state;
   }
 
+
   /**
-   * @param {object} obj
+   * @param {string} fleet_id
+   * @param {string} planet_id
+   * @param {number} block_start
+   * @param {number} difficulty_target
    * @return {TaskState}
    */
-  init(obj) {
+  initRaidTask(fleet_id, planet_id, block_start, difficulty_target){
+
     const task_state = new TaskState();
-    Object.assign(task_state, obj);
 
-    /* build the prefix */
-    switch (task_state.task_type) {
-      case TASK_TYPES.RAID:
-        task_state.object_type = OBJECT_TYPE.FLEET
-        task_state.prefix = task_state.object_id + TASK.TARGET_DELIMITER + task_state.target_id + task_state.task_type + task_state.block_start + TASK.NONCE_PREFIX;
-        break;
-      case TASK_TYPES.BUILD:
-      case TASK_TYPES.MINE:
-      case TASK_TYPES.REFINE:
-        task_state.object_type = OBJECT_TYPE.STRUCT
-        task_state.prefix = task_state.object_id  + task_state.task_type + task_state.block_start + TASK.NONCE_PREFIX;
-        break;
-    }
+    task_state.task_type = TASK_TYPES.RAID;
+    task_state.object_type = OBJECT_TYPE.FLEET;
+    task_state.object_id = fleet_id;
+    task_state.target_id = planet_id;
+    task_state.block_start = block_start;
+    task_state.difficulty_target = difficulty_target;
 
-    /* Set the Identity Postfix */
-    if ((task_state.identity !== undefined) && (task_state.identity !== null) && (task_state.identity !== "")) {
-      task_state.postfix = TASK.IDENTITY_PREFIX + task_state.identity;
-    } else {
-      task_state.postfix = '';
-    }
+    task_state.prefix = task_state.object_id + TASK.TARGET_DELIMITER + task_state.target_id + task_state.task_type + task_state.block_start + TASK.NONCE_PREFIX;
+    task_state.postfix = '';
 
     return task_state;
   }
+
+
+
+  /**
+   * @param {string} struct_id
+   * @param {string} task_type
+   * @param {number} block_start
+   * @param {number} difficulty_target
+   * @return {TaskState}
+   */
+  initStructTask(struct_id, task_type, block_start, difficulty_target){
+
+    const task_state = new TaskState();
+
+    task_state.task_type = task_type;
+    task_state.object_type = OBJECT_TYPE.STRUCT;
+    task_state.object_id = struct_id;
+    task_state.block_start = block_start;
+    task_state.difficulty_target = difficulty_target;
+
+    task_state.prefix = task_state.object_id  + task_state.task_type + task_state.block_start + TASK.NONCE_PREFIX;
+    task_state.postfix = '';
+
+    return task_state;
+}
+
 
 }
