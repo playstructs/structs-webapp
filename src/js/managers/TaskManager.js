@@ -62,6 +62,19 @@ export class TaskManager {
             }
         }.bind(this));
 
+
+        /*
+            TASK_KILL can be dispatched anywhere to kill tasks.
+         */
+        window.addEventListener(EVENTS.TASK_KILL, function (event) {
+            if ((this.processes[event.pid] !== undefined)
+                && (this.processes[event.pid] !== null)
+                && (this.processes[event.pid] !== "")
+            ) {
+                this.terminate(event.pid);
+            }
+        }.bind(this));
+
         window.addEventListener(EVENTS.TASK_COMPLETED, function (event) {
             console.log('It is done!' + event.state.toLog());
 
