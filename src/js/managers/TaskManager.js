@@ -3,6 +3,10 @@ import {EVENTS} from "../constants/Events";
 import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
 import {FEE} from "../constants/Fee";
 import {TaskProcess} from "../models/TaskProcess";
+import {RaidStatusListener} from "../grass_listeners/RaidStatusListener";
+import {RaidEnemyLastActionListener} from "../grass_listeners/RaidEnemyLastActionListener";
+import {RaidEnemyOreListener} from "../grass_listeners/RaidEnemyOreListener";
+import {StructRefineStatusListener} from "../grass_listeners/StructRefineStatusListener";
 
 
 /*
@@ -26,6 +30,10 @@ export class TaskManager {
         this.waiting_queue = [];
         this.running_queue = [];
         this.running_count = 0;
+
+        this.grassManager.registerListener(new StructBuildStatusListener(this.gameState));
+        this.grassManager.registerListener(new StructMineStatusListener(this.gameState));
+        this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 
         /*
             TASK_PROGRESS used to propagate task state throughout. Can be
