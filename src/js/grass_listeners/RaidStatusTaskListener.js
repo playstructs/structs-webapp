@@ -7,9 +7,6 @@ import {TaskKillEvent} from "../events/TaskKillEvent";
 export class RaidStatusTaskListener extends AbstractGrassListener {
   /**
    * @param {GameState} gameState
-   * @param {GuildAPI} guildAPI
-   * @param {RaidManager} raidManager
-   * @param {MapManager} mapManager
    */
   constructor(
     gameState,

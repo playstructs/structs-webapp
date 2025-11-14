@@ -105,4 +105,81 @@ export class SigningClientManager {
       }),
     }
   }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} fleetId
+   * @param {string} proof
+   * @param {string} nonce
+   * @return {{typeUrl: string, value: MsgPlanetRaidComplete}}
+   */
+  createMsgPlanetRaidComplete(creatorAddress, fleetId, proof, nonce) {
+    return {
+      typeUrl: '/structs.structs.MsgPlanetRaidComplete',
+      value: MsgPlanetRaidComplete.fromPartial({
+        creator: creatorAddress,
+        fleetId: fleetId,
+        proof: proof,
+        nonce: nonce
+      }),
+    }
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} structId
+   * @param {string} proof
+   * @param {string} nonce
+   * @return {{typeUrl: string, value: MsgStructBuildComplete}}
+   */
+  createMsgStructBuildComplete(creatorAddress, structId, proof, nonce) {
+    return {
+      typeUrl: '/structs.structs.MsgStructBuildComplete',
+      value: MsgStructBuildComplete.fromPartial({
+        creator: creatorAddress,
+        structId: structId,
+        proof: proof,
+        nonce: nonce
+      }),
+    }
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} structId
+   * @param {string} proof
+   * @param {string} nonce
+   * @return {{typeUrl: string, value: MsgStructMineComplete}}
+   */
+  createMsgStructMineComplete(creatorAddress, structId, proof, nonce) {
+    return {
+      typeUrl: '/structs.structs.MsgStructMineComplete',
+      value: MsgStructMineComplete.fromPartial({
+        creator: creatorAddress,
+        structId: structId,
+        proof: proof,
+        nonce: nonce
+      }),
+    }
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} structId
+   * @param {string} proof
+   * @param {string} nonce
+   * @return {{typeUrl: string, value: MsgStructRefineComplete}}
+   */
+  createMsgStructRefineComplete(creatorAddress, structId, proof, nonce) {
+    return {
+      typeUrl: '/structs.structs.MsgStructRefineComplete',
+      value: MsgStructRefineComplete.fromPartial({
+        creator: creatorAddress,
+        structId: structId,
+        proof: proof,
+        nonce: nonce
+      }),
+    }
+  }
+
 }
