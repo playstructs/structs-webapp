@@ -1,8 +1,6 @@
 import {TaskState} from "../models/TaskState";
 import {AbstractFactory} from "../framework/AbstractFactory";
 import {TASK} from "../constants/TaskConstants";
-import {TASK_MESSAGE_TYPES} from "../constants/TaskMessageTypes";
-import {TASK_STATUS} from "../constants/TaskStatus";
 import {TASK_TYPES} from "../constants/TaskTypes";
 import {OBJECT_TYPES as OBJECT_TYPE} from "../constants/ObjectTypes";
 

@@ -59,30 +59,6 @@ const TASK = {
 
 /***/ }),
 
-/***/ "./js/constants/TaskMessageTypes.js":
-/*!******************************************!*\
-  !*** ./js/constants/TaskMessageTypes.js ***!
-  \******************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   TASK_MESSAGE_TYPES: () => (/* binding */ TASK_MESSAGE_TYPES)
-/* harmony export */ });
-const TASK_MESSAGE_TYPES = {
-  START: 'start',
-  STARTED: 'started',
-  PAUSE: 'pause',
-  PAUSED: 'paused',
-  COMMIT: 'commit',
-  COMPLETED: 'completed',
-  BLOCK_UPDATE: 'block_update',
-};
-
-
-/***/ }),
-
 /***/ "./js/constants/TaskStatus.js":
 /*!************************************!*\
   !*** ./js/constants/TaskStatus.js ***!
@@ -141,12 +117,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _models_TaskState__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/TaskState */ "./js/models/TaskState.js");
 /* harmony import */ var _framework_AbstractFactory__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/AbstractFactory */ "./js/framework/AbstractFactory.js");
 /* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
-/* harmony import */ var _constants_TaskMessageTypes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/TaskMessageTypes */ "./js/constants/TaskMessageTypes.js");
-/* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
-/* harmony import */ var _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../constants/TaskTypes */ "./js/constants/TaskTypes.js");
-/* harmony import */ var _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../constants/ObjectTypes */ "./js/constants/ObjectTypes.js");
-
-
+/* harmony import */ var _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/TaskTypes */ "./js/constants/TaskTypes.js");
+/* harmony import */ var _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/ObjectTypes */ "./js/constants/ObjectTypes.js");
 
 
 
@@ -178,8 +150,8 @@ class TaskStateFactory extends _framework_AbstractFactory__WEBPACK_IMPORTED_MODU
 
     const task_state = new _models_TaskState__WEBPACK_IMPORTED_MODULE_0__.TaskState();
 
-    task_state.task_type = _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_5__.TASK_TYPES.RAID;
-    task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_6__.OBJECT_TYPES.FLEET;
+    task_state.task_type = _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.RAID;
+    task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__.OBJECT_TYPES.FLEET;
     task_state.object_id = fleet_id;
     task_state.target_id = planet_id;
     task_state.block_start = block_start;
@@ -205,7 +177,7 @@ class TaskStateFactory extends _framework_AbstractFactory__WEBPACK_IMPORTED_MODU
     const task_state = new _models_TaskState__WEBPACK_IMPORTED_MODULE_0__.TaskState();
 
     task_state.task_type = task_type;
-    task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_6__.OBJECT_TYPES.STRUCT;
+    task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__.OBJECT_TYPES.STRUCT;
     task_state.object_id = struct_id;
     task_state.block_start = block_start;
     task_state.difficulty_target = difficulty_target;
@@ -282,10 +254,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
 /* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
-/* harmony import */ var _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../factories/TaskStateFactory */ "./js/factories/TaskStateFactory.js");
-/* harmony import */ var _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/TaskTypes */ "./js/constants/TaskTypes.js");
-
-
 
 
 
@@ -6944,17 +6912,12 @@ var __webpack_exports__ = {};
   !*** ./js/workers/TaskWorker.js ***!
   \**********************************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _constants_TaskMessageTypes__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskMessageTypes */ "./js/constants/TaskMessageTypes.js");
+/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
 /* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
 /* harmony import */ var _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../factories/TaskStateFactory */ "./js/factories/TaskStateFactory.js");
-/* harmony import */ var _models_TaskState__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../models/TaskState */ "./js/models/TaskState.js");
-/* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! js-sha256 */ "./node_modules/js-sha256/src/sha256.js");
-/* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(js_sha256__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
+/* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! js-sha256 */ "./node_modules/js-sha256/src/sha256.js");
+/* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(js_sha256__WEBPACK_IMPORTED_MODULE_3__);
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
-
-
-
 
 
 
@@ -6974,16 +6937,16 @@ onmessage =  async function(process_request) {
 async function work() {
     let difficulty = state.getCurrentDifficulty();
 
-    while (difficulty > _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__.TASK.DIFFICULTY_START) {
-        console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__.TASK.DIFFICULTY_START);
-        await new Promise(r => setTimeout(r, _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__.TASK.DIFFICULTY_START_SLEEP_DELAY));
+    while (difficulty > _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START) {
+        console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START);
+        await new Promise(r => setTimeout(r, _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START_SLEEP_DELAY));
         difficulty = state.getCurrentDifficulty();
     }
 
     while (true) {
         const nonce = state.getNextNonce();
         const message = state.getMessage(nonce);
-        const hash = (0,js_sha256__WEBPACK_IMPORTED_MODULE_4__.sha256)(message);
+        const hash = (0,js_sha256__WEBPACK_IMPORTED_MODULE_3__.sha256)(message);
 
         if (difficultyCheck(hash, difficulty)){
             state.setResult(nonce, message, hash);
@@ -6991,11 +6954,11 @@ async function work() {
             break;
         }
 
-        if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__.TASK.CHECKPOINT_COMMIT === 0) {
+        if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.CHECKPOINT_COMMIT === 0) {
             postMessage([state]);
         }
 
-        if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_5__.TASK.DIFFICULTY_RECALCULATE === 0) {
+        if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_RECALCULATE === 0) {
             difficulty = state.getCurrentDifficulty();
         }
     }

@@ -1,10 +1,7 @@
-
-import {TASK_MESSAGE_TYPES} from "../constants/TaskMessageTypes";
+import {TASK} from "../constants/TaskConstants";
 import {TASK_STATUS} from "../constants/TaskStatus";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
-import {TaskState} from "../models/TaskState"
 import { sha256 } from "js-sha256";
-import {TASK} from "../constants/TaskConstants";
 
 let state = null;
 

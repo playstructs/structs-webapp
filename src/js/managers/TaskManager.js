@@ -1,8 +1,9 @@
 import {TASK} from "../constants/TaskConstants";
 import {EVENTS} from "../constants/Events";
-import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
 import {FEE} from "../constants/Fee";
+import {TASK_TYPES} from "../constants/TaskTypes";
 import {TaskProcess} from "../models/TaskProcess";
+import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
 import {StructRefineStatusListener} from "../grass_listeners/StructRefineStatusListener";
 import {StructMineStatusListener} from "../grass_listeners/StructMineStatusListener";
 import {StructBuildStatusListener} from "../grass_listeners/StructBuildStatusListener";
@@ -80,25 +81,56 @@ export class TaskManager {
             }
         }.bind(this));
 
-        window.addEventListener(EVENTS.TASK_COMPLETED, function (event) {
-            console.log('It is done!' + event.state.toLog());
+        window.addEventListener(EVENTS.TASK_COMPLETED, async function (event) {
+            console.log('It is done! \n ' + event.state.toLog());
 
-            // TODO - More complex result handling
-            // If the Task belongs to this user
-                // Create a transactions
-            // else
-                // submit to guild
+            // TODO - restructure this to not be switch based
+            // TODO - add result verification (check hash, difficulty, etc)
+            // TODO - More complex result handling, currently assumes
+            //          only processing your own work.
+            //
+                // If the Task belongs to this user
+                    // Create a transactions
+                // else
+                    // submit to guild
 
-            // StructBuildComplete
-            // StructOreMinerComplete
-            // StructOreRefineryComplete
-            // PlanetRaidComplete
+            let msg;
+            switch (event.state.task_type) {
+                case TASK_TYPES.RAID:
+                    msg = this.signingClientManager.createMsgPlanetRaidComplete(
+                        this.gameState.signingAccount.address,
+                        event.state.object_id,
+                        event.state.result_hash,
+                        event.state.result_nonce
+                    );
+                    break;
+                case TASK_TYPES.BUILD:
+                    msg = this.signingClientManager.createMsgStructBuildComplete(
+                        this.gameState.signingAccount.address,
+                        event.state.object_id,
+                        event.state.result_hash,
+                        event.state.result_nonce
+                    );
+                    break;
 
-            /*
-            const msg = this.signingClientManager.createMsgAddressRevoke(
-                this.gameState.signingAccount.address,
-                addressToRevoke
-            );
+                case TASK_TYPES.MINE:
+                    msg = this.signingClientManager.createMsgStructMineComplete(
+                        this.gameState.signingAccount.address,
+                        event.state.object_id,
+                        event.state.result_hash,
+                        event.state.result_nonce
+                    );
+                    break;
+
+                case TASK_TYPES.REFINE:
+                    msg = this.signingClientManager.createMsgStructRefineComplete(
+                        this.gameState.signingAccount.address,
+                        event.state.object_id,
+                        event.state.result_hash,
+                        event.state.result_nonce
+                    );
+                    break;
+            }
 
             try {
                 await this.gameState.signingClient.signAndBroadcast(
@@ -109,8 +141,6 @@ export class TaskManager {
             } catch (error) {
                 console.log('Sign and Broadcast Error:', error);
             }
-            */
-
         }.bind(this));
 
     }

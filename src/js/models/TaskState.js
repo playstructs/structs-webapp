@@ -1,7 +1,5 @@
 import {TASK} from "../constants/TaskConstants";
 import {TASK_STATUS} from "../constants/TaskStatus";
-import {TaskStateFactory} from "../factories/TaskStateFactory";
-import {TASK_TYPES} from "../constants/TaskTypes";
 
 export class TaskState {
   constructor() {
