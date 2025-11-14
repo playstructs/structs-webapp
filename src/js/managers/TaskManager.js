@@ -3,10 +3,9 @@ import {EVENTS} from "../constants/Events";
 import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
 import {FEE} from "../constants/Fee";
 import {TaskProcess} from "../models/TaskProcess";
-import {RaidStatusListener} from "../grass_listeners/RaidStatusListener";
-import {RaidEnemyLastActionListener} from "../grass_listeners/RaidEnemyLastActionListener";
-import {RaidEnemyOreListener} from "../grass_listeners/RaidEnemyOreListener";
 import {StructRefineStatusListener} from "../grass_listeners/StructRefineStatusListener";
+import {StructMineStatusListener} from "../grass_listeners/StructMineStatusListener";
+import {StructBuildStatusListener} from "../grass_listeners/StructBuildStatusListener";
 
 
 /*
@@ -31,6 +30,7 @@ export class TaskManager {
         this.running_queue = [];
         this.running_count = 0;
 
+        // Not convinced these go here
         this.grassManager.registerListener(new StructBuildStatusListener(this.gameState));
         this.grassManager.registerListener(new StructMineStatusListener(this.gameState));
         this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
@@ -50,8 +50,6 @@ export class TaskManager {
 
         /*
             TASK_SPAWN can be dispatched anywhere to execute new tasks.
-
-
          */
         window.addEventListener(EVENTS.TASK_SPAWN, function (event) {
 
@@ -69,7 +67,6 @@ export class TaskManager {
                 this.queue(process);
             }
         }.bind(this));
-
 
         /*
             TASK_KILL can be dispatched anywhere to kill tasks.

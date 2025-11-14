@@ -25,15 +25,13 @@ export class RaidStatusTaskListener extends AbstractGrassListener {
     ) {
       console.log('PLANET RAID STATUS TASK LISTENER', messageData);
 
+      // TODO Makes sure I'm not hashing my own demise
+
       if (messageData.detail.status === RAID_STATUS.INITIATED) {
-        // TODO Makes sure I'm not hashing my own demise
-        // TODO we need this proper block. Guessing with current block height will have errors.
-        // TODO get the correct difficulty
-        dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, gameState.currentBlockHeight, 1500  )));
+        dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.raidPlanetShieldInfo.block_start_raid, this.raidPlanetShieldInfo.planetary_shield  )));
 
       } else if (messageData.detail.status === RAID_STATUS.ONGOING) {
-
-        // TODO Did the planet shield value change? We should reload the task process
+        dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.raidPlanetShieldInfo.block_start_raid, this.raidPlanetShieldInfo.planetary_shield  )));
         console.log('PLANET RAID ONGOING TASK HANDLER');
 
       } else if (this.raidStatusUtil.hasRaidEnded(messageData.detail.status)) {
