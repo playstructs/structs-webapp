@@ -6,6 +6,10 @@ import {TaskState} from "./TaskState";
 import {TaskProgressEvent} from "../events/TaskProgressEvent";
 
 export class TaskProcess {
+
+  /**
+   * @param {TaskState} _state
+   */
   constructor(_state) {
     this.worker = null;
     this.state = _state;
@@ -40,6 +44,9 @@ export class TaskProcess {
     return true
   }
 
+  /**
+   * @param {TaskState} new_state
+   */
   replaceState(new_state) {
     switch (this.state.status) {
       case TASK_STATUS.INITIATED:
@@ -75,42 +82,72 @@ export class TaskProcess {
       this.worker = null;
   }
 
+  /**
+   * @return {numeric}
+   */
   getPID(){
     return this.state.getObjectId();
   }
 
+  /**
+   * @return {boolean}
+   */
   hasWorker() {
     return (this.worker !== undefined) && (this.worker !== null) && (this.worker !== "");
   }
 
+  /**
+   * @return {boolean}
+   */
   isInitiated() {
     return this.state.status === TASK_STATUS.INITIATED;
   }
 
+  /**
+   * @return {boolean}
+   */
   isStarting() {
     return this.state.status === TASK_STATUS.STARTING;
   }
 
+  /**
+   * @return {boolean}
+   */
   isRunning() {
     return this.state.status === TASK_STATUS.RUNNING;
   }
 
+  /**
+   * @return {boolean}
+   */
   isPaused() {
     return this.state.status === TASK_STATUS.PAUSED;
   }
 
+  /**
+   * @return {boolean}
+   */
   isTerminated() {
     return this.state.status === TASK_STATUS.TERMINATED;
   }
 
+  /**
+   * @return {boolean}
+   */
   isCompleted() {
     return this.state.status === TASK_STATUS.COMPLETED;
   }
 
+  /**
+   * @param {string} new_status
+   */
   setStatus(new_status) {
     this.state.status = new_status;
   }
 
+  /**
+   * @param {TaskState} new_state
+   */
   setState(new_state) {
     this.state = new_state;
   }

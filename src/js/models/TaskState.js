@@ -31,24 +31,41 @@ export class TaskState {
 
   }
 
+  /**
+   * @return {boolean}
+   */
   isCompleted() {
     return this.status === TASK_STATUS.COMPLETED;
   }
 
+  /**
+   * @return {string}
+   */
   toLog(){
     return JSON.stringify(this, null, 2);
   }
 
+  /**
+   * @param {numeric} block
+   */
   setBlockCheckpoint(block) {
     this.block_checkpoint_time = new Date();
     this.block_checkpoint = block;
     this.block_current_estimated = block;
   }
 
+  /**
+   * @param {string} status
+   */
   setStatus(status) {
     this.status = status
   }
 
+  /**
+   * @param {string} nonce
+   * @param {string} message
+   * @param {string} hash
+   */
   setResult(nonce, message, hash) {
     this.status = TASK_STATUS.COMPLETED;
     this.process_end_time = new Date();
@@ -66,10 +83,16 @@ export class TaskState {
     return this.object_id;
   }
 
+  /**
+   * @return {numeric}
+   */
   getPID() {
     return this.object_id;
   }
 
+  /**
+   * @return {numeric}
+   */
   getPercentCompleteEstimate() {
     if (this.isCompleted()) {
       return 1;
@@ -77,6 +100,9 @@ export class TaskState {
     return 1.0-(this.getCurrentDifficulty()/100) // TODO better
   }
 
+  /**
+   * @return {numeric}
+   */
   getTimeRemainingEstimate() {
     if (this.isCompleted()) {
       return 0.0;
@@ -86,6 +112,9 @@ export class TaskState {
     return hash_scope / this.getHashrate()
   }
 
+  /**
+   * @return {numeric}
+   */
   getHashrate() {
     if (this.isCompleted()) {
       return 0.0;
@@ -95,10 +124,17 @@ export class TaskState {
     return this.iterations / (Math.floor((current_time - this.process_start_time)) * 1);
   }
 
+  /**
+   * @param {string} nonce
+   * @return {string}
+   */
   getMessage(nonce) {
     return this.prefix + nonce + this.postfix;
   }
 
+  /**
+   * @return {numeric}
+   */
   getCurrentAgeEstimate() {
     const current_time = new Date();
     const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / TASK.ESTIMATED_BLOCK_TIME);
@@ -107,6 +143,9 @@ export class TaskState {
     return this.block_current_estimated - this.block_start;
   }
 
+  /**
+   * @return {numeric}
+   */
   getCurrentDifficulty(){
     const age = this.getCurrentAgeEstimate();
 

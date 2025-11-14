@@ -115,6 +115,10 @@ export class TaskManager {
 
     }
 
+    /**
+     * @param {TaskProcess} task_process
+     * @return {string}
+     */
     start(task_process) {
         const pid = task_process.getPID();
         this.processes[pid] = task_process;
@@ -132,6 +136,10 @@ export class TaskManager {
         return pid;
     }
 
+    /**
+     * @param {TaskProcess} task_process
+     * @return {string}
+     */
     queue(task_process) {
         const pid = task_process.getPID();
         this.processes[pid] = task_process;
@@ -164,6 +172,9 @@ export class TaskManager {
         }
     }
 
+    /**
+     * @param {string} pid
+     */
     terminate(pid) {
         this.processes[pid].terminate();
 
@@ -173,6 +184,9 @@ export class TaskManager {
         this.runNext();
     }
 
+    /**
+     * @param {string} pid
+     */
    complete(pid) {
         this.processes[pid].clearWorker();
 
@@ -184,6 +198,9 @@ export class TaskManager {
         this.runNext();
     }
 
+    /**
+     * @param {string} pid
+     */
     waitingQueueRemove(pid){
         const waiting_index = this.waiting_queue.indexOf(pid);
         if (waiting_index !== -1) {
@@ -191,6 +208,9 @@ export class TaskManager {
         }
     }
 
+    /**
+     * @param {string} pid
+     */
     runningQueueRemove(pid) {
         const running_index = this.running_queue.indexOf(pid);
         if (running_index !== -1) {
@@ -199,6 +219,9 @@ export class TaskManager {
         }
     }
 
+    /**
+     * @param {string} pid
+     */
     pause(pid) {
         if (this.processes[pid].isRunning()) {
 
@@ -211,6 +234,9 @@ export class TaskManager {
         }
     }
 
+    /**
+     * @param {string} pid
+     */
     resume(pid) {
         if (!this.processes[pid].isRunning()
             && !this.processes[pid].isCompleted()
@@ -237,19 +263,34 @@ export class TaskManager {
     }
 
 
+    /**
+     * @param {string} pid
+     * @param {string} new_status
+     */
     setStatus(pid, new_status) {
         console.log("Updating " + pid + " to status " + new_status);
         this.processes[pid].setStatus(new_status);
     }
 
+    /**
+     * @param {string} pid
+     * @param {TaskState} new_state
+     */
     setState(pid, new_state) {
         this.processes[pid].setState(new_state);
     }
 
+    /**
+     * @param {string} pid
+     * @return {numeric}
+     */
     getProcessPercentCompleteEstimate(pid) {
         return this.processes[pid].state.getPercentCompleteEstimate();
     }
 
+    /**
+     * @return {numeric}
+     */
     getProcessPercentCompleteEstimateAll() {
         let i = 0;
         let avg_complete = 0.0;
@@ -260,10 +301,17 @@ export class TaskManager {
         return avg_complete / (i);
     }
 
+    /**
+     * @param {string} pid
+     * @return {numeric}
+     */
     getProcessTimeRemainingEstimate(pid) {
         return this.processes[pid].state.getTimeRemainingEstimate();
     }
 
+    /**
+     * @return {numeric}
+     */
     getProcessTimeRemainingEstimateAll() {
         let longest = 0;
         for (const key in this.processes) {
@@ -275,10 +323,17 @@ export class TaskManager {
         return longest;
     }
 
+    /**
+     * @param {string} pid
+     * @return {numeric}
+     */
     getProcessHashrate(pid) {
         return this.processes[pid].state.getHashrate();
     }
 
+    /**
+     * @return {numeric}
+     */
     getProceessHashrateAll() {
         let total = 0;
         for (const key in this.processes) {
