@@ -300,7 +300,7 @@ class TaskState {
   }
 
   /**
-   * @param {numeric} block
+   * @param {number} block
    */
   setBlockCheckpoint(block) {
     this.block_checkpoint_time = new Date();
@@ -338,14 +338,14 @@ class TaskState {
   }
 
   /**
-   * @return {numeric}
+   * @return {number}
    */
   getPID() {
     return this.object_id;
   }
 
   /**
-   * @return {numeric}
+   * @return {number}
    */
   getPercentCompleteEstimate() {
     if (this.isCompleted()) {
@@ -355,7 +355,7 @@ class TaskState {
   }
 
   /**
-   * @return {numeric}
+   * @return {number}
    */
   getTimeRemainingEstimate() {
     if (this.isCompleted()) {
@@ -367,7 +367,7 @@ class TaskState {
   }
 
   /**
-   * @return {numeric}
+   * @return {number}
    */
   getHashrate() {
     if (this.isCompleted()) {
@@ -387,7 +387,7 @@ class TaskState {
   }
 
   /**
-   * @return {numeric}
+   * @return {number}
    */
   getCurrentAgeEstimate() {
     const current_time = new Date();
@@ -398,7 +398,7 @@ class TaskState {
   }
 
   /**
-   * @return {numeric}
+   * @return {number}
    */
   getCurrentDifficulty(){
     const age = this.getCurrentAgeEstimate();
