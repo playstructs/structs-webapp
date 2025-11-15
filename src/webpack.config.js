@@ -5,6 +5,7 @@ module.exports = {
   entry: {
     index: './js/index.js',
     test: './js/tests/test.js',
+    "workers/TaskWorker": "./js/workers/TaskWorker.js",
   },
   output: {
     filename: '[name].js',
