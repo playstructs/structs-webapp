@@ -312,14 +312,14 @@ export class TaskManager {
 
     /**
      * @param {string} pid
-     * @return {numeric}
+     * @return {number}
      */
     getProcessPercentCompleteEstimate(pid) {
         return this.processes[pid].state.getPercentCompleteEstimate();
     }
 
     /**
-     * @return {numeric}
+     * @return {number}
      */
     getProcessPercentCompleteEstimateAll() {
         let i = 0;
@@ -333,14 +333,14 @@ export class TaskManager {
 
     /**
      * @param {string} pid
-     * @return {numeric}
+     * @return {number}
      */
     getProcessTimeRemainingEstimate(pid) {
         return this.processes[pid].state.getTimeRemainingEstimate();
     }
 
     /**
-     * @return {numeric}
+     * @return {number}
      */
     getProcessTimeRemainingEstimateAll() {
         let longest = 0;
@@ -355,14 +355,14 @@ export class TaskManager {
 
     /**
      * @param {string} pid
-     * @return {numeric}
+     * @return {number}
      */
     getProcessHashrate(pid) {
         return this.processes[pid].state.getHashrate();
     }
 
     /**
-     * @return {numeric}
+     * @return {number}
      */
     getProceessHashrateAll() {
         let total = 0;
