@@ -3,6 +3,9 @@ import {RAID_STATUS} from "../constants/RaidStatus";
 import {RaidStatusUtil} from "../util/RaidStatusUtil";
 import {MenuPage} from "../framework/MenuPage";
 import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
+import {TaskSpawnEvent} from "../events/TaskSpawnEvent";
+import {TaskStateFactory} from "../factories/TaskStateFactory";
+import {TaskKillEvent} from "../events/TaskKillEvent";
 
 export class RaidStatusListener extends AbstractGrassListener {
   /**
@@ -39,6 +42,8 @@ export class RaidStatusListener extends AbstractGrassListener {
         this.raidManager.initRaidEnemy().then(() => {
           console.log('RAID ENEMY INITIATED DONE');
 
+          dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.raidPlanetShieldInfo.block_start_raid, this.raidPlanetShieldInfo.planetary_shield  )));
+
           this.mapManager.configureRaidMap();
           this.gameState.raidMap.render();
 
@@ -51,9 +56,13 @@ export class RaidStatusListener extends AbstractGrassListener {
 
         this.gameState.setRaidPlanetRaidStatus(messageData.detail.status);
 
+        dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.raidPlanetShieldInfo.block_start_raid, this.raidPlanetShieldInfo.planetary_shield  )));
+
       } else if (this.raidStatusUtil.hasRaidEnded(messageData.detail.status)) {
 
         console.log('RAID HAS ENDED HANDLER');
+
+        dispatchEvent(new TaskKillEvent(messageData.detail.fleet_id));
 
         // Clear the planet raid info
         // TODO: Change raid ended handling when map and structs added
