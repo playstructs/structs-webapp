@@ -215,6 +215,27 @@ export class TaskManager {
     /**
      * @param {string} pid
      */
+    clear(pid) {
+        if (this.processes[pid]) {
+            this.terminate(pid);
+        }
+        delete this.processes[pid];
+
+        this.runNext();
+    }
+
+
+    clearAllFinished() {
+        for (const pid of Object.keys(this.processes)) {
+            if (this.processes[pid].state.isTerminated() || this.processes[pid].state.isCompleted()) {
+                delete this.processes[pid];
+            }
+        }
+    }
+
+    /**
+     * @param {string} pid
+     */
     waitingQueueRemove(pid){
         const waiting_index = this.waiting_queue.indexOf(pid);
         if (waiting_index !== -1) {
