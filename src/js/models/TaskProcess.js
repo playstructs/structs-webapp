@@ -82,7 +82,7 @@ export class TaskProcess {
   }
 
   /**
-   * @return {number}
+   * @return {string}
    */
   getPID(){
     return this.state.getObjectId();
