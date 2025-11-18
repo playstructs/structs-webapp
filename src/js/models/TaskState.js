@@ -1,5 +1,6 @@
 import {TASK} from "../constants/TaskConstants";
 import {TASK_STATUS} from "../constants/TaskStatus";
+import {TaskProgressEvent} from "../events/TaskProgressEvent";
 
 export class TaskState {
   constructor() {

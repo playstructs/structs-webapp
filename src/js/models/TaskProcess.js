@@ -50,13 +50,13 @@ export class TaskProcess {
     switch (this.state.status) {
       case TASK_STATUS.INITIATED:
       case TASK_STATUS.PAUSED:
-        this.state = new_state;
+        this.setState(new_state);
         break;
 
       case TASK_STATUS.STARTING:
       case TASK_STATUS.RUNNING:
       case TASK_STATUS.TERMINATED:
-        this.state = new_state;
+        this.setState(new_state);
         this.start();
         break;
 
@@ -68,12 +68,12 @@ export class TaskProcess {
 
   pause() {
     this.clearWorker();
-    this.state.status = TASK_STATUS.PAUSED;
+    this.setStatus(TASK_STATUS.PAUSED);
   }
 
   terminate() {
     this.clearWorker();
-    this.state.status = TASK_STATUS.TERMINATED;
+    this.setStatus(TASK_STATUS.TERMINATED);
   }
 
   clearWorker() {
@@ -142,6 +142,7 @@ export class TaskProcess {
    */
   setStatus(new_status) {
     this.state.status = new_status;
+    this.dispatchProgress();
   }
 
   /**
@@ -149,6 +150,11 @@ export class TaskProcess {
    */
   setState(new_state) {
     this.state = new_state;
+    this.dispatchProgress();
+  }
+
+  dispatchProgress(){
+    window.dispatchEvent(new TaskProgressEvent(this.state));
   }
 
 
