@@ -24,16 +24,17 @@ export class TaskManager {
         this.processes = {};
         this.waiting_queue = [];
         this.running_queue = [];
-        this.running_count = 0;
 
         /*
             TASK_PROGRESS used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
 
-            Only Web Worker message handlers should dispatch this event.
+            TASK_WORKER_PROGRESS is used by the Web Worker and likely shouldn't
+            be used by UI elements as they may miss other events such
+            as Pausing and Resuming.
          */
-        window.addEventListener(EVENTS.TASK_PROGRESS, function (event) {
-            this.processes[event.state.getPID()].state = event.state;
+        window.addEventListener(EVENTS.TASK_WORKER_PROGRESS, function (event) {
+            this.processes[event.state.getPID()].setState(event.state);
             if (event.state.isCompleted()) {
                 this.complete(event.state.getPID());
             }
@@ -137,7 +138,7 @@ export class TaskManager {
         const pid = task_process.getPID();
         this.processes[pid] = task_process;
 
-        if (this.running_count === TASK.MAX_CONCURRENT_PROCESSES) {
+        if (this.running_queue.length === TASK.MAX_CONCURRENT_PROCESSES) {
             const sleep_pid = this.running_queue[0];
             this.pause(sleep_pid);
         }
@@ -145,7 +146,6 @@ export class TaskManager {
         this.processes[pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
         this.processes[pid].start(pid);
         this.running_queue.push(pid);
-        this.running_count++;
 
         return pid;
     }
@@ -158,11 +158,10 @@ export class TaskManager {
         const pid = task_process.getPID();
         this.processes[pid] = task_process;
 
-        if (this.running_count < TASK.MAX_CONCURRENT_PROCESSES) {
+        if (this.running_queue.length < TASK.MAX_CONCURRENT_PROCESSES) {
             this.processes[pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
             this.processes[pid].start(pid);
             this.running_queue.push(pid);
-            this.running_count++;
         } else {
             this.waiting_queue.push(pid);
         }
@@ -171,7 +170,7 @@ export class TaskManager {
     }
 
     runNext() {
-        if (this.running_count < TASK.MAX_CONCURRENT_PROCESSES) {
+        if (this.running_queue.length < TASK.MAX_CONCURRENT_PROCESSES) {
             const next_pid = this.waiting_queue.pop()
             if ((next_pid !== undefined)
                 && (next_pid !== null)
@@ -180,7 +179,6 @@ export class TaskManager {
                 console.log(next_pid)
                 this.processes[next_pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
                 this.processes[next_pid].start(next_pid);
-                this.running_count++;
                 this.running_queue.push(next_pid);
             }
         }
@@ -247,7 +245,7 @@ export class TaskManager {
 
     resumeAll() {
         for (const pid of this.waiting_queue) {
-            if (this.running_count === TASK.MAX_CONCURRENT_PROCESSES) {
+            if (this.running_queue.length === TASK.MAX_CONCURRENT_PROCESSES) {
                 break;
             }
             this.resume(pid);
@@ -271,7 +269,6 @@ export class TaskManager {
         const running_index = this.running_queue.indexOf(pid);
         if (running_index !== -1) {
             this.running_queue.splice(running_index, 1);
-            this.running_count--;
         }
     }
 
@@ -300,11 +297,10 @@ export class TaskManager {
             // Pull it out of the waiting queue
             this.waitingQueueRemove(pid)
 
-            if (this.running_count < TASK.MAX_CONCURRENT_PROCESSES) {
+            if (this.running_queue.length < TASK.MAX_CONCURRENT_PROCESSES) {
                 this.running_queue.push(pid);
                 this.processes[pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
                 this.processes[pid].start(pid);
-                this.running_count++;
 
             } else {
                 // Add back to the next position of the waiting queue

@@ -2,6 +2,7 @@ import {TASK} from "../constants/TaskConstants";
 import {TASK_STATUS} from "../constants/TaskStatus";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TaskState} from "./TaskState";
+import {TaskWorkerProgressEvent} from "../events/TaskWorkerProgressEvent";
 import {TaskProgressEvent} from "../events/TaskProgressEvent";
 
 export class TaskProcess {
@@ -33,8 +34,8 @@ export class TaskProcess {
 
     this.worker.onmessage = async function (result) {
       let taskStateFactory = new TaskStateFactory();
-      let _state = taskStateFactory.make(result.data[0]);
-      window.dispatchEvent(new TaskProgressEvent(_state));
+      let progressed_state = taskStateFactory.make(result.data[0]);
+      window.dispatchEvent(new TaskWorkerProgressEvent(progressed_state));
     }
 
     // Send the initial state to the Worker
