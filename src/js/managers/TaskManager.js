@@ -4,9 +4,6 @@ import {FEE} from "../constants/Fee";
 import {TASK_TYPES} from "../constants/TaskTypes";
 import {TaskProcess} from "../models/TaskProcess";
 import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
-import {StructRefineStatusListener} from "../grass_listeners/StructRefineStatusListener";
-import {StructMineStatusListener} from "../grass_listeners/StructMineStatusListener";
-import {StructBuildStatusListener} from "../grass_listeners/StructBuildStatusListener";
 
 
 /*
@@ -17,13 +14,11 @@ export class TaskManager {
     /**
      * @param {GameState} gameState
      * @param {GuildAPI} guildAPI
-     * @param {GrassManager} grassManager
      * @param {SigningClientManager} signingClientManager
      */
-    constructor(gameState, guildAPI, grassManager, signingClientManager) {
+    constructor(gameState, guildAPI, signingClientManager) {
         this.gameState = gameState;
         this.guildAPI = guildAPI;
-        this.grassManager = grassManager;
         this.signingClientManager = signingClientManager;
 
         this.processes = [];
