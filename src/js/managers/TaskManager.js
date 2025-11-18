@@ -21,7 +21,7 @@ export class TaskManager {
         this.guildAPI = guildAPI;
         this.signingClientManager = signingClientManager;
 
-        this.processes = [];
+        this.processes = {};
         this.waiting_queue = [];
         this.running_queue = [];
         this.running_count = 0;
@@ -46,10 +46,7 @@ export class TaskManager {
 
             event.state.setBlockCheckpoint(this.gameState.currentBlockHeight);
 
-            if ((this.processes[event.state.getPID()] !== undefined)
-                && (this.processes[event.state.getPID()] !== null)
-                && (this.processes[event.state.getPID()] !== "")
-            ) {
+            if (this.processes[event.state.getPID()]) {
                 if (event.state.block_start >= this.processes[event.state.getPID()].state.block_start) {
                     this.processes[event.state.getPID()].replaceState(event.state);
                 }
@@ -63,10 +60,7 @@ export class TaskManager {
             TASK_KILL can be dispatched anywhere to kill tasks.
          */
         window.addEventListener(EVENTS.TASK_KILL, function (event) {
-            if ((this.processes[event.pid] !== undefined)
-                && (this.processes[event.pid] !== null)
-                && (this.processes[event.pid] !== "")
-            ) {
+            if (this.processes[event.pid]) {
                 this.terminate(event.pid);
             }
         }.bind(this));
@@ -143,7 +137,7 @@ export class TaskManager {
         const pid = task_process.getPID();
         this.processes[pid] = task_process;
 
-        if (this.running_count > TASK.MAX_CONCURRENT_PROCESSES) {
+        if (this.running_count === TASK.MAX_CONCURRENT_PROCESSES) {
             const sleep_pid = this.running_queue[0];
             this.pause(sleep_pid);
         }
@@ -314,9 +308,9 @@ export class TaskManager {
     getProcessPercentCompleteEstimateAll() {
         let i = 0;
         let avg_complete = 0.0;
-        for (const key in this.processes) {
+        for (const pid of Object.keys(this.processes)) {
             i++
-            avg_complete += this.processes[key].state.getPercentCompleteEstimate();
+            avg_complete += this.processes[pid].state.getPercentCompleteEstimate();
         }
         return avg_complete / (i);
     }
@@ -334,8 +328,8 @@ export class TaskManager {
      */
     getProcessTimeRemainingEstimateAll() {
         let longest = 0;
-        for (const key in this.processes) {
-             const estimate = this.processes[key].state.getTimeRemainingEstimate();
+        for (const pid of Object.keys(this.processes)) {
+             const estimate = this.processes[pid].state.getTimeRemainingEstimate();
              if (estimate > longest) {
                  longest = estimate;
              }
@@ -356,8 +350,8 @@ export class TaskManager {
      */
     getProceessHashrateAll() {
         let total = 0;
-        for (const key in this.processes) {
-            total += this.processes[key].state.getHashrate();
+        for (const pid of Object.keys(this.processes)) {
+            total += this.processes[pid].state.getHashrate();
         }
         return total;
     }

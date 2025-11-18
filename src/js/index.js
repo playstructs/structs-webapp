@@ -23,6 +23,10 @@ import {MapComponent} from "./view_models/components/map/MapComponent";
 import {MapManager} from "./managers/MapMananger";
 import {MAP_CONTAINER_IDS} from "./constants/MapConstants";
 import {CheatsheetContentBuilder} from "./builders/CheatsheetContentBuilder";
+import {TaskSpawnEvent} from "./events/TaskSpawnEvent";
+import {TaskStateFactory} from "./factories/TaskStateFactory";
+import {TaskManager} from "./managers/TaskManager";
+import {TASK_TYPES} from "./constants/TaskTypes";
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -166,3 +170,26 @@ if (!gameState.thisPlayerId) {
     MenuPage.hideLoadingScreen();
   });
 }
+
+
+let taskManager = new TaskManager(gameState, guildAPI, signingClientManager);
+
+dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initStructTask('5-0', TASK_TYPES.BUILD, gameState.currentBlockHeight, 20  )));
+dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initStructTask('5-1', TASK_TYPES.BUILD, gameState.currentBlockHeight, 10  )));
+dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initStructTask('5-3', TASK_TYPES.BUILD, gameState.currentBlockHeight, 100  )));
+
+dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initStructTask('5-100', TASK_TYPES.BUILD, gameState.currentBlockHeight, 5  )));
+dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initStructTask('5-331', TASK_TYPES.BUILD, gameState.currentBlockHeight, 10  )));
+dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initStructTask('5-443', TASK_TYPES.BUILD, gameState.currentBlockHeight, 70  )));
+
+dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initRaidTask('9-10', '2-2', gameState.currentBlockHeight, 20  )));
+
+
+setInterval(() => {
+  console.log(taskManager.processes);
+  console.log(taskManager.waiting_queue);
+  console.log(taskManager.running_queue);
+  console.log('hashrate ' + taskManager.getProceessHashrateAll());
+  console.log('percent est. ' + taskManager.getProcessPercentCompleteEstimateAll());
+  console.log('time st . ' + taskManager.getProcessTimeRemainingEstimateAll()/1000.0);
+}, 2000);
