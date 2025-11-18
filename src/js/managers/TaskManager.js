@@ -233,6 +233,18 @@ export class TaskManager {
         }
     }
 
+    pauseAll() {
+        for (const pid of this.running_queue) {
+            if (this.processes[pid].isRunning()) {
+
+                this.processes[pid].pause();
+                this.runningQueueRemove(pid);
+
+                this.waiting_queue.push(pid);
+            }
+        }
+    }
+
     /**
      * @param {string} pid
      */
