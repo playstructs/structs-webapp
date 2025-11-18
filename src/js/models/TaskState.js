@@ -82,7 +82,7 @@ export class TaskState {
   }
 
   /**
-   * @return {number}
+   * @return {string}
    */
   getPID() {
     return this.object_id;
