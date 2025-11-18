@@ -31,11 +31,6 @@ export class TaskManager {
         this.running_queue = [];
         this.running_count = 0;
 
-        // Not convinced these go here
-        this.grassManager.registerListener(new StructBuildStatusListener(this.gameState));
-        this.grassManager.registerListener(new StructMineStatusListener(this.gameState));
-        this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
-
         /*
             TASK_PROGRESS used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.

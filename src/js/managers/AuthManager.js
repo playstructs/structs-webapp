@@ -20,6 +20,9 @@ import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApp
 import {PlayerAddressRevokedListener} from "../grass_listeners/PlayerAddressRevokedListener";
 import {AlphaChangeListener} from "../grass_listeners/AlphaChangeListener";
 import {PlanetRaidStatusListener} from "../grass_listeners/PlanetRaidStatusListener";
+import {StructBuildStatusListener} from "../grass_listeners/StructBuildStatusListener";
+import {StructMineStatusListener} from "../grass_listeners/StructMineStatusListener";
+import {StructRefineStatusListener} from "../grass_listeners/StructRefineStatusListener";
 
 export class AuthManager {
 
@@ -165,6 +168,11 @@ export class AuthManager {
         this.gameState.signingAccount.address
       ));
       this.grassManager.registerListener(new AlphaChangeListener(this.gameState, this.guildAPI));
+
+      // Task related listeners
+      this.grassManager.registerListener(new StructBuildStatusListener(this.gameState));
+      this.grassManager.registerListener(new StructMineStatusListener(this.gameState));
+      this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 
       await this.signingClientManager.initSigningClient(this.gameState.wallet);
       this.playerAddressManager.addPlayerAddressMeta();
