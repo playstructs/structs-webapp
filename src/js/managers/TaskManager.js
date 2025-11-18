@@ -245,6 +245,15 @@ export class TaskManager {
         }
     }
 
+    resumeAll() {
+        for (const pid of this.waiting_queue) {
+            if (this.running_count === TASK.MAX_CONCURRENT_PROCESSES) {
+                break;
+            }
+            this.resume(pid);
+        }
+    }
+
     /**
      * @param {string} pid
      */
