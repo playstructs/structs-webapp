@@ -5,6 +5,7 @@ import {msgTypes} from "../ts/structs.structs/registry";
 import {
   MsgAddressRegister,
   MsgPlanetExplore,
+  MsgPlanetRaidComplete,
   MsgAddressRevoke,
   MsgFleetMove,
   MsgAllocationCreate,
@@ -37,9 +38,12 @@ import {
   MsgStructDeactivate,
   MsgStructBuildInitiate,
   MsgStructBuildCancel,
+  MsgStructBuildComplete,
   MsgStructDefenseSet,
   MsgStructDefenseClear,
   MsgStructMove,
+  MsgStructOreMinerComplete,
+  MsgStructOreRefineryComplete,
   MsgStructAttack,
   MsgStructStealthActivate,
   MsgStructStealthDeactivate,
@@ -208,12 +212,12 @@ export class SigningClientManager {
    * @param {string} structId
    * @param {string} proof
    * @param {string} nonce
-   * @return {{typeUrl: string, value: MsgStructMineComplete}}
+   * @return {{typeUrl: string, value: MsgStructOreMinerComplete}}
    */
-  createMsgStructMineComplete(creatorAddress, structId, proof, nonce) {
+  createMsgStructOreMinerComplete(creatorAddress, structId, proof, nonce) {
     return {
-      typeUrl: '/structs.structs.MsgStructMineComplete',
-      value: MsgStructMineComplete.fromPartial({
+      typeUrl: '/structs.structs.MsgStructOreMinerComplete',
+      value: MsgStructOreMinerComplete.fromPartial({
         creator: creatorAddress,
         structId: structId,
         proof: proof,
@@ -227,12 +231,12 @@ export class SigningClientManager {
    * @param {string} structId
    * @param {string} proof
    * @param {string} nonce
-   * @return {{typeUrl: string, value: MsgStructRefineComplete}}
+   * @return {{typeUrl: string, value: MsgStructOreRefineryComplete}}
    */
-  createMsgStructRefineComplete(creatorAddress, structId, proof, nonce) {
+  createMsgStructOreRefineryComplete(creatorAddress, structId, proof, nonce) {
     return {
-      typeUrl: '/structs.structs.MsgStructRefineComplete',
-      value: MsgStructRefineComplete.fromPartial({
+      typeUrl: '/structs.structs.MsgStructOreRefineryComplete',
+      value: MsgStructOreRefineryComplete.fromPartial({
         creator: creatorAddress,
         structId: structId,
         proof: proof,

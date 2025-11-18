@@ -114,7 +114,7 @@ export class TaskManager {
                     break;
 
                 case TASK_TYPES.MINE:
-                    msg = this.signingClientManager.createMsgStructMineComplete(
+                    msg = this.signingClientManager.createMsgStructOreMinerComplete(
                         this.gameState.signingAccount.address,
                         event.state.object_id,
                         event.state.result_hash,
@@ -123,7 +123,7 @@ export class TaskManager {
                     break;
 
                 case TASK_TYPES.REFINE:
-                    msg = this.signingClientManager.createMsgStructRefineComplete(
+                    msg = this.signingClientManager.createMsgStructOreRefineryComplete(
                         this.gameState.signingAccount.address,
                         event.state.object_id,
                         event.state.result_hash,
