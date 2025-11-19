@@ -31,10 +31,10 @@ export class TaskManager {
         this.running_queue = [];
 
         /*
-            TASK_PROGRESS used to propagate task state throughout. Can be
+            TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
 
-            TASK_WORKER_PROGRESS is used by the Web Worker and likely shouldn't
+            TASK_WORKER_CHANGED is used by the Web Worker and likely shouldn't
             be used by UI elements as they may miss other events such
             as Pausing and Resuming.
          */
@@ -332,7 +332,6 @@ export class TaskManager {
         }
     }
 
-
     /**
      * @param {string} pid
      */
@@ -342,7 +341,6 @@ export class TaskManager {
             delete this.processes[pid];
         }
     }
-
 
     sweepAll() {
         let sweep_list = [];
@@ -376,7 +374,6 @@ export class TaskManager {
             this.running_queue.splice(running_index, 1);
         }
     }
-
 
     /**
      * @param {TaskState} new_state

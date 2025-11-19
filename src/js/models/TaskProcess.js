@@ -71,7 +71,6 @@ export class TaskProcess {
     }
   }
 
-
   pause() {
     this.clearWorker();
     this.setStatus(TASK_STATUS.PAUSED);
