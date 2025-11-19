@@ -24,6 +24,7 @@ import {MapManager} from "./managers/MapMananger";
 import {MAP_CONTAINER_IDS} from "./constants/MapConstants";
 import {CheatsheetContentBuilder} from "./builders/CheatsheetContentBuilder";
 
+
 const gameState = new GameState();
 global.gameState = gameState;
 
