@@ -40,6 +40,7 @@
     "@nats-io/nats-core": "^3.0.0",
     "bip39": "^3.0.3",
     "crypto-js": "^4.0.0",
+    "js-sha256": "^0.11.1",
     "node-polyfill-webpack-plugin": "^1.1.4",
     "sha.js": "^2.4.11",
     "ts-loader": "^9.5.2"
