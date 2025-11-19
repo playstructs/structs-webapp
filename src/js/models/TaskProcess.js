@@ -51,6 +51,7 @@ export class TaskProcess {
     switch (this.state.status) {
       case TASK_STATUS.INITIATED:
       case TASK_STATUS.PAUSED:
+        new_state.setStatus(this.state.status);
         this.setState(new_state);
         break;
 

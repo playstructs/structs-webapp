@@ -79,12 +79,7 @@ export class TaskManager {
         // TASK_CMD_SPAWN
         // Can be dispatched anywhere to execute new tasks.
         window.addEventListener(EVENTS.TASK_CMD_SPAWN, function (event) {
-            if (this.processes[event.state.getPID()]) {
-                event.state.setBlockCheckpoint(this.gameState.currentBlockHeight);
-                this.processes[event.state.getPID()].replaceState(event.state);
-            } else {
-                this.queue(new TaskProcess(event.state));
-            }
+            this.spawn(event.state);
         }.bind(this));
 
 
@@ -186,45 +181,25 @@ export class TaskManager {
     }
 
     /**
-     * @param {TaskProcess} task_process
+     * @param {TaskState} task_state
      * @return {string}
      */
-    start(task_process) {
-        const pid = task_process.getPID();
-        this.processes[pid] = task_process;
+    spawn(task_state) {
+        const pid = task_state.getPID();
 
-        if (this.isOnline()) {
-            if (this.isAtCapacity()) {
-                const sleep_pid = this.running_queue[0];
-                this.pause(sleep_pid);
+        task_state.setBlockCheckpoint(this.gameState.currentBlockHeight);
+
+        if (this.processes[pid]) {
+            this.processes[pid].replaceState(task_state);
+        } else {
+            this.processes[pid] = new TaskProcess(task_state);
+            if (this.canStartTask()) {
+                this.processes[pid].start(pid);
+                this.running_queue.push(pid);
+            } else {
+                this.waiting_queue.push(pid);
             }
-
-            this.processes[pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
-            this.processes[pid].start(pid);
-            this.running_queue.push(pid);
-        } else {
-            this.waiting_queue.push(pid);
         }
-
-        return pid;
-    }
-
-    /**
-     * @param {TaskProcess} task_process
-     * @return {string}
-     */
-    queue(task_process) {
-        const pid = task_process.getPID();
-        this.processes[pid] = task_process;
-
-        if (this.canStartTask()) {
-            this.processes[pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
-            this.processes[pid].start(pid);
-            this.running_queue.push(pid);
-        } else {
-            this.waiting_queue.push(pid);
-        }
-
         return pid;
     }
 
