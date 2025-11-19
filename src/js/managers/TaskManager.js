@@ -289,7 +289,8 @@ export class TaskManager {
     }
 
     pauseAll() {
-        for (const pid of this.running_queue) {
+        let pause_list = [...this.running_queue];
+        for (const pid of pause_list) {
             if (this.processes[pid].canPause()) {
                 this.processes[pid].pause();
                 this.runningQueueRemove(pid);
@@ -327,7 +328,8 @@ export class TaskManager {
     }
 
     resumeAll() {
-        for (const pid of this.waiting_queue) {
+        let resume_list = [...this.waiting_queue];
+        for (const pid of resume_list) {
             if (this.isAtCapacity()) {
                 break;
             }
@@ -348,10 +350,15 @@ export class TaskManager {
 
 
     sweepAll() {
+        let sweep_list = [];
         for (const pid of Object.keys(this.processes)) {
             if (this.processes[pid].canSweep()) {
-                delete this.processes[pid];
+                sweep_list.push(pid);
             }
+        }
+
+        for (const pid of sweep_list) {
+            delete this.processes[pid];
         }
     }
 
