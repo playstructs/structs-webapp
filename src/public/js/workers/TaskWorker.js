@@ -73,6 +73,7 @@ __webpack_require__.r(__webpack_exports__);
 const TASK_STATUS = {
   INITIATED: 'initiated',
   STARTING: 'starting',
+  WAITING: 'waiting',
   RUNNING: 'running',
   PAUSED: 'paused',
   TERMINATED: 'terminated',
@@ -6930,7 +6931,16 @@ const taskStateFactory = new _factories_TaskStateFactory__WEBPACK_IMPORTED_MODUL
 
 onmessage =  async function(process_request) {
     state = taskStateFactory.make(process_request.data[0]);
-    state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.RUNNING)
+
+    /*
+        If the state is starting, then start the task in a waiting state.
+        Otherwise, if it's been passed as "Running" already, then force it
+        to begin hashing even if difficulty is too high.
+     */
+    if (state.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.STARTING){
+        state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.WAITING);
+        postMessage([state]);
+    }
     console.log('Start Process Request ' + state.getPID());
     await work();
 }
@@ -6938,10 +6948,14 @@ onmessage =  async function(process_request) {
 async function work() {
     let difficulty = state.getCurrentDifficulty();
 
-    while (difficulty > _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START) {
-        console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START);
-        await new Promise(r => setTimeout(r, _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START_SLEEP_DELAY));
-        difficulty = state.getCurrentDifficulty();
+    if (state.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.WAITING){
+        while (difficulty > _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START) {
+            console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START);
+            await new Promise(r => setTimeout(r, _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START_SLEEP_DELAY));
+            difficulty = state.getCurrentDifficulty();
+        }
+        state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.RUNNING);
+        postMessage([state]);
     }
 
     while (true) {

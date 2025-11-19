@@ -6,6 +6,7 @@ import {TASK_MANAGER_STATUS} from "../constants/TaskManagerStatus";
 import {TaskProcess} from "../models/TaskProcess";
 import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
 import {TaskManagerStatusChangedEvent} from "../events/TaskManagerStatusChangedEvent";
+import {TASK_STATUS} from "../constants/TaskStatus";
 
 
 /*
@@ -39,6 +40,7 @@ export class TaskManager {
          */
         window.addEventListener(EVENTS.TASK_WORKER_CHANGED, function (event) {
             this.setState(event.state);
+            console.log(this.processes[event.state.getPID()].state)
             if (event.state.isCompleted()) {
                 this.complete(event.state.getPID());
             }
@@ -56,6 +58,12 @@ export class TaskManager {
         window.addEventListener(EVENTS.TASK_CMD_MANAGER_RESUME, function (event) {
             this.setManagerStatus(TASK_MANAGER_STATUS.ONLINE);
             this.resumeAll();
+        }.bind(this));
+
+        // TASK_CMD_FORCE_RUN
+        // Can be dispatched anywhere to force a process in waiting to start running
+        window.addEventListener(EVENTS.TASK_CMD_FORCE_RUN, function (event) {
+            this.forceRun(event.pid);
         }.bind(this));
 
         // TASK_CMD_KILL
@@ -211,6 +219,18 @@ export class TaskManager {
                 this.processes[next_pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
                 this.processes[next_pid].start(next_pid);
                 this.running_queue.push(next_pid);
+            }
+        }
+    }
+
+    /**
+     * @param {string} pid
+     */
+    forceRun(pid){
+        if (this.processes[pid]) {
+            if (this.processes[pid].isWaiting()) {
+                this.processes[pid].setStatus(TASK_STATUS.RUNNING);
+                this.processes[pid].start();
             }
         }
     }

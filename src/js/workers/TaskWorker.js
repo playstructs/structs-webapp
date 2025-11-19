@@ -9,7 +9,16 @@ const taskStateFactory = new TaskStateFactory();
 
 onmessage =  async function(process_request) {
     state = taskStateFactory.make(process_request.data[0]);
-    state.setStatus(TASK_STATUS.RUNNING)
+
+    /*
+        If the state is starting, then start the task in a waiting state.
+        Otherwise, if it's been passed as "Running" already, then force it
+        to begin hashing even if difficulty is too high.
+     */
+    if (state.status === TASK_STATUS.STARTING){
+        state.setStatus(TASK_STATUS.WAITING);
+        postMessage([state]);
+    }
     console.log('Start Process Request ' + state.getPID());
     await work();
 }
@@ -17,10 +26,14 @@ onmessage =  async function(process_request) {
 async function work() {
     let difficulty = state.getCurrentDifficulty();
 
-    while (difficulty > TASK.DIFFICULTY_START) {
-        console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + TASK.DIFFICULTY_START);
-        await new Promise(r => setTimeout(r, TASK.DIFFICULTY_START_SLEEP_DELAY));
-        difficulty = state.getCurrentDifficulty();
+    if (state.status === TASK_STATUS.WAITING){
+        while (difficulty > TASK.DIFFICULTY_START) {
+            console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + TASK.DIFFICULTY_START);
+            await new Promise(r => setTimeout(r, TASK.DIFFICULTY_START_SLEEP_DELAY));
+            difficulty = state.getCurrentDifficulty();
+        }
+        state.setStatus(TASK_STATUS.RUNNING);
+        postMessage([state]);
     }
 
     while (true) {

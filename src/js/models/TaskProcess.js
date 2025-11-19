@@ -14,7 +14,6 @@ export class TaskProcess {
   constructor(_state) {
     this.worker = null;
     this.state = _state;
-    this.taskStateFactory = new TaskStateFactory();
   }
 
   start() {
@@ -35,11 +34,15 @@ export class TaskProcess {
     this.worker = new Worker(TASK.WORKER_PATH);
 
     this.worker.onmessage = async function (result) {
-      window.dispatchEvent(new TaskWorkerChangedEvent(this.taskStateFactory.make(result.data[0])));
+      const taskStateFactory = new TaskStateFactory();
+      let state = taskStateFactory.make(result.data[0]);
+      window.dispatchEvent(new TaskWorkerChangedEvent(state));
     }
 
     // Send the initial state to the Worker
-    this.state.status = TASK_STATUS.STARTING;
+    if (!this.isRunning()) {
+      this.state.status = TASK_STATUS.STARTING;
+    }
     this.worker.postMessage([this.state]);
     return true
   }
@@ -68,6 +71,7 @@ export class TaskProcess {
     }
   }
 
+
   pause() {
     this.clearWorker();
     this.setStatus(TASK_STATUS.PAUSED);
@@ -94,7 +98,7 @@ export class TaskProcess {
    * @return {boolean}
    */
   hasWorker() {
-    return (this.worker !== undefined) && (this.worker !== null) && (this.worker !== "");
+    return (this.worker !== null);
   }
 
   /**
@@ -109,6 +113,13 @@ export class TaskProcess {
    */
   isStarting() {
     return this.state.status === TASK_STATUS.STARTING;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isWaiting() {
+    return this.state.status === TASK_STATUS.WAITING;
   }
 
   /**
@@ -144,11 +155,11 @@ export class TaskProcess {
   }
 
   canPause() {
-    return this.isStarting() || this.isRunning();
+    return this.isStarting() || this.isWaiting() || this.isRunning();
   }
 
   canResume() {
-    return !(this.isRunning() || this.isStarting() || this.isCompleted());
+    return !(this.isRunning() || this.isWaiting() || this.isStarting() || this.isCompleted());
   }
 
   canSweep() {
