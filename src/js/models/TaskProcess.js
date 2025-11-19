@@ -2,8 +2,9 @@ import {TASK} from "../constants/TaskConstants";
 import {TASK_STATUS} from "../constants/TaskStatus";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TaskState} from "./TaskState";
-import {TaskWorkerProgressEvent} from "../events/TaskWorkerProgressEvent";
-import {TaskProgressEvent} from "../events/TaskProgressEvent";
+import {TaskWorkerChangedEvent} from "../events/TaskWorkerChangedEvent";
+import {TaskStateChangedEvent} from "../events/TaskStateChangedEvent";
+
 
 export class TaskProcess {
 
@@ -35,7 +36,7 @@ export class TaskProcess {
     this.worker.onmessage = async function (result) {
       let taskStateFactory = new TaskStateFactory();
       let progressed_state = taskStateFactory.make(result.data[0]);
-      window.dispatchEvent(new TaskWorkerProgressEvent(progressed_state));
+      window.dispatchEvent(new TaskWorkerChangedEvent(progressed_state));
     }
 
     // Send the initial state to the Worker
@@ -138,6 +139,22 @@ export class TaskProcess {
     return this.state.status === TASK_STATUS.COMPLETED;
   }
 
+  canStart() {
+    return this.isInitiated() || this.isPaused();
+  }
+
+  canPause() {
+    return this.isStarting() || this.isRunning();
+  }
+
+  canResume() {
+    return !(this.isRunning() || this.isStarting() || this.isCompleted());
+  }
+
+  canSweep() {
+    return this.isTerminated() || this.isCompleted();
+  }
+
   /**
    * @param {string} new_status
    */
@@ -155,7 +172,7 @@ export class TaskProcess {
   }
 
   dispatchProgress(){
-    window.dispatchEvent(new TaskProgressEvent(this.state));
+    window.dispatchEvent(new TaskStateChangedEvent(this.state));
   }
 
 

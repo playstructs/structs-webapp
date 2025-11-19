@@ -1,44 +1,6 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./js/constants/Events.js":
-/*!********************************!*\
-  !*** ./js/constants/Events.js ***!
-  \********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   EVENTS: () => (/* binding */ EVENTS)
-/* harmony export */ });
-const EVENTS = {
-  ALPHA_COUNT_CHANGED: 'ALPHA_COUNT_CHANGED',
-  CHARGE_LEVEL_CHANGED: 'CHARGE_LEVEL_CHANGED',
-  ENERGY_USAGE_CHANGED: 'ENERGY_USAGE_CHANGED',
-  ORE_COUNT_CHANGED: 'ORE_COUNT_CHANGED',
-  ORE_COUNT_CHANGED_RAID_ENEMY: 'ORE_COUNT_CHANGED_RAID_ENEMY',
-  PLANET_RAID_STATUS_CHANGED: 'PLANET_RAID_STATUS_CHANGED',
-  RAID_STATUS_CHANGED: 'RAID_STATUS_CHANGED',
-  SHIELD_HEALTH_CHANGED: 'SHIELD_HEALTH_CHANGED',
-  SHIELD_HEALTH_CHANGED_RAID_PLANET: 'SHIELD_HEALTH_CHANGED_RAID_PLANET',
-  TASK_COMPLETED: 'TASK_COMPLETED',
-  TASK_KILL: 'TASK_KILL',
-  TASK_PROGRESS: 'TASK_PROGRESS',
-  TASK_SPAWN: 'TASK_SPAWN',
-  TASK_WORKER_PROGRESS: 'TASK_WORKER_PROGRESS',
-  TASK_CLEAR: 'TASK_CLEAR',
-  TASK_CLEAR_ALL: 'TASK_CLEAR_ALL',
-  TASK_PAUSE: 'TASK_PAUSE',
-  TASK_PAUSE_ALL: 'TASK_PAUSE_ALL',
-  TASK_RESUME: 'TASK_RESUME',
-  TASK_RESUME_ALL: 'TASK_RESUME_ALL',
-  UNDISCOVERED_ORE_COUNT_CHANGED: 'UNDISCOVERED_ORE_COUNT_CHANGED',
-  UNDISCOVERED_ORE_COUNT_CHANGED_RAID_PLANET: 'UNDISCOVERED_ORE_COUNT_CHANGED_RAID_PLANET',
-};
-
-/***/ }),
-
 /***/ "./js/constants/ObjectTypes.js":
 /*!*************************************!*\
   !*** ./js/constants/ObjectTypes.js ***!
@@ -137,33 +99,6 @@ const TASK_TYPES = {
   MINE: 'MINE',
   REFINE: 'REFINE',
 };
-
-
-/***/ }),
-
-/***/ "./js/events/TaskProgressEvent.js":
-/*!****************************************!*\
-  !*** ./js/events/TaskProgressEvent.js ***!
-  \****************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   TaskProgressEvent: () => (/* binding */ TaskProgressEvent)
-/* harmony export */ });
-/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
-
-
-class TaskProgressEvent extends CustomEvent {
-  /**
-   * @param {TaskState} state
-   */
-  constructor(state) {
-    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_PROGRESS);
-    this.state = state;
-  }
-}
 
 
 /***/ }),
@@ -319,7 +254,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
 /* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
-/* harmony import */ var _events_TaskProgressEvent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../events/TaskProgressEvent */ "./js/events/TaskProgressEvent.js");
 
 
 

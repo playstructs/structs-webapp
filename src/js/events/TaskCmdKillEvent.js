@@ -1,11 +1,11 @@
 import {EVENTS} from "../constants/Events";
 
-export class TaskKillEvent extends CustomEvent {
+export class TaskCmdKillEvent extends CustomEvent {
   /**
    * @param {string} pid
    */
   constructor(pid) {
-    super(EVENTS.TASK_KILL);
+    super(EVENTS.TASK_CMD_KILL);
     this.pid = pid;
   }
 }

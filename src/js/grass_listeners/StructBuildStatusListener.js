@@ -1,9 +1,9 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {RaidStatusUtil} from "../util/RaidStatusUtil";
-import {TaskSpawnEvent} from "../events/TaskSpawnEvent";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TASK_TYPES} from "../constants/TaskTypes";
-import {TaskKillEvent} from "../events/TaskKillEvent";
+import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
+import {TaskCmdSpawnEvent} from "../events/TaskCmdSpawnEvent";
 
 export class StructBuildStatusListener extends AbstractGrassListener {
   /**
@@ -22,7 +22,7 @@ export class StructBuildStatusListener extends AbstractGrassListener {
     ) {
       //TODO we need difficulty target here
       // I assume it'll be in the gameState eventually.
-      dispatchEvent(new TaskSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.BUILD, messageData.detail.block, 5000)));
+      dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.BUILD, messageData.detail.block, 5000)));
 
     } else if (
         messageData.category === 'struct_status'
@@ -31,7 +31,7 @@ export class StructBuildStatusListener extends AbstractGrassListener {
         && ((messageData.detail.status_old & 2) === 0
         && (messageData.detail.status & 2) > 0)
     ) {
-      dispatchEvent(new TaskKillEvent(messageData.detail.struct_id));
+      dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
     }
 
   }

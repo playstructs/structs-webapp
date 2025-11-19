@@ -1,11 +1,11 @@
 import {EVENTS} from "../constants/Events";
 
-export class TaskWorkerProgressEvent extends CustomEvent {
+export class TaskStateChangedEvent extends CustomEvent {
   /**
    * @param {TaskState} state
    */
   constructor(state) {
-    super(EVENTS.TASK_WORKER_PROGRESS);
+    super(EVENTS.TASK_STATE_CHANGED);
     this.state = state;
   }
 }
