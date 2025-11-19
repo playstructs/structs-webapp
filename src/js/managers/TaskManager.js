@@ -52,7 +52,7 @@ export class TaskManager {
         }.bind(this));
 
         // TASK_CMD_MANAGER_RESUME
-        // Can be dispatched anywhere to halt the Task Manager
+        // Can be dispatched anywhere to resume the Task Manager
         window.addEventListener(EVENTS.TASK_CMD_MANAGER_RESUME, function (event) {
             this.setManagerStatus(TASK_MANAGER_STATUS.ONLINE);
             this.resumeAll();
@@ -164,6 +164,15 @@ export class TaskManager {
         }.bind(this));
     }
 
+    canStartTask() {
+        return this.isOnline() && this.running_queue.length < TASK.MAX_CONCURRENT_PROCESSES
+    }
+
+    // TODO I'd like to change this to === but I'm not sure if something will currently send it over
+    isAtCapacity() {
+        return this.running_queue.length >= TASK.MAX_CONCURRENT_PROCESSES
+    }
+
     isOnline() {
         return this.status === TASK_MANAGER_STATUS.ONLINE;
     }
@@ -185,7 +194,7 @@ export class TaskManager {
         this.processes[pid] = task_process;
 
         if (this.isOnline()) {
-            if (this.running_queue.length === TASK.MAX_CONCURRENT_PROCESSES) {
+            if (this.isAtCapacity()) {
                 const sleep_pid = this.running_queue[0];
                 this.pause(sleep_pid);
             }
@@ -208,9 +217,7 @@ export class TaskManager {
         const pid = task_process.getPID();
         this.processes[pid] = task_process;
 
-        if (this.isOnline()
-            && this.running_queue.length < TASK.MAX_CONCURRENT_PROCESSES
-        ) {
+        if (this.canStartTask()) {
             this.processes[pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
             this.processes[pid].start(pid);
             this.running_queue.push(pid);
@@ -222,14 +229,9 @@ export class TaskManager {
     }
 
     runNext() {
-        if (this.isOnline()
-            && this.running_queue.length < TASK.MAX_CONCURRENT_PROCESSES
-        ) {
+        if (this.canStartTask()) {
             const next_pid = this.waiting_queue.pop()
-            if ((next_pid !== undefined)
-                && (next_pid !== null)
-                && (next_pid !== "")
-            ) {
+            if (next_pid !== undefined) {
                 console.log(next_pid)
                 this.processes[next_pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
                 this.processes[next_pid].start(next_pid);
@@ -255,7 +257,7 @@ export class TaskManager {
     /**
      * @param {string} pid
      */
-   complete(pid) {
+    complete(pid) {
        if (this.processes[pid]) {
            this.processes[pid].clearWorker();
 
@@ -301,14 +303,13 @@ export class TaskManager {
      * @param {string} pid
      */
     resume(pid) {
-        if (this.isOnline()
-            && this.processes[pid]
+        if (this.processes[pid]
             && this.processes[pid].canResume()
         ) {
             // Pull it out of the waiting queue
             this.waitingQueueRemove(pid)
 
-            if (this.running_queue.length < TASK.MAX_CONCURRENT_PROCESSES) {
+            if (this.canStartTask()) {
                 this.running_queue.push(pid);
                 this.processes[pid].state.setBlockCheckpoint(this.gameState.currentBlockHeight);
                 this.processes[pid].start(pid);
@@ -327,7 +328,7 @@ export class TaskManager {
 
     resumeAll() {
         for (const pid of this.waiting_queue) {
-            if (this.running_queue.length === TASK.MAX_CONCURRENT_PROCESSES) {
+            if (this.isAtCapacity()) {
                 break;
             }
             this.resume(pid);
@@ -436,7 +437,7 @@ export class TaskManager {
     /**
      * @return {number}
      */
-    getProceessHashrateAll() {
+    getProcessHashrateAll() {
         let total = 0;
         for (const pid of Object.keys(this.processes)) {
             total += this.processes[pid].state.getHashrate();

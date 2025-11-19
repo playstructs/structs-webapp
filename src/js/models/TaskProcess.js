@@ -14,6 +14,7 @@ export class TaskProcess {
   constructor(_state) {
     this.worker = null;
     this.state = _state;
+    this.taskStateFactory = new TaskStateFactory();
   }
 
   start() {
@@ -34,9 +35,7 @@ export class TaskProcess {
     this.worker = new Worker(TASK.WORKER_PATH);
 
     this.worker.onmessage = async function (result) {
-      let taskStateFactory = new TaskStateFactory();
-      let progressed_state = taskStateFactory.make(result.data[0]);
-      window.dispatchEvent(new TaskWorkerChangedEvent(progressed_state));
+      window.dispatchEvent(new TaskWorkerChangedEvent(this.taskStateFactory.make(result.data[0])));
     }
 
     // Send the initial state to the Worker
@@ -79,7 +78,7 @@ export class TaskProcess {
   }
 
   clearWorker() {
-      this.worker.terminate()
+      this.worker.terminate();
       this.worker = null;
   }
 
