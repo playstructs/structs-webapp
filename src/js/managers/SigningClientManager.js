@@ -69,7 +69,11 @@ import {
   MsgProviderUpdateAccessPolicy,
   MsgProviderGuildGrant,
   MsgProviderGuildRevoke,
-  MsgProviderDelete
+  MsgProviderDelete,
+  MsgReactorInfuse,
+  MsgReactorBeginMigration,
+  MsgReactorDefuse,
+  MsgReactorCancelDefusion
 } from "../ts/structs.structs/types/structs/structs/tx";
 
 export class SigningClientManager {
@@ -1266,6 +1270,86 @@ export class SigningClientManager {
       value: MsgProviderDelete.fromPartial({
         creator: creatorAddress,
         providerId: providerId
+      }),
+    }
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} delegatorAddress
+   * @param {string} validatorAddress
+   * @param {Object} amount
+   * @return {{typeUrl: string, value: MsgReactorInfuse}}
+   */
+  createMsgReactorInfuse(creatorAddress, delegatorAddress, validatorAddress, amount) {
+    return {
+      typeUrl: '/structs.structs.MsgReactorInfuse',
+      value: MsgReactorInfuse.fromPartial({
+        creator: creatorAddress,
+        delegator_address: delegatorAddress,
+        validator_address: validatorAddress,
+        amount: amount
+      }),
+    }
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} delegatorAddress
+   * @param {string} validatorSrcAddress
+   * @param {string} validatorDstAddress
+   * @param {Object} amount
+   * @return {{typeUrl: string, value: MsgReactorBeginMigration}}
+   */
+  createMsgReactorBeginMigration(creatorAddress, delegatorAddress, validatorSrcAddress, validatorDstAddress, amount) {
+    return {
+      typeUrl: '/structs.structs.MsgReactorBeginMigration',
+      value: MsgReactorBeginMigration.fromPartial({
+        creator: creatorAddress,
+        delegator_address: delegatorAddress,
+        validator_src_address: validatorSrcAddress,
+        validator_dst_address: validatorDstAddress,
+        amount: amount
+      }),
+    }
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} delegatorAddress
+   * @param {string} validatorAddress
+   * @param {Object} amount
+   * @return {{typeUrl: string, value: MsgReactorDefuse}}
+   */
+  createMsgReactorDefuse(creatorAddress, delegatorAddress, validatorAddress, amount) {
+    return {
+      typeUrl: '/structs.structs.MsgReactorDefuse',
+      value: MsgReactorDefuse.fromPartial({
+        creator: creatorAddress,
+        delegator_address: delegatorAddress,
+        validator_address: validatorAddress,
+        amount: amount
+      }),
+    }
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} delegatorAddress
+   * @param {string} validatorAddress
+   * @param {Object} amount
+   * @param {number} creationHeight
+   * @return {{typeUrl: string, value: MsgReactorCancelDefusion}}
+   */
+  createMsgReactorCancelDefusion(creatorAddress, delegatorAddress, validatorAddress, amount, creationHeight) {
+    return {
+      typeUrl: '/structs.structs.MsgReactorCancelDefusion',
+      value: MsgReactorCancelDefusion.fromPartial({
+        creator: creatorAddress,
+        delegator_address: delegatorAddress,
+        validator_address: validatorAddress,
+        amount: amount,
+        creation_height: creationHeight
       }),
     }
   }
