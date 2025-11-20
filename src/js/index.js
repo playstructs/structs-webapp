@@ -144,6 +144,7 @@ const hudContainer = document.getElementById('hud-container');
 
 await gameState.load();
 gameState.thisGuild = await guildAPI.getThisGuild();
+gameState.setStructTypes(await guildAPI.getStructTypes());
 
 HUDViewModel.init(gameState);
 hudContainer.innerHTML = HUDViewModel.render();

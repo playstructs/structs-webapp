@@ -9,6 +9,7 @@ import {ShieldHealthCalculator} from "../util/ShieldHealthCalculator";
 import {PlanetaryShieldInfoDTO} from "../dtos/PlanetaryShieldInfoDTO";
 import {PlanetRaid} from "./PlanetRaid";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
+import {StructTypeCollection} from "./StructTypeCollection";
 
 export class GameState {
 
@@ -78,6 +79,8 @@ export class GameState {
     this.raidPlanetShieldHealth = 100;
 
     this.raidPlanetShieldInfo = new PlanetaryShieldInfoDTO();
+
+    this.structTypes = new StructTypeCollection();
 
     /* GRASS Only Data */
     this.currentBlockHeight = 0;
@@ -499,5 +502,12 @@ export class GameState {
   setActiveMapContainerId(id) {
     this.activeMapContainerId = id;
     this.save();
+  }
+
+  /**
+   * @param {array} types
+   */
+  setStructTypes(types) {
+    this.structTypes.setStructTypes(types);
   }
 }

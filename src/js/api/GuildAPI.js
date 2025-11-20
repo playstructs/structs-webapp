@@ -16,6 +16,7 @@ import {GuildPowerStatsDTOFactory} from "../factories/GuildPowerStatsDTOFactory"
 import {GuildSearchResultDTOFactory} from "../factories/GuildSearchResultDTOFactory";
 import {PlanetaryShieldInfoDTOFactory} from "../factories/PlanetaryShieldInfoDTOFactory";
 import {PlanetRaidFactory} from "../factories/PlanetRaidFactory";
+import {StructTypeFactory} from "../factories/StructTypeFactory";
 
 export class GuildAPI {
 
@@ -35,6 +36,7 @@ export class GuildAPI {
     this.guildSearchResultDTOFactory = new GuildSearchResultDTOFactory();
     this.planetaryShieldInfoDTOFactory = new PlanetaryShieldInfoDTOFactory();
     this.planetRaidFactory = new PlanetRaidFactory();
+    this.structTypeFactory = new StructTypeFactory();
   }
 
   /**
@@ -679,5 +681,28 @@ export class GuildAPI {
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.planetRaidFactory.make(response.data);
+  }
+
+  /**
+   * @return {string}
+   */
+  getStructTypesCacheKey() {
+    return `getStructTypes`;
+  }
+
+  /**
+   * @param {boolean} forceRefresh
+   * @return {Promise<StructType[]>}
+   */
+  async getStructTypes(forceRefresh = false) {
+    let structTypes = this.getCachedItem(this.getStructTypesCacheKey(), 1000 * 60 * 60 * 24);
+    if (structTypes === null || forceRefresh) {
+      const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/type`);
+      const response = this.guildAPIResponseFactory.make(jsonResponse);
+      this.handleResponseFailure(response);
+      structTypes = this.structTypeFactory.parseList(response.data);
+      this.cacheItem(this.getStructTypesCacheKey(), structTypes);
+    }
+    return structTypes;
   }
 }
