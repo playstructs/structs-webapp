@@ -179,14 +179,17 @@ export class AuthManager {
 
       const [
         player,
-        height
+        height,
+        structTypes,
       ] = await Promise.all([
         this.guildAPI.getPlayer(playerId),
         this.guildAPI.getPlayerLastActionBlockHeight(playerId),
+        this.guildAPI.getStructTypes()
       ]);
 
       this.gameState.setThisPlayer(player);
       this.gameState.setLastActionBlockHeight(height);
+      this.gameState.setStructTypes(structTypes);
 
       if (this.gameState.thisPlayer.planet_id) {
 

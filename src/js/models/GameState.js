@@ -32,6 +32,8 @@ export class GameState {
     this.planetRaiderLastActionBlockHeight = 0;
     this.raidEnemyLastActionBlockHeight = 0;
     this.chargeLevel = 0;
+    this.planetRaiderChargeLevel = 0;
+    this.raidEnemyChargeLevel = 0;
     this.activeMapContainerId = MAP_CONTAINER_IDS.ALPHA_BASE;
 
     /* Must Be Re-instantiated On Load */
@@ -102,6 +104,8 @@ export class GameState {
       planetRaiderLastActionBlockHeight: this.planetRaiderLastActionBlockHeight,
       raidEnemyLastActionBlockHeight: this.raidEnemyLastActionBlockHeight,
       chargeLevel: this.chargeLevel,
+      planetRaiderChargeLevel: this.planetRaiderChargeLevel,
+      raidEnemyChargeLevel: this.raidEnemyChargeLevel,
       transferAmount: this.transferAmount,
       activeMapContainerId: this.activeMapContainerId
     }));
@@ -139,6 +143,21 @@ export class GameState {
     this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
     this.setPlanetShieldHealth();
 
+    if (this.planetPlanetRaidInfo.isRaidActive()) {
+      this.planetRaiderChargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.planetRaiderLastActionBlockHeight);
+
+      window.dispatchEvent(new ChargeLevelChangedEvent(this.getPlanetRaiderId(), this.planetRaiderChargeLevel));
+    }
+
+    if (this.raidPlanetRaidInfo.isRaidActive()) {
+      this.raidEnemyChargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.raidEnemyLastActionBlockHeight);
+      this.setRaidPlanetShieldHealth();
+
+      window.dispatchEvent(new ChargeLevelChangedEvent(this.getRaidEnemyId(), this.raidEnemyChargeLevel));
+    }
+
+    this.save();
+
     console.log(`New Block ${height}`);
     window.dispatchEvent(new ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
   }
@@ -159,18 +178,18 @@ export class GameState {
    */
   setPlanetRaiderLastActionBlockHeight(height) {
     this.planetRaiderLastActionBlockHeight = height;
-    this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.planetRaiderLastActionBlockHeight);
+    this.planetRaiderChargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.planetRaiderLastActionBlockHeight);
     this.save();
 
-    window.dispatchEvent(new ChargeLevelChangedEvent(this.getPlanetRaiderId(), this.chargeLevel));
+    window.dispatchEvent(new ChargeLevelChangedEvent(this.getPlanetRaiderId(), this.planetRaiderChargeLevel));
   }
 
   setRaidEnemyLastActionBlockHeight(height) {
     this.raidEnemyLastActionBlockHeight = height;
-    this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.raidEnemyLastActionBlockHeight);
+    this.raidEnemyChargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.raidEnemyLastActionBlockHeight);
     this.save();
 
-    window.dispatchEvent(new ChargeLevelChangedEvent(this.getRaidEnemyId(), this.chargeLevel));
+    window.dispatchEvent(new ChargeLevelChangedEvent(this.getRaidEnemyId(), this.raidEnemyChargeLevel));
   }
 
   /**
@@ -509,5 +528,26 @@ export class GameState {
    */
   setStructTypes(types) {
     this.structTypes.setStructTypes(types);
+  }
+
+  /**
+   * @return {number}
+   */
+  getCharge() {
+    return this.currentBlockHeight - this.lastActionBlockHeight;
+  }
+
+  /**
+   * @return {number}
+   */
+  getPlanetRaiderCharge() {
+    return this.currentBlockHeight - this.planetRaiderLastActionBlockHeight;
+  }
+
+  /**
+   * @return {number}
+   */
+  getRaidEnemyChange() {
+    return this.currentBlockHeight - this.raidEnemyLastActionBlockHeight;
   }
 }
