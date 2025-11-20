@@ -31,9 +31,6 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.headerScreenId = `${this.playerType}-action-bar-header`;
     this.propertiesScreenId = `${this.playerType}-action-bar-properties-screen`;
 
-    // this.actionChunkBtn1Id = `${this.playerType}-action-bar-btn-1`;
-    // this.actionChunkBtn2Id = `${this.playerType}-action-bar-btn-2`;
-
     /* Profile Chunk */
     this.profileClickHandler = function () {};
     this.batteryfilledClass = 'sui-mod-filled';
@@ -120,10 +117,12 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * @param {string} tileType
    * @param {string} ambitOrTileLabel
+   * @param {string} side right or left
    */
   showEmptyTile(
     tileType,
-    ambitOrTileLabel
+    ambitOrTileLabel,
+    side
   ) {
     const header = ambitOrTileLabel.toUpperCase();
 
@@ -134,29 +133,33 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     let deployBtn = '';
     const deployBtnId = `${this.playerType}-action-bar-deploy-btn`;
     let attachDeployBtnHandler = () => {};
+    let btnTypeClass = 'sui-mod-disabled';
 
     if (hasDeployButton) {
+
+      if (side === 'left') {
+        btnTypeClass = 'sui-mod-default';
+        attachDeployBtnHandler = () => {
+          document.getElementById(deployBtnId).addEventListener('click', function () {
+            MenuPage.sui.offcanvas.setHeader('Select Struct')
+            MenuPage.sui.offcanvas.setContent('Structs to Select')
+            MenuPage.sui.offcanvas.open();
+          });
+        };
+      }
+
       deployBtn = `
         <div class="sui-action-bar-btn-group">
           <a 
             id="${deployBtnId}"
             href="javascript: void(0)"
-            class="sui-panel-btn sui-mod-default"
+            class="sui-panel-btn ${btnTypeClass}"
             data-sui-offcanvas="deploy"
           >
             <i class="sui-icon-md icon-deploy"></i>
           </a>
         </div>
       `;
-
-      attachDeployBtnHandler = () => {
-        document.getElementById(deployBtnId).addEventListener('click', function () {
-          console.log('Deploy button clicked');
-          MenuPage.sui.offcanvas.setHeader('Select Struct')
-          MenuPage.sui.offcanvas.setContent('Structs to Select')
-          MenuPage.sui.offcanvas.open();
-        });
-      };
     }
 
     document.getElementById(this.actionChunkId).innerHTML = `

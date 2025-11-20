@@ -165,6 +165,7 @@ export class HUDViewModel extends AbstractViewModel {
       HUDViewModel[actionBar].showEmptyTile(
         clickedDomElement.dataset.tileType,
         clickedDomElement.dataset.tileLabel || clickedDomElement.dataset.ambit,
+        clickedDomElement.dataset.side
       );
     }
   }
