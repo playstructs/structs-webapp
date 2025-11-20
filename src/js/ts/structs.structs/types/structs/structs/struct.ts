@@ -61,7 +61,13 @@ export interface Struct {
 
 export interface StructType {
   id: number;
+  /** TODO Deprecating... Will match with Class for now. */
   type: string;
+  /** New Struct Type Identity Details */
+  class: string;
+  classAbbreviation: string;
+  defaultCosmeticModelNumber: string;
+  defaultCosmeticName: string;
   /** Fundamental attributes */
   category: objectType;
   /** How many of this Struct Type a player can have */
@@ -386,6 +392,10 @@ function createBaseStructType(): StructType {
   return {
     id: 0,
     type: "",
+    class: "",
+    classAbbreviation: "",
+    defaultCosmeticModelNumber: "",
+    defaultCosmeticName: "",
     category: 0,
     buildLimit: 0,
     buildDifficulty: 0,
@@ -458,6 +468,18 @@ export const StructType: MessageFns<StructType> = {
     }
     if (message.type !== "") {
       writer.uint32(18).string(message.type);
+    }
+    if (message.class !== "") {
+      writer.uint32(522).string(message.class);
+    }
+    if (message.classAbbreviation !== "") {
+      writer.uint32(530).string(message.classAbbreviation);
+    }
+    if (message.defaultCosmeticModelNumber !== "") {
+      writer.uint32(538).string(message.defaultCosmeticModelNumber);
+    }
+    if (message.defaultCosmeticName !== "") {
+      writer.uint32(546).string(message.defaultCosmeticName);
     }
     if (message.category !== 0) {
       writer.uint32(24).int32(message.category);
@@ -669,6 +691,38 @@ export const StructType: MessageFns<StructType> = {
           }
 
           message.type = reader.string();
+          continue;
+        }
+        case 65: {
+          if (tag !== 522) {
+            break;
+          }
+
+          message.class = reader.string();
+          continue;
+        }
+        case 66: {
+          if (tag !== 530) {
+            break;
+          }
+
+          message.classAbbreviation = reader.string();
+          continue;
+        }
+        case 67: {
+          if (tag !== 538) {
+            break;
+          }
+
+          message.defaultCosmeticModelNumber = reader.string();
+          continue;
+        }
+        case 68: {
+          if (tag !== 546) {
+            break;
+          }
+
+          message.defaultCosmeticName = reader.string();
           continue;
         }
         case 3: {
@@ -1180,6 +1234,12 @@ export const StructType: MessageFns<StructType> = {
     return {
       id: isSet(object.id) ? globalThis.Number(object.id) : 0,
       type: isSet(object.type) ? globalThis.String(object.type) : "",
+      class: isSet(object.class) ? globalThis.String(object.class) : "",
+      classAbbreviation: isSet(object.classAbbreviation) ? globalThis.String(object.classAbbreviation) : "",
+      defaultCosmeticModelNumber: isSet(object.defaultCosmeticModelNumber)
+        ? globalThis.String(object.defaultCosmeticModelNumber)
+        : "",
+      defaultCosmeticName: isSet(object.defaultCosmeticName) ? globalThis.String(object.defaultCosmeticName) : "",
       category: isSet(object.category) ? objectTypeFromJSON(object.category) : 0,
       buildLimit: isSet(object.buildLimit) ? globalThis.Number(object.buildLimit) : 0,
       buildDifficulty: isSet(object.buildDifficulty) ? globalThis.Number(object.buildDifficulty) : 0,
@@ -1296,6 +1356,18 @@ export const StructType: MessageFns<StructType> = {
     }
     if (message.type !== "") {
       obj.type = message.type;
+    }
+    if (message.class !== "") {
+      obj.class = message.class;
+    }
+    if (message.classAbbreviation !== "") {
+      obj.classAbbreviation = message.classAbbreviation;
+    }
+    if (message.defaultCosmeticModelNumber !== "") {
+      obj.defaultCosmeticModelNumber = message.defaultCosmeticModelNumber;
+    }
+    if (message.defaultCosmeticName !== "") {
+      obj.defaultCosmeticName = message.defaultCosmeticName;
     }
     if (message.category !== 0) {
       obj.category = objectTypeToJSON(message.category);
@@ -1493,6 +1565,10 @@ export const StructType: MessageFns<StructType> = {
     const message = createBaseStructType();
     message.id = object.id ?? 0;
     message.type = object.type ?? "";
+    message.class = object.class ?? "";
+    message.classAbbreviation = object.classAbbreviation ?? "";
+    message.defaultCosmeticModelNumber = object.defaultCosmeticModelNumber ?? "";
+    message.defaultCosmeticName = object.defaultCosmeticName ?? "";
     message.category = object.category ?? 0;
     message.buildLimit = object.buildLimit ?? 0;
     message.buildDifficulty = object.buildDifficulty ?? 0;
