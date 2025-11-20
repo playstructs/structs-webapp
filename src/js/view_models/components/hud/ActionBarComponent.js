@@ -142,7 +142,14 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         attachDeployBtnHandler = () => {
           document.getElementById(deployBtnId).addEventListener('click', function () {
             MenuPage.sui.offcanvas.setHeader('Select Struct')
-            MenuPage.sui.offcanvas.setContent('Structs to Select')
+            MenuPage.sui.offcanvas.setContent(`
+              <div class="offcanvas-struct-list-layout">
+                <a href="javascript: void(0)" class="offcanvas-struct-container"></a>
+                <a href="javascript: void(0)" class="offcanvas-struct-container"></a>
+                <a href="javascript: void(0)" class="offcanvas-struct-container"></a>
+                <a href="javascript: void(0)" class="offcanvas-struct-container"></a>
+              </div>
+            `)
             MenuPage.sui.offcanvas.open();
           });
         };

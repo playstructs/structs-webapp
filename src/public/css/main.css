@@ -1826,6 +1826,38 @@ img.guild-reactor-img {
   inset: 0;
 }
 
+.offcanvas-struct-list-layout {
+  display: flex;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 16px var(--spacing-xl);
+  align-self: stretch;
+  flex-wrap: wrap;
+}
+
+.offcanvas-struct-container,
+a.offcanvas-struct-container,
+a.offcanvas-struct-container:link,
+a.offcanvas-struct-container:hover,
+a.offcanvas-struct-container:active,
+a.offcanvas-struct-container:visited {
+  display: flex;
+  width: 64px;
+  height: 64px;
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+  text-decoration: none;
+}
+
+.offcanvas-struct-container.sui-mod-disabled,
+a.offcanvas-struct-container.sui-mod-disabled {
+  opacity: 0.5;
+}
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */
