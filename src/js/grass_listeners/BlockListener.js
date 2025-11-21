@@ -1,4 +1,5 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
+import {EVENTS} from "../constants/Events";
 
 export class BlockListener extends AbstractGrassListener {
 
@@ -16,6 +17,7 @@ export class BlockListener extends AbstractGrassListener {
       && messageData.subject === 'consensus'
     ) {
       this.gameState.setCurrentBlockHeight(messageData.height);
+      dispatchEvent(new CustomEvent(EVENTS.BLOCK_HEIGHT_CHANGED));
     }
   }
 }
