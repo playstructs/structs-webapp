@@ -379,7 +379,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} creatorAddress
-   * @param {Object} amountToken
+   * @param {{denom: string, amount: string}} amountToken
    */
   async queueMsgGuildBankRedeem(creatorAddress, amountToken) {
     this.queue({
@@ -1092,7 +1092,7 @@ export class SigningClientManager {
   /**
    * @param {string} creatorAddress
    * @param {string} substationId
-   * @param {Object} rate
+   * @param {{denom: string, amount: string}} rate
    * @param {string} accessPolicy
    * @param {string} providerCancellationPenalty
    * @param {string} consumerCancellationPenalty
@@ -1265,7 +1265,7 @@ export class SigningClientManager {
    * @param {string} creatorAddress
    * @param {string} delegatorAddress
    * @param {string} validatorAddress
-   * @param {Object} amount
+   * @param {{denom: string, amount: string}} amount
    */
   async queueMsgReactorInfuse(creatorAddress, delegatorAddress, validatorAddress, amount) {
     this.queue({
@@ -1284,7 +1284,7 @@ export class SigningClientManager {
    * @param {string} delegatorAddress
    * @param {string} validatorSrcAddress
    * @param {string} validatorDstAddress
-   * @param {Object} amount
+   * @param {{denom: string, amount: string}} amount
    */
   async queueMsgReactorBeginMigration(creatorAddress, delegatorAddress, validatorSrcAddress, validatorDstAddress, amount) {
     this.queue({
@@ -1303,7 +1303,7 @@ export class SigningClientManager {
    * @param {string} creatorAddress
    * @param {string} delegatorAddress
    * @param {string} validatorAddress
-   * @param {Object} amount
+   * @param {{denom: string, amount: string}} amount
    */
   async queueMsgReactorDefuse(creatorAddress, delegatorAddress, validatorAddress, amount) {
     this.queue({
@@ -1321,7 +1321,7 @@ export class SigningClientManager {
    * @param {string} creatorAddress
    * @param {string} delegatorAddress
    * @param {string} validatorAddress
-   * @param {Object} amount
+   * @param {{denom: string, amount: string}} amount
    * @param {number} creationHeight
    */
   async queueMsgReactorCancelDefusion(creatorAddress, delegatorAddress, validatorAddress, amount, creationHeight) {
