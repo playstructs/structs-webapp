@@ -364,7 +364,7 @@ export class AuthManager {
     );
     this.grassManager.registerListener(playerAddressApprovedListener);
 
-    const msg = this.signingClientManager.createMsgAddressRegister(
+    await this.signingClientManager.queueMsgAddressRegister(
       this.gameState.signingAccount.address,
       this.gameState.thisPlayerId,
       playerAddressPending.address,
@@ -372,16 +372,6 @@ export class AuthManager {
       playerAddressPending.signature,
       playerAddressPending.permissions
     );
-
-    try {
-      await this.gameState.signingClient.signAndBroadcast(
-        this.gameState.signingAccount.address,
-        [msg],
-        FEE
-      );
-    } catch (error) {
-      console.log('Sign and Broadcast Error:', error);
-    }
 
     await this.guildAPI.deleteActivationCode(playerAddressPending.code);
 
