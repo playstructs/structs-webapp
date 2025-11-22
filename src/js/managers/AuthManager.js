@@ -266,20 +266,10 @@ export class AuthManager {
       addressToRevoke
     ));
 
-    const msg = this.signingClientManager.createMsgAddressRevoke(
+    await this.gameState.signingClient.queueMsgAddressRevoke(
       this.gameState.signingAccount.address,
       addressToRevoke
     );
-
-    try {
-      await this.gameState.signingClient.signAndBroadcast(
-        this.gameState.signingAccount.address,
-        [msg],
-        FEE
-      );
-    } catch (error) {
-      console.log('Sign and Broadcast Error:', error);
-    }
   }
 
   logout() {
