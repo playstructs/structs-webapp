@@ -84,6 +84,7 @@ export class SigningClientManager {
    * @param {GameState} gameState
    */
   constructor(gameState) {
+    console.log('Initiating Signing Client Manager');
     this.gameState = gameState;
     this.wsUrl = `ws://${window.location.hostname}:26657`;
     this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
@@ -116,18 +117,23 @@ export class SigningClientManager {
   async transactQueue() {
     if (this.lastBroadcastHeight < this.gameState.currentBlockHeight) {
       this.lastBroadcastHeight = this.gameState.currentBlockHeight
-      console.log(this.messageQueue);
-
-      // TODO establish a maximum of messages to include in a single transaction
-      try {
-        await this.gameState.signingClient.signAndBroadcast(
-          this.gameState.signingAccount.address,
-          this.messageQueue,
-          FEE
-        );
+      if (this.messageQueue.length > 0) {
+        console.log('Running TransactQueue');
+        console.log(this.messageQueue);
+        // TODO establish a maximum of messages to include in a single transaction
+        try {
+          await this.gameState.signingClient.signAndBroadcast(
+              this.gameState.signingAccount.address,
+              this.messageQueue,
+              FEE
+          );
+        } catch (error) {
+          // There is always an error because our node hates this for some reason
+          // Sign and Broadcast Error: Error: {"code":-32603,"message":"Internal error","data":"the TxIndexer.Search method is not supported"}
+          //console.log('Sign and Broadcast Error:', error);
+        }
         this.messageQueue = [];
-      } catch (error) {
-        console.log('Sign and Broadcast Error:', error);
+
       }
     }
   }

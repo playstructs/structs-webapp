@@ -17,7 +17,7 @@ export class BlockListener extends AbstractGrassListener {
       && messageData.subject === 'consensus'
     ) {
       this.gameState.setCurrentBlockHeight(messageData.height);
-      dispatchEvent(new CustomEvent(EVENTS.BLOCK_HEIGHT_CHANGED));
+      window.dispatchEvent(new CustomEvent(EVENTS.BLOCK_HEIGHT_CHANGED));
     }
   }
 }
