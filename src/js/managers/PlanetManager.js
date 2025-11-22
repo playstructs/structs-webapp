@@ -14,19 +14,9 @@ export class PlanetManager {
   }
 
   async findNewPlanet() {
-    const msg = this.signingClientManager.createMsgPlanetExplore(
+    await this.signingClientManager.queueMsgPlanetExplore(
       this.gameState.signingAccount.address,
       this.gameState.thisPlayerId
     );
-
-    try {
-      await this.gameState.signingClient.signAndBroadcast(
-        this.gameState.signingAccount.address,
-        [msg],
-        FEE
-      );
-    } catch (error) {
-      console.log('Sign and Broadcast Error:', error);
-    }
   }
 }

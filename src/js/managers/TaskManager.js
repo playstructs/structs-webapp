@@ -120,7 +120,7 @@ export class TaskManager {
             let msg;
             switch (event.state.task_type) {
                 case TASK_TYPES.RAID:
-                    msg = this.signingClientManager.createMsgPlanetRaidComplete(
+                    await this.signingClientManager.queueMsgPlanetRaidComplete(
                         this.gameState.signingAccount.address,
                         event.state.object_id,
                         event.state.result_hash,
@@ -128,7 +128,7 @@ export class TaskManager {
                     );
                     break;
                 case TASK_TYPES.BUILD:
-                    msg = this.signingClientManager.createMsgStructBuildComplete(
+                    await this.signingClientManager.queueMsgStructBuildComplete(
                         this.gameState.signingAccount.address,
                         event.state.object_id,
                         event.state.result_hash,
@@ -137,7 +137,7 @@ export class TaskManager {
                     break;
 
                 case TASK_TYPES.MINE:
-                    msg = this.signingClientManager.createMsgStructOreMinerComplete(
+                    await this.signingClientManager.queueMsgStructOreMinerComplete(
                         this.gameState.signingAccount.address,
                         event.state.object_id,
                         event.state.result_hash,
@@ -146,23 +146,13 @@ export class TaskManager {
                     break;
 
                 case TASK_TYPES.REFINE:
-                    msg = this.signingClientManager.createMsgStructOreRefineryComplete(
+                    await this.signingClientManager.queueMsgStructOreRefineryComplete(
                         this.gameState.signingAccount.address,
                         event.state.object_id,
                         event.state.result_hash,
                         event.state.result_nonce
                     );
                     break;
-            }
-
-            try {
-                await this.gameState.signingClient.signAndBroadcast(
-                    this.gameState.signingAccount.address,
-                    [msg],
-                    FEE
-                );
-            } catch (error) {
-                console.log('Sign and Broadcast Error:', error);
             }
         }.bind(this));
     }

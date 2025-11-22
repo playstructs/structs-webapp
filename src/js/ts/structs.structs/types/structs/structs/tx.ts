@@ -7,6 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Coin } from "../../cosmos/base/v1beta1/coin";
+import { Timestamp } from "../../google/protobuf/timestamp";
 import { Fleet } from "./fleet";
 import { GuildMembershipApplication } from "./guild";
 import {
@@ -354,6 +355,87 @@ export interface MsgPlayerResume {
 }
 
 export interface MsgPlayerResumeResponse {
+}
+
+/**
+ * MsgReactorInfuse defines a SDK message for performing a delegation of coins
+ * from a delegator to a validator.
+ */
+export interface MsgReactorInfuse {
+  creator: string;
+  delegatorAddress: string;
+  validatorAddress: string;
+  amount: Coin | undefined;
+}
+
+/** MsgReactorInfuseResponse defines the Msg/Delegate response type. */
+export interface MsgReactorInfuseResponse {
+}
+
+/**
+ * MsgReactorBeginMigration defines a SDK message for performing a redelegation
+ * of coins from a delegator and source validator to a destination validator.
+ */
+export interface MsgReactorBeginMigration {
+  creator: string;
+  delegatorAddress: string;
+  validatorSrcAddress: string;
+  validatorDstAddress: string;
+  amount: Coin | undefined;
+}
+
+/** MsgBeginMigrationResponse defines the Msg/BeginRedelegate response type. */
+export interface MsgReactorBeginMigrationResponse {
+  completionTime: Date | undefined;
+}
+
+/**
+ * MsgReactorDefuse defines a SDK message for performing an undelegation from a
+ * delegate and a validator.
+ */
+export interface MsgReactorDefuse {
+  creator: string;
+  delegatorAddress: string;
+  validatorAddress: string;
+  amount: Coin | undefined;
+}
+
+/** MsgReactorDefuseResponse defines the Msg/Undelegate response type. */
+export interface MsgReactorDefuseResponse {
+  completionTime:
+    | Date
+    | undefined;
+  /**
+   * amount returns the amount of undelegated coins
+   *
+   * Since: cosmos-sdk 0.50
+   */
+  amount: Coin | undefined;
+}
+
+/**
+ * MsgReactorCancelDefusion defines the SDK message for performing a cancel unbonding delegation for delegator
+ *
+ * Since: cosmos-sdk 0.46
+ */
+export interface MsgReactorCancelDefusion {
+  creator: string;
+  delegatorAddress: string;
+  validatorAddress: string;
+  /** amount is always less than or equal to unbonding delegation entry balance */
+  amount:
+    | Coin
+    | undefined;
+  /** creation_height is the height which the unbonding took place. */
+  creationHeight: number;
+}
+
+/**
+ * MsgReactorCancelDefusionResponse
+ *
+ * Since: cosmos-sdk 0.46
+ */
+export interface MsgReactorCancelDefusionResponse {
 }
 
 export interface MsgStructStatusResponse {
@@ -5475,6 +5557,708 @@ export const MsgPlayerResumeResponse: MessageFns<MsgPlayerResumeResponse> = {
   },
 };
 
+function createBaseMsgReactorInfuse(): MsgReactorInfuse {
+  return { creator: "", delegatorAddress: "", validatorAddress: "", amount: undefined };
+}
+
+export const MsgReactorInfuse: MessageFns<MsgReactorInfuse> = {
+  encode(message: MsgReactorInfuse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.delegatorAddress !== "") {
+      writer.uint32(18).string(message.delegatorAddress);
+    }
+    if (message.validatorAddress !== "") {
+      writer.uint32(26).string(message.validatorAddress);
+    }
+    if (message.amount !== undefined) {
+      Coin.encode(message.amount, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgReactorInfuse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgReactorInfuse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.delegatorAddress = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.validatorAddress = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.amount = Coin.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgReactorInfuse {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      delegatorAddress: isSet(object.delegatorAddress) ? globalThis.String(object.delegatorAddress) : "",
+      validatorAddress: isSet(object.validatorAddress) ? globalThis.String(object.validatorAddress) : "",
+      amount: isSet(object.amount) ? Coin.fromJSON(object.amount) : undefined,
+    };
+  },
+
+  toJSON(message: MsgReactorInfuse): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.delegatorAddress !== "") {
+      obj.delegatorAddress = message.delegatorAddress;
+    }
+    if (message.validatorAddress !== "") {
+      obj.validatorAddress = message.validatorAddress;
+    }
+    if (message.amount !== undefined) {
+      obj.amount = Coin.toJSON(message.amount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgReactorInfuse>, I>>(base?: I): MsgReactorInfuse {
+    return MsgReactorInfuse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgReactorInfuse>, I>>(object: I): MsgReactorInfuse {
+    const message = createBaseMsgReactorInfuse();
+    message.creator = object.creator ?? "";
+    message.delegatorAddress = object.delegatorAddress ?? "";
+    message.validatorAddress = object.validatorAddress ?? "";
+    message.amount = (object.amount !== undefined && object.amount !== null)
+      ? Coin.fromPartial(object.amount)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseMsgReactorInfuseResponse(): MsgReactorInfuseResponse {
+  return {};
+}
+
+export const MsgReactorInfuseResponse: MessageFns<MsgReactorInfuseResponse> = {
+  encode(_: MsgReactorInfuseResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgReactorInfuseResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgReactorInfuseResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgReactorInfuseResponse {
+    return {};
+  },
+
+  toJSON(_: MsgReactorInfuseResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgReactorInfuseResponse>, I>>(base?: I): MsgReactorInfuseResponse {
+    return MsgReactorInfuseResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgReactorInfuseResponse>, I>>(_: I): MsgReactorInfuseResponse {
+    const message = createBaseMsgReactorInfuseResponse();
+    return message;
+  },
+};
+
+function createBaseMsgReactorBeginMigration(): MsgReactorBeginMigration {
+  return { creator: "", delegatorAddress: "", validatorSrcAddress: "", validatorDstAddress: "", amount: undefined };
+}
+
+export const MsgReactorBeginMigration: MessageFns<MsgReactorBeginMigration> = {
+  encode(message: MsgReactorBeginMigration, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.delegatorAddress !== "") {
+      writer.uint32(18).string(message.delegatorAddress);
+    }
+    if (message.validatorSrcAddress !== "") {
+      writer.uint32(26).string(message.validatorSrcAddress);
+    }
+    if (message.validatorDstAddress !== "") {
+      writer.uint32(34).string(message.validatorDstAddress);
+    }
+    if (message.amount !== undefined) {
+      Coin.encode(message.amount, writer.uint32(42).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgReactorBeginMigration {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgReactorBeginMigration();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.delegatorAddress = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.validatorSrcAddress = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.validatorDstAddress = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.amount = Coin.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgReactorBeginMigration {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      delegatorAddress: isSet(object.delegatorAddress) ? globalThis.String(object.delegatorAddress) : "",
+      validatorSrcAddress: isSet(object.validatorSrcAddress) ? globalThis.String(object.validatorSrcAddress) : "",
+      validatorDstAddress: isSet(object.validatorDstAddress) ? globalThis.String(object.validatorDstAddress) : "",
+      amount: isSet(object.amount) ? Coin.fromJSON(object.amount) : undefined,
+    };
+  },
+
+  toJSON(message: MsgReactorBeginMigration): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.delegatorAddress !== "") {
+      obj.delegatorAddress = message.delegatorAddress;
+    }
+    if (message.validatorSrcAddress !== "") {
+      obj.validatorSrcAddress = message.validatorSrcAddress;
+    }
+    if (message.validatorDstAddress !== "") {
+      obj.validatorDstAddress = message.validatorDstAddress;
+    }
+    if (message.amount !== undefined) {
+      obj.amount = Coin.toJSON(message.amount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgReactorBeginMigration>, I>>(base?: I): MsgReactorBeginMigration {
+    return MsgReactorBeginMigration.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgReactorBeginMigration>, I>>(object: I): MsgReactorBeginMigration {
+    const message = createBaseMsgReactorBeginMigration();
+    message.creator = object.creator ?? "";
+    message.delegatorAddress = object.delegatorAddress ?? "";
+    message.validatorSrcAddress = object.validatorSrcAddress ?? "";
+    message.validatorDstAddress = object.validatorDstAddress ?? "";
+    message.amount = (object.amount !== undefined && object.amount !== null)
+      ? Coin.fromPartial(object.amount)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseMsgReactorBeginMigrationResponse(): MsgReactorBeginMigrationResponse {
+  return { completionTime: undefined };
+}
+
+export const MsgReactorBeginMigrationResponse: MessageFns<MsgReactorBeginMigrationResponse> = {
+  encode(message: MsgReactorBeginMigrationResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.completionTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.completionTime), writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgReactorBeginMigrationResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgReactorBeginMigrationResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.completionTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgReactorBeginMigrationResponse {
+    return { completionTime: isSet(object.completionTime) ? fromJsonTimestamp(object.completionTime) : undefined };
+  },
+
+  toJSON(message: MsgReactorBeginMigrationResponse): unknown {
+    const obj: any = {};
+    if (message.completionTime !== undefined) {
+      obj.completionTime = message.completionTime.toISOString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgReactorBeginMigrationResponse>, I>>(
+    base?: I,
+  ): MsgReactorBeginMigrationResponse {
+    return MsgReactorBeginMigrationResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgReactorBeginMigrationResponse>, I>>(
+    object: I,
+  ): MsgReactorBeginMigrationResponse {
+    const message = createBaseMsgReactorBeginMigrationResponse();
+    message.completionTime = object.completionTime ?? undefined;
+    return message;
+  },
+};
+
+function createBaseMsgReactorDefuse(): MsgReactorDefuse {
+  return { creator: "", delegatorAddress: "", validatorAddress: "", amount: undefined };
+}
+
+export const MsgReactorDefuse: MessageFns<MsgReactorDefuse> = {
+  encode(message: MsgReactorDefuse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.delegatorAddress !== "") {
+      writer.uint32(18).string(message.delegatorAddress);
+    }
+    if (message.validatorAddress !== "") {
+      writer.uint32(26).string(message.validatorAddress);
+    }
+    if (message.amount !== undefined) {
+      Coin.encode(message.amount, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgReactorDefuse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgReactorDefuse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.delegatorAddress = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.validatorAddress = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.amount = Coin.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgReactorDefuse {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      delegatorAddress: isSet(object.delegatorAddress) ? globalThis.String(object.delegatorAddress) : "",
+      validatorAddress: isSet(object.validatorAddress) ? globalThis.String(object.validatorAddress) : "",
+      amount: isSet(object.amount) ? Coin.fromJSON(object.amount) : undefined,
+    };
+  },
+
+  toJSON(message: MsgReactorDefuse): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.delegatorAddress !== "") {
+      obj.delegatorAddress = message.delegatorAddress;
+    }
+    if (message.validatorAddress !== "") {
+      obj.validatorAddress = message.validatorAddress;
+    }
+    if (message.amount !== undefined) {
+      obj.amount = Coin.toJSON(message.amount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgReactorDefuse>, I>>(base?: I): MsgReactorDefuse {
+    return MsgReactorDefuse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgReactorDefuse>, I>>(object: I): MsgReactorDefuse {
+    const message = createBaseMsgReactorDefuse();
+    message.creator = object.creator ?? "";
+    message.delegatorAddress = object.delegatorAddress ?? "";
+    message.validatorAddress = object.validatorAddress ?? "";
+    message.amount = (object.amount !== undefined && object.amount !== null)
+      ? Coin.fromPartial(object.amount)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseMsgReactorDefuseResponse(): MsgReactorDefuseResponse {
+  return { completionTime: undefined, amount: undefined };
+}
+
+export const MsgReactorDefuseResponse: MessageFns<MsgReactorDefuseResponse> = {
+  encode(message: MsgReactorDefuseResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.completionTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.completionTime), writer.uint32(10).fork()).join();
+    }
+    if (message.amount !== undefined) {
+      Coin.encode(message.amount, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgReactorDefuseResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgReactorDefuseResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.completionTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.amount = Coin.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgReactorDefuseResponse {
+    return {
+      completionTime: isSet(object.completionTime) ? fromJsonTimestamp(object.completionTime) : undefined,
+      amount: isSet(object.amount) ? Coin.fromJSON(object.amount) : undefined,
+    };
+  },
+
+  toJSON(message: MsgReactorDefuseResponse): unknown {
+    const obj: any = {};
+    if (message.completionTime !== undefined) {
+      obj.completionTime = message.completionTime.toISOString();
+    }
+    if (message.amount !== undefined) {
+      obj.amount = Coin.toJSON(message.amount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgReactorDefuseResponse>, I>>(base?: I): MsgReactorDefuseResponse {
+    return MsgReactorDefuseResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgReactorDefuseResponse>, I>>(object: I): MsgReactorDefuseResponse {
+    const message = createBaseMsgReactorDefuseResponse();
+    message.completionTime = object.completionTime ?? undefined;
+    message.amount = (object.amount !== undefined && object.amount !== null)
+      ? Coin.fromPartial(object.amount)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseMsgReactorCancelDefusion(): MsgReactorCancelDefusion {
+  return { creator: "", delegatorAddress: "", validatorAddress: "", amount: undefined, creationHeight: 0 };
+}
+
+export const MsgReactorCancelDefusion: MessageFns<MsgReactorCancelDefusion> = {
+  encode(message: MsgReactorCancelDefusion, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.delegatorAddress !== "") {
+      writer.uint32(18).string(message.delegatorAddress);
+    }
+    if (message.validatorAddress !== "") {
+      writer.uint32(26).string(message.validatorAddress);
+    }
+    if (message.amount !== undefined) {
+      Coin.encode(message.amount, writer.uint32(34).fork()).join();
+    }
+    if (message.creationHeight !== 0) {
+      writer.uint32(40).int64(message.creationHeight);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgReactorCancelDefusion {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgReactorCancelDefusion();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.delegatorAddress = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.validatorAddress = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.amount = Coin.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.creationHeight = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgReactorCancelDefusion {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      delegatorAddress: isSet(object.delegatorAddress) ? globalThis.String(object.delegatorAddress) : "",
+      validatorAddress: isSet(object.validatorAddress) ? globalThis.String(object.validatorAddress) : "",
+      amount: isSet(object.amount) ? Coin.fromJSON(object.amount) : undefined,
+      creationHeight: isSet(object.creationHeight) ? globalThis.Number(object.creationHeight) : 0,
+    };
+  },
+
+  toJSON(message: MsgReactorCancelDefusion): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.delegatorAddress !== "") {
+      obj.delegatorAddress = message.delegatorAddress;
+    }
+    if (message.validatorAddress !== "") {
+      obj.validatorAddress = message.validatorAddress;
+    }
+    if (message.amount !== undefined) {
+      obj.amount = Coin.toJSON(message.amount);
+    }
+    if (message.creationHeight !== 0) {
+      obj.creationHeight = Math.round(message.creationHeight);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgReactorCancelDefusion>, I>>(base?: I): MsgReactorCancelDefusion {
+    return MsgReactorCancelDefusion.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgReactorCancelDefusion>, I>>(object: I): MsgReactorCancelDefusion {
+    const message = createBaseMsgReactorCancelDefusion();
+    message.creator = object.creator ?? "";
+    message.delegatorAddress = object.delegatorAddress ?? "";
+    message.validatorAddress = object.validatorAddress ?? "";
+    message.amount = (object.amount !== undefined && object.amount !== null)
+      ? Coin.fromPartial(object.amount)
+      : undefined;
+    message.creationHeight = object.creationHeight ?? 0;
+    return message;
+  },
+};
+
+function createBaseMsgReactorCancelDefusionResponse(): MsgReactorCancelDefusionResponse {
+  return {};
+}
+
+export const MsgReactorCancelDefusionResponse: MessageFns<MsgReactorCancelDefusionResponse> = {
+  encode(_: MsgReactorCancelDefusionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgReactorCancelDefusionResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgReactorCancelDefusionResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgReactorCancelDefusionResponse {
+    return {};
+  },
+
+  toJSON(_: MsgReactorCancelDefusionResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgReactorCancelDefusionResponse>, I>>(
+    base?: I,
+  ): MsgReactorCancelDefusionResponse {
+    return MsgReactorCancelDefusionResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgReactorCancelDefusionResponse>, I>>(
+    _: I,
+  ): MsgReactorCancelDefusionResponse {
+    const message = createBaseMsgReactorCancelDefusionResponse();
+    return message;
+  },
+};
+
 function createBaseMsgStructStatusResponse(): MsgStructStatusResponse {
   return { struct: undefined };
 }
@@ -10110,6 +10894,10 @@ export interface Msg {
   ProviderGuildGrant(request: MsgProviderGuildGrant): Promise<MsgProviderResponse>;
   ProviderGuildRevoke(request: MsgProviderGuildRevoke): Promise<MsgProviderResponse>;
   ProviderDelete(request: MsgProviderDelete): Promise<MsgProviderResponse>;
+  ReactorInfuse(request: MsgReactorInfuse): Promise<MsgReactorInfuseResponse>;
+  ReactorDefuse(request: MsgReactorDefuse): Promise<MsgReactorDefuseResponse>;
+  ReactorBeginMigration(request: MsgReactorBeginMigration): Promise<MsgReactorBeginMigrationResponse>;
+  ReactorCancelDefusion(request: MsgReactorCancelDefusion): Promise<MsgReactorCancelDefusionResponse>;
   StructActivate(request: MsgStructActivate): Promise<MsgStructStatusResponse>;
   StructDeactivate(request: MsgStructDeactivate): Promise<MsgStructStatusResponse>;
   StructBuildInitiate(request: MsgStructBuildInitiate): Promise<MsgStructStatusResponse>;
@@ -10196,6 +10984,10 @@ export class MsgClientImpl implements Msg {
     this.ProviderGuildGrant = this.ProviderGuildGrant.bind(this);
     this.ProviderGuildRevoke = this.ProviderGuildRevoke.bind(this);
     this.ProviderDelete = this.ProviderDelete.bind(this);
+    this.ReactorInfuse = this.ReactorInfuse.bind(this);
+    this.ReactorDefuse = this.ReactorDefuse.bind(this);
+    this.ReactorBeginMigration = this.ReactorBeginMigration.bind(this);
+    this.ReactorCancelDefusion = this.ReactorCancelDefusion.bind(this);
     this.StructActivate = this.StructActivate.bind(this);
     this.StructDeactivate = this.StructDeactivate.bind(this);
     this.StructBuildInitiate = this.StructBuildInitiate.bind(this);
@@ -10546,6 +11338,30 @@ export class MsgClientImpl implements Msg {
     return promise.then((data) => MsgProviderResponse.decode(new BinaryReader(data)));
   }
 
+  ReactorInfuse(request: MsgReactorInfuse): Promise<MsgReactorInfuseResponse> {
+    const data = MsgReactorInfuse.encode(request).finish();
+    const promise = this.rpc.request(this.service, "ReactorInfuse", data);
+    return promise.then((data) => MsgReactorInfuseResponse.decode(new BinaryReader(data)));
+  }
+
+  ReactorDefuse(request: MsgReactorDefuse): Promise<MsgReactorDefuseResponse> {
+    const data = MsgReactorDefuse.encode(request).finish();
+    const promise = this.rpc.request(this.service, "ReactorDefuse", data);
+    return promise.then((data) => MsgReactorDefuseResponse.decode(new BinaryReader(data)));
+  }
+
+  ReactorBeginMigration(request: MsgReactorBeginMigration): Promise<MsgReactorBeginMigrationResponse> {
+    const data = MsgReactorBeginMigration.encode(request).finish();
+    const promise = this.rpc.request(this.service, "ReactorBeginMigration", data);
+    return promise.then((data) => MsgReactorBeginMigrationResponse.decode(new BinaryReader(data)));
+  }
+
+  ReactorCancelDefusion(request: MsgReactorCancelDefusion): Promise<MsgReactorCancelDefusionResponse> {
+    const data = MsgReactorCancelDefusion.encode(request).finish();
+    const promise = this.rpc.request(this.service, "ReactorCancelDefusion", data);
+    return promise.then((data) => MsgReactorCancelDefusionResponse.decode(new BinaryReader(data)));
+  }
+
   StructActivate(request: MsgStructActivate): Promise<MsgStructStatusResponse> {
     const data = MsgStructActivate.encode(request).finish();
     const promise = this.rpc.request(this.service, "StructActivate", data);
@@ -10692,6 +11508,28 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function toTimestamp(date: Date): Timestamp {
+  const seconds = Math.trunc(date.getTime() / 1_000);
+  const nanos = (date.getTime() % 1_000) * 1_000_000;
+  return { seconds, nanos };
+}
+
+function fromTimestamp(t: Timestamp): Date {
+  let millis = (t.seconds || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
+  return new globalThis.Date(millis);
+}
+
+function fromJsonTimestamp(o: any): Date {
+  if (o instanceof globalThis.Date) {
+    return o;
+  } else if (typeof o === "string") {
+    return new globalThis.Date(o);
+  } else {
+    return fromTimestamp(Timestamp.fromJSON(o));
+  }
+}
 
 function longToNumber(int64: { toString(): string }): number {
   const num = globalThis.Number(int64.toString());

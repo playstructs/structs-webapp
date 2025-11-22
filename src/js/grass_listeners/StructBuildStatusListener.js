@@ -22,7 +22,7 @@ export class StructBuildStatusListener extends AbstractGrassListener {
     ) {
       //TODO we need difficulty target here
       // I assume it'll be in the gameState eventually.
-      dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.BUILD, messageData.detail.block, 5000)));
+      window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.BUILD, messageData.detail.block, 5000)));
 
     } else if (
         messageData.category === 'struct_status'
@@ -31,7 +31,7 @@ export class StructBuildStatusListener extends AbstractGrassListener {
         && ((messageData.detail.status_old & 2) === 0
         && (messageData.detail.status & 2) > 0)
     ) {
-      dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
+      window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
     }
 
   }
