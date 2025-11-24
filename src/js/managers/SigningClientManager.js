@@ -158,8 +158,8 @@ export class SigningClientManager {
     this.queue({
       typeUrl: '/cosmos.bank.v1beta1.MsgSend',
       value: {
-        from_address: fromAddress,
-        to_address: toAddress,
+        fromAddress: fromAddress,
+        toAddress: toAddress,
         amount: amount
       },
     });
@@ -1280,8 +1280,8 @@ export class SigningClientManager {
       typeUrl: '/structs.structs.MsgReactorInfuse',
       value: MsgReactorInfuse.fromPartial({
         creator: creatorAddress,
-        delegator_address: delegatorAddress,
-        validator_address: validatorAddress,
+        delegatorAddress: delegatorAddress,
+        validatorAddress: validatorAddress,
         amount: amount
       }),
     });
@@ -1299,9 +1299,9 @@ export class SigningClientManager {
       typeUrl: '/structs.structs.MsgReactorBeginMigration',
       value: MsgReactorBeginMigration.fromPartial({
         creator: creatorAddress,
-        delegator_address: delegatorAddress,
-        validator_src_address: validatorSrcAddress,
-        validator_dst_address: validatorDstAddress,
+        delegatorAddress: delegatorAddress,
+        validatorSrcAddress: validatorSrcAddress,
+        validatorDstAddress: validatorDstAddress,
         amount: amount
       }),
     });
@@ -1318,8 +1318,8 @@ export class SigningClientManager {
       typeUrl: '/structs.structs.MsgReactorDefuse',
       value: MsgReactorDefuse.fromPartial({
         creator: creatorAddress,
-        delegator_address: delegatorAddress,
-        validator_address: validatorAddress,
+        delegatorAddress: delegatorAddress,
+        validatorAddress: validatorAddress,
         amount: amount
       }),
     });
@@ -1337,10 +1337,10 @@ export class SigningClientManager {
       typeUrl: '/structs.structs.MsgReactorCancelDefusion',
       value: MsgReactorCancelDefusion.fromPartial({
         creator: creatorAddress,
-        delegator_address: delegatorAddress,
-        validator_address: validatorAddress,
+        delegatorAddress: delegatorAddress,
+        validatorAddress: validatorAddress,
         amount: amount,
-        creation_height: creationHeight
+        creationHeight: creationHeight
       }),
     });
   }
