@@ -67,6 +67,7 @@ export class StructType {
     this.trigger_raid_defeat_by_destruction = null;
     this.updated_at = null;
     this.possible_ambit_array = null;
+    this.is_command = null;
   }
 
 }

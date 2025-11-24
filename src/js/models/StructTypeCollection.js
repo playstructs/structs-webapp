@@ -1,3 +1,6 @@
+import {MAP_TILE_TYPES} from "../constants/MapConstants";
+import {STRUCT_CATEGORIES} from "../constants/StructConstants";
+
 export class StructTypeCollection {
   constructor() {
     this.structTypes = [];
@@ -8,5 +11,21 @@ export class StructTypeCollection {
    */
   setStructTypes(structTypes) {
     this.structTypes = structTypes;
+  }
+
+  /**
+   * @param {string} tileType
+   * @param {string} ambit
+   * @return {string[]}
+   */
+  fetchAllByTileTypeAndAmbit(tileType, ambit) {
+    return this.structTypes.filter((structType) =>
+      structType.possible_ambit_array.includes(ambit.toLowerCase())
+      && (
+        (tileType === MAP_TILE_TYPES.PLANETARY_SLOT && structType.category === STRUCT_CATEGORIES.PLANET)
+        || (tileType === MAP_TILE_TYPES.FLEET && structType.category === STRUCT_CATEGORIES.FLEET)
+        || (tileType === MAP_TILE_TYPES.COMMAND && structType.is_command)
+      )
+    );
   }
 }

@@ -10,6 +10,7 @@ export class StructTypeFactory extends AbstractFactory {
   make(obj) {
     const structType = new StructType();
     Object.assign(structType, obj);
+    structType.possible_ambit_array = JSON.parse(obj.possible_ambit_array);
     return structType;
   }
 
