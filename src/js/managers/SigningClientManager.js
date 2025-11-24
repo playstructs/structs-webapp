@@ -118,13 +118,17 @@ export class SigningClientManager {
     if (this.lastBroadcastHeight < this.gameState.currentBlockHeight) {
       this.lastBroadcastHeight = this.gameState.currentBlockHeight
       if (this.messageQueue.length > 0) {
+
+        let processMessageQueue = [...this.messageQueue];
+        this.messageQueue.splice(0,processMessageQueue.length);
+
         console.log('Running TransactQueue');
-        console.log(this.messageQueue);
+        console.log(processMessageQueue);
         // TODO establish a maximum of messages to include in a single transaction
         try {
           await this.gameState.signingClient.signAndBroadcast(
               this.gameState.signingAccount.address,
-              this.messageQueue,
+              processMessageQueue,
               FEE
           );
         } catch (error) {
@@ -132,8 +136,6 @@ export class SigningClientManager {
           // Sign and Broadcast Error: Error: {"code":-32603,"message":"Internal error","data":"the TxIndexer.Search method is not supported"}
           //console.log('Sign and Broadcast Error:', error);
         }
-        this.messageQueue = [];
-
       }
     }
   }
