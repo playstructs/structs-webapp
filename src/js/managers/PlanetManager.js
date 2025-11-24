@@ -1,7 +1,5 @@
 //TODO: Awaiting working stargate ts client
 
-import {FEE} from "../constants/Fee";
-
 export class PlanetManager {
 
   /**

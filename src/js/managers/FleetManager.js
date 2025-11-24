@@ -1,4 +1,3 @@
-import {FEE} from "../constants/Fee";
 
 export class FleetManager {
 

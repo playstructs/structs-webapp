@@ -15,7 +15,6 @@ import {PlayerAddressApprovedLoginListener} from "../grass_listeners/PlayerAddre
 import {PlayerAddressPendingCreatedListener} from "../grass_listeners/PlayerAddressPendingCreatedListener";
 import {PlayerAddressPendingFactory} from "../factories/PlayerAddressPendingFactory";
 import {SetPendingAddressPermissionsRequestDTO} from "../dtos/SetPendingAddressPermissionsRequestDTO";
-import {FEE} from "../constants/Fee";
 import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApprovedListener";
 import {PlayerAddressRevokedListener} from "../grass_listeners/PlayerAddressRevokedListener";
 import {AlphaChangeListener} from "../grass_listeners/AlphaChangeListener";
