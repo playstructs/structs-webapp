@@ -23,7 +23,7 @@ export class AlphaManager {
    * @param {number} alphaAmount
    */
   async transferAlpha(recipientAddress, alphaAmount) {
-    await this.gameState.signingClient.queueMsgBankSend(
+    await this.signingClientManager.queueMsgBankSend(
       gameState.signingAccount.address,
       recipientAddress,
       [{
@@ -37,7 +37,7 @@ export class AlphaManager {
    * @param {number} alphaAmount
    */
   async infuse(alphaAmount) {
-    await this.gameState.signingClient.queueMsgReactorInfuse(
+    await this.signingClientManager.queueMsgReactorInfuse(
       gameState.signingAccount.address,
       gameState.signingAccount.address,
       this.gameState.thisGuild.validator,
@@ -52,7 +52,7 @@ export class AlphaManager {
    * @param {number} alphaAmount
    */
   async defuse(alphaAmount) {
-    await this.gameState.signingClient.queueMsgReactorDefuse(
+    await this.signingClientManager.queueMsgReactorDefuse(
       gameState.signingAccount.address,
       gameState.signingAccount.address,
       this.gameState.thisGuild.validator,

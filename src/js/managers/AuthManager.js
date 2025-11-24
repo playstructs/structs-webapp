@@ -265,7 +265,7 @@ export class AuthManager {
       addressToRevoke
     ));
 
-    await this.gameState.signingClient.queueMsgAddressRevoke(
+    await this.signingClientManager.queueMsgAddressRevoke(
       this.gameState.signingAccount.address,
       addressToRevoke
     );
