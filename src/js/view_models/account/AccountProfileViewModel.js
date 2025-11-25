@@ -89,7 +89,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(this.player.primary_address);
       }
-    })
+    }.bind(this));
   }
 
   renderEditUsernameBtnHTML() {

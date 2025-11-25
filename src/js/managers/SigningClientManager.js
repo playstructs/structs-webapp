@@ -69,8 +69,14 @@ import {
   MsgProviderUpdateAccessPolicy,
   MsgProviderGuildGrant,
   MsgProviderGuildRevoke,
-  MsgProviderDelete
+  MsgProviderDelete,
+  MsgReactorInfuse,
+  MsgReactorBeginMigration,
+  MsgReactorDefuse,
+  MsgReactorCancelDefusion
 } from "../ts/structs.structs/types/structs/structs/tx";
+import {EVENTS} from "../constants/Events";
+import {FEE} from "../constants/Fee";
 
 export class SigningClientManager {
 
@@ -78,9 +84,18 @@ export class SigningClientManager {
    * @param {GameState} gameState
    */
   constructor(gameState) {
+    console.log('Initiating Signing Client Manager');
     this.gameState = gameState;
     this.wsUrl = `ws://${window.location.hostname}:26657`;
     this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
+
+    this.messageQueue = [];
+    this.lastBroadcastHeight = 0;
+
+    window.addEventListener(EVENTS.BLOCK_HEIGHT_CHANGED, async function (event) {
+     await this.transactQueue();
+    }.bind(this));
+
   }
 
   /**
@@ -99,19 +114,69 @@ export class SigningClientManager {
     console.log("Signing client initialized.");
   }
 
+  async transactQueue() {
+    if (this.lastBroadcastHeight < this.gameState.currentBlockHeight) {
+      this.lastBroadcastHeight = this.gameState.currentBlockHeight
+      if (this.messageQueue.length > 0) {
+
+        let processMessageQueue = [...this.messageQueue];
+        this.messageQueue.splice(0,processMessageQueue.length);
+
+        console.log('Running TransactQueue');
+        console.log(processMessageQueue);
+        // TODO establish a maximum of messages to include in a single transaction
+        try {
+          await this.gameState.signingClient.signAndBroadcast(
+              this.gameState.signingAccount.address,
+              processMessageQueue,
+              FEE
+          );
+        } catch (error) {
+          // There is always an error because our node hates this for some reason
+          // Sign and Broadcast Error: Error: {"code":-32603,"message":"Internal error","data":"the TxIndexer.Search method is not supported"}
+          //console.log('Sign and Broadcast Error:', error);
+        }
+      }
+    }
+  }
+
+  /**
+   * @param {object} msg
+   * @return {string}
+   */
+  async queue(msg) {
+    this.messageQueue.push(msg);
+    await this.transactQueue();
+  }
+
+  /**
+   * @param {string} fromAddress
+   * @param {string} toAddress
+   * @param {Array<{denom: string, amount: string}>} amount
+   */
+  async queueMsgBankSend(fromAddress, toAddress, amount) {
+    this.queue({
+      typeUrl: '/cosmos.bank.v1beta1.MsgSend',
+      value: {
+        fromAddress: fromAddress,
+        toAddress: toAddress,
+        amount: amount
+      },
+    });
+  }
+
   /**
    * @param {string} playerAddress
    * @param {string} playerId
-   * @return {{typeUrl: string, value: MsgPlanetExplore}}
    */
-  createMsgPlanetExplore(playerAddress, playerId) {
-    return {
+  async queueMsgPlanetExplore(playerAddress, playerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgPlanetExplore',
       value: MsgPlanetExplore.fromPartial({
         creator: playerAddress,
         playerId: playerId
       }),
-    }
+    });
   }
 
   /**
@@ -121,10 +186,9 @@ export class SigningClientManager {
    * @param {string} proofPubKey
    * @param {string} proofSignature
    * @param {number} permissions
-   * @return {{typeUrl: string, value: MsgAddressRegister}}
    */
-  createMsgAddressRegister(creatorAddress, playerId, addressToRegister, proofPubKey, proofSignature, permissions) {
-    return {
+  async queueMsgAddressRegister(creatorAddress, playerId, addressToRegister, proofPubKey, proofSignature, permissions) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAddressRegister',
       value: MsgAddressRegister.fromPartial({
         creator: creatorAddress,
@@ -134,39 +198,37 @@ export class SigningClientManager {
         proofSignature: proofSignature,
         permissions: permissions
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} addressToRevoke
-   * @return {{typeUrl: string, value: {creator: string, address: string}}}
    */
-  createMsgAddressRevoke(creatorAddress, addressToRevoke) {
-    return {
+  async queueMsgAddressRevoke(creatorAddress, addressToRevoke) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAddressRevoke',
       value: MsgAddressRevoke.fromPartial({
         creator: creatorAddress,
         address: addressToRevoke
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} fleetId
    * @param {string} destinationLocationId
-   * @return {{typeUrl: string, value: MsgFleetMove}}
    */
-  createMsgFleetMove(creatorAddress, fleetId, destinationLocationId) {
-    return {
+  async queueMsgFleetMove(creatorAddress, fleetId, destinationLocationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgFleetMove',
       value: MsgFleetMove.fromPartial({
         creator: creatorAddress,
         fleetId: fleetId,
         destinationLocationId: destinationLocationId
       }),
-    }
+    });
   }
 
   /**
@@ -174,10 +236,9 @@ export class SigningClientManager {
    * @param {string} fleetId
    * @param {string} proof
    * @param {string} nonce
-   * @return {{typeUrl: string, value: MsgPlanetRaidComplete}}
    */
-  createMsgPlanetRaidComplete(creatorAddress, fleetId, proof, nonce) {
-    return {
+  async queueMsgPlanetRaidComplete(creatorAddress, fleetId, proof, nonce) {
+    this.queue({
       typeUrl: '/structs.structs.MsgPlanetRaidComplete',
       value: MsgPlanetRaidComplete.fromPartial({
         creator: creatorAddress,
@@ -185,7 +246,7 @@ export class SigningClientManager {
         proof: proof,
         nonce: nonce
       }),
-    }
+    });
   }
 
   /**
@@ -193,10 +254,9 @@ export class SigningClientManager {
    * @param {string} structId
    * @param {string} proof
    * @param {string} nonce
-   * @return {{typeUrl: string, value: MsgStructBuildComplete}}
    */
-  createMsgStructBuildComplete(creatorAddress, structId, proof, nonce) {
-    return {
+  async queueMsgStructBuildComplete(creatorAddress, structId, proof, nonce) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructBuildComplete',
       value: MsgStructBuildComplete.fromPartial({
         creator: creatorAddress,
@@ -204,7 +264,7 @@ export class SigningClientManager {
         proof: proof,
         nonce: nonce
       }),
-    }
+    });
   }
 
   /**
@@ -212,10 +272,9 @@ export class SigningClientManager {
    * @param {string} structId
    * @param {string} proof
    * @param {string} nonce
-   * @return {{typeUrl: string, value: MsgStructOreMinerComplete}}
    */
-  createMsgStructOreMinerComplete(creatorAddress, structId, proof, nonce) {
-    return {
+  async queueMsgStructOreMinerComplete(creatorAddress, structId, proof, nonce) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructOreMinerComplete',
       value: MsgStructOreMinerComplete.fromPartial({
         creator: creatorAddress,
@@ -223,7 +282,7 @@ export class SigningClientManager {
         proof: proof,
         nonce: nonce
       }),
-    }
+    });
   }
 
   /**
@@ -231,10 +290,9 @@ export class SigningClientManager {
    * @param {string} structId
    * @param {string} proof
    * @param {string} nonce
-   * @return {{typeUrl: string, value: MsgStructOreRefineryComplete}}
    */
-  createMsgStructOreRefineryComplete(creatorAddress, structId, proof, nonce) {
-    return {
+  async queueMsgStructOreRefineryComplete(creatorAddress, structId, proof, nonce) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructOreRefineryComplete',
       value: MsgStructOreRefineryComplete.fromPartial({
         creator: creatorAddress,
@@ -242,7 +300,7 @@ export class SigningClientManager {
         proof: proof,
         nonce: nonce
       }),
-    }
+    });
   }
 
   /**
@@ -251,10 +309,9 @@ export class SigningClientManager {
    * @param {string} sourceObjectId
    * @param {string} allocationType
    * @param {number} power
-   * @return {{typeUrl: string, value: MsgAllocationCreate}}
    */
-  createMsgAllocationCreate(creatorAddress, controller, sourceObjectId, allocationType, power) {
-    return {
+  async queueMsgAllocationCreate(creatorAddress, controller, sourceObjectId, allocationType, power) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAllocationCreate',
       value: MsgAllocationCreate.fromPartial({
         creator: creatorAddress,
@@ -263,122 +320,115 @@ export class SigningClientManager {
         allocationType: allocationType,
         power: power
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} allocationId
-   * @return {{typeUrl: string, value: MsgAllocationDelete}}
    */
-  createMsgAllocationDelete(creatorAddress, allocationId) {
-    return {
+  async queueMsgAllocationDelete(creatorAddress, allocationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAllocationDelete',
       value: MsgAllocationDelete.fromPartial({
         creator: creatorAddress,
         allocationId: allocationId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} allocationId
    * @param {number} power
-   * @return {{typeUrl: string, value: MsgAllocationUpdate}}
    */
-  createMsgAllocationUpdate(creatorAddress, allocationId, power) {
-    return {
+  async queueMsgAllocationUpdate(creatorAddress, allocationId, power) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAllocationUpdate',
       value: MsgAllocationUpdate.fromPartial({
         creator: creatorAddress,
         allocationId: allocationId,
         power: power
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} allocationId
    * @param {string} controller
-   * @return {{typeUrl: string, value: MsgAllocationTransfer}}
    */
-  createMsgAllocationTransfer(creatorAddress, allocationId, controller) {
-    return {
+  async queueMsgAllocationTransfer(creatorAddress, allocationId, controller) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAllocationTransfer',
       value: MsgAllocationTransfer.fromPartial({
         creator: creatorAddress,
         allocationId: allocationId,
         controller: controller
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {number} amountAlpha
    * @param {number} amountToken
-   * @return {{typeUrl: string, value: MsgGuildBankMint}}
    */
-  createMsgGuildBankMint(creatorAddress, amountAlpha, amountToken) {
-    return {
+  async queueMsgGuildBankMint(creatorAddress, amountAlpha, amountToken) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildBankMint',
       value: MsgGuildBankMint.fromPartial({
         creator: creatorAddress,
         amountAlpha: amountAlpha,
         amountToken: amountToken
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
-   * @param {Object} amountToken
-   * @return {{typeUrl: string, value: MsgGuildBankRedeem}}
+   * @param {{denom: string, amount: string}} amountToken
    */
-  createMsgGuildBankRedeem(creatorAddress, amountToken) {
-    return {
+  async queueMsgGuildBankRedeem(creatorAddress, amountToken) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildBankRedeem',
       value: MsgGuildBankRedeem.fromPartial({
         creator: creatorAddress,
         amountToken: amountToken
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} address
    * @param {number} amountToken
-   * @return {{typeUrl: string, value: MsgGuildBankConfiscateAndBurn}}
    */
-  createMsgGuildBankConfiscateAndBurn(creatorAddress, address, amountToken) {
-    return {
+  async queueMsgGuildBankConfiscateAndBurn(creatorAddress, address, amountToken) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildBankConfiscateAndBurn',
       value: MsgGuildBankConfiscateAndBurn.fromPartial({
         creator: creatorAddress,
         address: address,
         amountToken: amountToken
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} entrySubstationId
-   * @return {{typeUrl: string, value: MsgGuildUpdateEntrySubstationId}}
    */
-  createMsgGuildUpdateEntrySubstationId(creatorAddress, guildId, entrySubstationId) {
-    return {
+  async queueMsgGuildUpdateEntrySubstationId(creatorAddress, guildId, entrySubstationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildUpdateEntrySubstationId',
       value: MsgGuildUpdateEntrySubstationId.fromPartial({
         creator: creatorAddress,
         guildId: guildId,
         entrySubstationId: entrySubstationId
       }),
-    }
+    });
   }
 
   /**
@@ -386,10 +436,9 @@ export class SigningClientManager {
    * @param {string} guildId
    * @param {string} playerId
    * @param {string} substationId
-   * @return {{typeUrl: string, value: MsgGuildMembershipInvite}}
    */
-  createMsgGuildMembershipInvite(creatorAddress, guildId, playerId, substationId) {
-    return {
+  async queueMsgGuildMembershipInvite(creatorAddress, guildId, playerId, substationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipInvite',
       value: MsgGuildMembershipInvite.fromPartial({
         creator: creatorAddress,
@@ -397,7 +446,7 @@ export class SigningClientManager {
         playerId: playerId,
         substationId: substationId
       }),
-    }
+    });
   }
 
   /**
@@ -405,10 +454,9 @@ export class SigningClientManager {
    * @param {string} guildId
    * @param {string} playerId
    * @param {string} substationId
-   * @return {{typeUrl: string, value: MsgGuildMembershipInviteApprove}}
    */
-  createMsgGuildMembershipInviteApprove(creatorAddress, guildId, playerId, substationId) {
-    return {
+  async queueMsgGuildMembershipInviteApprove(creatorAddress, guildId, playerId, substationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipInviteApprove',
       value: MsgGuildMembershipInviteApprove.fromPartial({
         creator: creatorAddress,
@@ -416,41 +464,39 @@ export class SigningClientManager {
         playerId: playerId,
         substationId: substationId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
-   * @return {{typeUrl: string, value: MsgGuildMembershipInviteDeny}}
    */
-  createMsgGuildMembershipInviteDeny(creatorAddress, guildId, playerId) {
-    return {
+  async queueMsgGuildMembershipInviteDeny(creatorAddress, guildId, playerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipInviteDeny',
       value: MsgGuildMembershipInviteDeny.fromPartial({
         creator: creatorAddress,
         guildId: guildId,
         playerId: playerId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
-   * @return {{typeUrl: string, value: MsgGuildMembershipInviteRevoke}}
    */
-  createMsgGuildMembershipInviteRevoke(creatorAddress, guildId, playerId) {
-    return {
+  async queueMsgGuildMembershipInviteRevoke(creatorAddress, guildId, playerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipInviteRevoke',
       value: MsgGuildMembershipInviteRevoke.fromPartial({
         creator: creatorAddress,
         guildId: guildId,
         playerId: playerId
       }),
-    }
+    });
   }
 
   /**
@@ -459,10 +505,9 @@ export class SigningClientManager {
    * @param {string} playerId
    * @param {string} substationId
    * @param {string[]} infusionId
-   * @return {{typeUrl: string, value: MsgGuildMembershipJoin}}
    */
-  createMsgGuildMembershipJoin(creatorAddress, guildId, playerId, substationId, infusionId) {
-    return {
+  async queueMsgGuildMembershipJoin(creatorAddress, guildId, playerId, substationId, infusionId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipJoin',
       value: MsgGuildMembershipJoin.fromPartial({
         creator: creatorAddress,
@@ -471,24 +516,23 @@ export class SigningClientManager {
         substationId: substationId,
         infusionId: infusionId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
-   * @return {{typeUrl: string, value: MsgGuildMembershipKick}}
    */
-  createMsgGuildMembershipKick(creatorAddress, guildId, playerId) {
-    return {
+  async queueMsgGuildMembershipKick(creatorAddress, guildId, playerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipKick',
       value: MsgGuildMembershipKick.fromPartial({
         creator: creatorAddress,
         guildId: guildId,
         playerId: playerId
       }),
-    }
+    });
   }
 
   /**
@@ -496,10 +540,9 @@ export class SigningClientManager {
    * @param {string} guildId
    * @param {string} playerId
    * @param {string} substationId
-   * @return {{typeUrl: string, value: MsgGuildMembershipRequest}}
    */
-  createMsgGuildMembershipRequest(creatorAddress, guildId, playerId, substationId) {
-    return {
+  async queueMsgGuildMembershipRequest(creatorAddress, guildId, playerId, substationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipRequest',
       value: MsgGuildMembershipRequest.fromPartial({
         creator: creatorAddress,
@@ -507,7 +550,7 @@ export class SigningClientManager {
         playerId: playerId,
         substationId: substationId
       }),
-    }
+    });
   }
 
   /**
@@ -515,10 +558,9 @@ export class SigningClientManager {
    * @param {string} guildId
    * @param {string} playerId
    * @param {string} substationId
-   * @return {{typeUrl: string, value: MsgGuildMembershipRequestApprove}}
    */
-  createMsgGuildMembershipRequestApprove(creatorAddress, guildId, playerId, substationId) {
-    return {
+  async queueMsgGuildMembershipRequestApprove(creatorAddress, guildId, playerId, substationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipRequestApprove',
       value: MsgGuildMembershipRequestApprove.fromPartial({
         creator: creatorAddress,
@@ -526,41 +568,39 @@ export class SigningClientManager {
         playerId: playerId,
         substationId: substationId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
-   * @return {{typeUrl: string, value: MsgGuildMembershipRequestDeny}}
    */
-  createMsgGuildMembershipRequestDeny(creatorAddress, guildId, playerId) {
-    return {
+  async queueMsgGuildMembershipRequestDeny(creatorAddress, guildId, playerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipRequestDeny',
       value: MsgGuildMembershipRequestDeny.fromPartial({
         creator: creatorAddress,
         guildId: guildId,
         playerId: playerId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
-   * @return {{typeUrl: string, value: MsgGuildMembershipRequestRevoke}}
    */
-  createMsgGuildMembershipRequestRevoke(creatorAddress, guildId, playerId) {
-    return {
+  async queueMsgGuildMembershipRequestRevoke(creatorAddress, guildId, playerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipRequestRevoke',
       value: MsgGuildMembershipRequestRevoke.fromPartial({
         creator: creatorAddress,
         guildId: guildId,
         playerId: playerId
       }),
-    }
+    });
   }
 
   /**
@@ -568,10 +608,9 @@ export class SigningClientManager {
    * @param {string} objectId
    * @param {string} playerId
    * @param {number} permissions
-   * @return {{typeUrl: string, value: MsgPermissionGrantOnObject}}
    */
-  createMsgPermissionGrantOnObject(creatorAddress, objectId, playerId, permissions) {
-    return {
+  async queueMsgPermissionGrantOnObject(creatorAddress, objectId, playerId, permissions) {
+    this.queue({
       typeUrl: '/structs.structs.MsgPermissionGrantOnObject',
       value: MsgPermissionGrantOnObject.fromPartial({
         creator: creatorAddress,
@@ -579,24 +618,23 @@ export class SigningClientManager {
         playerId: playerId,
         permissions: permissions
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} address
    * @param {number} permissions
-   * @return {{typeUrl: string, value: MsgPermissionGrantOnAddress}}
    */
-  createMsgPermissionGrantOnAddress(creatorAddress, address, permissions) {
-    return {
+  async queueMsgPermissionGrantOnAddress(creatorAddress, address, permissions) {
+    this.queue({
       typeUrl: '/structs.structs.MsgPermissionGrantOnAddress',
       value: MsgPermissionGrantOnAddress.fromPartial({
         creator: creatorAddress,
         address: address,
         permissions: permissions
       }),
-    }
+    });
   }
 
   /**
@@ -604,10 +642,9 @@ export class SigningClientManager {
    * @param {string} objectId
    * @param {string} playerId
    * @param {number} permissions
-   * @return {{typeUrl: string, value: MsgPermissionRevokeOnObject}}
    */
-  createMsgPermissionRevokeOnObject(creatorAddress, objectId, playerId, permissions) {
-    return {
+  async queueMsgPermissionRevokeOnObject(creatorAddress, objectId, playerId, permissions) {
+    this.queue({
       typeUrl: '/structs.structs.MsgPermissionRevokeOnObject',
       value: MsgPermissionRevokeOnObject.fromPartial({
         creator: creatorAddress,
@@ -615,24 +652,23 @@ export class SigningClientManager {
         playerId: playerId,
         permissions: permissions
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} address
    * @param {number} permissions
-   * @return {{typeUrl: string, value: MsgPermissionRevokeOnAddress}}
    */
-  createMsgPermissionRevokeOnAddress(creatorAddress, address, permissions) {
-    return {
+  async queueMsgPermissionRevokeOnAddress(creatorAddress, address, permissions) {
+    this.queue({
       typeUrl: '/structs.structs.MsgPermissionRevokeOnAddress',
       value: MsgPermissionRevokeOnAddress.fromPartial({
         creator: creatorAddress,
         address: address,
         permissions: permissions
       }),
-    }
+    });
   }
 
   /**
@@ -640,10 +676,9 @@ export class SigningClientManager {
    * @param {string} objectId
    * @param {string} playerId
    * @param {number} permissions
-   * @return {{typeUrl: string, value: MsgPermissionSetOnObject}}
    */
-  createMsgPermissionSetOnObject(creatorAddress, objectId, playerId, permissions) {
-    return {
+  async queueMsgPermissionSetOnObject(creatorAddress, objectId, playerId, permissions) {
+    this.queue({
       typeUrl: '/structs.structs.MsgPermissionSetOnObject',
       value: MsgPermissionSetOnObject.fromPartial({
         creator: creatorAddress,
@@ -651,86 +686,81 @@ export class SigningClientManager {
         playerId: playerId,
         permissions: permissions
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} address
    * @param {number} permissions
-   * @return {{typeUrl: string, value: MsgPermissionSetOnAddress}}
    */
-  createMsgPermissionSetOnAddress(creatorAddress, address, permissions) {
-    return {
+  async queueMsgPermissionSetOnAddress(creatorAddress, address, permissions) {
+    this.queue({
       typeUrl: '/structs.structs.MsgPermissionSetOnAddress',
       value: MsgPermissionSetOnAddress.fromPartial({
         creator: creatorAddress,
         address: address,
         permissions: permissions
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} playerId
    * @param {string} primaryAddress
-   * @return {{typeUrl: string, value: MsgPlayerUpdatePrimaryAddress}}
    */
-  createMsgPlayerUpdatePrimaryAddress(creatorAddress, playerId, primaryAddress) {
-    return {
+  async queueMsgPlayerUpdatePrimaryAddress(creatorAddress, playerId, primaryAddress) {
+    this.queue({
       typeUrl: '/structs.structs.MsgPlayerUpdatePrimaryAddress',
       value: MsgPlayerUpdatePrimaryAddress.fromPartial({
         creator: creatorAddress,
         playerId: playerId,
         primaryAddress: primaryAddress
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} playerId
-   * @return {{typeUrl: string, value: MsgPlayerResume}}
    */
-  createMsgPlayerResume(creatorAddress, playerId) {
-    return {
+  async queueMsgPlayerResume(creatorAddress, playerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgPlayerResume',
       value: MsgPlayerResume.fromPartial({
         creator: creatorAddress,
         playerId: playerId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} structId
-   * @return {{typeUrl: string, value: MsgStructActivate}}
    */
-  createMsgStructActivate(creatorAddress, structId) {
-    return {
+  async queueMsgStructActivate(creatorAddress, structId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructActivate',
       value: MsgStructActivate.fromPartial({
         creator: creatorAddress,
         structId: structId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} structId
-   * @return {{typeUrl: string, value: MsgStructDeactivate}}
    */
-  createMsgStructDeactivate(creatorAddress, structId) {
-    return {
+  async queueMsgStructDeactivate(creatorAddress, structId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructDeactivate',
       value: MsgStructDeactivate.fromPartial({
         creator: creatorAddress,
         structId: structId
       }),
-    }
+    });
   }
 
   /**
@@ -739,10 +769,9 @@ export class SigningClientManager {
    * @param {number} structTypeId
    * @param {string} operatingAmbit
    * @param {number} slot
-   * @return {{typeUrl: string, value: MsgStructBuildInitiate}}
    */
-  createMsgStructBuildInitiate(creatorAddress, playerId, structTypeId, operatingAmbit, slot) {
-    return {
+  async queueMsgStructBuildInitiate(creatorAddress, playerId, structTypeId, operatingAmbit, slot) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructBuildInitiate',
       value: MsgStructBuildInitiate.fromPartial({
         creator: creatorAddress,
@@ -751,54 +780,51 @@ export class SigningClientManager {
         operatingAmbit: operatingAmbit,
         slot: slot
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} structId
-   * @return {{typeUrl: string, value: MsgStructBuildCancel}}
    */
-  createMsgStructBuildCancel(creatorAddress, structId) {
-    return {
+  async queueMsgStructBuildCancel(creatorAddress, structId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructBuildCancel',
       value: MsgStructBuildCancel.fromPartial({
         creator: creatorAddress,
         structId: structId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} defenderStructId
    * @param {string} protectedStructId
-   * @return {{typeUrl: string, value: MsgStructDefenseSet}}
    */
-  createMsgStructDefenseSet(creatorAddress, defenderStructId, protectedStructId) {
-    return {
+  async queueMsgStructDefenseSet(creatorAddress, defenderStructId, protectedStructId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructDefenseSet',
       value: MsgStructDefenseSet.fromPartial({
         creator: creatorAddress,
         defenderStructId: defenderStructId,
         protectedStructId: protectedStructId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} defenderStructId
-   * @return {{typeUrl: string, value: MsgStructDefenseClear}}
    */
-  createMsgStructDefenseClear(creatorAddress, defenderStructId) {
-    return {
+  async queueMsgStructDefenseClear(creatorAddress, defenderStructId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructDefenseClear',
       value: MsgStructDefenseClear.fromPartial({
         creator: creatorAddress,
         defenderStructId: defenderStructId
       }),
-    }
+    });
   }
 
   /**
@@ -807,10 +833,9 @@ export class SigningClientManager {
    * @param {string} locationType
    * @param {string} ambit
    * @param {number} slot
-   * @return {{typeUrl: string, value: MsgStructMove}}
    */
-  createMsgStructMove(creatorAddress, structId, locationType, ambit, slot) {
-    return {
+  async queueMsgStructMove(creatorAddress, structId, locationType, ambit, slot) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructMove',
       value: MsgStructMove.fromPartial({
         creator: creatorAddress,
@@ -819,7 +844,7 @@ export class SigningClientManager {
         ambit: ambit,
         slot: slot
       }),
-    }
+    });
   }
 
   /**
@@ -827,10 +852,9 @@ export class SigningClientManager {
    * @param {string} operatingStructId
    * @param {string[]} targetStructId
    * @param {string} weaponSystem
-   * @return {{typeUrl: string, value: MsgStructAttack}}
    */
-  createMsgStructAttack(creatorAddress, operatingStructId, targetStructId, weaponSystem) {
-    return {
+  async queueMsgStructAttack(creatorAddress, operatingStructId, targetStructId, weaponSystem) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructAttack',
       value: MsgStructAttack.fromPartial({
         creator: creatorAddress,
@@ -838,169 +862,159 @@ export class SigningClientManager {
         targetStructId: targetStructId,
         weaponSystem: weaponSystem
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} structId
-   * @return {{typeUrl: string, value: MsgStructStealthActivate}}
    */
-  createMsgStructStealthActivate(creatorAddress, structId) {
-    return {
+  async queueMsgStructStealthActivate(creatorAddress, structId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructStealthActivate',
       value: MsgStructStealthActivate.fromPartial({
         creator: creatorAddress,
         structId: structId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} structId
-   * @return {{typeUrl: string, value: MsgStructStealthDeactivate}}
    */
-  createMsgStructStealthDeactivate(creatorAddress, structId) {
-    return {
+  async queueMsgStructStealthDeactivate(creatorAddress, structId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructStealthDeactivate',
       value: MsgStructStealthDeactivate.fromPartial({
         creator: creatorAddress,
         structId: structId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} structId
    * @param {string} infuseAmount
-   * @return {{typeUrl: string, value: MsgStructGeneratorInfuse}}
    */
-  createMsgStructGeneratorInfuse(creatorAddress, structId, infuseAmount) {
-    return {
+  async queueMsgStructGeneratorInfuse(creatorAddress, structId, infuseAmount) {
+    this.queue({
       typeUrl: '/structs.structs.MsgStructGeneratorInfuse',
       value: MsgStructGeneratorInfuse.fromPartial({
         creator: creatorAddress,
         structId: structId,
         infuseAmount: infuseAmount
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} owner
    * @param {string} allocationId
-   * @return {{typeUrl: string, value: MsgSubstationCreate}}
    */
-  createMsgSubstationCreate(creatorAddress, owner, allocationId) {
-    return {
+  async queueMsgSubstationCreate(creatorAddress, owner, allocationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgSubstationCreate',
       value: MsgSubstationCreate.fromPartial({
         creator: creatorAddress,
         owner: owner,
         allocationId: allocationId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} substationId
    * @param {string} migrationSubstationId
-   * @return {{typeUrl: string, value: MsgSubstationDelete}}
    */
-  createMsgSubstationDelete(creatorAddress, substationId, migrationSubstationId) {
-    return {
+  async queueMsgSubstationDelete(creatorAddress, substationId, migrationSubstationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgSubstationDelete',
       value: MsgSubstationDelete.fromPartial({
         creator: creatorAddress,
         substationId: substationId,
         migrationSubstationId: migrationSubstationId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} allocationId
    * @param {string} destinationId
-   * @return {{typeUrl: string, value: MsgSubstationAllocationConnect}}
    */
-  createMsgSubstationAllocationConnect(creatorAddress, allocationId, destinationId) {
-    return {
+  async queueMsgSubstationAllocationConnect(creatorAddress, allocationId, destinationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgSubstationAllocationConnect',
       value: MsgSubstationAllocationConnect.fromPartial({
         creator: creatorAddress,
         allocationId: allocationId,
         destinationId: destinationId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} allocationId
-   * @return {{typeUrl: string, value: MsgSubstationAllocationDisconnect}}
    */
-  createMsgSubstationAllocationDisconnect(creatorAddress, allocationId) {
-    return {
+  async queueMsgSubstationAllocationDisconnect(creatorAddress, allocationId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgSubstationAllocationDisconnect',
       value: MsgSubstationAllocationDisconnect.fromPartial({
         creator: creatorAddress,
         allocationId: allocationId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} substationId
    * @param {string} playerId
-   * @return {{typeUrl: string, value: MsgSubstationPlayerConnect}}
    */
-  createMsgSubstationPlayerConnect(creatorAddress, substationId, playerId) {
-    return {
+  async queueMsgSubstationPlayerConnect(creatorAddress, substationId, playerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgSubstationPlayerConnect',
       value: MsgSubstationPlayerConnect.fromPartial({
         creator: creatorAddress,
         substationId: substationId,
         playerId: playerId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} playerId
-   * @return {{typeUrl: string, value: MsgSubstationPlayerDisconnect}}
    */
-  createMsgSubstationPlayerDisconnect(creatorAddress, playerId) {
-    return {
+  async queueMsgSubstationPlayerDisconnect(creatorAddress, playerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgSubstationPlayerDisconnect',
       value: MsgSubstationPlayerDisconnect.fromPartial({
         creator: creatorAddress,
         playerId: playerId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} substationId
    * @param {string[]} playerId
-   * @return {{typeUrl: string, value: MsgSubstationPlayerMigrate}}
    */
-  createMsgSubstationPlayerMigrate(creatorAddress, substationId, playerId) {
-    return {
+  async queueMsgSubstationPlayerMigrate(creatorAddress, substationId, playerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgSubstationPlayerMigrate',
       value: MsgSubstationPlayerMigrate.fromPartial({
         creator: creatorAddress,
         substationId: substationId,
         playerId: playerId
       }),
-    }
+    });
   }
 
   /**
@@ -1008,10 +1022,9 @@ export class SigningClientManager {
    * @param {string} providerId
    * @param {number} duration
    * @param {number} capacity
-   * @return {{typeUrl: string, value: MsgAgreementOpen}}
    */
-  createMsgAgreementOpen(creatorAddress, providerId, duration, capacity) {
-    return {
+  async queueMsgAgreementOpen(creatorAddress, providerId, duration, capacity) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAgreementOpen',
       value: MsgAgreementOpen.fromPartial({
         creator: creatorAddress,
@@ -1019,79 +1032,75 @@ export class SigningClientManager {
         duration: duration,
         capacity: capacity
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} agreementId
-   * @return {{typeUrl: string, value: MsgAgreementClose}}
    */
-  createMsgAgreementClose(creatorAddress, agreementId) {
-    return {
+  async queueMsgAgreementClose(creatorAddress, agreementId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAgreementClose',
       value: MsgAgreementClose.fromPartial({
         creator: creatorAddress,
         agreementId: agreementId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} agreementId
    * @param {number} capacityIncrease
-   * @return {{typeUrl: string, value: MsgAgreementCapacityIncrease}}
    */
-  createMsgAgreementCapacityIncrease(creatorAddress, agreementId, capacityIncrease) {
-    return {
+  async queueMsgAgreementCapacityIncrease(creatorAddress, agreementId, capacityIncrease) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAgreementCapacityIncrease',
       value: MsgAgreementCapacityIncrease.fromPartial({
         creator: creatorAddress,
         agreementId: agreementId,
         capacityIncrease: capacityIncrease
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} agreementId
    * @param {number} capacityDecrease
-   * @return {{typeUrl: string, value: MsgAgreementCapacityDecrease}}
    */
-  createMsgAgreementCapacityDecrease(creatorAddress, agreementId, capacityDecrease) {
-    return {
+  async queueMsgAgreementCapacityDecrease(creatorAddress, agreementId, capacityDecrease) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAgreementCapacityDecrease',
       value: MsgAgreementCapacityDecrease.fromPartial({
         creator: creatorAddress,
         agreementId: agreementId,
         capacityDecrease: capacityDecrease
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} agreementId
    * @param {number} durationIncrease
-   * @return {{typeUrl: string, value: MsgAgreementDurationIncrease}}
    */
-  createMsgAgreementDurationIncrease(creatorAddress, agreementId, durationIncrease) {
-    return {
+  async queueMsgAgreementDurationIncrease(creatorAddress, agreementId, durationIncrease) {
+    this.queue({
       typeUrl: '/structs.structs.MsgAgreementDurationIncrease',
       value: MsgAgreementDurationIncrease.fromPartial({
         creator: creatorAddress,
         agreementId: agreementId,
         durationIncrease: durationIncrease
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} substationId
-   * @param {Object} rate
+   * @param {{denom: string, amount: string}} rate
    * @param {string} accessPolicy
    * @param {string} providerCancellationPenalty
    * @param {string} consumerCancellationPenalty
@@ -1099,10 +1108,9 @@ export class SigningClientManager {
    * @param {number} capacityMaximum
    * @param {number} durationMinimum
    * @param {number} durationMaximum
-   * @return {{typeUrl: string, value: MsgProviderCreate}}
    */
-  createMsgProviderCreate(creatorAddress, substationId, rate, accessPolicy, providerCancellationPenalty, consumerCancellationPenalty, capacityMinimum, capacityMaximum, durationMinimum, durationMaximum) {
-    return {
+  async queueMsgProviderCreate(creatorAddress, substationId, rate, accessPolicy, providerCancellationPenalty, consumerCancellationPenalty, capacityMinimum, capacityMaximum, durationMinimum, durationMaximum) {
+    this.queue({
       typeUrl: '/structs.structs.MsgProviderCreate',
       value: MsgProviderCreate.fromPartial({
         creator: creatorAddress,
@@ -1116,158 +1124,225 @@ export class SigningClientManager {
         durationMinimum: durationMinimum,
         durationMaximum: durationMaximum
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} providerId
    * @param {string} destinationAddress
-   * @return {{typeUrl: string, value: MsgProviderWithdrawBalance}}
    */
-  createMsgProviderWithdrawBalance(creatorAddress, providerId, destinationAddress) {
-    return {
+  async queueMsgProviderWithdrawBalance(creatorAddress, providerId, destinationAddress) {
+    this.queue({
       typeUrl: '/structs.structs.MsgProviderWithdrawBalance',
       value: MsgProviderWithdrawBalance.fromPartial({
         creator: creatorAddress,
         providerId: providerId,
         destinationAddress: destinationAddress
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} providerId
    * @param {number} newMinimumCapacity
-   * @return {{typeUrl: string, value: MsgProviderUpdateCapacityMinimum}}
    */
-  createMsgProviderUpdateCapacityMinimum(creatorAddress, providerId, newMinimumCapacity) {
-    return {
+  async queueMsgProviderUpdateCapacityMinimum(creatorAddress, providerId, newMinimumCapacity) {
+    this.queue({
       typeUrl: '/structs.structs.MsgProviderUpdateCapacityMinimum',
       value: MsgProviderUpdateCapacityMinimum.fromPartial({
         creator: creatorAddress,
         providerId: providerId,
         newMinimumCapacity: newMinimumCapacity
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} providerId
    * @param {number} newMaximumCapacity
-   * @return {{typeUrl: string, value: MsgProviderUpdateCapacityMaximum}}
    */
-  createMsgProviderUpdateCapacityMaximum(creatorAddress, providerId, newMaximumCapacity) {
-    return {
+  async queueMsgProviderUpdateCapacityMaximum(creatorAddress, providerId, newMaximumCapacity) {
+    this.queue({
       typeUrl: '/structs.structs.MsgProviderUpdateCapacityMaximum',
       value: MsgProviderUpdateCapacityMaximum.fromPartial({
         creator: creatorAddress,
         providerId: providerId,
         newMaximumCapacity: newMaximumCapacity
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} providerId
    * @param {number} newMinimumDuration
-   * @return {{typeUrl: string, value: MsgProviderUpdateDurationMinimum}}
    */
-  createMsgProviderUpdateDurationMinimum(creatorAddress, providerId, newMinimumDuration) {
-    return {
+  async queueMsgProviderUpdateDurationMinimum(creatorAddress, providerId, newMinimumDuration) {
+    this.queue({
       typeUrl: '/structs.structs.MsgProviderUpdateDurationMinimum',
       value: MsgProviderUpdateDurationMinimum.fromPartial({
         creator: creatorAddress,
         providerId: providerId,
         newMinimumDuration: newMinimumDuration
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} providerId
    * @param {number} newMaximumDuration
-   * @return {{typeUrl: string, value: MsgProviderUpdateDurationMaximum}}
    */
-  createMsgProviderUpdateDurationMaximum(creatorAddress, providerId, newMaximumDuration) {
-    return {
+  async queueMsgProviderUpdateDurationMaximum(creatorAddress, providerId, newMaximumDuration) {
+    this.queue({
       typeUrl: '/structs.structs.MsgProviderUpdateDurationMaximum',
       value: MsgProviderUpdateDurationMaximum.fromPartial({
         creator: creatorAddress,
         providerId: providerId,
         newMaximumDuration: newMaximumDuration
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} providerId
    * @param {string} accessPolicy
-   * @return {{typeUrl: string, value: MsgProviderUpdateAccessPolicy}}
    */
-  createMsgProviderUpdateAccessPolicy(creatorAddress, providerId, accessPolicy) {
-    return {
+  async queueMsgProviderUpdateAccessPolicy(creatorAddress, providerId, accessPolicy) {
+    this.queue({
       typeUrl: '/structs.structs.MsgProviderUpdateAccessPolicy',
       value: MsgProviderUpdateAccessPolicy.fromPartial({
         creator: creatorAddress,
         providerId: providerId,
         accessPolicy: accessPolicy
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} providerId
    * @param {string[]} guildId
-   * @return {{typeUrl: string, value: MsgProviderGuildGrant}}
    */
-  createMsgProviderGuildGrant(creatorAddress, providerId, guildId) {
-    return {
+  async queueMsgProviderGuildGrant(creatorAddress, providerId, guildId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgProviderGuildGrant',
       value: MsgProviderGuildGrant.fromPartial({
         creator: creatorAddress,
         providerId: providerId,
         guildId: guildId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} providerId
    * @param {string[]} guildId
-   * @return {{typeUrl: string, value: MsgProviderGuildRevoke}}
    */
-  createMsgProviderGuildRevoke(creatorAddress, providerId, guildId) {
-    return {
+  async queueMsgProviderGuildRevoke(creatorAddress, providerId, guildId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgProviderGuildRevoke',
       value: MsgProviderGuildRevoke.fromPartial({
         creator: creatorAddress,
         providerId: providerId,
         guildId: guildId
       }),
-    }
+    });
   }
 
   /**
    * @param {string} creatorAddress
    * @param {string} providerId
-   * @return {{typeUrl: string, value: MsgProviderDelete}}
    */
-  createMsgProviderDelete(creatorAddress, providerId) {
-    return {
+  async queueMsgProviderDelete(creatorAddress, providerId) {
+    this.queue({
       typeUrl: '/structs.structs.MsgProviderDelete',
       value: MsgProviderDelete.fromPartial({
         creator: creatorAddress,
         providerId: providerId
       }),
-    }
+    });
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} delegatorAddress
+   * @param {string} validatorAddress
+   * @param {{denom: string, amount: string}} amount
+   */
+  async queueMsgReactorInfuse(creatorAddress, delegatorAddress, validatorAddress, amount) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgReactorInfuse',
+      value: MsgReactorInfuse.fromPartial({
+        creator: creatorAddress,
+        delegatorAddress: delegatorAddress,
+        validatorAddress: validatorAddress,
+        amount: amount
+      }),
+    });
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} delegatorAddress
+   * @param {string} validatorSrcAddress
+   * @param {string} validatorDstAddress
+   * @param {{denom: string, amount: string}} amount
+   */
+  async queueMsgReactorBeginMigration(creatorAddress, delegatorAddress, validatorSrcAddress, validatorDstAddress, amount) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgReactorBeginMigration',
+      value: MsgReactorBeginMigration.fromPartial({
+        creator: creatorAddress,
+        delegatorAddress: delegatorAddress,
+        validatorSrcAddress: validatorSrcAddress,
+        validatorDstAddress: validatorDstAddress,
+        amount: amount
+      }),
+    });
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} delegatorAddress
+   * @param {string} validatorAddress
+   * @param {{denom: string, amount: string}} amount
+   */
+  async queueMsgReactorDefuse(creatorAddress, delegatorAddress, validatorAddress, amount) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgReactorDefuse',
+      value: MsgReactorDefuse.fromPartial({
+        creator: creatorAddress,
+        delegatorAddress: delegatorAddress,
+        validatorAddress: validatorAddress,
+        amount: amount
+      }),
+    });
+  }
+
+  /**
+   * @param {string} creatorAddress
+   * @param {string} delegatorAddress
+   * @param {string} validatorAddress
+   * @param {{denom: string, amount: string}} amount
+   * @param {number} creationHeight
+   */
+  async queueMsgReactorCancelDefusion(creatorAddress, delegatorAddress, validatorAddress, amount, creationHeight) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgReactorCancelDefusion',
+      value: MsgReactorCancelDefusion.fromPartial({
+        creator: creatorAddress,
+        delegatorAddress: delegatorAddress,
+        validatorAddress: validatorAddress,
+        amount: amount,
+        creationHeight: creationHeight
+      }),
+    });
   }
 
 }

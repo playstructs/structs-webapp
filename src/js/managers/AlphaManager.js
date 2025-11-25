@@ -1,4 +1,3 @@
-import {FEE} from "../constants/Fee";
 
 export class AlphaManager {
 
@@ -22,49 +21,45 @@ export class AlphaManager {
   /**
    * @param {string} recipientAddress
    * @param {number} alphaAmount
-   * @return {Promise<void>}
    */
   async transferAlpha(recipientAddress, alphaAmount) {
-    await this.gameState.signingClient.sendTokens(
+    await this.signingClientManager.queueMsgBankSend(
       gameState.signingAccount.address,
       recipientAddress,
       [{
         denom: "ualpha",
         amount: this.convertAlphaToUAlpha(alphaAmount),
-      }],
-      FEE
+      }]
     );
   }
 
   /**
    * @param {number} alphaAmount
-   * @return {Promise<void>}
    */
   async infuse(alphaAmount) {
-    await this.gameState.signingClient.delegateTokens(
+    await this.signingClientManager.queueMsgReactorInfuse(
+      gameState.signingAccount.address,
       gameState.signingAccount.address,
       this.gameState.thisGuild.validator,
       {
         denom: "ualpha",
         amount: this.convertAlphaToUAlpha(alphaAmount),
-      },
-      FEE
+      }
     );
   }
 
   /**
    * @param {number} alphaAmount
-   * @return {Promise<void>}
    */
   async defuse(alphaAmount) {
-    await this.gameState.signingClient.undelegateTokens(
+    await this.signingClientManager.queueMsgReactorDefuse(
+      gameState.signingAccount.address,
       gameState.signingAccount.address,
       this.gameState.thisGuild.validator,
       {
         denom: "ualpha",
         amount: this.convertAlphaToUAlpha(alphaAmount),
-      },
-      FEE
+      }
     );
   }
 }
