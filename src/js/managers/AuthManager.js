@@ -15,7 +15,6 @@ import {PlayerAddressApprovedLoginListener} from "../grass_listeners/PlayerAddre
 import {PlayerAddressPendingCreatedListener} from "../grass_listeners/PlayerAddressPendingCreatedListener";
 import {PlayerAddressPendingFactory} from "../factories/PlayerAddressPendingFactory";
 import {SetPendingAddressPermissionsRequestDTO} from "../dtos/SetPendingAddressPermissionsRequestDTO";
-import {FEE} from "../constants/Fee";
 import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApprovedListener";
 import {PlayerAddressRevokedListener} from "../grass_listeners/PlayerAddressRevokedListener";
 import {AlphaChangeListener} from "../grass_listeners/AlphaChangeListener";
@@ -266,20 +265,10 @@ export class AuthManager {
       addressToRevoke
     ));
 
-    const msg = this.signingClientManager.createMsgAddressRevoke(
+    await this.signingClientManager.queueMsgAddressRevoke(
       this.gameState.signingAccount.address,
       addressToRevoke
     );
-
-    try {
-      await this.gameState.signingClient.signAndBroadcast(
-        this.gameState.signingAccount.address,
-        [msg],
-        FEE
-      );
-    } catch (error) {
-      console.log('Sign and Broadcast Error:', error);
-    }
   }
 
   logout() {
@@ -374,7 +363,7 @@ export class AuthManager {
     );
     this.grassManager.registerListener(playerAddressApprovedListener);
 
-    const msg = this.signingClientManager.createMsgAddressRegister(
+    await this.signingClientManager.queueMsgAddressRegister(
       this.gameState.signingAccount.address,
       this.gameState.thisPlayerId,
       playerAddressPending.address,
@@ -382,16 +371,6 @@ export class AuthManager {
       playerAddressPending.signature,
       playerAddressPending.permissions
     );
-
-    try {
-      await this.gameState.signingClient.signAndBroadcast(
-        this.gameState.signingAccount.address,
-        [msg],
-        FEE
-      );
-    } catch (error) {
-      console.log('Sign and Broadcast Error:', error);
-    }
 
     await this.guildAPI.deleteActivationCode(playerAddressPending.code);
 

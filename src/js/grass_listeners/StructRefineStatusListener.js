@@ -21,11 +21,11 @@ export class StructRefineStatusListener extends AbstractGrassListener {
       && messageData.subject === `structs.planet.${this.gameState.thisPlayer.planetId}`
     ) {
       if (messageData.detail.block === 0) {
-        dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
+        window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
       } else {
         //TODO we need difficulty target here
         // I assume it'll be in the gameState eventually.
-        dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.REFINE, messageData.detail.block, 28000)));
+        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.REFINE, messageData.detail.block, 28000)));
       }
     }
   }

@@ -130,6 +130,16 @@ export interface EventGrid {
   gridRecord: GridRecord | undefined;
 }
 
+export interface EventProviderAddress {
+  eventProviderAddressDetail: EventProviderAddressDetail | undefined;
+}
+
+export interface EventProviderAddressDetail {
+  providerId: string;
+  collateralPool: string;
+  earningPool: string;
+}
+
 export interface EventProviderGrantGuild {
   eventProviderGrantGuildDetail: EventProviderGrantGuildDetail | undefined;
 }
@@ -166,6 +176,16 @@ export interface EventAddressAssociation {
 
 export interface EventAddressActivity {
   addressActivity: AddressActivity | undefined;
+}
+
+export interface EventGuildBankAddress {
+  eventGuildBankAddressDetail: EventGuildBankAddressDetail | undefined;
+}
+
+export interface EventGuildBankAddressDetail {
+  guildId: string;
+  bankCollateralPool: string;
+  bankTokenPool: string;
 }
 
 export interface EventGuildBankMint {
@@ -1516,6 +1536,163 @@ export const EventGrid: MessageFns<EventGrid> = {
   },
 };
 
+function createBaseEventProviderAddress(): EventProviderAddress {
+  return { eventProviderAddressDetail: undefined };
+}
+
+export const EventProviderAddress: MessageFns<EventProviderAddress> = {
+  encode(message: EventProviderAddress, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.eventProviderAddressDetail !== undefined) {
+      EventProviderAddressDetail.encode(message.eventProviderAddressDetail, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventProviderAddress {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventProviderAddress();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.eventProviderAddressDetail = EventProviderAddressDetail.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventProviderAddress {
+    return {
+      eventProviderAddressDetail: isSet(object.eventProviderAddressDetail)
+        ? EventProviderAddressDetail.fromJSON(object.eventProviderAddressDetail)
+        : undefined,
+    };
+  },
+
+  toJSON(message: EventProviderAddress): unknown {
+    const obj: any = {};
+    if (message.eventProviderAddressDetail !== undefined) {
+      obj.eventProviderAddressDetail = EventProviderAddressDetail.toJSON(message.eventProviderAddressDetail);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventProviderAddress>, I>>(base?: I): EventProviderAddress {
+    return EventProviderAddress.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventProviderAddress>, I>>(object: I): EventProviderAddress {
+    const message = createBaseEventProviderAddress();
+    message.eventProviderAddressDetail =
+      (object.eventProviderAddressDetail !== undefined && object.eventProviderAddressDetail !== null)
+        ? EventProviderAddressDetail.fromPartial(object.eventProviderAddressDetail)
+        : undefined;
+    return message;
+  },
+};
+
+function createBaseEventProviderAddressDetail(): EventProviderAddressDetail {
+  return { providerId: "", collateralPool: "", earningPool: "" };
+}
+
+export const EventProviderAddressDetail: MessageFns<EventProviderAddressDetail> = {
+  encode(message: EventProviderAddressDetail, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.providerId !== "") {
+      writer.uint32(10).string(message.providerId);
+    }
+    if (message.collateralPool !== "") {
+      writer.uint32(18).string(message.collateralPool);
+    }
+    if (message.earningPool !== "") {
+      writer.uint32(26).string(message.earningPool);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventProviderAddressDetail {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventProviderAddressDetail();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.providerId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.collateralPool = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.earningPool = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventProviderAddressDetail {
+    return {
+      providerId: isSet(object.providerId) ? globalThis.String(object.providerId) : "",
+      collateralPool: isSet(object.collateralPool) ? globalThis.String(object.collateralPool) : "",
+      earningPool: isSet(object.earningPool) ? globalThis.String(object.earningPool) : "",
+    };
+  },
+
+  toJSON(message: EventProviderAddressDetail): unknown {
+    const obj: any = {};
+    if (message.providerId !== "") {
+      obj.providerId = message.providerId;
+    }
+    if (message.collateralPool !== "") {
+      obj.collateralPool = message.collateralPool;
+    }
+    if (message.earningPool !== "") {
+      obj.earningPool = message.earningPool;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventProviderAddressDetail>, I>>(base?: I): EventProviderAddressDetail {
+    return EventProviderAddressDetail.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventProviderAddressDetail>, I>>(object: I): EventProviderAddressDetail {
+    const message = createBaseEventProviderAddressDetail();
+    message.providerId = object.providerId ?? "";
+    message.collateralPool = object.collateralPool ?? "";
+    message.earningPool = object.earningPool ?? "";
+    return message;
+  },
+};
+
 function createBaseEventProviderGrantGuild(): EventProviderGrantGuild {
   return { eventProviderGrantGuildDetail: undefined };
 }
@@ -2100,6 +2277,163 @@ export const EventAddressActivity: MessageFns<EventAddressActivity> = {
     message.addressActivity = (object.addressActivity !== undefined && object.addressActivity !== null)
       ? AddressActivity.fromPartial(object.addressActivity)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseEventGuildBankAddress(): EventGuildBankAddress {
+  return { eventGuildBankAddressDetail: undefined };
+}
+
+export const EventGuildBankAddress: MessageFns<EventGuildBankAddress> = {
+  encode(message: EventGuildBankAddress, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.eventGuildBankAddressDetail !== undefined) {
+      EventGuildBankAddressDetail.encode(message.eventGuildBankAddressDetail, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventGuildBankAddress {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventGuildBankAddress();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.eventGuildBankAddressDetail = EventGuildBankAddressDetail.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventGuildBankAddress {
+    return {
+      eventGuildBankAddressDetail: isSet(object.eventGuildBankAddressDetail)
+        ? EventGuildBankAddressDetail.fromJSON(object.eventGuildBankAddressDetail)
+        : undefined,
+    };
+  },
+
+  toJSON(message: EventGuildBankAddress): unknown {
+    const obj: any = {};
+    if (message.eventGuildBankAddressDetail !== undefined) {
+      obj.eventGuildBankAddressDetail = EventGuildBankAddressDetail.toJSON(message.eventGuildBankAddressDetail);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventGuildBankAddress>, I>>(base?: I): EventGuildBankAddress {
+    return EventGuildBankAddress.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventGuildBankAddress>, I>>(object: I): EventGuildBankAddress {
+    const message = createBaseEventGuildBankAddress();
+    message.eventGuildBankAddressDetail =
+      (object.eventGuildBankAddressDetail !== undefined && object.eventGuildBankAddressDetail !== null)
+        ? EventGuildBankAddressDetail.fromPartial(object.eventGuildBankAddressDetail)
+        : undefined;
+    return message;
+  },
+};
+
+function createBaseEventGuildBankAddressDetail(): EventGuildBankAddressDetail {
+  return { guildId: "", bankCollateralPool: "", bankTokenPool: "" };
+}
+
+export const EventGuildBankAddressDetail: MessageFns<EventGuildBankAddressDetail> = {
+  encode(message: EventGuildBankAddressDetail, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.guildId !== "") {
+      writer.uint32(10).string(message.guildId);
+    }
+    if (message.bankCollateralPool !== "") {
+      writer.uint32(18).string(message.bankCollateralPool);
+    }
+    if (message.bankTokenPool !== "") {
+      writer.uint32(26).string(message.bankTokenPool);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventGuildBankAddressDetail {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventGuildBankAddressDetail();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.bankCollateralPool = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.bankTokenPool = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventGuildBankAddressDetail {
+    return {
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      bankCollateralPool: isSet(object.bankCollateralPool) ? globalThis.String(object.bankCollateralPool) : "",
+      bankTokenPool: isSet(object.bankTokenPool) ? globalThis.String(object.bankTokenPool) : "",
+    };
+  },
+
+  toJSON(message: EventGuildBankAddressDetail): unknown {
+    const obj: any = {};
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.bankCollateralPool !== "") {
+      obj.bankCollateralPool = message.bankCollateralPool;
+    }
+    if (message.bankTokenPool !== "") {
+      obj.bankTokenPool = message.bankTokenPool;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventGuildBankAddressDetail>, I>>(base?: I): EventGuildBankAddressDetail {
+    return EventGuildBankAddressDetail.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventGuildBankAddressDetail>, I>>(object: I): EventGuildBankAddressDetail {
+    const message = createBaseEventGuildBankAddressDetail();
+    message.guildId = object.guildId ?? "";
+    message.bankCollateralPool = object.bankCollateralPool ?? "";
+    message.bankTokenPool = object.bankTokenPool ?? "";
     return message;
   },
 };

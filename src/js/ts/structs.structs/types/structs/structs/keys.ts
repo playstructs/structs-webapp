@@ -450,6 +450,7 @@ export enum raidStatus {
   initiated = 0,
   ongoing = 2,
   attackerDefeated = 1,
+  attackerRetreated = 5,
   raidSuccessful = 3,
   demilitarized = 4,
   UNRECOGNIZED = -1,
@@ -466,6 +467,9 @@ export function raidStatusFromJSON(object: any): raidStatus {
     case 1:
     case "attackerDefeated":
       return raidStatus.attackerDefeated;
+    case 5:
+    case "attackerRetreated":
+      return raidStatus.attackerRetreated;
     case 3:
     case "raidSuccessful":
       return raidStatus.raidSuccessful;
@@ -487,6 +491,8 @@ export function raidStatusToJSON(object: raidStatus): string {
       return "ongoing";
     case raidStatus.attackerDefeated:
       return "attackerDefeated";
+    case raidStatus.attackerRetreated:
+      return "attackerRetreated";
     case raidStatus.raidSuccessful:
       return "raidSuccessful";
     case raidStatus.demilitarized:
