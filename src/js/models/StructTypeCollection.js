@@ -16,7 +16,7 @@ export class StructTypeCollection {
   /**
    * @param {string} tileType
    * @param {string} ambit
-   * @return {string[]}
+   * @return {StructType[]}
    */
   fetchAllByTileTypeAndAmbit(tileType, ambit) {
     return this.structTypes.filter((structType) =>
@@ -25,6 +25,7 @@ export class StructTypeCollection {
         (
           tileType === MAP_TILE_TYPES.PLANETARY_SLOT
           && structType.category === STRUCT_CATEGORIES.PLANET
+          && structType.class.toLowerCase() !== 'world engine'
         ) || (
           tileType === MAP_TILE_TYPES.FLEET
           && structType.category === STRUCT_CATEGORIES.FLEET
