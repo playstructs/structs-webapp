@@ -141,6 +141,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         btnTypeClass = 'sui-mod-default';
         attachDeployBtnHandler = () => {
           document.getElementById(deployBtnId).addEventListener('click', function () {
+            console.log(this.gameState.structTypes.fetchAllByTileTypeAndAmbit(tileType, ambitOrTileLabel));
             MenuPage.sui.offcanvas.setHeader('Select Struct')
             MenuPage.sui.offcanvas.setContent(`
               <div class="offcanvas-struct-list-layout">
@@ -151,7 +152,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
               </div>
             `)
             MenuPage.sui.offcanvas.open();
-          });
+          }.bind(this));
         };
       }
 

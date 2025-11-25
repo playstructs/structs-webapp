@@ -22,9 +22,17 @@ export class StructTypeCollection {
     return this.structTypes.filter((structType) =>
       structType.possible_ambit_array.includes(ambit.toLowerCase())
       && (
-        (tileType === MAP_TILE_TYPES.PLANETARY_SLOT && structType.category === STRUCT_CATEGORIES.PLANET)
-        || (tileType === MAP_TILE_TYPES.FLEET && structType.category === STRUCT_CATEGORIES.FLEET)
-        || (tileType === MAP_TILE_TYPES.COMMAND && structType.is_command)
+        (
+          tileType === MAP_TILE_TYPES.PLANETARY_SLOT
+          && structType.category === STRUCT_CATEGORIES.PLANET
+        ) || (
+          tileType === MAP_TILE_TYPES.FLEET
+          && structType.category === STRUCT_CATEGORIES.FLEET
+          && !structType.is_command
+        ) || (
+          tileType === MAP_TILE_TYPES.COMMAND
+          && structType.is_command
+        )
       )
     );
   }
