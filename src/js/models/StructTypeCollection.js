@@ -25,6 +25,7 @@ export class StructTypeCollection {
         (
           tileType === MAP_TILE_TYPES.PLANETARY_SLOT
           && structType.category === STRUCT_CATEGORIES.PLANET
+          && structType.class.toLowerCase() !== 'continental power plant'
           && structType.class.toLowerCase() !== 'world engine'
         ) || (
           tileType === MAP_TILE_TYPES.FLEET
