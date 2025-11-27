@@ -8,6 +8,22 @@
  * 5. Other
  */
 
+/* ---- Variables Start ---- */
+
+:root {
+
+  /* -- Positioning Start -- */
+
+  --struct-top-z-index: 300;
+  --struct-middle-z-index: 200;
+  --struct-bottom-z-index: 100;
+
+  /* -- Positioning End -- */
+
+}
+
+/* ---- Variables End ---- */
+
 /* Keyframes Start */
 
 @keyframes fade-out {
@@ -1842,9 +1858,9 @@ a.offcanvas-struct-container:hover,
 a.offcanvas-struct-container:active,
 a.offcanvas-struct-container:visited {
   display: flex;
-  width: 64px;
-  height: 64px;
-  padding: var(--spacing-xl);
+  width: 128px;
+  height: 128px;
+  padding: 0;
   border: 1px solid var(--border);
   flex-direction: column;
   align-items: center;
@@ -1856,6 +1872,36 @@ a.offcanvas-struct-container:visited {
 .offcanvas-struct-container.sui-mod-disabled,
 a.offcanvas-struct-container.sui-mod-disabled {
   opacity: 0.5;
+}
+
+.struct-still {
+  position: relative;
+  display: flex;
+  max-width: 100%;
+  max-height: 100%;
+  width: var(--tile-width);
+  height: var(--tile-height);
+  padding: 0;
+  border: 0 none;
+  margin: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.struct-still img {
+  position: absolute;
+  z-index: var(--struct-middle-z-index);
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.struct-still img.struct-top-detail {
+  z-index: var(--struct-top-z-index);
+}
+
+.struct-still img.struct-bottom-detail {
+  z-index: var(--struct-bottom-z-index);
 }
 
 /* Page Specific Styling Start */

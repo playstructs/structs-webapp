@@ -2539,15 +2539,16 @@ label.sui-form-element-group-label {
 #sui-offcanvas.sui-mod-left {
   top: 0;
   left: 0;
-  width: 268px;
   max-width: 100%;
+  width: 332px;
   height: 100vh;
 }
 
 #sui-offcanvas.sui-mod-right {
   top: 0;
   right: 0;
-  min-width: 260px;
+  max-width: 100%;
+  width: 332px;
   height: 100vh;
 }
 

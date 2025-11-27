@@ -2,7 +2,7 @@ import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelCo
 import {EVENTS} from "../../../constants/Events";
 import {MAP_TILE_TYPE_ICONS, MAP_TILE_TYPES} from "../../../constants/MapConstants";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
-import {MenuPage} from "../../../framework/MenuPage";
+import {DeployOffcanvas} from "../offcanvas/DeployOffcanvas";
 
 export class ActionBarComponent extends AbstractViewModelComponent {
 
@@ -141,17 +141,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         btnTypeClass = 'sui-mod-default';
         attachDeployBtnHandler = () => {
           document.getElementById(deployBtnId).addEventListener('click', function () {
-            MenuPage.sui.offcanvas.setHeader('Select Struct')
-            MenuPage.sui.offcanvas.setContent(`
-              <div class="offcanvas-struct-list-layout">
-                <a href="javascript: void(0)" class="offcanvas-struct-container"></a>
-                <a href="javascript: void(0)" class="offcanvas-struct-container"></a>
-                <a href="javascript: void(0)" class="offcanvas-struct-container"></a>
-                <a href="javascript: void(0)" class="offcanvas-struct-container"></a>
-              </div>
-            `)
-            MenuPage.sui.offcanvas.open();
-          });
+            const deployOffcanvas = new DeployOffcanvas(this.gameState, tileType, ambitOrTileLabel);
+            deployOffcanvas.render();
+          }.bind(this));
         };
       }
 
