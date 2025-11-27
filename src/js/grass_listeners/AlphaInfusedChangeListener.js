@@ -18,13 +18,15 @@ export class AlphaInfusedChangeListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === this.category
-      && messageData.subject.startsWith(`structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.thisPlayerId}`)
-    ) {
+      && (messageData.subject.startsWith(`structs.inventory.ualpha.infused.${this.gameState.thisGuild.id}.${this.gameState.thisPlayerId}`)
+        || messageData.subject.startsWith(`structs.inventory.ualpha.defusing.${this.gameState.thisGuild.id}.${this.gameState.thisPlayerId}`)
+        )
+      ) {
       this.shouldUnregister = () => true;
 
       this.guildAPI.getPlayer(this.gameState.thisPlayerId).then(player => {
         this.gameState.setThisPlayer(player); // Refresh alpha count
-        MenuPage.router.goto('Guild', 'reactor');
+        MenuPage.router.goto('Guild', 'reactor'); // Infusion gets reloaded from Guild controller
       });
 
     }
