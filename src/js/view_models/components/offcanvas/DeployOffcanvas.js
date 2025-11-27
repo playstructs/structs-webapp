@@ -1,5 +1,6 @@
 import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelComponent";
 import {MenuPage} from "../../../framework/MenuPage";
+import {StructStillBuilder} from "../../../builders/StructStillBuilder";
 
 export class DeployOffcanvas extends AbstractViewModelComponent {
 
@@ -16,6 +17,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
     super(gameState);
     this.tileType = tileType;
     this.ambit = ambit;
+    this.structStillBuilder = new StructStillBuilder(this.gameState);
 
     /** @type {StructType[]}*/
     this.deployableStructTypes = this.gameState.structTypes.fetchAllByTileTypeAndAmbit(this.tileType, this.ambit);
@@ -47,14 +49,18 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
   renderHTML() {
      return `
         <div class="offcanvas-struct-list-layout">
-          ${this.deployableStructTypes.map(structType => `
-            <a 
-              href="javascript: void(0)"
-              id="${this.createLinkId(structType)}"
-              class="offcanvas-struct-container ${this.className}">
-              ${structType.type}
-            </a>
-          `).join('')}
+          ${this.deployableStructTypes.map(structType => {
+            const structStill = this.structStillBuilder.build(structType.type);
+            return `
+              <a 
+                href="javascript: void(0)"
+                id="${this.createLinkId(structType)}"
+                class="offcanvas-struct-container ${this.className}"
+              >
+                ${structStill.renderHTML()}
+              </a>
+            `;
+          }).join('')}
         </div>
      `;
    }
