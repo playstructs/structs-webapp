@@ -23,7 +23,7 @@ export class SUICheatsheetRenderer {
     const chargeLevel = this.chargeCalculator.calcChargeLevelByCharge(batteryCost);
 
     for(let i = 1; i < this.chargeCalculator.chargeLevelThresholds.length; i++) {
-      const isFilledClass = i < chargeLevel ? 'sui-mod-filled' : '';
+      const isFilledClass = i <= chargeLevel ? 'sui-mod-filled' : '';
       batteryChunks += `<div class="sui-battery-chunk ${isFilledClass}"></div>`;
     }
 

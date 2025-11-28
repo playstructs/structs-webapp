@@ -16,7 +16,7 @@ export class ChargeCalculator {
    */
   calcChargeLevelByCharge(charge) {
     for (let i = 0; i < this.chargeLevelThresholds.length; i++) {
-      if (charge < this.chargeLevelThresholds[i]) {
+      if (charge <= this.chargeLevelThresholds[i]) {
         return i;
       }
     }
