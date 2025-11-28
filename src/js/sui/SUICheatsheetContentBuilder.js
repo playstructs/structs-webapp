@@ -8,10 +8,10 @@ export class SUICheatsheetContentBuilder {
   }
 
   /**
-   * @param {string} cheatsheetKey
+   * @param {object} dataset triggering element's data attributes
    * @return {string}
    */
-  build(cheatsheetKey) {
-    throw new SUINotImplementedError(`build() not implemented for ${cheatsheetKey}`);
+  build(dataset) {
+    throw new SUINotImplementedError(`build() not implemented for ${dataset.cheatsheetKey}`);
   }
 }

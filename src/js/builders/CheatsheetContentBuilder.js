@@ -1,18 +1,39 @@
 import {SUICheatsheetContentBuilder} from "../sui/SUICheatsheetContentBuilder";
+import {STRUCT_DESCRIPTIONS} from "../constants/StructConstants";
 
 export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
-  constructor() {
+
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
     super();
+    this.gameState = gameState;
   }
 
   /**
-   * @param {string} cheatsheetKey
+   * @param {StructType} structType
+   * @param {object} dataset
    * @return {string}
    */
-  build(cheatsheetKey) {
+  buildStructCheatsheet(structType, dataset = {}) {
+    return this.renderer.renderContentHTML(
+      structType.class,
+      structType.build_charge,
+      structType.build_draw,
+      STRUCT_DESCRIPTIONS[structType.type],
+      dataset.contextualMsg ? dataset.contextualMsg : ''
+    );
+  }
+
+  /**
+   * @param {object} dataset triggering element's data attributes
+   * @return {string}
+   */
+  build(dataset) {
     let html = '';
 
-    switch (cheatsheetKey) {
+    switch (dataset.suiCheatsheet) {
       case 'icon-beacon':
         html = this.renderer.renderContentForEmptyTileHTML(
           'Planetary Beacon',
@@ -50,9 +71,15 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
         );
         break;
       default:
-        throw new Error(`Unknown cheatsheet key: ${cheatsheetKey}`);
+        const structType = this.gameState.structTypes.getStructType(dataset.suiCheatsheet);
+        if (structType) {
+          html = this.buildStructCheatsheet(structType, dataset);
+        } else {
+          throw new Error(`Unknown cheatsheet key: ${dataset.suiCheatsheet}`);
+        }
 
     }
+
     return html;
   }
 }

@@ -134,7 +134,7 @@ MenuPage.router.registerController(genericController);
 MenuPage.router.registerController(guildController);
 MenuPage.router.registerController(fleetController);
 MenuPage.initListeners();
-MenuPage.sui.cheatsheet.setContentBuilder(new CheatsheetContentBuilder());
+MenuPage.sui.cheatsheet.setContentBuilder(new CheatsheetContentBuilder(gameState));
 
 grassManager.init();
 blockGrassManager.registerListener(blockListener);

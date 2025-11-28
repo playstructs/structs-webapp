@@ -1,10 +1,11 @@
 import {NumberFormatter} from "../util/NumberFormatter";
+import {ChargeCalculator} from "../util/ChargeCalculator";
 
 export class SUICheatsheetRenderer {
 
   constructor() {
     this.numberFormatter = new NumberFormatter();
-    this.numBatteryChargeLevels = 5;
+    this.chargeCalculator = new ChargeCalculator();
   }
 
 
@@ -19,8 +20,10 @@ export class SUICheatsheetRenderer {
 
     let batteryChunks = '';
 
-    for(let i = 0; i < this.numBatteryChargeLevels; i++) {
-      const isFilledClass = i < batteryCost ? 'sui-mod-filled' : '';
+    const chargeLevel = this.chargeCalculator.calcChargeLevelByCharge(batteryCost);
+
+    for(let i = 1; i < this.chargeCalculator.chargeLevelThresholds.length; i++) {
+      const isFilledClass = i < chargeLevel ? 'sui-mod-filled' : '';
       batteryChunks += `<div class="sui-battery-chunk ${isFilledClass}"></div>`;
     }
 

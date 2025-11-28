@@ -153,7 +153,6 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             id="${deployBtnId}"
             href="javascript: void(0)"
             class="sui-panel-btn ${btnTypeClass}"
-            data-sui-offcanvas="deploy"
           >
             <i class="sui-icon-md icon-deploy"></i>
           </a>
@@ -182,10 +181,6 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     `;
 
     attachDeployBtnHandler();
-
-    document.getElementById(propertyIconLinkId).addEventListener('click', function () {
-      console.log('Property icon clicked', propertyIcon);
-    });
 
     this.showActionChunk();
   }

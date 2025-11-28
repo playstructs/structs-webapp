@@ -643,6 +643,8 @@ a.sui-panel-btn.sui-mod-disabled-active {
   line-height: 16px;
   text-align: left;
   text-transform: uppercase;
+  word-wrap: normal;
+  white-space: break-spaces;
 }
 
 .sui-cheatsheet-costs {

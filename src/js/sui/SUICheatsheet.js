@@ -62,7 +62,7 @@ export class SUICheatsheet extends SUIFeature {
       cheatsheetTriggerElm.parentElement.appendChild(cheatsheetElm);
 
       // Use the triggering elements data attribute as key to which cheatsheet to show.
-      cheatsheetElm.innerHTML = this.contentBuilder.build(cheatsheetTriggerElm.dataset.suiCheatsheet);
+      cheatsheetElm.innerHTML = this.contentBuilder.build({...cheatsheetTriggerElm.dataset});
 
       this.util.horizontallyCenter(cheatsheetElm, cheatsheetTriggerElm);
 
