@@ -14,7 +14,7 @@ export class StructStillBuilder {
   /**
    * @return {StructStillRenderer}
    */
-  buildPlanetaryBattleship() {
+  buildBattleship() {
     const topDetailLayers = [];
 
     const structVariants = {};

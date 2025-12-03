@@ -13,6 +13,11 @@ export class SUICheatsheet extends SUIFeature {
   constructor() {
     super();
     this.util = new SUIUtil();
+    this.suiThemes = [
+      'sui-theme-player',
+      'sui-theme-enemy',
+      'sui-theme-neutral'
+    ];
 
     /** @type {SUICheatsheetContentBuilder} */
     this.contentBuilder = null;
@@ -51,6 +56,16 @@ export class SUICheatsheet extends SUIFeature {
     }
 
     SUICheatsheet.pointerPressedTimer = setTimeout(function() {
+
+      this.suiThemes.forEach(themeClass => {
+        cheatsheetElm.classList.remove(themeClass);
+      });
+
+      if (cheatsheetTriggerElm.dataset.suiTheme) {
+        cheatsheetElm.classList.add(`sui-theme-${cheatsheetTriggerElm.dataset.suiTheme}`);
+      } else {
+        cheatsheetElm.classList.add(this.suiThemes[0]);
+      }
 
       // Append to body so cheatsheet is not clipped by ancestor overflow
       document.body.appendChild(cheatsheetElm);
