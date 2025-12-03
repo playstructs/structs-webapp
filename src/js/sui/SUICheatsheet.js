@@ -95,23 +95,17 @@ export class SUICheatsheet extends SUIFeature {
       // Press and hold on mobile also fires a contextmenu event which we need to block
       // because it can obscure the cheatsheet and also cause inadvertent actions.
       document.body.addEventListener('contextmenu', (e) => {
-        if (
-          e.target.matches('[data-sui-cheatsheet]')
-          || e.target.parentElement.matches('[data-sui-cheatsheet]')
-        ) {
+        if (e.target.closest('[data-sui-cheatsheet]')) {
           e.preventDefault();
         }
       }, { passive: false });
     }
 
     document.body.addEventListener(pressedEvent, function (e) {
-      if (e.target.matches('[data-sui-cheatsheet]')) {
-        this.pointerPressed(cheatsheetElm, e.target);
+      const cheatsheetTriggerElm = e.target.closest('[data-sui-cheatsheet]');
+      if (cheatsheetTriggerElm) {
+        this.pointerPressed(cheatsheetElm, cheatsheetTriggerElm);
       }
-      if (e.target.parentElement.matches('[data-sui-cheatsheet]')) {
-        this.pointerPressed(cheatsheetElm, e.target.parentElement);
-      }
-
     }.bind(this), { passive: true });
 
     window.addEventListener(releasedEvent, function () {

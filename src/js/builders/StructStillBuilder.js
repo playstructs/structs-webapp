@@ -416,7 +416,7 @@ export class StructStillBuilder {
   /**
    * @return {StructStillRenderer}
    */
-  buildSubmerssible() {
+  buildSubmersible() {
     const topDetailLayers = [
       this.structImageDir + '/submersible/submersible-top-weapon.png'
     ];

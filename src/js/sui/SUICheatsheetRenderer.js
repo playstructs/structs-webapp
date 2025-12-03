@@ -76,7 +76,7 @@ export class SUICheatsheetRenderer {
    * @return {string}
    */
   renderDescriptionHTML(descriptionText) {
-    if (descriptionText === null) {
+    if (!descriptionText) {
       return '';
     }
     return `
@@ -91,7 +91,7 @@ export class SUICheatsheetRenderer {
    * @return {string}
    */
   renderContextualMessageHTML(contextualMessageText) {
-    if (contextualMessageText === null) {
+    if (!contextualMessageText) {
       return '';
     }
     return `
@@ -102,11 +102,27 @@ export class SUICheatsheetRenderer {
   }
 
   /**
+   * @param {string|null} propertySectionHTML
+   * @return {string}
+   */
+  renderCheatsheetPropertySectionHTML(propertySectionHTML) {
+    if (!propertySectionHTML) {
+      return '';
+    }
+    return `
+      <div class="sui-cheatsheet-property-section">
+        ${propertySectionHTML}
+      </div>
+    `;
+  }
+
+  /**
    * @param {string} titleText
    * @param {number|null} batteryCost
    * @param {number|null} energyCost
    * @param {string|null} descriptionText
    * @param {string|null} contextualMessageText
+   * @param {string|null} propertySectionHTML
    * @return {string}
    */
   renderContentHTML(
@@ -114,7 +130,8 @@ export class SUICheatsheetRenderer {
     batteryCost = null,
     energyCost = null,
     descriptionText = null,
-    contextualMessageText = null
+    contextualMessageText = null,
+    propertySectionHTML = null
   ) {
     return `
       <div class="sui-cheatsheet-top-frame"></div>
@@ -125,6 +142,8 @@ export class SUICheatsheetRenderer {
         ${this.renderDescriptionHTML(descriptionText)}
         
         ${this.renderContextualMessageHTML(contextualMessageText)}
+
+        ${this.renderCheatsheetPropertySectionHTML(propertySectionHTML)}
       </div>
     `;
   }

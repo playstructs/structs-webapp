@@ -729,6 +729,7 @@ a.sui-panel-btn.sui-mod-disabled-active {
   gap: var(--spacing-lg);
 
   color: var(--text-body);
+  text-align: left;
 }
 
 .sui-cheatsheet-property i.sui-icon {

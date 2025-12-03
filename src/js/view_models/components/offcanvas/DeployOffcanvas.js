@@ -56,6 +56,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
                 href="javascript: void(0)"
                 id="${this.createLinkId(structType)}"
                 class="offcanvas-struct-container ${this.className}"
+                data-sui-cheatsheet="${structType.type}"
               >
                 ${structStill.renderHTML()}
               </a>
@@ -69,5 +70,6 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
     MenuPage.sui.offcanvas.setHeader('Select Struct');
     MenuPage.sui.offcanvas.setContent(this.renderHTML());
     MenuPage.sui.offcanvas.open();
+    this.initPageCode();
   }
 }

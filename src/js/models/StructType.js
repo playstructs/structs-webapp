@@ -13,9 +13,12 @@ export class StructType {
     this.movable = null;
     this.slot_bound = null;
     this.primary_weapon = null;
+    this.primary_weapon_label = null;
+    this.primary_weapon_description = null;
     this.primary_weapon_control = null;
     this.primary_weapon_charge = null;
     this.primary_weapon_ambits = null;
+    this.primary_weapon_ambits_array = null;
     this.primary_weapon_targets = null;
     this.primary_weapon_shots = null;
     this.primary_weapon_damage = null;
@@ -25,9 +28,12 @@ export class StructType {
     this.primary_weapon_shot_success_rate_numerator = null;
     this.primary_weapon_shot_success_rate_denominator = null;
     this.secondary_weapon = null;
+    this.secondary_weapon_label = null;
+    this.secondary_weapon_description = null;
     this.secondary_weapon_control = null;
     this.secondary_weapon_charge = null;
     this.secondary_weapon_ambits = null;
+    this.secondary_weapon_ambits_array = null;
     this.secondary_weapon_targets = null;
     this.secondary_weapon_shots = null;
     this.secondary_weapon_damage = null;
@@ -37,12 +43,26 @@ export class StructType {
     this.secondary_weapon_shot_success_rate_numerator = null;
     this.secondary_weapon_shot_success_rate_denominator = null;
     this.passive_weaponry = null;
+    this.passive_weaponry_label = null;
+    this.passive_weaponry_description = null;
     this.unit_defenses = null;
+    this.unit_defenses_label = null;
+    this.unit_defenses_description = null;
     this.ore_reserve_defenses = null;
+    this.ore_reserve_defenses_label = null;
+    this.ore_reserve_defenses_description = null;
     this.planetary_defenses = null;
+    this.planetary_defenses_label = null;
+    this.planetary_defenses_description = null;
     this.planetary_mining = null;
+    this.planetary_mining_label = null;
+    this.planetary_mining_description = null;
     this.planetary_refinery = null;
+    this.planetary_refinery_label = null;
+    this.planetary_refinery_description = null;
     this.power_generation = null;
+    this.power_generation_label = null;
+    this.power_generation_description = null;
     this.activate_charge = null;
     this.build_charge = null;
     this.defend_change_charge = null;
@@ -68,6 +88,8 @@ export class StructType {
     this.updated_at = null;
     this.possible_ambit_array = null;
     this.is_command = null;
+    this.drive_label = null;
+    this.drive_description = null;
   }
 
 }
