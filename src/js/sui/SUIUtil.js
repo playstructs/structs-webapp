@@ -56,4 +56,66 @@ export class SUIUtil {
       dynamicElm.style.left = `${originElm.offsetLeft - (dynamicElm.offsetWidth - originElm.offsetWidth) / 2}px`;
     }
   }
+
+  /**
+   * Position element above the origin using fixed positioning (viewport-relative).
+   * Falls back to below if there's not enough space above.
+   *
+   * @param {HTMLElement} dynamicElm
+   * @param {DOMRect} originRect
+   */
+  positionAboveFixed(dynamicElm, originRect) {
+    // If dynamic element would go offscreen above, place it below instead
+    if (
+      originRect.top < dynamicElm.offsetHeight
+      && (window.innerHeight - originRect.bottom) >= dynamicElm.offsetHeight
+    ) {
+      this.positionBelowFixed(dynamicElm, originRect);
+    } else {
+      dynamicElm.style.top = `${originRect.top - dynamicElm.offsetHeight}px`;
+    }
+  }
+
+  /**
+   * Position element below the origin using fixed positioning (viewport-relative).
+   * Falls back to above if there's not enough space below.
+   *
+   * @param {HTMLElement} dynamicElm
+   * @param {DOMRect} originRect
+   */
+  positionBelowFixed(dynamicElm, originRect) {
+    // If dynamic element would go offscreen below, place it above instead
+    if (
+      (window.innerHeight - originRect.bottom) < dynamicElm.offsetHeight
+      && originRect.top > dynamicElm.offsetHeight
+    ) {
+      this.positionAboveFixed(dynamicElm, originRect);
+    } else {
+      dynamicElm.style.top = `${originRect.bottom}px`;
+    }
+  }
+
+  /**
+   * Horizontally center element relative to origin using fixed positioning (viewport-relative).
+   * Adjusts to keep element within viewport bounds.
+   *
+   * @param {HTMLElement} dynamicElm
+   * @param {DOMRect} originRect
+   */
+  horizontallyCenterFixed(dynamicElm, originRect) {
+    const dynamicWidth = dynamicElm.offsetWidth;
+    const originCenterX = originRect.left + (originRect.width / 2);
+    let leftPos = originCenterX - (dynamicWidth / 2);
+
+    // If element would go offscreen on the left, align to left edge
+    if (leftPos < 0) {
+      leftPos = originRect.left;
+
+    // If element would go offscreen on the right, align to right edge
+    } else if (leftPos + dynamicWidth > window.innerWidth) {
+      leftPos = originRect.right - dynamicWidth;
+    }
+
+    dynamicElm.style.left = `${leftPos}px`;
+  }
 }

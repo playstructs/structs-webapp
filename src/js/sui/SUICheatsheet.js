@@ -52,24 +52,21 @@ export class SUICheatsheet extends SUIFeature {
 
     SUICheatsheet.pointerPressedTimer = setTimeout(function() {
 
-      // To position the cheatsheet the parent also must have position defined.
-      const parentStyle = getComputedStyle(cheatsheetTriggerElm.parentElement);
-      if (parentStyle.getPropertyValue('position') === 'static') {
-        cheatsheetTriggerElm.parentElement.style.position = 'relative';
-      }
-
-      // Add the cheatsheet to the triggering element's parent, so that the cheatsheet stays relative to the target.
-      cheatsheetTriggerElm.parentElement.appendChild(cheatsheetElm);
+      // Append to body so cheatsheet is not clipped by ancestor overflow
+      document.body.appendChild(cheatsheetElm);
 
       // Use the triggering elements data attribute as key to which cheatsheet to show.
       cheatsheetElm.innerHTML = this.contentBuilder.build({...cheatsheetTriggerElm.dataset});
 
-      this.util.horizontallyCenter(cheatsheetElm, cheatsheetTriggerElm);
+      // Get viewport-relative coordinates for fixed positioning
+      const triggerRect = cheatsheetTriggerElm.getBoundingClientRect();
+
+      this.util.horizontallyCenterFixed(cheatsheetElm, triggerRect);
 
       if (cheatsheetTriggerElm.dataset.suiModPlacement === 'bottom') {
-        this.util.positionBelow(cheatsheetElm, cheatsheetTriggerElm);
+        this.util.positionBelowFixed(cheatsheetElm, triggerRect);
       } else {
-        this.util.positionAbove(cheatsheetElm, cheatsheetTriggerElm);
+        this.util.positionAboveFixed(cheatsheetElm, triggerRect);
       }
 
     }.bind(this), 100);
@@ -83,7 +80,7 @@ export class SUICheatsheet extends SUIFeature {
     const cheatsheetElm = document.createElement('div');
     cheatsheetElm.id = `sui-cheatsheet-container`;
     cheatsheetElm.classList.add('sui-cheatsheet');
-    cheatsheetElm.style.position = 'absolute';
+    cheatsheetElm.style.position = 'fixed';
 
     let pressedEvent = 'mousedown';
     let releasedEvent = 'mouseup';

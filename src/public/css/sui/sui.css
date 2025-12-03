@@ -584,6 +584,7 @@ a.sui-panel-btn.sui-mod-disabled-active {
 /* ---- Cheatsheet Start ---- */
 
 .sui-cheatsheet {
+  z-index: var(--popup-z-index);
   display: inline-flex;
   min-width: 200px;
   border-top: 2px solid var(--border);
