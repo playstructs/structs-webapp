@@ -118,4 +118,126 @@ export class SUIUtil {
 
     dynamicElm.style.left = `${leftPos}px`;
   }
+
+  /**
+   * Vertically center element relative to origin using fixed positioning (viewport-relative).
+   * Adjusts to keep element within viewport bounds.
+   *
+   * @param {HTMLElement} dynamicElm
+   * @param {DOMRect} originRect
+   */
+  verticallyCenterFixed(dynamicElm, originRect) {
+    const dynamicHeight = dynamicElm.offsetHeight;
+    const originCenterY = originRect.top + (originRect.height / 2);
+    let topPos = originCenterY - (dynamicHeight / 2);
+
+    // If element would go offscreen on the top, align to top edge
+    if (topPos < 0) {
+      topPos = 0;
+
+    // If element would go offscreen on the bottom, align to bottom edge
+    } else if (topPos + dynamicHeight > window.innerHeight) {
+      topPos = window.innerHeight - dynamicHeight;
+    }
+
+    dynamicElm.style.top = `${topPos}px`;
+  }
+
+  /**
+   * Position element to the right of the origin using fixed positioning (viewport-relative).
+   *
+   * @param {HTMLElement} dynamicElm
+   * @param {DOMRect} originRect
+   */
+  positionRightFixed(dynamicElm, originRect) {
+    dynamicElm.style.left = `${originRect.right}px`;
+    this.verticallyCenterFixed(dynamicElm, originRect);
+  }
+
+  /**
+   * Position element to the left of the origin using fixed positioning (viewport-relative).
+   *
+   * @param {HTMLElement} dynamicElm
+   * @param {DOMRect} originRect
+   */
+  positionLeftFixed(dynamicElm, originRect) {
+    dynamicElm.style.left = `${originRect.left - dynamicElm.offsetWidth}px`;
+    this.verticallyCenterFixed(dynamicElm, originRect);
+  }
+
+  /**
+   * Position element in the best fitting position relative to origin.
+   * Tries positions in order: top, right, bottom, left.
+   * Falls back to the side with the most available space.
+   *
+   * @param {HTMLElement} dynamicElm
+   * @param {DOMRect} originRect
+   */
+  positionBestFitFixed(dynamicElm, originRect) {
+    const dynamicWidth = dynamicElm.offsetWidth;
+    const dynamicHeight = dynamicElm.offsetHeight;
+
+    // Calculate available space on each side
+    const spaceTop = originRect.top;
+    const spaceRight = window.innerWidth - originRect.right;
+    const spaceBottom = window.innerHeight - originRect.bottom;
+    const spaceLeft = originRect.left;
+
+    // Check if element fits on each side (in order: top, right, bottom, left)
+    const fitsTop = spaceTop >= dynamicHeight;
+    const fitsRight = spaceRight >= dynamicWidth;
+    const fitsBottom = spaceBottom >= dynamicHeight;
+    const fitsLeft = spaceLeft >= dynamicWidth;
+
+    // Try positions in order: top, right, bottom, left
+    if (fitsTop) {
+      dynamicElm.style.top = `${originRect.top - dynamicHeight}px`;
+      this.horizontallyCenterFixed(dynamicElm, originRect);
+      return;
+    }
+
+    if (fitsRight) {
+      this.positionRightFixed(dynamicElm, originRect);
+      return;
+    }
+
+    if (fitsBottom) {
+      dynamicElm.style.top = `${originRect.bottom}px`;
+      this.horizontallyCenterFixed(dynamicElm, originRect);
+      return;
+    }
+
+    if (fitsLeft) {
+      this.positionLeftFixed(dynamicElm, originRect);
+      return;
+    }
+
+    // None fit - find the side with the most space
+    const spaces = [
+      { side: 'top', space: spaceTop },
+      { side: 'right', space: spaceRight },
+      { side: 'bottom', space: spaceBottom },
+      { side: 'left', space: spaceLeft }
+    ];
+
+    spaces.sort((a, b) => b.space - a.space);
+    const bestSide = spaces[0].side;
+
+    switch (bestSide) {
+      case 'top':
+        dynamicElm.style.top = `${originRect.top - dynamicHeight}px`;
+        this.horizontallyCenterFixed(dynamicElm, originRect);
+        break;
+      case 'right':
+        this.positionRightFixed(dynamicElm, originRect);
+        break;
+      case 'bottom':
+        dynamicElm.style.top = `${originRect.bottom}px`;
+        this.horizontallyCenterFixed(dynamicElm, originRect);
+        break;
+      case 'left':
+        this.positionLeftFixed(dynamicElm, originRect);
+        break;
+    }
+  }
 }

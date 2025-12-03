@@ -76,13 +76,8 @@ export class SUICheatsheet extends SUIFeature {
       // Get viewport-relative coordinates for fixed positioning
       const triggerRect = cheatsheetTriggerElm.getBoundingClientRect();
 
-      this.util.horizontallyCenterFixed(cheatsheetElm, triggerRect);
-
-      if (cheatsheetTriggerElm.dataset.suiModPlacement === 'bottom') {
-        this.util.positionBelowFixed(cheatsheetElm, triggerRect);
-      } else {
-        this.util.positionAboveFixed(cheatsheetElm, triggerRect);
-      }
+      // Position cheatsheet in best fitting location (tries: top, right, bottom, left)
+      this.util.positionBestFitFixed(cheatsheetElm, triggerRect);
 
     }.bind(this), 100);
   }
