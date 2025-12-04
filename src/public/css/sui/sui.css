@@ -2556,6 +2556,10 @@ label.sui-form-element-group-label {
   height: 100vh;
 }
 
+.sui-offcanvas-body {
+  align-self: stretch;
+}
+
 /* ---- Offcanvas End ---- */
 
 
