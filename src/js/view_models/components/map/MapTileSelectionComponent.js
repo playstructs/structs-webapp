@@ -6,6 +6,8 @@ import {
 } from "../../../constants/MapConstants";
 import {AMBITS} from "../../../constants/Ambits";
 import {HUDViewModel} from "../../HUDViewModel";
+import {Planet} from "../../../models/Planet";
+
 
 export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
@@ -428,7 +430,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     for (let a = 0; a < planetAmbits.length; a++) {
 
       const currentAmbit = planetAmbits[a];
-      const numPlanetarySlots = this.planet[`${currentAmbit.toLowerCase()}_slots`];
+      const numPlanetarySlots = this.planet.getPlanetarySlotsByAmbit(currentAmbit, this.gameState.structTypes);
       const totalFleetSlotsPerAmbitPerPlayer = MAP_TILE_ROWS_PER_AMBIT * MAP_DEFAULT_FLEET_COL_COUNT;
 
       html += this.renderTransitionRowHTML(previousAmbit, currentAmbit);

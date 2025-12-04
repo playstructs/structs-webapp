@@ -86,7 +86,7 @@ export class MapTileMarkersComponent extends AbstractViewModelComponent {
     for (let a = 0; a < planetAmbits.length; a++) {
 
       const ambit = planetAmbits[a];
-      let slotsPerAmbit = this.planet[`${ambit.toLowerCase()}_slots`];
+      let slotsPerAmbit = this.planet.getPlanetarySlotsByAmbit(ambit, this.gameState.structTypes);
 
       for (let r = 0; r < MAP_TILE_ROWS_PER_AMBIT; r++) {
 
