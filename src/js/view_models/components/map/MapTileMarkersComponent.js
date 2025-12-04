@@ -1,6 +1,6 @@
 import {PositionDTO} from "../../../dtos/PositionDTO";
 import {
-  MAP_COL_ATTACKER_COMMAND, MAP_COL_DEFENDER_PLANETARY,
+  MAP_COL_ATTACKER_COMMAND, MAP_COL_DEFENDER_COMMAND, MAP_COL_DEFENDER_PLANETARY,
   MAP_TILE_ROWS_PER_AMBIT,
   MAP_TILE_SIZE,
   MAP_TRANSITION_HEIGHT
@@ -79,52 +79,96 @@ export class MapTileMarkersComponent extends AbstractViewModelComponent {
    * @return {string} html
    */
   renderHTML() {
-    let html = '';
-
+    const markers = [];
     const planetAmbits = this.planet.getAmbits();
 
-    for (let a = 0; a < planetAmbits.length; a++) {
-
-      const ambit = planetAmbits[a];
-      let slotsPerAmbit = this.planet[`${ambit.toLowerCase()}_slots`];
+    for (const ambit of planetAmbits) {
+      const slotTracker = this.createSlotTracker(ambit);
 
       for (let r = 0; r < MAP_TILE_ROWS_PER_AMBIT; r++) {
-
-        let colLoopInit = this.mapColBreakdown.length - 1;
-        let colLoopTest = c => c >= 0;
-        let colLoopAdvance = c => c - 1;
-
-        // If it's the view is from the attacker's perspective
-        // the blockers and beacons should be swapped
-        if (this.mapColBreakdown[0] === MAP_COL_ATTACKER_COMMAND) {
-          colLoopInit = 0;
-          colLoopTest = c => c < this.mapColBreakdown.length;
-          colLoopAdvance = c => c + 1;
-        }
-
-        for (let c = colLoopInit; colLoopTest(c); c = colLoopAdvance(c)) {
-
-          const colType = this.mapColBreakdown[c];
-
-          if (colType === MAP_COL_DEFENDER_PLANETARY) {
-
-            // For planetary tiles need to display beacons for slots and blocked otherwise.
-            let markerClassName = this.tileClassNameUtil.getTileBlockedClassName(ambit);
-            if (slotsPerAmbit > 0) {
-              markerClassName = this.tileClassNameUtil.getTileBeaconClassName(ambit);
-              slotsPerAmbit--;
-            }
-
-            const pos = this.convertAmbitPosToPixelPos(ambit, r, c);
-
-            html += `<div class="map-marker ${markerClassName}" style="top: ${pos.y}px; left: ${pos.x}px"></div>`;
+        for (const c of this.getColumnIndices()) {
+          const marker = this.processCell(ambit, r, c, slotTracker);
+          if (marker) {
+            markers.push(marker);
           }
-
         }
       }
-
     }
 
-    return html;
+    return markers.join('');
+  }
+
+  /**
+   * Creates a slot tracker object for an ambit with consumption logic.
+   *
+   * @param {string} ambit
+   * @return {Object} slotTracker
+   */
+  createSlotTracker(ambit) {
+    return {
+      [MAP_COL_ATTACKER_COMMAND]: 1,
+      [MAP_COL_DEFENDER_COMMAND]: 1,
+      [MAP_COL_DEFENDER_PLANETARY]: this.planet.getPlanetarySlotsByAmbit(ambit, this.gameState.structTypes),
+    };
+  }
+
+  /**
+   * Returns column indices in the correct order based on perspective.
+   * If the view is from the attacker's perspective, the blockers and beacons should be swapped.
+   *
+   * @return {number[]} indices
+   */
+  getColumnIndices() {
+    const isAttackerPerspective = this.mapColBreakdown[0] === MAP_COL_ATTACKER_COMMAND;
+    const indices = [...Array(this.mapColBreakdown.length).keys()];
+    return isAttackerPerspective ? indices : indices.reverse();
+  }
+
+  /**
+   * Processes a single cell and returns marker HTML or null.
+   *
+   * @param {string} ambit
+   * @param {int} row
+   * @param {int} col
+   * @param {Object} slotTracker
+   * @return {string|null} marker HTML or null
+   */
+  processCell(ambit, row, col, slotTracker) {
+    const colType = this.mapColBreakdown[col];
+
+    if (!(colType in slotTracker)) {
+      return null;
+    }
+
+    const hasAvailableSlot = slotTracker[colType] > 0;
+
+    if (hasAvailableSlot) {
+      slotTracker[colType]--;
+
+      // Only planetary tiles show beacons for available slots
+      if (colType !== MAP_COL_DEFENDER_PLANETARY) {
+        return null;
+      }
+    }
+
+    return this.renderMarker(ambit, row, col, hasAvailableSlot);
+  }
+
+  /**
+   * Renders a single marker div.
+   *
+   * @param {string} ambit
+   * @param {int} row
+   * @param {int} col
+   * @param {boolean} isBeacon
+   * @return {string} marker HTML
+   */
+  renderMarker(ambit, row, col, isBeacon = false) {
+    const pos = this.convertAmbitPosToPixelPos(ambit, row, col);
+    const className = isBeacon
+      ? this.tileClassNameUtil.getTileBeaconClassName(ambit)
+      : this.tileClassNameUtil.getTileBlockedClassName(ambit);
+
+    return `<div class="map-marker ${className}" style="top: ${pos.y}px; left: ${pos.x}px"></div>`;
   }
 }

@@ -129,7 +129,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const propertyIcon = this.getPropertyIconForTileType(tileType);
     const propertyIconLinkId = `${this.playerType}-action-bar-property-tile-type`;
 
-    const hasDeployButton = tileType === MAP_TILE_TYPES.PLANETARY_SLOT || tileType === MAP_TILE_TYPES.FLEET;
+    const hasDeployButton = tileType === MAP_TILE_TYPES.PLANETARY_SLOT
+      || tileType === MAP_TILE_TYPES.FLEET
+      || tileType === MAP_TILE_TYPES.COMMAND;
     let deployBtn = '';
     const deployBtnId = `${this.playerType}-action-bar-deploy-btn`;
     let attachDeployBtnHandler = () => {};

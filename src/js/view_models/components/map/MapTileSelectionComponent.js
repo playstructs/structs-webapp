@@ -2,10 +2,13 @@ import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelCo
 import {
   MAP_COL_ATTACKER_COMMAND, MAP_COL_ATTACKER_FLEET, MAP_COL_DEFENDER_COMMAND, MAP_COL_DEFENDER_FLEET,
   MAP_COL_DEFENDER_PLANETARY, MAP_COL_DIVIDER, MAP_DEFAULT_FLEET_COL_COUNT,
-  MAP_TILE_ROWS_PER_AMBIT, MAP_TILE_TYPES, MAP_TRANSITION_TILE_LABELS
+  MAP_TILE_ROWS_PER_AMBIT, MAP_TILE_TYPES, MAP_TRANSITION_TILE_LABELS,
+  MAP_DEFAULT_COMMAND_COL_COUNT
 } from "../../../constants/MapConstants";
 import {AMBITS} from "../../../constants/Ambits";
 import {HUDViewModel} from "../../HUDViewModel";
+import {Planet} from "../../../models/Planet";
+
 
 export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
@@ -191,15 +194,30 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * Creates a command slot tracker object for an ambit.
+   * Each command column type gets 1 usable slot per ambit.
+   *
+   * @return {Object} commandSlotTracker
+   */
+  createCommandSlotTracker() {
+    return {
+      [MAP_COL_DEFENDER_COMMAND]: MAP_DEFAULT_COMMAND_COL_COUNT,
+      [MAP_COL_ATTACKER_COMMAND]: MAP_DEFAULT_COMMAND_COL_COUNT,
+    };
+  }
+
+  /**
    * @param {string} mapColType
    * @param {string} side
    * @param {string} ambit
+   * @param {Object} commandSlotTracker
    * @return {string}
    */
   renderCommandTileHTML(
     mapColType,
     side,
-    ambit
+    ambit,
+    commandSlotTracker
   ) {
     let playerId = '';
 
@@ -211,8 +229,19 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       return '';
     }
 
+    // Check if there's an available command slot for this column type
+    const hasAvailableSlot = commandSlotTracker[mapColType] > 0;
+
+    if (hasAvailableSlot) {
+      commandSlotTracker[mapColType]--;
+    }
+
+    const tileType = hasAvailableSlot
+      ? MAP_TILE_TYPES.COMMAND
+      : MAP_TILE_TYPES.COMMAND_BLOCKED;
+
     return this.renderSelectionTileHTML(
-      MAP_TILE_TYPES.COMMAND,
+      tileType,
       side,
       playerId,
       ambit
@@ -428,8 +457,9 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     for (let a = 0; a < planetAmbits.length; a++) {
 
       const currentAmbit = planetAmbits[a];
-      const numPlanetarySlots = this.planet[`${currentAmbit.toLowerCase()}_slots`];
+      const numPlanetarySlots = this.planet.getPlanetarySlotsByAmbit(currentAmbit, this.gameState.structTypes);
       const totalFleetSlotsPerAmbitPerPlayer = MAP_TILE_ROWS_PER_AMBIT * MAP_DEFAULT_FLEET_COL_COUNT;
+      const commandSlotTracker = this.createCommandSlotTracker();
 
       html += this.renderTransitionRowHTML(previousAmbit, currentAmbit);
 
@@ -443,7 +473,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
           let side = this.getTileSide(c);
 
           html += this.renderFogOfWarTileHTML(mapColType)
-            || this.renderCommandTileHTML(mapColType, side, currentAmbit)
+            || this.renderCommandTileHTML(mapColType, side, currentAmbit, commandSlotTracker)
             || this.renderPlanetaryTileHTML(
               mapColType,
               side,

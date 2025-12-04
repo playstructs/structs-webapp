@@ -1,4 +1,5 @@
 import {AMBITS} from "../constants/Ambits";
+import {MAP_TILE_TYPES} from "../constants/MapConstants";
 
 export class Planet {
   constructor() {
@@ -50,5 +51,24 @@ export class Planet {
    */
   getOrnaments() {
     return this.ornaments;
+  }
+
+  /**
+   * @param {string} ambit
+   * @param {StructTypeCollection} structTypes
+   * @return {number}
+   */
+  getPlanetarySlotsByAmbit(ambit, structTypes) {
+    const property = `${ambit.toLowerCase()}_slots`;
+
+    if (this[property] === undefined) {
+      throw new Error(`Invalid ambit: ${ambit}`);
+    }
+
+    if (structTypes.fetchAllByTileTypeAndAmbit(MAP_TILE_TYPES.PLANETARY_SLOT, ambit).length > 0) {
+      return this[property];
+    }
+
+    return 0;
   }
 }
