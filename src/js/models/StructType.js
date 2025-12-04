@@ -90,6 +90,10 @@ export class StructType {
     this.is_command = null;
     this.drive_label = null;
     this.drive_description = null;
+    this['class'] = null;
+    this.class_abbreviation = null;
+    this.default_cosmetic_model_number = null;
+    this.default_cosmetic_name = null;
   }
 
 }

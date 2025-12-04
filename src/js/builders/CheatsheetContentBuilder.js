@@ -2,6 +2,7 @@ import {SUICheatsheetContentBuilder} from "../sui/SUICheatsheetContentBuilder";
 import {STRUCT_DESCRIPTIONS, STRUCT_EQUIPMENT_ICON_MAP} from "../constants/StructConstants";
 import {AMBIT_ORDER} from "../constants/Ambits";
 import {StructType} from "../models/StructType";
+import {NumberFormatter} from "../util/NumberFormatter";
 
 export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
 
@@ -11,6 +12,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
   constructor(gameState) {
     super();
     this.gameState = gameState;
+    this.numberFormatter = new NumberFormatter();
   }
 
   /**
@@ -125,17 +127,15 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
   }
 
   /**
-   * @param {string} abilityType
-   * @param {string} abilityLabel
-   * @param {string} notEquippedValue
+   * @param {StructType} structType
    * @return {string}
    */
-  renderAbilityProperty(abilityType, abilityLabel, notEquippedValue) {
-    if (!abilityType || abilityType === notEquippedValue) {
+  renderUnitDefensesProperty(structType) {
+    if (structType.unit_defenses === 'noUnitDefenses') {
       return '';
     }
 
-    const iconClass = STRUCT_EQUIPMENT_ICON_MAP[abilityType];
+    const iconClass = STRUCT_EQUIPMENT_ICON_MAP[structType.unit_defenses];
 
     return `
       <div class="sui-cheatsheet-property">
@@ -143,7 +143,95 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           <i class="sui-icon sui-icon-md ${iconClass}"></i>
         </div>
         <div class="sui-cheatsheet-property-info">
-          <div>${abilityLabel}</div>
+          <div>${structType.unit_defenses_label}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {StructType} structType
+   * @return {string}
+   */
+  renderPlanetaryDefensesProperty(structType) {
+    switch (structType.planetary_defenses) {
+      case 'noPlanetaryDefense':
+        return '';
+      case 'defensiveCannon':
+        return this.renderWeaponProperty(
+          structType.planetary_defenses,
+          structType.planetary_defenses_label,
+          1,
+          AMBIT_ORDER.map(ambit => ambit.toLowerCase()),
+          'noPlanetaryDefense'
+        );
+      default:
+        const iconClass = STRUCT_EQUIPMENT_ICON_MAP[structType.planetary_defenses];
+
+        return `
+          <div class="sui-cheatsheet-property">
+            <div class="sui-cheatsheet-property-icon">
+              <i class="sui-icon sui-icon-md ${iconClass}"></i>
+            </div>
+            <div class="sui-cheatsheet-property-info">
+              <div>${structType.planetary_defenses_label}</div>
+            </div>
+          </div>
+        `;
+    }
+  }
+
+  /**
+   * @param {StructType} structType
+   * @return {string}
+   */
+  renderOreReserveDefensesProperty(structType) {
+    if (structType.ore_reserve_defenses === 'noOreReserveDefenses') {
+      return '';
+    }
+
+    const iconClass = STRUCT_EQUIPMENT_ICON_MAP[structType.ore_reserve_defenses];
+    const planetaryShieldContribution = this.numberFormatter.format(structType.planetary_shield_contribution);
+
+    return `
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md ${iconClass}"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>${structType.ore_reserve_defenses_label}</div>
+          <div>+${planetaryShieldContribution} Planetary Defense</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {StructType} structType
+   * @return {string}
+   */
+  renderPowerGenerationProperty(structType) {
+    if (structType.power_generation === 'noPowerGeneration') {
+      return '';
+    }
+
+    const iconClass = STRUCT_EQUIPMENT_ICON_MAP[structType.power_generation];
+
+    return `
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md icon-send-alpha"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>Consume Alpha</div>
+        </div>
+      </div>
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md ${iconClass}"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>+${structType.generating_rate} KW Per Alpha</div>
         </div>
       </div>
     `;
@@ -175,32 +263,16 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
 
     propertiesHTML += this.renderPassiveWeaponProperty(structType);
 
-    propertiesHTML += this.renderAbilityProperty(
-      structType.unit_defenses,
-      structType.unit_defenses_label,
-      'noUnitDefenses'
-    );
+    propertiesHTML += this.renderUnitDefensesProperty(structType);
 
-    propertiesHTML += this.renderAbilityProperty(
-      structType.ore_reserve_defenses,
-      structType.ore_reserve_defenses_label,
-      'noOreReserveDefenses'
-    );
+    propertiesHTML += this.renderPlanetaryDefensesProperty(structType);
 
-    propertiesHTML += this.renderAbilityProperty(
-      structType.planetary_defenses,
-      structType.planetary_defenses_label,
-      'noPlanetaryDefense'
-    );
+    propertiesHTML += this.renderOreReserveDefensesProperty(structType);
 
-    propertiesHTML += this.renderAbilityProperty(
-      structType.power_generation,
-      structType.power_generation_label,
-      'noPowerGeneration'
-    );
+    propertiesHTML += this.renderPowerGenerationProperty(structType);
 
     return this.renderer.renderContentHTML(
-      structType.class,
+      `${structType.default_cosmetic_model_number} ${structType.class}`,
       structType.build_charge,
       structType.build_draw,
       STRUCT_DESCRIPTIONS[structType.type],
