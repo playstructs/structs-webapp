@@ -1,10 +1,11 @@
 import {NumberFormatter} from "../util/NumberFormatter";
+import {ChargeCalculator} from "../util/ChargeCalculator";
 
 export class SUICheatsheetRenderer {
 
   constructor() {
     this.numberFormatter = new NumberFormatter();
-    this.numBatteryChargeLevels = 5;
+    this.chargeCalculator = new ChargeCalculator();
   }
 
 
@@ -19,8 +20,10 @@ export class SUICheatsheetRenderer {
 
     let batteryChunks = '';
 
-    for(let i = 0; i < this.numBatteryChargeLevels; i++) {
-      const isFilledClass = i < batteryCost ? 'sui-mod-filled' : '';
+    const chargeLevel = this.chargeCalculator.calcChargeLevelByCharge(batteryCost);
+
+    for(let i = 1; i < this.chargeCalculator.chargeLevelThresholds.length; i++) {
+      const isFilledClass = i <= chargeLevel ? 'sui-mod-filled' : '';
       batteryChunks += `<div class="sui-battery-chunk ${isFilledClass}"></div>`;
     }
 
@@ -73,7 +76,7 @@ export class SUICheatsheetRenderer {
    * @return {string}
    */
   renderDescriptionHTML(descriptionText) {
-    if (descriptionText === null) {
+    if (!descriptionText) {
       return '';
     }
     return `
@@ -88,7 +91,7 @@ export class SUICheatsheetRenderer {
    * @return {string}
    */
   renderContextualMessageHTML(contextualMessageText) {
-    if (contextualMessageText === null) {
+    if (!contextualMessageText) {
       return '';
     }
     return `
@@ -99,11 +102,27 @@ export class SUICheatsheetRenderer {
   }
 
   /**
+   * @param {string|null} propertySectionHTML
+   * @return {string}
+   */
+  renderCheatsheetPropertySectionHTML(propertySectionHTML) {
+    if (!propertySectionHTML) {
+      return '';
+    }
+    return `
+      <div class="sui-cheatsheet-property-section">
+        ${propertySectionHTML}
+      </div>
+    `;
+  }
+
+  /**
    * @param {string} titleText
    * @param {number|null} batteryCost
    * @param {number|null} energyCost
    * @param {string|null} descriptionText
    * @param {string|null} contextualMessageText
+   * @param {string|null} propertySectionHTML
    * @return {string}
    */
   renderContentHTML(
@@ -111,7 +130,8 @@ export class SUICheatsheetRenderer {
     batteryCost = null,
     energyCost = null,
     descriptionText = null,
-    contextualMessageText = null
+    contextualMessageText = null,
+    propertySectionHTML = null
   ) {
     return `
       <div class="sui-cheatsheet-top-frame"></div>
@@ -122,6 +142,8 @@ export class SUICheatsheetRenderer {
         ${this.renderDescriptionHTML(descriptionText)}
         
         ${this.renderContextualMessageHTML(contextualMessageText)}
+
+        ${this.renderCheatsheetPropertySectionHTML(propertySectionHTML)}
       </div>
     `;
   }

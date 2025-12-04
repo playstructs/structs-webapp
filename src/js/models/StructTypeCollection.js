@@ -14,6 +14,26 @@ export class StructTypeCollection {
   }
 
   /**
+   * @param {String}type
+   * @return {StructType|undefined}
+   */
+  getStructType(type) {
+    return this.structTypes.find((structType) =>
+      structType.type === type
+      && !this.isExcluded(structType)
+    );
+  }
+
+  /**
+   * @param {StructType} structType
+   * @return {boolean}
+   */
+  isExcluded(structType) {
+    return structType.type.toLowerCase() === 'continental power plant'
+      || structType.type.toLowerCase() === 'world engine';
+  }
+
+  /**
    * @param {string} tileType
    * @param {string} ambit
    * @return {StructType[]}
@@ -25,8 +45,7 @@ export class StructTypeCollection {
         (
           tileType === MAP_TILE_TYPES.PLANETARY_SLOT
           && structType.category === STRUCT_CATEGORIES.PLANET
-          && structType.class.toLowerCase() !== 'continental power plant'
-          && structType.class.toLowerCase() !== 'world engine'
+          && !this.isExcluded(structType)
         ) || (
           tileType === MAP_TILE_TYPES.FLEET
           && structType.category === STRUCT_CATEGORIES.FLEET

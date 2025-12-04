@@ -11,19 +11,26 @@ export class ChargeCalculator {
   }
 
   /**
+   * @param {number} charge
+   * @return {number}
+   */
+  calcChargeLevelByCharge(charge) {
+    for (let i = 0; i < this.chargeLevelThresholds.length; i++) {
+      if (charge <= this.chargeLevelThresholds[i]) {
+        return i;
+      }
+    }
+
+    return this.chargeLevelThresholds.length - 1;
+  }
+
+  /**
    * @param {number} currentBlockHeight
    * @param {number} lastActionBlockHeight
    * @return {number}
    */
   calc(currentBlockHeight, lastActionBlockHeight) {
     const charge = currentBlockHeight - lastActionBlockHeight;
-
-    for (let i = 0; i < this.chargeLevelThresholds.length; i++) {
-      if (charge < this.chargeLevelThresholds[i]) {
-        return i;
-      }
-    }
-
-    return this.chargeLevelThresholds.length - 1;
+    return this.calcChargeLevelByCharge(charge);
   }
 }

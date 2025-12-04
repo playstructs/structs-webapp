@@ -13,6 +13,11 @@ export class SUICheatsheet extends SUIFeature {
   constructor() {
     super();
     this.util = new SUIUtil();
+    this.suiThemes = [
+      'sui-theme-player',
+      'sui-theme-enemy',
+      'sui-theme-neutral'
+    ];
 
     /** @type {SUICheatsheetContentBuilder} */
     this.contentBuilder = null;
@@ -52,25 +57,27 @@ export class SUICheatsheet extends SUIFeature {
 
     SUICheatsheet.pointerPressedTimer = setTimeout(function() {
 
-      // To position the cheatsheet the parent also must have position defined.
-      const parentStyle = getComputedStyle(cheatsheetTriggerElm.parentElement);
-      if (parentStyle.getPropertyValue('position') === 'static') {
-        cheatsheetTriggerElm.parentElement.style.position = 'relative';
+      this.suiThemes.forEach(themeClass => {
+        cheatsheetElm.classList.remove(themeClass);
+      });
+
+      if (cheatsheetTriggerElm.dataset.suiTheme) {
+        cheatsheetElm.classList.add(`sui-theme-${cheatsheetTriggerElm.dataset.suiTheme}`);
+      } else {
+        cheatsheetElm.classList.add(this.suiThemes[0]);
       }
 
-      // Add the cheatsheet to the triggering element's parent, so that the cheatsheet stays relative to the target.
-      cheatsheetTriggerElm.parentElement.appendChild(cheatsheetElm);
+      // Append to body so cheatsheet is not clipped by ancestor overflow
+      document.body.appendChild(cheatsheetElm);
 
       // Use the triggering elements data attribute as key to which cheatsheet to show.
-      cheatsheetElm.innerHTML = this.contentBuilder.build(cheatsheetTriggerElm.dataset.suiCheatsheet);
+      cheatsheetElm.innerHTML = this.contentBuilder.build({...cheatsheetTriggerElm.dataset});
 
-      this.util.horizontallyCenter(cheatsheetElm, cheatsheetTriggerElm);
+      // Get viewport-relative coordinates for fixed positioning
+      const triggerRect = cheatsheetTriggerElm.getBoundingClientRect();
 
-      if (cheatsheetTriggerElm.dataset.suiModPlacement === 'bottom') {
-        this.util.positionBelow(cheatsheetElm, cheatsheetTriggerElm);
-      } else {
-        this.util.positionAbove(cheatsheetElm, cheatsheetTriggerElm);
-      }
+      // Position cheatsheet in best fitting location (tries: top, right, bottom, left)
+      this.util.positionBestFitFixed(cheatsheetElm, triggerRect);
 
     }.bind(this), 100);
   }
@@ -83,7 +90,7 @@ export class SUICheatsheet extends SUIFeature {
     const cheatsheetElm = document.createElement('div');
     cheatsheetElm.id = `sui-cheatsheet-container`;
     cheatsheetElm.classList.add('sui-cheatsheet');
-    cheatsheetElm.style.position = 'absolute';
+    cheatsheetElm.style.position = 'fixed';
 
     let pressedEvent = 'mousedown';
     let releasedEvent = 'mouseup';
@@ -95,23 +102,17 @@ export class SUICheatsheet extends SUIFeature {
       // Press and hold on mobile also fires a contextmenu event which we need to block
       // because it can obscure the cheatsheet and also cause inadvertent actions.
       document.body.addEventListener('contextmenu', (e) => {
-        if (
-          e.target.matches('[data-sui-cheatsheet]')
-          || e.target.parentElement.matches('[data-sui-cheatsheet]')
-        ) {
+        if (e.target.closest('[data-sui-cheatsheet]')) {
           e.preventDefault();
         }
       }, { passive: false });
     }
 
     document.body.addEventListener(pressedEvent, function (e) {
-      if (e.target.matches('[data-sui-cheatsheet]')) {
-        this.pointerPressed(cheatsheetElm, e.target);
+      const cheatsheetTriggerElm = e.target.closest('[data-sui-cheatsheet]');
+      if (cheatsheetTriggerElm) {
+        this.pointerPressed(cheatsheetElm, cheatsheetTriggerElm);
       }
-      if (e.target.parentElement.matches('[data-sui-cheatsheet]')) {
-        this.pointerPressed(cheatsheetElm, e.target.parentElement);
-      }
-
     }.bind(this), { passive: true });
 
     window.addEventListener(releasedEvent, function () {

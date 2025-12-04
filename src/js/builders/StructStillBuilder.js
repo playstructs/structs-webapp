@@ -14,7 +14,7 @@ export class StructStillBuilder {
   /**
    * @return {StructStillRenderer}
    */
-  buildPlanetaryBattleship() {
+  buildBattleship() {
     const topDetailLayers = [];
 
     const structVariants = {};
@@ -416,7 +416,7 @@ export class StructStillBuilder {
   /**
    * @return {StructStillRenderer}
    */
-  buildSubmerssible() {
+  buildSubmersible() {
     const topDetailLayers = [
       this.structImageDir + '/submersible/submersible-top-weapon.png'
     ];

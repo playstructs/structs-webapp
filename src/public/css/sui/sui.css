@@ -584,6 +584,7 @@ a.sui-panel-btn.sui-mod-disabled-active {
 /* ---- Cheatsheet Start ---- */
 
 .sui-cheatsheet {
+  z-index: var(--popup-z-index);
   display: inline-flex;
   min-width: 200px;
   border-top: 2px solid var(--border);
@@ -643,6 +644,8 @@ a.sui-panel-btn.sui-mod-disabled-active {
   line-height: 16px;
   text-align: left;
   text-transform: uppercase;
+  word-wrap: normal;
+  white-space: break-spaces;
 }
 
 .sui-cheatsheet-costs {
@@ -727,6 +730,7 @@ a.sui-panel-btn.sui-mod-disabled-active {
   gap: var(--spacing-lg);
 
   color: var(--text-body);
+  text-align: left;
 }
 
 .sui-cheatsheet-property i.sui-icon {
