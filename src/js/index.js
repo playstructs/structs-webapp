@@ -145,7 +145,7 @@ const hudContainer = document.getElementById('hud-container');
 await gameState.load();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
-HUDViewModel.init(gameState);
+HUDViewModel.init(gameState, signingClientManager);
 hudContainer.innerHTML = HUDViewModel.render();
 HUDViewModel.initPageCode();
 

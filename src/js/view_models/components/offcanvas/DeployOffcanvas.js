@@ -6,17 +6,23 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
 
   /**
    * @param {GameState} gameState
+   * @param {SigningClientManager} signingClientManager
    * @param {string} tileType see MAP_TILE_TYPES
    * @param {string} ambit
+   * @param {number|null} slot
    */
   constructor(
     gameState,
+    signingClientManager,
     tileType,
-    ambit
+    ambit,
+    slot = null
   ) {
     super(gameState);
     this.tileType = tileType;
     this.ambit = ambit;
+    this.signingClientManager = signingClientManager;
+    this.slot = slot;
     this.structStillBuilder = new StructStillBuilder(this.gameState);
 
     /** @type {StructType[]}*/
@@ -39,6 +45,13 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
     this.deployableStructTypes.forEach(structType => {
       document.getElementById(this.createLinkId(structType)).addEventListener('click', () => {
         console.log(`Clicked on type: ${structType.type}`);
+        this.signingClientManager.queueMsgStructBuildInitiate(
+          this.gameState.signingAccount.address,
+          this.gameState.thisPlayerId,
+          structType.id,
+          this.ambit,
+          this.slot
+        ).then();
       });
     });
   }

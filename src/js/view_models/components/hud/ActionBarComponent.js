@@ -8,14 +8,22 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
   /**
    * @param {GameState} gameState
+   * @param {SigningClientManager} signingClientManager
    * @param {string} playerType
    * @param {string} align left or right
    * @param {string} id
    */
-  constructor(gameState, playerType, align, id) {
+  constructor(
+    gameState,
+    signingClientManager,
+    playerType,
+    align,
+    id
+  ) {
     super(gameState);
 
     this.playerType = playerType;
+    this.signingClientManager = signingClientManager;
 
     /* Style */
     this.themeClass = `sui-theme-${this.playerType === PLAYER_TYPES.PLAYER ? 'player' : 'enemy'}`;
@@ -118,11 +126,13 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {string} tileType
    * @param {string} ambitOrTileLabel
    * @param {string} side right or left
+   * @param {number|null} slot
    */
   showEmptyTile(
     tileType,
     ambitOrTileLabel,
-    side
+    side,
+    slot = null
   ) {
     const header = ambitOrTileLabel.toUpperCase();
 
@@ -143,7 +153,13 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         btnTypeClass = 'sui-mod-default';
         attachDeployBtnHandler = () => {
           document.getElementById(deployBtnId).addEventListener('click', function () {
-            const deployOffcanvas = new DeployOffcanvas(this.gameState, tileType, ambitOrTileLabel);
+            const deployOffcanvas = new DeployOffcanvas(
+              this.gameState,
+              this.signingClientManager,
+              tileType,
+              ambitOrTileLabel,
+              slot
+            );
             deployOffcanvas.render();
           }.bind(this));
         };

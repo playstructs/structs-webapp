@@ -13,6 +13,9 @@ export class HUDViewModel extends AbstractViewModel {
   /** @type {GameState} */
   static gameState;
 
+  /** @type {SigningClientManager} */
+  static signingClientManager;
+
   /** @type {StatusBarTopLeftComponent} */
   static topLeftStatusBar;
 
@@ -32,10 +35,12 @@ export class HUDViewModel extends AbstractViewModel {
   static bottomRightActionBarRaid;
 
   /**
-   * @param gameState
+   * @param {GameState} gameState
+   * @param {SigningClientManager} signingClientManager
    */
-  static init(gameState) {
+  static init(gameState, signingClientManager) {
     HUDViewModel.gameState = gameState;
+    HUDViewModel.signingClientManager = signingClientManager;
 
     HUDViewModel.topLeftStatusBar = new StatusBarTopLeftComponent(
       gameState,
@@ -56,6 +61,7 @@ export class HUDViewModel extends AbstractViewModel {
 
     HUDViewModel.bottomLeftActionBar = new ActionBarComponent(
       gameState,
+      signingClientManager,
       PLAYER_TYPES.PLAYER,
       'left',
       HUD_IDS.ACTION_BAR_PLAYER
@@ -63,6 +69,7 @@ export class HUDViewModel extends AbstractViewModel {
 
     HUDViewModel.bottomRightActionBarAlphaBase = new ActionBarComponent(
       gameState,
+      signingClientManager,
       PLAYER_TYPES.PLANET_RAIDER,
       'right',
       HUD_IDS.ACTION_BAR_ALPHA_BASE_ENEMY
@@ -70,6 +77,7 @@ export class HUDViewModel extends AbstractViewModel {
 
     HUDViewModel.bottomRightActionBarRaid = new ActionBarComponent(
       gameState,
+      signingClientManager,
       PLAYER_TYPES.RAID_ENEMY,
       'right',
       HUD_IDS.ACTION_BAR_RAID_ENEMY
@@ -162,10 +170,16 @@ export class HUDViewModel extends AbstractViewModel {
     const actionBar = HUDViewModel.whichActionBar(clickedDomElement.dataset.side);
 
     if (!clickedDomElement.dataset.structId) {
+      let slot = parseInt(clickedDomElement.dataset.slot, 10);
+      if (isNaN(slot)) {
+        slot = null;
+      }
+
       HUDViewModel[actionBar].showEmptyTile(
         clickedDomElement.dataset.tileType,
         clickedDomElement.dataset.tileLabel || clickedDomElement.dataset.ambit,
-        clickedDomElement.dataset.side
+        clickedDomElement.dataset.side,
+        slot
       );
     }
   }
