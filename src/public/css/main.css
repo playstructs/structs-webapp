@@ -475,6 +475,40 @@ a.sui-text-secondary:hover {
   flex-grow: 1;
 }
 
+.map-struct-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
+.map-struct-layer-row {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: var(--tile-height);
+  padding: 0;
+  margin: 0;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
+.map-struct-layer-tile {
+  position: relative;
+  display: flex;
+  width: var(--tile-width);
+  height: var(--tile-height);
+  background: rgba(0, 128, 0, 0.25);
+}
+
 .map-tile-selection {
   position: absolute;
   top: 0;

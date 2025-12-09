@@ -11,6 +11,7 @@ import {MAP_ORNAMENTS} from "../../../constants/MapConstants";
 import {PLAYER_MAP_ROLES} from "../../../constants/PlayerMapRoles";
 import {MAP_PERSPECTIVES} from "../../../constants/MapPerspectives";
 import {MapTileSelectionComponent} from "./MapTileSelectionComponent";
+import {MapStructLayerComponent} from "./MapStructLayerComponent";
 
 export class MapComponent extends AbstractViewModelComponent {
 
@@ -34,6 +35,7 @@ export class MapComponent extends AbstractViewModelComponent {
     this.terrainId = `${this.idPrefix}-map-terrain`;
     this.ornamentsId = `${this.idPrefix}-map-ornaments`;
     this.markersId = `${this.idPrefix}-map-markers`;
+    this.structLayerId = `${this.idPrefix}-map-struct-layer`;
     this.fogOfWarId = `${this.idPrefix}-map-fog-of-war`;
     this.tileSelectionId = `${this.idPrefix}-map-tile-selection`;
 
@@ -67,6 +69,9 @@ export class MapComponent extends AbstractViewModelComponent {
 
     /** @type {MapFogOfWarComponent|null} */
     this.mapFogOfWar = null;
+
+    /** @type {MapStructLayerComponent|null} */
+    this.mapStructLayer = null;
 
     /** @type {MapTileSelectionComponent|null} */
     this.mapTileSelection = null;
@@ -172,6 +177,14 @@ export class MapComponent extends AbstractViewModelComponent {
       this.planet
     );
 
+    this.mapStructLayer = new MapStructLayerComponent(
+      this.gameState,
+      mapColBreakdown,
+      this.planet,
+      this.defender,
+      this.attacker
+    );
+
     this.mapTileSelection = new MapTileSelectionComponent(
       this.gameState,
       mapColBreakdown,
@@ -190,6 +203,7 @@ export class MapComponent extends AbstractViewModelComponent {
         <div id="${this.terrainId}" class="map-terrain"></div>
         <div id="${this.ornamentsId}" class="map-ornaments"></div>
         <div id="${this.markersId}" class="map-markers"></div>
+        <div id="${this.structLayerId}" class="map-struct-layer"></div>
         <div id="${this.fogOfWarId}" class="map-fog-of-war-anchor"></div>
         <div id="${this.tileSelectionId}" class="map-tile-selection"></div>
       </div>
@@ -210,6 +224,8 @@ export class MapComponent extends AbstractViewModelComponent {
     document.getElementById(this.ornamentsId).innerHTML = this.mapOrnaments.renderHTML();
 
     document.getElementById(this.markersId).innerHTML = this.mapTileMarkers.renderHTML();
+
+    document.getElementById(this.structLayerId).innerHTML = this.mapStructLayer.renderHTML();
 
     if (this.shouldDisplayFogOfWar()) {
       document.getElementById(this.fogOfWarId).innerHTML = this.mapFogOfWar.renderHTML();
