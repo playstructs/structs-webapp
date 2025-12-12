@@ -22,13 +22,13 @@ export class Player {
    * @return {string}
    */
   getTag() {
-    return this.tag.length > 0 ? `[${this.tag}]` : '';
+    return (this.tag && this.tag.length > 0) ? `[${this.tag}]` : '';
   }
 
   /**
    * @return {string}
    */
   getUsername() {
-    return this.username.length > 0 ? `${this.username}` : 'Name Redacted';
+    return (this.username && this.username.length > 0) ? `${this.username}` : 'Name Redacted';
   }
 }

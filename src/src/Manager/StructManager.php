@@ -43,11 +43,17 @@ class StructManager
     public function getAllStructsOnPlanet(string $planet_id): Response
     {
         $query = '
-            SELECT s.*, COALESCE(sa.val, 0) AS health
+            SELECT 
+              s.*, 
+              COALESCE(sa.val, 0) AS health,
+              CASE WHEN w.object_id IS NOT NULL THEN true ELSE false END AS is_building
             FROM struct s
             LEFT JOIN struct_attribute sa
               ON s.id = sa.object_id
               AND sa.attribute_type = \'health\'
+            LEFT JOIN view.work w
+              ON s.id = w.object_id
+              AND w.category = \'BUILD\'
             WHERE 
               s.location_id = :planet_id
               OR s.location_id in (
@@ -71,6 +77,41 @@ class StructManager
     }
 
     /**
+     * @param string $player_id
+     * @return Response
+     * @throws Exception
+     */
+    public function getStructsByPlayerId(string $player_id): Response
+    {
+        $query = '
+            SELECT 
+              s.*, 
+              COALESCE(sa.val, 0) AS health,
+              CASE WHEN w.object_id IS NOT NULL THEN true ELSE false END AS is_building
+            FROM struct s
+            LEFT JOIN struct_attribute sa
+              ON s.id = sa.object_id
+              AND sa.attribute_type = \'health\'
+            LEFT JOIN view.work w
+              ON s.id = w.object_id
+              AND w.category = \'BUILD\'
+            WHERE s.owner = :player_id
+            ORDER BY s.location_type, s.location_id, s.slot;
+        ';
+
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        return $this->queryAll(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+
+    /**
      * @param string $struct_id
      * @return Response
      * @throws Exception
@@ -78,11 +119,17 @@ class StructManager
     public function getStruct(string $struct_id): Response
     {
         $query = '
-            SELECT s.*, COALESCE(sa.val, 0) AS health
+            SELECT 
+              s.*, 
+              COALESCE(sa.val, 0) AS health,
+              CASE WHEN w.object_id IS NOT NULL THEN true ELSE false END AS is_building
             FROM struct s
             LEFT JOIN struct_attribute sa
               ON s.id = sa.object_id
               AND sa.attribute_type = \'health\'
+            LEFT JOIN view.work w
+              ON s.id = w.object_id
+              AND w.category = \'BUILD\'
             WHERE s.id = :struct_id
             LIMIT 1;
         ';

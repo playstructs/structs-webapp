@@ -1,6 +1,6 @@
 import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../../constants/Events";
-import {MAP_TILE_TYPE_ICONS, MAP_TILE_TYPES} from "../../../constants/MapConstants";
+import {MAP_CONTAINER_IDS, MAP_TILE_TYPE_ICONS, MAP_TILE_TYPES} from "../../../constants/MapConstants";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {DeployOffcanvas} from "../offcanvas/DeployOffcanvas";
 
@@ -127,14 +127,17 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {string} ambitOrTileLabel
    * @param {string} side right or left
    * @param {number|null} slot
+   * @param {string|null} structId - ID of struct occupying the tile, null if empty
    */
-  showEmptyTile(
+  showActionBarFor(
     tileType,
     ambitOrTileLabel,
     side,
-    slot = null
+    slot = null,
+    structId = null
   ) {
     const header = ambitOrTileLabel.toUpperCase();
+    const isOccupied = structId !== null && structId !== '';
 
     const propertyIcon = this.getPropertyIconForTileType(tileType);
     const propertyIconLinkId = `${this.playerType}-action-bar-property-tile-type`;
@@ -148,8 +151,16 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     let btnTypeClass = 'sui-mod-disabled';
 
     if (hasDeployButton) {
-
-      if (side === 'left') {
+      // Only enable deploy button if:
+      // 1. It's on the left side (player's side)
+      // 2. The tile is NOT occupied by a struct
+      // 3. The map is the alpha base map
+      // TODO 4. The player's command ship is on the alpha base
+      if (
+        side === 'left'
+        && !isOccupied
+        && this.gameState.activeMapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE
+      ) {
         btnTypeClass = 'sui-mod-default';
         attachDeployBtnHandler = () => {
           document.getElementById(deployBtnId).addEventListener('click', function () {

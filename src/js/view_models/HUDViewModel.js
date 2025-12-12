@@ -168,19 +168,21 @@ export class HUDViewModel extends AbstractViewModel {
     HUDViewModel.hideActionBarActionChunks();
 
     const actionBar = HUDViewModel.whichActionBar(clickedDomElement.dataset.side);
+    const structId = clickedDomElement.dataset.structId;
 
-    if (!clickedDomElement.dataset.structId) {
-      let slot = parseInt(clickedDomElement.dataset.slot, 10);
-      if (isNaN(slot)) {
-        slot = null;
-      }
-
-      HUDViewModel[actionBar].showEmptyTile(
-        clickedDomElement.dataset.tileType,
-        clickedDomElement.dataset.tileLabel || clickedDomElement.dataset.ambit,
-        clickedDomElement.dataset.side,
-        slot
-      );
+    let slot = parseInt(clickedDomElement.dataset.slot, 10);
+    if (isNaN(slot)) {
+      slot = null;
     }
+
+    // Show action bar for both empty and occupied tiles
+    // Pass structId to determine if deploy button should be disabled
+    HUDViewModel[actionBar].showActionBarFor(
+      clickedDomElement.dataset.tileType,
+      clickedDomElement.dataset.tileLabel || clickedDomElement.dataset.ambit,
+      clickedDomElement.dataset.side,
+      slot,
+      structId || null
+    );
   }
 }

@@ -10,6 +10,9 @@ import {PlanetaryShieldInfoDTO} from "../dtos/PlanetaryShieldInfoDTO";
 import {PlanetRaid} from "./PlanetRaid";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {StructTypeCollection} from "./StructTypeCollection";
+import {Struct} from "./Struct";
+import {Player} from "./Player";
+import {Fleet} from "./Fleet"
 
 export class GameState {
 
@@ -41,24 +44,24 @@ export class GameState {
     this.signingAccount = null;
     this.signingClient = null;
 
-    /** @type {MapComponent|null} */
+    /** @type {MapComponent} */
     this.alphaBaseMap = null;
 
-    /** @type {MapComponent|null} */
+    /** @type {MapComponent} */
     this.raidMap = null;
 
-    /** @type {MapComponent|null} */
+    /** @type {MapComponent} */
     this.previewMap = null;
 
     /* API Primed Data */
 
-    /** @type {Guild|null} */
+    /** @type {Guild} */
     this.thisGuild = null;
 
-    /** @type {Player|null} */
+    /** @type {Player} */
     this.thisPlayer = null;
 
-    /** @type {Planet|null} */
+    /** @type {Planet} */
     this.planet = null;
 
     this.planetShieldHealth = 100;
@@ -67,20 +70,38 @@ export class GameState {
 
     this.planetPlanetRaidInfo = new PlanetRaid();
 
-    /** @type {Player|null} */
+    /** @type {Fleet} */
+    this.thisPlayerFleet = null;
+
+    /** @type {Struct[]} */
+    this.thisPlayerStructs = [];
+
+    /** @type {Player} */
     this.planetRaider = null;
+
+    /** @type {Fleet} */
+    this.planetRaiderFleet = null;
+
+    /** @type {Struct[]} */
+    this.planetRaiderStructs = [];
 
     this.raidPlanetRaidInfo = new PlanetRaid();
 
-    /** @type {Player|null} */
+    /** @type {Player} */
     this.raidEnemy = null;
 
-    /** @type {Planet|null} */
+    /** @type {Planet} */
     this.raidPlanet = null;
 
     this.raidPlanetShieldHealth = 100;
 
     this.raidPlanetShieldInfo = new PlanetaryShieldInfoDTO();
+
+    /** @type {Fleet} */
+    this.raidEnemyFleet = null;
+
+    /** @type {Struct[]} */
+    this.raidEnemyStructs = [];
 
     this.structTypes = new StructTypeCollection();
 
@@ -421,6 +442,71 @@ export class GameState {
     }
   }
 
+  /**
+   * @param {number} amount
+   */
+  setTransferAmount(amount) {
+    this.transferAmount = amount;
+    this.save();
+  }
+
+  /**
+   * @param {string} id
+   */
+  setActiveMapContainerId(id) {
+    this.activeMapContainerId = id;
+    this.save();
+  }
+
+  /**
+   * @param {array} types
+   */
+  setStructTypes(types) {
+    this.structTypes.setStructTypes(types);
+  }
+
+  /**
+   * @param {Fleet} fleet
+   */
+  setThisPlayerFleet(fleet) {
+    this.thisPlayerFleet = fleet;
+  }
+
+  /**
+   * @param {Fleet} fleet
+   */
+  setPlanetRaiderFleet(fleet) {
+    this.planetRaiderFleet = fleet;
+  }
+
+  /**
+   * @param {Fleet} fleet
+   */
+  setRaidEnemyFleet(fleet) {
+    this.raidEnemyFleet = fleet;
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setThisPlayerStructs(structs) {
+    this.thisPlayerStructs = structs;
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setPlanetRaiderStructs(structs) {
+    this.planetRaiderStructs = structs;
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setRaidEnemyStructs(structs) {
+    this.raidEnemyStructs = structs;
+  }
+
   clearPlanetRaidData() {
     this.planetPlanetRaidInfo = new PlanetRaid();
     this.planetRaider = null;
@@ -464,6 +550,26 @@ export class GameState {
   }
 
   /**
+   * @param {String} playerId
+   * @return {string}
+   */
+  getPlayerTypeById(playerId) {
+    if (this.thisPlayerId === playerId) {
+      return PLAYER_TYPES.PLAYER;
+    }
+
+    if (this.planetRaider && this.planetRaider.id === playerId) {
+      return PLAYER_TYPES.PLANET_RAIDER;
+    }
+
+    if (this.raidEnemy && this.raidEnemy.id === playerId) {
+      return PLAYER_TYPES.RAID_ENEMY;
+    }
+
+    throw new Error(`Player with ID ${playerId} has no type`);
+  }
+
+  /**
    * @return {string}
    */
   getPlayerTag() {
@@ -495,59 +601,26 @@ export class GameState {
     return this.raidPlanetRaidInfo.planet_owner
   }
 
-  getPlanetRaiderUsername() {
-    return this.planetRaider && this.planetRaider.username.length > 0
-      ? `${this.planetRaider.username}`
-      : `PID# ${this.getPlanetRaiderId()}`;
-  }
-
   getRaidEnemyUsername() {
-    return this.raidEnemy && this.raidEnemy.username.length > 0
+    return this.raidEnemy && this.raidEnemy.username && this.raidEnemy.username.length > 0
       ? `${this.raidEnemy.username}`
       : `PID# ${this.getRaidEnemyId()}`;
   }
 
   /**
-   * @param {number} amount
+   * @param {string} type
+   * @return {Fleet}
    */
-  setTransferAmount(amount) {
-    this.transferAmount = amount;
-    this.save();
-  }
-
-  /**
-   * @param {string} id
-   */
-  setActiveMapContainerId(id) {
-    this.activeMapContainerId = id;
-    this.save();
-  }
-
-  /**
-   * @param {array} types
-   */
-  setStructTypes(types) {
-    this.structTypes.setStructTypes(types);
-  }
-
-  /**
-   * @return {number}
-   */
-  getCharge() {
-    return this.currentBlockHeight - this.lastActionBlockHeight;
-  }
-
-  /**
-   * @return {number}
-   */
-  getPlanetRaiderCharge() {
-    return this.currentBlockHeight - this.planetRaiderLastActionBlockHeight;
-  }
-
-  /**
-   * @return {number}
-   */
-  getRaidEnemyChange() {
-    return this.currentBlockHeight - this.raidEnemyLastActionBlockHeight;
+  getFleetByPlayerType(type) {
+    switch (type) {
+      case PLAYER_TYPES.PLAYER:
+        return this.thisPlayerFleet;
+      case PLAYER_TYPES.PLANET_RAIDER:
+        return this.planetRaiderFleet;
+      case PLAYER_TYPES.RAID_ENEMY:
+        return this.raidEnemyFleet;
+      default:
+        return null;
+    }
   }
 }

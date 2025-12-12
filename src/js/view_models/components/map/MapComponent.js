@@ -17,15 +17,19 @@ export class MapComponent extends AbstractViewModelComponent {
 
   /**
    * @param {GameState} gameState
+   * @param {StructManager} structManager
    * @param {string} containerId
    * @param {string} idPrefix
    */
   constructor(
     gameState,
+    structManager,
     containerId,
     idPrefix
   ) {
     super(gameState);
+
+    this.structManager = structManager;
 
     this.containerId = containerId;
 
@@ -177,20 +181,27 @@ export class MapComponent extends AbstractViewModelComponent {
       this.planet
     );
 
+    // Determine if this is the raid map based on idPrefix
+    const isRaidMap = this.idPrefix === 'raid';
+    
     this.mapStructLayer = new MapStructLayerComponent(
       this.gameState,
+      this.structManager,
       mapColBreakdown,
       this.planet,
       this.defender,
-      this.attacker
+      this.attacker,
+      isRaidMap
     );
 
     this.mapTileSelection = new MapTileSelectionComponent(
       this.gameState,
+      this.structManager,
       mapColBreakdown,
       this.planet,
       this.defender,
-      this.attacker
+      this.attacker,
+      isRaidMap
     )
   }
 

@@ -8,30 +8,70 @@ import {
 import {AMBITS} from "../../../constants/Ambits";
 import {HUDViewModel} from "../../HUDViewModel";
 import {Planet} from "../../../models/Planet";
+import {Player} from "../../../models/Player";
 
 
 export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
   /**
    * @param {GameState} gameState
+   * @param {StructManager} structManager
    * @param {string[]} mapColBreakdown
    * @param {Planet|null} planet
    * @param {Player|null} defender
    * @param {Player|null} attacker
+   * @param {boolean} isRaidMap - Whether this is the raid map
    */
   constructor(
     gameState,
+    structManager,
     mapColBreakdown,
     planet,
     defender,
-    attacker
+    attacker,
+    isRaidMap = false
   ) {
     super(gameState);
+    this.structManager = structManager;
     this.mapColBreakdown = mapColBreakdown;
     this.dividerIndex = this.mapColBreakdown.lastIndexOf(MAP_COL_DIVIDER);
+
+    /** @type {Planet} */
     this.planet = planet;
+
+    /** @type {Player} */
     this.defender = defender;
+
+    /** @type {Player} */
     this.attacker = attacker;
+
+    this.isRaidMap = isRaidMap;
+  }
+
+  /**
+   * Get struct ID at a position for the data attribute
+   * @param {string} locationType
+   * @param {string} locationId
+   * @param {string} ambit
+   * @param {string|number} slot
+   * @param {boolean} isCommandSlot
+   * @return {string}
+   */
+  getStructIdAtPosition(locationType, locationId, ambit, slot, isCommandSlot = false) {
+    if (slot === "") {
+      return "";
+    }
+
+    const struct = this.structManager.getStructByPosition(
+      this.isRaidMap,
+      locationType,
+      locationId,
+      ambit,
+      parseInt(slot, 10),
+      isCommandSlot
+    );
+
+    return struct ? struct.id : "";
   }
 
   /**
@@ -220,11 +260,14 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     commandSlotTracker
   ) {
     let playerId = '';
+    let fleetId = '';
 
     if (mapColType === MAP_COL_DEFENDER_COMMAND) {
       playerId = this.defender.id;
+      fleetId = this.defender.fleet_id;
     } else if (mapColType === MAP_COL_ATTACKER_COMMAND) {
       playerId = this.attacker.id;
+      fleetId = this.attacker.fleet_id;
     } else {
       return '';
     }
@@ -240,11 +283,18 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       ? MAP_TILE_TYPES.COMMAND
       : MAP_TILE_TYPES.COMMAND_BLOCKED;
 
+    // Command structs are always slot 0
+    const structId = hasAvailableSlot 
+      ? this.getStructIdAtPosition('fleet', fleetId, ambit, 0, true)
+      : '';
+
     return this.renderSelectionTileHTML(
       tileType,
       side,
       playerId,
-      ambit
+      ambit,
+      hasAvailableSlot ? 0 : '',
+      structId
     );
   }
 
@@ -269,12 +319,17 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       ? MAP_TILE_TYPES.PLANETARY_BLOCKED
       : MAP_TILE_TYPES.PLANETARY_SLOT;
 
+    const structId = slot !== '' 
+      ? this.getStructIdAtPosition('planet', this.planet.id, ambit, slot, false)
+      : '';
+
     return this.renderSelectionTileHTML(
       tileType,
       side,
       this.defender.id,
       ambit,
-      slot
+      slot,
+      structId
     );
   }
 
@@ -295,12 +350,17 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       return '';
     }
 
+    const structId = slot !== ''
+      ? this.getStructIdAtPosition('fleet', this.defender.fleet_id, ambit, slot, false)
+      : '';
+
     return this.renderSelectionTileHTML(
       MAP_TILE_TYPES.FLEET,
       side,
       this.defender.id,
       ambit,
-      slot
+      slot,
+      structId
     );
   }
 
@@ -321,12 +381,17 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       return '';
     }
 
+    const structId = slot !== ''
+      ? this.getStructIdAtPosition('fleet', this.attacker.fleet_id, ambit, slot, false)
+      : '';
+
     return this.renderSelectionTileHTML(
       MAP_TILE_TYPES.FLEET,
       side,
       this.attacker.id,
       ambit,
-      slot
+      slot,
+      structId
     );
   }
 

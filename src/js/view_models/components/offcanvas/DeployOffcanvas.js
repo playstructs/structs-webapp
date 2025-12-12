@@ -44,7 +44,8 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
   initPageCode() {
     this.deployableStructTypes.forEach(structType => {
       document.getElementById(this.createLinkId(structType)).addEventListener('click', () => {
-        console.log(`Clicked on type: ${structType.type}`);
+        console.log(`Deploy: ${structType.type}`);
+
         this.signingClientManager.queueMsgStructBuildInitiate(
           this.gameState.signingAccount.address,
           this.gameState.thisPlayerId,
@@ -52,6 +53,8 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
           this.ambit,
           this.slot
         ).then();
+
+        MenuPage.sui.offcanvas.close();
       });
     });
   }

@@ -23,6 +23,7 @@ import {MapComponent} from "./view_models/components/map/MapComponent";
 import {MapManager} from "./managers/MapMananger";
 import {MAP_CONTAINER_IDS} from "./constants/MapConstants";
 import {CheatsheetContentBuilder} from "./builders/CheatsheetContentBuilder";
+import {StructManager} from "./managers/StructManager";
 
 
 const gameState = new GameState();
@@ -43,6 +44,8 @@ const blockGrassManager = new GrassManager(
   "ws://localhost:1443",
   "consensus"
 );
+
+const structManager = new StructManager(gameState);
 
 const signingClientManager = new SigningClientManager(gameState);
 
@@ -112,16 +115,19 @@ const fleetController = new FleetController(
 
 gameState.alphaBaseMap = new MapComponent(
   gameState,
+  structManager,
   MAP_CONTAINER_IDS.ALPHA_BASE,
   'alpha-base'
 );
 gameState.raidMap = new MapComponent(
   gameState,
+  structManager,
   MAP_CONTAINER_IDS.RAID,
   'raid'
 );
 gameState.previewMap = new MapComponent(
   gameState,
+  structManager,
   MAP_CONTAINER_IDS.PREVIEW,
   'preview'
 );

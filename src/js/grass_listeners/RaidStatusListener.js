@@ -42,7 +42,7 @@ export class RaidStatusListener extends AbstractGrassListener {
         this.raidManager.initRaidEnemy().then(() => {
           console.log('RAID ENEMY INITIATED DONE');
 
-          window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.raidPlanetShieldInfo.block_start_raid, this.raidPlanetShieldInfo.planetary_shield  )));
+          window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.gameState.raidPlanetShieldInfo.block_start_raid, this.gameState.raidPlanetShieldInfo.planetary_shield  )));
 
           this.mapManager.configureRaidMap();
           this.gameState.raidMap.render();
@@ -56,7 +56,7 @@ export class RaidStatusListener extends AbstractGrassListener {
 
         this.gameState.setRaidPlanetRaidStatus(messageData.detail.status);
 
-        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.raidPlanetShieldInfo.block_start_raid, this.raidPlanetShieldInfo.planetary_shield  )));
+        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.gameState.raidPlanetShieldInfo.block_start_raid, this.gameState.raidPlanetShieldInfo.planetary_shield  )));
 
       } else if (this.raidStatusUtil.hasRaidEnded(messageData.detail.status)) {
 

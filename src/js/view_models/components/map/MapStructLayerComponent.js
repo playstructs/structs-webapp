@@ -5,31 +5,41 @@ import {
   MAP_TILE_ROWS_PER_AMBIT, MAP_TILE_TYPES,
   MAP_DEFAULT_COMMAND_COL_COUNT
 } from "../../../constants/MapConstants";
+import {StructStillBuilder} from "../../../builders/StructStillBuilder";
+import {Player} from "../../../models/Player";
+import {Struct} from "../../../models/Struct";
 
 
 export class MapStructLayerComponent extends AbstractViewModelComponent {
 
   /**
    * @param {GameState} gameState
+   * @param {StructManager} structManager
    * @param {string[]} mapColBreakdown
    * @param {Planet|null} planet
    * @param {Player|null} defender
    * @param {Player|null} attacker
+   * @param {boolean} isRaidMap - Whether this is the raid map (to determine which struct collection to use)
    */
   constructor(
     gameState,
+    structManager,
     mapColBreakdown,
     planet,
     defender,
-    attacker
+    attacker,
+    isRaidMap = false
   ) {
     super(gameState);
+    this.structManager = structManager;
     this.mapColBreakdown = mapColBreakdown;
     this.dividerIndex = this.mapColBreakdown.lastIndexOf(MAP_COL_DIVIDER);
     this.planet = planet;
     this.defender = defender;
     this.attacker = attacker;
+    this.isRaidMap = isRaidMap;
     this.tileIdCounter = 0;
+    this.structStillBuilder = new StructStillBuilder(this.gameState);
   }
 
   /**
@@ -55,12 +65,46 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * Render the content inside a struct tile (struct image or building indicator)
+   * @param {Struct|null} struct
+   * @return {string}
+   */
+  renderStructContent(struct) {
+    if (!struct) {
+      return '';
+    }
+
+    if (struct.is_building) {
+      // Building state - no content, CSS will show yellow background
+      return '';
+    }
+
+    const structType = this.gameState.structTypes.getStructTypeById(struct.type)
+
+    // Completed struct - render the struct image
+    const structStill = this.structStillBuilder.build(structType.type);
+    return structStill.renderHTML();
+  }
+
+  /**
+   * Get the CSS class for a struct tile based on its state
+   * @param {Struct|null} struct
+   * @return {string}
+   */
+  getStructTileClass(struct) {
+    return (struct && struct.is_building)
+      ? 'map-struct-layer-tile map-struct-layer-tile-building'
+      : 'map-struct-layer-tile';
+  }
+
+  /**
    * @param {string} tileType the tile type. See MAP_TILE_TYPES constant array.
    * @param {string} side the side of the map the tile is on
    * @param {string} playerId the ID of the player that owns the tile or empty if no one does such as a transition tile.
    * @param {string} ambit the ambit the tile is in or empty if it's a transition tile.
    * @param {string|number} slot the planetary or fleet slot number. Empty if it's not a command, planetary, fleet or command tile.
-   * @param {string} structId the ID of the struct occupying the tile or empty if the tile is not occupied.
+   * @param {string} locationType "fleet" or "planet"
+   * @param {string} locationId Fleet ID or Planet ID for struct lookup
    * @return {string}
    */
   renderStructTileHTML(
@@ -69,21 +113,42 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     playerId = "",
     ambit = "",
     slot = "",
-    structId = ""
+    locationType = "",
+    locationId = ""
   ) {
     const tileId = this.generateTileId();
+    
+    // Look up struct at this position
+    let struct = null;
+    if (locationType && locationId && ambit && slot !== "") {
+      const slotNum = typeof slot === 'string' ? parseInt(slot, 10) : slot;
+      if (!isNaN(slotNum)) {
+        struct = this.structManager.getStructByPosition(
+          this.isRaidMap,
+          locationType,
+          locationId,
+          ambit,
+          slot,
+          tileType === MAP_TILE_TYPES.COMMAND
+        );
+      }
+    }
+
+    const tileClass = this.getStructTileClass(struct);
+    const structId = struct ? struct.id : "";
+    const structContent = this.renderStructContent(struct);
+
     return `
       <div
         id="${tileId}"
-        class="map-struct-layer-tile"
+        class="${tileClass}"
         data-tile-type="${tileType}"
         data-side="${side}"
         data-player-id="${playerId}"
         data-ambit="${ambit}"
         data-slot="${slot}"
         data-struct-id="${structId}"
-      >
-      </div>
+      >${structContent}</div>
     `;
   }
 
@@ -179,11 +244,14 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     commandSlotTracker
   ) {
     let playerId = '';
+    let fleetId = '';
 
     if (mapColType === MAP_COL_DEFENDER_COMMAND) {
       playerId = this.defender.id;
+      fleetId = this.defender.fleet_id;
     } else if (mapColType === MAP_COL_ATTACKER_COMMAND) {
       playerId = this.attacker.id;
+      fleetId = this.attacker.fleet_id;
     } else {
       return '';
     }
@@ -199,11 +267,15 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
       ? MAP_TILE_TYPES.COMMAND
       : MAP_TILE_TYPES.COMMAND_BLOCKED;
 
+    // Command structs are always slot 0 in a fleet
     return this.renderStructTileHTML(
       tileType,
       side,
       playerId,
-      ambit
+      ambit,
+      hasAvailableSlot ? 0 : '',
+      'fleet',
+      fleetId
     );
   }
 
@@ -233,7 +305,9 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
       side,
       this.defender.id,
       ambit,
-      slot
+      slot,
+      'planet',
+      this.planet.id
     );
   }
 
@@ -259,7 +333,9 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
       side,
       this.defender.id,
       ambit,
-      slot
+      slot,
+      'fleet',
+      this.defender.fleet_id
     );
   }
 
@@ -285,7 +361,9 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
       side,
       this.attacker.id,
       ambit,
-      slot
+      slot,
+      'fleet',
+      this.attacker.fleet_id
     );
   }
 
@@ -439,4 +517,3 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     return html;
   }
 }
-

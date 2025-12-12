@@ -13,6 +13,23 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class StructController extends AbstractController
 {
     /**
+     * @param string $player_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/struct/player/{player_id}', name: 'api_get_structs_by_player_id', methods: ['GET'])]
+    public function getStructsByPlayerId(
+        string $player_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $structManager = new StructManager($entityManager, $validator);
+        return $structManager->getStructsByPlayerId($player_id);
+    }
+
+    /**
      * @param string $planet_id
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator
