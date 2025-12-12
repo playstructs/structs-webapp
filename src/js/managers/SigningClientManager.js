@@ -77,6 +77,7 @@ import {
 } from "../ts/structs.structs/types/structs/structs/tx";
 import {EVENTS} from "../constants/Events";
 import {FEE} from "../constants/Fee";
+import {AMBIT_ENUM} from "../constants/Ambits";
 
 export class SigningClientManager {
 
@@ -771,13 +772,14 @@ export class SigningClientManager {
    * @param {number} slot
    */
   async queueMsgStructBuildInitiate(creatorAddress, playerId, structTypeId, operatingAmbit, slot) {
+    const ambitNumber = AMBIT_ENUM[operatingAmbit.toUpperCase()];
     this.queue({
       typeUrl: '/structs.structs.MsgStructBuildInitiate',
       value: MsgStructBuildInitiate.fromPartial({
         creator: creatorAddress,
         playerId: playerId,
         structTypeId: structTypeId,
-        operatingAmbit: operatingAmbit,
+        operatingAmbit: ambitNumber,
         slot: slot
       }),
     });
@@ -835,13 +837,14 @@ export class SigningClientManager {
    * @param {number} slot
    */
   async queueMsgStructMove(creatorAddress, structId, locationType, ambit, slot) {
+    const ambitNumber = AMBIT_ENUM[ambit.toUpperCase()];
     this.queue({
       typeUrl: '/structs.structs.MsgStructMove',
       value: MsgStructMove.fromPartial({
         creator: creatorAddress,
         structId: structId,
         locationType: locationType,
-        ambit: ambit,
+        ambit: ambitNumber,
         slot: slot
       }),
     });

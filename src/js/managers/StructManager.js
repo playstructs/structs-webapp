@@ -95,7 +95,7 @@ export class StructManager {
         struct.location_type === locationType
         && struct.location_id === locationId
         && struct.operating_ambit === ambit.toLowerCase()
-        && struct.slot === slot
+        && `${struct.slot}` === `${slot}`
         && this.isCommandStruct(struct) === isCommandSlot
       ) {
         return struct;
