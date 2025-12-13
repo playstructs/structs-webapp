@@ -36,6 +36,7 @@ export class AuthManager {
    * @param {PlayerAddressPendingFactory} playerAddressPendingFactory
    * @param {RaidManager} raidManager
    * @param {MapManager} mapManager
+   * @param {TaskManager} taskManager
    */
   constructor(
     gameState,
@@ -47,7 +48,8 @@ export class AuthManager {
     playerAddressManager,
     playerAddressPendingFactory,
     raidManager,
-    mapManager
+    mapManager,
+    taskManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -59,6 +61,7 @@ export class AuthManager {
     this.playerAddressPendingFactory = playerAddressPendingFactory;
     this.raidManager = raidManager;
     this.mapManager = mapManager;
+    this.taskManager = taskManager;
   }
 
   /**
@@ -101,7 +104,7 @@ export class AuthManager {
     playerCreatedListener.guildAPI = this.guildAPI;
     playerCreatedListener.gameState = this.gameState;
     playerCreatedListener.grassManager = this.grassManager;
-    playerCreatedListener.planetManager = new PlanetManager(this.gameState, this.signingClientManager);
+    playerCreatedListener.planetManager = this.planetManager;
 
     const newPlanetListener = new NewPlanetListener(
       this.gameState,
@@ -217,8 +220,10 @@ export class AuthManager {
 
         await Promise.all([
           this.raidManager.initPlanetRaider(),
-          this.raidManager.initRaidEnemy()
+          this.raidManager.initRaidEnemy(),
         ]);
+
+        await this.taskManager.restoreTasksFromDB();
 
         this.grassManager.registerListener(new PlanetRaidStatusListener(
           this.gameState,

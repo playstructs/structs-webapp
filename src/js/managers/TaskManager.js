@@ -18,11 +18,18 @@ export class TaskManager {
      * @param {GameState} gameState
      * @param {GuildAPI} guildAPI
      * @param {SigningClientManager} signingClientManager
+     * @param {TaskStateFactory} taskStateFactory
      */
-    constructor(gameState, guildAPI, signingClientManager) {
+    constructor(
+      gameState,
+      guildAPI,
+      signingClientManager,
+      taskStateFactory
+    ) {
         this.gameState = gameState;
         this.guildAPI = guildAPI;
         this.signingClientManager = signingClientManager;
+        this.taskStateFactory = taskStateFactory;
 
         this.status = TASK_MANAGER_STATUS.ONLINE;
 
@@ -432,5 +439,25 @@ export class TaskManager {
             total += this.processes[pid].state.getHashrate();
         }
         return total;
+    }
+
+
+    /**
+     * Restores worker tasks for the logged in player from the database.
+     *
+     * @return {Promise<void>}
+     */
+    async restoreTasksFromDB() {
+
+        // Only restore tasks, if the task manager is not already in use.
+        if (Object.keys(this.processes).length || this.running_queue.length || this.waiting_queue.length) {
+            return;
+        }
+
+        const work = await this.guildAPI.getWorkByPlayerId(this.gameState.thisPlayerId);
+        work.forEach((workTask) => {
+            const task = this.taskStateFactory.initTaskFromWork(workTask);
+            this.spawn(task);
+        });
     }
 }

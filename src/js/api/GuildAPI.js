@@ -727,7 +727,7 @@ export class GuildAPI {
 
   /**
    * @param playerId
-   * @return {Promise<Work>}
+   * @return {Promise<Work[]>}
    */
   async getWorkByPlayerId(playerId) {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/work/player/${playerId}`);

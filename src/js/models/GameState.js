@@ -13,7 +13,6 @@ import {StructTypeCollection} from "./StructTypeCollection";
 import {Struct} from "./Struct";
 import {Player} from "./Player";
 import {Fleet} from "./Fleet";
-import {Work} from "./Work";
 
 export class GameState {
 
@@ -105,9 +104,6 @@ export class GameState {
     this.raidEnemyStructs = [];
 
     this.structTypes = new StructTypeCollection();
-
-    /** @type {Work[]} */
-    this.work = [];
 
     /* GRASS Only Data */
     this.currentBlockHeight = 0;
@@ -509,13 +505,6 @@ export class GameState {
    */
   setRaidEnemyStructs(structs) {
     this.raidEnemyStructs = structs;
-  }
-
-  /**
-   * @param {Work[]} work
-   */
-  setAllWork(work) {
-    this.work = work;
   }
 
   clearPlanetRaidData() {

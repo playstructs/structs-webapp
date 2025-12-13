@@ -24,6 +24,8 @@ import {MapManager} from "./managers/MapMananger";
 import {MAP_CONTAINER_IDS} from "./constants/MapConstants";
 import {CheatsheetContentBuilder} from "./builders/CheatsheetContentBuilder";
 import {StructManager} from "./managers/StructManager";
+import {TaskManager} from "./managers/TaskManager";
+import {TaskStateFactory} from "./factories/TaskStateFactory";
 
 
 const gameState = new GameState();
@@ -61,6 +63,11 @@ const mapManager = new MapManager(gameState);
 
 const raidManager = new RaidManager(gameState, guildAPI, grassManager, mapManager);
 
+const taskStateFactory = new TaskStateFactory();
+
+const taskManager = new TaskManager(gameState, guildAPI, signingClientManager, taskStateFactory);
+global.taskManager = taskManager;
+
 const authManager = new AuthManager(
   gameState,
   guildAPI,
@@ -71,7 +78,8 @@ const authManager = new AuthManager(
   playerAddressManager,
   playerAddressPendingFactory,
   raidManager,
-  mapManager
+  mapManager,
+  taskManager
 );
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);

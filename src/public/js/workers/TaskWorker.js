@@ -187,7 +187,24 @@ class TaskStateFactory extends _framework_AbstractFactory__WEBPACK_IMPORTED_MODU
     task_state.postfix = '';
 
     return task_state;
-}
+  }
+
+  /**
+   * @param {Work} work
+   * @return {TaskState}
+   */
+  initTaskFromWork(work) {
+    switch(work.category) {
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.RAID:
+        return this.initRaidTask(work.object_id, work.target_id, work.block_start, work.difficulty_target);
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.BUILD:
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.MINE:
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.REFINE:
+        return this.initStructTask(work.object_id, work.category, work.block_start, work.difficulty_target);
+      default:
+        throw new Error(`Unknown task type: ${work.category}`);
+    }
+  }
 
 
 }
