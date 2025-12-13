@@ -19,6 +19,7 @@ import {PlanetRaidFactory} from "../factories/PlanetRaidFactory";
 import {StructTypeFactory} from "../factories/StructTypeFactory";
 import {StructFactory} from "../factories/StructFactory";
 import {FleetFactory} from "../factories/FleetFactory";
+import {WorkFactory} from "../factories/WorkFactory";
 
 export class GuildAPI {
 
@@ -41,6 +42,7 @@ export class GuildAPI {
     this.structTypeFactory = new StructTypeFactory();
     this.structFactory = new StructFactory();
     this.fleetFactory = new FleetFactory();
+    this.workFactory = new WorkFactory();
   }
 
   /**
@@ -721,5 +723,16 @@ export class GuildAPI {
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.fleetFactory.make(response.data);
+  }
+
+  /**
+   * @param playerId
+   * @return {Promise<Work>}
+   */
+  async getWorkByPlayerId(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/work/player/${playerId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.workFactory.parseList(response.data);
   }
 }
