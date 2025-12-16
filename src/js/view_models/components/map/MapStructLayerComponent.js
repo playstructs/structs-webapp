@@ -5,6 +5,9 @@ import {
   MAP_TILE_ROWS_PER_AMBIT, MAP_TILE_TYPES,
   MAP_DEFAULT_COMMAND_COL_COUNT
 } from "../../../constants/MapConstants";
+import {EVENTS} from "../../../constants/Events";
+import {RenderAllStructsEvent} from "../../../events/RenderAllStructsEvent";
+import {RenderStructEvent} from "../../../events/RenderStructEvent";
 import {StructStillBuilder} from "../../../builders/StructStillBuilder";
 import {Player} from "../../../models/Player";
 import {Struct} from "../../../models/Struct";
@@ -20,6 +23,7 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
    * @param {Player|null} defender
    * @param {Player|null} attacker
    * @param {boolean} isRaidMap - Whether this is the raid map (to determine which struct collection to use)
+   * @param {string} containerId - The ID of the DOM container element for this struct layer
    */
   constructor(
     gameState,
@@ -28,7 +32,8 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     planet,
     defender,
     attacker,
-    isRaidMap = false
+    isRaidMap = false,
+    containerId = ""
   ) {
     super(gameState);
     this.structManager = structManager;
@@ -38,6 +43,7 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     this.defender = defender;
     this.attacker = attacker;
     this.isRaidMap = isRaidMap;
+    this.containerId = containerId;
     this.tileIdCounter = 0;
     this.structStillBuilder = new StructStillBuilder(this.gameState);
   }
@@ -98,13 +104,119 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * Update a tile element's struct content, class, and data-struct-id attribute
+   * @param {HTMLElement} tileElement
+   * @param {Struct|null} struct
+   */
+  updateTileStructContent(tileElement, struct) {
+    tileElement.innerHTML = this.renderStructContent(struct);
+    tileElement.className = this.getStructTileClass(struct);
+    tileElement.setAttribute('data-struct-id', struct ? struct.id : '');
+  }
+
+  /**
+   * Find and update a single struct tile by position
+   * @param {Struct} struct
+   */
+  renderStruct(struct) {
+
+    // Determine tile type based on struct location
+    let tileType;
+    let playerId = '';
+
+    if (struct.location_type === 'planet') {
+      tileType = MAP_TILE_TYPES.PLANETARY_SLOT;
+      // Planetary tiles always use defender's player ID
+      playerId = this.defender.id;
+    } else if (struct.location_type === 'fleet') {
+      // Check if this is a command struct
+      const isCommand = this.structManager.isCommandStruct(struct);
+      if (isCommand) {
+        tileType = MAP_TILE_TYPES.COMMAND;
+      } else {
+        tileType = MAP_TILE_TYPES.FLEET;
+      }
+      // Determine player ID based on which fleet this struct is in
+      if (struct.location_id === this.defender.fleet_id) {
+        playerId = this.defender.id;
+      } else if (struct.location_id === this.attacker.fleet_id) {
+        playerId = this.attacker.id;
+      }
+    }
+
+    // Convert ambit to uppercase to match data-ambit attribute (tiles use uppercase, structs use lowercase)
+    const ambit = struct.operating_ambit ? struct.operating_ambit.toUpperCase() : '';
+    const slot = struct.slot;
+
+    // Find matching tile by querying with data attributes
+    // We need to match: tile type, ambit, slot, and player ID
+    const selector = `.map-struct-layer-tile[data-tile-type="${tileType}"][data-ambit="${ambit}"][data-slot="${slot}"][data-player-id="${playerId}"]`;
+    const container = document.getElementById(this.containerId);
+    const tileElement = container.querySelector(selector);
+    this.updateTileStructContent(tileElement, struct);
+  }
+
+  /**
+   * Sync all struct tiles in the container by looking up structs for each tile
+   */
+  renderAllStructs() {
+    const container = document.getElementById(this.containerId);
+    const tiles = container.querySelectorAll('.map-struct-layer-tile');
+    
+    tiles.forEach(tileElement => {
+      const tileType = tileElement.getAttribute('data-tile-type');
+      const ambit = tileElement.getAttribute('data-ambit');
+      const slot = tileElement.getAttribute('data-slot');
+      const playerId = tileElement.getAttribute('data-player-id');
+
+      // Skip tiles that don't have position data (transition tiles, divider tiles, etc.)
+      if (!tileType || !ambit || slot === '' || !playerId) {
+        return;
+      }
+
+      // Determine location type and ID based on tile type
+      let locationType = '';
+      let locationId = '';
+      let isCommandSlot = false;
+
+      if (tileType === MAP_TILE_TYPES.PLANETARY_SLOT) {
+        locationType = 'planet';
+        locationId = this.planet.id;
+      } else if (tileType === MAP_TILE_TYPES.COMMAND || tileType === MAP_TILE_TYPES.FLEET) {
+        locationType = 'fleet';
+        isCommandSlot = (tileType === MAP_TILE_TYPES.COMMAND);
+        
+        // Determine fleet ID based on player ID
+        if (this.defender && playerId === this.defender.id) {
+          locationId = this.defender.fleet_id;
+        } else if (this.attacker && playerId === this.attacker.id) {
+          locationId = this.attacker.fleet_id;
+        }
+      }
+
+      // Look up struct at this position
+      const slotNum = parseInt(slot, 10);
+
+      const struct = this.structManager.getStructByPosition(
+        this.isRaidMap,
+        locationType,
+        locationId,
+        ambit,
+        slotNum,
+        isCommandSlot
+      );
+
+      // Update tile with struct (or null if no struct)
+      this.updateTileStructContent(tileElement, struct);
+    });
+  }
+
+  /**
    * @param {string} tileType the tile type. See MAP_TILE_TYPES constant array.
    * @param {string} side the side of the map the tile is on
    * @param {string} playerId the ID of the player that owns the tile or empty if no one does such as a transition tile.
    * @param {string} ambit the ambit the tile is in or empty if it's a transition tile.
    * @param {string|number} slot the planetary or fleet slot number. Empty if it's not a command, planetary, fleet or command tile.
-   * @param {string} locationType "fleet" or "planet"
-   * @param {string} locationId Fleet ID or Planet ID for struct lookup
    * @return {string}
    */
   renderStructTileHTML(
@@ -112,43 +224,20 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     side = "",
     playerId = "",
     ambit = "",
-    slot = "",
-    locationType = "",
-    locationId = ""
+    slot = ""
   ) {
     const tileId = this.generateTileId();
-    
-    // Look up struct at this position
-    let struct = null;
-    if (locationType && locationId && ambit && slot !== "") {
-      const slotNum = typeof slot === 'string' ? parseInt(slot, 10) : slot;
-      if (!isNaN(slotNum)) {
-        struct = this.structManager.getStructByPosition(
-          this.isRaidMap,
-          locationType,
-          locationId,
-          ambit,
-          slot,
-          tileType === MAP_TILE_TYPES.COMMAND
-        );
-      }
-    }
-
-    const tileClass = this.getStructTileClass(struct);
-    const structId = struct ? struct.id : "";
-    const structContent = this.renderStructContent(struct);
 
     return `
       <div
         id="${tileId}"
-        class="${tileClass}"
+        class="map-struct-layer-tile"
         data-tile-type="${tileType}"
         data-side="${side}"
         data-player-id="${playerId}"
         data-ambit="${ambit}"
         data-slot="${slot}"
-        data-struct-id="${structId}"
-      >${structContent}</div>
+      ></div>
     `;
   }
 
@@ -244,14 +333,11 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     commandSlotTracker
   ) {
     let playerId = '';
-    let fleetId = '';
 
     if (mapColType === MAP_COL_DEFENDER_COMMAND) {
       playerId = this.defender.id;
-      fleetId = this.defender.fleet_id;
     } else if (mapColType === MAP_COL_ATTACKER_COMMAND) {
       playerId = this.attacker.id;
-      fleetId = this.attacker.fleet_id;
     } else {
       return '';
     }
@@ -273,9 +359,7 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
       side,
       playerId,
       ambit,
-      hasAvailableSlot ? 0 : '',
-      'fleet',
-      fleetId
+      hasAvailableSlot ? 0 : ''
     );
   }
 
@@ -305,9 +389,7 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
       side,
       this.defender.id,
       ambit,
-      slot,
-      'planet',
-      this.planet.id
+      slot
     );
   }
 
@@ -333,9 +415,7 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
       side,
       this.defender.id,
       ambit,
-      slot,
-      'fleet',
-      this.defender.fleet_id
+      slot
     );
   }
 
@@ -361,9 +441,7 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
       side,
       this.attacker.id,
       ambit,
-      slot,
-      'fleet',
-      this.attacker.fleet_id
+      slot
     );
   }
 
@@ -444,6 +522,28 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     }
 
     return (slotNumber >= totalSlots) ? '' : `${slotNumber}`;
+  }
+
+  /**
+   * Initialize page code: populate structs and set up event listeners
+   */
+  initPageCode() {
+    // Populate initial structs
+    this.renderAllStructs();
+
+    // Listen for RENDER_ALL_STRUCTS events
+    window.addEventListener(EVENTS.RENDER_ALL_STRUCTS, (event) => {
+      if (event instanceof RenderAllStructsEvent && event.containerId === this.containerId) {
+        this.renderAllStructs();
+      }
+    });
+
+    // Listen for RENDER_STRUCT events
+    window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
+      if (event instanceof RenderStructEvent && event.containerId === this.containerId) {
+        this.renderStruct(event.struct);
+      }
+    });
   }
 
   /**

@@ -191,7 +191,8 @@ export class MapComponent extends AbstractViewModelComponent {
       this.planet,
       this.defender,
       this.attacker,
-      isRaidMap
+      isRaidMap,
+      this.structLayerId
     );
 
     this.mapTileSelection = new MapTileSelectionComponent(
@@ -244,5 +245,7 @@ export class MapComponent extends AbstractViewModelComponent {
 
     document.getElementById(this.tileSelectionId).innerHTML = this.mapTileSelection.renderHTML();
     this.mapTileSelection.initPageCode();
+    
+    this.mapStructLayer.initPageCode();
   }
 }
