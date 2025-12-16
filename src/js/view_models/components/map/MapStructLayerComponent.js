@@ -115,44 +115,125 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * Determine tile type from struct location and type
+   * @param {Struct} struct
+   * @return {string}
+   */
+  getTileTypeFromStruct(struct) {
+    if (struct.location_type === 'planet') {
+      return MAP_TILE_TYPES.PLANETARY_SLOT;
+    }
+    if (struct.location_type === 'fleet') {
+      return this.structManager.isCommandStruct(struct)
+        ? MAP_TILE_TYPES.COMMAND
+        : MAP_TILE_TYPES.FLEET;
+    }
+    return null;
+  }
+
+  /**
+   * Build CSS selector for finding a struct tile
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @return {string}
+   */
+  buildTileSelector(tileType, ambit, slot, playerId) {
+    return `.map-struct-layer-tile[data-tile-type="${tileType}"][data-ambit="${ambit}"][data-slot="${slot}"][data-player-id="${playerId}"]`;
+  }
+
+  /**
    * Find and update a single struct tile by position
    * @param {Struct} struct
    */
   renderStruct(struct) {
-
-    // Determine tile type based on struct location
-    let tileType;
-    let playerId = '';
-
-    if (struct.location_type === 'planet') {
-      tileType = MAP_TILE_TYPES.PLANETARY_SLOT;
-      // Planetary tiles always use defender's player ID
-      playerId = this.defender.id;
-    } else if (struct.location_type === 'fleet') {
-      // Check if this is a command struct
-      const isCommand = this.structManager.isCommandStruct(struct);
-      if (isCommand) {
-        tileType = MAP_TILE_TYPES.COMMAND;
-      } else {
-        tileType = MAP_TILE_TYPES.FLEET;
-      }
-      // Determine player ID based on which fleet this struct is in
-      if (struct.location_id === this.defender.fleet_id) {
-        playerId = this.defender.id;
-      } else if (struct.location_id === this.attacker.fleet_id) {
-        playerId = this.attacker.id;
-      }
+    const tileType = this.getTileTypeFromStruct(struct);
+    if (!tileType) {
+      return;
     }
 
-    // Convert ambit to uppercase to match data-ambit attribute (tiles use uppercase, structs use lowercase)
     const ambit = struct.operating_ambit ? struct.operating_ambit.toUpperCase() : '';
-    const slot = struct.slot;
-
-    // Find matching tile by querying with data attributes
-    // We need to match: tile type, ambit, slot, and player ID
-    const selector = `.map-struct-layer-tile[data-tile-type="${tileType}"][data-ambit="${ambit}"][data-slot="${slot}"][data-player-id="${playerId}"]`;
+    const selector = this.buildTileSelector(tileType, ambit, struct.slot, struct.owner);
     const container = document.getElementById(this.containerId);
     const tileElement = container.querySelector(selector);
+    this.updateTileStructContent(tileElement, struct);
+  }
+
+  /**
+   * Check if tile has required position data attributes
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {string} slot
+   * @param {string} playerId
+   * @return {boolean}
+   */
+  hasTilePositionData(tileType, ambit, slot, playerId) {
+    return !!(tileType && ambit && slot !== '' && playerId);
+  }
+
+  /**
+   * Get location info for a tile based on its type and player
+   * @param {string} tileType
+   * @param {string} playerId
+   * @return {{locationType: string, locationId: string, isCommandSlot: boolean}|null}
+   */
+  getLocationInfoFromTile(tileType, playerId) {
+    if (tileType === MAP_TILE_TYPES.PLANETARY_SLOT) {
+      return {
+        locationType: 'planet',
+        locationId: this.planet.id,
+        isCommandSlot: false
+      };
+    }
+
+    if (tileType === MAP_TILE_TYPES.COMMAND || tileType === MAP_TILE_TYPES.FLEET) {
+      let locationId = null;
+      if (this.defender && playerId === this.defender.id) {
+        locationId = this.defender.fleet_id;
+      } else if (this.attacker && playerId === this.attacker.id) {
+        locationId = this.attacker.fleet_id;
+      }
+
+      return {
+        locationType: 'fleet',
+        locationId: locationId,
+        isCommandSlot: (tileType === MAP_TILE_TYPES.COMMAND)
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Update a single tile with struct data
+   * @param {HTMLElement} tileElement
+   */
+  updateTileWithStruct(tileElement) {
+    const tileType = tileElement.getAttribute('data-tile-type');
+    const ambit = tileElement.getAttribute('data-ambit');
+    const slot = tileElement.getAttribute('data-slot');
+    const playerId = tileElement.getAttribute('data-player-id');
+
+    if (!this.hasTilePositionData(tileType, ambit, slot, playerId)) {
+      return;
+    }
+
+    const locationInfo = this.getLocationInfoFromTile(tileType, playerId);
+    if (!locationInfo) {
+      return;
+    }
+
+    const slotNum = parseInt(slot, 10);
+    const struct = this.structManager.getStructByPosition(
+      this.isRaidMap,
+      locationInfo.locationType,
+      locationInfo.locationId,
+      ambit,
+      slotNum,
+      locationInfo.isCommandSlot
+    );
+
     this.updateTileStructContent(tileElement, struct);
   }
 
@@ -162,53 +243,7 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
   renderAllStructs() {
     const container = document.getElementById(this.containerId);
     const tiles = container.querySelectorAll('.map-struct-layer-tile');
-    
-    tiles.forEach(tileElement => {
-      const tileType = tileElement.getAttribute('data-tile-type');
-      const ambit = tileElement.getAttribute('data-ambit');
-      const slot = tileElement.getAttribute('data-slot');
-      const playerId = tileElement.getAttribute('data-player-id');
-
-      // Skip tiles that don't have position data (transition tiles, divider tiles, etc.)
-      if (!tileType || !ambit || slot === '' || !playerId) {
-        return;
-      }
-
-      // Determine location type and ID based on tile type
-      let locationType = '';
-      let locationId = '';
-      let isCommandSlot = false;
-
-      if (tileType === MAP_TILE_TYPES.PLANETARY_SLOT) {
-        locationType = 'planet';
-        locationId = this.planet.id;
-      } else if (tileType === MAP_TILE_TYPES.COMMAND || tileType === MAP_TILE_TYPES.FLEET) {
-        locationType = 'fleet';
-        isCommandSlot = (tileType === MAP_TILE_TYPES.COMMAND);
-        
-        // Determine fleet ID based on player ID
-        if (this.defender && playerId === this.defender.id) {
-          locationId = this.defender.fleet_id;
-        } else if (this.attacker && playerId === this.attacker.id) {
-          locationId = this.attacker.fleet_id;
-        }
-      }
-
-      // Look up struct at this position
-      const slotNum = parseInt(slot, 10);
-
-      const struct = this.structManager.getStructByPosition(
-        this.isRaidMap,
-        locationType,
-        locationId,
-        ambit,
-        slotNum,
-        isCommandSlot
-      );
-
-      // Update tile with struct (or null if no struct)
-      this.updateTileStructContent(tileElement, struct);
-    });
+    tiles.forEach(tileElement => this.updateTileWithStruct(tileElement));
   }
 
   /**
