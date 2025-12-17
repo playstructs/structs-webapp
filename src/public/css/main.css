@@ -515,10 +515,6 @@ a.sui-text-secondary:hover {
   transform: scaleX(-1);
 }
 
-.map-struct-layer-tile-building {
-  background: rgba(255, 255, 0, 0.25);
-}
-
 .map-tile-selection {
   position: absolute;
   top: 0;
@@ -1918,7 +1914,8 @@ a.offcanvas-struct-container.sui-mod-disabled {
   opacity: 0.5;
 }
 
-.struct-still {
+.struct-still,
+.deployment-indicator {
   position: relative;
   display: flex;
   max-width: 100%;
@@ -1933,7 +1930,8 @@ a.offcanvas-struct-container.sui-mod-disabled {
   justify-content: center;
 }
 
-.struct-still img {
+.struct-still img,
+.deployment-indicator img {
   position: absolute;
   z-index: var(--struct-middle-z-index);
   max-width: 100%;

@@ -45,6 +45,17 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * @return {string}
+   */
+  renderDeploymentIndicator() {
+    return `
+      <div class="deployment-indicator">
+        <img src="/img/structs/deployment-indicator/deployment-indicator.gif" alt="Deployment Indicator">
+      </div>
+    `;
+  }
+
+  /**
    * Render the content inside a struct tile (struct image or building indicator)
    * @param {Struct|null} struct
    * @return {string}
@@ -55,8 +66,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     }
 
     if (struct.is_building) {
-      // Building state - no content, CSS will show yellow background
-      return '';
+      return this.renderDeploymentIndicator();
     }
 
     const structType = this.gameState.structTypes.getStructTypeById(struct.type)
@@ -64,19 +74,6 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     // Completed struct - render the struct image
     const structStill = this.structStillBuilder.build(structType.type);
     return structStill.renderHTML();
-  }
-
-  /**
-   * Update a tile element's struct content, class, and data-struct-id attribute
-   * @param {HTMLElement} tileElement
-   * @param {Struct|null} struct
-   */
-  updateTileStructContent(tileElement, struct) {
-    tileElement.innerHTML = this.renderStructContent(struct);
-
-    if (struct && struct.is_building) {
-      tileElement.classList.add('map-struct-layer-tile-building');
-    }
   }
 
   /**
@@ -122,7 +119,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     const selector = this.buildTileSelector(tileType, ambit, struct.slot, struct.owner);
     const container = document.getElementById(this.containerId);
     const tileElement = container.querySelector(selector);
-    this.updateTileStructContent(tileElement, struct);
+    tileElement.innerHTML = this.renderStructContent(struct);
   }
 
   /**
@@ -199,7 +196,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
       locationInfo.isCommandSlot
     );
 
-    this.updateTileStructContent(tileElement, struct);
+    tileElement.innerHTML = this.renderStructContent(struct);
   }
 
   /**
