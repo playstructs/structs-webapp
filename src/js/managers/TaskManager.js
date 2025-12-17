@@ -236,7 +236,9 @@ export class TaskManager {
      * @param {string} pid
      */
     terminate(pid) {
-        if (this.processes[pid]){
+        const running_index = this.running_queue.indexOf(pid);
+        const waiting_index = this.waiting_queue.indexOf(pid);
+        if ((running_index !== -1) || (waiting_index !== -1)) {
             this.processes[pid].terminate();
 
             this.runningQueueRemove(pid);
