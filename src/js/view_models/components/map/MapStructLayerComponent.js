@@ -42,16 +42,7 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     this.attacker = attacker;
     this.isRaidMap = isRaidMap;
     this.containerId = containerId;
-    this.tileIdCounter = 0;
     this.structStillBuilder = new StructStillBuilder(this.gameState);
-  }
-
-  /**
-   * Generates a unique tile ID
-   * @return {string}
-   */
-  generateTileId() {
-    return `map-struct-tile-${this.tileIdCounter++}`;
   }
 
   /**
@@ -109,7 +100,6 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
   updateTileStructContent(tileElement, struct) {
     tileElement.innerHTML = this.renderStructContent(struct);
     tileElement.className = this.getStructTileClass(struct);
-    tileElement.setAttribute('data-struct-id', struct ? struct.id : '');
   }
 
   /**
@@ -259,11 +249,8 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     ambit = "",
     slot = ""
   ) {
-    const tileId = this.generateTileId();
-
     return `
       <div
-        id="${tileId}"
         class="map-struct-layer-tile"
         data-tile-type="${tileType}"
         data-side="${side}"
@@ -587,9 +574,6 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
     let previousAmbit = '';
 
     const planetAmbits = this.planet.getAmbits();
-
-    // Reset tile ID counter for each render
-    this.tileIdCounter = 0;
 
     for (let a = 0; a < planetAmbits.length; a++) {
 
