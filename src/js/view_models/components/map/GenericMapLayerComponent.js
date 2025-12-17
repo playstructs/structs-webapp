@@ -88,17 +88,16 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
     }
 
     const mapColTypeLastIndex = this.mapColBreakdown.lastIndexOf(mapColType);
-    const dividerIndex = this.mapColBreakdown.lastIndexOf(MAP_COL_DIVIDER);
     const attackerSide = (this.mapColBreakdown[0] === MAP_COL_ATTACKER_COMMAND) ? 'LEFT' : 'RIGHT';
 
-    if (dividerIndex === -1 || mapColTypeLastIndex === -1) {
+    if (this.dividerIndex === -1 || mapColTypeLastIndex === -1) {
       throw new Error('Divider or map col type not found');
     }
 
     if (
       mapColType === MAP_COL_DIVIDER
-      || (attackerSide === 'RIGHT' && dividerIndex < mapColTypeLastIndex)
-      || (attackerSide === 'LEFT' && mapColTypeLastIndex < dividerIndex)
+      || (attackerSide === 'RIGHT' && this.dividerIndex < mapColTypeLastIndex)
+      || (attackerSide === 'LEFT' && mapColTypeLastIndex < this.dividerIndex)
     ) {
       return this.renderTileHTML(
         MAP_TILE_TYPES.FOG_OF_WAR,
@@ -241,49 +240,19 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
    * @param {string} slot
    * @return {string}
    */
-  renderDefenderFleetTileHTML(
+  renderFleetTileHTML(
     mapColType,
     side,
     ambit,
     slot
   ) {
-    if (mapColType !== MAP_COL_DEFENDER_FLEET) {
-      return '';
+    if (mapColType === MAP_COL_DEFENDER_FLEET) {
+      return this.renderTileHTML(MAP_TILE_TYPES.FLEET, side, this.defender.id, ambit, slot);
     }
-
-    return this.renderTileHTML(
-      MAP_TILE_TYPES.FLEET,
-      side,
-      this.defender.id,
-      ambit,
-      slot
-    );
-  }
-
-  /**
-   * @param {string} mapColType
-   * @param {string} side
-   * @param {string} ambit
-   * @param {string} slot
-   * @return {string}
-   */
-  renderAttackerFleetTileHTML(
-    mapColType,
-    side,
-    ambit,
-    slot
-  ) {
-    if (mapColType !== MAP_COL_ATTACKER_FLEET) {
-      return '';
+    if (mapColType === MAP_COL_ATTACKER_FLEET) {
+      return this.renderTileHTML(MAP_TILE_TYPES.FLEET, side, this.attacker.id, ambit, slot);
     }
-
-    return this.renderTileHTML(
-      MAP_TILE_TYPES.FLEET,
-      side,
-      this.attacker.id,
-      ambit,
-      slot
-    );
+    return '';
   }
 
   /**
@@ -312,27 +281,11 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
    * @return {{first: null|number, last: null|number}}
    */
   findFirstAndLastOccurrencesOfColType(targetColType) {
-    let firstOccurrence = null;
-    let lastOccurrence = null;
-
-    for(let i = 0; i < this.mapColBreakdown.length; i++) {
-
-      if (this.mapColBreakdown[i] !== targetColType) {
-        continue;
-      }
-
-      if (firstOccurrence === null) {
-        firstOccurrence = i;
-      }
-
-      lastOccurrence = i;
-    }
-
+    const first = this.mapColBreakdown.indexOf(targetColType);
     return {
-      first: firstOccurrence,
-      last: lastOccurrence
-    }
-
+      first: first === -1 ? null : first,
+      last: first === -1 ? null : this.mapColBreakdown.lastIndexOf(targetColType)
+    };
   }
 
   /**
@@ -402,17 +355,11 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
               currentAmbit,
               this.calcSlotNumber(MAP_COL_DEFENDER_PLANETARY, r, c, numPlanetarySlots)
             )
-            || this.renderDefenderFleetTileHTML(
+            || this.renderFleetTileHTML(
               mapColType,
               side,
               currentAmbit,
-              this.calcSlotNumber(MAP_COL_DEFENDER_FLEET, r, c, totalFleetSlotsPerAmbitPerPlayer)
-            )
-            || this.renderAttackerFleetTileHTML(
-              mapColType,
-              side,
-              currentAmbit,
-              this.calcSlotNumber(MAP_COL_ATTACKER_FLEET, r, c, totalFleetSlotsPerAmbitPerPlayer)
+              this.calcSlotNumber(mapColType, r, c, totalFleetSlotsPerAmbitPerPlayer)
             )
             || this.renderDividerTileHTML(mapColType, currentAmbit)
           ;
