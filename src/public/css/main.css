@@ -511,6 +511,10 @@ a.sui-text-secondary:hover {
   justify-content: center;
 }
 
+.map-struct-layer-tile.mod-side-right {
+  transform: scaleX(-1);
+}
+
 .map-struct-layer-tile-building {
   background: rgba(255, 255, 0, 0.25);
 }

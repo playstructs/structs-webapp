@@ -67,24 +67,16 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
-   * Get the CSS class for a struct tile based on its state
-   * @param {Struct|null} struct
-   * @return {string}
-   */
-  getStructTileClass(struct) {
-    return (struct && struct.is_building)
-      ? `${this.tileClass} map-struct-layer-tile-building`
-      : this.tileClass;
-  }
-
-  /**
    * Update a tile element's struct content, class, and data-struct-id attribute
    * @param {HTMLElement} tileElement
    * @param {Struct|null} struct
    */
   updateTileStructContent(tileElement, struct) {
     tileElement.innerHTML = this.renderStructContent(struct);
-    tileElement.className = this.getStructTileClass(struct);
+
+    if (struct && struct.is_building) {
+      tileElement.classList.add('map-struct-layer-tile-building');
+    }
   }
 
   /**

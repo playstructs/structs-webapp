@@ -72,7 +72,7 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
   ) {
     return `
       <div
-        class="${this.tileClass}"
+        class="${this.tileClass} mod-side-${side}"
         data-tile-type="${tileType}"
         data-side="${side}"
         data-player-id="${playerId}"
