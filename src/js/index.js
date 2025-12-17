@@ -79,7 +79,8 @@ const authManager = new AuthManager(
   playerAddressPendingFactory,
   raidManager,
   mapManager,
-  taskManager
+  taskManager,
+  structManager
 );
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);

@@ -735,4 +735,15 @@ export class GuildAPI {
     this.handleResponseFailure(response);
     return this.workFactory.parseList(response.data);
   }
+
+  /**
+   * @param {string} structId
+   * @return {Promise<Struct>}
+   */
+  async getStruct(structId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/${structId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.structFactory.make(response.data);
+  }
 }

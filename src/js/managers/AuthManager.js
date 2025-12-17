@@ -37,6 +37,7 @@ export class AuthManager {
    * @param {RaidManager} raidManager
    * @param {MapManager} mapManager
    * @param {TaskManager} taskManager
+   * @param {StructManager} structManager
    */
   constructor(
     gameState,
@@ -49,7 +50,8 @@ export class AuthManager {
     playerAddressPendingFactory,
     raidManager,
     mapManager,
-    taskManager
+    taskManager,
+    structManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -62,6 +64,7 @@ export class AuthManager {
     this.raidManager = raidManager;
     this.mapManager = mapManager;
     this.taskManager = taskManager;
+    this.structManager = structManager;
   }
 
   /**
@@ -172,7 +175,7 @@ export class AuthManager {
       this.grassManager.registerListener(new AlphaChangeListener(this.gameState, this.guildAPI));
 
       // Task related listeners
-      this.grassManager.registerListener(new StructBuildStatusListener(this.gameState));
+      this.grassManager.registerListener(new StructBuildStatusListener(this.gameState, this.guildAPI, this.structManager));
       this.grassManager.registerListener(new StructMineStatusListener(this.gameState));
       this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 

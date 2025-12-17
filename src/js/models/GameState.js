@@ -507,6 +507,60 @@ export class GameState {
     this.raidEnemyStructs = structs;
   }
 
+  /**
+   * @param {Struct} struct
+   */
+  setThisPlayerStruct(struct) {
+    const existingIndex = this.thisPlayerStructs.findIndex(s => s.id === struct.id);
+    if (existingIndex !== -1) {
+      this.thisPlayerStructs[existingIndex] = struct;
+    } else {
+      this.thisPlayerStructs.push(struct);
+    }
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  setPlanetRaiderStruct(struct) {
+    const existingIndex = this.planetRaiderStructs.findIndex(s => s.id === struct.id);
+    if (existingIndex !== -1) {
+      this.planetRaiderStructs[existingIndex] = struct;
+    } else {
+      this.planetRaiderStructs.push(struct);
+    }
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  setRaidEnemyStruct(struct) {
+    const existingIndex = this.raidEnemyStructs.findIndex(s => s.id === struct.id);
+    if (existingIndex !== -1) {
+      this.raidEnemyStructs[existingIndex] = struct;
+    } else {
+      this.raidEnemyStructs.push(struct);
+    }
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  setStruct(struct) {
+    const playerType = this.getPlayerTypeById(struct.owner);
+    switch (playerType) {
+      case PLAYER_TYPES.PLAYER:
+        this.setThisPlayerStruct(struct);
+        break;
+      case PLAYER_TYPES.PLANET_RAIDER:
+        this.setPlanetRaiderStruct(struct);
+        break;
+      case PLAYER_TYPES.RAID_ENEMY:
+        this.setRaidEnemyStruct(struct);
+        break;
+    }
+  }
+
   clearPlanetRaidData() {
     this.planetPlanetRaidInfo = new PlanetRaid();
     this.planetRaider = null;

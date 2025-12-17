@@ -6,8 +6,6 @@ import {
   MAP_DEFAULT_COMMAND_COL_COUNT
 } from "../../../constants/MapConstants";
 import {EVENTS} from "../../../constants/Events";
-import {RenderAllStructsEvent} from "../../../events/RenderAllStructsEvent";
-import {RenderStructEvent} from "../../../events/RenderStructEvent";
 import {StructStillBuilder} from "../../../builders/StructStillBuilder";
 import {Player} from "../../../models/Player";
 import {Struct} from "../../../models/Struct";
@@ -568,14 +566,14 @@ export class MapStructLayerComponent extends AbstractViewModelComponent {
 
     // Listen for RENDER_ALL_STRUCTS events
     window.addEventListener(EVENTS.RENDER_ALL_STRUCTS, (event) => {
-      if (event instanceof RenderAllStructsEvent && event.containerId === this.containerId) {
+      if (event.containerId === this.containerId) {
         this.renderAllStructs();
       }
     });
 
     // Listen for RENDER_STRUCT events
     window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
-      if (event instanceof RenderStructEvent && event.containerId === this.containerId) {
+      if (event.containerId === this.containerId) {
         this.renderStruct(event.struct);
       }
     });
