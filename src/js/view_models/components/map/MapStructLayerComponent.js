@@ -47,12 +47,26 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   /**
    * @return {string}
    */
-  renderDeploymentIndicator() {
+  renderDeploymentIndicatorHTML() {
     return `
       <div class="deployment-indicator">
         <img src="/img/structs/deployment-indicator/deployment-indicator.gif" alt="Deployment Indicator">
       </div>
     `;
+  }
+
+  /**
+   * Render the deployment indicator over a particular tile.
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   */
+  renderDeploymentIndicator(tileType, ambit, slot, playerId) {
+    const selector = this.buildTileSelector(tileType, ambit, slot, playerId);
+    const container = document.getElementById(this.containerId);
+    const tileElement = container.querySelector(selector);
+    tileElement.innerHTML = this.renderDeploymentIndicatorHTML();
   }
 
   /**
@@ -66,7 +80,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     }
 
     if (struct.is_building) {
-      return this.renderDeploymentIndicator();
+      return this.renderDeploymentIndicatorHTML();
     }
 
     const structType = this.gameState.structTypes.getStructTypeById(struct.type)
@@ -226,6 +240,12 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
       if (event.containerId === this.containerId) {
         this.renderStruct(event.struct);
+      }
+    });
+
+    window.addEventListener(EVENTS.RENDER_DEPLOYMENT_INDICATOR, (event) => {
+      if (event.containerId === this.containerId) {
+        this.renderDeploymentIndicator(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });
   }

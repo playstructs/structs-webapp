@@ -1,6 +1,9 @@
 import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelComponent";
 import {MenuPage} from "../../../framework/MenuPage";
 import {StructStillBuilder} from "../../../builders/StructStillBuilder";
+import {MAP_TILE_TYPES} from "../../../constants/MapConstants";
+import {StructType} from "../../../models/StructType";
+import {RenderDeploymentIndicatorEvent} from "../../../events/RenderDeploymentIndicatorEvent";
 
 export class DeployOffcanvas extends AbstractViewModelComponent {
 
@@ -41,6 +44,23 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
     return `${this.idPrefix}${name}`;
   }
 
+  /**
+   * @param {StructType} structType
+   */
+  getTileTypeByStructType(structType) {
+    if (structType.category === 'planet') {
+      return MAP_TILE_TYPES.PLANETARY_SLOT;
+    } else if (structType.category === 'fleet') {
+      if (structType.is_command) {
+        return MAP_TILE_TYPES.COMMAND
+      } else {
+        return MAP_TILE_TYPES.FLEET
+      }
+    }
+
+    throw new Error(`Unknown struct type category: ${structType.category}`);
+  }
+
   initPageCode() {
     this.deployableStructTypes.forEach(structType => {
       document.getElementById(this.createLinkId(structType)).addEventListener('click', () => {
@@ -55,6 +75,14 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
         ).then();
 
         MenuPage.sui.offcanvas.close();
+
+        window.dispatchEvent(new RenderDeploymentIndicatorEvent(
+          this.gameState.alphaBaseMap.structLayerId,
+          this.getTileTypeByStructType(structType),
+          this.ambit,
+          this.slot,
+          this.gameState.thisPlayerId
+        ));
       });
     });
   }
