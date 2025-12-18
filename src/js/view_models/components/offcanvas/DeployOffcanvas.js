@@ -4,6 +4,7 @@ import {StructStillBuilder} from "../../../builders/StructStillBuilder";
 import {MAP_TILE_TYPES} from "../../../constants/MapConstants";
 import {StructType} from "../../../models/StructType";
 import {RenderDeploymentIndicatorEvent} from "../../../events/RenderDeploymentIndicatorEvent";
+import {SUICheatsheet} from "../../../sui/SUICheatsheet";
 
 export class DeployOffcanvas extends AbstractViewModelComponent {
 
@@ -63,7 +64,25 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
 
   initPageCode() {
     this.deployableStructTypes.forEach(structType => {
-      document.getElementById(this.createLinkId(structType)).addEventListener('click', () => {
+      const element = document.getElementById(this.createLinkId(structType));
+      let mouseDownTime = null;
+
+      element.addEventListener('mousedown', () => {
+        mouseDownTime = performance.now();
+      });
+
+      element.addEventListener('mouseup', () => {
+        if (mouseDownTime === null) {
+          return;
+        }
+
+        const elapsed = performance.now() - mouseDownTime;
+        mouseDownTime = null;
+
+        if (elapsed > SUICheatsheet.OPEN_DELAY - 50) {
+          return;
+        }
+
         console.log(`Deploy: ${structType.type}`);
 
         this.signingClientManager.queueMsgStructBuildInitiate(
