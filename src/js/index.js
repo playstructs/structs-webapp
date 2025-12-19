@@ -160,7 +160,7 @@ const hudContainer = document.getElementById('hud-container');
 await gameState.load();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
-HUDViewModel.init(gameState, signingClientManager);
+HUDViewModel.init(gameState, signingClientManager, structManager);
 hudContainer.innerHTML = HUDViewModel.render();
 HUDViewModel.initPageCode();
 

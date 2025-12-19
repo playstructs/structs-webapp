@@ -11,6 +11,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
   /**
    * @param {GameState} gameState
    * @param {SigningClientManager} signingClientManager
+   * @param {StructManager} structManager
    * @param {string} tileType see MAP_TILE_TYPES
    * @param {string} ambit
    * @param {number|null} slot
@@ -18,6 +19,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
   constructor(
     gameState,
     signingClientManager,
+    structManager,
     tileType,
     ambit,
     slot = null
@@ -26,6 +28,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
     this.tileType = tileType;
     this.ambit = ambit;
     this.signingClientManager = signingClientManager;
+    this.structManager = structManager;
     this.slot = slot;
     this.structStillBuilder = new StructStillBuilder(this.gameState);
 
@@ -34,6 +37,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
 
     this.idPrefix = 'deploy-';
     this.className = 'deploy-struct-type';
+    this.disabledClassName = 'deploy-struct-type-disabled';
   }
 
   /**
@@ -64,6 +68,10 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
 
   initPageCode() {
     this.deployableStructTypes.forEach(structType => {
+      if (this.structManager.getDeploymentBlocker(structType)) {
+        return;
+      }
+
       const element = document.getElementById(this.createLinkId(structType));
       let mouseDownTime = null;
 
@@ -114,12 +122,15 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
         <div class="offcanvas-struct-list-layout">
           ${this.deployableStructTypes.map(structType => {
             const structStill = this.structStillBuilder.build(structType.type);
+            const deploymentBlocker = this.structManager.getDeploymentBlocker(structType);
+            const disabledClassName = deploymentBlocker ? this.disabledClassName : '';
             return `
               <a 
                 href="javascript: void(0)"
                 id="${this.createLinkId(structType)}"
-                class="offcanvas-struct-container ${this.className}"
+                class="offcanvas-struct-container ${this.className} ${disabledClassName}"
                 data-sui-cheatsheet="${structType.type}"
+                data-contextual-msg="${deploymentBlocker}"
               >
                 ${structStill.renderHTML()}
               </a>

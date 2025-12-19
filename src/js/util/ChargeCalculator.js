@@ -29,8 +29,17 @@ export class ChargeCalculator {
    * @param {number} lastActionBlockHeight
    * @return {number}
    */
+  calcCharge(currentBlockHeight, lastActionBlockHeight) {
+    return currentBlockHeight - lastActionBlockHeight;
+  }
+
+  /**
+   * @param {number} currentBlockHeight
+   * @param {number} lastActionBlockHeight
+   * @return {number}
+   */
   calc(currentBlockHeight, lastActionBlockHeight) {
-    const charge = currentBlockHeight - lastActionBlockHeight;
+    const charge = this.calcCharge(currentBlockHeight, lastActionBlockHeight);
     return this.calcChargeLevelByCharge(charge);
   }
 }

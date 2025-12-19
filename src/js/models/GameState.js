@@ -677,4 +677,11 @@ export class GameState {
         return null;
     }
   }
+
+  /**
+   * @return {number}
+   */
+  getThisPlayerCharge() {
+    return this.chargeCalculator.calcCharge(this.currentBlockHeight, this.lastActionBlockHeight);
+  }
 }

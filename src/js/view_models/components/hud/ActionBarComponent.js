@@ -9,6 +9,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * @param {GameState} gameState
    * @param {SigningClientManager} signingClientManager
+   * @param {StructManager} structManager
    * @param {string} playerType
    * @param {string} align left or right
    * @param {string} id
@@ -16,6 +17,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   constructor(
     gameState,
     signingClientManager,
+    structManager,
     playerType,
     align,
     id
@@ -24,6 +26,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
     this.playerType = playerType;
     this.signingClientManager = signingClientManager;
+    this.structManager = structManager;
 
     /* Style */
     this.themeClass = `sui-theme-${this.playerType === PLAYER_TYPES.PLAYER ? 'player' : 'enemy'}`;
@@ -167,6 +170,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             const deployOffcanvas = new DeployOffcanvas(
               this.gameState,
               this.signingClientManager,
+              this.structManager,
               tileType,
               ambitOrTileLabel,
               slot

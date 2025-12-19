@@ -104,4 +104,95 @@ export class StructManager {
 
     return null;
   }
+
+  /**
+   * @param {StructType} structType
+   * @return {string}
+   */
+  getDeploymentBlockerBuildLimitReached(structType) {
+    if (structType.build_limit > 0) {
+      const structTypeCount = this.gameState.thisPlayerStructs.filter(struct =>
+        struct.type === structType.id
+      ).length;
+
+      if (structTypeCount >= structType.build_limit) {
+        return 'Already deployed';
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * @param {StructType} structType
+   * @return {string}
+   */
+  getDeploymentBlockerInsufficientCharge(structType) {
+    return this.gameState.getThisPlayerCharge() < structType.build_charge
+      ? 'Insufficient battery'
+      : '';
+  }
+
+  /**
+   * @return {number}
+   */
+  getEnergySupply() {
+    let totalLoad = this.gameState.thisPlayer.load + this.gameState.thisPlayer.structs_load;
+    let totalCapacity = this.gameState.thisPlayer.capacity + this.gameState.thisPlayer.connection_capacity;
+
+    return totalCapacity - totalLoad;
+  }
+
+  /**
+   * @param {StructType} structType
+   * @return {string}
+   */
+  getDeploymentBlockerInsufficientEnergySupply(structType) {
+    const energySupply = this.getEnergySupply();
+    return (energySupply < structType.build_draw || energySupply < structType.passive_draw)
+      ? 'Insufficient energy supply'
+      : '';
+  }
+
+  /**
+   * @param {StructType} structType
+   * @return {string}
+   */
+  getDeploymentBlockerNoCommandShip(structType) {
+    if (structType.is_command) {
+      return '';
+    }
+
+    return !this.gameState.thisPlayerFleet.command_struct
+      ? 'Requires command ship'
+      : '';
+  }
+
+  /**
+   * @param {StructType} structType
+   * @return {string|string}
+   */
+  getDeploymentBlockerCommandShipAway(structType) {
+    if (structType.is_command) {
+      return '';
+    }
+
+    return this.gameState.thisPlayerFleet.status === 'away'
+      ? 'Command ship is away'
+      : '';
+  }
+
+  /**
+   * Checks if the logged in player is eligible to deploy the select struct type and returns any blockers.
+   *
+   * @param {StructType} structType
+   * @return {string}
+   */
+  getDeploymentBlocker(structType) {
+    return this.getDeploymentBlockerNoCommandShip(structType)
+      || this.getDeploymentBlockerBuildLimitReached(structType)
+      || this.getDeploymentBlockerInsufficientEnergySupply(structType)
+      || this.getDeploymentBlockerInsufficientCharge(structType)
+      || this.getDeploymentBlockerCommandShipAway(structType);
+  }
 }

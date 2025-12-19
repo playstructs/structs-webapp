@@ -37,8 +37,9 @@ export class HUDViewModel extends AbstractViewModel {
   /**
    * @param {GameState} gameState
    * @param {SigningClientManager} signingClientManager
+   * @param {StructManager} structManager
    */
-  static init(gameState, signingClientManager) {
+  static init(gameState, signingClientManager, structManager) {
     HUDViewModel.gameState = gameState;
     HUDViewModel.signingClientManager = signingClientManager;
 
@@ -62,6 +63,7 @@ export class HUDViewModel extends AbstractViewModel {
     HUDViewModel.bottomLeftActionBar = new ActionBarComponent(
       gameState,
       signingClientManager,
+      structManager,
       PLAYER_TYPES.PLAYER,
       'left',
       HUD_IDS.ACTION_BAR_PLAYER
@@ -70,6 +72,7 @@ export class HUDViewModel extends AbstractViewModel {
     HUDViewModel.bottomRightActionBarAlphaBase = new ActionBarComponent(
       gameState,
       signingClientManager,
+      structManager,
       PLAYER_TYPES.PLANET_RAIDER,
       'right',
       HUD_IDS.ACTION_BAR_ALPHA_BASE_ENEMY
@@ -78,6 +81,7 @@ export class HUDViewModel extends AbstractViewModel {
     HUDViewModel.bottomRightActionBarRaid = new ActionBarComponent(
       gameState,
       signingClientManager,
+      structManager,
       PLAYER_TYPES.RAID_ENEMY,
       'right',
       HUD_IDS.ACTION_BAR_RAID_ENEMY

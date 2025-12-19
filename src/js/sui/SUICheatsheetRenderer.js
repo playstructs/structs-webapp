@@ -141,9 +141,9 @@ export class SUICheatsheetRenderer {
       <div class="sui-cheatsheet-content">
         ${this.renderDescriptionHTML(descriptionText)}
         
-        ${this.renderContextualMessageHTML(contextualMessageText)}
-
         ${this.renderCheatsheetPropertySectionHTML(propertySectionHTML)}
+        
+        ${this.renderContextualMessageHTML(contextualMessageText)}
       </div>
     `;
   }

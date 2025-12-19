@@ -1914,6 +1914,10 @@ a.offcanvas-struct-container.sui-mod-disabled {
   opacity: 0.5;
 }
 
+.deploy-struct-type-disabled {
+  opacity: 0.5;
+}
+
 .struct-still,
 .deployment-indicator {
   position: relative;
