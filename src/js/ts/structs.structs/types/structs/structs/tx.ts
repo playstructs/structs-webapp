@@ -734,6 +734,18 @@ export interface MsgProviderDelete {
 export interface MsgProviderResponse {
 }
 
+export interface MsgPlayerSend {
+  creator: string;
+  playerId: string;
+  fromAddress: string;
+  toAddress: string;
+  amount: Coin[];
+}
+
+/** This message has no fields. */
+export interface MsgPlayerSendResponse {
+}
+
 function createBaseMsgUpdateParams(): MsgUpdateParams {
   return { authority: "", params: undefined };
 }
@@ -10830,6 +10842,173 @@ export const MsgProviderResponse: MessageFns<MsgProviderResponse> = {
   },
 };
 
+function createBaseMsgPlayerSend(): MsgPlayerSend {
+  return { creator: "", playerId: "", fromAddress: "", toAddress: "", amount: [] };
+}
+
+export const MsgPlayerSend: MessageFns<MsgPlayerSend> = {
+  encode(message: MsgPlayerSend, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(18).string(message.playerId);
+    }
+    if (message.fromAddress !== "") {
+      writer.uint32(26).string(message.fromAddress);
+    }
+    if (message.toAddress !== "") {
+      writer.uint32(34).string(message.toAddress);
+    }
+    for (const v of message.amount) {
+      Coin.encode(v!, writer.uint32(42).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgPlayerSend {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgPlayerSend();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.fromAddress = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.toAddress = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.amount.push(Coin.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgPlayerSend {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      fromAddress: isSet(object.fromAddress) ? globalThis.String(object.fromAddress) : "",
+      toAddress: isSet(object.toAddress) ? globalThis.String(object.toAddress) : "",
+      amount: globalThis.Array.isArray(object?.amount) ? object.amount.map((e: any) => Coin.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: MsgPlayerSend): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.fromAddress !== "") {
+      obj.fromAddress = message.fromAddress;
+    }
+    if (message.toAddress !== "") {
+      obj.toAddress = message.toAddress;
+    }
+    if (message.amount?.length) {
+      obj.amount = message.amount.map((e) => Coin.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgPlayerSend>, I>>(base?: I): MsgPlayerSend {
+    return MsgPlayerSend.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgPlayerSend>, I>>(object: I): MsgPlayerSend {
+    const message = createBaseMsgPlayerSend();
+    message.creator = object.creator ?? "";
+    message.playerId = object.playerId ?? "";
+    message.fromAddress = object.fromAddress ?? "";
+    message.toAddress = object.toAddress ?? "";
+    message.amount = object.amount?.map((e) => Coin.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseMsgPlayerSendResponse(): MsgPlayerSendResponse {
+  return {};
+}
+
+export const MsgPlayerSendResponse: MessageFns<MsgPlayerSendResponse> = {
+  encode(_: MsgPlayerSendResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgPlayerSendResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgPlayerSendResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgPlayerSendResponse {
+    return {};
+  },
+
+  toJSON(_: MsgPlayerSendResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgPlayerSendResponse>, I>>(base?: I): MsgPlayerSendResponse {
+    return MsgPlayerSendResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgPlayerSendResponse>, I>>(_: I): MsgPlayerSendResponse {
+    const message = createBaseMsgPlayerSendResponse();
+    return message;
+  },
+};
+
 /** Msg defines the Msg service. */
 export interface Msg {
   /**
@@ -10884,6 +11063,7 @@ export interface Msg {
   PlanetRaidComplete(request: MsgPlanetRaidComplete): Promise<MsgPlanetRaidCompleteResponse>;
   PlayerUpdatePrimaryAddress(request: MsgPlayerUpdatePrimaryAddress): Promise<MsgPlayerUpdatePrimaryAddressResponse>;
   PlayerResume(request: MsgPlayerResume): Promise<MsgPlayerResumeResponse>;
+  PlayerSend(request: MsgPlayerSend): Promise<MsgPlayerSendResponse>;
   ProviderCreate(request: MsgProviderCreate): Promise<MsgProviderResponse>;
   ProviderWithdrawBalance(request: MsgProviderWithdrawBalance): Promise<MsgProviderResponse>;
   ProviderUpdateCapacityMinimum(request: MsgProviderUpdateCapacityMinimum): Promise<MsgProviderResponse>;
@@ -10974,6 +11154,7 @@ export class MsgClientImpl implements Msg {
     this.PlanetRaidComplete = this.PlanetRaidComplete.bind(this);
     this.PlayerUpdatePrimaryAddress = this.PlayerUpdatePrimaryAddress.bind(this);
     this.PlayerResume = this.PlayerResume.bind(this);
+    this.PlayerSend = this.PlayerSend.bind(this);
     this.ProviderCreate = this.ProviderCreate.bind(this);
     this.ProviderWithdrawBalance = this.ProviderWithdrawBalance.bind(this);
     this.ProviderUpdateCapacityMinimum = this.ProviderUpdateCapacityMinimum.bind(this);
@@ -11276,6 +11457,12 @@ export class MsgClientImpl implements Msg {
     const data = MsgPlayerResume.encode(request).finish();
     const promise = this.rpc.request(this.service, "PlayerResume", data);
     return promise.then((data) => MsgPlayerResumeResponse.decode(new BinaryReader(data)));
+  }
+
+  PlayerSend(request: MsgPlayerSend): Promise<MsgPlayerSendResponse> {
+    const data = MsgPlayerSend.encode(request).finish();
+    const promise = this.rpc.request(this.service, "PlayerSend", data);
+    return promise.then((data) => MsgPlayerSendResponse.decode(new BinaryReader(data)));
   }
 
   ProviderCreate(request: MsgProviderCreate): Promise<MsgProviderResponse> {

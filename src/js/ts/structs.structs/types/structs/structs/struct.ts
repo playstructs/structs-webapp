@@ -129,8 +129,6 @@ export interface StructType {
   buildCharge: number;
   defendChangeCharge: number;
   moveCharge: number;
-  oreMiningCharge: number;
-  oreRefiningCharge: number;
   stealthActivateCharge: number;
   /** Tech Tree Attributes */
   attackReduction: number;
@@ -440,8 +438,6 @@ function createBaseStructType(): StructType {
     buildCharge: 0,
     defendChangeCharge: 0,
     moveCharge: 0,
-    oreMiningCharge: 0,
-    oreRefiningCharge: 0,
     stealthActivateCharge: 0,
     attackReduction: 0,
     attackCounterable: false,
@@ -470,16 +466,16 @@ export const StructType: MessageFns<StructType> = {
       writer.uint32(18).string(message.type);
     }
     if (message.class !== "") {
-      writer.uint32(522).string(message.class);
+      writer.uint32(506).string(message.class);
     }
     if (message.classAbbreviation !== "") {
-      writer.uint32(530).string(message.classAbbreviation);
+      writer.uint32(514).string(message.classAbbreviation);
     }
     if (message.defaultCosmeticModelNumber !== "") {
-      writer.uint32(538).string(message.defaultCosmeticModelNumber);
+      writer.uint32(522).string(message.defaultCosmeticModelNumber);
     }
     if (message.defaultCosmeticName !== "") {
-      writer.uint32(546).string(message.defaultCosmeticName);
+      writer.uint32(530).string(message.defaultCosmeticName);
     }
     if (message.category !== 0) {
       writer.uint32(24).int32(message.category);
@@ -613,59 +609,53 @@ export const StructType: MessageFns<StructType> = {
     if (message.moveCharge !== 0) {
       writer.uint32(368).uint64(message.moveCharge);
     }
-    if (message.oreMiningCharge !== 0) {
-      writer.uint32(376).uint64(message.oreMiningCharge);
-    }
-    if (message.oreRefiningCharge !== 0) {
-      writer.uint32(384).uint64(message.oreRefiningCharge);
-    }
     if (message.stealthActivateCharge !== 0) {
-      writer.uint32(392).uint64(message.stealthActivateCharge);
+      writer.uint32(376).uint64(message.stealthActivateCharge);
     }
     if (message.attackReduction !== 0) {
-      writer.uint32(400).uint64(message.attackReduction);
+      writer.uint32(384).uint64(message.attackReduction);
     }
     if (message.attackCounterable !== false) {
-      writer.uint32(408).bool(message.attackCounterable);
+      writer.uint32(392).bool(message.attackCounterable);
     }
     if (message.stealthSystems !== false) {
-      writer.uint32(416).bool(message.stealthSystems);
+      writer.uint32(400).bool(message.stealthSystems);
     }
     if (message.counterAttack !== 0) {
-      writer.uint32(424).uint64(message.counterAttack);
+      writer.uint32(408).uint64(message.counterAttack);
     }
     if (message.counterAttackSameAmbit !== 0) {
-      writer.uint32(432).uint64(message.counterAttackSameAmbit);
+      writer.uint32(416).uint64(message.counterAttackSameAmbit);
     }
     if (message.postDestructionDamage !== 0) {
-      writer.uint32(440).uint64(message.postDestructionDamage);
+      writer.uint32(424).uint64(message.postDestructionDamage);
     }
     if (message.generatingRate !== 0) {
-      writer.uint32(448).uint64(message.generatingRate);
+      writer.uint32(432).uint64(message.generatingRate);
     }
     if (message.planetaryShieldContribution !== 0) {
-      writer.uint32(456).uint64(message.planetaryShieldContribution);
+      writer.uint32(440).uint64(message.planetaryShieldContribution);
     }
     if (message.oreMiningDifficulty !== 0) {
-      writer.uint32(464).uint64(message.oreMiningDifficulty);
+      writer.uint32(448).uint64(message.oreMiningDifficulty);
     }
     if (message.oreRefiningDifficulty !== 0) {
-      writer.uint32(472).uint64(message.oreRefiningDifficulty);
+      writer.uint32(456).uint64(message.oreRefiningDifficulty);
     }
     if (message.unguidedDefensiveSuccessRateNumerator !== 0) {
-      writer.uint32(480).uint64(message.unguidedDefensiveSuccessRateNumerator);
+      writer.uint32(464).uint64(message.unguidedDefensiveSuccessRateNumerator);
     }
     if (message.unguidedDefensiveSuccessRateDenominator !== 0) {
-      writer.uint32(488).uint64(message.unguidedDefensiveSuccessRateDenominator);
+      writer.uint32(472).uint64(message.unguidedDefensiveSuccessRateDenominator);
     }
     if (message.guidedDefensiveSuccessRateNumerator !== 0) {
-      writer.uint32(496).uint64(message.guidedDefensiveSuccessRateNumerator);
+      writer.uint32(480).uint64(message.guidedDefensiveSuccessRateNumerator);
     }
     if (message.guidedDefensiveSuccessRateDenominator !== 0) {
-      writer.uint32(504).uint64(message.guidedDefensiveSuccessRateDenominator);
+      writer.uint32(488).uint64(message.guidedDefensiveSuccessRateDenominator);
     }
     if (message.triggerRaidDefeatByDestruction !== false) {
-      writer.uint32(512).bool(message.triggerRaidDefeatByDestruction);
+      writer.uint32(496).bool(message.triggerRaidDefeatByDestruction);
     }
     return writer;
   },
@@ -693,32 +683,32 @@ export const StructType: MessageFns<StructType> = {
           message.type = reader.string();
           continue;
         }
-        case 65: {
-          if (tag !== 522) {
+        case 63: {
+          if (tag !== 506) {
             break;
           }
 
           message.class = reader.string();
           continue;
         }
-        case 66: {
-          if (tag !== 530) {
+        case 64: {
+          if (tag !== 514) {
             break;
           }
 
           message.classAbbreviation = reader.string();
           continue;
         }
-        case 67: {
-          if (tag !== 538) {
+        case 65: {
+          if (tag !== 522) {
             break;
           }
 
           message.defaultCosmeticModelNumber = reader.string();
           continue;
         }
-        case 68: {
-          if (tag !== 546) {
+        case 66: {
+          if (tag !== 530) {
             break;
           }
 
@@ -1082,7 +1072,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.oreMiningCharge = longToNumber(reader.uint64());
+          message.stealthActivateCharge = longToNumber(reader.uint64());
           continue;
         }
         case 48: {
@@ -1090,7 +1080,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.oreRefiningCharge = longToNumber(reader.uint64());
+          message.attackReduction = longToNumber(reader.uint64());
           continue;
         }
         case 49: {
@@ -1098,7 +1088,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.stealthActivateCharge = longToNumber(reader.uint64());
+          message.attackCounterable = reader.bool();
           continue;
         }
         case 50: {
@@ -1106,7 +1096,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.attackReduction = longToNumber(reader.uint64());
+          message.stealthSystems = reader.bool();
           continue;
         }
         case 51: {
@@ -1114,7 +1104,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.attackCounterable = reader.bool();
+          message.counterAttack = longToNumber(reader.uint64());
           continue;
         }
         case 52: {
@@ -1122,7 +1112,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.stealthSystems = reader.bool();
+          message.counterAttackSameAmbit = longToNumber(reader.uint64());
           continue;
         }
         case 53: {
@@ -1130,7 +1120,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.counterAttack = longToNumber(reader.uint64());
+          message.postDestructionDamage = longToNumber(reader.uint64());
           continue;
         }
         case 54: {
@@ -1138,7 +1128,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.counterAttackSameAmbit = longToNumber(reader.uint64());
+          message.generatingRate = longToNumber(reader.uint64());
           continue;
         }
         case 55: {
@@ -1146,7 +1136,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.postDestructionDamage = longToNumber(reader.uint64());
+          message.planetaryShieldContribution = longToNumber(reader.uint64());
           continue;
         }
         case 56: {
@@ -1154,7 +1144,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.generatingRate = longToNumber(reader.uint64());
+          message.oreMiningDifficulty = longToNumber(reader.uint64());
           continue;
         }
         case 57: {
@@ -1162,7 +1152,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.planetaryShieldContribution = longToNumber(reader.uint64());
+          message.oreRefiningDifficulty = longToNumber(reader.uint64());
           continue;
         }
         case 58: {
@@ -1170,7 +1160,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.oreMiningDifficulty = longToNumber(reader.uint64());
+          message.unguidedDefensiveSuccessRateNumerator = longToNumber(reader.uint64());
           continue;
         }
         case 59: {
@@ -1178,7 +1168,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.oreRefiningDifficulty = longToNumber(reader.uint64());
+          message.unguidedDefensiveSuccessRateDenominator = longToNumber(reader.uint64());
           continue;
         }
         case 60: {
@@ -1186,7 +1176,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.unguidedDefensiveSuccessRateNumerator = longToNumber(reader.uint64());
+          message.guidedDefensiveSuccessRateNumerator = longToNumber(reader.uint64());
           continue;
         }
         case 61: {
@@ -1194,27 +1184,11 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.unguidedDefensiveSuccessRateDenominator = longToNumber(reader.uint64());
+          message.guidedDefensiveSuccessRateDenominator = longToNumber(reader.uint64());
           continue;
         }
         case 62: {
           if (tag !== 496) {
-            break;
-          }
-
-          message.guidedDefensiveSuccessRateNumerator = longToNumber(reader.uint64());
-          continue;
-        }
-        case 63: {
-          if (tag !== 504) {
-            break;
-          }
-
-          message.guidedDefensiveSuccessRateDenominator = longToNumber(reader.uint64());
-          continue;
-        }
-        case 64: {
-          if (tag !== 512) {
             break;
           }
 
@@ -1314,8 +1288,6 @@ export const StructType: MessageFns<StructType> = {
       buildCharge: isSet(object.buildCharge) ? globalThis.Number(object.buildCharge) : 0,
       defendChangeCharge: isSet(object.defendChangeCharge) ? globalThis.Number(object.defendChangeCharge) : 0,
       moveCharge: isSet(object.moveCharge) ? globalThis.Number(object.moveCharge) : 0,
-      oreMiningCharge: isSet(object.oreMiningCharge) ? globalThis.Number(object.oreMiningCharge) : 0,
-      oreRefiningCharge: isSet(object.oreRefiningCharge) ? globalThis.Number(object.oreRefiningCharge) : 0,
       stealthActivateCharge: isSet(object.stealthActivateCharge) ? globalThis.Number(object.stealthActivateCharge) : 0,
       attackReduction: isSet(object.attackReduction) ? globalThis.Number(object.attackReduction) : 0,
       attackCounterable: isSet(object.attackCounterable) ? globalThis.Boolean(object.attackCounterable) : false,
@@ -1501,12 +1473,6 @@ export const StructType: MessageFns<StructType> = {
     if (message.moveCharge !== 0) {
       obj.moveCharge = Math.round(message.moveCharge);
     }
-    if (message.oreMiningCharge !== 0) {
-      obj.oreMiningCharge = Math.round(message.oreMiningCharge);
-    }
-    if (message.oreRefiningCharge !== 0) {
-      obj.oreRefiningCharge = Math.round(message.oreRefiningCharge);
-    }
     if (message.stealthActivateCharge !== 0) {
       obj.stealthActivateCharge = Math.round(message.stealthActivateCharge);
     }
@@ -1613,8 +1579,6 @@ export const StructType: MessageFns<StructType> = {
     message.buildCharge = object.buildCharge ?? 0;
     message.defendChangeCharge = object.defendChangeCharge ?? 0;
     message.moveCharge = object.moveCharge ?? 0;
-    message.oreMiningCharge = object.oreMiningCharge ?? 0;
-    message.oreRefiningCharge = object.oreRefiningCharge ?? 0;
     message.stealthActivateCharge = object.stealthActivateCharge ?? 0;
     message.attackReduction = object.attackReduction ?? 0;
     message.attackCounterable = object.attackCounterable ?? false;
