@@ -19,7 +19,7 @@ export interface Infusion {
   playerId: string;
   address: string;
   ratio: number;
-  defusing: string;
+  defusing: number;
 }
 
 function createBaseInfusion(): Infusion {
@@ -32,7 +32,7 @@ function createBaseInfusion(): Infusion {
     playerId: "",
     address: "",
     ratio: 0,
-    defusing: "",
+    defusing: 0,
   };
 }
 
@@ -62,8 +62,8 @@ export const Infusion: MessageFns<Infusion> = {
     if (message.ratio !== 0) {
       writer.uint32(64).uint64(message.ratio);
     }
-    if (message.defusing !== "") {
-      writer.uint32(74).string(message.defusing);
+    if (message.defusing !== 0) {
+      writer.uint32(72).uint64(message.defusing);
     }
     return writer;
   },
@@ -140,11 +140,11 @@ export const Infusion: MessageFns<Infusion> = {
           continue;
         }
         case 9: {
-          if (tag !== 74) {
+          if (tag !== 72) {
             break;
           }
 
-          message.defusing = reader.string();
+          message.defusing = longToNumber(reader.uint64());
           continue;
         }
       }
@@ -166,7 +166,7 @@ export const Infusion: MessageFns<Infusion> = {
       playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
       address: isSet(object.address) ? globalThis.String(object.address) : "",
       ratio: isSet(object.ratio) ? globalThis.Number(object.ratio) : 0,
-      defusing: isSet(object.defusing) ? globalThis.String(object.defusing) : "",
+      defusing: isSet(object.defusing) ? globalThis.Number(object.defusing) : 0,
     };
   },
 
@@ -196,8 +196,8 @@ export const Infusion: MessageFns<Infusion> = {
     if (message.ratio !== 0) {
       obj.ratio = Math.round(message.ratio);
     }
-    if (message.defusing !== "") {
-      obj.defusing = message.defusing;
+    if (message.defusing !== 0) {
+      obj.defusing = Math.round(message.defusing);
     }
     return obj;
   },
@@ -215,7 +215,7 @@ export const Infusion: MessageFns<Infusion> = {
     message.playerId = object.playerId ?? "";
     message.address = object.address ?? "";
     message.ratio = object.ratio ?? 0;
-    message.defusing = object.defusing ?? "";
+    message.defusing = object.defusing ?? 0;
     return message;
   },
 };

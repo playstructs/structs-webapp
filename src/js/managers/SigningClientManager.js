@@ -34,6 +34,7 @@ import {
   MsgPermissionSetOnAddress,
   MsgPlayerUpdatePrimaryAddress,
   MsgPlayerResume,
+  MsgPlayerSend,
   MsgStructActivate,
   MsgStructDeactivate,
   MsgStructBuildInitiate,
@@ -163,6 +164,26 @@ export class SigningClientManager {
         toAddress: toAddress,
         amount: amount
       },
+    });
+  }
+
+/**
+   * @param {string} creator
+   * @param {string} fromPlayerId
+   * @param {string} fromAddress
+   * @param {string} toAddress
+   * @param {Array<{denom: string, amount: string}>} amount
+   */
+  async queueMsgPlayerSend(creator, fromPlayerId, fromAddress, toAddress, amount) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgPlayerSend',
+      value: MsgPlayerSend.fromPartial({
+        creator: creator,
+        playerId: fromPlayerId,
+        fromAddress: fromAddress,
+        toAddress: toAddress,
+        amount: amount
+      }),
     });
   }
 
