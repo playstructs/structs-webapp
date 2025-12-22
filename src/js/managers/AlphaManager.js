@@ -26,7 +26,7 @@ export class AlphaManager {
     await this.signingClientManager.queueMsgPlayerSend(
       gameState.signingAccount.address,
         gameState.thisPlayerId,
-        gameState.thisPlayer.primaryAddress,
+        gameState.thisPlayer.primary_address,
       recipientAddress,
       [{
         denom: "ualpha",
@@ -41,7 +41,7 @@ export class AlphaManager {
   async infuse(alphaAmount) {
     await this.signingClientManager.queueMsgReactorInfuse(
       gameState.signingAccount.address,
-      gameState.thisPlayer.primaryAddress,
+      gameState.thisPlayer.primary_address,
       this.gameState.thisGuild.validator,
       {
         denom: "ualpha",
@@ -56,7 +56,7 @@ export class AlphaManager {
   async defuse(alphaAmount) {
     await this.signingClientManager.queueMsgReactorDefuse(
       gameState.signingAccount.address,
-      gameState.thisPlayer.primaryAddress,
+      gameState.thisPlayer.primary_address,
       this.gameState.thisGuild.validator,
       {
         denom: "ualpha",
