@@ -203,6 +203,10 @@ export class StructManager {
    * @return {Struct|null}
    */
   getStructById(structId) {
+    if (!structId) {
+      return null;
+    }
+
     const allStructs = [
       ...this.gameState.thisPlayerStructs,
       ...this.gameState.planetRaiderStructs,

@@ -167,20 +167,28 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     slot = null,
     structId = null
   ) {
-    const isOccupied = structId !== null && structId !== '';
-
-    // Check if the struct is building
-    let struct = null;
-    if (isOccupied) {
-      struct = this.structManager.getStructById(structId);
-    }
+    const struct = this.structManager.getStructById(structId);
 
     // If the struct is building, show the building action bar
     if (struct && struct.is_building) {
       this.showBuildingActionBar(struct);
-      return;
+    } else {
+      this.showEmptyTileActionBar(tileType, ambitOrTileLabel, side, slot);
     }
+  }
 
+  /**
+   * @param {string} tileType
+   * @param {string} ambitOrTileLabel
+   * @param {string} side right or left
+   * @param {number|null} slot
+   */
+  showEmptyTileActionBar(
+    tileType,
+    ambitOrTileLabel,
+    side,
+    slot = null,
+  ) {
     const header = ambitOrTileLabel.toUpperCase();
 
     const propertyIcon = this.getPropertyIconForTileType(tileType);
@@ -197,12 +205,10 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     if (hasDeployButton) {
       // Only enable deploy button if:
       // 1. It's on the left side (player's side)
-      // 2. The tile is NOT occupied by a struct
-      // 3. The map is the alpha base map
-      // TODO 4. The player's command ship is on the alpha base
+      // 2. The map is the alpha base map
+      // TODO 3. The player's command ship is on the alpha base
       if (
         side === 'left'
-        && !isOccupied
         && this.gameState.activeMapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE
       ) {
         btnTypeClass = 'sui-mod-default';
