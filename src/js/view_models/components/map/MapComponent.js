@@ -12,6 +12,7 @@ import {PLAYER_MAP_ROLES} from "../../../constants/PlayerMapRoles";
 import {MAP_PERSPECTIVES} from "../../../constants/MapPerspectives";
 import {MapTileSelectionComponent} from "./MapTileSelectionComponent";
 import {MapStructLayerComponent} from "./MapStructLayerComponent";
+import {Planet} from "../../../models/Planet";
 
 export class MapComponent extends AbstractViewModelComponent {
 
@@ -52,7 +53,6 @@ export class MapComponent extends AbstractViewModelComponent {
     /** @type {Player|null} */
     this.defender = null;
 
-    this.playerMapRole = null; // ATTACKER, DEFENDER, SPECTATOR
     this.perspective = null; // ATTACKER, DEFENDER
 
     this.tileClassNameUtil = new TileClassNameUtil();
@@ -180,9 +180,6 @@ export class MapComponent extends AbstractViewModelComponent {
       mapColBreakdown,
       this.planet
     );
-
-    // Determine if this is the raid map based on idPrefix
-    const isRaidMap = this.idPrefix === 'raid';
     
     this.mapStructLayer = new MapStructLayerComponent(
       this.gameState,
@@ -191,7 +188,6 @@ export class MapComponent extends AbstractViewModelComponent {
       this.planet,
       this.defender,
       this.attacker,
-      isRaidMap,
       this.structLayerId
     );
 
@@ -202,7 +198,6 @@ export class MapComponent extends AbstractViewModelComponent {
       this.planet,
       this.defender,
       this.attacker,
-      isRaidMap,
       this.tileSelectionId
     )
   }

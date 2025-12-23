@@ -21,7 +21,6 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
    * @param {Planet|null} planet
    * @param {Player|null} defender
    * @param {Player|null} attacker
-   * @param {boolean} isRaidMap - Whether this is the raid map
    * @param {string} containerId - The ID of the DOM container element for this tile selection layer
    */
   constructor(
@@ -31,7 +30,6 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     planet,
     defender,
     attacker,
-    isRaidMap = false,
     containerId = ""
   ) {
     super(gameState);
@@ -48,34 +46,6 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     /** @type {Player} */
     this.attacker = attacker;
-
-    this.isRaidMap = isRaidMap;
-  }
-
-  /**
-   * Get struct ID at a position for the data attribute
-   * @param {string} locationType
-   * @param {string} locationId
-   * @param {string} ambit
-   * @param {string|number} slot
-   * @param {boolean} isCommandSlot
-   * @return {string}
-   */
-  getStructIdAtPosition(locationType, locationId, ambit, slot, isCommandSlot = false) {
-    if (slot === "") {
-      return "";
-    }
-
-    const struct = this.structManager.getStructByPosition(
-      this.isRaidMap,
-      locationType,
-      locationId,
-      ambit,
-      parseInt(slot, 10),
-      isCommandSlot
-    );
-
-    return struct ? struct.id : "";
   }
 
   /**
@@ -289,7 +259,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     // Command structs are always slot 0
     const structId = hasAvailableSlot 
-      ? this.getStructIdAtPosition('fleet', fleetId, ambit, 0, true)
+      ? this.structManager.getStructIdByPositionAndPlayerId(playerId,'fleet', fleetId, ambit, 0, true)
       : '';
 
     return this.renderSelectionTileHTML(
@@ -324,7 +294,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       : MAP_TILE_TYPES.PLANETARY_SLOT;
 
     const structId = slot !== '' 
-      ? this.getStructIdAtPosition('planet', this.planet.id, ambit, slot, false)
+      ? this.structManager.getStructIdByPositionAndPlayerId(this.defender.id, 'planet', this.planet.id, ambit, slot, false)
       : '';
 
     return this.renderSelectionTileHTML(
@@ -355,7 +325,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     }
 
     const structId = slot !== ''
-      ? this.getStructIdAtPosition('fleet', this.defender.fleet_id, ambit, slot, false)
+      ? this.structManager.getStructIdByPositionAndPlayerId(this.defender.id, 'fleet', this.defender.fleet_id, ambit, slot, false)
       : '';
 
     return this.renderSelectionTileHTML(
@@ -386,7 +356,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     }
 
     const structId = slot !== ''
-      ? this.getStructIdAtPosition('fleet', this.attacker.fleet_id, ambit, slot, false)
+      ? this.structManager.getStructIdByPositionAndPlayerId(this.attacker.id,'fleet', this.attacker.fleet_id, ambit, slot, false)
       : '';
 
     return this.renderSelectionTileHTML(

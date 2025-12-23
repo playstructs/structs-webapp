@@ -15,7 +15,6 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
    * @param {Planet|null} planet
    * @param {Player|null} defender
    * @param {Player|null} attacker
-   * @param {boolean} isRaidMap - Whether this is the raid map (to determine which struct collection to use)
    * @param {string} containerId - The ID of the DOM container element for this struct layer
    */
   constructor(
@@ -25,7 +24,6 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     planet,
     defender,
     attacker,
-    isRaidMap = false,
     containerId = ""
   ) {
     super(
@@ -39,7 +37,6 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
       attacker
     );
 
-    this.isRaidMap = isRaidMap;
     this.containerId = containerId;
     this.structStillBuilder = new StructStillBuilder(this.gameState);
   }
@@ -184,8 +181,8 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     }
 
     const slotNum = parseInt(slot, 10);
-    const struct = this.structManager.getStructByPosition(
-      this.isRaidMap,
+    const struct = this.structManager.getStructByPositionAndPlayerId(
+      playerId,
       locationInfo.locationType,
       locationInfo.locationId,
       ambit,

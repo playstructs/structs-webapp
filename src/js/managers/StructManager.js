@@ -15,53 +15,6 @@ export class StructManager {
 
   /**
    * @param {Struct} struct
-   * @return {string} struct id
-   */
-  getStructTrueLocation(struct) {
-    if (struct.location_type === 'planet') {
-      return struct.location_id;
-    }
-
-    if (struct.location_type === 'fleet') {
-      const playerType = this.gameState.getPlayerTypeById(struct.owner);
-      const fleet = this.gameState.getFleetByPlayerType(playerType);
-      if (struct.location_id === fleet.id) {
-        return fleet.location_id;
-      }
-    }
-
-    console.log(struct);
-    throw new Error('Struct location unknown');
-  }
-
-  /**
-   * @return {Struct[]}
-   */
-  getStructsOnAlphaBasePlanet() {
-    return this.gameState.thisPlayerStructs.filter(struct =>
-      this.getStructTrueLocation(struct) === this.gameState.planet.id
-    ).concat(
-      this.gameState.planetRaiderStructs.filter(struct =>
-        this.getStructTrueLocation(struct) === this.gameState.planet.id
-      )
-    );
-  }
-
-  /**
-   * @return {Struct[]}
-   */
-  getStructsOnRaidPlanet() {
-    return this.gameState.thisPlayerStructs.filter(struct =>
-      this.getStructTrueLocation(struct) === this.gameState.raidPlanet.id
-    ).concat(
-      this.gameState.raidEnemyStructs.filter(struct =>
-        this.getStructTrueLocation(struct) === this.gameState.raidPlanet.id
-      )
-    );
-  }
-
-  /**
-   * @param {Struct} struct
    * @return {boolean}
    */
   isCommandStruct(struct) {
@@ -70,8 +23,8 @@ export class StructManager {
   }
 
   /**
-   * Get a struct by its position on a planet
-   * @param {boolean} isRaidPlanet - Whether to search raid planet structs
+   * Get a struct by its owner, and it's position on planet or in fleet
+   * @param {string} playerId - The id of the struct owner
    * @param {string} locationType - "fleet" or "planet"
    * @param {string} locationId - Fleet ID or Planet ID
    * @param {string} ambit - "space", "air", "land", "water"
@@ -79,31 +32,58 @@ export class StructManager {
    * @param {boolean} isCommandSlot - Whether the slot is a command slot or just a planetary or fleet slot
    * @return {Struct|null}
    */
-  getStructByPosition(
-    isRaidPlanet,
+  getStructByPositionAndPlayerId(
+    playerId,
     locationType,
     locationId,
     ambit,
     slot,
     isCommandSlot
   ) {
-    const structs = isRaidPlanet ? this.getStructsOnRaidPlanet() : this.getStructsOnAlphaBasePlanet();
 
-    for (const struct of structs.values()) {
+    /**
+     * @type {Struct[]}
+     */
+    const allStructs = [
+      ...this.gameState.thisPlayerStructs,
+      ...this.gameState.planetRaiderStructs,
+      ...this.gameState.raidEnemyStructs
+    ];
 
-      /** @type {StructType} */
-      if (
-        struct.location_type === locationType
-        && struct.location_id === locationId
-        && struct.operating_ambit === ambit.toLowerCase()
-        && `${struct.slot}` === `${slot}`
-        && this.isCommandStruct(struct) === isCommandSlot
-      ) {
-        return struct;
-      }
+    return allStructs.find(struct =>
+      struct.owner === playerId
+      && struct.location_type === locationType
+      && struct.location_id === locationId
+      && struct.operating_ambit.toLowerCase() === ambit.toLowerCase()
+      && `${struct.slot}` === `${slot}`
+      && this.isCommandStruct(struct) === isCommandSlot
+    ) || null;
+  }
+
+  /**
+   * Get a struct id by its owner, and it's position on planet or in fleet
+   * @param {string} playerId - The id of the struct owner
+   * @param {string} locationType - "fleet" or "planet"
+   * @param {string} locationId - Fleet ID or Planet ID
+   * @param {string} ambit - "space", "air", "land", "water"
+   * @param {string|number} slot - Slot number
+   * @param {boolean} isCommandSlot - Whether the slot is a command slot or just a planetary or fleet slot
+   * @return {string}
+   */
+  getStructIdByPositionAndPlayerId(
+    playerId,
+    locationType,
+    locationId,
+    ambit,
+    slot,
+    isCommandSlot
+  ) {
+    if (slot === "") {
+      return "";
     }
 
-    return null;
+    const struct = this.getStructByPositionAndPlayerId(playerId, locationType, locationId, ambit, parseInt(slot), isCommandSlot);
+    return struct ? struct.id : '';
   }
 
   /**
