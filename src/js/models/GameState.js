@@ -13,6 +13,7 @@ import {StructTypeCollection} from "./StructTypeCollection";
 import {Struct} from "./Struct";
 import {Player} from "./Player";
 import {Fleet} from "./Fleet";
+import {StructType} from "./StructType";
 
 export class GameState {
 
@@ -107,6 +108,14 @@ export class GameState {
 
     /* GRASS Only Data */
     this.currentBlockHeight = 0;
+
+    /**
+     * Tracks pending builds before the struct ID is known.
+     * Key: "{tileType}-{ambit}-{slot}-{playerId}"
+     * Value: {structType: StructType, timestamp: number}
+     * @type {Map<string, {structType: StructType, timestamp: number}>}
+     */
+    this.pendingBuilds = new Map();
   }
 
   save() {
@@ -561,6 +570,36 @@ export class GameState {
     }
   }
 
+  /**
+   * Adds a pending build to track before the struct ID is known.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @param {StructType} structType
+   */
+  addPendingBuild(tileType, ambit, slot, playerId, structType) {
+    const key = this.getPendingBuildKey(tileType, ambit, slot, playerId);
+    this.pendingBuilds.set(key, {
+      structType: structType,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Removes a pending build after the struct ID is known.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   */
+  removePendingBuild(tileType, ambit, slot, playerId) {
+    const key = this.getPendingBuildKey(tileType, ambit, slot, playerId);
+    this.pendingBuilds.delete(key);
+  }
+
   clearPlanetRaidData() {
     this.planetPlanetRaidInfo = new PlanetRaid();
     this.planetRaider = null;
@@ -683,5 +722,32 @@ export class GameState {
    */
   getThisPlayerCharge() {
     return this.chargeCalculator.calcCharge(this.currentBlockHeight, this.lastActionBlockHeight);
+  }
+
+  /**
+   * Generates a key for the pending builds map.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @return {string}
+   */
+  getPendingBuildKey(tileType, ambit, slot, playerId) {
+    return `${tileType}-${ambit.toLowerCase()}-${slot}-${playerId}`;
+  }
+
+  /**
+   * Gets a pending build by position.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @return {{structType: StructType, timestamp: number}|null}
+   */
+  getPendingBuild(tileType, ambit, slot, playerId) {
+    const key = this.getPendingBuildKey(tileType, ambit, slot, playerId);
+    return this.pendingBuilds.get(key) || null;
   }
 }

@@ -6,6 +6,7 @@ import {
   MAP_DEFAULT_COMMAND_COL_COUNT
 } from "../../../constants/MapConstants";
 import {AMBITS} from "../../../constants/Ambits";
+import {EVENTS} from "../../../constants/Events";
 import {HUDViewModel} from "../../HUDViewModel";
 import {Planet} from "../../../models/Planet";
 import {Player} from "../../../models/Player";
@@ -21,6 +22,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
    * @param {Player|null} defender
    * @param {Player|null} attacker
    * @param {boolean} isRaidMap - Whether this is the raid map
+   * @param {string} containerId - The ID of the DOM container element for this tile selection layer
    */
   constructor(
     gameState,
@@ -29,12 +31,14 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     planet,
     defender,
     attacker,
-    isRaidMap = false
+    isRaidMap = false,
+    containerId = ""
   ) {
     super(gameState);
     this.structManager = structManager;
     this.mapColBreakdown = mapColBreakdown;
     this.dividerIndex = this.mapColBreakdown.lastIndexOf(MAP_COL_DIVIDER);
+    this.containerId = containerId;
 
     /** @type {Planet} */
     this.planet = planet;
@@ -499,6 +503,36 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     }
   }
 
+  /**
+   * Build CSS selector for finding a tile by position.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @return {string}
+   */
+  buildTileSelector(tileType, ambit, slot, playerId) {
+    return `.map-tile-selection-tile[data-tile-type="${tileType}"][data-ambit="${ambit}"][data-slot="${slot}"][data-player-id="${playerId}"]`;
+  }
+
+  /**
+   * Update a tile's struct ID attribute.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @param {string} structId
+   */
+  updateTileStructId(tileType, ambit, slot, playerId, structId) {
+    const selector = this.buildTileSelector(tileType, ambit, slot, playerId);
+    const tileElement = document.getElementById(this.containerId).querySelector(selector);
+    if (tileElement) {
+      tileElement.setAttribute('data-struct-id', structId);
+    }
+  }
+
   initPageCode() {
     document.querySelectorAll('a.map-tile-selection-tile').forEach(tile => {
       tile.addEventListener('click', (e) => {
@@ -507,6 +541,19 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
         HUDViewModel.showActionBar(e.currentTarget);
         console.log(e.currentTarget);
       });
+    });
+
+    // Listen for UPDATE_TILE_STRUCT_ID events
+    window.addEventListener(EVENTS.UPDATE_TILE_STRUCT_ID, (event) => {
+      if (event.containerId === this.containerId) {
+        this.updateTileStructId(
+          event.tileType,
+          event.ambit,
+          event.slot,
+          event.playerId,
+          event.structId
+        );
+      }
     });
   }
 

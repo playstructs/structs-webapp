@@ -50,6 +50,12 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     /* Profile Chunk */
     this.profileClickHandler = function () {};
     this.batteryfilledClass = 'sui-mod-filled';
+
+    /**
+     * Currently displayed building struct ID (for progress bar updates).
+     * @type {string|null}
+     */
+    this.currentBuildingStructId = null;
   }
 
   initPageCode() {
@@ -60,6 +66,25 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     }.bind(this));
 
     document.getElementById(this.playerChunkPortraitId).addEventListener('click', this.profileClickHandler.bind(this));
+
+    // Listen for task worker changes to update progress bar
+    window.addEventListener(EVENTS.TASK_WORKER_CHANGED, (event) => {
+      if (this.currentBuildingStructId && event.state.object_id === this.currentBuildingStructId) {
+        this.updateProgressBar(event.state.getPercentCompleteEstimate());
+      }
+    });
+  }
+
+  /**
+   * Update the progress bar contents without re-rendering the entire action bar.
+   *
+   * @param {number} percentageToComplete
+   */
+  updateProgressBar(percentageToComplete) {
+    const progressBarWrapper = document.getElementById(this.progressBarId);
+    if (progressBarWrapper) {
+      progressBarWrapper.innerHTML = this.renderProgressBar(percentageToComplete);
+    }
   }
 
   renderChargeLevel(level) {
@@ -172,9 +197,69 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     // If the struct is building, show the building action bar
     if (struct && struct.is_building) {
       this.showBuildingActionBar(struct);
+      return;
+    }
+
+    // Check if there's a pending build at this position
+    const playerId = this.gameState.thisPlayerId;
+    const pendingBuild = this.gameState.getPendingBuild(tileType, ambitOrTileLabel, slot, playerId);
+
+    if (pendingBuild) {
+      this.showPendingBuildActionBar(pendingBuild.structType);
     } else {
       this.showEmptyTileActionBar(tileType, ambitOrTileLabel, side, slot);
     }
+  }
+
+  /**
+   * Shows the action bar for a pending build (before struct ID is known).
+   *
+   * @param {StructType} structType
+   */
+  showPendingBuildActionBar(structType) {
+    // Clear current building struct ID (pending builds don't have one yet)
+    this.currentBuildingStructId = null;
+
+    const header = structType.class_abbreviation;
+
+    // Pending builds start at 0% progress
+    const percentageToComplete = 0;
+
+    const cancelBtnId = `${this.playerType}-action-bar-cancel-btn`;
+
+    const cancelBtn = `
+      <div class="sui-action-bar-btn-group">
+        <a 
+          id="${cancelBtnId}"
+          href="javascript: void(0)"
+          class="sui-panel-btn sui-mod-disabled"
+        >
+          <i class="sui-icon-md icon-close"></i>
+        </a>
+      </div>
+    `;
+
+    document.getElementById(this.actionChunkId).innerHTML = `
+      <div class="sui-screen sui-screen-full-width">
+        <div id="${this.headerScreenId}" class="sui-screen-info">${header}</div>
+      </div>
+
+      <div class="sui-action-bar-bottom-row">
+
+        <div id="${this.propertiesScreenId}" class="sui-screen">
+          <div class="sui-screen-properties">
+            <div id="${this.progressBarId}" class="sui-action-bar-progress-bar-wrapper">
+              ${this.renderProgressBar(percentageToComplete)}
+            </div>
+          </div>
+        </div>
+
+        ${cancelBtn}
+
+      </div>
+    `;
+
+    this.showActionChunk();
   }
 
   /**
@@ -189,6 +274,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     side,
     slot = null,
   ) {
+    // Clear current building struct ID
+    this.currentBuildingStructId = null;
+
     const header = ambitOrTileLabel.toUpperCase();
 
     const propertyIcon = this.getPropertyIconForTileType(tileType);
@@ -271,6 +359,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {Struct} struct
    */
   showBuildingActionBar(struct) {
+    // Store current building struct ID for progress bar updates
+    this.currentBuildingStructId = struct.id;
+
     const structType = this.gameState.structTypes.getStructTypeById(struct.type);
     const header = structType.class_abbreviation;
 

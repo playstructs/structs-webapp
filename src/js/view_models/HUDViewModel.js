@@ -3,6 +3,7 @@ import {StatusBarTopLeftComponent} from "./components/hud/StatusBarTopLeftCompon
 import {StatusBarTopRightComponent} from "./components/hud/StatusBarTopRightComponent";
 import {ActionBarComponent} from "./components/hud/ActionBarComponent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {EVENTS} from "../constants/Events";
 import {MenuPage} from "../framework/MenuPage";
 import {HUD_IDS} from "../constants/HUDConstants";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
@@ -33,6 +34,12 @@ export class HUDViewModel extends AbstractViewModel {
 
   /** @type {ActionBarComponent} */
   static bottomRightActionBarRaid;
+
+  /**
+   * Currently selected tile data for action bar refresh.
+   * @type {{tileType: string, ambit: string, slot: number|null, playerId: string, side: string, structId: string|null, tileLabel: string}|null}
+   */
+  static currentSelectedTile = null;
 
   /**
    * @param {GameState} gameState
@@ -133,6 +140,40 @@ export class HUDViewModel extends AbstractViewModel {
     HUDViewModel.bottomLeftActionBar.initPageCode();
     HUDViewModel.bottomRightActionBarAlphaBase.initPageCode();
     HUDViewModel.bottomRightActionBarRaid.initPageCode();
+
+    // Listen for REFRESH_ACTION_BAR events (when a struct arrives at a position)
+    window.addEventListener(EVENTS.REFRESH_ACTION_BAR, (event) => {
+      HUDViewModel.refreshActionBarIfSelected(
+        event.tileType,
+        event.ambit,
+        event.slot,
+        event.playerId,
+        event.structId
+      );
+    });
+
+    // Listen for PENDING_BUILD_ADDED events to refresh action bar if the tile is selected
+    window.addEventListener(EVENTS.PENDING_BUILD_ADDED, (event) => {
+      if (HUDViewModel.currentSelectedTile) {
+        const current = HUDViewModel.currentSelectedTile;
+        if (
+          current.tileType === event.tileType
+          && current.ambit.toUpperCase() === event.ambit.toUpperCase()
+          && current.slot === event.slot
+          && current.playerId === event.playerId
+        ) {
+          // Refresh the action bar to show the pending build
+          const actionBar = HUDViewModel.whichActionBar(current.side);
+          HUDViewModel[actionBar].showActionBarFor(
+            current.tileType,
+            current.tileLabel,
+            current.side,
+            current.slot,
+            current.structId
+          );
+        }
+      }
+    });
   }
 
   static render() {
@@ -188,14 +229,69 @@ export class HUDViewModel extends AbstractViewModel {
       slot = null;
     }
 
+    const tileType = clickedDomElement.dataset.tileType;
+    const tileLabel = clickedDomElement.dataset.tileLabel || clickedDomElement.dataset.ambit;
+    const side = clickedDomElement.dataset.side;
+    const playerId = clickedDomElement.dataset.playerId;
+
+    // Store the currently selected tile for action bar refresh
+    HUDViewModel.currentSelectedTile = {
+      tileType: tileType,
+      ambit: clickedDomElement.dataset.ambit,
+      slot: slot,
+      playerId: playerId,
+      side: side,
+      structId: structId || null,
+      tileLabel: tileLabel
+    };
+
     // Show action bar for both empty and occupied tiles
     // Pass structId to determine if deploy button should be disabled
     HUDViewModel[actionBar].showActionBarFor(
-      clickedDomElement.dataset.tileType,
-      clickedDomElement.dataset.tileLabel || clickedDomElement.dataset.ambit,
-      clickedDomElement.dataset.side,
+      tileType,
+      tileLabel,
+      side,
       slot,
       structId || null
     );
+  }
+
+  /**
+   * Refresh the action bar for the currently selected tile.
+   * Called when a struct arrives at the selected position.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @param {string} structId
+   */
+  static refreshActionBarIfSelected(tileType, ambit, slot, playerId, structId) {
+    if (!HUDViewModel.currentSelectedTile) {
+      return;
+    }
+
+    const current = HUDViewModel.currentSelectedTile;
+
+    // Check if the event matches the currently selected tile
+    if (
+      current.tileType === tileType
+      && current.ambit.toUpperCase() === ambit.toUpperCase()
+      && current.slot === slot
+      && current.playerId === playerId
+    ) {
+      // Update the stored struct ID
+      HUDViewModel.currentSelectedTile.structId = structId;
+
+      // Refresh the action bar
+      const actionBar = HUDViewModel.whichActionBar(current.side);
+      HUDViewModel[actionBar].showActionBarFor(
+        current.tileType,
+        current.tileLabel,
+        current.side,
+        current.slot,
+        structId
+      );
+    }
   }
 }

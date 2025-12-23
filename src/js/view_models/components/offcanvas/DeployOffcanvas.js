@@ -4,6 +4,7 @@ import {StructStillBuilder} from "../../../builders/StructStillBuilder";
 import {MAP_TILE_TYPES} from "../../../constants/MapConstants";
 import {StructType} from "../../../models/StructType";
 import {RenderDeploymentIndicatorEvent} from "../../../events/RenderDeploymentIndicatorEvent";
+import {PendingBuildAddedEvent} from "../../../events/PendingBuildAddedEvent";
 import {SUICheatsheet} from "../../../sui/SUICheatsheet";
 
 export class DeployOffcanvas extends AbstractViewModelComponent {
@@ -93,6 +94,8 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
 
         console.log(`Deploy: ${structType.type}`);
 
+        const tileType = this.getTileTypeByStructType(structType);
+
         this.signingClientManager.queueMsgStructBuildInitiate(
           this.gameState.signingAccount.address,
           this.gameState.thisPlayerId,
@@ -103,12 +106,32 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
 
         MenuPage.sui.offcanvas.close();
 
+        // Add pending build to gameState
+        this.gameState.addPendingBuild(
+          tileType,
+          this.ambit,
+          this.slot,
+          this.gameState.thisPlayerId,
+          structType
+        );
+
+        // Dispatch event to render deployment indicator on struct layer
         window.dispatchEvent(new RenderDeploymentIndicatorEvent(
           this.gameState.alphaBaseMap.structLayerId,
-          this.getTileTypeByStructType(structType),
+          tileType,
           this.ambit,
           this.slot,
           this.gameState.thisPlayerId
+        ));
+
+        // Dispatch event to notify that a pending build was added
+        window.dispatchEvent(new PendingBuildAddedEvent(
+          this.gameState.alphaBaseMap.structLayerId,
+          tileType,
+          this.ambit,
+          this.slot,
+          this.gameState.thisPlayerId,
+          structType
         ));
       });
     });

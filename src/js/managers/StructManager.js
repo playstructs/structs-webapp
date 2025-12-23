@@ -1,5 +1,6 @@
 import {Struct} from "../models/Struct";
 import {StructType} from "../models/StructType";
+import {MAP_TILE_TYPES} from "../constants/MapConstants";
 
 export class StructManager {
 
@@ -214,5 +215,22 @@ export class StructManager {
     ];
 
     return allStructs.find(struct => struct.id === structId) || null;
+  }
+
+  /**
+   * Determine tile type from struct location and type
+   * @param {Struct} struct
+   * @return {string|null}
+   */
+  getTileTypeFromStruct(struct) {
+    if (struct.location_type === 'planet') {
+      return MAP_TILE_TYPES.PLANETARY_SLOT;
+    }
+    if (struct.location_type === 'fleet') {
+      return this.isCommandStruct(struct)
+        ? MAP_TILE_TYPES.COMMAND
+        : MAP_TILE_TYPES.FLEET;
+    }
+    return null;
   }
 }

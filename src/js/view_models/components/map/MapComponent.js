@@ -202,7 +202,8 @@ export class MapComponent extends AbstractViewModelComponent {
       this.planet,
       this.defender,
       this.attacker,
-      isRaidMap
+      isRaidMap,
+      this.tileSelectionId
     )
   }
 

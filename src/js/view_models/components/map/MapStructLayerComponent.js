@@ -91,23 +91,6 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
-   * Determine tile type from struct location and type
-   * @param {Struct} struct
-   * @return {string|null}
-   */
-  getTileTypeFromStruct(struct) {
-    if (struct.location_type === 'planet') {
-      return MAP_TILE_TYPES.PLANETARY_SLOT;
-    }
-    if (struct.location_type === 'fleet') {
-      return this.structManager.isCommandStruct(struct)
-        ? MAP_TILE_TYPES.COMMAND
-        : MAP_TILE_TYPES.FLEET;
-    }
-    return null;
-  }
-
-  /**
    * Build CSS selector for finding a struct tile
    * @param {string} tileType
    * @param {string} ambit
@@ -124,7 +107,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
    * @param {Struct} struct
    */
   renderStruct(struct) {
-    const tileType = this.getTileTypeFromStruct(struct);
+    const tileType = this.structManager.getTileTypeFromStruct(struct);
     if (!tileType) {
       return;
     }
