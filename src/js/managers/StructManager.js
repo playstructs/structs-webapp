@@ -195,4 +195,20 @@ export class StructManager {
       || this.getDeploymentBlockerInsufficientCharge(structType)
       || this.getDeploymentBlockerCommandShipAway(structType);
   }
+
+  /**
+   * Gets a struct by ID from all available struct arrays.
+   *
+   * @param {string} structId
+   * @return {Struct|null}
+   */
+  getStructById(structId) {
+    const allStructs = [
+      ...this.gameState.thisPlayerStructs,
+      ...this.gameState.planetRaiderStructs,
+      ...this.gameState.raidEnemyStructs
+    ];
+
+    return allStructs.find(struct => struct.id === structId) || null;
+  }
 }

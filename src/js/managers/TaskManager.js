@@ -7,6 +7,7 @@ import {TaskProcess} from "../models/TaskProcess";
 import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
 import {TaskManagerStatusChangedEvent} from "../events/TaskManagerStatusChangedEvent";
 import {TASK_STATUS} from "../constants/TaskStatus";
+import {OBJECT_TYPES} from "../constants/ObjectTypes";
 
 
 /*
@@ -441,6 +442,27 @@ export class TaskManager {
             total += this.processes[pid].state.getHashrate();
         }
         return total;
+    }
+
+    /**
+     * Searches for a build process by struct ID.
+     *
+     * @param {string} structId
+     * @return {TaskProcess|null}
+     */
+    getBuildProcessByStructId(structId) {
+        for (const pid of Object.keys(this.processes)) {
+            const process = this.processes[pid];
+            const state = process.state;
+            if (
+                state.task_type === TASK_TYPES.BUILD
+                && state.object_type === OBJECT_TYPES.STRUCT
+                && state.object_id === structId
+            ) {
+                return process;
+            }
+        }
+        return null;
     }
 
 

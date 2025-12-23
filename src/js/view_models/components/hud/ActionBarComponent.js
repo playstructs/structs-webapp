@@ -3,6 +3,7 @@ import {EVENTS} from "../../../constants/Events";
 import {MAP_CONTAINER_IDS, MAP_TILE_TYPE_ICONS, MAP_TILE_TYPES} from "../../../constants/MapConstants";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {DeployOffcanvas} from "../offcanvas/DeployOffcanvas";
+import {Struct} from "../../../models/Struct";
 
 export class ActionBarComponent extends AbstractViewModelComponent {
 
@@ -10,6 +11,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {GameState} gameState
    * @param {SigningClientManager} signingClientManager
    * @param {StructManager} structManager
+   * @param {TaskManager} taskManager
    * @param {string} playerType
    * @param {string} align left or right
    * @param {string} id
@@ -18,6 +20,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     gameState,
     signingClientManager,
     structManager,
+    taskManager,
     playerType,
     align,
     id
@@ -27,6 +30,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.playerType = playerType;
     this.signingClientManager = signingClientManager;
     this.structManager = structManager;
+    this.taskManager = taskManager;
 
     /* Style */
     this.themeClass = `sui-theme-${this.playerType === PLAYER_TYPES.PLAYER ? 'player' : 'enemy'}`;
@@ -41,6 +45,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.actionChunkId = `${this.playerType}-action-bar-action-chunk`;
     this.headerScreenId = `${this.playerType}-action-bar-header`;
     this.propertiesScreenId = `${this.playerType}-action-bar-properties-screen`;
+    this.progressBarId = `${this.playerType}-action-bar-progress-bar`;
 
     /* Profile Chunk */
     this.profileClickHandler = function () {};
@@ -126,6 +131,29 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * Renders the progress bar chunks HTML without the wrapper.
+   *
+   * @param {number} percentageToComplete - A number from 0 to 1 representing completion percentage
+   * @return {string} HTML for the progress bar chunks
+   */
+  renderProgressBar(percentageToComplete) {
+    const totalChunks = 10;
+    const filledChunks = Math.floor(percentageToComplete * totalChunks);
+
+    let chunksHTML = '';
+    for (let i = 0; i < totalChunks; i++) {
+      const filledClass = i < filledChunks ? ' sui-mod-filled' : '';
+      chunksHTML += `<div class="sui-action-bar-progress-bar-chunk${filledClass}"></div>`;
+    }
+
+    return `
+      <div class="sui-action-bar-progress-bar">
+        ${chunksHTML}
+      </div>
+    `;
+  }
+
+  /**
    * @param {string} tileType
    * @param {string} ambitOrTileLabel
    * @param {string} side right or left
@@ -139,8 +167,21 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     slot = null,
     structId = null
   ) {
-    const header = ambitOrTileLabel.toUpperCase();
     const isOccupied = structId !== null && structId !== '';
+
+    // Check if the struct is building
+    let struct = null;
+    if (isOccupied) {
+      struct = this.structManager.getStructById(structId);
+    }
+
+    // If the struct is building, show the building action bar
+    if (struct && struct.is_building) {
+      this.showBuildingActionBar(struct);
+      return;
+    }
+
+    const header = ambitOrTileLabel.toUpperCase();
 
     const propertyIcon = this.getPropertyIconForTileType(tileType);
     const propertyIconLinkId = `${this.playerType}-action-bar-property-tile-type`;
@@ -214,6 +255,66 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     `;
 
     attachDeployBtnHandler();
+
+    this.showActionChunk();
+  }
+
+  /**
+   * Shows the action bar for a struct that is currently being built.
+   *
+   * @param {Struct} struct
+   */
+  showBuildingActionBar(struct) {
+    const structType = this.gameState.structTypes.getStructTypeById(struct.type);
+    const header = structType.class_abbreviation;
+
+    // Get the build progress
+    let percentageToComplete = 0;
+
+    const buildProcess = this.taskManager.getBuildProcessByStructId(struct.id);
+    if (buildProcess) {
+      percentageToComplete = this.taskManager.getProcessPercentCompleteEstimate(buildProcess.state.getPID());
+      console.log(`Build progress: ${percentageToComplete}`);
+    }
+
+    const cancelBtnId = `${this.playerType}-action-bar-cancel-btn`;
+
+    const cancelBtn = `
+      <div class="sui-action-bar-btn-group">
+        <a 
+          id="${cancelBtnId}"
+          href="javascript: void(0)"
+          class="sui-panel-btn sui-mod-default"
+        >
+          <i class="sui-icon-md icon-close"></i>
+        </a>
+      </div>
+    `;
+
+    document.getElementById(this.actionChunkId).innerHTML = `
+      <div class="sui-screen sui-screen-full-width">
+        <div id="${this.headerScreenId}" class="sui-screen-info">${header}</div>
+      </div>
+
+      <div class="sui-action-bar-bottom-row">
+
+        <div id="${this.propertiesScreenId}" class="sui-screen">
+          <div class="sui-screen-properties">
+            <div id="${this.progressBarId}" class="sui-action-bar-progress-bar-wrapper">
+              ${this.renderProgressBar(percentageToComplete)}
+            </div>
+          </div>
+        </div>
+
+        ${cancelBtn}
+
+      </div>
+    `;
+
+    // Attach cancel button handler
+    document.getElementById(cancelBtnId).addEventListener('click', function () {
+      console.log(`Canceling build of struct ${struct.id}`);
+    });
 
     this.showActionChunk();
   }
