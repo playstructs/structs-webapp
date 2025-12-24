@@ -109,7 +109,7 @@ export class TaskState {
 
     console.log(cumulativeBlocksRemainingWithCurrentHashRate)
     console.log(worstCaseBlocksRemaining)
-    const percent = cumulativeBlocksRemainingWithCurrentHashRate / worstCaseBlocksRemaining;
+    const percent = 1.0 - (cumulativeBlocksRemainingWithCurrentHashRate / worstCaseBlocksRemaining);
 
     return Math.min(1.0, Math.max(0.0, percent));
   }
