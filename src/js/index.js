@@ -38,12 +38,12 @@ const walletManager = new WalletManager();
 global.walletManager = walletManager;
 
 const grassManager = new GrassManager(
-  "ws://localhost:1443",
+  `ws://${window.location.hostname}:1443`,
   "structs.>"
 );
 
 const blockGrassManager = new GrassManager(
-  "ws://localhost:1443",
+  `ws://${window.location.hostname}:1443`,
   "consensus"
 );
 
