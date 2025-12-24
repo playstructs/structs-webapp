@@ -101,14 +101,9 @@ export class TaskState {
 
     // Get the current blocks remaining using getBlockRemainingEstimate
     const cumulativeBlocksRemainingWithCurrentHashRate = this.getBlockRemainingEstimate(blockStartOffset, hashRateOverride);
-
     // Get worst-case blocks remaining using getBlockRemainingEstimate with hash rate 1
     const worstCaseBlocksRemaining = this.getBlockRemainingEstimate(blockStartOffset, 1);
 
-    // Percent = actual progress / worst case total
-
-    console.log(cumulativeBlocksRemainingWithCurrentHashRate)
-    console.log(worstCaseBlocksRemaining)
     const percent = 1.0 - (cumulativeBlocksRemainingWithCurrentHashRate / worstCaseBlocksRemaining);
 
     return Math.min(1.0, Math.max(0.0, percent));
