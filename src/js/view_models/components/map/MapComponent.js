@@ -13,6 +13,7 @@ import {MAP_PERSPECTIVES} from "../../../constants/MapPerspectives";
 import {MapTileSelectionComponent} from "./MapTileSelectionComponent";
 import {MapStructLayerComponent} from "./MapStructLayerComponent";
 import {Planet} from "../../../models/Planet";
+import {Player} from "../../../models/Player";
 
 export class MapComponent extends AbstractViewModelComponent {
 
@@ -21,12 +22,14 @@ export class MapComponent extends AbstractViewModelComponent {
    * @param {StructManager} structManager
    * @param {string} containerId
    * @param {string} idPrefix
+   * @param {boolean} enableTileSelectionLayer
    */
   constructor(
     gameState,
     structManager,
     containerId,
-    idPrefix
+    idPrefix,
+    enableTileSelectionLayer = true
   ) {
     super(gameState);
 
@@ -35,6 +38,8 @@ export class MapComponent extends AbstractViewModelComponent {
     this.containerId = containerId;
 
     this.idPrefix = idPrefix;
+
+    this.enableTileSelectionLayer = enableTileSelectionLayer;
 
     this.mapId = `${this.idPrefix}-map`;
     this.terrainId = `${this.idPrefix}-map-terrain`;
@@ -191,15 +196,19 @@ export class MapComponent extends AbstractViewModelComponent {
       this.structLayerId
     );
 
-    this.mapTileSelection = new MapTileSelectionComponent(
-      this.gameState,
-      this.structManager,
-      mapColBreakdown,
-      this.planet,
-      this.defender,
-      this.attacker,
-      this.tileSelectionId
-    )
+    if (this.enableTileSelectionLayer) {
+
+      this.mapTileSelection = new MapTileSelectionComponent(
+        this.gameState,
+        this.structManager,
+        mapColBreakdown,
+        this.planet,
+        this.defender,
+        this.attacker,
+        this.tileSelectionId
+      );
+
+    }
   }
 
   /**
@@ -239,8 +248,10 @@ export class MapComponent extends AbstractViewModelComponent {
       document.getElementById(this.fogOfWarId).innerHTML = this.mapFogOfWar.renderHTML();
     }
 
-    document.getElementById(this.tileSelectionId).innerHTML = this.mapTileSelection.renderHTML();
-    this.mapTileSelection.initPageCode();
+    if (this.enableTileSelectionLayer) {
+      document.getElementById(this.tileSelectionId).innerHTML = this.mapTileSelection.renderHTML();
+      this.mapTileSelection.initPageCode();
+    }
     
     this.mapStructLayer.initPageCode();
   }

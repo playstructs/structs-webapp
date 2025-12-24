@@ -138,7 +138,8 @@ gameState.previewMap = new MapComponent(
   gameState,
   structManager,
   MAP_CONTAINER_IDS.PREVIEW,
-  'preview'
+  'preview',
+  false
 );
 
 MenuPage.gameState = gameState;

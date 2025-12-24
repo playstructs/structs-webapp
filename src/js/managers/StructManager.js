@@ -47,7 +47,9 @@ export class StructManager {
     const allStructs = [
       ...this.gameState.thisPlayerStructs,
       ...this.gameState.planetRaiderStructs,
-      ...this.gameState.raidEnemyStructs
+      ...this.gameState.raidEnemyStructs,
+      ...this.gameState.previewDefenderStructs,
+      ...this.gameState.previewAttackerStructs
     ];
 
     return allStructs.find(struct =>
@@ -191,7 +193,9 @@ export class StructManager {
     const allStructs = [
       ...this.gameState.thisPlayerStructs,
       ...this.gameState.planetRaiderStructs,
-      ...this.gameState.raidEnemyStructs
+      ...this.gameState.raidEnemyStructs,
+      ...this.gameState.previewDefenderStructs,
+      ...this.gameState.previewAttackerStructs
     ];
 
     return allStructs.find(struct => struct.id === structId) || null;

@@ -106,8 +106,17 @@ export class GameState {
 
     this.structTypes = new StructTypeCollection();
 
+    /** @type {Struct[]} */
+    this.previewDefenderStructs = [];
+
+    /** @type {Struct[]} */
+    this.previewAttackerStructs = [];
+
     /* GRASS Only Data */
+
     this.currentBlockHeight = 0;
+
+    /* Temp Data */
 
     /**
      * Tracks pending builds before the struct ID is known.
@@ -598,6 +607,20 @@ export class GameState {
   removePendingBuild(tileType, ambit, slot, playerId) {
     const key = this.getPendingBuildKey(tileType, ambit, slot, playerId);
     this.pendingBuilds.delete(key);
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setPreviewDefenderStructs(structs) {
+    this.previewDefenderStructs = structs;
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setPreviewAttackerStructs(structs) {
+    this.previewAttackerStructs = structs;
   }
 
   clearPlanetRaidData() {
