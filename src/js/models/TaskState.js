@@ -100,15 +100,65 @@ export class TaskState {
   }
 
   /**
+   * @param {number} blockStartOffset
+   * @param {number} hashRateAverage
    * @return {number}
    */
-  getTimeRemainingEstimate() {
+  getBlockRemainingEstimate(blockStartOffset = 0, hashRateOverride = 0) {
     if (this.isCompleted()) {
-      return 0.0;
+      return 0;
     }
 
-    const hash_scope = 2.0 ** (this.getCurrentDifficulty() * 4);
-    return hash_scope / this.getHashrate()
+    const currentAge = this.getCurrentAgeEstimate()
+    const hashRate = (hashRateOverride) ? hashRateOverride : this.getHashrate()
+
+    const baseDifficultyRange = this.difficulty_target
+    const maxBlocksToCheck =  TASK.MAX_BLOCKS_WHEN_ESTIMATING
+
+    let cumulativeExpectedSuccesses = 0;
+    let blocksAhead = 0;
+
+    while (cumulativeExpectedSuccesses < 1 && blocksAhead < maxBlocksToCheck) {
+      if (blocksAhead > blockStartOffset) {
+        const ageAtBlock = currentAge + blocksAhead;
+        const difficulty = this.getCalculatedDifficulty(ageAtBlock, baseDifficultyRange);
+        const successProbability = 1 / Math.pow(16, difficulty);
+
+        // Expected number of successful hashes in this block
+        const expectedSuccessesInBlock = hashRate * blockTimeSeconds * successProbability;
+        cumulativeExpectedSuccesses += expectedSuccessesInBlock;
+      }
+      blocksAhead++;
+    }
+
+    if (blocksAhead >= maxBlocksToCheck) {
+      return maxBlocksToCheck * blockTimeSeconds; // Too long to estimate accurately
+    }
+
+    console.log('Task:  ' + this.prefix)
+    console.log('Task: blocks ahead ' + blocksAhead)
+
+    return blocksAhead;
+
+  }
+
+
+  /**
+   * @return {number}
+   */
+  getTimeRemainingEstimate(blockStartOffset = 0, hashRateOverride = 0) {
+
+    const blockTimeSeconds = TASK.ESTIMATED_BLOCK_TIME
+    const blocksAhead = this.getBlockRemainingEstimate(blockStartOffset, hashRateOverride)
+
+    const finalEstimate = blocksAhead * blockTimeSeconds
+    console.log('Task:  ' + this.prefix)
+    console.log('Task: blocks ahead ' + blocksAhead)
+    console.log('Task: block time ' + blockTimeSeconds)
+    console.log('Task: time ' + finalEstimate)
+
+    return finalEstimate;
+
   }
 
   /**
@@ -160,5 +210,24 @@ export class TaskState {
     }
 
     return difficulty;
+  }
+
+  /**
+   * Calculate difficulty from age
+   *
+   * @param {number} age - Current age in blocks
+   * @param {number} baseDifficultyRange - Base difficulty range
+   * @returns {number} Difficulty (number of leading zeros required in hash)
+   */
+   getCalculatedDifficulty(age, baseDifficultyRange) {
+    if (age <= 1) {
+      return 64;
+    }
+
+    const difficulty = 64 - Math.floor(
+        Math.log10(age) / Math.log10(baseDifficultyRange) * 63
+    );
+
+    return Math.max(1, difficulty);
   }
 }
