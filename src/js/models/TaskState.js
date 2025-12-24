@@ -90,14 +90,30 @@ export class TaskState {
   }
 
   /**
-   * @return {number}
+   * Calculate percent complete using getBlockRemainingEstimate.
+   *
+   * @return {number} Percent complete (0.0 to 1.0)
    */
-  getPercentCompleteEstimate() {
+  getPercentCompleteEstimate(blockStartOffset = 0, hashRateOverride = 0) {
     if (this.isCompleted()) {
-      return 1;
+      return 1.0;
     }
-    return 1.0-(this.getCurrentDifficulty()/100) // TODO better
+
+    // Get the current blocks remaining using getBlockRemainingEstimate
+    const cumulativeExpectedSuccessesWithCurrentHashRate = this.getBlockRemainingEstimate(blockStartOffset, hashRateOverride);
+
+    // Get worst-case blocks remaining using getBlockRemainingEstimate with hash rate 1
+    const worstCaseBlocksRemaining = this.getBlockRemainingEstimate(blockStartOffset, 1);
+
+    // Percent = actual progress / worst case total
+
+    console.log(cumulativeExpectedSuccessesWithCurrentHashRate)
+    console.log(worstCaseBlocksRemaining)
+    const percent = 1.0 - (cumulativeExpectedSuccessesWithCurrentHashRate / worstCaseBlocksRemaining);
+
+    return Math.min(1.0, Math.max(0.0, percent));
   }
+
 
   /**
    * @param {number} blockStartOffset
@@ -114,6 +130,7 @@ export class TaskState {
 
     const baseDifficultyRange = this.difficulty_target
     const maxBlocksToCheck =  TASK.MAX_BLOCKS_WHEN_ESTIMATING
+    const blockTimeSeconds = TASK.ESTIMATED_BLOCK_TIME
 
     let cumulativeExpectedSuccesses = 0;
     let blocksAhead = 0;
@@ -132,7 +149,7 @@ export class TaskState {
     }
 
     if (blocksAhead >= maxBlocksToCheck) {
-      return maxBlocksToCheck * blockTimeSeconds; // Too long to estimate accurately
+      return maxBlocksToCheck; // Too long to estimate accurately
     }
 
     console.log('Task:  ' + this.prefix)

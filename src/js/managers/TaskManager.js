@@ -387,7 +387,10 @@ export class TaskManager {
      * @return {number}
      */
     getProcessPercentCompleteEstimate(pid) {
-        return this.processes[pid].state.getPercentCompleteEstimate();
+        const offsetBlock = this.getProcessBlockOffset(pid);
+        const hashrateEstimate = this.getProcessAverageHashrate();
+
+        return this.processes[pid].state.getPercentCompleteEstimate(offsetBlock, hashrateEstimate);
     }
 
     /**
@@ -408,8 +411,29 @@ export class TaskManager {
      * @return {number}
      */
     getProcessTimeRemainingEstimate(pid) {
-        return this.processes[pid].state.getTimeRemainingEstimate();
+        const offsetBlock = this.getProcessBlockOffset(pid);
+        const hashrateEstimate = this.getProcessAverageHashrate();
+
+        return this.processes[pid].state.getTimeRemainingEstimate(offsetBlock, hashrateEstimate);
     }
+
+    getProcessBlockOffset(queue_pid = '') {
+        let longest_block = 0;
+        let running_list = [...this.running_queue];
+        for (const pid of running_list) {
+            const current_block_length = this.processes[pid].state.getTimeRemainingEstimate();
+            longest_block = (current_block_length > longest_block) ? current_block_length : longest_block;
+        }
+
+        let waiting_list = [...this.waiting_queue];
+        for (const pid of waiting_list) {
+            if (pid = queue_pid) { break; }
+            const current_block_length = this.processes[pid].state.getTimeRemainingEstimate(longest_block);
+            longest_block = (current_block_length > longest_block) ? current_block_length : longest_block;
+        }
+    }
+
+
 
     /**
      * @return {number}
@@ -442,6 +466,20 @@ export class TaskManager {
             total += this.processes[pid].state.getHashrate();
         }
         return total;
+    }
+
+
+    /**
+     * @return {number}
+     */
+    getProcessAverageHashrate() {
+        let average = 0;
+        let iterations = 0;
+        for (const pid of Object.keys(this.processes)) {
+            average += this.processes[pid].state.getHashrate();
+            iterations++
+        }
+        return average / iterations;
     }
 
     /**
