@@ -226,8 +226,6 @@ export class AuthManager {
           this.raidManager.initRaidEnemy(),
         ]);
 
-        await this.taskManager.restoreTasksFromDB();
-
         this.grassManager.registerListener(new PlanetRaidStatusListener(
           this.gameState,
           this.guildAPI,
@@ -242,6 +240,9 @@ export class AuthManager {
         this.gameState.raidMap.render();
 
         this.mapManager.showActiveMap();
+
+        // Do this last so block height is available
+        await this.taskManager.restoreTasksFromDB();
       }
     }
 
