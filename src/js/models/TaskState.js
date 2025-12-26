@@ -112,7 +112,7 @@ export class TaskState {
 
   /**
    * @param {number} blockStartOffset
-   * @param {number} hashRateAverage
+   * @param {number} hashRateOverride
    * @return {number}
    */
   getBlockRemainingEstimate(blockStartOffset = 0, hashRateOverride = 0) {
@@ -123,9 +123,9 @@ export class TaskState {
     const currentAge = this.getCurrentAgeEstimate()
     const hashRate = (hashRateOverride) ? hashRateOverride : this.getHashrate()
 
-    const baseDifficultyRange = this.difficulty_target
-    const maxBlocksToCheck =  TASK.MAX_BLOCKS_WHEN_ESTIMATING
-    const blockTimeSeconds = TASK.ESTIMATED_BLOCK_TIME
+    const baseDifficultyRange = this.difficulty_target;
+    const maxBlocksToCheck =  TASK.MAX_BLOCKS_WHEN_ESTIMATING;
+    const blockTimeSeconds = TASK.ESTIMATED_BLOCK_TIME;
 
     let cumulativeExpectedSuccesses = 0;
     let blocksAhead = 0;
@@ -143,15 +143,7 @@ export class TaskState {
       blocksAhead++;
     }
 
-    if (blocksAhead >= maxBlocksToCheck) {
-      return maxBlocksToCheck; // Too long to estimate accurately
-    }
-
-    console.log('Task:  ' + this.prefix)
-    console.log('Task: blocks ahead ' + blocksAhead)
-
-    return blocksAhead;
-
+    return Math.min(blocksAhead, maxBlocksToCheck);
   }
 
 
@@ -159,18 +151,8 @@ export class TaskState {
    * @return {number}
    */
   getTimeRemainingEstimate(blockStartOffset = 0, hashRateOverride = 0) {
-
-    const blockTimeSeconds = TASK.ESTIMATED_BLOCK_TIME
-    const blocksAhead = this.getBlockRemainingEstimate(blockStartOffset, hashRateOverride)
-
-    const finalEstimate = blocksAhead * blockTimeSeconds
-    console.log('Task:  ' + this.prefix)
-    console.log('Task: blocks ahead ' + blocksAhead)
-    console.log('Task: block time ' + blockTimeSeconds)
-    console.log('Task: time ' + finalEstimate)
-
-    return finalEstimate;
-
+    const blocksAhead = this.getBlockRemainingEstimate(blockStartOffset, hashRateOverride);
+    return blocksAhead * TASK.ESTIMATED_BLOCK_TIME;
   }
 
   /**
@@ -217,11 +199,7 @@ export class TaskState {
     // Using logarithmic function to calculate difficulty
     let difficulty = 64 - Math.floor(Math.log10(age) / Math.log10(this.difficulty_target) * 63);
 
-    if (difficulty < 1) {
-      return 1;
-    }
-
-    return difficulty;
+    return Math.max(1, difficulty)
   }
 
   /**

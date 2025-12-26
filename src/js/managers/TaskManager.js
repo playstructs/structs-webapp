@@ -417,6 +417,10 @@ export class TaskManager {
         return this.processes[pid].state.getTimeRemainingEstimate(offsetBlock, hashrateEstimate);
     }
 
+    /**
+     * @param {string} queue_pid
+     * @return {number}
+     */
     getProcessBlockOffset(queue_pid = '') {
         let longest_block = 0;
         let running_list = [...this.running_queue];
@@ -427,10 +431,11 @@ export class TaskManager {
 
         let waiting_list = [...this.waiting_queue];
         for (const pid of waiting_list) {
-            if (pid = queue_pid) { break; }
+            if (pid === queue_pid) { break; }
             const current_block_length = this.processes[pid].state.getTimeRemainingEstimate(longest_block);
             longest_block = (current_block_length > longest_block) ? current_block_length : longest_block;
         }
+        return longest_block;
     }
 
 
@@ -478,6 +483,10 @@ export class TaskManager {
         for (const pid of Object.keys(this.processes)) {
             average += this.processes[pid].state.getHashrate();
             iterations++
+        }
+
+        if (iterations == 0) {
+            return 0;
         }
         return average / iterations;
     }
