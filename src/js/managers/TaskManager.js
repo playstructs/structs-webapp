@@ -387,9 +387,11 @@ export class TaskManager {
      * @return {number}
      */
     getProcessPercentCompleteEstimate(pid) {
-        const offsetBlock = this.getProcessBlockOffset(pid);
         const hashrateEstimate = this.getProcessAverageHashrate();
+        const offsetBlock = this.getProcessBlockOffset(pid, hashrateEstimate);
 
+        console.log(offsetBlock);
+        console.log(hashrateEstimate);
         return this.processes[pid].state.getPercentCompleteEstimate(offsetBlock, hashrateEstimate);
     }
 
@@ -411,8 +413,9 @@ export class TaskManager {
      * @return {number}
      */
     getProcessTimeRemainingEstimate(pid) {
-        const offsetBlock = this.getProcessBlockOffset(pid);
         const hashrateEstimate = this.getProcessAverageHashrate();
+        const offsetBlock = this.getProcessBlockOffset(pid, hashrateEstimate);
+
 
         return this.processes[pid].state.getTimeRemainingEstimate(offsetBlock, hashrateEstimate);
     }
@@ -421,21 +424,27 @@ export class TaskManager {
      * @param {string} queue_pid
      * @return {number}
      */
-    getProcessBlockOffset(queue_pid = '') {
+    getProcessBlockOffset(queue_pid = '', hashRateAverage = 0) {
         let longest_block = 0;
         let running_list = [...this.running_queue];
         for (const pid of running_list) {
-            const current_block_length = this.processes[pid].state.getTimeRemainingEstimate();
+            if (pid === queue_pid) { return 0; }
+            const current_block_length = this.processes[pid].state.getTimeRemainingEstimate(0, hashRateAverage );
             longest_block = (current_block_length > longest_block) ? current_block_length : longest_block;
         }
 
-        let waiting_list = [...this.waiting_queue];
-        for (const pid of waiting_list) {
-            if (pid === queue_pid) { break; }
-            const current_block_length = this.processes[pid].state.getTimeRemainingEstimate(longest_block);
-            longest_block = (current_block_length > longest_block) ? current_block_length : longest_block;
+        // Only process the waiting list if the running list has any jobs
+        // Otherwise we end up with a wonky estimate on initial jobs
+        if (running_list.length > 0) {
+            let waiting_list = [...this.waiting_queue];
+            for (const pid of waiting_list) {
+                if (pid === queue_pid) { break; }
+                const current_block_length = this.processes[pid].state.getTimeRemainingEstimate(longest_block, hashRateAverage);
+                longest_block = (current_block_length > longest_block) ? current_block_length : longest_block;
+            }
         }
         return longest_block;
+
     }
 
 
@@ -485,8 +494,8 @@ export class TaskManager {
             iterations++
         }
 
-        if (iterations == 0) {
-            return 0;
+        if (iterations == 0 || average == 0) {
+            return TASK.HASHRATE_INITIAL_ESTIMATE;
         }
         return average / iterations;
     }
