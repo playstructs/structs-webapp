@@ -121,7 +121,8 @@ export class TaskState {
     }
 
     const currentAge = this.getCurrentAgeEstimate()
-    const hashRate = (hashRateOverride) ? hashRateOverride : this.getHashrate()
+    const processingHashRate = this.getHashrate();
+    const hashRate = Math.max(hashRateOverride, processingHashRate);
 
     const baseDifficultyRange = this.difficulty_target;
     const maxBlocksToCheck =  TASK.MAX_BLOCKS_WHEN_ESTIMATING;

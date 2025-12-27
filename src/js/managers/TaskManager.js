@@ -390,8 +390,6 @@ export class TaskManager {
         const hashrateEstimate = this.getProcessAverageHashrate();
         const offsetBlock = this.getProcessBlockOffset(pid, hashrateEstimate);
 
-        console.log(offsetBlock);
-        console.log(hashrateEstimate);
         return this.processes[pid].state.getPercentCompleteEstimate(offsetBlock, hashrateEstimate);
     }
 
@@ -415,7 +413,6 @@ export class TaskManager {
     getProcessTimeRemainingEstimate(pid) {
         const hashrateEstimate = this.getProcessAverageHashrate();
         const offsetBlock = this.getProcessBlockOffset(pid, hashrateEstimate);
-
 
         return this.processes[pid].state.getTimeRemainingEstimate(offsetBlock, hashrateEstimate);
     }
