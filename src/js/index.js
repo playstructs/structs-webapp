@@ -26,6 +26,7 @@ import {CheatsheetContentBuilder} from "./builders/CheatsheetContentBuilder";
 import {StructManager} from "./managers/StructManager";
 import {TaskManager} from "./managers/TaskManager";
 import {TaskStateFactory} from "./factories/TaskStateFactory";
+import {EVENTS} from "./constants/Events";
 
 
 const gameState = new GameState();
@@ -182,3 +183,6 @@ if (!gameState.thisPlayerId) {
     MenuPage.hideLoadingScreen();
   });
 }
+
+// Start the hashing engine
+window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME));

@@ -32,7 +32,7 @@ export class TaskManager {
         this.signingClientManager = signingClientManager;
         this.taskStateFactory = taskStateFactory;
 
-        this.status = TASK_MANAGER_STATUS.ONLINE;
+        this.status = TASK_MANAGER_STATUS.OFFLINE;
 
         this.processes = {};
         this.waiting_queue = [];
