@@ -38,7 +38,7 @@ export class TaskManager {
         this.waiting_queue = [];
         this.running_queue = [];
 
-        /*
+
         setInterval(() => {
             console.log(this.processes);
             console.log(this.waiting_queue);
@@ -47,7 +47,7 @@ export class TaskManager {
             console.log('percent est. ' + this.getProcessPercentCompleteEstimateAll());
             console.log('time est. ' + this.getProcessTimeRemainingEstimateAll()/1000.0);
         }, 5000);
-        */
+
         /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
