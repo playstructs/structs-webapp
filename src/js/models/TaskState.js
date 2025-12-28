@@ -38,6 +38,20 @@ export class TaskState {
   }
 
   /**
+   * @return {boolean}
+   */
+  isWaiting() {
+    return this.status === TASK_STATUS.WAITING;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isRunning() {
+    return this.status === TASK_STATUS.RUNNING;
+  }
+
+  /**
    * @return {string}
    */
   toLog(){
@@ -92,17 +106,19 @@ export class TaskState {
   /**
    * Calculate percent complete using getBlockRemainingEstimate.
    *
+   * @param {number} hashRate
+   * @param {number} blockStartOffset
    * @return {number} Percent complete (0.0 to 1.0)
    */
-  getPercentCompleteEstimate(blockStartOffset = 0, hashRateOverride = 0) {
+  getPercentCompleteEstimate(hashRate, blockStartOffset = 0) {
     if (this.isCompleted()) {
       return 1.0;
     }
 
     // Get the current blocks remaining using getBlockRemainingEstimate
-    const cumulativeBlocksRemainingWithCurrentHashRate = this.getBlockRemainingEstimate(blockStartOffset, hashRateOverride);
+    const cumulativeBlocksRemainingWithCurrentHashRate = this.getBlockRemainingEstimate(hashRate, blockStartOffset);
     // Get worst-case blocks remaining using getBlockRemainingEstimate with hash rate 1
-    const worstCaseBlocksRemaining = this.getBlockRemainingEstimate(blockStartOffset, 1);
+    const worstCaseBlocksRemaining = this.getBlockRemainingEstimate(1, blockStartOffset);
 
     const percent = 1.0 - (cumulativeBlocksRemainingWithCurrentHashRate / worstCaseBlocksRemaining);
 
@@ -111,18 +127,16 @@ export class TaskState {
 
 
   /**
+   * @param {number} hashRate
    * @param {number} blockStartOffset
-   * @param {number} hashRateOverride
    * @return {number}
    */
-  getBlockRemainingEstimate(blockStartOffset = 0, hashRateOverride = 0) {
+  getBlockRemainingEstimate(hashRate,blockStartOffset = 0) {
     if (this.isCompleted()) {
       return 0;
     }
 
     const currentAge = this.getCurrentAgeEstimate()
-    const processingHashRate = this.getHashrate();
-    const hashRate = Math.max(hashRateOverride, processingHashRate);
 
     const baseDifficultyRange = this.difficulty_target;
     const maxBlocksToCheck =  TASK.MAX_BLOCKS_WHEN_ESTIMATING;
@@ -149,10 +163,12 @@ export class TaskState {
 
 
   /**
+   * @param {number} hashRate
+   * @param {number} blockStartOffset
    * @return {number}
    */
-  getTimeRemainingEstimate(blockStartOffset = 0, hashRateOverride = 0) {
-    const blocksAhead = this.getBlockRemainingEstimate(blockStartOffset, hashRateOverride);
+  getTimeRemainingEstimate(hashRate, blockStartOffset = 0) {
+    const blocksAhead = this.getBlockRemainingEstimate(hashRate, blockStartOffset);
     return blocksAhead * TASK.ESTIMATED_BLOCK_TIME;
   }
 
@@ -160,7 +176,7 @@ export class TaskState {
    * @return {number}
    */
   getHashrate() {
-    if (this.isCompleted()) {
+    if (!this.isRunning()) {
       return 0.0;
     }
 

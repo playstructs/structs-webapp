@@ -39,6 +39,16 @@ export class TaskManager {
         this.running_queue = [];
 
         /*
+        setInterval(() => {
+            console.log(this.processes);
+            console.log(this.waiting_queue);
+            console.log(this.running_queue);
+            console.log('hashrate ' + this.getProcessAverageHashrate());
+            console.log('percent est. ' + this.getProcessPercentCompleteEstimateAll());
+            console.log('time est. ' + this.getProcessTimeRemainingEstimateAll()/1000.0);
+        }, 5000);
+        */
+        /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
 
@@ -387,21 +397,28 @@ export class TaskManager {
      * @return {number}
      */
     getProcessPercentCompleteEstimate(pid) {
-        const hashrateEstimate = this.getProcessAverageHashrate();
-        const offsetBlock = this.getProcessBlockOffset(pid, hashrateEstimate);
+        const hashrate = this.getProcessAverageHashrate();
+        const offsetBlock = this.getProcessBlockOffset(pid, hashrate);
 
-        return this.processes[pid].state.getPercentCompleteEstimate(offsetBlock, hashrateEstimate);
+        return this.processes[pid].state.getPercentCompleteEstimate(offsetBlock, hashrate);
     }
 
     /**
      * @return {number}
      */
     getProcessPercentCompleteEstimateAll() {
+        const hashrate = this.getProcessAverageHashrate();
+
         let i = 0;
         let avg_complete = 0.0;
         for (const pid of Object.keys(this.processes)) {
             i++
-            avg_complete += this.processes[pid].state.getPercentCompleteEstimate();
+            const offsetBlock = this.getProcessBlockOffset(pid, hashrate);
+            avg_complete += this.processes[pid].state.getPercentCompleteEstimate(hashrate, offsetBlock);
+        }
+
+        if (i == 0) {
+            return 1;
         }
         return avg_complete / (i);
     }
@@ -411,22 +428,23 @@ export class TaskManager {
      * @return {number}
      */
     getProcessTimeRemainingEstimate(pid) {
-        const hashrateEstimate = this.getProcessAverageHashrate();
-        const offsetBlock = this.getProcessBlockOffset(pid, hashrateEstimate);
+        const hashrate = this.getProcessAverageHashrate();
+        const offsetBlock = this.getProcessBlockOffset(pid, hashrate);
 
-        return this.processes[pid].state.getTimeRemainingEstimate(offsetBlock, hashrateEstimate);
+        return this.processes[pid].state.getTimeRemainingEstimate(hashrate, offsetBlock);
     }
 
     /**
      * @param {string} queue_pid
+     * @param {number} hashRate
      * @return {number}
      */
-    getProcessBlockOffset(queue_pid = '', hashRateAverage = 0) {
+    getProcessBlockOffset(queue_pid, hashrate) {
         let longest_block = 0;
         let running_list = [...this.running_queue];
         for (const pid of running_list) {
             if (pid === queue_pid) { return 0; }
-            const current_block_length = this.processes[pid].state.getTimeRemainingEstimate(0, hashRateAverage );
+            const current_block_length = this.processes[pid].state.getTimeRemainingEstimate(hashrate, 0 );
             longest_block = (current_block_length > longest_block) ? current_block_length : longest_block;
         }
 
@@ -436,7 +454,7 @@ export class TaskManager {
             let waiting_list = [...this.waiting_queue];
             for (const pid of waiting_list) {
                 if (pid === queue_pid) { break; }
-                const current_block_length = this.processes[pid].state.getTimeRemainingEstimate(longest_block, hashRateAverage);
+                const current_block_length = this.processes[pid].state.getTimeRemainingEstimate(hashrate, longest_block );
                 longest_block = (current_block_length > longest_block) ? current_block_length : longest_block;
             }
         }
@@ -450,12 +468,15 @@ export class TaskManager {
      * @return {number}
      */
     getProcessTimeRemainingEstimateAll() {
+        const hashrate = this.getProcessAverageHashrate();
+
         let longest = 0;
         for (const pid of Object.keys(this.processes)) {
-             const estimate = this.processes[pid].state.getTimeRemainingEstimate();
-             if (estimate > longest) {
+            const offsetBlock = this.getProcessBlockOffset(pid, hashrate);
+            const estimate = this.processes[pid].state.getTimeRemainingEstimate(hashrate, offsetBlock);
+            if (estimate > longest) {
                  longest = estimate;
-             }
+            }
         }
         return longest;
     }
@@ -487,8 +508,11 @@ export class TaskManager {
         let average = 0;
         let iterations = 0;
         for (const pid of Object.keys(this.processes)) {
-            average += this.processes[pid].state.getHashrate();
-            iterations++
+            // Make sure the state is actually running and not waiting
+            if (this.processes[pid].state.isRunning()) {
+                average += this.processes[pid].state.getHashrate();
+                iterations++
+            }
         }
 
         if (iterations == 0 || average == 0) {
