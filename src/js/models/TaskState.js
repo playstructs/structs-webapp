@@ -106,11 +106,11 @@ export class TaskState {
   /**
    * Calculate percent complete using getBlockRemainingEstimate.
    *
-   * @param {number} hashRate
+   * @param {number} hashrate
    * @param {number} blockStartOffset
    * @return {number} Percent complete (0.0 to 1.0)
    */
-  getPercentCompleteEstimate(hashRate, blockStartOffset = 0) {
+  getPercentCompleteEstimate(hashrate, blockStartOffset = 0) {
     if (this.isCompleted()) {
       return 1.0;
     }
@@ -119,7 +119,7 @@ export class TaskState {
     const age = this.block_current_estimated - this.block_start;
 
     // Get the blocks remaining using current hash rate
-    const blocksRemaining = this.getBlockRemainingEstimate(hashRate, blockStartOffset);
+    const blocksRemaining = this.getBlockRemainingEstimate(hashrate, blockStartOffset);
 
     // Total blocks needed = blocks already processed + blocks remaining
     const totalBlocks = age + blocksRemaining;
@@ -132,11 +132,11 @@ export class TaskState {
 
 
   /**
-   * @param {number} hashRate
+   * @param {number} hashrate
    * @param {number} blockStartOffset
    * @return {number}
    */
-  getBlockRemainingEstimate(hashRate,blockStartOffset = 0) {
+  getBlockRemainingEstimate(hashrate,blockStartOffset = 0) {
     if (this.isCompleted()) {
       return 0;
     }
@@ -157,7 +157,7 @@ export class TaskState {
         const successProbability = 1 / Math.pow(16, difficulty);
 
         // Expected number of successful hashes in this block
-        const expectedSuccessesInBlock = hashRate * blockTimeSeconds * successProbability;
+        const expectedSuccessesInBlock = hashrate * blockTimeSeconds * successProbability;
         cumulativeExpectedSuccesses += expectedSuccessesInBlock;
       }
       blocksAhead++;
@@ -168,12 +168,12 @@ export class TaskState {
 
 
   /**
-   * @param {number} hashRate
+   * @param {number} hashrate
    * @param {number} blockStartOffset
    * @return {number}
    */
-  getTimeRemainingEstimate(hashRate, blockStartOffset = 0) {
-    const blocksAhead = this.getBlockRemainingEstimate(hashRate, blockStartOffset);
+  getTimeRemainingEstimate(hashrate, blockStartOffset = 0) {
+    const blocksAhead = this.getBlockRemainingEstimate(hashrate, blockStartOffset);
     return blocksAhead * TASK.ESTIMATED_BLOCK_TIME;
   }
 
