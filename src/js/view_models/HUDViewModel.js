@@ -141,8 +141,13 @@ export class HUDViewModel extends AbstractViewModel {
     HUDViewModel.bottomRightActionBarAlphaBase.initPageCode();
     HUDViewModel.bottomRightActionBarRaid.initPageCode();
 
+    window.addEventListener(EVENTS.REFRESH_ACTION_BAR, () => {
+      console.log('Refreshing action bar');
+      HUDViewModel.refreshActionBar();
+    });
+
     // Listen for REFRESH_ACTION_BAR events (when a struct arrives at a position)
-    window.addEventListener(EVENTS.REFRESH_ACTION_BAR, (event) => {
+    window.addEventListener(EVENTS.REFRESH_ACTION_BAR_IF_SELECTED, (event) => {
       HUDViewModel.refreshActionBarIfSelected(
         event.tileType,
         event.ambit,
@@ -293,5 +298,21 @@ export class HUDViewModel extends AbstractViewModel {
         structId
       );
     }
+  }
+
+  static refreshActionBar() {
+    if (!HUDViewModel.currentSelectedTile) {
+      return;
+    }
+
+    const current = HUDViewModel.currentSelectedTile;
+    const actionBar = HUDViewModel.whichActionBar(current.side);
+    HUDViewModel[actionBar].showActionBarFor(
+      current.tileType,
+      current.tileLabel,
+      current.side,
+      current.slot,
+      current.structId
+    );
   }
 }

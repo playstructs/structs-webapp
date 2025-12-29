@@ -1,16 +1,24 @@
 import {Struct} from "../models/Struct";
 import {StructType} from "../models/StructType";
 import {MAP_TILE_TYPES} from "../constants/MapConstants";
+import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
+import {ClearStructTileEvent} from "../events/ClearStructTileEvent";
+import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
+import {HUDViewModel} from "../view_models/HUDViewModel";
+import {RefreshActionBarEvent} from "../events/RefreshActionBarEvent";
 
 export class StructManager {
 
   /**
    * @param {GameState} gameState
+   * @param {SigningClientManager} signingClientManager
    */
   constructor(
-    gameState
+    gameState,
+    signingClientManager
   ) {
     this.gameState = gameState;
+    this.signingClientManager = signingClientManager;
   }
 
   /**
@@ -216,5 +224,60 @@ export class StructManager {
         : MAP_TILE_TYPES.FLEET;
     }
     return null;
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  cancelStructBuild(struct) {
+    console.log(`Canceling build of struct ${struct.id}`);
+
+    // Get struct position info before removing
+    const tileType = this.getTileTypeFromStruct(struct);
+    const ambit = struct.operating_ambit.toUpperCase();
+    const slot = struct.slot;
+    const playerId = struct.owner;
+    const mapId = this.gameState.alphaBaseMap.mapId;
+
+    // Kill the task worker
+    window.dispatchEvent(new TaskCmdKillEvent(struct.id));
+
+    if (!struct.is_destroyed) {
+      // Send cancel message to backend (fire and forget)
+      this.signingClientManager.queueMsgStructBuildCancel(
+        this.gameState.signingAccount.address,
+        struct.id
+      ).then();
+    }
+
+    // Optimistic UI update: remove struct from gameState immediately
+    this.gameState.removeStruct(struct.id);
+
+    // Clear the struct layer tile
+    window.dispatchEvent(new ClearStructTileEvent(
+      mapId,
+      tileType,
+      ambit,
+      slot,
+      playerId
+    ));
+
+    // Clear the tile selection's data-struct-id
+    window.dispatchEvent(new UpdateTileStructIdEvent(
+      mapId,
+      tileType,
+      ambit,
+      slot,
+      playerId,
+      ''  // Empty string to clear the struct ID
+    ));
+
+    // Clear currentSelectedTile.structId
+    if (HUDViewModel.currentSelectedTile) {
+      HUDViewModel.currentSelectedTile.structId = null;
+    }
+
+    // Refresh the action bar to show empty tile state
+    window.dispatchEvent(new RefreshActionBarEvent());
   }
 }

@@ -193,7 +193,8 @@ export class MapComponent extends AbstractViewModelComponent {
       this.planet,
       this.defender,
       this.attacker,
-      this.structLayerId
+      this.structLayerId,
+      this.mapId
     );
 
     if (this.enableTileSelectionLayer) {
@@ -205,7 +206,8 @@ export class MapComponent extends AbstractViewModelComponent {
         this.planet,
         this.defender,
         this.attacker,
-        this.tileSelectionId
+        this.tileSelectionId,
+        this.mapId
       );
 
     }

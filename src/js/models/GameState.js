@@ -580,6 +580,29 @@ export class GameState {
   }
 
   /**
+   * Removes a struct by ID from all struct arrays.
+   *
+   * @param {string} structId
+   * @return {Struct|null} The removed struct, or null if not found
+   */
+  removeStruct(structId) {
+    const playerStructs = [
+      this.thisPlayerStructs,
+      this.planetRaiderStructs,
+      this.raidEnemyStructs
+    ]
+
+    playerStructs.forEach(structs => {
+      const index = structs.findIndex(s => s.id === structId);
+      if (index !== -1) {
+        return structs.splice(index, 1)[0];
+      }
+    });
+
+    return null;
+  }
+
+  /**
    * Adds a pending build to track before the struct ID is known.
    *
    * @param {string} tileType

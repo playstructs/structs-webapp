@@ -22,6 +22,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
    * @param {Player|null} defender
    * @param {Player|null} attacker
    * @param {string} containerId - The ID of the DOM container element for this tile selection layer
+   * @param {string} mapId
    */
   constructor(
     gameState,
@@ -30,13 +31,15 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     planet,
     defender,
     attacker,
-    containerId = ""
+    containerId = "",
+    mapId = ""
   ) {
     super(gameState);
     this.structManager = structManager;
     this.mapColBreakdown = mapColBreakdown;
     this.dividerIndex = this.mapColBreakdown.lastIndexOf(MAP_COL_DIVIDER);
     this.containerId = containerId;
+    this.mapId = mapId;
 
     /** @type {Planet} */
     this.planet = planet;
@@ -515,7 +518,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     // Listen for UPDATE_TILE_STRUCT_ID events
     window.addEventListener(EVENTS.UPDATE_TILE_STRUCT_ID, (event) => {
-      if (event.containerId === this.containerId) {
+      if (event.mapId === this.mapId) {
         this.updateTileStructId(
           event.tileType,
           event.ambit,
