@@ -1,5 +1,6 @@
 import {MAP_TILE_TYPES} from "../constants/MapConstants";
 import {STRUCT_CATEGORIES} from "../constants/StructConstants";
+import {StructType} from "./StructType";
 
 export class StructTypeCollection {
   constructor() {
@@ -20,6 +21,17 @@ export class StructTypeCollection {
   getStructType(type) {
     return this.structTypes.find((structType) =>
       structType.type === type
+      && !this.isExcluded(structType)
+    );
+  }
+
+  /**
+   * @param {String} id
+   * @return {StructType}
+   */
+  getStructTypeById(id) {
+    return this.structTypes.find((structType) =>
+      structType.id === id
       && !this.isExcluded(structType)
     );
   }

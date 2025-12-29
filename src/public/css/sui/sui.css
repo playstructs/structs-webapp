@@ -1455,6 +1455,44 @@ a.sui-screen-portrait:hover {
   background: url("/img/sui/panel/panel-btn-group-sliver-medium.png") left no-repeat;
 }
 
+.sui-action-bar-progress-bar-wrapper {
+  display: flex;
+  padding: 2px;
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: 10px;
+  height: 20px;
+  max-width: 46px;
+}
+
+.sui-action-bar-progress-bar {
+  display: flex;
+  padding: var(--spacing-sm);
+  flex: 1 0 0;
+  flex-direction: row;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  gap: 2px;
+  background: var(--surface-player-body);
+  box-shadow: -2px 0 0 0 var(--surface-player-inverted), 2px 0 0 0 var(--surface-player-inverted), 0 -2px 0 0 var(--surface-player-inverted), 0 2px 0 0 var(--surface-player-inverted);
+}
+
+.sui-action-bar-progress-bar-chunk {
+  display: flex;
+  width: 2px;
+  flex-shrink: 0;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: 10px;
+}
+
+.sui-action-bar-progress-bar-chunk.sui-mod-filled {
+  background: var(--text-player-highlight);
+}
+
 /* ---- Action Bar End ---- */
 
 

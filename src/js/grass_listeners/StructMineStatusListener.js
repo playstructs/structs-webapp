@@ -1,5 +1,4 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
-import {RaidStatusUtil} from "../util/RaidStatusUtil";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TASK_TYPES} from "../constants/TaskTypes";
 import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
@@ -17,7 +16,7 @@ export class StructMineStatusListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'struct_block_mine_start'
-      && messageData.subject === `structs.planet.${this.gameState.thisPlayer.planetId}`
+      && messageData.subject === `structs.planet.${this.gameState.thisPlayer.planet_id}`
     ) {
       if (messageData.detail.block === 0) {
         window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));

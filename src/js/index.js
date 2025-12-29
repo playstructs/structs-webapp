@@ -23,6 +23,10 @@ import {MapComponent} from "./view_models/components/map/MapComponent";
 import {MapManager} from "./managers/MapMananger";
 import {MAP_CONTAINER_IDS} from "./constants/MapConstants";
 import {CheatsheetContentBuilder} from "./builders/CheatsheetContentBuilder";
+import {StructManager} from "./managers/StructManager";
+import {TaskManager} from "./managers/TaskManager";
+import {TaskStateFactory} from "./factories/TaskStateFactory";
+import {EVENTS} from "./constants/Events";
 
 
 const gameState = new GameState();
@@ -35,16 +39,18 @@ const walletManager = new WalletManager();
 global.walletManager = walletManager;
 
 const grassManager = new GrassManager(
-  "ws://localhost:1443",
+  `ws://${window.location.hostname}:1443`,
   "structs.>"
 );
 
 const blockGrassManager = new GrassManager(
-  "ws://localhost:1443",
+  `ws://${window.location.hostname}:1443`,
   "consensus"
 );
 
 const signingClientManager = new SigningClientManager(gameState);
+
+const structManager = new StructManager(gameState, signingClientManager);
 
 const planetManager = new PlanetManager(gameState, signingClientManager);
 
@@ -58,6 +64,11 @@ const mapManager = new MapManager(gameState);
 
 const raidManager = new RaidManager(gameState, guildAPI, grassManager, mapManager);
 
+const taskStateFactory = new TaskStateFactory();
+
+const taskManager = new TaskManager(gameState, guildAPI, signingClientManager, taskStateFactory);
+global.taskManager = taskManager;
+
 const authManager = new AuthManager(
   gameState,
   guildAPI,
@@ -68,7 +79,9 @@ const authManager = new AuthManager(
   playerAddressManager,
   playerAddressPendingFactory,
   raidManager,
-  mapManager
+  mapManager,
+  taskManager,
+  structManager
 );
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);
@@ -112,18 +125,22 @@ const fleetController = new FleetController(
 
 gameState.alphaBaseMap = new MapComponent(
   gameState,
+  structManager,
   MAP_CONTAINER_IDS.ALPHA_BASE,
   'alpha-base'
 );
 gameState.raidMap = new MapComponent(
   gameState,
+  structManager,
   MAP_CONTAINER_IDS.RAID,
   'raid'
 );
 gameState.previewMap = new MapComponent(
   gameState,
+  structManager,
   MAP_CONTAINER_IDS.PREVIEW,
-  'preview'
+  'preview',
+  false
 );
 
 MenuPage.gameState = gameState;
@@ -145,7 +162,7 @@ const hudContainer = document.getElementById('hud-container');
 await gameState.load();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
-HUDViewModel.init(gameState, signingClientManager);
+HUDViewModel.init(gameState, signingClientManager, structManager, taskManager);
 hudContainer.innerHTML = HUDViewModel.render();
 HUDViewModel.initPageCode();
 
@@ -167,3 +184,6 @@ if (!gameState.thisPlayerId) {
     MenuPage.hideLoadingScreen();
   });
 }
+
+// Start the hashing engine
+window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME));

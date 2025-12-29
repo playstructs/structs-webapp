@@ -96,18 +96,26 @@ export class PreviewViewModel extends AbstractViewModel {
     Promise.all([
       this.guildAPI.getPlanet(this.planet_id),
       this.guildAPI.getPlayer(this.defender_id),
+      this.guildAPI.getStructsByPlayerId(this.defender_id),
       (async () => (this.attacker_id === null)
             ? null
             : await this.guildAPI.getPlayer(this.attacker_id)
-      )
+      )(),
+      (async () => (this.attacker_id === null)
+          ? []
+          : await this.guildAPI.getStructsByPlayerId(this.attacker_id)
+      )(),
     ]).then(
       ([
-         planet,
-         defender,
-         attacker
+        planet,
+        defender,
+        defenderStructs,
+        attacker,
+        attackerStructs
       ]) => {
-
         this.mapManager.configurePreviewMap(planet, defender, attacker);
+        this.gameState.setPreviewDefenderStructs(defenderStructs);
+        this.gameState.setPreviewAttackerStructs(attackerStructs);
         this.mapManager.showMap(MAP_CONTAINER_IDS.PREVIEW);
         this.gameState.previewMap.render();
 

@@ -103,7 +103,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
 
   defuse() {
     const alphaDiff = this.infusion.fuel - this.alphaToInfuse;
-    this.grassManager.registerListener(new AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'defused'));
+    this.grassManager.registerListener(new AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'defusion_started'));
     this.alphaManager.defuse(alphaDiff).then();
   }
 

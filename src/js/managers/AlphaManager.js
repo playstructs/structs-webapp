@@ -18,13 +18,15 @@ export class AlphaManager {
     return (BigInt(alphaAmount) * BigInt(1000000)).toString();
   }
 
-  /**
+    /**
    * @param {string} recipientAddress
    * @param {number} alphaAmount
    */
   async transferAlpha(recipientAddress, alphaAmount) {
-    await this.signingClientManager.queueMsgBankSend(
+    await this.signingClientManager.queueMsgPlayerSend(
       gameState.signingAccount.address,
+        gameState.thisPlayerId,
+        gameState.thisPlayer.primary_address,
       recipientAddress,
       [{
         denom: "ualpha",
@@ -39,7 +41,7 @@ export class AlphaManager {
   async infuse(alphaAmount) {
     await this.signingClientManager.queueMsgReactorInfuse(
       gameState.signingAccount.address,
-      gameState.signingAccount.address,
+      gameState.thisPlayer.primary_address,
       this.gameState.thisGuild.validator,
       {
         denom: "ualpha",
@@ -54,7 +56,7 @@ export class AlphaManager {
   async defuse(alphaAmount) {
     await this.signingClientManager.queueMsgReactorDefuse(
       gameState.signingAccount.address,
-      gameState.signingAccount.address,
+      gameState.thisPlayer.primary_address,
       this.gameState.thisGuild.validator,
       {
         denom: "ualpha",

@@ -17,6 +17,9 @@ import {GuildSearchResultDTOFactory} from "../factories/GuildSearchResultDTOFact
 import {PlanetaryShieldInfoDTOFactory} from "../factories/PlanetaryShieldInfoDTOFactory";
 import {PlanetRaidFactory} from "../factories/PlanetRaidFactory";
 import {StructTypeFactory} from "../factories/StructTypeFactory";
+import {StructFactory} from "../factories/StructFactory";
+import {FleetFactory} from "../factories/FleetFactory";
+import {WorkFactory} from "../factories/WorkFactory";
 
 export class GuildAPI {
 
@@ -37,6 +40,9 @@ export class GuildAPI {
     this.planetaryShieldInfoDTOFactory = new PlanetaryShieldInfoDTOFactory();
     this.planetRaidFactory = new PlanetRaidFactory();
     this.structTypeFactory = new StructTypeFactory();
+    this.structFactory = new StructFactory();
+    this.fleetFactory = new FleetFactory();
+    this.workFactory = new WorkFactory();
   }
 
   /**
@@ -300,15 +306,6 @@ export class GuildAPI {
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.planetFactory.make(response.data);
-  }
-
-  /**
-   * @param {string} planetId
-   * @return {Promise<number>}
-   */
-  async getPlanetShieldHealth(planetId) {
-    const health = await this.getSingleDataValue(`${this.apiUrl}/planet/${planetId}/shield/health`, 'health');
-    return parseInt(health);
   }
 
   /**
@@ -704,5 +701,49 @@ export class GuildAPI {
       this.cacheItem(this.getStructTypesCacheKey(), structTypes);
     }
     return structTypes;
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<Struct[]>}
+   */
+  async getStructsByPlayerId(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/player/${playerId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.structFactory.parseList(response.data);
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<Fleet>}
+   */
+  async getFleetByPlayerId(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/fleet/player/${playerId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.fleetFactory.make(response.data);
+  }
+
+  /**
+   * @param playerId
+   * @return {Promise<Work[]>}
+   */
+  async getWorkByPlayerId(playerId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/work/player/${playerId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.workFactory.parseList(response.data);
+  }
+
+  /**
+   * @param {string} structId
+   * @return {Promise<Struct>}
+   */
+  async getStruct(structId) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/${structId}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.structFactory.make(response.data);
   }
 }

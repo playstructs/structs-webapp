@@ -10,6 +10,8 @@ export class SUICheatsheet extends SUIFeature {
    */
   static pointerPressedTimer = null;
 
+  static OPEN_DELAY = 500;
+
   constructor() {
     super();
     this.util = new SUIUtil();
@@ -79,7 +81,7 @@ export class SUICheatsheet extends SUIFeature {
       // Position cheatsheet in best fitting location (tries: top, right, bottom, left)
       this.util.positionBestFitFixed(cheatsheetElm, triggerRect);
 
-    }.bind(this), 100);
+    }.bind(this), SUICheatsheet.OPEN_DELAY);
   }
 
   /**

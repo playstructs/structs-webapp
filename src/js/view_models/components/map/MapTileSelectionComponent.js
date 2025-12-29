@@ -6,31 +6,48 @@ import {
   MAP_DEFAULT_COMMAND_COL_COUNT
 } from "../../../constants/MapConstants";
 import {AMBITS} from "../../../constants/Ambits";
+import {EVENTS} from "../../../constants/Events";
 import {HUDViewModel} from "../../HUDViewModel";
 import {Planet} from "../../../models/Planet";
+import {Player} from "../../../models/Player";
 
 
 export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
   /**
    * @param {GameState} gameState
+   * @param {StructManager} structManager
    * @param {string[]} mapColBreakdown
    * @param {Planet|null} planet
    * @param {Player|null} defender
    * @param {Player|null} attacker
+   * @param {string} containerId - The ID of the DOM container element for this tile selection layer
+   * @param {string} mapId
    */
   constructor(
     gameState,
+    structManager,
     mapColBreakdown,
     planet,
     defender,
-    attacker
+    attacker,
+    containerId = "",
+    mapId = ""
   ) {
     super(gameState);
+    this.structManager = structManager;
     this.mapColBreakdown = mapColBreakdown;
     this.dividerIndex = this.mapColBreakdown.lastIndexOf(MAP_COL_DIVIDER);
+    this.containerId = containerId;
+    this.mapId = mapId;
+
+    /** @type {Planet} */
     this.planet = planet;
+
+    /** @type {Player} */
     this.defender = defender;
+
+    /** @type {Player} */
     this.attacker = attacker;
   }
 
@@ -220,11 +237,14 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     commandSlotTracker
   ) {
     let playerId = '';
+    let fleetId = '';
 
     if (mapColType === MAP_COL_DEFENDER_COMMAND) {
       playerId = this.defender.id;
+      fleetId = this.defender.fleet_id;
     } else if (mapColType === MAP_COL_ATTACKER_COMMAND) {
       playerId = this.attacker.id;
+      fleetId = this.attacker.fleet_id;
     } else {
       return '';
     }
@@ -240,11 +260,18 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       ? MAP_TILE_TYPES.COMMAND
       : MAP_TILE_TYPES.COMMAND_BLOCKED;
 
+    // Command structs are always slot 0
+    const structId = hasAvailableSlot 
+      ? this.structManager.getStructIdByPositionAndPlayerId(playerId,'fleet', fleetId, ambit, 0, true)
+      : '';
+
     return this.renderSelectionTileHTML(
       tileType,
       side,
       playerId,
-      ambit
+      ambit,
+      hasAvailableSlot ? 0 : '',
+      structId
     );
   }
 
@@ -269,12 +296,17 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       ? MAP_TILE_TYPES.PLANETARY_BLOCKED
       : MAP_TILE_TYPES.PLANETARY_SLOT;
 
+    const structId = slot !== '' 
+      ? this.structManager.getStructIdByPositionAndPlayerId(this.defender.id, 'planet', this.planet.id, ambit, slot, false)
+      : '';
+
     return this.renderSelectionTileHTML(
       tileType,
       side,
       this.defender.id,
       ambit,
-      slot
+      slot,
+      structId
     );
   }
 
@@ -295,12 +327,17 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       return '';
     }
 
+    const structId = slot !== ''
+      ? this.structManager.getStructIdByPositionAndPlayerId(this.defender.id, 'fleet', this.defender.fleet_id, ambit, slot, false)
+      : '';
+
     return this.renderSelectionTileHTML(
       MAP_TILE_TYPES.FLEET,
       side,
       this.defender.id,
       ambit,
-      slot
+      slot,
+      structId
     );
   }
 
@@ -321,12 +358,17 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       return '';
     }
 
+    const structId = slot !== ''
+      ? this.structManager.getStructIdByPositionAndPlayerId(this.attacker.id,'fleet', this.attacker.fleet_id, ambit, slot, false)
+      : '';
+
     return this.renderSelectionTileHTML(
       MAP_TILE_TYPES.FLEET,
       side,
       this.attacker.id,
       ambit,
-      slot
+      slot,
+      structId
     );
   }
 
@@ -434,6 +476,36 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     }
   }
 
+  /**
+   * Build CSS selector for finding a tile by position.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @return {string}
+   */
+  buildTileSelector(tileType, ambit, slot, playerId) {
+    return `.map-tile-selection-tile[data-tile-type="${tileType}"][data-ambit="${ambit}"][data-slot="${slot}"][data-player-id="${playerId}"]`;
+  }
+
+  /**
+   * Update a tile's struct ID attribute.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @param {string} structId
+   */
+  updateTileStructId(tileType, ambit, slot, playerId, structId) {
+    const selector = this.buildTileSelector(tileType, ambit, slot, playerId);
+    const tileElement = document.getElementById(this.containerId).querySelector(selector);
+    if (tileElement) {
+      tileElement.setAttribute('data-struct-id', structId);
+    }
+  }
+
   initPageCode() {
     document.querySelectorAll('a.map-tile-selection-tile').forEach(tile => {
       tile.addEventListener('click', (e) => {
@@ -442,6 +514,19 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
         HUDViewModel.showActionBar(e.currentTarget);
         console.log(e.currentTarget);
       });
+    });
+
+    // Listen for UPDATE_TILE_STRUCT_ID events
+    window.addEventListener(EVENTS.UPDATE_TILE_STRUCT_ID, (event) => {
+      if (event.mapId === this.mapId) {
+        this.updateTileStructId(
+          event.tileType,
+          event.ambit,
+          event.slot,
+          event.playerId,
+          event.structId
+        );
+      }
     });
   }
 

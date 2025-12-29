@@ -487,6 +487,7 @@ a.sui-text-secondary:hover {
   flex-direction: column;
   flex-wrap: nowrap;
   gap: 0;
+  pointer-events: none;
 }
 
 .map-struct-layer-row {
@@ -506,7 +507,12 @@ a.sui-text-secondary:hover {
   display: flex;
   width: var(--tile-width);
   height: var(--tile-height);
-  background: rgba(0, 128, 0, 0.25);
+  align-items: center;
+  justify-content: center;
+}
+
+.map-struct-layer-tile.mod-side-right {
+  transform: scaleX(-1);
 }
 
 .map-tile-selection {
@@ -1908,7 +1914,12 @@ a.offcanvas-struct-container.sui-mod-disabled {
   opacity: 0.5;
 }
 
-.struct-still {
+.deploy-struct-type-disabled {
+  opacity: 0.5;
+}
+
+.struct-still,
+.deployment-indicator {
   position: relative;
   display: flex;
   max-width: 100%;
@@ -1923,7 +1934,8 @@ a.offcanvas-struct-container.sui-mod-disabled {
   justify-content: center;
 }
 
-.struct-still img {
+.struct-still img,
+.deployment-indicator img {
   position: absolute;
   z-index: var(--struct-middle-z-index);
   max-width: 100%;

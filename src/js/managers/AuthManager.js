@@ -36,6 +36,8 @@ export class AuthManager {
    * @param {PlayerAddressPendingFactory} playerAddressPendingFactory
    * @param {RaidManager} raidManager
    * @param {MapManager} mapManager
+   * @param {TaskManager} taskManager
+   * @param {StructManager} structManager
    */
   constructor(
     gameState,
@@ -47,7 +49,9 @@ export class AuthManager {
     playerAddressManager,
     playerAddressPendingFactory,
     raidManager,
-    mapManager
+    mapManager,
+    taskManager,
+    structManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -59,6 +63,8 @@ export class AuthManager {
     this.playerAddressPendingFactory = playerAddressPendingFactory;
     this.raidManager = raidManager;
     this.mapManager = mapManager;
+    this.taskManager = taskManager;
+    this.structManager = structManager;
   }
 
   /**
@@ -101,7 +107,7 @@ export class AuthManager {
     playerCreatedListener.guildAPI = this.guildAPI;
     playerCreatedListener.gameState = this.gameState;
     playerCreatedListener.grassManager = this.grassManager;
-    playerCreatedListener.planetManager = new PlanetManager(this.gameState, this.signingClientManager);
+    playerCreatedListener.planetManager = this.planetManager;
 
     const newPlanetListener = new NewPlanetListener(
       this.gameState,
@@ -169,7 +175,7 @@ export class AuthManager {
       this.grassManager.registerListener(new AlphaChangeListener(this.gameState, this.guildAPI));
 
       // Task related listeners
-      this.grassManager.registerListener(new StructBuildStatusListener(this.gameState));
+      this.grassManager.registerListener(new StructBuildStatusListener(this.gameState, this.guildAPI, this.structManager));
       this.grassManager.registerListener(new StructMineStatusListener(this.gameState));
       this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 
@@ -180,15 +186,21 @@ export class AuthManager {
         player,
         height,
         structTypes,
+        fleet,
+        structs
       ] = await Promise.all([
         this.guildAPI.getPlayer(playerId),
         this.guildAPI.getPlayerLastActionBlockHeight(playerId),
-        this.guildAPI.getStructTypes()
+        this.guildAPI.getStructTypes(),
+        this.guildAPI.getFleetByPlayerId(playerId),
+        this.guildAPI.getStructsByPlayerId(playerId)
       ]);
 
       this.gameState.setThisPlayer(player);
       this.gameState.setLastActionBlockHeight(height);
       this.gameState.setStructTypes(structTypes);
+      this.gameState.setThisPlayerFleet(fleet);
+      this.gameState.setThisPlayerStructs(structs);
 
       if (this.gameState.thisPlayer.planet_id) {
 
@@ -211,7 +223,7 @@ export class AuthManager {
 
         await Promise.all([
           this.raidManager.initPlanetRaider(),
-          this.raidManager.initRaidEnemy()
+          this.raidManager.initRaidEnemy(),
         ]);
 
         this.grassManager.registerListener(new PlanetRaidStatusListener(
@@ -228,6 +240,9 @@ export class AuthManager {
         this.gameState.raidMap.render();
 
         this.mapManager.showActiveMap();
+
+        // Do this last so block height is available
+        await this.taskManager.restoreTasksFromDB();
       }
     }
 

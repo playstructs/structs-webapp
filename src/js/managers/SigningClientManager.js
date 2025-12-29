@@ -34,6 +34,7 @@ import {
   MsgPermissionSetOnAddress,
   MsgPlayerUpdatePrimaryAddress,
   MsgPlayerResume,
+  MsgPlayerSend,
   MsgStructActivate,
   MsgStructDeactivate,
   MsgStructBuildInitiate,
@@ -77,6 +78,7 @@ import {
 } from "../ts/structs.structs/types/structs/structs/tx";
 import {EVENTS} from "../constants/Events";
 import {FEE} from "../constants/Fee";
+import {AMBIT_ENUM} from "../constants/Ambits";
 
 export class SigningClientManager {
 
@@ -162,6 +164,26 @@ export class SigningClientManager {
         toAddress: toAddress,
         amount: amount
       },
+    });
+  }
+
+/**
+   * @param {string} creator
+   * @param {string} fromPlayerId
+   * @param {string} fromAddress
+   * @param {string} toAddress
+   * @param {Array<{denom: string, amount: string}>} amount
+   */
+  async queueMsgPlayerSend(creator, fromPlayerId, fromAddress, toAddress, amount) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgPlayerSend',
+      value: MsgPlayerSend.fromPartial({
+        creator: creator,
+        playerId: fromPlayerId,
+        fromAddress: fromAddress,
+        toAddress: toAddress,
+        amount: amount
+      }),
     });
   }
 
@@ -771,13 +793,14 @@ export class SigningClientManager {
    * @param {number} slot
    */
   async queueMsgStructBuildInitiate(creatorAddress, playerId, structTypeId, operatingAmbit, slot) {
+    const ambitNumber = AMBIT_ENUM[operatingAmbit.toUpperCase()];
     this.queue({
       typeUrl: '/structs.structs.MsgStructBuildInitiate',
       value: MsgStructBuildInitiate.fromPartial({
         creator: creatorAddress,
         playerId: playerId,
         structTypeId: structTypeId,
-        operatingAmbit: operatingAmbit,
+        operatingAmbit: ambitNumber,
         slot: slot
       }),
     });
@@ -835,13 +858,14 @@ export class SigningClientManager {
    * @param {number} slot
    */
   async queueMsgStructMove(creatorAddress, structId, locationType, ambit, slot) {
+    const ambitNumber = AMBIT_ENUM[ambit.toUpperCase()];
     this.queue({
       typeUrl: '/structs.structs.MsgStructMove',
       value: MsgStructMove.fromPartial({
         creator: creatorAddress,
         structId: structId,
         locationType: locationType,
-        ambit: ambit,
+        ambit: ambitNumber,
         slot: slot
       }),
     });

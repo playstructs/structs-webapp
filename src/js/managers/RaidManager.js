@@ -39,18 +39,24 @@ export class RaidManager {
       player,
       height,
       planet,
-      shieldInfo
+      shieldInfo,
+      fleet,
+      structs,
     ] = await Promise.all([
       this.guildAPI.getPlayer(this.gameState.raidPlanetRaidInfo.planet_owner),
       this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.raidPlanetRaidInfo.planet_owner),
       this.guildAPI.getPlanet(this.gameState.raidPlanetRaidInfo.planet_id),
-      this.guildAPI.getPlanetaryShieldInfo(this.gameState.raidPlanetRaidInfo.planet_id)
+      this.guildAPI.getPlanetaryShieldInfo(this.gameState.raidPlanetRaidInfo.planet_id),
+      this.guildAPI.getFleetByPlayerId(this.gameState.raidPlanetRaidInfo.planet_owner),
+      this.guildAPI.getStructsByPlayerId(this.gameState.raidPlanetRaidInfo.planet_owner)
     ]);
 
     this.gameState.setRaidEnemy(player);
     this.gameState.setRaidEnemyLastActionBlockHeight(height);
     this.gameState.setRaidPlanet(planet);
     this.gameState.setRaidPlanetShieldInfo(shieldInfo);
+    this.gameState.setRaidEnemyFleet(fleet);
+    this.gameState.setRaidEnemyStructs(structs);
   }
 
   /**
@@ -65,13 +71,19 @@ export class RaidManager {
 
     const [
       player,
-      height
+      height,
+      fleet,
+      structs
     ] = await Promise.all([
       this.guildAPI.getPlayer(this.gameState.planetPlanetRaidInfo.fleet_owner),
       this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.planetPlanetRaidInfo.fleet_owner),
+      this.guildAPI.getFleetByPlayerId(this.gameState.planetPlanetRaidInfo.fleet_owner),
+      this.guildAPI.getStructsByPlayerId(this.gameState.planetPlanetRaidInfo.fleet_owner)
     ]);
 
     this.gameState.setPlanetRaider(player);
     this.gameState.setPlanetRaiderLastActionBlockHeight(height);
+    this.gameState.setPlanetRaiderFleet(fleet);
+    this.gameState.setPlanetRaiderStructs(structs);
   }
 }

@@ -10,6 +10,10 @@ import {PlanetaryShieldInfoDTO} from "../dtos/PlanetaryShieldInfoDTO";
 import {PlanetRaid} from "./PlanetRaid";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {StructTypeCollection} from "./StructTypeCollection";
+import {Struct} from "./Struct";
+import {Player} from "./Player";
+import {Fleet} from "./Fleet";
+import {StructType} from "./StructType";
 
 export class GameState {
 
@@ -41,24 +45,24 @@ export class GameState {
     this.signingAccount = null;
     this.signingClient = null;
 
-    /** @type {MapComponent|null} */
+    /** @type {MapComponent} */
     this.alphaBaseMap = null;
 
-    /** @type {MapComponent|null} */
+    /** @type {MapComponent} */
     this.raidMap = null;
 
-    /** @type {MapComponent|null} */
+    /** @type {MapComponent} */
     this.previewMap = null;
 
     /* API Primed Data */
 
-    /** @type {Guild|null} */
+    /** @type {Guild} */
     this.thisGuild = null;
 
-    /** @type {Player|null} */
+    /** @type {Player} */
     this.thisPlayer = null;
 
-    /** @type {Planet|null} */
+    /** @type {Planet} */
     this.planet = null;
 
     this.planetShieldHealth = 100;
@@ -67,25 +71,60 @@ export class GameState {
 
     this.planetPlanetRaidInfo = new PlanetRaid();
 
-    /** @type {Player|null} */
+    /** @type {Fleet} */
+    this.thisPlayerFleet = null;
+
+    /** @type {Struct[]} */
+    this.thisPlayerStructs = [];
+
+    /** @type {Player} */
     this.planetRaider = null;
+
+    /** @type {Fleet} */
+    this.planetRaiderFleet = null;
+
+    /** @type {Struct[]} */
+    this.planetRaiderStructs = [];
 
     this.raidPlanetRaidInfo = new PlanetRaid();
 
-    /** @type {Player|null} */
+    /** @type {Player} */
     this.raidEnemy = null;
 
-    /** @type {Planet|null} */
+    /** @type {Planet} */
     this.raidPlanet = null;
 
     this.raidPlanetShieldHealth = 100;
 
     this.raidPlanetShieldInfo = new PlanetaryShieldInfoDTO();
 
+    /** @type {Fleet} */
+    this.raidEnemyFleet = null;
+
+    /** @type {Struct[]} */
+    this.raidEnemyStructs = [];
+
     this.structTypes = new StructTypeCollection();
 
+    /** @type {Struct[]} */
+    this.previewDefenderStructs = [];
+
+    /** @type {Struct[]} */
+    this.previewAttackerStructs = [];
+
     /* GRASS Only Data */
+
     this.currentBlockHeight = 0;
+
+    /* Temp Data */
+
+    /**
+     * Tracks pending builds before the struct ID is known.
+     * Key: "{tileType}-{ambit}-{slot}-{playerId}"
+     * Value: {structType: StructType, timestamp: number}
+     * @type {Map<string, {structType: StructType, timestamp: number}>}
+     */
+    this.pendingBuilds = new Map();
   }
 
   save() {
@@ -421,6 +460,192 @@ export class GameState {
     }
   }
 
+  /**
+   * @param {number} amount
+   */
+  setTransferAmount(amount) {
+    this.transferAmount = amount;
+    this.save();
+  }
+
+  /**
+   * @param {string} id
+   */
+  setActiveMapContainerId(id) {
+    this.activeMapContainerId = id;
+    this.save();
+  }
+
+  /**
+   * @param {array} types
+   */
+  setStructTypes(types) {
+    this.structTypes.setStructTypes(types);
+  }
+
+  /**
+   * @param {Fleet} fleet
+   */
+  setThisPlayerFleet(fleet) {
+    this.thisPlayerFleet = fleet;
+  }
+
+  /**
+   * @param {Fleet} fleet
+   */
+  setPlanetRaiderFleet(fleet) {
+    this.planetRaiderFleet = fleet;
+  }
+
+  /**
+   * @param {Fleet} fleet
+   */
+  setRaidEnemyFleet(fleet) {
+    this.raidEnemyFleet = fleet;
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setThisPlayerStructs(structs) {
+    this.thisPlayerStructs = structs;
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setPlanetRaiderStructs(structs) {
+    this.planetRaiderStructs = structs;
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setRaidEnemyStructs(structs) {
+    this.raidEnemyStructs = structs;
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  setThisPlayerStruct(struct) {
+    const existingIndex = this.thisPlayerStructs.findIndex(s => s.id === struct.id);
+    if (existingIndex !== -1) {
+      this.thisPlayerStructs[existingIndex] = struct;
+    } else {
+      this.thisPlayerStructs.push(struct);
+    }
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  setPlanetRaiderStruct(struct) {
+    const existingIndex = this.planetRaiderStructs.findIndex(s => s.id === struct.id);
+    if (existingIndex !== -1) {
+      this.planetRaiderStructs[existingIndex] = struct;
+    } else {
+      this.planetRaiderStructs.push(struct);
+    }
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  setRaidEnemyStruct(struct) {
+    const existingIndex = this.raidEnemyStructs.findIndex(s => s.id === struct.id);
+    if (existingIndex !== -1) {
+      this.raidEnemyStructs[existingIndex] = struct;
+    } else {
+      this.raidEnemyStructs.push(struct);
+    }
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  setStruct(struct) {
+    const playerType = this.getPlayerTypeById(struct.owner);
+    switch (playerType) {
+      case PLAYER_TYPES.PLAYER:
+        this.setThisPlayerStruct(struct);
+        break;
+      case PLAYER_TYPES.PLANET_RAIDER:
+        this.setPlanetRaiderStruct(struct);
+        break;
+      case PLAYER_TYPES.RAID_ENEMY:
+        this.setRaidEnemyStruct(struct);
+        break;
+    }
+  }
+
+  /**
+   * Removes a struct by ID from all struct arrays.
+   *
+   * @param {string} structId
+   * @return {Struct|null} The removed struct, or null if not found
+   */
+  removeStruct(structId) {
+    const playerStructs = [
+      this.thisPlayerStructs,
+      this.planetRaiderStructs,
+      this.raidEnemyStructs
+    ]
+
+    playerStructs.forEach(structs => {
+      const index = structs.findIndex(s => s.id === structId);
+      if (index !== -1) {
+        return structs.splice(index, 1)[0];
+      }
+    });
+
+    return null;
+  }
+
+  /**
+   * Adds a pending build to track before the struct ID is known.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @param {StructType} structType
+   */
+  addPendingBuild(tileType, ambit, slot, playerId, structType) {
+    const key = this.getPendingBuildKey(tileType, ambit, slot, playerId);
+    this.pendingBuilds.set(key, {
+      structType: structType,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Removes a pending build after the struct ID is known.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   */
+  removePendingBuild(tileType, ambit, slot, playerId) {
+    const key = this.getPendingBuildKey(tileType, ambit, slot, playerId);
+    this.pendingBuilds.delete(key);
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setPreviewDefenderStructs(structs) {
+    this.previewDefenderStructs = structs;
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setPreviewAttackerStructs(structs) {
+    this.previewAttackerStructs = structs;
+  }
+
   clearPlanetRaidData() {
     this.planetPlanetRaidInfo = new PlanetRaid();
     this.planetRaider = null;
@@ -464,6 +689,26 @@ export class GameState {
   }
 
   /**
+   * @param {String} playerId
+   * @return {string}
+   */
+  getPlayerTypeById(playerId) {
+    if (this.thisPlayerId === playerId) {
+      return PLAYER_TYPES.PLAYER;
+    }
+
+    if (this.planetRaider && this.planetRaider.id === playerId) {
+      return PLAYER_TYPES.PLANET_RAIDER;
+    }
+
+    if (this.raidEnemy && this.raidEnemy.id === playerId) {
+      return PLAYER_TYPES.RAID_ENEMY;
+    }
+
+    throw new Error(`Player with ID ${playerId} has no type`);
+  }
+
+  /**
    * @return {string}
    */
   getPlayerTag() {
@@ -495,59 +740,60 @@ export class GameState {
     return this.raidPlanetRaidInfo.planet_owner
   }
 
-  getPlanetRaiderUsername() {
-    return this.planetRaider && this.planetRaider.username.length > 0
-      ? `${this.planetRaider.username}`
-      : `PID# ${this.getPlanetRaiderId()}`;
-  }
-
   getRaidEnemyUsername() {
-    return this.raidEnemy && this.raidEnemy.username.length > 0
+    return this.raidEnemy && this.raidEnemy.username && this.raidEnemy.username.length > 0
       ? `${this.raidEnemy.username}`
       : `PID# ${this.getRaidEnemyId()}`;
   }
 
   /**
-   * @param {number} amount
+   * @param {string} type
+   * @return {Fleet}
    */
-  setTransferAmount(amount) {
-    this.transferAmount = amount;
-    this.save();
-  }
-
-  /**
-   * @param {string} id
-   */
-  setActiveMapContainerId(id) {
-    this.activeMapContainerId = id;
-    this.save();
-  }
-
-  /**
-   * @param {array} types
-   */
-  setStructTypes(types) {
-    this.structTypes.setStructTypes(types);
+  getFleetByPlayerType(type) {
+    switch (type) {
+      case PLAYER_TYPES.PLAYER:
+        return this.thisPlayerFleet;
+      case PLAYER_TYPES.PLANET_RAIDER:
+        return this.planetRaiderFleet;
+      case PLAYER_TYPES.RAID_ENEMY:
+        return this.raidEnemyFleet;
+      default:
+        return null;
+    }
   }
 
   /**
    * @return {number}
    */
-  getCharge() {
-    return this.currentBlockHeight - this.lastActionBlockHeight;
+  getThisPlayerCharge() {
+    return this.chargeCalculator.calcCharge(this.currentBlockHeight, this.lastActionBlockHeight);
   }
 
   /**
-   * @return {number}
+   * Generates a key for the pending builds map.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @return {string}
    */
-  getPlanetRaiderCharge() {
-    return this.currentBlockHeight - this.planetRaiderLastActionBlockHeight;
+  getPendingBuildKey(tileType, ambit, slot, playerId) {
+    return `${tileType}-${ambit.toLowerCase()}-${slot}-${playerId}`;
   }
 
   /**
-   * @return {number}
+   * Gets a pending build by position.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @return {{structType: StructType, timestamp: number}|null}
    */
-  getRaidEnemyChange() {
-    return this.currentBlockHeight - this.raidEnemyLastActionBlockHeight;
+  getPendingBuild(tileType, ambit, slot, playerId) {
+    const key = this.getPendingBuildKey(tileType, ambit, slot, playerId);
+    return this.pendingBuilds.get(key) || null;
   }
 }

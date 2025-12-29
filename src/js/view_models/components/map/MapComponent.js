@@ -12,24 +12,34 @@ import {PLAYER_MAP_ROLES} from "../../../constants/PlayerMapRoles";
 import {MAP_PERSPECTIVES} from "../../../constants/MapPerspectives";
 import {MapTileSelectionComponent} from "./MapTileSelectionComponent";
 import {MapStructLayerComponent} from "./MapStructLayerComponent";
+import {Planet} from "../../../models/Planet";
+import {Player} from "../../../models/Player";
 
 export class MapComponent extends AbstractViewModelComponent {
 
   /**
    * @param {GameState} gameState
+   * @param {StructManager} structManager
    * @param {string} containerId
    * @param {string} idPrefix
+   * @param {boolean} enableTileSelectionLayer
    */
   constructor(
     gameState,
+    structManager,
     containerId,
-    idPrefix
+    idPrefix,
+    enableTileSelectionLayer = true
   ) {
     super(gameState);
+
+    this.structManager = structManager;
 
     this.containerId = containerId;
 
     this.idPrefix = idPrefix;
+
+    this.enableTileSelectionLayer = enableTileSelectionLayer;
 
     this.mapId = `${this.idPrefix}-map`;
     this.terrainId = `${this.idPrefix}-map-terrain`;
@@ -48,7 +58,6 @@ export class MapComponent extends AbstractViewModelComponent {
     /** @type {Player|null} */
     this.defender = null;
 
-    this.playerMapRole = null; // ATTACKER, DEFENDER, SPECTATOR
     this.perspective = null; // ATTACKER, DEFENDER
 
     this.tileClassNameUtil = new TileClassNameUtil();
@@ -176,22 +185,32 @@ export class MapComponent extends AbstractViewModelComponent {
       mapColBreakdown,
       this.planet
     );
-
+    
     this.mapStructLayer = new MapStructLayerComponent(
       this.gameState,
+      this.structManager,
       mapColBreakdown,
       this.planet,
       this.defender,
-      this.attacker
+      this.attacker,
+      this.structLayerId,
+      this.mapId
     );
 
-    this.mapTileSelection = new MapTileSelectionComponent(
-      this.gameState,
-      mapColBreakdown,
-      this.planet,
-      this.defender,
-      this.attacker
-    )
+    if (this.enableTileSelectionLayer) {
+
+      this.mapTileSelection = new MapTileSelectionComponent(
+        this.gameState,
+        this.structManager,
+        mapColBreakdown,
+        this.planet,
+        this.defender,
+        this.attacker,
+        this.tileSelectionId,
+        this.mapId
+      );
+
+    }
   }
 
   /**
@@ -231,7 +250,11 @@ export class MapComponent extends AbstractViewModelComponent {
       document.getElementById(this.fogOfWarId).innerHTML = this.mapFogOfWar.renderHTML();
     }
 
-    document.getElementById(this.tileSelectionId).innerHTML = this.mapTileSelection.renderHTML();
-    this.mapTileSelection.initPageCode();
+    if (this.enableTileSelectionLayer) {
+      document.getElementById(this.tileSelectionId).innerHTML = this.mapTileSelection.renderHTML();
+      this.mapTileSelection.initPageCode();
+    }
+    
+    this.mapStructLayer.initPageCode();
   }
 }

@@ -65,7 +65,24 @@ export class TaskStateFactory extends AbstractFactory {
     task_state.postfix = '';
 
     return task_state;
-}
+  }
+
+  /**
+   * @param {Work} work
+   * @return {TaskState}
+   */
+  initTaskFromWork(work) {
+    switch(work.category) {
+      case TASK_TYPES.RAID:
+        return this.initRaidTask(work.object_id, work.target_id, work.block_start, work.difficulty_target);
+      case TASK_TYPES.BUILD:
+      case TASK_TYPES.MINE:
+      case TASK_TYPES.REFINE:
+        return this.initStructTask(work.object_id, work.category, work.block_start, work.difficulty_target);
+      default:
+        throw new Error(`Unknown task type: ${work.category}`);
+    }
+  }
 
 
 }

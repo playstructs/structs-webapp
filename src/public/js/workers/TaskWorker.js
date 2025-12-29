@@ -44,6 +44,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 const TASK = {
   WORKER_PATH: '/js/workers/TaskWorker.js',
+  MAX_BLOCKS_WHEN_ESTIMATING: 30000,
   MAX_CONCURRENT_PROCESSES: 5,
   CHECKPOINT_COMMIT: 5000000,
   DIFFICULTY_RECALCULATE: 5000000,
@@ -51,6 +52,7 @@ const TASK = {
   DIFFICULTY_START_SLEEP_DELAY: 10000,
   CHECKPOINT_BLOCK: 10,
   ESTIMATED_BLOCK_TIME: 7000,
+  HASHRATE_INITIAL_ESTIMATE: 300.0,
   IDENTITY_PREFIX: "IDENTITY",
   NONCE_PREFIX: "NONCE",
   TARGET_DELIMITER: "@",
@@ -187,7 +189,24 @@ class TaskStateFactory extends _framework_AbstractFactory__WEBPACK_IMPORTED_MODU
     task_state.postfix = '';
 
     return task_state;
-}
+  }
+
+  /**
+   * @param {Work} work
+   * @return {TaskState}
+   */
+  initTaskFromWork(work) {
+    switch(work.category) {
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.RAID:
+        return this.initRaidTask(work.object_id, work.target_id, work.block_start, work.difficulty_target);
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.BUILD:
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.MINE:
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.REFINE:
+        return this.initStructTask(work.object_id, work.category, work.block_start, work.difficulty_target);
+      default:
+        throw new Error(`Unknown task type: ${work.category}`);
+    }
+  }
 
 
 }
@@ -295,6 +314,20 @@ class TaskState {
   }
 
   /**
+   * @return {boolean}
+   */
+  isWaiting() {
+    return this.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.WAITING;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isRunning() {
+    return this.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.RUNNING;
+  }
+
+  /**
    * @return {string}
    */
   toLog(){
@@ -347,32 +380,84 @@ class TaskState {
   }
 
   /**
-   * @return {number}
+   * Calculate percent complete using getBlockRemainingEstimate.
+   *
+   * @param {number} hashrate
+   * @param {number} blockStartOffset
+   * @return {number} Percent complete (0.0 to 1.0)
    */
-  getPercentCompleteEstimate() {
+  getPercentCompleteEstimate(hashrate, blockStartOffset = 0) {
     if (this.isCompleted()) {
-      return 1;
+      return 1.0;
     }
-    return 1.0-(this.getCurrentDifficulty()/100) // TODO better
+
+    // Age represents blocks processed since start
+    const age = this.block_current_estimated - this.block_start;
+
+    // Get the blocks remaining using current hash rate
+    const blocksRemaining = this.getBlockRemainingEstimate(hashrate, blockStartOffset);
+
+    // Total blocks needed = blocks already processed + blocks remaining
+    const totalBlocks = age + blocksRemaining;
+
+    // Percent complete = blocks processed / total blocks needed
+    const percent = totalBlocks > 0 ? age / totalBlocks : 0.0;
+
+    return Math.min(1.0, Math.max(0.0, percent));
   }
 
+
   /**
+   * @param {number} hashrate
+   * @param {number} blockStartOffset
    * @return {number}
    */
-  getTimeRemainingEstimate() {
+  getBlockRemainingEstimate(hashrate,blockStartOffset = 0) {
     if (this.isCompleted()) {
-      return 0.0;
+      return 0;
     }
 
-    const hash_scope = 2.0 ** (this.getCurrentDifficulty() * 4);
-    return hash_scope / this.getHashrate()
+    const currentAge = this.getCurrentAgeEstimate()
+
+    const baseDifficultyRange = this.difficulty_target;
+    const maxBlocksToCheck =  _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.MAX_BLOCKS_WHEN_ESTIMATING;
+    const blockTimeSeconds = _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.ESTIMATED_BLOCK_TIME;
+
+    let cumulativeExpectedSuccesses = 0;
+    let blocksAhead = 0;
+
+    while (cumulativeExpectedSuccesses < 1 && blocksAhead < maxBlocksToCheck) {
+      if (blocksAhead > blockStartOffset) {
+        const ageAtBlock = currentAge + blocksAhead;
+        const difficulty = this.getCalculatedDifficulty(ageAtBlock, baseDifficultyRange);
+        const successProbability = 1 / Math.pow(16, difficulty);
+
+        // Expected number of successful hashes in this block
+        const expectedSuccessesInBlock = hashrate * blockTimeSeconds * successProbability;
+        cumulativeExpectedSuccesses += expectedSuccessesInBlock;
+      }
+      blocksAhead++;
+    }
+
+    return Math.min(blocksAhead, maxBlocksToCheck);
+  }
+
+
+  /**
+   * @param {number} hashrate
+   * @param {number} blockStartOffset
+   * @return {number}
+   */
+  getTimeRemainingEstimate(hashrate, blockStartOffset = 0) {
+    const blocksAhead = this.getBlockRemainingEstimate(hashrate, blockStartOffset);
+    return blocksAhead * _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.ESTIMATED_BLOCK_TIME;
   }
 
   /**
    * @return {number}
    */
   getHashrate() {
-    if (this.isCompleted()) {
+    if (!this.isRunning()) {
       return 0.0;
     }
 
@@ -412,11 +497,26 @@ class TaskState {
     // Using logarithmic function to calculate difficulty
     let difficulty = 64 - Math.floor(Math.log10(age) / Math.log10(this.difficulty_target) * 63);
 
-    if (difficulty < 1) {
-      return 1;
+    return Math.max(1, difficulty)
+  }
+
+  /**
+   * Calculate difficulty from age
+   *
+   * @param {number} age - Current age in blocks
+   * @param {number} baseDifficultyRange - Base difficulty range
+   * @returns {number} Difficulty (number of leading zeros required in hash)
+   */
+   getCalculatedDifficulty(age, baseDifficultyRange) {
+    if (age <= 1) {
+      return 64;
     }
 
-    return difficulty;
+    const difficulty = 64 - Math.floor(
+        Math.log10(age) / Math.log10(baseDifficultyRange) * 63
+    );
+
+    return Math.max(1, difficulty);
   }
 }
 

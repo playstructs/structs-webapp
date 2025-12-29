@@ -1,0 +1,3 @@
+export const PRECISION_CONVERSION = {
+  ENERGY: 1000
+};
