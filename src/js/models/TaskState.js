@@ -115,12 +115,17 @@ export class TaskState {
       return 1.0;
     }
 
-    // Get the current blocks remaining using getBlockRemainingEstimate
-    const cumulativeBlocksRemainingWithCurrentHashRate = this.getBlockRemainingEstimate(hashRate, blockStartOffset);
-    // Get worst-case blocks remaining using getBlockRemainingEstimate with hash rate 1
-    const worstCaseBlocksRemaining = this.getBlockRemainingEstimate(1, blockStartOffset);
+    // Age represents blocks processed since start
+    const age = this.block_current_estimated - this.block_start;
 
-    const percent = 1.0 - (cumulativeBlocksRemainingWithCurrentHashRate / worstCaseBlocksRemaining);
+    // Get the blocks remaining using current hash rate
+    const blocksRemaining = this.getBlockRemainingEstimate(hashRate, blockStartOffset);
+
+    // Total blocks needed = blocks already processed + blocks remaining
+    const totalBlocks = age + blocksRemaining;
+
+    // Percent complete = blocks processed / total blocks needed
+    const percent = totalBlocks > 0 ? age / totalBlocks : 0.0;
 
     return Math.min(1.0, Math.max(0.0, percent));
   }

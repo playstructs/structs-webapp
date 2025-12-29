@@ -38,7 +38,6 @@ export class TaskManager {
         this.waiting_queue = [];
         this.running_queue = [];
 
-
         setInterval(() => {
             console.log(this.processes);
             console.log(this.waiting_queue);
@@ -400,7 +399,7 @@ export class TaskManager {
         const hashrate = this.getProcessAverageHashrate();
         const offsetBlock = this.getProcessBlockOffset(pid, hashrate);
 
-        return this.processes[pid].state.getPercentCompleteEstimate(offsetBlock, hashrate);
+        return this.processes[pid].state.getPercentCompleteEstimate(hashrate, offsetBlock);
     }
 
     /**
