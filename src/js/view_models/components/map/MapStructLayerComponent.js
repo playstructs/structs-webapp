@@ -16,6 +16,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
    * @param {Player|null} defender
    * @param {Player|null} attacker
    * @param {string} containerId - The ID of the DOM container element for this struct layer
+   * @param {string} mapId
    */
   constructor(
     gameState,
@@ -24,7 +25,8 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     planet,
     defender,
     attacker,
-    containerId = ""
+    containerId = "",
+    mapId = ""
   ) {
     super(
       gameState,
@@ -38,6 +40,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     );
 
     this.containerId = containerId;
+    this.mapId = mapId;
     this.structStillBuilder = new StructStillBuilder(this.gameState);
   }
 
@@ -231,7 +234,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
 
     // Listen for CLEAR_STRUCT_TILE events (when a build is canceled)
     window.addEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
-      if (event.containerId === this.containerId) {
+      if (event.mapId === this.mapId) {
         this.clearStructTile(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });

@@ -237,7 +237,7 @@ export class StructManager {
     const ambit = struct.operating_ambit.toUpperCase();
     const slot = struct.slot;
     const playerId = struct.owner;
-    const containerId = this.gameState.activeMapContainerId;
+    const mapId = this.gameState.alphaBaseMap.mapId;
 
     // Kill the task worker
     window.dispatchEvent(new TaskCmdKillEvent(struct.id));
@@ -255,7 +255,7 @@ export class StructManager {
 
     // Clear the struct layer tile
     window.dispatchEvent(new ClearStructTileEvent(
-      containerId,
+      mapId,
       tileType,
       ambit,
       slot,
@@ -264,7 +264,7 @@ export class StructManager {
 
     // Clear the tile selection's data-struct-id
     window.dispatchEvent(new UpdateTileStructIdEvent(
-      containerId,
+      mapId,
       tileType,
       ambit,
       slot,

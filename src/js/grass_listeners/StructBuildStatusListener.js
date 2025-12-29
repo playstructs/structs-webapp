@@ -49,7 +49,7 @@ export class StructBuildStatusListener extends AbstractGrassListener {
     // Dispatch event to update the tile selection layer's struct ID
     if (tileType) {
       const updateTileEvent = new UpdateTileStructIdEvent(
-        this.gameState.alphaBaseMap.tileSelectionId,
+        this.gameState.alphaBaseMap.mapId,
         tileType,
         ambit,
         struct.slot,
