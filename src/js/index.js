@@ -26,6 +26,7 @@ import {CheatsheetContentBuilder} from "./builders/CheatsheetContentBuilder";
 import {StructManager} from "./managers/StructManager";
 import {TaskManager} from "./managers/TaskManager";
 import {TaskStateFactory} from "./factories/TaskStateFactory";
+import {EVENTS} from "./constants/Events";
 
 
 const gameState = new GameState();
@@ -38,12 +39,12 @@ const walletManager = new WalletManager();
 global.walletManager = walletManager;
 
 const grassManager = new GrassManager(
-  "ws://localhost:1443",
+  `ws://${window.location.hostname}:1443`,
   "structs.>"
 );
 
 const blockGrassManager = new GrassManager(
-  "ws://localhost:1443",
+  `ws://${window.location.hostname}:1443`,
   "consensus"
 );
 
@@ -183,3 +184,6 @@ if (!gameState.thisPlayerId) {
     MenuPage.hideLoadingScreen();
   });
 }
+
+// Start the hashing engine
+window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME));
