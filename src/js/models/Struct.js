@@ -32,6 +32,9 @@ export class Struct {
 
     /** @type {boolean} */
     this.is_building = false;
+
+    /** @type {boolean} */
+    this.is_destroyed = false;
   }
 }
 

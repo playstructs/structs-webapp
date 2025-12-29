@@ -55,7 +55,8 @@ class StructManager
               ON s.id = w.object_id
               AND w.category = \'BUILD\'
             WHERE 
-              s.location_id = :planet_id
+              s.is_destroyed = false
+              AND s.location_id = :planet_id
               OR s.location_id in (
                 SELECT fleet.id
                 FROM structs.fleet
@@ -96,6 +97,7 @@ class StructManager
               ON s.id = w.object_id
               AND w.category = \'BUILD\'
             WHERE s.owner = :player_id
+            AND s.is_destroyed = false
             ORDER BY s.location_type, s.location_id, s.slot;
         ';
 

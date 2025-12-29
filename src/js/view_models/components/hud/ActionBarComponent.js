@@ -4,6 +4,7 @@ import {MAP_CONTAINER_IDS, MAP_TILE_TYPE_ICONS, MAP_TILE_TYPES} from "../../../c
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {DeployOffcanvas} from "../offcanvas/DeployOffcanvas";
 import {Struct} from "../../../models/Struct";
+import {StructType} from "../../../models/StructType";
 
 export class ActionBarComponent extends AbstractViewModelComponent {
 
@@ -410,8 +411,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
     // Attach cancel button handler
     document.getElementById(cancelBtnId).addEventListener('click', function () {
-      console.log(`Canceling build of struct ${struct.id}`);
-    });
+      this.structManager.cancelStructBuild(struct);
+    }.bind(this));
 
     this.showActionChunk();
   }

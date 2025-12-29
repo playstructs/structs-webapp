@@ -228,5 +228,29 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
         this.renderDeploymentIndicator(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });
+
+    // Listen for CLEAR_STRUCT_TILE events (when a build is canceled)
+    window.addEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
+      if (event.containerId === this.containerId) {
+        this.clearStructTile(event.tileType, event.ambit, event.slot, event.playerId);
+      }
+    });
+  }
+
+  /**
+   * Clear a struct tile by position (e.g., when build is canceled).
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   */
+  clearStructTile(tileType, ambit, slot, playerId) {
+    const selector = this.buildTileSelector(tileType, ambit, slot, playerId);
+    const container = document.getElementById(this.containerId);
+    const tileElement = container.querySelector(selector);
+    if (tileElement) {
+      tileElement.innerHTML = '';
+    }
   }
 }

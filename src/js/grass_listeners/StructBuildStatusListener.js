@@ -5,7 +5,7 @@ import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
 import {TaskCmdSpawnEvent} from "../events/TaskCmdSpawnEvent";
 import {RenderStructEvent} from "../events/RenderStructEvent";
 import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
-import {RefreshActionBarEvent} from "../events/RefreshActionBarEvent";
+import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {Struct} from "../models/Struct";
 
 export class StructBuildStatusListener extends AbstractGrassListener {
@@ -59,7 +59,7 @@ export class StructBuildStatusListener extends AbstractGrassListener {
       window.dispatchEvent(updateTileEvent);
 
       // Dispatch event to refresh action bar if this struct's tile is currently selected
-      const refreshActionBarEvent = new RefreshActionBarEvent(
+      const refreshActionBarEvent = new RefreshActionBarIfSelectedEvent(
         tileType,
         ambit,
         struct.slot,

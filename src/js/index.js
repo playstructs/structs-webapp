@@ -48,9 +48,9 @@ const blockGrassManager = new GrassManager(
   "consensus"
 );
 
-const structManager = new StructManager(gameState);
-
 const signingClientManager = new SigningClientManager(gameState);
+
+const structManager = new StructManager(gameState, signingClientManager);
 
 const planetManager = new PlanetManager(gameState, signingClientManager);
 
