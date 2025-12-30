@@ -8,6 +8,7 @@ export class JsonAjaxer {
       headers: {
         'Content-Type': 'application/json'
       },
+      credentials: 'include',
       redirect: 'follow'
     });
     return response.json();
@@ -19,6 +20,7 @@ export class JsonAjaxer {
       headers: {
         'Content-Type': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify(data)
     });
 
@@ -31,6 +33,7 @@ export class JsonAjaxer {
       headers: {
         'Content-Type': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify(data)
     });
 
@@ -43,6 +46,7 @@ export class JsonAjaxer {
       headers: {
         'Content-Type': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify(data)
     });
 
