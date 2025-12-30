@@ -180,6 +180,10 @@ export class AuthManager {
       this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 
       await this.signingClientManager.initSigningClient(this.gameState.wallet);
+
+      // There is a race condition regarding login
+      // Add this to fix... but it's a weak fix
+      await new Promise(resolve => setTimeout(resolve, 500));
       this.playerAddressManager.addPlayerAddressMeta();
 
       const [
