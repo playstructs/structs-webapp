@@ -120,7 +120,8 @@ const fleetController = new FleetController(
   fleetManager,
   raidManager,
   planetManager,
-  mapManager
+  mapManager,
+  structManager
 );
 
 gameState.alphaBaseMap = new MapComponent(

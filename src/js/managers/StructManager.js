@@ -6,6 +6,7 @@ import {ClearStructTileEvent} from "../events/ClearStructTileEvent";
 import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
 import {HUDViewModel} from "../view_models/HUDViewModel";
 import {RefreshActionBarEvent} from "../events/RefreshActionBarEvent";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class StructManager {
 
@@ -279,5 +280,40 @@ export class StructManager {
 
     // Refresh the action bar to show empty tile state
     window.dispatchEvent(new RefreshActionBarEvent());
+  }
+
+  /**
+   * @param {String} playerType
+   * @return {Struct[]}
+   */
+  getStructsByPlayerType(playerType) {
+    switch (playerType) {
+      case PLAYER_TYPES.PLAYER:
+        return this.gameState.thisPlayerStructs;
+      case PLAYER_TYPES.PLANET_RAIDER:
+        return this.gameState.planetRaiderStructs;
+      case PLAYER_TYPES.RAID_ENEMY:
+        return this.gameState.raidEnemyStructs;
+      default:
+        throw new Error(`No such player type ${playerType}`);
+    }
+  }
+
+  /**
+   * @param {string} playerType
+   * @return {string}
+   */
+  getStructCountByPlayerType(playerType) {
+    const structs = this.getStructsByPlayerType(playerType);
+    let planetaryStructCount = 0;
+    let fleetStructCount = 0;
+    for (let i = 0; i < structs.length; i++) {
+      if (structs[i].location_type === 'planet') {
+        planetaryStructCount++;
+      } else if (structs[i].location_type === 'fleet') {
+        fleetStructCount++;
+      }
+    }
+    return `${fleetStructCount}+${planetaryStructCount}`;
   }
 }

@@ -4,6 +4,7 @@ import {MenuPage} from "../framework/MenuPage";
 import {RAID_STATUS} from "../constants/RaidStatus";
 import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class PlanetCardBuilder {
 
@@ -15,6 +16,7 @@ export class PlanetCardBuilder {
    * @param {PlanetManager} planetManager
    * @param {MapManager} mapManager
    * @param {RaidManager} raidManager
+   * @param {StructManager} structManager
    */
   constructor(
     gameState,
@@ -23,7 +25,8 @@ export class PlanetCardBuilder {
     fleetManager,
     planetManager,
     mapManager,
-    raidManager
+    raidManager,
+    structManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -32,6 +35,7 @@ export class PlanetCardBuilder {
     this.planetManager = planetManager;
     this.mapManager = mapManager;
     this.raidManager = raidManager;
+    this.structManager = structManager;
   }
 
   /**
@@ -93,6 +97,7 @@ export class PlanetCardBuilder {
     alphaBaseCard.undiscoveredOre = this.gameState.planet.undiscovered_ore;
     alphaBaseCard.alphaOre = this.gameState.thisPlayer.ore;
     alphaBaseCard.shieldHealth = this.gameState.planetShieldHealth;
+    alphaBaseCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.PLAYER);
 
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'Command';
@@ -112,6 +117,7 @@ export class PlanetCardBuilder {
     alphaBaseCard.undiscoveredOre = this.gameState.planet.undiscovered_ore;
     alphaBaseCard.alphaOre = this.gameState.thisPlayer.ore;
     alphaBaseCard.shieldHealth = this.gameState.planetShieldHealth;
+    alphaBaseCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.PLAYER);
 
     alphaBaseCard.hasAlert = true;
     alphaBaseCard.alertIconColorClass = 'sui-text-primary';
@@ -272,6 +278,7 @@ export class PlanetCardBuilder {
     raidCard.undiscoveredOre = this.gameState.raidPlanet.undiscovered_ore;
     raidCard.alphaOre = this.gameState.raidEnemy.ore;
     raidCard.shieldHealth = this.gameState.raidPlanetShieldHealth;
+    raidCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.RAID_ENEMY);
 
     raidCard.hasPrimaryBtn = true;
     raidCard.primaryBtnLabel = 'Command';

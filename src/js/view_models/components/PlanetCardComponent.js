@@ -36,7 +36,7 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
     this.shieldHealthId = `${this.idPrefix}-planet-card-shield-health`;
     this.shieldHealthEvent = EVENTS.SHIELD_HEALTH_CHANGED;
 
-    this.deployedStructs = 'TODO';
+    this.deployedStructs = '0+0';
     this.deployedStructsId = `${this.idPrefix}-planet-card-deployed-structs`;
     this.deployedStructsEvent = "";
 

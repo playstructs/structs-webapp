@@ -16,6 +16,7 @@ export class FleetController extends AbstractController {
    * @param {RaidManager} raidManager
    * @param {PlanetManager} planetManager
    * @param {MapManager} mapManager
+   * @param {StructManager} structManager
    */
   constructor(
     gameState,
@@ -24,7 +25,8 @@ export class FleetController extends AbstractController {
     fleetManager,
     raidManager,
     planetManager,
-    mapManager
+    mapManager,
+    structManager
   ) {
     super('Fleet', gameState);
     this.guildAPI = guildAPI;
@@ -33,6 +35,7 @@ export class FleetController extends AbstractController {
     this.raidManager = raidManager;
     this.planetManager = planetManager;
     this.mapManager = mapManager;
+    this.structManager = structManager;
   }
 
   /**
@@ -51,6 +54,7 @@ export class FleetController extends AbstractController {
       this.planetManager,
       this.mapManager,
       this.raidManager,
+      this.structManager,
       planetCardType,
       raidCardType
     );
