@@ -180,7 +180,7 @@ export class AuthManager {
       this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 
       await this.signingClientManager.initSigningClient(this.gameState.wallet);
-      this.playerAddressManager.addPlayerAddressMeta();
+      await this.playerAddressManager.addPlayerAddressMeta();
 
       const [
         player,
