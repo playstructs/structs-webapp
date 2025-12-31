@@ -509,6 +509,8 @@ export class GameState {
    */
   setThisPlayerStructs(structs) {
     this.thisPlayerStructs = structs;
+
+    window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED));
   }
 
   /**
@@ -523,6 +525,8 @@ export class GameState {
    */
   setRaidEnemyStructs(structs) {
     this.raidEnemyStructs = structs;
+
+    window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET));
   }
 
   /**
@@ -535,6 +539,8 @@ export class GameState {
     } else {
       this.thisPlayerStructs.push(struct);
     }
+
+    window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED));
   }
 
   /**
@@ -559,6 +565,8 @@ export class GameState {
     } else {
       this.raidEnemyStructs.push(struct);
     }
+
+    window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET));
   }
 
   /**
@@ -595,7 +603,15 @@ export class GameState {
     playerStructs.forEach(structs => {
       const index = structs.findIndex(s => s.id === structId);
       if (index !== -1) {
-        return structs.splice(index, 1)[0];
+        const removedStruct = structs.splice(index, 1)[0];
+
+        if (removedStruct.owner === this.thisPlayerId) {
+          window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED));
+        } else if (this.raidEnemy && removedStruct.owner === this.raidEnemy.id) {
+          window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET));
+        }
+
+        return removedStruct;
       }
     });
 

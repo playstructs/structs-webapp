@@ -5,6 +5,7 @@ import {RAID_STATUS} from "../constants/RaidStatus";
 import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {EVENTS} from "../constants/Events";
 
 export class PlanetCardBuilder {
 
@@ -84,6 +85,36 @@ export class PlanetCardBuilder {
 
   /**
    * @param {PlanetCardComponent} alphaBaseCard
+   */
+  configureAlphaBaseCardCounterUpdateHandlers(alphaBaseCard) {
+    alphaBaseCard.undiscoveredOreUpdateHandler = () => {
+      const display = document.getElementById(`${alphaBaseCard.undiscoveredOreId}-value`);
+      if (display) {
+        display.innerHTML = this.gameState.planet.undiscovered_ore;
+      }
+    };
+    alphaBaseCard.alphaOreUpdateHandler = () => {
+      const display = document.getElementById(`${alphaBaseCard.alphaOreId}-value`);
+      if (display) {
+        display.innerHTML = this.gameState.thisPlayer.ore;
+      }
+    };
+    alphaBaseCard.shieldHealthUpdateHandler = () => {
+      const display = document.getElementById(`${alphaBaseCard.shieldHealthId}-value`);
+      if (display) {
+        display.innerHTML = this.gameState.planetShieldHealth;
+      }
+    };
+    alphaBaseCard.deployedStructsUpdateHandler = () => {
+      const display = document.getElementById(`${alphaBaseCard.deployedStructsId}-value`);
+      if (display) {
+        display.innerHTML = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.PLAYER);
+      }
+    };
+  }
+
+  /**
+   * @param {PlanetCardComponent} alphaBaseCard
    * @param {string} type
    */
   buildAlphaBaseActive(alphaBaseCard, type) {
@@ -98,6 +129,8 @@ export class PlanetCardBuilder {
     alphaBaseCard.alphaOre = this.gameState.thisPlayer.ore;
     alphaBaseCard.shieldHealth = this.gameState.planetShieldHealth;
     alphaBaseCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.PLAYER);
+
+    this.configureAlphaBaseCardCounterUpdateHandlers(alphaBaseCard);
 
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'Command';
@@ -118,6 +151,8 @@ export class PlanetCardBuilder {
     alphaBaseCard.alphaOre = this.gameState.thisPlayer.ore;
     alphaBaseCard.shieldHealth = this.gameState.planetShieldHealth;
     alphaBaseCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.PLAYER);
+
+    this.configureAlphaBaseCardCounterUpdateHandlers(alphaBaseCard);
 
     alphaBaseCard.hasAlert = true;
     alphaBaseCard.alertIconColorClass = 'sui-text-primary';
@@ -279,6 +314,36 @@ export class PlanetCardBuilder {
     raidCard.alphaOre = this.gameState.raidEnemy.ore;
     raidCard.shieldHealth = this.gameState.raidPlanetShieldHealth;
     raidCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.RAID_ENEMY);
+
+    raidCard.undiscoveredOreEvent = EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED_RAID_PLANET;
+    raidCard.alphaOreEvent = EVENTS.ORE_COUNT_CHANGED_RAID_ENEMY;
+    raidCard.shieldHealthEvent = EVENTS.SHIELD_HEALTH_CHANGED_RAID_PLANET;
+    raidCard.deployedStructsEvent = EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET;
+
+    raidCard.undiscoveredOreUpdateHandler = () => {
+      const display = document.getElementById(`${raidCard.undiscoveredOreId}-value`);
+      if (display) {
+        display.innerHTML = this.gameState.raidPlanet.undiscovered_ore;
+      }
+    };
+    raidCard.alphaOreUpdateHandler = () => {
+      const display = document.getElementById(`${raidCard.alphaOreId}-value`);
+      if (display) {
+        display.innerHTML = this.gameState.raidEnemy.ore;
+      }
+    };
+    raidCard.shieldHealthUpdateHandler = () => {
+      const display = document.getElementById(`${raidCard.shieldHealthId}-value`);
+      if (display) {
+        display.innerHTML = this.gameState.raidPlanetShieldHealth;
+      }
+    };
+    raidCard.deployedStructsUpdateHandler = () => {
+      const display = document.getElementById(`${raidCard.deployedStructsId}-value`);
+      if (display) {
+        display.innerHTML = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.RAID_ENEMY);
+      }
+    };
 
     raidCard.hasPrimaryBtn = true;
     raidCard.primaryBtnLabel = 'Command';
