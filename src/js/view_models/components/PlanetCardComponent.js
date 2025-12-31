@@ -38,7 +38,7 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
 
     this.deployedStructs = '0+0';
     this.deployedStructsId = `${this.idPrefix}-planet-card-deployed-structs`;
-    this.deployedStructsEvent = "";
+    this.deployedStructsEvent = EVENTS.STRUCT_COUNT_CHANGED;
 
     this.undiscoveredOreUpdateHandler = () => {};
     this.alphaOreUpdateHandler = () => {};
