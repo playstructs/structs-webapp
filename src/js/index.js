@@ -175,14 +175,11 @@ if (!gameState.thisPlayerId) {
   MenuPage.hideLoadingScreen();
 } else {
   authManager.login(gameState.thisPlayerId).then(() => {
-
-    playerAddressManager.addPlayerAddressMeta();
-
-    MenuPage.close();
-    // MenuPage.router.goto('Account', 'index');
-    MenuPage.router.restore('Fleet', 'index');
-
-    MenuPage.hideLoadingScreen();
+    playerAddressManager.addPlayerAddressMeta().then(() => {
+      MenuPage.close();
+      MenuPage.router.restore('Fleet', 'index');
+      MenuPage.hideLoadingScreen();
+    });
   });
 }
 

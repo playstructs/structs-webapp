@@ -11,16 +11,16 @@ export class PlayerAddressManager {
     this.guildAPI = guildAPI;
   }
 
-  addPlayerAddressMeta() {
+  async addPlayerAddressMeta() {
     const request = new AddPlayerAddressMetaRequestDTO();
     request.address = this.gameState.signingAccount.address;
     request.guild_id = this.gameState.thisGuild.id;
     request.user_agent = window.navigator.userAgent;
 
-    this.guildAPI.addPlayerAddressMeta(request).then(response => {
-      if (!response.success) {
-        console.log(response);
-      }
-    });
+    const response = await this.guildAPI.addPlayerAddressMeta(request);
+
+    if (!response.success) {
+      console.log(response);
+    }
   }
 }
