@@ -27,6 +27,7 @@ import {StructManager} from "./managers/StructManager";
 import {TaskManager} from "./managers/TaskManager";
 import {TaskStateFactory} from "./factories/TaskStateFactory";
 import {EVENTS} from "./constants/Events";
+import {TASK} from "./constants/TaskConstants";
 
 
 const gameState = new GameState();
@@ -184,4 +185,4 @@ if (!gameState.thisPlayerId) {
 }
 
 // Start the hashing engine after a delay
-new Promise(resolve => setTimeout(resolve, 2000)).then(window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
+new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
