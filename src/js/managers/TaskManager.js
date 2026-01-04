@@ -176,7 +176,6 @@ export class TaskManager {
         window.TaskManagerResumeAll = this.resumeAll.bind(this);
         window.TaskManagerResume = this.resume.bind(this);
 
-
     }
 
     StatusAll() {
