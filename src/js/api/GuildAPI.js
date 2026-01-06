@@ -692,15 +692,15 @@ export class GuildAPI {
    * @return {Promise<StructType[]>}
    */
   async getStructTypes(forceRefresh = false) {
-    let structTypes = this.getCachedItem(this.getStructTypesCacheKey(), 1000 * 60 * 60 * 24);
-    if (structTypes === null || forceRefresh) {
+    let structTypeResponseData = this.getCachedItem(this.getStructTypesCacheKey(), 1000 * 60 * 60 * 24);
+    if (structTypeResponseData === null || forceRefresh) {
       const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/type`);
       const response = this.guildAPIResponseFactory.make(jsonResponse);
       this.handleResponseFailure(response);
-      structTypes = this.structTypeFactory.parseList(response.data);
-      this.cacheItem(this.getStructTypesCacheKey(), structTypes);
+      structTypeResponseData = response.data;
+      this.cacheItem(this.getStructTypesCacheKey(), structTypeResponseData);
     }
-    return structTypes;
+    return this.structTypeFactory.parseList(structTypeResponseData);
   }
 
   /**

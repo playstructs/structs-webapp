@@ -5,6 +5,7 @@ import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {DeployOffcanvas} from "../offcanvas/DeployOffcanvas";
 import {Struct} from "../../../models/Struct";
 import {StructType} from "../../../models/StructType";
+import {STRUCT_CATEGORIES, STRUCT_EQUIPMENT_ICON_MAP} from "../../../constants/StructConstants";
 
 export class ActionBarComponent extends AbstractViewModelComponent {
 
@@ -198,6 +199,12 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     // If the struct is building, show the building action bar
     if (struct && struct.is_building) {
       this.showBuildingActionBar(struct);
+      return;
+    }
+
+    // If the struct is built, show the built struct action bar
+    if (struct && !struct.is_building) {
+      this.showStructActionBar(struct);
       return;
     }
 
@@ -415,6 +422,315 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     }.bind(this));
 
     this.showActionChunk();
+  }
+
+  /**
+   * Shows the action bar for a built (completed) struct.
+   *
+   * @param {Struct} struct
+   */
+  showStructActionBar(struct) {
+    // Clear current building struct ID
+    this.currentBuildingStructId = null;
+
+    const structType = this.gameState.structTypes.getStructTypeById(struct.type);
+    const header = structType.class_abbreviation;
+
+    // Build list of property icons based on struct type capabilities
+    const propertyIcons = this.buildStructPropertyIcons(structType);
+
+    // Build action buttons based on struct type capabilities
+    const actionButtons = this.buildStructActionButtons(struct, structType);
+
+    document.getElementById(this.actionChunkId).innerHTML = `
+      <div class="sui-screen sui-screen-full-width">
+        <div id="${this.headerScreenId}" class="sui-screen-info">${header}</div>
+      </div>
+
+      <div class="sui-action-bar-bottom-row">
+      
+        <div class="sui-action-bar-panel-switch-group">
+          <img src="/img/sui/panel/panel-switch-on.png" alt="panel switch on" style="height: 48px">
+        </div>
+
+        <div id="${this.propertiesScreenId}" class="sui-screen">
+          <div class="sui-screen-properties">
+            ${propertyIcons}
+          </div>
+        </div>
+
+        <div class="sui-action-bar-btn-group">
+          ${actionButtons}
+        </div>
+
+      </div>
+    `;
+
+    // Attach action button handlers
+    this.attachStructActionButtonHandlers(struct, structType);
+
+    this.showActionChunk();
+  }
+
+  /**
+   * @param {string} iconClass
+   * @return {string}
+   */
+  structPropertyIconHtml(iconClass) {
+    return `
+      <a href="javascript: void(0)" data-sui-cheatsheet="${iconClass}">
+        <i class="sui-icon-md ${iconClass}"></i>
+      </a>
+    `;
+  }
+
+  /**
+   * @param structType
+   * @return {string}
+   */
+  buildStructPropertyIcons(structType) {
+    const standardPropsMap = {
+      'hasPassiveWeaponry': 'passive_weaponry',
+      'hasUnitDefenses': 'unit_defenses',
+      'hasOreReserveDefenses': 'ore_reserve_defenses',
+      'hasPlanetaryDefenses': 'planetary_defenses',
+    };
+    const icons = [];
+
+    Object.keys(standardPropsMap).forEach((hasEquipmentFn) => {
+      if (structType[hasEquipmentFn]()) {
+        const prop = standardPropsMap[hasEquipmentFn];
+        const equipmentType = structType[prop];
+        const iconClass = STRUCT_EQUIPMENT_ICON_MAP[equipmentType];
+        if (!iconClass) {
+          console.log(`Missing icon for equipment type: ${hasEquipmentFn}`)
+        }
+        icons.push(this.structPropertyIconHtml(iconClass));
+      }
+    });
+
+    return icons.join('');
+  }
+
+  /**
+   * Builds the HTML for struct action buttons based on struct type capabilities.
+   *
+   * @param {Struct} struct
+   * @param {StructType} structType
+   * @return {string} HTML for action buttons
+   */
+  buildStructActionButtons(struct, structType) {
+    const buttons = [];
+    const btnPrefix = `${this.playerType}-action-bar`;
+
+    // Primary weapon button
+    if (structType.hasPrimaryWeapon()) {
+      const iconClass = structType.primary_weapon_control === 'guided' 
+        ? 'icon-smart-weapon' 
+        : 'icon-ballistic-weapon';
+      buttons.push(`
+        <a 
+          id="${btnPrefix}-primary-weapon-btn"
+          href="javascript: void(0)"
+          class="sui-panel-btn sui-mod-default"
+          title="${structType.primary_weapon_label || 'Primary Weapon'}"
+        >
+          <i class="sui-icon-md ${iconClass}"></i>
+        </a>
+      `);
+    }
+
+    // Secondary weapon button
+    if (structType.hasSecondaryWeapon()) {
+      const iconClass = structType.secondary_weapon_control === 'guided' 
+        ? 'icon-smart-weapon' 
+        : 'icon-ballistic-weapon';
+      buttons.push(`
+        <a 
+          id="${btnPrefix}-secondary-weapon-btn"
+          href="javascript: void(0)"
+          class="sui-panel-btn sui-mod-default"
+          title="${structType.secondary_weapon_label || 'Secondary Weapon'}"
+        >
+          <i class="sui-icon-md ${iconClass}"></i>
+        </a>
+      `);
+    }
+
+    // Stealth button (for structs with stealth systems)
+    if (structType.stealth_systems) {
+      buttons.push(`
+        <a 
+          id="${btnPrefix}-stealth-btn"
+          href="javascript: void(0)"
+          class="sui-panel-btn sui-mod-default"
+          title="Stealth Mode"
+        >
+          <i class="sui-icon-md icon-stealth"></i>
+        </a>
+      `);
+    }
+
+    // Move button (for movable structs)
+    if (structType.movable) {
+      buttons.push(`
+        <a 
+          id="${btnPrefix}-move-btn"
+          href="javascript: void(0)"
+          class="sui-panel-btn sui-mod-default"
+          title="Move"
+        >
+          <i class="sui-icon-md icon-move"></i>
+        </a>
+      `);
+    }
+
+    // Defend button (for structs with defensive capabilities)
+    if (structType.category === STRUCT_CATEGORIES.FLEET) {
+      buttons.push(`
+        <a 
+          id="${btnPrefix}-defend-btn"
+          href="javascript: void(0)"
+          class="sui-panel-btn sui-mod-default"
+          title="Defend"
+        >
+          <i class="sui-icon-md icon-defend"></i>
+        </a>
+      `);
+    }
+
+    // Mine button (for structs with mining capability)
+    if (structType.hasPlanetaryMining()) {
+      buttons.push(`
+        <a 
+          id="${btnPrefix}-mine-btn"
+          href="javascript: void(0)"
+          class="sui-panel-btn sui-mod-default"
+          title="${structType.planetary_mining_label || 'Mine'}"
+        >
+          <i class="sui-icon-md icon-mine"></i>
+        </a>
+      `);
+    }
+
+    // Refine button (for structs with refining capability)
+    if (structType.hasPlanetaryRefinery()) {
+      buttons.push(`
+        <a 
+          id="${btnPrefix}-refine-btn"
+          href="javascript: void(0)"
+          class="sui-panel-btn sui-mod-default"
+          title="${structType.planetary_refinery_label || 'Refine'}"
+        >
+          <i class="sui-icon-md icon-refine"></i>
+        </a>
+      `);
+    }
+
+    return buttons.join('');
+  }
+
+  /**
+   * Attaches click handlers to struct action buttons.
+   *
+   * @param {Struct} struct
+   * @param {StructType} structType
+   */
+  attachStructActionButtonHandlers(struct, structType) {
+    const btnPrefix = `${this.playerType}-action-bar`;
+
+    // Primary weapon handler
+    if (structType.hasPrimaryWeapon()) {
+      const btn = document.getElementById(`${btnPrefix}-primary-weapon-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: PRIMARY_WEAPON_ATTACK', { 
+            structId: struct.id, 
+            weapon: structType.primary_weapon,
+            label: structType.primary_weapon_label
+          });
+        });
+      }
+    }
+
+    // Secondary weapon handler
+    if (structType.hasSecondaryWeapon()) {
+      const btn = document.getElementById(`${btnPrefix}-secondary-weapon-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: SECONDARY_WEAPON_ATTACK', { 
+            structId: struct.id, 
+            weapon: structType.secondary_weapon,
+            label: structType.secondary_weapon_label
+          });
+        });
+      }
+    }
+
+    // Stealth handler
+    if (structType.stealth_systems) {
+      const btn = document.getElementById(`${btnPrefix}-stealth-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: STEALTH_TOGGLE', { 
+            structId: struct.id
+          });
+        });
+      }
+    }
+
+    // Move handler
+    if (structType.movable) {
+      const btn = document.getElementById(`${btnPrefix}-move-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: MOVE', { 
+            structId: struct.id
+          });
+        });
+      }
+    }
+
+    // Defend handler
+    if (structType.category === STRUCT_CATEGORIES.FLEET) {
+      const btn = document.getElementById(`${btnPrefix}-defend-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: DEFEND', {
+            structId: struct.id,
+            unitDefenses: structType.unit_defenses_label,
+            oreDefenses: structType.ore_reserve_defenses_label,
+            planetaryDefenses: structType.planetary_defenses_label
+          });
+        });
+      }
+    }
+
+    // Mine handler
+    if (structType.hasPlanetaryMining()) {
+      const btn = document.getElementById(`${btnPrefix}-mine-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: MINE', { 
+            structId: struct.id,
+            label: structType.planetary_mining_label
+          });
+        });
+      }
+    }
+
+    // Refine handler
+    if (structType.hasPlanetaryRefinery()) {
+      const btn = document.getElementById(`${btnPrefix}-refine-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: REFINE', { 
+            structId: struct.id,
+            label: structType.planetary_refinery_label
+          });
+        });
+      }
+    }
   }
 
   renderHTML() {
