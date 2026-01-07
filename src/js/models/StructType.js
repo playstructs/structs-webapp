@@ -1,3 +1,15 @@
+import {
+  STRUCT_PRIMARY_WEAPON,
+  STRUCT_SECONDARY_WEAPON,
+  STRUCT_PASSIVE_WEAPONRY,
+  STRUCT_UNIT_DEFENSES,
+  STRUCT_ORE_RESERVE_DEFENSES,
+  STRUCT_PLANETARY_DEFENSES,
+  STRUCT_PLANETARY_MINING,
+  STRUCT_PLANETARY_REFINERY,
+  STRUCT_POWER_GENERATION
+} from "../constants/StructConstants";
+
 export class StructType {
 
   constructor() {
@@ -96,4 +108,84 @@ export class StructType {
     this.default_cosmetic_name = null;
   }
 
+  /**
+   * Checks if the struct type has a primary weapon.
+   * @return {boolean}
+   */
+  hasPrimaryWeapon() {
+    return this.primary_weapon
+      && this.primary_weapon !== STRUCT_PRIMARY_WEAPON.NO_ACTIVE_WEAPONRY;
+  }
+
+  /**
+   * Checks if the struct type has a secondary weapon.
+   * @return {boolean}
+   */
+  hasSecondaryWeapon() {
+    return this.secondary_weapon
+      && this.secondary_weapon !== STRUCT_SECONDARY_WEAPON.NO_ACTIVE_WEAPONRY;
+  }
+
+  /**
+   * Checks if the struct type has passive weaponry.
+   * @return {boolean}
+   */
+  hasPassiveWeaponry() {
+    return this.passive_weaponry
+      && this.passive_weaponry !== STRUCT_PASSIVE_WEAPONRY.NO_PASSIVE_WEAPONRY;
+  }
+
+  /**
+   * Checks if the struct type has unit defenses.
+   * @return {boolean}
+   */
+  hasUnitDefenses() {
+    return this.unit_defenses
+      && this.unit_defenses !== STRUCT_UNIT_DEFENSES.NO_UNIT_DEFENSES;
+  }
+
+  /**
+   * Checks if the struct type has ore reserve defenses.
+   * @return {boolean}
+   */
+  hasOreReserveDefenses() {
+    return this.ore_reserve_defenses
+      && this.ore_reserve_defenses !== STRUCT_ORE_RESERVE_DEFENSES.NO_ORE_RESERVE_DEFENSES;
+  }
+
+  /**
+   * Checks if the struct type has planetary defenses.
+   * @return {boolean}
+   */
+  hasPlanetaryDefenses() {
+    return this.planetary_defenses
+      && this.planetary_defenses !== STRUCT_PLANETARY_DEFENSES.NO_PLANETARY_DEFENSE;
+  }
+
+  /**
+   * Checks if the struct type has planetary mining capability.
+   * @return {boolean}
+   */
+  hasPlanetaryMining() {
+    return this.planetary_mining
+      && this.planetary_mining !== STRUCT_PLANETARY_MINING.NO_PLANETARY_MINING;
+  }
+
+  /**
+   * Checks if the struct type has planetary refinery capability.
+   * @return {boolean}
+   */
+  hasPlanetaryRefinery() {
+    return this.planetary_refinery
+      && this.planetary_refinery !== STRUCT_PLANETARY_REFINERY.NO_PLANETARY_REFINERY;
+  }
+
+  /**
+   * Checks if the struct type has power generation capability.
+   * @return {boolean}
+   */
+  hasPowerGeneration() {
+    return this.power_generation
+      && this.power_generation !== STRUCT_POWER_GENERATION.NO_POWER_GENERATION;
+  }
 }

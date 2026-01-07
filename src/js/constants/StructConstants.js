@@ -8,6 +8,55 @@ export const
     DMG: 'dmg',
     BLINK: 'blink'
   },
+  STRUCT_PRIMARY_WEAPON = {
+    UNGUIDED_WEAPONRY: 'unguidedWeaponry',
+    GUIDED_WEAPONRY: 'guidedWeaponry',
+    NO_ACTIVE_WEAPONRY: 'noActiveWeaponry'
+  },
+  STRUCT_SECONDARY_WEAPON = {
+    UNGUIDED_WEAPONRY: 'unguidedWeaponry',
+    ATTACK_RUN: 'attackRun',
+    NO_ACTIVE_WEAPONRY: 'noActiveWeaponry'
+  },
+  STRUCT_PASSIVE_WEAPONRY = {
+    COUNTER_ATTACK: 'counterAttack',
+    STRONG_COUNTER_ATTACK: 'strongCounterAttack',
+    ADVANCED_COUNTER_ATTACK: 'advancedCounterAttack',
+    NO_PASSIVE_WEAPONRY: 'noPassiveWeaponry'
+  },
+  STRUCT_UNIT_DEFENSES = {
+    ARMOUR: 'armour',
+    DEFENSIVE_MANEUVER: 'defensiveManeuver',
+    INDIRECT_COMBAT_MODULE: 'indirectCombatModule',
+    SIGNAL_JAMMING: 'signalJamming',
+    STEALTH_MODE: 'stealthMode',
+    NO_UNIT_DEFENSES: 'noUnitDefenses'
+  },
+  STRUCT_ORE_RESERVE_DEFENSES = {
+    COORDINATED_RESERVE_RESPONSE_TRACKER: 'coordinatedReserveResponseTracker',
+    MONITORING_STATION: 'monitoringStation',
+    ORE_BUNKER: 'oreBunker',
+    NO_ORE_RESERVE_DEFENSES: 'noOreReserveDefenses'
+  },
+  STRUCT_PLANETARY_DEFENSES = {
+    DEFENSIVE_CANNON: 'defensiveCannon',
+    LOW_ORBIT_BALLISTIC_INTERCEPTOR_NETWORK: 'lowOrbitBallisticInterceptorNetwork',
+    NO_PLANETARY_DEFENSE: 'noPlanetaryDefense'
+  },
+  STRUCT_PLANETARY_MINING = {
+    ORE_MINING_RIG: 'oreMiningRig',
+    NO_PLANETARY_MINING: 'noPlanetaryMining'
+  },
+  STRUCT_PLANETARY_REFINERY = {
+    ORE_REFINERY: 'oreRefinery',
+    NO_PLANETARY_REFINERY: 'noPlanetaryRefinery'
+  },
+  STRUCT_POWER_GENERATION = {
+    SMALL_GENERATOR: 'smallGenerator',
+    MEDIUM_GENERATOR: 'mediumGenerator',
+    LARGE_GENERATOR: 'largeGenerator',
+    NO_POWER_GENERATION: 'noPowerGeneration'
+  },
   STRUCT_EQUIPMENT_ICON_MAP = {
     'attackRun': 'icon-ballistic-weapon',
     'guidedWeaponry': 'icon-smart-weapon',
