@@ -197,13 +197,13 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const struct = this.structManager.getStructById(structId);
 
     // If the struct is building, show the building action bar
-    if (struct && struct.is_building) {
+    if (struct && !struct.isBuilt()) {
       this.showBuildingActionBar(struct);
       return;
     }
 
     // If the struct is built, show the built struct action bar
-    if (struct && !struct.is_building) {
+    if (struct && struct.isBuilt()) {
       this.showStructActionBar(struct);
       return;
     }
@@ -485,6 +485,38 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * @param {StructType} structType
+   * @return {string[]}
+   */
+  buildExtractorPropertyIcons(structType) {
+    if (!structType.hasPlanetaryMining()) {
+      return [];
+    }
+
+    const icons = [];
+
+    // TODO extractor property icons
+
+    return icons;
+  }
+
+  /**
+   * @param {StructType} structType
+   * @return {string[]}
+   */
+  buildRefineryPropertyIcons(structType) {
+    if (!structType.hasPlanetaryRefinery()) {
+      return [];
+    }
+
+    const icons = [];
+
+    // TODO extractor property icons
+
+    return icons;
+  }
+
+  /**
    * @param structType
    * @return {string}
    */
@@ -495,7 +527,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       'hasOreReserveDefenses': 'ore_reserve_defenses',
       'hasPlanetaryDefenses': 'planetary_defenses',
     };
-    const icons = [];
+    let icons = [];
 
     Object.keys(standardPropsMap).forEach((hasEquipmentFn) => {
       if (structType[hasEquipmentFn]()) {
@@ -509,28 +541,31 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       }
     });
 
+    icons = icons.concat(this.buildExtractorPropertyIcons(structType));
+    icons = icons.concat(this.buildRefineryPropertyIcons(structType));
+
     return icons.join('');
   }
 
   /**
-   * Builds the HTML for struct action buttons based on struct type capabilities.
-   *
-   * @param {Struct} struct
-   * @param {StructType} structType
-   * @return {string} HTML for action buttons
+   * @return {string}
    */
-  buildStructActionButtons(struct, structType) {
-    const buttons = [];
-    const btnPrefix = `${this.playerType}-action-bar`;
+  getActionBtnIdPrefix() {
+    return `${this.playerType}-action-bar`;
+  }
 
-    // Primary weapon button
+  /**
+   * @param {array} buttons
+   * @param {StructType} structType
+   */
+  buildPrimaryWeaponActionButton(buttons, structType) {
     if (structType.hasPrimaryWeapon()) {
-      const iconClass = structType.primary_weapon_control === 'guided' 
-        ? 'icon-smart-weapon' 
+      const iconClass = structType.primary_weapon_control === 'guided'
+        ? 'icon-smart-weapon'
         : 'icon-ballistic-weapon';
       buttons.push(`
         <a 
-          id="${btnPrefix}-primary-weapon-btn"
+          id="${this.getActionBtnIdPrefix()}-primary-weapon-btn"
           href="javascript: void(0)"
           class="sui-panel-btn sui-mod-default"
           title="${structType.primary_weapon_label || 'Primary Weapon'}"
@@ -539,15 +574,39 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         </a>
       `);
     }
+  }
 
-    // Secondary weapon button
+  /**
+   * @param {Struct} struct
+   * @param {StructType} structType
+   */
+  attachPrimaryWeaponButtonHandler(struct, structType) {
+    if (structType.hasPrimaryWeapon()) {
+      const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-primary-weapon-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: PRIMARY_WEAPON_ATTACK', {
+            structId: struct.id,
+            weapon: structType.primary_weapon,
+            label: structType.primary_weapon_label
+          });
+        });
+      }
+    }
+  }
+
+  /**
+   * @param {array} buttons
+   * @param {StructType} structType
+   */
+  buildSecondaryWeaponActionButton(buttons, structType) {
     if (structType.hasSecondaryWeapon()) {
-      const iconClass = structType.secondary_weapon_control === 'guided' 
-        ? 'icon-smart-weapon' 
+      const iconClass = structType.secondary_weapon_control === 'guided'
+        ? 'icon-smart-weapon'
         : 'icon-ballistic-weapon';
       buttons.push(`
         <a 
-          id="${btnPrefix}-secondary-weapon-btn"
+          id="${this.getActionBtnIdPrefix()}-secondary-weapon-btn"
           href="javascript: void(0)"
           class="sui-panel-btn sui-mod-default"
           title="${structType.secondary_weapon_label || 'Secondary Weapon'}"
@@ -556,12 +615,36 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         </a>
       `);
     }
+  }
 
-    // Stealth button (for structs with stealth systems)
+  /**
+   * @param {Struct} struct
+   * @param {StructType} structType
+   */
+  attachSecondaryWeaponButtonHandler(struct, structType) {
+    if (structType.hasSecondaryWeapon()) {
+      const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-secondary-weapon-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: SECONDARY_WEAPON_ATTACK', {
+            structId: struct.id,
+            weapon: structType.secondary_weapon,
+            label: structType.secondary_weapon_label
+          });
+        });
+      }
+    }
+  }
+
+  /**
+   * @param {array} buttons
+   * @param {StructType} structType
+   */
+  buildStealthModeActionButton(buttons, structType) {
     if (structType.stealth_systems) {
       buttons.push(`
         <a 
-          id="${btnPrefix}-stealth-btn"
+          id="${this.getActionBtnIdPrefix()}-stealth-btn"
           href="javascript: void(0)"
           class="sui-panel-btn sui-mod-default"
           title="Stealth Mode"
@@ -570,12 +653,34 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         </a>
       `);
     }
+  }
 
-    // Move button (for movable structs)
+  /**
+   * @param {Struct} struct
+   * @param {StructType} structType
+   */
+  attachStealthModeButtonHandler(struct, structType) {
+    if (structType.stealth_systems) {
+      const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-stealth-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: STEALTH_TOGGLE', {
+            structId: struct.id
+          });
+        });
+      }
+    }
+  }
+
+  /**
+   * @param {array} buttons
+   * @param {StructType} structType
+   */
+  buildMoveActionButton(buttons, structType) {
     if (structType.movable) {
       buttons.push(`
         <a 
-          id="${btnPrefix}-move-btn"
+          id="${this.getActionBtnIdPrefix()}-move-btn"
           href="javascript: void(0)"
           class="sui-panel-btn sui-mod-default"
           title="Move"
@@ -584,12 +689,34 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         </a>
       `);
     }
+  }
 
-    // Defend button (for structs with defensive capabilities)
+  /**
+   * @param {Struct} struct
+   * @param {StructType} structType
+   */
+  attachMoveButtonHandler(struct, structType) {
+    if (structType.movable) {
+      const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-move-btn`);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          console.log('Action: MOVE', {
+            structId: struct.id
+          });
+        });
+      }
+    }
+  }
+
+  /**
+   * @param {array} buttons
+   * @param {StructType} structType
+   */
+  buildDefendActionButton(buttons, structType) {
     if (structType.category === STRUCT_CATEGORIES.FLEET) {
       buttons.push(`
         <a 
-          id="${btnPrefix}-defend-btn"
+          id="${this.getActionBtnIdPrefix()}-defend-btn"
           href="javascript: void(0)"
           class="sui-panel-btn sui-mod-default"
           title="Defend"
@@ -598,102 +725,11 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         </a>
       `);
     }
-
-    // Mine button (for structs with mining capability)
-    if (structType.hasPlanetaryMining()) {
-      buttons.push(`
-        <a 
-          id="${btnPrefix}-mine-btn"
-          href="javascript: void(0)"
-          class="sui-panel-btn sui-mod-default"
-          title="${structType.planetary_mining_label || 'Mine'}"
-        >
-          <i class="sui-icon-md icon-mine"></i>
-        </a>
-      `);
-    }
-
-    // Refine button (for structs with refining capability)
-    if (structType.hasPlanetaryRefinery()) {
-      buttons.push(`
-        <a 
-          id="${btnPrefix}-refine-btn"
-          href="javascript: void(0)"
-          class="sui-panel-btn sui-mod-default"
-          title="${structType.planetary_refinery_label || 'Refine'}"
-        >
-          <i class="sui-icon-md icon-refine"></i>
-        </a>
-      `);
-    }
-
-    return buttons.join('');
   }
 
-  /**
-   * Attaches click handlers to struct action buttons.
-   *
-   * @param {Struct} struct
-   * @param {StructType} structType
-   */
-  attachStructActionButtonHandlers(struct, structType) {
-    const btnPrefix = `${this.playerType}-action-bar`;
-
-    // Primary weapon handler
-    if (structType.hasPrimaryWeapon()) {
-      const btn = document.getElementById(`${btnPrefix}-primary-weapon-btn`);
-      if (btn) {
-        btn.addEventListener('click', () => {
-          console.log('Action: PRIMARY_WEAPON_ATTACK', { 
-            structId: struct.id, 
-            weapon: structType.primary_weapon,
-            label: structType.primary_weapon_label
-          });
-        });
-      }
-    }
-
-    // Secondary weapon handler
-    if (structType.hasSecondaryWeapon()) {
-      const btn = document.getElementById(`${btnPrefix}-secondary-weapon-btn`);
-      if (btn) {
-        btn.addEventListener('click', () => {
-          console.log('Action: SECONDARY_WEAPON_ATTACK', { 
-            structId: struct.id, 
-            weapon: structType.secondary_weapon,
-            label: structType.secondary_weapon_label
-          });
-        });
-      }
-    }
-
-    // Stealth handler
-    if (structType.stealth_systems) {
-      const btn = document.getElementById(`${btnPrefix}-stealth-btn`);
-      if (btn) {
-        btn.addEventListener('click', () => {
-          console.log('Action: STEALTH_TOGGLE', { 
-            structId: struct.id
-          });
-        });
-      }
-    }
-
-    // Move handler
-    if (structType.movable) {
-      const btn = document.getElementById(`${btnPrefix}-move-btn`);
-      if (btn) {
-        btn.addEventListener('click', () => {
-          console.log('Action: MOVE', { 
-            structId: struct.id
-          });
-        });
-      }
-    }
-
-    // Defend handler
+  attachDefendButtonHandler(struct, structType) {
     if (structType.category === STRUCT_CATEGORIES.FLEET) {
-      const btn = document.getElementById(`${btnPrefix}-defend-btn`);
+      const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-defend-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
           console.log('Action: DEFEND', {
@@ -705,32 +741,39 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         });
       }
     }
+  }
 
-    // Mine handler
-    if (structType.hasPlanetaryMining()) {
-      const btn = document.getElementById(`${btnPrefix}-mine-btn`);
-      if (btn) {
-        btn.addEventListener('click', () => {
-          console.log('Action: MINE', { 
-            structId: struct.id,
-            label: structType.planetary_mining_label
-          });
-        });
-      }
-    }
+  /**
+   * Builds the HTML for struct action buttons based on struct type capabilities.
+   *
+   * @param {Struct} struct
+   * @param {StructType} structType
+   * @return {string} HTML for action buttons
+   */
+  buildStructActionButtons(struct, structType) {
+    const buttons = [];
 
-    // Refine handler
-    if (structType.hasPlanetaryRefinery()) {
-      const btn = document.getElementById(`${btnPrefix}-refine-btn`);
-      if (btn) {
-        btn.addEventListener('click', () => {
-          console.log('Action: REFINE', { 
-            structId: struct.id,
-            label: structType.planetary_refinery_label
-          });
-        });
-      }
-    }
+    this.buildPrimaryWeaponActionButton(buttons, structType);
+    this.buildSecondaryWeaponActionButton(buttons, structType);
+    this.buildStealthModeActionButton(buttons, structType);
+    this.buildMoveActionButton(buttons, structType);
+    this.buildDefendActionButton(buttons, structType);
+
+    return buttons.join('');
+  }
+
+  /**
+   * Attaches click handlers to struct action buttons.
+   *
+   * @param {Struct} struct
+   * @param {StructType} structType
+   */
+  attachStructActionButtonHandlers(struct, structType) {
+    this.attachPrimaryWeaponButtonHandler(struct, structType);
+    this.attachSecondaryWeaponButtonHandler(struct, structType);
+    this.attachStealthModeButtonHandler(struct, structType);
+    this.attachMoveButtonHandler(struct, structType);
+    this.attachDefendButtonHandler(struct, structType);
   }
 
   renderHTML() {
