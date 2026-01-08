@@ -29,6 +29,13 @@ import {TaskStateFactory} from "./factories/TaskStateFactory";
 import {EVENTS} from "./constants/Events";
 import {TASK} from "./constants/TaskConstants";
 
+// TODO Remove eventually...
+const actionBarMigrate = localStorage.getItem("actionBarMigrate");
+if (!actionBarMigrate) {
+  console.log('Migrating to new Struct Type System')
+  localStorage.setItem("actionBarMigrate", true);
+  localStorage.removeItem('getStructTypes');
+}
 
 const gameState = new GameState();
 global.gameState = gameState;
