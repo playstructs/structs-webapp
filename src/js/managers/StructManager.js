@@ -54,11 +54,11 @@ export class StructManager {
      * @type {Struct[]}
      */
     const allStructs = [
-      ...this.gameState.thisPlayerStructs,
-      ...this.gameState.planetRaiderStructs,
-      ...this.gameState.raidEnemyStructs,
-      ...this.gameState.previewDefenderStructs,
-      ...this.gameState.previewAttackerStructs
+      ...Object.values(this.gameState.thisPlayerStructs),
+      ...Object.values(this.gameState.planetRaiderStructs),
+      ...Object.values(this.gameState.raidEnemyStructs),
+      ...Object.values(this.gameState.previewDefenderStructs),
+      ...Object.values(this.gameState.previewAttackerStructs)
     ];
 
     return allStructs.find(struct =>
@@ -103,7 +103,7 @@ export class StructManager {
    */
   getDeploymentBlockerBuildLimitReached(structType) {
     if (structType.build_limit > 0) {
-      const structTypeCount = this.gameState.thisPlayerStructs.filter(struct =>
+      const structTypeCount = Object.values(this.gameState.thisPlayerStructs).filter(struct =>
         struct.type === structType.id
       ).length;
 
@@ -189,7 +189,7 @@ export class StructManager {
   }
 
   /**
-   * Gets a struct by ID from all available struct arrays.
+   * Gets a struct by ID from all available struct objects. O(1) lookup.
    *
    * @param {string} structId
    * @return {Struct|null}
@@ -199,15 +199,12 @@ export class StructManager {
       return null;
     }
 
-    const allStructs = [
-      ...this.gameState.thisPlayerStructs,
-      ...this.gameState.planetRaiderStructs,
-      ...this.gameState.raidEnemyStructs,
-      ...this.gameState.previewDefenderStructs,
-      ...this.gameState.previewAttackerStructs
-    ];
-
-    return allStructs.find(struct => struct.id === structId) || null;
+    return this.gameState.thisPlayerStructs[structId]
+      || this.gameState.planetRaiderStructs[structId]
+      || this.gameState.raidEnemyStructs[structId]
+      || this.gameState.previewDefenderStructs[structId]
+      || this.gameState.previewAttackerStructs[structId]
+      || null;
   }
 
   /**
@@ -284,7 +281,7 @@ export class StructManager {
 
   /**
    * @param {String} playerType
-   * @return {Struct[]}
+   * @return {Object<string, Struct>}
    */
   getStructsByPlayerType(playerType) {
     switch (playerType) {
@@ -307,10 +304,10 @@ export class StructManager {
     const structs = this.getStructsByPlayerType(playerType);
     let planetaryStructCount = 0;
     let fleetStructCount = 0;
-    for (let i = 0; i < structs.length; i++) {
-      if (structs[i].location_type === 'planet') {
+    for (const struct of Object.values(structs)) {
+      if (struct.location_type === 'planet') {
         planetaryStructCount++;
-      } else if (structs[i].location_type === 'fleet') {
+      } else if (struct.location_type === 'fleet') {
         fleetStructCount++;
       }
     }

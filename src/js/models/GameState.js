@@ -74,8 +74,8 @@ export class GameState {
     /** @type {Fleet} */
     this.thisPlayerFleet = null;
 
-    /** @type {Struct[]} */
-    this.thisPlayerStructs = [];
+    /** @type {Object<string, Struct>} */
+    this.thisPlayerStructs = {};
 
     /** @type {Player} */
     this.planetRaider = null;
@@ -83,8 +83,8 @@ export class GameState {
     /** @type {Fleet} */
     this.planetRaiderFleet = null;
 
-    /** @type {Struct[]} */
-    this.planetRaiderStructs = [];
+    /** @type {Object<string, Struct>} */
+    this.planetRaiderStructs = {};
 
     this.raidPlanetRaidInfo = new PlanetRaid();
 
@@ -101,16 +101,16 @@ export class GameState {
     /** @type {Fleet} */
     this.raidEnemyFleet = null;
 
-    /** @type {Struct[]} */
-    this.raidEnemyStructs = [];
+    /** @type {Object<string, Struct>} */
+    this.raidEnemyStructs = {};
 
     this.structTypes = new StructTypeCollection();
 
-    /** @type {Struct[]} */
-    this.previewDefenderStructs = [];
+    /** @type {Object<string, Struct>} */
+    this.previewDefenderStructs = {};
 
-    /** @type {Struct[]} */
-    this.previewAttackerStructs = [];
+    /** @type {Object<string, Struct>} */
+    this.previewAttackerStructs = {};
 
     /* GRASS Only Data */
 
@@ -508,7 +508,10 @@ export class GameState {
    * @param {Struct[]} structs
    */
   setThisPlayerStructs(structs) {
-    this.thisPlayerStructs = structs;
+    this.thisPlayerStructs = {};
+    structs.forEach(struct => {
+      this.thisPlayerStructs[struct.id] = struct;
+    });
 
     window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED));
   }
@@ -517,14 +520,20 @@ export class GameState {
    * @param {Struct[]} structs
    */
   setPlanetRaiderStructs(structs) {
-    this.planetRaiderStructs = structs;
+    this.planetRaiderStructs = {};
+    structs.forEach(struct => {
+      this.planetRaiderStructs[struct.id] = struct;
+    });
   }
 
   /**
    * @param {Struct[]} structs
    */
   setRaidEnemyStructs(structs) {
-    this.raidEnemyStructs = structs;
+    this.raidEnemyStructs = {};
+    structs.forEach(struct => {
+      this.raidEnemyStructs[struct.id] = struct;
+    });
 
     window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET));
   }
@@ -533,12 +542,7 @@ export class GameState {
    * @param {Struct} struct
    */
   setThisPlayerStruct(struct) {
-    const existingIndex = this.thisPlayerStructs.findIndex(s => s.id === struct.id);
-    if (existingIndex !== -1) {
-      this.thisPlayerStructs[existingIndex] = struct;
-    } else {
-      this.thisPlayerStructs.push(struct);
-    }
+    this.thisPlayerStructs[struct.id] = struct;
 
     window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED));
   }
@@ -547,24 +551,14 @@ export class GameState {
    * @param {Struct} struct
    */
   setPlanetRaiderStruct(struct) {
-    const existingIndex = this.planetRaiderStructs.findIndex(s => s.id === struct.id);
-    if (existingIndex !== -1) {
-      this.planetRaiderStructs[existingIndex] = struct;
-    } else {
-      this.planetRaiderStructs.push(struct);
-    }
+    this.planetRaiderStructs[struct.id] = struct;
   }
 
   /**
    * @param {Struct} struct
    */
   setRaidEnemyStruct(struct) {
-    const existingIndex = this.raidEnemyStructs.findIndex(s => s.id === struct.id);
-    if (existingIndex !== -1) {
-      this.raidEnemyStructs[existingIndex] = struct;
-    } else {
-      this.raidEnemyStructs.push(struct);
-    }
+    this.raidEnemyStructs[struct.id] = struct;
 
     window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET));
   }
@@ -588,32 +582,30 @@ export class GameState {
   }
 
   /**
-   * Removes a struct by ID from all struct arrays.
+   * Removes a struct by ID from all struct objects.
    *
    * @param {string} structId
    * @return {Struct|null} The removed struct, or null if not found
    */
   removeStruct(structId) {
-    const playerStructs = [
-      this.thisPlayerStructs,
-      this.planetRaiderStructs,
-      this.raidEnemyStructs
-    ]
+    const collections = [
+      { structs: this.thisPlayerStructs, ownerCheck: this.thisPlayerId, event: EVENTS.STRUCT_COUNT_CHANGED },
+      { structs: this.planetRaiderStructs, ownerCheck: null, event: null },
+      { structs: this.raidEnemyStructs, ownerCheck: this.raidEnemy?.id, event: EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET }
+    ];
 
-    playerStructs.forEach(structs => {
-      const index = structs.findIndex(s => s.id === structId);
-      if (index !== -1) {
-        const removedStruct = structs.splice(index, 1)[0];
+    for (const { structs, ownerCheck, event } of collections) {
+      if (structs[structId]) {
+        const removedStruct = structs[structId];
+        delete structs[structId];
 
-        if (removedStruct.owner === this.thisPlayerId) {
-          window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED));
-        } else if (this.raidEnemy && removedStruct.owner === this.raidEnemy.id) {
-          window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET));
+        if (event && removedStruct.owner === ownerCheck) {
+          window.dispatchEvent(new CustomEvent(event));
         }
 
         return removedStruct;
       }
-    });
+    }
 
     return null;
   }
@@ -652,14 +644,20 @@ export class GameState {
    * @param {Struct[]} structs
    */
   setPreviewDefenderStructs(structs) {
-    this.previewDefenderStructs = structs;
+    this.previewDefenderStructs = {};
+    structs.forEach(struct => {
+      this.previewDefenderStructs[struct.id] = struct;
+    });
   }
 
   /**
    * @param {Struct[]} structs
    */
   setPreviewAttackerStructs(structs) {
-    this.previewAttackerStructs = structs;
+    this.previewAttackerStructs = {};
+    structs.forEach(struct => {
+      this.previewAttackerStructs[struct.id] = struct;
+    });
   }
 
   clearPlanetRaidData() {

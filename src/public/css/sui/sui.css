@@ -1435,6 +1435,28 @@ a.sui-screen-portrait:hover {
   gap: 0;
 }
 
+.sui-action-bar-panel-switch-group {
+  display: flex;
+  height: 48px;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: var(--spacing-xs);
+}
+
+.sui-theme-player .sui-action-bar-panel-switch-group {
+  padding-right: 7px;
+
+  background: url("/img/sui/panel/panel-switch-group-sliver-default.png") right no-repeat;
+  background-size: 6px 48px;
+}
+
+.sui-theme-enemy .sui-action-bar-panel-switch-group {
+  padding-right: 7px;
+
+  background: url("/img/sui/panel/panel-switch-group-sliver-medium.png") right no-repeat;
+  background-size: 6px 48px;
+}
+
 .sui-action-bar-btn-group {
   display: flex;
   height: 48px;
