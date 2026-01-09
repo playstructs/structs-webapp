@@ -33,7 +33,7 @@ import {TASK} from "./constants/TaskConstants";
 // Or formalize a migration system (MigrationManager?)
 const actionBarMigrate = localStorage.getItem("actionBarMigrate-20260107");
 if (!actionBarMigrate) {
-  console.log('Migrating to new Struct Type System')
+  console.log('Migrating to new Struct Type System');
   localStorage.setItem("actionBarMigrate-20260107", "true");
   localStorage.removeItem('getStructTypes');
 }
