@@ -79,7 +79,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
       return '';
     }
 
-    if (struct.is_building) {
+    if (!struct.isBuilt()) {
       return this.renderDeploymentIndicatorHTML();
     }
 

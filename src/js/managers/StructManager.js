@@ -240,7 +240,7 @@ export class StructManager {
     // Kill the task worker
     window.dispatchEvent(new TaskCmdKillEvent(struct.id));
 
-    if (!struct.is_destroyed) {
+    if (!struct.isDestroyed()) {
       // Send cancel message to backend (fire and forget)
       this.signingClientManager.queueMsgStructBuildCancel(
         this.gameState.signingAccount.address,

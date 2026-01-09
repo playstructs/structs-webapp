@@ -443,7 +443,11 @@ export class TaskManager {
         const hashrate = this.getProcessAverageHashrate();
         const offsetBlock = this.getProcessBlockOffset(pid, hashrate);
 
-        return this.processes[pid].state.getTimeRemainingEstimate(hashrate, offsetBlock);
+        if (this.processes[pid]) {
+            return this.processes[pid].state.getTimeRemainingEstimate(hashrate, offsetBlock);
+        }
+
+        return 0;
     }
 
     /**
