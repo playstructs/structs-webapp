@@ -438,6 +438,27 @@ class NumberFormatter {
 
     return intString.substring(0, remainderDigits) + unit;
   }
+
+  /**
+   * @param {number} ms milliseconds
+   * @return {string}
+   */
+  formatMilliseconds(ms) {
+    const timeParts = [];
+
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours > 0) {
+      timeParts.push `${hours}h`;
+    }
+
+    if (minutes > 0) {
+      timeParts.push `${minutes}m`;
+    }
+
+    return timeParts.join(' ');
+  }
 }
 
 

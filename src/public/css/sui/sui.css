@@ -513,6 +513,10 @@ i.sui-icon-water {
   background-image: url("/img/sui/icon/icon-water.png");
 }
 
+span.sui-icon-value {
+  margin-left: var(--spacing-sm);
+}
+
 /* ---- Icons End ---- */
 
 

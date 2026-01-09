@@ -6,6 +6,8 @@ import {DeployOffcanvas} from "../offcanvas/DeployOffcanvas";
 import {Struct} from "../../../models/Struct";
 import {StructType} from "../../../models/StructType";
 import {STRUCT_CATEGORIES, STRUCT_EQUIPMENT_ICON_MAP} from "../../../constants/StructConstants";
+import {TASK_TYPES} from "../../../constants/TaskTypes";
+import {NumberFormatter} from "../../../util/NumberFormatter";
 
 export class ActionBarComponent extends AbstractViewModelComponent {
 
@@ -33,6 +35,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.signingClientManager = signingClientManager;
     this.structManager = structManager;
     this.taskManager = taskManager;
+    this.numberFormatter = new NumberFormatter();
 
     /* Style */
     this.themeClass = `sui-theme-${this.playerType === PLAYER_TYPES.PLAYER ? 'player' : 'enemy'}`;
@@ -48,16 +51,19 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.headerScreenId = `${this.playerType}-action-bar-header`;
     this.propertiesScreenId = `${this.playerType}-action-bar-properties-screen`;
     this.progressBarId = `${this.playerType}-action-bar-progress-bar`;
+    this.undiscoveredOreContainerId = `${this.playerType}-action-bar-undiscovered-or-container`;
+    this.oreReadyContainerId = `${this.playerType}-action-bar-ore-ready-container`;
+    this.inProgressValueContainerId = `${this.playerType}-action-bar-progress-bar-in-progress-value`;
 
     /* Profile Chunk */
     this.profileClickHandler = function () {};
     this.batteryfilledClass = 'sui-mod-filled';
 
     /**
-     * Currently displayed building struct ID (for progress bar updates).
+     * Currently selected struct ID
      * @type {string|null}
      */
-    this.currentBuildingStructId = null;
+    this.selectedStructId = null;
   }
 
   initPageCode() {
@@ -71,10 +77,31 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
     // Listen for task worker changes to update progress bar
     window.addEventListener(EVENTS.TASK_WORKER_CHANGED, (event) => {
-      if (this.currentBuildingStructId && event.state.object_id === this.currentBuildingStructId) {
+      if (!this.selectedStructId || event.state.object_id !== this.selectedStructId) {
+        return;
+      }
+      if (event.state.task_type === TASK_TYPES.BUILD) {
         this.updateProgressBar(event.state.getPercentCompleteEstimate());
+      } else if (event.state.task_type === TASK_TYPES.MINE || event.state.task_type === TASK_TYPES.REFINE) {
+        const estInMS = event.state.getProcessTimeRemainingEstimate(this.selectedStructId);
+        const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
+        this.updateInProgressValue(estFormatted);
       }
     });
+
+    const undiscoveredOreContainer = document.getElementById(this.undiscoveredOreContainerId);
+    if (undiscoveredOreContainer) {
+      window.addEventListener(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, () => {
+        undiscoveredOreContainer.innerHTML = this.gameState.planet.undiscovered_ore;
+      });
+    }
+
+    const oreReadyContainer = document.getElementById(this.oreReadyContainerId);
+    if (oreReadyContainer) {
+      window.addEventListener(EVENTS.ORE_COUNT_CHANGED, () => {
+        oreReadyContainer.innerHTML = this.gameState.thisPlayer.ore;
+      });
+    }
   }
 
   /**
@@ -86,6 +113,18 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const progressBarWrapper = document.getElementById(this.progressBarId);
     if (progressBarWrapper) {
       progressBarWrapper.innerHTML = this.renderProgressBar(percentageToComplete);
+    }
+  }
+
+  /**
+   * Update the in progress time estimate without re-rendering the entire action bar.
+   *
+   * @param {string} value
+   */
+  updateInProgressValue(value) {
+    const inProgressValueContainer = document.getElementById(this.inProgressValueContainerId);
+    if (inProgressValueContainer) {
+      inProgressValueContainer.innerHTML = value;
     }
   }
 
@@ -226,7 +265,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    */
   showPendingBuildActionBar(structType) {
     // Clear current building struct ID (pending builds don't have one yet)
-    this.currentBuildingStructId = null;
+    this.selectedStructId = null;
 
     const header = structType.class_abbreviation;
 
@@ -283,7 +322,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     slot = null,
   ) {
     // Clear current building struct ID
-    this.currentBuildingStructId = null;
+    this.selectedStructId = null;
 
     const header = ambitOrTileLabel.toUpperCase();
 
@@ -368,7 +407,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    */
   showBuildingActionBar(struct) {
     // Store current building struct ID for progress bar updates
-    this.currentBuildingStructId = struct.id;
+    this.selectedStructId = struct.id;
 
     const structType = this.gameState.structTypes.getStructTypeById(struct.type);
     const header = structType.class_abbreviation;
@@ -430,14 +469,13 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {Struct} struct
    */
   showStructActionBar(struct) {
-    // Clear current building struct ID
-    this.currentBuildingStructId = null;
+    this.selectedStructId = struct.id;
 
     const structType = this.gameState.structTypes.getStructTypeById(struct.type);
     const header = structType.class_abbreviation;
 
     // Build list of property icons based on struct type capabilities
-    const propertyIcons = this.buildStructPropertyIcons(structType);
+    const propertyIcons = this.buildStructPropertyIcons(struct, structType);
 
     // Build action buttons based on struct type capabilities
     const actionButtons = this.buildStructActionButtons(struct, structType);
@@ -485,42 +523,75 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * @param {Struct} struct
    * @param {StructType} structType
    * @return {string[]}
    */
-  buildExtractorPropertyIcons(structType) {
+  buildExtractorPropertyIcons(struct, structType) {
     if (!structType.hasPlanetaryMining()) {
       return [];
     }
 
     const icons = [];
 
-    // TODO extractor property icons
+    icons.push(`
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore">
+        <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value">${this.gameState.planet.undiscovered_ore}</span>
+      </a> 
+    `);
+
+    if (struct.isOnline()) {
+      const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.selectedStructId);
+      const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
+
+      icons.push(`
+        <a href="javascript: void(0)" data-sui-cheatsheet="icon-in-progress">
+          <i class="sui-icon-md icon-in-progress"></i><span id="${this.inProgressValueContainerId}" class="sui-icon-value">${estFormatted}</span>
+        </a>
+      `);
+    }
 
     return icons;
   }
 
   /**
+   * @param {Struct} struct
    * @param {StructType} structType
    * @return {string[]}
    */
-  buildRefineryPropertyIcons(structType) {
+  buildRefineryPropertyIcons(struct, structType) {
     if (!structType.hasPlanetaryRefinery()) {
       return [];
     }
 
     const icons = [];
 
-    // TODO extractor property icons
+    icons.push(`
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready">
+        <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value">${this.gameState.thisPlayer.ore}</span>
+      </a> 
+    `);
+
+    if (struct.isOnline()) {
+      const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.selectedStructId);
+      const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
+
+      icons.push(`
+        <a href="javascript: void(0)" data-sui-cheatsheet="icon-in-progress">
+          <i class="sui-icon-md icon-in-progress"></i><span id="${this.inProgressValueContainerId}" class="sui-icon-value">${estFormatted}</span>
+        </a>
+      `);
+    }
 
     return icons;
   }
 
   /**
-   * @param structType
+   * @param {Struct} struct
+   * @param {StructType} structType
    * @return {string}
    */
-  buildStructPropertyIcons(structType) {
+  buildStructPropertyIcons(struct, structType) {
     const standardPropsMap = {
       'hasPassiveWeaponry': 'passive_weaponry',
       'hasUnitDefenses': 'unit_defenses',
@@ -541,8 +612,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       }
     });
 
-    icons = icons.concat(this.buildExtractorPropertyIcons(structType));
-    icons = icons.concat(this.buildRefineryPropertyIcons(structType));
+    icons = icons.concat(this.buildExtractorPropertyIcons(struct, structType));
+    icons = icons.concat(this.buildRefineryPropertyIcons(struct, structType));
 
     return icons.join('');
   }
