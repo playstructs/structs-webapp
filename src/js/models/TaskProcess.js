@@ -14,9 +14,6 @@ export class TaskProcess {
   constructor(state) {
     this.worker = null;
     this.state = state;
-
-    this.hashrate = TASK.HASHRATE_INITIAL_ESTIMATE;
-    this.blockStartOffset = 0;
   }
 
   start() {
