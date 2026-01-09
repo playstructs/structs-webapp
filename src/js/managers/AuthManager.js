@@ -19,7 +19,7 @@ import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApp
 import {PlayerAddressRevokedListener} from "../grass_listeners/PlayerAddressRevokedListener";
 import {AlphaChangeListener} from "../grass_listeners/AlphaChangeListener";
 import {PlanetRaidStatusListener} from "../grass_listeners/PlanetRaidStatusListener";
-import {StructBuildStatusListener} from "../grass_listeners/StructBuildStatusListener";
+import {StructStatusListener} from "../grass_listeners/StructStatusListener";
 import {StructMineStatusListener} from "../grass_listeners/StructMineStatusListener";
 import {StructRefineStatusListener} from "../grass_listeners/StructRefineStatusListener";
 
@@ -175,7 +175,7 @@ export class AuthManager {
       this.grassManager.registerListener(new AlphaChangeListener(this.gameState, this.guildAPI));
 
       // Task related listeners
-      this.grassManager.registerListener(new StructBuildStatusListener(this.gameState, this.guildAPI, this.structManager));
+      this.grassManager.registerListener(new StructStatusListener(this.gameState, this.guildAPI, this.structManager));
       this.grassManager.registerListener(new StructMineStatusListener(this.gameState));
       this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 

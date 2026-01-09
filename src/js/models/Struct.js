@@ -30,11 +30,57 @@ export class Struct {
     /** @type {number|null} */
     this.health = null;
 
-    /** @type {boolean} */
-    this.is_building = false;
+    /** @type {number|null} */
+    this.status = null;
+  }
 
-    /** @type {boolean} */
-    this.is_destroyed = false;
+  /**
+   * @return {boolean}
+   */
+  isMaterialized() {
+    return (this.status & 1) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isBuilt() {
+    return (this.status & 2) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isOnline() {
+    return (this.status & 4) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isStored() {
+    return (this.status & 8) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isHidden() {
+    return (this.status & 16) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isDestroyed() {
+    return (this.status & 32) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isLocked() {
+    return (this.status & 64) > 0;
   }
 }
 

@@ -45,15 +45,15 @@ class StructManager
         $query = '
             SELECT 
               s.*, 
-              COALESCE(sa.val, 0) AS health,
-              CASE WHEN w.object_id IS NOT NULL THEN true ELSE false END AS is_building
+              COALESCE(sa_health.val, 0) AS health,
+              COALESCE(sa_status.val, 0) AS status
             FROM struct s
-            LEFT JOIN struct_attribute sa
-              ON s.id = sa.object_id
-              AND sa.attribute_type = \'health\'
-            LEFT JOIN view.work w
-              ON s.id = w.object_id
-              AND w.category = \'BUILD\'
+            LEFT JOIN struct_attribute sa_health
+              ON s.id = sa_health.object_id
+              AND sa_health.attribute_type = \'health\'
+            LEFT JOIN struct_attribute sa_status
+              ON s.id = sa_status.object_id
+              AND sa_status.attribute_type = \'status\'
             WHERE 
               s.is_destroyed = false
               AND s.location_id = :planet_id
@@ -87,15 +87,15 @@ class StructManager
         $query = '
             SELECT 
               s.*, 
-              COALESCE(sa.val, 0) AS health,
-              CASE WHEN w.object_id IS NOT NULL THEN true ELSE false END AS is_building
+              COALESCE(sa_health.val, 0) AS health,
+              COALESCE(sa_status.val, 0) AS status
             FROM struct s
-            LEFT JOIN struct_attribute sa
-              ON s.id = sa.object_id
-              AND sa.attribute_type = \'health\'
-            LEFT JOIN view.work w
-              ON s.id = w.object_id
-              AND w.category = \'BUILD\'
+            LEFT JOIN struct_attribute sa_health
+              ON s.id = sa_health.object_id
+              AND sa_health.attribute_type = \'health\'
+            LEFT JOIN struct_attribute sa_status
+              ON s.id = sa_status.object_id
+              AND sa_status.attribute_type = \'status\'
             WHERE s.owner = :player_id
             AND s.is_destroyed = false
             ORDER BY s.location_type, s.location_id, s.slot;
@@ -123,15 +123,15 @@ class StructManager
         $query = '
             SELECT 
               s.*, 
-              COALESCE(sa.val, 0) AS health,
-              CASE WHEN w.object_id IS NOT NULL THEN true ELSE false END AS is_building
+              COALESCE(sa_health.val, 0) AS health,
+              COALESCE(sa_status.val, 0) AS status
             FROM struct s
-            LEFT JOIN struct_attribute sa
-              ON s.id = sa.object_id
-              AND sa.attribute_type = \'health\'
-            LEFT JOIN view.work w
-              ON s.id = w.object_id
-              AND w.category = \'BUILD\'
+            LEFT JOIN struct_attribute sa_health
+              ON s.id = sa_health.object_id
+              AND sa_health.attribute_type = \'health\'
+            LEFT JOIN struct_attribute sa_status
+              ON s.id = sa_status.object_id
+              AND sa_status.attribute_type = \'status\'
             WHERE s.id = :struct_id
             LIMIT 1;
         ';
