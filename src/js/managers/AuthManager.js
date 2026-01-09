@@ -65,6 +65,7 @@ export class AuthManager {
     this.mapManager = mapManager;
     this.taskManager = taskManager;
     this.structManager = structManager;
+
   }
 
   /**

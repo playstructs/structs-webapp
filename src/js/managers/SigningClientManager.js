@@ -79,6 +79,7 @@ import {
 import {EVENTS} from "../constants/Events";
 import {FEE} from "../constants/Fee";
 import {AMBIT_ENUM} from "../constants/Ambits";
+import {TASK} from "../constants/TaskConstants";
 
 export class SigningClientManager {
 

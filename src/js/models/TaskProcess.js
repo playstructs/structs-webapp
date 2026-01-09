@@ -11,9 +11,9 @@ export class TaskProcess {
   /**
    * @param {TaskState} _state
    */
-  constructor(_state) {
+  constructor(state) {
     this.worker = null;
-    this.state = _state;
+    this.state = state;
   }
 
   start() {
@@ -43,6 +43,7 @@ export class TaskProcess {
     if (!this.isRunning()) {
       this.state.status = TASK_STATUS.STARTING;
     }
+    this.clearEstimatedBlockStartOffset();
     this.worker.postMessage([this.state]);
     return true
   }
@@ -71,8 +72,9 @@ export class TaskProcess {
     }
   }
 
-  pause() {
+  pause(estimatedHashrate, estimatedBlockStartOffset) {
     this.clearWorker();
+    this.setEstimatedHashrateAndBlockStartOffset(estimatedHashrate, estimatedBlockStartOffset);
     this.setStatus(TASK_STATUS.PAUSED);
   }
 
@@ -181,9 +183,20 @@ export class TaskProcess {
     this.dispatchProgress();
   }
 
+  /**
+   * @param {number} estimatedHashrate
+   * @param {number} estimatedBlockStartOffset
+   */
+  setEstimatedHashrateAndBlockStartOffset(estimatedHashrate, estimatedBlockStartOffset){
+    this.state.estimated_hashrate = estimatedHashrate;
+    this.state.estimated_block_start_offset = estimatedBlockStartOffset;
+  }
+
+  clearEstimatedBlockStartOffset() {
+    this.state.estimated_block_start_offset = 0;
+  }
+
   dispatchProgress(){
     window.dispatchEvent(new TaskStateChangedEvent(this.state));
   }
-
-
 }

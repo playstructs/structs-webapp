@@ -43,6 +43,7 @@ export class GuildAPI {
     this.structFactory = new StructFactory();
     this.fleetFactory = new FleetFactory();
     this.workFactory = new WorkFactory();
+
   }
 
   /**

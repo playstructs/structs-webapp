@@ -36,6 +36,7 @@ async function work() {
         postMessage([state]);
     }
 
+    let sessionIterations = 1;
     while (true) {
         const nonce = state.getNextNonce();
         const message = state.getMessage(nonce);
@@ -48,12 +49,14 @@ async function work() {
         }
 
         if (state.iterations % TASK.CHECKPOINT_COMMIT === 0) {
+            state.iterations_since_last_start = sessionIterations;
             postMessage([state]);
         }
 
         if (state.iterations % TASK.DIFFICULTY_RECALCULATE === 0) {
             difficulty = state.getCurrentDifficulty();
         }
+        sessionIterations++;
     }
 }
 

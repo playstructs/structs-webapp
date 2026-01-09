@@ -56,6 +56,8 @@ const TASK = {
   IDENTITY_PREFIX: "IDENTITY",
   NONCE_PREFIX: "NONCE",
   TARGET_DELIMITER: "@",
+  AUTOMATIC_STATUS_INTERVAL: 60000,
+  START_DELAY: 10000,
 };
 
 
@@ -292,6 +294,7 @@ class TaskState {
     this.nonce_start = Math.floor(Math.random() * 10000000000);
     this.nonce_current = this.nonce_start;
     this.iterations = 0;
+    this.iterations_since_last_start = 0;
     this.process_start_time = new Date();
     this.process_end_time = null;
     this.difficulty_start = null;
@@ -304,6 +307,9 @@ class TaskState {
     this.result_nonce = null;
     this.result_hash = null;
 
+    this.estimated_hashrate = _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.HASHRATE_INITIAL_ESTIMATE;
+    this.estimated_block_start_offset = 0;
+    this.last_status_change_time = new Date();
   }
 
   /**
@@ -347,6 +353,7 @@ class TaskState {
    * @param {string} status
    */
   setStatus(status) {
+    this.last_status_change_time = new Date();
     this.status = status
   }
 
@@ -386,7 +393,7 @@ class TaskState {
    * @param {number} blockStartOffset
    * @return {number} Percent complete (0.0 to 1.0)
    */
-  getPercentCompleteEstimate(hashrate, blockStartOffset = 0) {
+  getPercentCompleteEstimate(hashrate = this.getHashrate(), blockStartOffset = this.estimated_block_start_offset) {
     if (this.isCompleted()) {
       return 1.0;
     }
@@ -412,7 +419,7 @@ class TaskState {
    * @param {number} blockStartOffset
    * @return {number}
    */
-  getBlockRemainingEstimate(hashrate,blockStartOffset = 0) {
+  getBlockRemainingEstimate(hashrate= this.getHashrate(), blockStartOffset = this.estimated_block_start_offset) {
     if (this.isCompleted()) {
       return 0;
     }
@@ -448,7 +455,7 @@ class TaskState {
    * @param {number} blockStartOffset
    * @return {number}
    */
-  getTimeRemainingEstimate(hashrate, blockStartOffset = 0) {
+  getTimeRemainingEstimate(hashrate= this.getHashrate(), blockStartOffset = this.estimated_block_start_offset) {
     const blocksAhead = this.getBlockRemainingEstimate(hashrate, blockStartOffset);
     return blocksAhead * _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.ESTIMATED_BLOCK_TIME;
   }
@@ -458,11 +465,11 @@ class TaskState {
    */
   getHashrate() {
     if (!this.isRunning()) {
-      return 0.0;
+      return this.estimated_hashrate;
     }
 
     const current_time = new Date();
-    return this.iterations / (Math.floor((current_time - this.process_start_time)) * 1);
+    return this.iterations_since_last_start / (Math.floor((current_time - this.last_status_change_time)) * 1);
   }
 
   /**
@@ -7058,6 +7065,7 @@ async function work() {
         postMessage([state]);
     }
 
+    let sessionIterations = 1;
     while (true) {
         const nonce = state.getNextNonce();
         const message = state.getMessage(nonce);
@@ -7070,12 +7078,14 @@ async function work() {
         }
 
         if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.CHECKPOINT_COMMIT === 0) {
+            state.iterations_since_last_start = sessionIterations;
             postMessage([state]);
         }
 
         if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_RECALCULATE === 0) {
             difficulty = state.getCurrentDifficulty();
         }
+        sessionIterations++;
     }
 }
 

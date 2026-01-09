@@ -38,15 +38,6 @@ export class TaskManager {
         this.waiting_queue = [];
         this.running_queue = [];
 
-        setInterval(() => {
-            console.log(this.processes);
-            console.log(this.waiting_queue);
-            console.log(this.running_queue);
-            console.log('hashrate ' + this.getProcessAverageHashrate());
-            console.log('percent est. ' + this.getProcessPercentCompleteEstimateAll());
-            console.log('time est. ' + this.getProcessTimeRemainingEstimateAll()/1000.0);
-        }, 5000);
-
         /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
@@ -172,6 +163,19 @@ export class TaskManager {
                     break;
             }
         }.bind(this));
+
+        // Add Console Utilities
+        setInterval(() => this.StatusAll(), TASK.AUTOMATIC_STATUS_INTERVAL);
+
+    }
+
+    StatusAll() {
+        console.log(this.processes);
+        console.log(this.waiting_queue);
+        console.log(this.running_queue);
+        console.log('hashrate ' + this.getProcessAverageHashrate());
+        console.log('percent est. ' + this.getProcessPercentCompleteEstimateAll());
+        console.log('time est. ' + this.getProcessTimeRemainingEstimateAll()/1000.0);
     }
 
     canStartTask() {
@@ -282,7 +286,10 @@ export class TaskManager {
         if (this.processes[pid]) {
             if (this.processes[pid].canPause()) {
 
-                this.processes[pid].pause();
+                const estimatedHashrate = this.getProcessAverageHashrate();
+                const estimatedBlockStartOffset = this.getProcessBlockOffset(pid, estimatedHashrate);
+
+                this.processes[pid].pause(estimatedHashrate, estimatedBlockStartOffset);
                 this.runningQueueRemove(pid);
 
                 this.waiting_queue.push(pid);
@@ -294,9 +301,14 @@ export class TaskManager {
 
     pauseAll() {
         let pause_list = [...this.running_queue];
+
+        const estimatedHashrate = this.getProcessAverageHashrate();
+
         for (const pid of pause_list) {
             if (this.processes[pid].canPause()) {
-                this.processes[pid].pause();
+                const estimatedBlockStartOffset = this.getProcessBlockOffset(pid, estimatedHashrate);
+
+                this.processes[pid].pause(estimatedHashrate, estimatedBlockStartOffset);
                 this.runningQueueRemove(pid);
 
                 this.waiting_queue.push(pid);

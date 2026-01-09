@@ -810,4 +810,10 @@ export class GameState {
     const key = this.getPendingBuildKey(tileType, ambit, slot, playerId);
     return this.pendingBuilds.get(key) || null;
   }
+
+  printMyPlayer() {
+    console.log('Player ID: ' + this.thisPlayerId);
+    console.log('Singing Account: ' + this.signingAccount.address);
+    console.log('Primary Account: ' + this.thisPlayer.primary_address);
+  }
 }
