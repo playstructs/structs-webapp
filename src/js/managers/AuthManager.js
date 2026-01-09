@@ -393,10 +393,4 @@ export class AuthManager {
     return true;
   }
 
-  statusPrint() {
-    console.log('Player ID: ' + this.gameState.thisPlayerId);
-    console.log('Singing Account: ' + this.gameState.signingAccount.address);
-    console.log('Primary Account: ' + this.gameState.thisPlayer.primary_address);
-  }
-
 }

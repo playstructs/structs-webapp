@@ -164,17 +164,8 @@ export class TaskManager {
             }
         }.bind(this));
 
-
         // Add Console Utilities
-        window.TaskManagerStatusAll = this.StatusAll.bind(this);
         setInterval(() => this.StatusAll(), TASK.AUTOMATIC_STATUS_INTERVAL);
-
-        window.TaskManagerForceRun = this.forceRun.bind(this);
-        window.TaskManagerPause = this.pause.bind(this);
-        window.TaskManagerTerminate = this.terminate.bind(this);
-        window.TaskManagerPauseAll = this.pauseAll.bind(this);
-        window.TaskManagerResumeAll = this.resumeAll.bind(this);
-        window.TaskManagerResume = this.resume.bind(this);
 
     }
 
