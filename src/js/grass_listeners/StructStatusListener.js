@@ -77,11 +77,15 @@ export class StructStatusListener extends AbstractGrassListener {
       && messageData.subject === `structs.planet.${this.gameState.thisPlayer.planet_id}`
       && messageData.detail.block > 0
     ) {
-      this.refreshStruct(messageData.detail.struct_id).then();
+      this.refreshStruct(messageData.detail.struct_id).then(() => {
+        const structId = messageData.detail.struct_id;
+        const structTypeId = this.gameState.thisPlayerStructs[structId].type;
+        const buildDifficulty = this.gameState.structTypes.getStructTypeById(structTypeId).build_difficulty;
 
-      //TODO we need difficulty target here
-      // I assume it'll be in the gameState eventually.
-      window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.BUILD, messageData.detail.block, 5000)));
+        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(structId, TASK_TYPES.BUILD, messageData.detail.block, buildDifficulty)));
+      }
+    );
+
     } else if (
         messageData.category === 'struct_status'
         && messageData.subject === `structs.planet.${this.gameState.thisPlayer.planet_id}`
@@ -93,8 +97,9 @@ export class StructStatusListener extends AbstractGrassListener {
       );
 
       this.refreshStruct(messageData.detail.struct_id, removePendingBuild).then();
-
-      window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
+      if (removePendingBuild) {
+        window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
+      }
     }
 
   }
