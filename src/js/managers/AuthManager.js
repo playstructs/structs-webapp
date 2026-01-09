@@ -65,6 +65,10 @@ export class AuthManager {
     this.mapManager = mapManager;
     this.taskManager = taskManager;
     this.structManager = structManager;
+
+    // Add Console Utilities
+    window.MyPlayer = this.statusPrint.bind(this);
+
   }
 
   /**
@@ -390,6 +394,12 @@ export class AuthManager {
     await this.guildAPI.deleteActivationCode(playerAddressPending.code);
 
     return true;
+  }
+
+  statusPrint() {
+    console.log('Player ID: ' + this.gameState.thisPlayerId);
+    console.log('Singing Account: ' + this.gameState.signingAccount.address);
+    console.log('Primary Account: ' + this.gameState.thisPlayer.primary_address);
   }
 
 }

@@ -27,7 +27,16 @@ import {StructManager} from "./managers/StructManager";
 import {TaskManager} from "./managers/TaskManager";
 import {TaskStateFactory} from "./factories/TaskStateFactory";
 import {EVENTS} from "./constants/Events";
+import {TASK} from "./constants/TaskConstants";
 
+// TODO Remove eventually...
+// Or formalize a migration system (MigrationManager?)
+const actionBarMigrate = localStorage.getItem("actionBarMigrate");
+if (!actionBarMigrate) {
+  console.log('Migrating to new Struct Type System')
+  localStorage.setItem("actionBarMigrate", "true");
+  localStorage.removeItem('getStructTypes');
+}
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -184,4 +193,4 @@ if (!gameState.thisPlayerId) {
 }
 
 // Start the hashing engine after a delay
-new Promise(resolve => setTimeout(resolve, 7000)).then(window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
+new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));

@@ -38,15 +38,6 @@ export class TaskManager {
         this.waiting_queue = [];
         this.running_queue = [];
 
-        setInterval(() => {
-            console.log(this.processes);
-            console.log(this.waiting_queue);
-            console.log(this.running_queue);
-            console.log('hashrate ' + this.getProcessAverageHashrate());
-            console.log('percent est. ' + this.getProcessPercentCompleteEstimateAll());
-            console.log('time est. ' + this.getProcessTimeRemainingEstimateAll()/1000.0);
-        }, 5000);
-
         /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
@@ -172,6 +163,28 @@ export class TaskManager {
                     break;
             }
         }.bind(this));
+
+
+        // Add Console Utilities
+        window.TaskManagerStatusAll = this.StatusAll.bind(this);
+        setInterval(() => this.StatusAll(), TASK.AUTOMATIC_STATUS_INTERVAL);
+
+        window.TaskManagerForceRun = this.forceRun.bind(this);
+        window.TaskManagerPause = this.pause.bind(this);
+        window.TaskManagerTerminate = this.terminate.bind(this);
+        window.TaskManagerPauseAll = this.pauseAll.bind(this);
+        window.TaskManagerResumeAll = this.resumeAll.bind(this);
+        window.TaskManagerResume = this.resume.bind(this);
+
+    }
+
+    StatusAll() {
+        console.log(this.processes);
+        console.log(this.waiting_queue);
+        console.log(this.running_queue);
+        console.log('hashrate ' + this.getProcessAverageHashrate());
+        console.log('percent est. ' + this.getProcessPercentCompleteEstimateAll());
+        console.log('time est. ' + this.getProcessTimeRemainingEstimateAll()/1000.0);
     }
 
     canStartTask() {
