@@ -16,6 +16,7 @@ export class TaskState {
     this.nonce_start = Math.floor(Math.random() * 10000000000);
     this.nonce_current = this.nonce_start;
     this.iterations = 0;
+    this.iterations_since_last_start = 0;
     this.process_start_time = new Date();
     this.process_end_time = null;
     this.difficulty_start = null;
@@ -28,6 +29,9 @@ export class TaskState {
     this.result_nonce = null;
     this.result_hash = null;
 
+    this.estimated_hashrate = TASK.HASHRATE_INITIAL_ESTIMATE;
+    this.estimated_block_start_offset = 0;
+    this.last_status_change_time = new Date();
   }
 
   /**
@@ -71,6 +75,7 @@ export class TaskState {
    * @param {string} status
    */
   setStatus(status) {
+    this.last_status_change_time = new Date();
     this.status = status
   }
 
@@ -110,7 +115,7 @@ export class TaskState {
    * @param {number} blockStartOffset
    * @return {number} Percent complete (0.0 to 1.0)
    */
-  getPercentCompleteEstimate(hashrate, blockStartOffset = 0) {
+  getPercentCompleteEstimate(hashrate = this.getHashrate(), blockStartOffset = this.estimated_block_start_offset) {
     if (this.isCompleted()) {
       return 1.0;
     }
@@ -136,7 +141,7 @@ export class TaskState {
    * @param {number} blockStartOffset
    * @return {number}
    */
-  getBlockRemainingEstimate(hashrate,blockStartOffset = 0) {
+  getBlockRemainingEstimate(hashrate= this.getHashrate(), blockStartOffset = this.estimated_block_start_offset) {
     if (this.isCompleted()) {
       return 0;
     }
@@ -172,7 +177,7 @@ export class TaskState {
    * @param {number} blockStartOffset
    * @return {number}
    */
-  getTimeRemainingEstimate(hashrate, blockStartOffset = 0) {
+  getTimeRemainingEstimate(hashrate= this.getHashrate(), blockStartOffset = this.estimated_block_start_offset) {
     const blocksAhead = this.getBlockRemainingEstimate(hashrate, blockStartOffset);
     return blocksAhead * TASK.ESTIMATED_BLOCK_TIME;
   }
@@ -182,11 +187,11 @@ export class TaskState {
    */
   getHashrate() {
     if (!this.isRunning()) {
-      return 0.0;
+      return this.estimated_hashrate;
     }
 
     const current_time = new Date();
-    return this.iterations / (Math.floor((current_time - this.process_start_time)) * 1);
+    return this.iterations_since_last_start / (Math.floor((current_time - this.last_status_change_time)) * 1);
   }
 
   /**

@@ -282,7 +282,10 @@ export class TaskManager {
         if (this.processes[pid]) {
             if (this.processes[pid].canPause()) {
 
-                this.processes[pid].pause();
+                const estimatedHashrate = this.getProcessAverageHashrate();
+                const estimatedBlockStartOffset = this.getProcessBlockOffset(pid, estimatedHashrate);
+
+                this.processes[pid].pause(estimatedHashrate, estimatedBlockStartOffset);
                 this.runningQueueRemove(pid);
 
                 this.waiting_queue.push(pid);
@@ -294,9 +297,14 @@ export class TaskManager {
 
     pauseAll() {
         let pause_list = [...this.running_queue];
+
+        const estimatedHashrate = this.getProcessAverageHashrate();
+
         for (const pid of pause_list) {
             if (this.processes[pid].canPause()) {
-                this.processes[pid].pause();
+                const estimatedBlockStartOffset = this.getProcessBlockOffset(pid, estimatedHashrate);
+
+                this.processes[pid].pause(estimatedHashrate, estimatedBlockStartOffset);
                 this.runningQueueRemove(pid);
 
                 this.waiting_queue.push(pid);
