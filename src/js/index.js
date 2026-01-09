@@ -30,6 +30,7 @@ import {EVENTS} from "./constants/Events";
 import {TASK} from "./constants/TaskConstants";
 
 // TODO Remove eventually...
+// Or formalize a migration system (MigrationManager?)
 const actionBarMigrate = localStorage.getItem("actionBarMigrate");
 if (!actionBarMigrate) {
   console.log('Migrating to new Struct Type System')
