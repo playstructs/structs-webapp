@@ -8,7 +8,7 @@ import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
 import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {Struct} from "../models/Struct";
 
-export class StructBuildStatusListener extends AbstractGrassListener {
+export class StructStatusListener extends AbstractGrassListener {
 
   /**
    * @param {GameState} gameState
@@ -20,7 +20,7 @@ export class StructBuildStatusListener extends AbstractGrassListener {
     guildAPI,
     structManager
   ) {
-    super('STRUCTS_BUILD_STATUS_CHANGE');
+    super('STRUCTS_STATUS_CHANGE');
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.structManager = structManager
@@ -28,8 +28,9 @@ export class StructBuildStatusListener extends AbstractGrassListener {
 
   /**
    * @param {string} structId
+   * @param {boolean} removePendingBuild
    */
-  async refreshStruct(structId) {
+  async refreshStruct(structId, removePendingBuild = false) {
     /** @type {Struct} */
     const struct = await this.guildAPI.getStruct(structId);
     this.gameState.setStruct(struct);
@@ -38,7 +39,7 @@ export class StructBuildStatusListener extends AbstractGrassListener {
     const ambit = struct.operating_ambit.toUpperCase();
 
     // Remove pending build from gameState
-    if (tileType) {
+    if (tileType && removePendingBuild) {
       this.gameState.removePendingBuild(tileType, ambit, struct.slot, struct.owner);
     }
 
@@ -84,14 +85,15 @@ export class StructBuildStatusListener extends AbstractGrassListener {
     } else if (
         messageData.category === 'struct_status'
         && messageData.subject === `structs.planet.${this.gameState.thisPlayer.planet_id}`
-        // Check to see if the status has changed to Built (feature flag 2)
-        && ((messageData.detail.status_old & 2) === 0
-        && (messageData.detail.status & 2) > 0)
     ) {
-      this.refreshStruct(messageData.detail.struct_id).then();
+      // Check to see if the status has changed to Built (feature flag 2)
+      const removePendingBuild = (
+        (messageData.detail.status_old & 2) === 0
+        && (messageData.detail.status & 2) > 0
+      );
 
-      //TODO this needs to be fixed. Has error:
-      // Cannot read properties of null (reading 'terminate')
+      this.refreshStruct(messageData.detail.struct_id, removePendingBuild).then();
+
       window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
     }
 
