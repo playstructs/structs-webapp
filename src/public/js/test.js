@@ -450,11 +450,11 @@ class NumberFormatter {
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
 
     if (hours > 0) {
-      timeParts.push `${hours}h`;
+      timeParts.push(`${hours}h`);
     }
 
     if (minutes > 0) {
-      timeParts.push `${minutes}m`;
+      timeParts.push(`${minutes}m`);
     }
 
     return timeParts.join(' ');
