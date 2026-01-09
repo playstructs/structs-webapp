@@ -66,9 +66,6 @@ export class AuthManager {
     this.taskManager = taskManager;
     this.structManager = structManager;
 
-    // Add Console Utilities
-    window.MyPlayer = this.statusPrint.bind(this);
-
   }
 
   /**

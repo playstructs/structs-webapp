@@ -44,14 +44,6 @@ export class GuildAPI {
     this.fleetFactory = new FleetFactory();
     this.workFactory = new WorkFactory();
 
-    // Add Console Utilities
-    window.showPlayer = this.getPlayer.bind(this);
-    window.showPlayerInfusions = this.getInfusionByPlayerId.bind(this);
-    window.showPlayerFleet = this.getFleetByPlayerId.bind(this);
-    window.showPlayerStructs = this.getStructsByPlayerId.bind(this);
-    window.showGuild = this.getGuild.bind(this);
-    window.showStruct = this.getStruct.bind(this);
-
   }
 
   /**

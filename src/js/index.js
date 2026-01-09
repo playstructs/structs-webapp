@@ -58,6 +58,7 @@ const blockGrassManager = new GrassManager(
 );
 
 const signingClientManager = new SigningClientManager(gameState);
+global.signingClientManager = signingClientManager;
 
 const structManager = new StructManager(gameState, signingClientManager);
 
