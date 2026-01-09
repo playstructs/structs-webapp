@@ -31,10 +31,10 @@ import {TASK} from "./constants/TaskConstants";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
-const actionBarMigrate = localStorage.getItem("actionBarMigrate");
+const actionBarMigrate = localStorage.getItem("actionBarMigrate-20260107");
 if (!actionBarMigrate) {
   console.log('Migrating to new Struct Type System')
-  localStorage.setItem("actionBarMigrate", "true");
+  localStorage.setItem("actionBarMigrate-20260107", "true");
   localStorage.removeItem('getStructTypes');
 }
 
