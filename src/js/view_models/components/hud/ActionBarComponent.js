@@ -83,7 +83,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       if (event.state.task_type === TASK_TYPES.BUILD) {
         this.updateProgressBar(event.state.getPercentCompleteEstimate());
       } else if (event.state.task_type === TASK_TYPES.MINE || event.state.task_type === TASK_TYPES.REFINE) {
-        const estInMS = event.state.getProcessTimeRemainingEstimate();
+        const estInMS = event.state.getTimeRemainingEstimate();
         const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
         this.updateInProgressValue(estFormatted);
       }
