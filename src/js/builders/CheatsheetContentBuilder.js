@@ -680,14 +680,22 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
         break;
       default:
         const structType = this.gameState.structTypes.getStructType(dataset.suiCheatsheet);
-        if (structType) {
-          if (dataset.selectedProperty) {
-            html = this.buildStructPropertyCheatsheet(structType, dataset);
-          } else {
-            html = this.buildStructCheatsheet(structType, dataset);
-          }
-        } else {
+
+        if (!structType) {
           throw new Error(`Unknown cheatsheet key: ${dataset.suiCheatsheet}`);
+        }
+
+        if (dataset.selectedProperty) {
+          html = this.buildStructPropertyCheatsheet(structType, dataset);
+        } else if (dataset.actionButton === 'defend') {
+          html = this.renderer.renderContentHTML(
+            'Defend',
+            structType.defend_change_charge,
+            null,
+            `Blocks incoming damage and counter-attacks on behalf of another Struct.`
+          );
+        } else {
+          html = this.buildStructCheatsheet(structType, dataset);
         }
 
     }

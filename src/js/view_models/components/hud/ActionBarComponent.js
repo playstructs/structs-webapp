@@ -801,6 +801,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           href="javascript: void(0)"
           class="sui-panel-btn sui-mod-default"
           title="Defend"
+          data-sui-cheatsheet="${structType.type}"
+          data-action-button="defend"
         >
           <i class="sui-icon-md icon-defend"></i>
         </a>
