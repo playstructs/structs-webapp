@@ -464,6 +464,13 @@ i.sui-icon-land {
   background-image: url("/img/sui/icon/icon-land.png");
 }
 
+i.sui-icon-local {
+  width: var(--icon-md);
+  height: var(--icon-md);
+
+  background-image: url("/img/sui/icon/icon-local.png");
+}
+
 i.sui-icon-player-indicator {
   width: var(--icon-xs);
   height: var(--icon-xs);
