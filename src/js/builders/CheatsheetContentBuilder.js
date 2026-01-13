@@ -1,5 +1,9 @@
 import {SUICheatsheetContentBuilder} from "../sui/SUICheatsheetContentBuilder";
-import {STRUCT_DESCRIPTIONS, STRUCT_EQUIPMENT_ICON_MAP} from "../constants/StructConstants";
+import {
+  STRUCT_DESCRIPTIONS,
+  STRUCT_EQUIPMENT_ICON_MAP,
+  STRUCT_WEAPON_CONTROL_LABELS
+} from "../constants/StructConstants";
 import {AMBIT_ORDER} from "../constants/Ambits";
 import {StructType} from "../models/StructType";
 import {NumberFormatter} from "../util/NumberFormatter";
@@ -282,6 +286,343 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
   }
 
   /**
+   *
+   * @param {string} selectedProperty
+   * @param {string} weaponType
+   * @param {string} weaponControl
+   * @param {number} weaponCharge
+   * @param {number} weaponDamage
+   * @param {number} weaponShots
+   * @param {string[]} weaponAmbitsArray
+   * @return {string}
+   */
+  renderPropertiesForWeapon(
+    selectedProperty,
+    weaponType,
+    weaponControl,
+    weaponCharge,
+    weaponDamage,
+    weaponShots,
+    weaponAmbitsArray
+  ) {
+    if (!selectedProperty || (selectedProperty !== 'primary_weapon' && selectedProperty !== 'secondary_weapon')) {
+      return '';
+    }
+
+    const iconClass = STRUCT_EQUIPMENT_ICON_MAP[weaponType];
+    const weaponControlLabel = STRUCT_WEAPON_CONTROL_LABELS[weaponControl];
+    let weaponDamageLabel = (weaponShots > 1)
+      ? `${weaponDamage}-${weaponDamage * weaponShots} DMG`
+      :`${weaponDamage} DMG`;
+    const ambitIcons = weaponAmbitsArray.map(ambit =>
+      `<i class="sui-icon sui-icon-${ambit.toLowerCase()}"></i>`
+    ).join('');
+
+    return `
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md ${iconClass}"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>${weaponControlLabel}</div>
+        </div>
+      </div>
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md icon-dmg"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>
+            ${weaponDamageLabel}
+          </div>
+        </div>
+      </div>
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md icon-range"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>
+            ${ambitIcons}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {string} selectedProperty
+   * @param {StructType} structType
+   * @return {string}
+   */
+  renderPropertiesForPassiveWeaponry(selectedProperty, structType) {
+    if (!selectedProperty || selectedProperty !== 'passive_weaponry') {
+      return '';
+    }
+
+    if (!structType.passive_weaponry || structType.passive_weaponry === 'noPassiveWeaponry') {
+      return '';
+    }
+
+    const weaponAmbits = this.getPassiveWeaponryAmbits(structType);
+
+    let damageHTML = `${structType.counter_attack} DMG`;
+
+    if (structType.counter_attack_same_ambit > structType.counter_attack) {
+      damageHTML += `${structType.counter_attack}-${structType.counter_attack_same_ambit} DMG`;
+    }
+
+    return `
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md icon-dmg"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>
+            ${damageHTML}
+          </div>
+        </div>
+      </div>
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md icon-range"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>
+            ${weaponAmbits.map(ambit => `<i class="sui-icon sui-icon-${ambit.toLowerCase()}"></i>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {string} selectedProperty
+   * @param {StructType} structType
+   * @return {string}
+   */
+  renderPropertiesForOreReserveDefenses(selectedProperty, structType) {
+    if (!selectedProperty || selectedProperty !== 'ore_reserve_defenses') {
+      return '';
+    }
+
+    if (structType.ore_reserve_defenses === 'noOreReserveDefenses') {
+      return '';
+    }
+
+    const iconClass = STRUCT_EQUIPMENT_ICON_MAP[structType.ore_reserve_defenses];
+    const planetaryShieldContribution = this.numberFormatter.format(structType.planetary_shield_contribution);
+
+    return `
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md ${iconClass}"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>${structType.ore_reserve_defenses_label}</div>
+          <div>+${planetaryShieldContribution} Planetary Defense</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {string} selectedProperty
+   * @param {StructType} structType
+   * @return {string}
+   */
+  renderPropertiesForPlanetaryDefenses(selectedProperty, structType) {
+    if (!selectedProperty || selectedProperty !== 'planetary_defenses') {
+      return '';
+    }
+
+    if (structType.planetary_defenses === 'defensiveCannon') {
+        const weaponDamage = 1;
+        const weaponAmbits = AMBIT_ORDER.map(ambit => ambit.toLowerCase());
+        const ambitIcons = weaponAmbits.map(ambit =>
+            `<i class="sui-icon sui-icon-${ambit.toLowerCase()}"></i>`
+        ).join('');
+        
+        return `
+          <div class="sui-cheatsheet-property">
+            <div class="sui-cheatsheet-property-icon">
+              <i class="sui-icon sui-icon-md icon-dmg"></i>
+            </div>
+            <div class="sui-cheatsheet-property-info">
+              <div>
+                ${weaponDamage} DMG
+              </div>
+            </div>
+          </div>
+          <div class="sui-cheatsheet-property">
+            <div class="sui-cheatsheet-property-icon">
+              <i class="sui-icon sui-icon-md icon-range"></i>
+            </div>
+            <div class="sui-cheatsheet-property-info">
+              <div>
+                ${ambitIcons}
+              </div>
+            </div>
+          </div>
+        `;
+    }
+
+    // Default or other planetary defenses if any
+    return '';
+  }
+
+  /**
+   * @param {StructType} structType
+   * @param {object} dataset
+   * @return {string}
+   */
+  buildStructPropertyCheatsheet(structType, dataset) {
+    const selectedProperty = dataset.selectedProperty;
+    let titleText = '';
+    let batteryCost = null;
+    let descriptionText = '';
+    let propertySectionHTML = '';
+
+    switch (selectedProperty) {
+      case 'primary_weapon':
+        titleText = structType.primary_weapon_label;
+        batteryCost = structType.primary_weapon_charge;
+        descriptionText = structType.primary_weapon_description;
+        propertySectionHTML = this.renderPropertiesForWeapon(
+          selectedProperty,
+          structType.primary_weapon,
+          structType.primary_weapon_control,
+          structType.primary_weapon_charge,
+          structType.primary_weapon_damage,
+          structType.primary_weapon_shots,
+          structType.primary_weapon_ambits_array
+        );
+        break;
+      case 'secondary_weapon':
+        titleText = structType.secondary_weapon_label;
+        batteryCost = structType.secondary_weapon_charge;
+        descriptionText = structType.secondary_weapon_description;
+        propertySectionHTML = this.renderPropertiesForWeapon(
+          selectedProperty,
+          structType.secondary_weapon,
+          structType.secondary_weapon_control,
+          structType.secondary_weapon_charge,
+          structType.secondary_weapon_damage,
+          structType.secondary_weapon_shots,
+          structType.secondary_weapon_ambits_array
+        );
+        break;
+      case 'movable':
+        titleText = structType.drive_label;
+        batteryCost = structType.move_charge;
+        descriptionText = structType.drive_description;
+        break;
+      case 'passive_weaponry':
+        titleText = structType.passive_weaponry_label;
+        descriptionText = structType.passive_weaponry_description;
+        propertySectionHTML = this.renderPropertiesForPassiveWeaponry(selectedProperty, structType);
+        break;
+      case 'unit_defenses':
+        titleText = structType.unit_defenses_label;
+        descriptionText = structType.unit_defenses_description;
+        break;
+      case 'ore_reserve_defenses':
+        titleText = structType.ore_reserve_defenses_label;
+        descriptionText = structType.ore_reserve_defenses_description;
+        propertySectionHTML = this.renderPropertiesForOreReserveDefenses(selectedProperty, structType);
+        break;
+      case 'planetary_defenses':
+        titleText = structType.planetary_defenses_label;
+        descriptionText = structType.planetary_defenses_description;
+        propertySectionHTML = this.renderPropertiesForPlanetaryDefenses(selectedProperty, structType);
+        break;
+    }
+
+    return this.renderer.renderContentHTML(
+      titleText,
+      batteryCost,
+      null,
+      descriptionText,
+      null,
+      propertySectionHTML
+    );
+  }
+
+  /**
+   * @param {object} dataset
+   * @return {string}
+   */
+  renderUndiscoveredOre(dataset) {
+    return this.renderer.renderContentHTML(
+      'Undiscovered Ore',
+      null,
+      null,
+      `${dataset.undiscoveredOre} Ore remains to be mined.`
+    );
+  }
+
+  /**
+   * @param {object} dataset
+   * @return {string}
+   */
+  renderExtractorActive(dataset) {
+    let oreExtracting = 0;
+    let timeRemaining = '';
+
+    if (dataset.estTime) {
+      oreExtracting = 1;
+      timeRemaining = `<div>${dataset.estTime} Est. time remaining.</div>`;
+    }
+
+    return this.renderer.renderContentHTML(
+      'Extractor Active',
+      null,
+      null,
+      `
+        <div>${oreExtracting} Ore extracting.</div>
+        ${timeRemaining}
+      `
+    );
+  }
+
+  /**
+   * @param {object} dataset
+   * @return {string}
+   */
+  renderOreReady(dataset) {
+    return this.renderer.renderContentHTML(
+      'Ore Ready',
+      null,
+      null,
+      `${dataset.oreReady} Ore remains to be refined.`
+    );
+  }
+
+  /**
+   * @param {object} dataset
+   * @return {string}
+   */
+  renderRefineryActive(dataset) {
+    let oreRefining = 0;
+    let timeRemaining = '';
+
+    if (dataset.estTime) {
+      oreRefining = 1;
+      timeRemaining = `<div>${dataset.estTime} Est. time remaining.</div>`;
+    }
+
+    return this.renderer.renderContentHTML(
+      'Refinery Active',
+      null,
+      null,
+      `
+        <div>${oreRefining} Ore refining.</div>
+        ${timeRemaining}
+      `
+    );
+  }
+
+  /**
    * @param {object} dataset triggering element's data attributes
    * @return {string}
    */
@@ -325,12 +666,36 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           'There is nothing of interest here yet.'
         );
         break;
+      case 'icon-undiscovered-ore':
+        html = this.renderUndiscoveredOre(dataset);
+        break;
+      case 'extractor-active':
+        html = this.renderExtractorActive(dataset);
+        break;
+      case 'icon-ore-ready':
+        html = this.renderOreReady(dataset);
+        break;
+      case 'refinery-active':
+        html = this.renderRefineryActive(dataset);
+        break;
       default:
         const structType = this.gameState.structTypes.getStructType(dataset.suiCheatsheet);
-        if (structType) {
-          html = this.buildStructCheatsheet(structType, dataset);
-        } else {
+
+        if (!structType) {
           throw new Error(`Unknown cheatsheet key: ${dataset.suiCheatsheet}`);
+        }
+
+        if (dataset.selectedProperty) {
+          html = this.buildStructPropertyCheatsheet(structType, dataset);
+        } else if (dataset.actionButton === 'defend') {
+          html = this.renderer.renderContentHTML(
+            'Defend',
+            structType.defend_change_charge,
+            null,
+            `Blocks incoming damage and counter-attacks on behalf of another Struct.`
+          );
+        } else {
+          html = this.buildStructCheatsheet(structType, dataset);
         }
 
     }
