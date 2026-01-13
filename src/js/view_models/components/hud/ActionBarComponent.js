@@ -512,11 +512,13 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
   /**
    * @param {string} iconClass
+   * @param {string} selectedProperty
+   * @param {string} structTypeId
    * @return {string}
    */
-  structPropertyIconHtml(iconClass) {
+  structPropertyIconHtml(iconClass, selectedProperty, structTypeId) {
     return `
-      <a href="javascript: void(0)" data-sui-cheatsheet="${iconClass}">
+      <a href="javascript: void(0)" data-sui-cheatsheet="${structTypeId}" data-selected-property="${selectedProperty}">
         <i class="sui-icon-md ${iconClass}"></i>
       </a>
     `;
@@ -608,7 +610,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         if (!iconClass) {
           console.log(`Missing icon for equipment type: ${hasEquipmentFn}`)
         }
-        icons.push(this.structPropertyIconHtml(iconClass));
+        icons.push(this.structPropertyIconHtml(iconClass, prop, structType.type));
       }
     });
 
@@ -640,6 +642,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           href="javascript: void(0)"
           class="sui-panel-btn sui-mod-default"
           title="${structType.primary_weapon_label || 'Primary Weapon'}"
+          data-sui-cheatsheet="${structType.type}"
+          data-selected-property="primary_weapon"
         >
           <i class="sui-icon-md ${iconClass}"></i>
         </a>
@@ -681,6 +685,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           href="javascript: void(0)"
           class="sui-panel-btn sui-mod-default"
           title="${structType.secondary_weapon_label || 'Secondary Weapon'}"
+          data-sui-cheatsheet="${structType.type}"
+          data-selected-property="secondary_weapon"
         >
           <i class="sui-icon-md ${iconClass}"></i>
         </a>
@@ -719,6 +725,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           href="javascript: void(0)"
           class="sui-panel-btn sui-mod-default"
           title="Stealth Mode"
+          data-sui-cheatsheet="${structType.type}"
+          data-selected-property="unit_defenses"
         >
           <i class="sui-icon-md icon-stealth"></i>
         </a>
@@ -755,6 +763,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           href="javascript: void(0)"
           class="sui-panel-btn sui-mod-default"
           title="Move"
+          data-sui-cheatsheet="${structType.type}"
+          data-selected-property="movable"
         >
           <i class="sui-icon-md icon-move"></i>
         </a>
