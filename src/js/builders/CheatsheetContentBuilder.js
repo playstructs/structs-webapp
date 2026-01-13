@@ -1,5 +1,9 @@
 import {SUICheatsheetContentBuilder} from "../sui/SUICheatsheetContentBuilder";
-import {STRUCT_DESCRIPTIONS, STRUCT_EQUIPMENT_ICON_MAP} from "../constants/StructConstants";
+import {
+  STRUCT_DESCRIPTIONS,
+  STRUCT_EQUIPMENT_ICON_MAP,
+  STRUCT_WEAPON_CONTROL_LABELS
+} from "../constants/StructConstants";
 import {AMBIT_ORDER} from "../constants/Ambits";
 import {StructType} from "../models/StructType";
 import {NumberFormatter} from "../util/NumberFormatter";
@@ -279,6 +283,71 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
       dataset.contextualMsg ? dataset.contextualMsg : '',
       propertiesHTML || null
     );
+  }
+
+  /**
+   *
+   * @param {string} selectedProperty
+   * @param {string} weaponType
+   * @param {string} weaponControl
+   * @param {number} weaponCharge
+   * @param {number} weaponDamage
+   * @param {number} weaponShots
+   * @param {string[]} weaponAmbitsArray
+   * @return {string}
+   */
+  renderPropertiesForWeapon(
+    selectedProperty,
+    weaponType,
+    weaponControl,
+    weaponCharge,
+    weaponDamage,
+    weaponShots,
+    weaponAmbitsArray
+  ) {
+    if (!selectedProperty || selectedProperty !== 'primary_weapon' || selectedProperty !== 'secondary_weapon') {
+      return '';
+    }
+
+    const iconClass = STRUCT_EQUIPMENT_ICON_MAP[weaponType];
+    const weaponControlLabel = STRUCT_WEAPON_CONTROL_LABELS[weaponControl];
+    let weaponDamageLabel = (weaponShots > 1)
+      ? `${weaponDamage}-${weaponDamage * weaponShots} DMG`
+      :`${weaponDamage} DMG`;
+    const ambitIcons = weaponAmbitsArray.map(ambit =>
+      `<i class="sui-icon sui-icon-${ambit.toLowerCase()}"></i>`
+    ).join('');
+
+    return `
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md ${iconClass}"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>${weaponControlLabel}</div>
+        </div>
+      </div>
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md icon-dmg"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>
+            ${weaponDamageLabel}
+          </div>
+        </div>
+      </div>
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md icon-range"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>
+            ${ambitIcons}
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   /**

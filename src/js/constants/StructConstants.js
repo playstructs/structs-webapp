@@ -102,5 +102,13 @@ export const
     "Submersible": "",
     "Tank": "",
     "World Engine": "Consumes Alpha Matter to generate Energy."
+  },
+  STRUCT_WEAPON_CONTROL = {
+    GUIDED: 'guided',
+    UNGUIDED: 'unguided'
+  },
+  STRUCT_WEAPON_CONTROL_LABELS = {
+    'guided': 'Smart Weapon',
+    'unguided': 'Ballistic Weapon'
   }
 ;
