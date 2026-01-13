@@ -537,7 +537,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore">
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${this.gameState.planet.undiscovered_ore}">
         <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value">${this.gameState.planet.undiscovered_ore}</span>
       </a> 
     `);
@@ -547,7 +547,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
 
       icons.push(`
-        <a href="javascript: void(0)" data-sui-cheatsheet="icon-in-progress">
+        <a href="javascript: void(0)" data-sui-cheatsheet="extractor-active" data-est-time="${estFormatted}">
           <i class="sui-icon-md icon-in-progress"></i><span id="${this.inProgressValueContainerId}" class="sui-icon-value">${estFormatted}</span>
         </a>
       `);
@@ -569,7 +569,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready">
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${this.gameState.thisPlayer.ore}">
         <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value">${this.gameState.thisPlayer.ore}</span>
       </a> 
     `);
@@ -579,7 +579,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
 
       icons.push(`
-        <a href="javascript: void(0)" data-sui-cheatsheet="icon-in-progress">
+        <a href="javascript: void(0)" data-sui-cheatsheet="refinery-active" data-est-time="${estFormatted}">
           <i class="sui-icon-md icon-in-progress"></i><span id="${this.inProgressValueContainerId}" class="sui-icon-value">${estFormatted}</span>
         </a>
       `);

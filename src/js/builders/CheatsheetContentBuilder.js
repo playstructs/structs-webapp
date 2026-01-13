@@ -549,6 +549,80 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
   }
 
   /**
+   * @param {object} dataset
+   * @return {string}
+   */
+  renderUndiscoveredOre(dataset) {
+    return this.renderer.renderContentHTML(
+      'Undiscovered Ore',
+      null,
+      null,
+      `${dataset.undiscoveredOre} Ore remains to be mined.`
+    );
+  }
+
+  /**
+   * @param {object} dataset
+   * @return {string}
+   */
+  renderExtractorActive(dataset) {
+    let oreExtracting = 0;
+    let timeRemaining = '';
+
+    if (dataset.estTime) {
+      oreExtracting = 1;
+      timeRemaining = `<div>${dataset.estTime} Est. time remaining.</div>`;
+    }
+
+    return this.renderer.renderContentHTML(
+      'Extractor Active',
+      null,
+      null,
+      `
+        <div>${oreExtracting} Ore extracting.</div>
+        ${timeRemaining}
+      `
+    );
+  }
+
+  /**
+   * @param {object} dataset
+   * @return {string}
+   */
+  renderOreReady(dataset) {
+    return this.renderer.renderContentHTML(
+      'Ore Ready',
+      null,
+      null,
+      `${dataset.oreReady} Ore remains to be refined.`
+    );
+  }
+
+  /**
+   * @param {object} dataset
+   * @return {string}
+   */
+  renderRefineryActive(dataset) {
+    let oreRefining = 0;
+    let timeRemaining = '';
+
+    if (dataset.estTime) {
+      oreRefining = 1;
+      timeRemaining = `<div>${dataset.estTime} Est. time remaining.</div>`;
+    }
+
+    return this.renderer.renderContentHTML(
+      'Refinery Active',
+      null,
+      null,
+      `
+        <div>${oreRefining} Ore refining.</div>
+        ${timeRemaining}
+      `
+    );
+  }
+
+  /**
    * @param {object} dataset triggering element's data attributes
    * @return {string}
    */
@@ -591,6 +665,18 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           'Unknown Territory',
           'There is nothing of interest here yet.'
         );
+        break;
+      case 'icon-undiscovered-ore':
+        html = this.renderUndiscoveredOre(dataset);
+        break;
+      case 'extractor-active':
+        html = this.renderExtractorActive(dataset);
+        break;
+      case 'icon-ore-ready':
+        html = this.renderOreReady(dataset);
+        break;
+      case 'refinery-active':
+        html = this.renderRefineryActive(dataset);
         break;
       default:
         const structType = this.gameState.structTypes.getStructType(dataset.suiCheatsheet);
