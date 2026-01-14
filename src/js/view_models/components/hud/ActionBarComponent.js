@@ -5,7 +5,7 @@ import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {DeployOffcanvas} from "../offcanvas/DeployOffcanvas";
 import {Struct} from "../../../models/Struct";
 import {StructType} from "../../../models/StructType";
-import {STRUCT_CATEGORIES, STRUCT_EQUIPMENT_ICON_MAP} from "../../../constants/StructConstants";
+import {STRUCT_CATEGORIES, STRUCT_EQUIPMENT_ICON_MAP, STRUCT_STATUS_FLAGS} from "../../../constants/StructConstants";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
 import {NumberFormatter} from "../../../util/NumberFormatter";
 
@@ -54,16 +54,25 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.undiscoveredOreContainerId = `${this.playerType}-action-bar-undiscovered-or-container`;
     this.oreReadyContainerId = `${this.playerType}-action-bar-ore-ready-container`;
     this.inProgressValueContainerId = `${this.playerType}-action-bar-progress-bar-in-progress-value`;
+    this.panelSwitchId = `${this.playerType}-action-bar-panel-switch`;
 
     /* Profile Chunk */
     this.profileClickHandler = function () {};
     this.batteryfilledClass = 'sui-mod-filled';
 
     /**
-     * Currently selected struct ID
-     * @type {string|null}
+     * Currently selected struct
+     * @type {Struct|null}
      */
-    this.selectedStructId = null;
+    this.selectedStruct = null;
+  }
+
+  /**
+   * Currently selected struct ID if there is one.
+   * @return {string|null}
+   */
+  getSelectedStructId() {
+    return this.selectedStruct ? this.selectedStruct.id : null;
   }
 
   initPageCode() {
@@ -71,13 +80,27 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       if (event.playerId === this.gameState.getPlayerIdByType(this.playerType)) {
         this.renderChargeLevel(event.chargeLevel);
       }
+
+      if (this.selectedStruct && !this.selectedStruct.isOnline()) {
+        const panelSwitchElm = document.getElementById(this.panelSwitchId);
+
+        if (panelSwitchElm && panelSwitchElm.dataset.state === 'disabled') {
+          const structType = this.gameState.structTypes.getStructTypeById(this.selectedStruct.type);
+          const panelSwitchState = this.getPanelSwitchState(this.selectedStruct, structType);
+
+          if (panelSwitchState.canToggle) {
+            this.showStructActionBar(this.selectedStruct);
+          }
+        }
+
+      }
     }.bind(this));
 
     document.getElementById(this.playerChunkPortraitId).addEventListener('click', this.profileClickHandler.bind(this));
 
     // Listen for task worker changes to update progress bar
     window.addEventListener(EVENTS.TASK_WORKER_CHANGED, (event) => {
-      if (!this.selectedStructId || event.state.object_id !== this.selectedStructId) {
+      if (!this.getSelectedStructId() || event.state.object_id !== this.getSelectedStructId()) {
         return;
       }
       if (event.state.task_type === TASK_TYPES.BUILD) {
@@ -265,7 +288,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    */
   showPendingBuildActionBar(structType) {
     // Clear current building struct ID (pending builds don't have one yet)
-    this.selectedStructId = null;
+    this.selectedStruct = null;
 
     const header = structType.class_abbreviation;
 
@@ -322,7 +345,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     slot = null,
   ) {
     // Clear current building struct ID
-    this.selectedStructId = null;
+    this.selectedStruct = null;
 
     const header = ambitOrTileLabel.toUpperCase();
 
@@ -407,7 +430,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    */
   showBuildingActionBar(struct) {
     // Store current building struct ID for progress bar updates
-    this.selectedStructId = struct.id;
+    this.selectedStruct = struct;
 
     const structType = this.gameState.structTypes.getStructTypeById(struct.type);
     const header = structType.class_abbreviation;
@@ -464,21 +487,94 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * Determines the panel switch state based on struct online status and player charge.
+   *
+   * @param {Struct} struct
+   * @param {StructType} structType
+   * @return {{image: string, state: string, canToggle: boolean}}
+   */
+  getPanelSwitchState(struct, structType) {
+    if (struct.isOnline()) {
+      return {
+        image: '/img/sui/panel/panel-switch-on.png',
+        state: 'on',
+        canToggle: true
+      };
+    }
+
+    // Struct is offline - check if player has enough charge to activate
+    const playerCharge = this.gameState.getThisPlayerCharge();
+    const activateCharge = structType.activate_charge || 0;
+
+    if (playerCharge >= activateCharge) {
+      return {
+        image: '/img/sui/panel/panel-switch-off.png',
+        state: 'off',
+        canToggle: true
+      };
+    }
+
+    return {
+      image: '/img/sui/panel/panel-switch-disabled.png',
+      state: 'disabled',
+      canToggle: false
+    };
+  }
+
+  /**
+   * Handles panel switch click to toggle struct online/offline state.
+   *
+   * @param {Struct} struct
+   */
+  handlePanelSwitchClick(struct) {
+    if (struct.isOnline()) {
+      // Turn off: deactivate the struct
+      this.signingClientManager.queueMsgStructDeactivate(struct.id).then(() => {
+        struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
+        this.showStructActionBar(struct);
+      });
+    } else {
+      // Turn on: activate the struct
+      this.signingClientManager.queueMsgStructActivate(struct.id).then(() => {
+        struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
+        this.showStructActionBar(struct);
+      });
+    }
+  }
+
+  /**
    * Shows the action bar for a built (completed) struct.
    *
    * @param {Struct} struct
    */
   showStructActionBar(struct) {
-    this.selectedStructId = struct.id;
+    this.selectedStruct = struct;
 
     const structType = this.gameState.structTypes.getStructTypeById(struct.type);
     const header = structType.class_abbreviation;
 
-    // Build list of property icons based on struct type capabilities
-    const propertyIcons = this.buildStructPropertyIcons(struct, structType);
+    const isOnline = struct.isOnline();
+
+    // Determine panel switch state
+    const panelSwitchState = this.getPanelSwitchState(struct, structType);
+    const panelSwitchCursor = panelSwitchState.canToggle ? 'pointer' : 'not-allowed';
+
+    // Build list of property icons based on struct type capabilities and online state
+    let propertyIcons;
+    if (isOnline) {
+      propertyIcons = this.buildStructPropertyIcons(struct, structType);
+    } else {
+      // Show unpowered icon when offline
+      propertyIcons = `
+        <a href="javascript: void(0)" data-sui-cheatsheet="icon-unpowered">
+          <i class="sui-icon-md icon-unpowered"></i>
+        </a>
+      `;
+    }
 
     // Build action buttons based on struct type capabilities
-    const actionButtons = this.buildStructActionButtons(struct, structType);
+    // Pass online state to disable buttons when offline
+    const actionButtons = this.buildStructActionButtons(structType, isOnline);
 
     document.getElementById(this.actionChunkId).innerHTML = `
       <div class="sui-screen sui-screen-full-width">
@@ -488,7 +584,13 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       <div class="sui-action-bar-bottom-row">
       
         <div class="sui-action-bar-panel-switch-group">
-          <img src="/img/sui/panel/panel-switch-on.png" alt="panel switch on" style="height: 48px">
+          <img 
+            id="${this.panelSwitchId}" 
+            src="${panelSwitchState.image}" 
+            alt="panel switch" 
+            data-state="${panelSwitchState.state}"
+            style="height: 48px; cursor: ${panelSwitchCursor}"
+          >
         </div>
 
         <div id="${this.propertiesScreenId}" class="sui-screen">
@@ -504,8 +606,17 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       </div>
     `;
 
-    // Attach action button handlers
-    this.attachStructActionButtonHandlers(struct, structType);
+    // Attach panel switch handler if it can be toggled
+    if (panelSwitchState.canToggle) {
+      document.getElementById(this.panelSwitchId).addEventListener('click', () => {
+        this.handlePanelSwitchClick(struct);
+      });
+    }
+
+    // Attach action button handlers (only functional when online)
+    if (isOnline) {
+      this.attachStructActionButtonHandlers(struct, structType);
+    }
 
     this.showActionChunk();
   }
@@ -543,7 +654,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     `);
 
     if (struct.isOnline()) {
-      const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.selectedStructId);
+      const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
       const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
 
       icons.push(`
@@ -575,7 +686,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     `);
 
     if (struct.isOnline()) {
-      const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.selectedStructId);
+      const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
       const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
 
       icons.push(`
@@ -630,17 +741,19 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * @param {array} buttons
    * @param {StructType} structType
+   * @param {boolean} isOnline
    */
-  buildPrimaryWeaponActionButton(buttons, structType) {
+  buildPrimaryWeaponActionButton(buttons, structType, isOnline) {
     if (structType.hasPrimaryWeapon()) {
       const iconClass = structType.primary_weapon_control === 'guided'
         ? 'icon-smart-weapon'
         : 'icon-ballistic-weapon';
+      const btnClass = isOnline ? 'sui-mod-default' : 'sui-mod-disabled';
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-primary-weapon-btn"
           href="javascript: void(0)"
-          class="sui-panel-btn sui-mod-default"
+          class="sui-panel-btn ${btnClass}"
           title="${structType.primary_weapon_label || 'Primary Weapon'}"
           data-sui-cheatsheet="${structType.type}"
           data-selected-property="primary_weapon"
@@ -673,17 +786,19 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * @param {array} buttons
    * @param {StructType} structType
+   * @param {boolean} isOnline
    */
-  buildSecondaryWeaponActionButton(buttons, structType) {
+  buildSecondaryWeaponActionButton(buttons, structType, isOnline) {
     if (structType.hasSecondaryWeapon()) {
       const iconClass = structType.secondary_weapon_control === 'guided'
         ? 'icon-smart-weapon'
         : 'icon-ballistic-weapon';
+      const btnClass = isOnline ? 'sui-mod-default' : 'sui-mod-disabled';
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-secondary-weapon-btn"
           href="javascript: void(0)"
-          class="sui-panel-btn sui-mod-default"
+          class="sui-panel-btn ${btnClass}"
           title="${structType.secondary_weapon_label || 'Secondary Weapon'}"
           data-sui-cheatsheet="${structType.type}"
           data-selected-property="secondary_weapon"
@@ -716,14 +831,16 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * @param {array} buttons
    * @param {StructType} structType
+   * @param {boolean} isOnline
    */
-  buildStealthModeActionButton(buttons, structType) {
+  buildStealthModeActionButton(buttons, structType, isOnline) {
     if (structType.stealth_systems) {
+      const btnClass = isOnline ? 'sui-mod-default' : 'sui-mod-disabled';
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-stealth-btn"
           href="javascript: void(0)"
-          class="sui-panel-btn sui-mod-default"
+          class="sui-panel-btn ${btnClass}"
           title="Stealth Mode"
           data-sui-cheatsheet="${structType.type}"
           data-selected-property="unit_defenses"
@@ -754,14 +871,16 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * @param {array} buttons
    * @param {StructType} structType
+   * @param {boolean} isOnline
    */
-  buildMoveActionButton(buttons, structType) {
+  buildMoveActionButton(buttons, structType, isOnline) {
     if (structType.movable) {
+      const btnClass = isOnline ? 'sui-mod-default' : 'sui-mod-disabled';
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-move-btn"
           href="javascript: void(0)"
-          class="sui-panel-btn sui-mod-default"
+          class="sui-panel-btn ${btnClass}"
           title="Move"
           data-sui-cheatsheet="${structType.type}"
           data-selected-property="movable"
@@ -792,14 +911,16 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * @param {array} buttons
    * @param {StructType} structType
+   * @param {boolean} isOnline
    */
-  buildDefendActionButton(buttons, structType) {
+  buildDefendActionButton(buttons, structType, isOnline) {
     if (structType.category === STRUCT_CATEGORIES.FLEET) {
+      const btnClass = isOnline ? 'sui-mod-default' : 'sui-mod-disabled';
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-defend-btn"
           href="javascript: void(0)"
-          class="sui-panel-btn sui-mod-default"
+          class="sui-panel-btn ${btnClass}"
           title="Defend"
           data-sui-cheatsheet="${structType.type}"
           data-action-button="defend"
@@ -829,18 +950,18 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * Builds the HTML for struct action buttons based on struct type capabilities.
    *
-   * @param {Struct} struct
    * @param {StructType} structType
+   * @param {boolean} isOnline - Whether the struct is online (buttons are disabled when offline)
    * @return {string} HTML for action buttons
    */
-  buildStructActionButtons(struct, structType) {
+  buildStructActionButtons(structType, isOnline = true) {
     const buttons = [];
 
-    this.buildPrimaryWeaponActionButton(buttons, structType);
-    this.buildSecondaryWeaponActionButton(buttons, structType);
-    this.buildStealthModeActionButton(buttons, structType);
-    this.buildMoveActionButton(buttons, structType);
-    this.buildDefendActionButton(buttons, structType);
+    this.buildPrimaryWeaponActionButton(buttons, structType, isOnline);
+    this.buildSecondaryWeaponActionButton(buttons, structType, isOnline);
+    this.buildStealthModeActionButton(buttons, structType, isOnline);
+    this.buildMoveActionButton(buttons, structType, isOnline);
+    this.buildDefendActionButton(buttons, structType, isOnline);
 
     return buttons.join('');
   }

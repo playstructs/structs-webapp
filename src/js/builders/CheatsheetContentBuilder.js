@@ -678,6 +678,14 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
       case 'refinery-active':
         html = this.renderRefineryActive(dataset);
         break;
+      case 'icon-unpowered':
+        html = this.renderer.renderContentHTML(
+          'Unpowered',
+          null,
+          null,
+          'This Struct is not receiving power. It’s abilities are not active.'
+        );
+        break;
       default:
         const structType = this.gameState.structTypes.getStructType(dataset.suiCheatsheet);
 
