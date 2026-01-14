@@ -169,17 +169,16 @@ export class SigningClientManager {
   }
 
 /**
-   * @param {string} creator
    * @param {string} fromPlayerId
    * @param {string} fromAddress
    * @param {string} toAddress
    * @param {Array<{denom: string, amount: string}>} amount
    */
-  async queueMsgPlayerSend(creator, fromPlayerId, fromAddress, toAddress, amount) {
+  async queueMsgPlayerSend(fromPlayerId, fromAddress, toAddress, amount) {
     this.queue({
       typeUrl: '/structs.structs.MsgPlayerSend',
       value: MsgPlayerSend.fromPartial({
-        creator: creator,
+        creator: this.gameState.signingAccount.address,
         playerId: fromPlayerId,
         fromAddress: fromAddress,
         toAddress: toAddress,
@@ -189,32 +188,31 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} playerAddress
    * @param {string} playerId
    */
-  async queueMsgPlanetExplore(playerAddress, playerId) {
+  async queueMsgPlanetExplore(playerId) {
+    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgPlanetExplore',
       value: MsgPlanetExplore.fromPartial({
-        creator: playerAddress,
+        creator: this.gameState.signingAccount.address,
         playerId: playerId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} playerId
    * @param {string} addressToRegister
    * @param {string} proofPubKey
    * @param {string} proofSignature
    * @param {number} permissions
    */
-  async queueMsgAddressRegister(creatorAddress, playerId, addressToRegister, proofPubKey, proofSignature, permissions) {
+  async queueMsgAddressRegister(playerId, addressToRegister, proofPubKey, proofSignature, permissions) {
     this.queue({
       typeUrl: '/structs.structs.MsgAddressRegister',
       value: MsgAddressRegister.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         playerId: playerId,
         address: addressToRegister,
         proofPubKey: proofPubKey,
@@ -225,29 +223,28 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} addressToRevoke
    */
-  async queueMsgAddressRevoke(creatorAddress, addressToRevoke) {
+  async queueMsgAddressRevoke(addressToRevoke) {
     this.queue({
       typeUrl: '/structs.structs.MsgAddressRevoke',
       value: MsgAddressRevoke.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         address: addressToRevoke
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} fleetId
    * @param {string} destinationLocationId
    */
-  async queueMsgFleetMove(creatorAddress, fleetId, destinationLocationId) {
+  async queueMsgFleetMove(fleetId, destinationLocationId) {
+    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgFleetMove',
       value: MsgFleetMove.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         fleetId: fleetId,
         destinationLocationId: destinationLocationId
       }),
@@ -255,16 +252,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} fleetId
    * @param {string} proof
    * @param {string} nonce
    */
-  async queueMsgPlanetRaidComplete(creatorAddress, fleetId, proof, nonce) {
+  async queueMsgPlanetRaidComplete(fleetId, proof, nonce) {
     this.queue({
       typeUrl: '/structs.structs.MsgPlanetRaidComplete',
       value: MsgPlanetRaidComplete.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         fleetId: fleetId,
         proof: proof,
         nonce: nonce
@@ -273,16 +269,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} structId
    * @param {string} proof
    * @param {string} nonce
    */
-  async queueMsgStructBuildComplete(creatorAddress, structId, proof, nonce) {
+  async queueMsgStructBuildComplete(structId, proof, nonce) {
     this.queue({
       typeUrl: '/structs.structs.MsgStructBuildComplete',
       value: MsgStructBuildComplete.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         structId: structId,
         proof: proof,
         nonce: nonce
@@ -291,16 +286,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} structId
    * @param {string} proof
    * @param {string} nonce
    */
-  async queueMsgStructOreMinerComplete(creatorAddress, structId, proof, nonce) {
+  async queueMsgStructOreMinerComplete(structId, proof, nonce) {
     this.queue({
       typeUrl: '/structs.structs.MsgStructOreMinerComplete',
       value: MsgStructOreMinerComplete.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         structId: structId,
         proof: proof,
         nonce: nonce
@@ -309,16 +303,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} structId
    * @param {string} proof
    * @param {string} nonce
    */
-  async queueMsgStructOreRefineryComplete(creatorAddress, structId, proof, nonce) {
+  async queueMsgStructOreRefineryComplete(structId, proof, nonce) {
     this.queue({
       typeUrl: '/structs.structs.MsgStructOreRefineryComplete',
       value: MsgStructOreRefineryComplete.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         structId: structId,
         proof: proof,
         nonce: nonce
@@ -327,17 +320,16 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} controller
    * @param {string} sourceObjectId
    * @param {string} allocationType
    * @param {number} power
    */
-  async queueMsgAllocationCreate(creatorAddress, controller, sourceObjectId, allocationType, power) {
+  async queueMsgAllocationCreate(controller, sourceObjectId, allocationType, power) {
     this.queue({
       typeUrl: '/structs.structs.MsgAllocationCreate',
       value: MsgAllocationCreate.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         controller: controller,
         sourceObjectId: sourceObjectId,
         allocationType: allocationType,
@@ -347,29 +339,27 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} allocationId
    */
-  async queueMsgAllocationDelete(creatorAddress, allocationId) {
+  async queueMsgAllocationDelete(allocationId) {
     this.queue({
       typeUrl: '/structs.structs.MsgAllocationDelete',
       value: MsgAllocationDelete.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         allocationId: allocationId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} allocationId
    * @param {number} power
    */
-  async queueMsgAllocationUpdate(creatorAddress, allocationId, power) {
+  async queueMsgAllocationUpdate(allocationId, power) {
     this.queue({
       typeUrl: '/structs.structs.MsgAllocationUpdate',
       value: MsgAllocationUpdate.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         allocationId: allocationId,
         power: power
       }),
@@ -377,15 +367,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} allocationId
    * @param {string} controller
    */
-  async queueMsgAllocationTransfer(creatorAddress, allocationId, controller) {
+  async queueMsgAllocationTransfer(allocationId, controller) {
     this.queue({
       typeUrl: '/structs.structs.MsgAllocationTransfer',
       value: MsgAllocationTransfer.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         allocationId: allocationId,
         controller: controller
       }),
@@ -393,15 +382,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {number} amountAlpha
    * @param {number} amountToken
    */
-  async queueMsgGuildBankMint(creatorAddress, amountAlpha, amountToken) {
+  async queueMsgGuildBankMint(amountAlpha, amountToken) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildBankMint',
       value: MsgGuildBankMint.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         amountAlpha: amountAlpha,
         amountToken: amountToken
       }),
@@ -409,29 +397,27 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {{denom: string, amount: string}} amountToken
    */
-  async queueMsgGuildBankRedeem(creatorAddress, amountToken) {
+  async queueMsgGuildBankRedeem(amountToken) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildBankRedeem',
       value: MsgGuildBankRedeem.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         amountToken: amountToken
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} address
    * @param {number} amountToken
    */
-  async queueMsgGuildBankConfiscateAndBurn(creatorAddress, address, amountToken) {
+  async queueMsgGuildBankConfiscateAndBurn(address, amountToken) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildBankConfiscateAndBurn',
       value: MsgGuildBankConfiscateAndBurn.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         address: address,
         amountToken: amountToken
       }),
@@ -439,15 +425,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} entrySubstationId
    */
-  async queueMsgGuildUpdateEntrySubstationId(creatorAddress, guildId, entrySubstationId) {
+  async queueMsgGuildUpdateEntrySubstationId(guildId, entrySubstationId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildUpdateEntrySubstationId',
       value: MsgGuildUpdateEntrySubstationId.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         entrySubstationId: entrySubstationId
       }),
@@ -455,16 +440,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
    * @param {string} substationId
    */
-  async queueMsgGuildMembershipInvite(creatorAddress, guildId, playerId, substationId) {
+  async queueMsgGuildMembershipInvite(guildId, playerId, substationId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipInvite',
       value: MsgGuildMembershipInvite.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         playerId: playerId,
         substationId: substationId
@@ -473,16 +457,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
    * @param {string} substationId
    */
-  async queueMsgGuildMembershipInviteApprove(creatorAddress, guildId, playerId, substationId) {
+  async queueMsgGuildMembershipInviteApprove(guildId, playerId, substationId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipInviteApprove',
       value: MsgGuildMembershipInviteApprove.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         playerId: playerId,
         substationId: substationId
@@ -491,15 +474,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
    */
-  async queueMsgGuildMembershipInviteDeny(creatorAddress, guildId, playerId) {
+  async queueMsgGuildMembershipInviteDeny(guildId, playerId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipInviteDeny',
       value: MsgGuildMembershipInviteDeny.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         playerId: playerId
       }),
@@ -507,15 +489,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
    */
-  async queueMsgGuildMembershipInviteRevoke(creatorAddress, guildId, playerId) {
+  async queueMsgGuildMembershipInviteRevoke(guildId, playerId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipInviteRevoke',
       value: MsgGuildMembershipInviteRevoke.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         playerId: playerId
       }),
@@ -523,17 +504,16 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
    * @param {string} substationId
    * @param {string[]} infusionId
    */
-  async queueMsgGuildMembershipJoin(creatorAddress, guildId, playerId, substationId, infusionId) {
+  async queueMsgGuildMembershipJoin(guildId, playerId, substationId, infusionId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipJoin',
       value: MsgGuildMembershipJoin.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         playerId: playerId,
         substationId: substationId,
@@ -543,15 +523,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
    */
-  async queueMsgGuildMembershipKick(creatorAddress, guildId, playerId) {
+  async queueMsgGuildMembershipKick(guildId, playerId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipKick',
       value: MsgGuildMembershipKick.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         playerId: playerId
       }),
@@ -559,16 +538,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
    * @param {string} substationId
    */
-  async queueMsgGuildMembershipRequest(creatorAddress, guildId, playerId, substationId) {
+  async queueMsgGuildMembershipRequest(guildId, playerId, substationId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipRequest',
       value: MsgGuildMembershipRequest.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         playerId: playerId,
         substationId: substationId
@@ -577,16 +555,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
    * @param {string} substationId
    */
-  async queueMsgGuildMembershipRequestApprove(creatorAddress, guildId, playerId, substationId) {
+  async queueMsgGuildMembershipRequestApprove(guildId, playerId, substationId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipRequestApprove',
       value: MsgGuildMembershipRequestApprove.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         playerId: playerId,
         substationId: substationId
@@ -595,15 +572,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
    */
-  async queueMsgGuildMembershipRequestDeny(creatorAddress, guildId, playerId) {
+  async queueMsgGuildMembershipRequestDeny(guildId, playerId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipRequestDeny',
       value: MsgGuildMembershipRequestDeny.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         playerId: playerId
       }),
@@ -611,15 +587,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} guildId
    * @param {string} playerId
    */
-  async queueMsgGuildMembershipRequestRevoke(creatorAddress, guildId, playerId) {
+  async queueMsgGuildMembershipRequestRevoke(guildId, playerId) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipRequestRevoke',
       value: MsgGuildMembershipRequestRevoke.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         guildId: guildId,
         playerId: playerId
       }),
@@ -627,16 +602,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} objectId
    * @param {string} playerId
    * @param {number} permissions
    */
-  async queueMsgPermissionGrantOnObject(creatorAddress, objectId, playerId, permissions) {
+  async queueMsgPermissionGrantOnObject(objectId, playerId, permissions) {
     this.queue({
       typeUrl: '/structs.structs.MsgPermissionGrantOnObject',
       value: MsgPermissionGrantOnObject.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         objectId: objectId,
         playerId: playerId,
         permissions: permissions
@@ -645,15 +619,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} address
    * @param {number} permissions
    */
-  async queueMsgPermissionGrantOnAddress(creatorAddress, address, permissions) {
+  async queueMsgPermissionGrantOnAddress(address, permissions) {
     this.queue({
       typeUrl: '/structs.structs.MsgPermissionGrantOnAddress',
       value: MsgPermissionGrantOnAddress.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         address: address,
         permissions: permissions
       }),
@@ -661,16 +634,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} objectId
    * @param {string} playerId
    * @param {number} permissions
    */
-  async queueMsgPermissionRevokeOnObject(creatorAddress, objectId, playerId, permissions) {
+  async queueMsgPermissionRevokeOnObject(objectId, playerId, permissions) {
     this.queue({
       typeUrl: '/structs.structs.MsgPermissionRevokeOnObject',
       value: MsgPermissionRevokeOnObject.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         objectId: objectId,
         playerId: playerId,
         permissions: permissions
@@ -679,15 +651,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} address
    * @param {number} permissions
    */
-  async queueMsgPermissionRevokeOnAddress(creatorAddress, address, permissions) {
+  async queueMsgPermissionRevokeOnAddress(address, permissions) {
     this.queue({
       typeUrl: '/structs.structs.MsgPermissionRevokeOnAddress',
       value: MsgPermissionRevokeOnAddress.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         address: address,
         permissions: permissions
       }),
@@ -695,16 +666,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} objectId
    * @param {string} playerId
    * @param {number} permissions
    */
-  async queueMsgPermissionSetOnObject(creatorAddress, objectId, playerId, permissions) {
+  async queueMsgPermissionSetOnObject(objectId, playerId, permissions) {
     this.queue({
       typeUrl: '/structs.structs.MsgPermissionSetOnObject',
       value: MsgPermissionSetOnObject.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         objectId: objectId,
         playerId: playerId,
         permissions: permissions
@@ -713,15 +683,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} address
    * @param {number} permissions
    */
-  async queueMsgPermissionSetOnAddress(creatorAddress, address, permissions) {
+  async queueMsgPermissionSetOnAddress(address, permissions) {
     this.queue({
       typeUrl: '/structs.structs.MsgPermissionSetOnAddress',
       value: MsgPermissionSetOnAddress.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         address: address,
         permissions: permissions
       }),
@@ -729,15 +698,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} playerId
    * @param {string} primaryAddress
    */
-  async queueMsgPlayerUpdatePrimaryAddress(creatorAddress, playerId, primaryAddress) {
+  async queueMsgPlayerUpdatePrimaryAddress(playerId, primaryAddress) {
     this.queue({
       typeUrl: '/structs.structs.MsgPlayerUpdatePrimaryAddress',
       value: MsgPlayerUpdatePrimaryAddress.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         playerId: playerId,
         primaryAddress: primaryAddress
       }),
@@ -745,60 +713,59 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} playerId
    */
-  async queueMsgPlayerResume(creatorAddress, playerId) {
+  async queueMsgPlayerResume(playerId) {
     this.queue({
       typeUrl: '/structs.structs.MsgPlayerResume',
       value: MsgPlayerResume.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         playerId: playerId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} structId
    */
-  async queueMsgStructActivate(creatorAddress, structId) {
+  async queueMsgStructActivate(structId) {
+    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructActivate',
       value: MsgStructActivate.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         structId: structId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} structId
    */
-  async queueMsgStructDeactivate(creatorAddress, structId) {
+  async queueMsgStructDeactivate(structId) {
+    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructDeactivate',
       value: MsgStructDeactivate.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         structId: structId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} playerId
    * @param {number} structTypeId
    * @param {string} operatingAmbit
    * @param {number} slot
    */
-  async queueMsgStructBuildInitiate(creatorAddress, playerId, structTypeId, operatingAmbit, slot) {
+  async queueMsgStructBuildInitiate(playerId, structTypeId, operatingAmbit, slot) {
+    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     const ambitNumber = AMBIT_ENUM[operatingAmbit.toUpperCase()];
     this.queue({
       typeUrl: '/structs.structs.MsgStructBuildInitiate',
       value: MsgStructBuildInitiate.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         playerId: playerId,
         structTypeId: structTypeId,
         operatingAmbit: ambitNumber,
@@ -808,29 +775,28 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} structId
    */
-  async queueMsgStructBuildCancel(creatorAddress, structId) {
+  async queueMsgStructBuildCancel(structId) {
     this.queue({
       typeUrl: '/structs.structs.MsgStructBuildCancel',
       value: MsgStructBuildCancel.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         structId: structId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} defenderStructId
    * @param {string} protectedStructId
    */
-  async queueMsgStructDefenseSet(creatorAddress, defenderStructId, protectedStructId) {
+  async queueMsgStructDefenseSet(defenderStructId, protectedStructId) {
+    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructDefenseSet',
       value: MsgStructDefenseSet.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         defenderStructId: defenderStructId,
         protectedStructId: protectedStructId
       }),
@@ -838,32 +804,31 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} defenderStructId
    */
-  async queueMsgStructDefenseClear(creatorAddress, defenderStructId) {
+  async queueMsgStructDefenseClear(defenderStructId) {
     this.queue({
       typeUrl: '/structs.structs.MsgStructDefenseClear',
       value: MsgStructDefenseClear.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         defenderStructId: defenderStructId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} structId
    * @param {string} locationType
    * @param {string} ambit
    * @param {number} slot
    */
-  async queueMsgStructMove(creatorAddress, structId, locationType, ambit, slot) {
+  async queueMsgStructMove(structId, locationType, ambit, slot) {
+    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     const ambitNumber = AMBIT_ENUM[ambit.toUpperCase()];
     this.queue({
       typeUrl: '/structs.structs.MsgStructMove',
       value: MsgStructMove.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         structId: structId,
         locationType: locationType,
         ambit: ambitNumber,
@@ -873,16 +838,16 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} operatingStructId
    * @param {string[]} targetStructId
    * @param {string} weaponSystem
    */
-  async queueMsgStructAttack(creatorAddress, operatingStructId, targetStructId, weaponSystem) {
+  async queueMsgStructAttack(operatingStructId, targetStructId, weaponSystem) {
+    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructAttack',
       value: MsgStructAttack.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         operatingStructId: operatingStructId,
         targetStructId: targetStructId,
         weaponSystem: weaponSystem
@@ -891,43 +856,42 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} structId
    */
-  async queueMsgStructStealthActivate(creatorAddress, structId) {
+  async queueMsgStructStealthActivate(structId) {
+    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructStealthActivate',
       value: MsgStructStealthActivate.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         structId: structId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} structId
    */
-  async queueMsgStructStealthDeactivate(creatorAddress, structId) {
+  async queueMsgStructStealthDeactivate(structId) {
+    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructStealthDeactivate',
       value: MsgStructStealthDeactivate.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         structId: structId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} structId
    * @param {string} infuseAmount
    */
-  async queueMsgStructGeneratorInfuse(creatorAddress, structId, infuseAmount) {
+  async queueMsgStructGeneratorInfuse(structId, infuseAmount) {
     this.queue({
       typeUrl: '/structs.structs.MsgStructGeneratorInfuse',
       value: MsgStructGeneratorInfuse.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         structId: structId,
         infuseAmount: infuseAmount
       }),
@@ -935,15 +899,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} owner
    * @param {string} allocationId
    */
-  async queueMsgSubstationCreate(creatorAddress, owner, allocationId) {
+  async queueMsgSubstationCreate(owner, allocationId) {
     this.queue({
       typeUrl: '/structs.structs.MsgSubstationCreate',
       value: MsgSubstationCreate.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         owner: owner,
         allocationId: allocationId
       }),
@@ -951,15 +914,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} substationId
    * @param {string} migrationSubstationId
    */
-  async queueMsgSubstationDelete(creatorAddress, substationId, migrationSubstationId) {
+  async queueMsgSubstationDelete(substationId, migrationSubstationId) {
     this.queue({
       typeUrl: '/structs.structs.MsgSubstationDelete',
       value: MsgSubstationDelete.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         substationId: substationId,
         migrationSubstationId: migrationSubstationId
       }),
@@ -967,15 +929,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} allocationId
    * @param {string} destinationId
    */
-  async queueMsgSubstationAllocationConnect(creatorAddress, allocationId, destinationId) {
+  async queueMsgSubstationAllocationConnect(allocationId, destinationId) {
     this.queue({
       typeUrl: '/structs.structs.MsgSubstationAllocationConnect',
       value: MsgSubstationAllocationConnect.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         allocationId: allocationId,
         destinationId: destinationId
       }),
@@ -983,29 +944,27 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} allocationId
    */
-  async queueMsgSubstationAllocationDisconnect(creatorAddress, allocationId) {
+  async queueMsgSubstationAllocationDisconnect(allocationId) {
     this.queue({
       typeUrl: '/structs.structs.MsgSubstationAllocationDisconnect',
       value: MsgSubstationAllocationDisconnect.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         allocationId: allocationId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} substationId
    * @param {string} playerId
    */
-  async queueMsgSubstationPlayerConnect(creatorAddress, substationId, playerId) {
+  async queueMsgSubstationPlayerConnect(substationId, playerId) {
     this.queue({
       typeUrl: '/structs.structs.MsgSubstationPlayerConnect',
       value: MsgSubstationPlayerConnect.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         substationId: substationId,
         playerId: playerId
       }),
@@ -1013,29 +972,27 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} playerId
    */
-  async queueMsgSubstationPlayerDisconnect(creatorAddress, playerId) {
+  async queueMsgSubstationPlayerDisconnect(playerId) {
     this.queue({
       typeUrl: '/structs.structs.MsgSubstationPlayerDisconnect',
       value: MsgSubstationPlayerDisconnect.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         playerId: playerId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} substationId
    * @param {string[]} playerId
    */
-  async queueMsgSubstationPlayerMigrate(creatorAddress, substationId, playerId) {
+  async queueMsgSubstationPlayerMigrate(substationId, playerId) {
     this.queue({
       typeUrl: '/structs.structs.MsgSubstationPlayerMigrate',
       value: MsgSubstationPlayerMigrate.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         substationId: substationId,
         playerId: playerId
       }),
@@ -1043,16 +1000,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} providerId
    * @param {number} duration
    * @param {number} capacity
    */
-  async queueMsgAgreementOpen(creatorAddress, providerId, duration, capacity) {
+  async queueMsgAgreementOpen(providerId, duration, capacity) {
     this.queue({
       typeUrl: '/structs.structs.MsgAgreementOpen',
       value: MsgAgreementOpen.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         providerId: providerId,
         duration: duration,
         capacity: capacity
@@ -1061,29 +1017,27 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} agreementId
    */
-  async queueMsgAgreementClose(creatorAddress, agreementId) {
+  async queueMsgAgreementClose(agreementId) {
     this.queue({
       typeUrl: '/structs.structs.MsgAgreementClose',
       value: MsgAgreementClose.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         agreementId: agreementId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} agreementId
    * @param {number} capacityIncrease
    */
-  async queueMsgAgreementCapacityIncrease(creatorAddress, agreementId, capacityIncrease) {
+  async queueMsgAgreementCapacityIncrease(agreementId, capacityIncrease) {
     this.queue({
       typeUrl: '/structs.structs.MsgAgreementCapacityIncrease',
       value: MsgAgreementCapacityIncrease.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         agreementId: agreementId,
         capacityIncrease: capacityIncrease
       }),
@@ -1091,15 +1045,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} agreementId
    * @param {number} capacityDecrease
    */
-  async queueMsgAgreementCapacityDecrease(creatorAddress, agreementId, capacityDecrease) {
+  async queueMsgAgreementCapacityDecrease(agreementId, capacityDecrease) {
     this.queue({
       typeUrl: '/structs.structs.MsgAgreementCapacityDecrease',
       value: MsgAgreementCapacityDecrease.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         agreementId: agreementId,
         capacityDecrease: capacityDecrease
       }),
@@ -1107,15 +1060,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} agreementId
    * @param {number} durationIncrease
    */
-  async queueMsgAgreementDurationIncrease(creatorAddress, agreementId, durationIncrease) {
+  async queueMsgAgreementDurationIncrease(agreementId, durationIncrease) {
     this.queue({
       typeUrl: '/structs.structs.MsgAgreementDurationIncrease',
       value: MsgAgreementDurationIncrease.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         agreementId: agreementId,
         durationIncrease: durationIncrease
       }),
@@ -1123,7 +1075,6 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} substationId
    * @param {{denom: string, amount: string}} rate
    * @param {string} accessPolicy
@@ -1134,11 +1085,11 @@ export class SigningClientManager {
    * @param {number} durationMinimum
    * @param {number} durationMaximum
    */
-  async queueMsgProviderCreate(creatorAddress, substationId, rate, accessPolicy, providerCancellationPenalty, consumerCancellationPenalty, capacityMinimum, capacityMaximum, durationMinimum, durationMaximum) {
+  async queueMsgProviderCreate(substationId, rate, accessPolicy, providerCancellationPenalty, consumerCancellationPenalty, capacityMinimum, capacityMaximum, durationMinimum, durationMaximum) {
     this.queue({
       typeUrl: '/structs.structs.MsgProviderCreate',
       value: MsgProviderCreate.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         substationId: substationId,
         rate: rate,
         accessPolicy: accessPolicy,
@@ -1153,15 +1104,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} providerId
    * @param {string} destinationAddress
    */
-  async queueMsgProviderWithdrawBalance(creatorAddress, providerId, destinationAddress) {
+  async queueMsgProviderWithdrawBalance(providerId, destinationAddress) {
     this.queue({
       typeUrl: '/structs.structs.MsgProviderWithdrawBalance',
       value: MsgProviderWithdrawBalance.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         providerId: providerId,
         destinationAddress: destinationAddress
       }),
@@ -1169,15 +1119,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} providerId
    * @param {number} newMinimumCapacity
    */
-  async queueMsgProviderUpdateCapacityMinimum(creatorAddress, providerId, newMinimumCapacity) {
+  async queueMsgProviderUpdateCapacityMinimum(providerId, newMinimumCapacity) {
     this.queue({
       typeUrl: '/structs.structs.MsgProviderUpdateCapacityMinimum',
       value: MsgProviderUpdateCapacityMinimum.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         providerId: providerId,
         newMinimumCapacity: newMinimumCapacity
       }),
@@ -1185,15 +1134,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} providerId
    * @param {number} newMaximumCapacity
    */
-  async queueMsgProviderUpdateCapacityMaximum(creatorAddress, providerId, newMaximumCapacity) {
+  async queueMsgProviderUpdateCapacityMaximum(providerId, newMaximumCapacity) {
     this.queue({
       typeUrl: '/structs.structs.MsgProviderUpdateCapacityMaximum',
       value: MsgProviderUpdateCapacityMaximum.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         providerId: providerId,
         newMaximumCapacity: newMaximumCapacity
       }),
@@ -1201,15 +1149,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} providerId
    * @param {number} newMinimumDuration
    */
-  async queueMsgProviderUpdateDurationMinimum(creatorAddress, providerId, newMinimumDuration) {
+  async queueMsgProviderUpdateDurationMinimum(providerId, newMinimumDuration) {
     this.queue({
       typeUrl: '/structs.structs.MsgProviderUpdateDurationMinimum',
       value: MsgProviderUpdateDurationMinimum.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         providerId: providerId,
         newMinimumDuration: newMinimumDuration
       }),
@@ -1217,15 +1164,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} providerId
    * @param {number} newMaximumDuration
    */
-  async queueMsgProviderUpdateDurationMaximum(creatorAddress, providerId, newMaximumDuration) {
+  async queueMsgProviderUpdateDurationMaximum(providerId, newMaximumDuration) {
     this.queue({
       typeUrl: '/structs.structs.MsgProviderUpdateDurationMaximum',
       value: MsgProviderUpdateDurationMaximum.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         providerId: providerId,
         newMaximumDuration: newMaximumDuration
       }),
@@ -1233,15 +1179,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} providerId
    * @param {string} accessPolicy
    */
-  async queueMsgProviderUpdateAccessPolicy(creatorAddress, providerId, accessPolicy) {
+  async queueMsgProviderUpdateAccessPolicy(providerId, accessPolicy) {
     this.queue({
       typeUrl: '/structs.structs.MsgProviderUpdateAccessPolicy',
       value: MsgProviderUpdateAccessPolicy.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         providerId: providerId,
         accessPolicy: accessPolicy
       }),
@@ -1249,15 +1194,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} providerId
    * @param {string[]} guildId
    */
-  async queueMsgProviderGuildGrant(creatorAddress, providerId, guildId) {
+  async queueMsgProviderGuildGrant(providerId, guildId) {
     this.queue({
       typeUrl: '/structs.structs.MsgProviderGuildGrant',
       value: MsgProviderGuildGrant.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         providerId: providerId,
         guildId: guildId
       }),
@@ -1265,15 +1209,14 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} providerId
    * @param {string[]} guildId
    */
-  async queueMsgProviderGuildRevoke(creatorAddress, providerId, guildId) {
+  async queueMsgProviderGuildRevoke(providerId, guildId) {
     this.queue({
       typeUrl: '/structs.structs.MsgProviderGuildRevoke',
       value: MsgProviderGuildRevoke.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         providerId: providerId,
         guildId: guildId
       }),
@@ -1281,30 +1224,28 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} providerId
    */
-  async queueMsgProviderDelete(creatorAddress, providerId) {
+  async queueMsgProviderDelete(providerId) {
     this.queue({
       typeUrl: '/structs.structs.MsgProviderDelete',
       value: MsgProviderDelete.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         providerId: providerId
       }),
     });
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} delegatorAddress
    * @param {string} validatorAddress
    * @param {{denom: string, amount: string}} amount
    */
-  async queueMsgReactorInfuse(creatorAddress, delegatorAddress, validatorAddress, amount) {
+  async queueMsgReactorInfuse(delegatorAddress, validatorAddress, amount) {
     this.queue({
       typeUrl: '/structs.structs.MsgReactorInfuse',
       value: MsgReactorInfuse.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         delegatorAddress: delegatorAddress,
         validatorAddress: validatorAddress,
         amount: amount
@@ -1313,17 +1254,16 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} delegatorAddress
    * @param {string} validatorSrcAddress
    * @param {string} validatorDstAddress
    * @param {{denom: string, amount: string}} amount
    */
-  async queueMsgReactorBeginMigration(creatorAddress, delegatorAddress, validatorSrcAddress, validatorDstAddress, amount) {
+  async queueMsgReactorBeginMigration(delegatorAddress, validatorSrcAddress, validatorDstAddress, amount) {
     this.queue({
       typeUrl: '/structs.structs.MsgReactorBeginMigration',
       value: MsgReactorBeginMigration.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         delegatorAddress: delegatorAddress,
         validatorSrcAddress: validatorSrcAddress,
         validatorDstAddress: validatorDstAddress,
@@ -1333,16 +1273,15 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} delegatorAddress
    * @param {string} validatorAddress
    * @param {{denom: string, amount: string}} amount
    */
-  async queueMsgReactorDefuse(creatorAddress, delegatorAddress, validatorAddress, amount) {
+  async queueMsgReactorDefuse(delegatorAddress, validatorAddress, amount) {
     this.queue({
       typeUrl: '/structs.structs.MsgReactorDefuse',
       value: MsgReactorDefuse.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         delegatorAddress: delegatorAddress,
         validatorAddress: validatorAddress,
         amount: amount
@@ -1351,17 +1290,16 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} creatorAddress
    * @param {string} delegatorAddress
    * @param {string} validatorAddress
    * @param {{denom: string, amount: string}} amount
    * @param {number} creationHeight
    */
-  async queueMsgReactorCancelDefusion(creatorAddress, delegatorAddress, validatorAddress, amount, creationHeight) {
+  async queueMsgReactorCancelDefusion(delegatorAddress, validatorAddress, amount, creationHeight) {
     this.queue({
       typeUrl: '/structs.structs.MsgReactorCancelDefusion',
       value: MsgReactorCancelDefusion.fromPartial({
-        creator: creatorAddress,
+        creator: this.gameState.signingAccount.address,
         delegatorAddress: delegatorAddress,
         validatorAddress: validatorAddress,
         amount: amount,

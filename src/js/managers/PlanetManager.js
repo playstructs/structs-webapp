@@ -13,7 +13,6 @@ export class PlanetManager {
 
   async findNewPlanet() {
     await this.signingClientManager.queueMsgPlanetExplore(
-      this.gameState.signingAccount.address,
       this.gameState.thisPlayerId
     );
   }

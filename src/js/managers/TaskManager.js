@@ -129,7 +129,6 @@ export class TaskManager {
             switch (event.state.task_type) {
                 case TASK_TYPES.RAID:
                     await this.signingClientManager.queueMsgPlanetRaidComplete(
-                        this.gameState.signingAccount.address,
                         event.state.object_id,
                         event.state.result_hash,
                         event.state.result_nonce
@@ -137,7 +136,6 @@ export class TaskManager {
                     break;
                 case TASK_TYPES.BUILD:
                     await this.signingClientManager.queueMsgStructBuildComplete(
-                        this.gameState.signingAccount.address,
                         event.state.object_id,
                         event.state.result_hash,
                         event.state.result_nonce
@@ -146,7 +144,6 @@ export class TaskManager {
 
                 case TASK_TYPES.MINE:
                     await this.signingClientManager.queueMsgStructOreMinerComplete(
-                        this.gameState.signingAccount.address,
                         event.state.object_id,
                         event.state.result_hash,
                         event.state.result_nonce
@@ -155,7 +152,6 @@ export class TaskManager {
 
                 case TASK_TYPES.REFINE:
                     await this.signingClientManager.queueMsgStructOreRefineryComplete(
-                        this.gameState.signingAccount.address,
                         event.state.object_id,
                         event.state.result_hash,
                         event.state.result_nonce
