@@ -15,7 +15,6 @@ export class FleetManager {
    */
   async moveFleet(destinationLocationId) {
     await this.signingClientManager.queueMsgFleetMove(
-        this.gameState.signingAccount.address,
         this.gameState.thisPlayer.fleet_id,
         destinationLocationId
     );

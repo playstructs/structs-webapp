@@ -282,7 +282,6 @@ export class AuthManager {
     ));
 
     await this.signingClientManager.queueMsgAddressRevoke(
-      this.gameState.signingAccount.address,
       addressToRevoke
     );
   }
@@ -380,7 +379,6 @@ export class AuthManager {
     this.grassManager.registerListener(playerAddressApprovedListener);
 
     await this.signingClientManager.queueMsgAddressRegister(
-      this.gameState.signingAccount.address,
       this.gameState.thisPlayerId,
       playerAddressPending.address,
       playerAddressPending.pubkey,

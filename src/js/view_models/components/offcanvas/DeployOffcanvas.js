@@ -97,7 +97,6 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
         const tileType = this.getTileTypeByStructType(structType);
 
         this.signingClientManager.queueMsgStructBuildInitiate(
-          this.gameState.signingAccount.address,
           this.gameState.thisPlayerId,
           structType.id,
           this.ambit,
