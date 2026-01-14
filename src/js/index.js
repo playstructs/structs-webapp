@@ -194,4 +194,4 @@ if (!gameState.thisPlayerId) {
 }
 
 // Start the hashing engine after a delay
-new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
+new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(() => window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));

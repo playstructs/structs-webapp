@@ -243,7 +243,6 @@ export class StructManager {
     if (!struct.isDestroyed()) {
       // Send cancel message to backend (fire and forget)
       this.signingClientManager.queueMsgStructBuildCancel(
-        this.gameState.signingAccount.address,
         struct.id
       ).then();
     }
