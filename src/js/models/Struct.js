@@ -1,3 +1,5 @@
+import {STRUCT_STATUS_FLAGS} from "../constants/StructConstants";
+
 export class Struct {
   constructor() {
     /** @type {string|null} */
@@ -38,49 +40,63 @@ export class Struct {
    * @return {boolean}
    */
   isMaterialized() {
-    return (this.status & 1) > 0;
+    return (this.status & STRUCT_STATUS_FLAGS.MATERIALIZED) > 0;
   }
 
   /**
    * @return {boolean}
    */
   isBuilt() {
-    return (this.status & 2) > 0;
+    return (this.status & STRUCT_STATUS_FLAGS.BUILT) > 0;
   }
 
   /**
    * @return {boolean}
    */
   isOnline() {
-    return (this.status & 4) > 0;
+    return (this.status & STRUCT_STATUS_FLAGS.ONLINE) > 0;
   }
 
   /**
    * @return {boolean}
    */
   isStored() {
-    return (this.status & 8) > 0;
+    return (this.status & STRUCT_STATUS_FLAGS.STORED) > 0;
   }
 
   /**
    * @return {boolean}
    */
   isHidden() {
-    return (this.status & 16) > 0;
+    return (this.status & STRUCT_STATUS_FLAGS.HIDDEN) > 0;
   }
 
   /**
    * @return {boolean}
    */
   isDestroyed() {
-    return (this.status & 32) > 0;
+    return (this.status & STRUCT_STATUS_FLAGS.DESTROYED) > 0;
   }
 
   /**
    * @return {boolean}
    */
   isLocked() {
-    return (this.status & 64) > 0;
+    return (this.status & STRUCT_STATUS_FLAGS.LOCKED) > 0;
+  }
+
+  /**
+   * @param {number} flag see STRUCT_STATUS_FLAGS
+   */
+  addStatusFlag(flag) {
+    this.status |= flag;
+  }
+
+  /**
+   * @param {number} flag see STRUCT_STATUS_FLAGS
+   */
+  removeStatusFlag(flag) {
+    this.status &= ~flag;
   }
 }
 

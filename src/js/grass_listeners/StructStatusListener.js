@@ -7,6 +7,7 @@ import {RenderStructEvent} from "../events/RenderStructEvent";
 import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
 import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {Struct} from "../models/Struct";
+import {STRUCT_STATUS_FLAGS} from "../constants/StructConstants";
 
 export class StructStatusListener extends AbstractGrassListener {
 
@@ -92,8 +93,8 @@ export class StructStatusListener extends AbstractGrassListener {
     ) {
       // Check to see if the status has changed to Built (feature flag 2)
       const removePendingBuild = (
-        (messageData.detail.status_old & 2) === 0
-        && (messageData.detail.status & 2) > 0
+        (messageData.detail.status_old & STRUCT_STATUS_FLAGS.BUILT) === 0
+        && (messageData.detail.status & STRUCT_STATUS_FLAGS.BUILT) > 0
       );
 
       this.refreshStruct(messageData.detail.struct_id, removePendingBuild).then();
