@@ -110,5 +110,14 @@ export const
   STRUCT_WEAPON_CONTROL_LABELS = {
     'guided': 'Smart Weapon',
     'unguided': 'Ballistic Weapon'
+  },
+  STRUCT_STATUS_FLAGS = {
+    MATERIALIZED: 1,
+    BUILT: 2,
+    ONLINE: 4,
+    STORED: 8,
+    HIDDEN: 16,
+    DESTROYED: 32,
+    LOCKED: 64
   }
 ;

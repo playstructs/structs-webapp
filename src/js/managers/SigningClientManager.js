@@ -743,7 +743,6 @@ export class SigningClientManager {
    * @param {string} structId
    */
   async queueMsgStructDeactivate(structId) {
-    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructDeactivate',
       value: MsgStructDeactivate.fromPartial({

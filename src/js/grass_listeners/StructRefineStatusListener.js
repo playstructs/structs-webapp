@@ -16,15 +16,17 @@ export class StructRefineStatusListener extends AbstractGrassListener {
 
   handler(messageData) {
     if (
-      messageData.category === 'struct_block_refine_start'
+      messageData.category === 'struct_block_ore_refine_start'
       && messageData.subject === `structs.planet.${this.gameState.thisPlayer.planet_id}`
     ) {
       if (messageData.detail.block === 0) {
         window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
       } else {
-        //TODO we need difficulty target here
-        // I assume it'll be in the gameState eventually.
-        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.REFINE, messageData.detail.block, 28000)));
+        const structId = messageData.detail.struct_id;
+        const structTypeId = this.gameState.thisPlayerStructs[structId].type;
+        const oreRefineDifficulty = this.gameState.structTypes.getStructTypeById(structTypeId).ore_refining_difficulty;
+
+        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.REFINE, messageData.detail.block, oreRefineDifficulty)));
       }
     }
   }
