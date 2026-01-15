@@ -23,9 +23,9 @@ export class StructMineStatusListener extends AbstractGrassListener {
       } else {
         const structId = messageData.detail.struct_id;
         const structTypeId = this.gameState.thisPlayerStructs[structId].type;
-        const buildDifficulty = this.gameState.structTypes.getStructTypeById(structTypeId).ore_mining_difficulty;
+        const oreMineDifficulty = this.gameState.structTypes.getStructTypeById(structTypeId).ore_mining_difficulty;
 
-        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.MINE, messageData.detail.block, buildDifficulty)));
+        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.MINE, messageData.detail.block, oreMineDifficulty)));
       }
     }
   }

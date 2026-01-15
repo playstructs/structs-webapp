@@ -24,9 +24,9 @@ export class StructRefineStatusListener extends AbstractGrassListener {
       } else {
         const structId = messageData.detail.struct_id;
         const structTypeId = this.gameState.thisPlayerStructs[structId].type;
-        const buildDifficulty = this.gameState.structTypes.getStructTypeById(structTypeId).ore_refining_difficulty;
+        const oreRefineDifficulty = this.gameState.structTypes.getStructTypeById(structTypeId).ore_refining_difficulty;
 
-        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.REFINE, messageData.detail.block, buildDifficulty)));
+        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.REFINE, messageData.detail.block, oreRefineDifficulty)));
       }
     }
   }
