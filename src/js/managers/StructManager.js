@@ -54,9 +54,9 @@ export class StructManager {
      * @type {Struct[]}
      */
     const allStructs = [
-      ...Object.values(this.gameState.thisPlayerStructs),
-      ...Object.values(this.gameState.planetRaiderStructs),
-      ...Object.values(this.gameState.raidEnemyStructs),
+      ...Object.values(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].structs),
+      ...Object.values(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].structs),
+      ...Object.values(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].structs),
       ...Object.values(this.gameState.previewDefenderStructs),
       ...Object.values(this.gameState.previewAttackerStructs)
     ];
@@ -103,7 +103,7 @@ export class StructManager {
    */
   getDeploymentBlockerBuildLimitReached(structType) {
     if (structType.build_limit > 0) {
-      const structTypeCount = Object.values(this.gameState.thisPlayerStructs).filter(struct =>
+      const structTypeCount = Object.values(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].structs).filter(struct =>
         struct.type === structType.id
       ).length;
 
@@ -120,7 +120,8 @@ export class StructManager {
    * @return {string}
    */
   getDeploymentBlockerInsufficientCharge(structType) {
-    return this.gameState.getThisPlayerCharge() < structType.build_charge
+    const playerCharge = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight);
+    return playerCharge < structType.build_charge
       ? 'Insufficient battery'
       : '';
   }
@@ -129,8 +130,8 @@ export class StructManager {
    * @return {number}
    */
   getEnergySupply() {
-    let totalLoad = this.gameState.thisPlayer.load + this.gameState.thisPlayer.structs_load;
-    let totalCapacity = this.gameState.thisPlayer.capacity + this.gameState.thisPlayer.connection_capacity;
+    let totalLoad = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.load + this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.structs_load;
+    let totalCapacity = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.capacity + this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.connection_capacity;
 
     return totalCapacity - totalLoad;
   }
@@ -155,7 +156,7 @@ export class StructManager {
       return '';
     }
 
-    return !this.gameState.thisPlayerFleet.command_struct
+    return !this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet.command_struct
       ? 'Requires command ship'
       : '';
   }
@@ -169,7 +170,7 @@ export class StructManager {
       return '';
     }
 
-    return this.gameState.thisPlayerFleet.status === 'away'
+    return this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet.status === 'away'
       ? 'Command ship is away'
       : '';
   }
@@ -199,9 +200,9 @@ export class StructManager {
       return null;
     }
 
-    return this.gameState.thisPlayerStructs[structId]
-      || this.gameState.planetRaiderStructs[structId]
-      || this.gameState.raidEnemyStructs[structId]
+    return this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].structs[structId]
+      || this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].structs[structId]
+      || this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].structs[structId]
       || this.gameState.previewDefenderStructs[structId]
       || this.gameState.previewAttackerStructs[structId]
       || null;
@@ -285,11 +286,11 @@ export class StructManager {
   getStructsByPlayerType(playerType) {
     switch (playerType) {
       case PLAYER_TYPES.PLAYER:
-        return this.gameState.thisPlayerStructs;
+        return this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].structs;
       case PLAYER_TYPES.PLANET_RAIDER:
-        return this.gameState.planetRaiderStructs;
+        return this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].structs;
       case PLAYER_TYPES.RAID_ENEMY:
-        return this.gameState.raidEnemyStructs;
+        return this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].structs;
       default:
         throw new Error(`No such player type ${playerType}`);
     }

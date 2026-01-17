@@ -80,6 +80,7 @@ import {EVENTS} from "../constants/Events";
 import {FEE} from "../constants/Fee";
 import {AMBIT_ENUM} from "../constants/Ambits";
 import {TASK} from "../constants/TaskConstants";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class SigningClientManager {
 
@@ -191,7 +192,7 @@ export class SigningClientManager {
    * @param {string} playerId
    */
   async queueMsgPlanetExplore(playerId) {
-    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgPlanetExplore',
       value: MsgPlanetExplore.fromPartial({
@@ -240,7 +241,7 @@ export class SigningClientManager {
    * @param {string} destinationLocationId
    */
   async queueMsgFleetMove(fleetId, destinationLocationId) {
-    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgFleetMove',
       value: MsgFleetMove.fromPartial({
@@ -729,7 +730,7 @@ export class SigningClientManager {
    * @param {string} structId
    */
   async queueMsgStructActivate(structId) {
-    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructActivate',
       value: MsgStructActivate.fromPartial({
@@ -759,7 +760,7 @@ export class SigningClientManager {
    * @param {number} slot
    */
   async queueMsgStructBuildInitiate(playerId, structTypeId, operatingAmbit, slot) {
-    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     const ambitNumber = AMBIT_ENUM[operatingAmbit.toUpperCase()];
     this.queue({
       typeUrl: '/structs.structs.MsgStructBuildInitiate',
@@ -791,7 +792,7 @@ export class SigningClientManager {
    * @param {string} protectedStructId
    */
   async queueMsgStructDefenseSet(defenderStructId, protectedStructId) {
-    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructDefenseSet',
       value: MsgStructDefenseSet.fromPartial({
@@ -822,7 +823,7 @@ export class SigningClientManager {
    * @param {number} slot
    */
   async queueMsgStructMove(structId, locationType, ambit, slot) {
-    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     const ambitNumber = AMBIT_ENUM[ambit.toUpperCase()];
     this.queue({
       typeUrl: '/structs.structs.MsgStructMove',
@@ -842,7 +843,7 @@ export class SigningClientManager {
    * @param {string} weaponSystem
    */
   async queueMsgStructAttack(operatingStructId, targetStructId, weaponSystem) {
-    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructAttack',
       value: MsgStructAttack.fromPartial({
@@ -858,7 +859,7 @@ export class SigningClientManager {
    * @param {string} structId
    */
   async queueMsgStructStealthActivate(structId) {
-    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructStealthActivate',
       value: MsgStructStealthActivate.fromPartial({
@@ -872,7 +873,7 @@ export class SigningClientManager {
    * @param {string} structId
    */
   async queueMsgStructStealthDeactivate(structId) {
-    this.gameState.setLastActionBlockHeight(this.gameState.currentBlockHeight + 1);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgStructStealthDeactivate',
       value: MsgStructStealthDeactivate.fromPartial({

@@ -1,6 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {USERNAME_PATTERN} from "../../constants/RegexPattern";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class AccountChangeUsername extends AbstractViewModel {
 
@@ -46,7 +47,7 @@ export class AccountChangeUsername extends AbstractViewModel {
       } else {
         this.guildAPI.setUsername(usernameInput.value).then((response) => {
           if (response.success) {
-            this.gameState.thisPlayer.username = usernameInput.value;
+            this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.username = usernameInput.value;
             MenuPage.router.goto('Account', 'profile');
           } else {
             document.getElementById(this.changeUsernameErrorId).classList.add('sui-mod-show');

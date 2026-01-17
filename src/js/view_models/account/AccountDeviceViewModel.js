@@ -31,7 +31,7 @@ export class AccountDeviceViewModel extends AbstractViewModel {
     this.cancelDeviceChangesBtnId = 'cancelDeviceChangesBtnId';
     this.saveDeviceChangesBtnId = 'saveDeviceChangesBtn';
 
-    this.isPrimaryDevice = (this.gameState.thisPlayer.primary_address === this.deviceAddress.address);
+    this.isPrimaryDevice = (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.primary_address === this.deviceAddress.address);
   }
 
   initPageCode() {

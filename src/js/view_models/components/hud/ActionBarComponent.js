@@ -115,14 +115,14 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const undiscoveredOreContainer = document.getElementById(this.undiscoveredOreContainerId);
     if (undiscoveredOreContainer) {
       window.addEventListener(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, () => {
-        undiscoveredOreContainer.innerHTML = this.gameState.planet.undiscovered_ore;
+        undiscoveredOreContainer.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
       });
     }
 
     const oreReadyContainer = document.getElementById(this.oreReadyContainerId);
     if (oreReadyContainer) {
       window.addEventListener(EVENTS.ORE_COUNT_CHANGED, () => {
-        oreReadyContainer.innerHTML = this.gameState.thisPlayer.ore;
+        oreReadyContainer.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore;
       });
     }
   }
@@ -271,7 +271,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     }
 
     // Check if there's a pending build at this position
-    const playerId = this.gameState.thisPlayerId;
+    const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
     const pendingBuild = this.gameState.getPendingBuild(tileType, ambitOrTileLabel, slot, playerId);
 
     if (pendingBuild) {
@@ -503,7 +503,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     }
 
     // Struct is offline - check if player has enough charge to activate
-    const playerCharge = this.gameState.getThisPlayerCharge();
+    const playerCharge = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight);
     const activateCharge = structType.activate_charge || 0;
 
     if (playerCharge >= activateCharge) {
@@ -648,8 +648,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${this.gameState.planet.undiscovered_ore}">
-        <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value">${this.gameState.planet.undiscovered_ore}</span>
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore}">
+        <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value">${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore}</span>
       </a> 
     `);
 
@@ -680,8 +680,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${this.gameState.thisPlayer.ore}">
-        <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value">${this.gameState.thisPlayer.ore}</span>
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore}">
+        <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value">${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore}</span>
       </a> 
     `);
 

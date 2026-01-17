@@ -1,5 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class AccountIndexViewModel extends AbstractViewModel {
 
@@ -17,7 +18,6 @@ export class AccountIndexViewModel extends AbstractViewModel {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.authManager = authManager;
-    this.playerAddressCount = 0;
     this.copyPidBtnId = 'account-menu-copy-pid';
     this.profileBtnId = 'account-menu-profile-btn';
     this.transfersBtnId = 'account-menu-transfers-btn';
@@ -28,7 +28,7 @@ export class AccountIndexViewModel extends AbstractViewModel {
   initPageCode() {
     document.getElementById(this.copyPidBtnId).addEventListener('click', async function () {
       if (navigator.clipboard) {
-        await navigator.clipboard.writeText(this.gameState.thisPlayerId);
+        await navigator.clipboard.writeText(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
       }
     }.bind(this));
     document.getElementById(this.logoutBtnId).addEventListener('click', function () {
@@ -46,7 +46,7 @@ export class AccountIndexViewModel extends AbstractViewModel {
   }
 
   render () {
-    this.guildAPI.getPlayerAddressCount(this.gameState.thisPlayerId).then((addressCount) => {
+    this.guildAPI.getPlayerAddressCount(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then((addressCount) => {
 
       MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
@@ -57,11 +57,11 @@ export class AccountIndexViewModel extends AbstractViewModel {
           <div class="account-menu-index-header-row">
             <div class="account-menu-index-header-player-info">
               <div class="account-menu-index-header-player-name">
-                <span class="sui-text-secondary">${this.gameState.getPlayerTag()}</span>
-                ${this.gameState.getPlayerUsername()}
+                <span class="sui-text-secondary">${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getTag()}</span>
+                ${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getUsername()}
               </div>
               <div class="account-menu-index-header-player-id">
-                PID #${this.gameState.thisPlayerId}
+                PID #${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}
                 <a id="${this.copyPidBtnId}" href="javascript: void(0)">
                   <i class="sui-icon icon-copy sui-text-secondary"></i>
                 </a>

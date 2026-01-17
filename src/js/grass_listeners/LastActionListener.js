@@ -1,4 +1,5 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class LastActionListener extends AbstractGrassListener {
   /**
@@ -12,9 +13,9 @@ export class LastActionListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'lastAction'
-      && messageData.subject === `structs.grid.player.${this.gameState.thisPlayerId}`
+      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
     ) {
-      this.gameState.setLastActionBlockHeight(messageData.value);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, messageData.value);
     }
   }
 }

@@ -1,5 +1,6 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {MenuPage} from "../framework/MenuPage";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class TransferSentListener extends AbstractGrassListener {
 
@@ -20,9 +21,9 @@ export class TransferSentListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       this.gameState.thisGuild.id
-      && this.gameState.thisPlayerId
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
       && messageData.category === 'sent'
-      && messageData.subject === `structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.thisPlayerId}.${this.fromAddress}`
+      && messageData.subject === `structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}.${this.fromAddress}`
       && messageData.address === this.fromAddress
       && messageData.counterparty === this.toAddress
       && Math.abs(messageData.amount) === this.alphaAmount

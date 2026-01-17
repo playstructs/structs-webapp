@@ -6,6 +6,7 @@ import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
 import {TaskCmdSpawnEvent} from "../events/TaskCmdSpawnEvent";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class RaidStatusListener extends AbstractGrassListener {
   /**
@@ -28,7 +29,7 @@ export class RaidStatusListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.gameState.raidPlanetRaidInfo.planet_id}`
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id}`
     ) {
       console.log('RAID STATUS LISTENER', messageData);
 
@@ -42,7 +43,7 @@ export class RaidStatusListener extends AbstractGrassListener {
         this.raidManager.initRaidEnemy().then(() => {
           console.log('RAID ENEMY INITIATED DONE');
 
-          window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.gameState.raidPlanetShieldInfo.block_start_raid, this.gameState.raidPlanetShieldInfo.planetary_shield  )));
+          window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield  )));
 
           this.mapManager.configureRaidMap();
           this.gameState.raidMap.render();
@@ -56,7 +57,7 @@ export class RaidStatusListener extends AbstractGrassListener {
 
         this.gameState.setRaidPlanetRaidStatus(messageData.detail.status);
 
-        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.gameState.raidPlanetShieldInfo.block_start_raid, this.gameState.raidPlanetShieldInfo.planetary_shield  )));
+        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield  )));
 
       } else if (this.raidStatusUtil.hasRaidEnded(messageData.detail.status)) {
 

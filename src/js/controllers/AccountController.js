@@ -17,6 +17,7 @@ import {AccountRecipientSearchViewModel} from "../view_models/account/AccountRec
 import {AccountRecipientSearchResults} from "../view_models/account/AccountRecipientSearchResults";
 import {AccountRecipientViewModel} from "../view_models/account/AccountRecipientViewModel";
 import {AccountConfirmTransfer} from "../view_models/account/AccountConfirmTransfer";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class AccountController extends AbstractController {
 
@@ -55,7 +56,7 @@ export class AccountController extends AbstractController {
   profile(options) {
     const playerId = (options.hasOwnProperty('playerId') && options.playerId)
       ? options.playerId
-      : this.gameState.thisPlayerId;
+      : this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
     const viewModel = new AccountProfileViewModel(
       this.gameState,
       this.guildAPI,

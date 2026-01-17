@@ -8,6 +8,7 @@ import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
 import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {Struct} from "../models/Struct";
 import {STRUCT_STATUS_FLAGS} from "../constants/StructConstants";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class StructStatusListener extends AbstractGrassListener {
 
@@ -75,12 +76,12 @@ export class StructStatusListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'struct_block_build_start'
-      && messageData.subject === `structs.planet.${this.gameState.thisPlayer.planet_id}`
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id}`
       && messageData.detail.block > 0
     ) {
       this.refreshStruct(messageData.detail.struct_id).then(() => {
         const structId = messageData.detail.struct_id;
-        const structTypeId = this.gameState.thisPlayerStructs[structId].type;
+        const structTypeId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].structs[structId].type;
         const buildDifficulty = this.gameState.structTypes.getStructTypeById(structTypeId).build_difficulty;
 
         window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(structId, TASK_TYPES.BUILD, messageData.detail.block, buildDifficulty)));
@@ -89,7 +90,7 @@ export class StructStatusListener extends AbstractGrassListener {
 
     } else if (
         messageData.category === 'struct_status'
-        && messageData.subject === `structs.planet.${this.gameState.thisPlayer.planet_id}`
+        && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id}`
     ) {
       // Check to see if the status has changed to Built (feature flag 2)
       const removePendingBuild = (

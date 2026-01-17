@@ -12,8 +12,9 @@ import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {StructTypeCollection} from "./StructTypeCollection";
 import {Struct} from "./Struct";
 import {Player} from "./Player";
-import {Fleet} from "./Fleet";
 import {StructType} from "./StructType";
+import {KeyPlayer} from "./KeyPlayer";
+import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
 
 export class GameState {
 
@@ -30,14 +31,7 @@ export class GameState {
     /* Persistent Data */
     this.mnemonic = null;
     this.pubkey = null;
-    this.thisPlayerId = null;
     this.lastSaveBlockHeight = 0;
-    this.lastActionBlockHeight = 0;
-    this.planetRaiderLastActionBlockHeight = 0;
-    this.raidEnemyLastActionBlockHeight = 0;
-    this.chargeLevel = 0;
-    this.planetRaiderChargeLevel = 0;
-    this.raidEnemyChargeLevel = 0;
     this.activeMapContainerId = MAP_CONTAINER_IDS.ALPHA_BASE;
 
     /* Must Be Re-instantiated On Load */
@@ -59,50 +53,14 @@ export class GameState {
     /** @type {Guild} */
     this.thisGuild = null;
 
-    /** @type {Player} */
-    this.thisPlayer = null;
-
-    /** @type {Planet} */
-    this.planet = null;
-
-    this.planetShieldHealth = 100;
-
-    this.planetShieldInfo = new PlanetaryShieldInfoDTO();
-
-    this.planetPlanetRaidInfo = new PlanetRaid();
-
-    /** @type {Fleet} */
-    this.thisPlayerFleet = null;
-
-    /** @type {Object<string, Struct>} */
-    this.thisPlayerStructs = {};
-
-    /** @type {Player} */
-    this.planetRaider = null;
-
-    /** @type {Fleet} */
-    this.planetRaiderFleet = null;
-
-    /** @type {Object<string, Struct>} */
-    this.planetRaiderStructs = {};
-
-    this.raidPlanetRaidInfo = new PlanetRaid();
-
-    /** @type {Player} */
-    this.raidEnemy = null;
-
-    /** @type {Planet} */
-    this.raidPlanet = null;
-
-    this.raidPlanetShieldHealth = 100;
-
-    this.raidPlanetShieldInfo = new PlanetaryShieldInfoDTO();
-
-    /** @type {Fleet} */
-    this.raidEnemyFleet = null;
-
-    /** @type {Object<string, Struct>} */
-    this.raidEnemyStructs = {};
+    /**
+     * @type {{player: KeyPlayer, raid_enemy: KeyPlayer, planet_raider: KeyPlayer}}
+     */
+    this.keyPlayers = {
+      [PLAYER_TYPES.PLAYER]: new KeyPlayer(PLAYER_TYPES.PLAYER),
+      [PLAYER_TYPES.RAID_ENEMY]: new KeyPlayer(PLAYER_TYPES.RAID_ENEMY),
+      [PLAYER_TYPES.PLANET_RAIDER]: new KeyPlayer(PLAYER_TYPES.PLANET_RAIDER)
+    };
 
     this.structTypes = new StructTypeCollection();
 
@@ -125,26 +83,25 @@ export class GameState {
      * @type {Map<string, {structType: StructType, timestamp: number}>}
      */
     this.pendingBuilds = new Map();
+
+    /* Allow saving from other classes without cyclical references. */
+    window.addEventListener(EVENTS.SAVE_GAME_STATE, this.save.bind(this));
   }
 
   save() {
     this.lastSaveBlockHeight = this.currentBlockHeight;
 
-    if (!this.mnemonic) {
-      console.error('Nullifying mnemonic!', this);
-    }
-
     localStorage.setItem('gameState', JSON.stringify({
       mnemonic: this.mnemonic,
       pubkey: this.pubkey,
-      thisPlayerId: this.thisPlayerId,
+      thisPlayerId: this.keyPlayers[PLAYER_TYPES.PLAYER].id,
       lastSaveBlockHeight: this.lastSaveBlockHeight,
-      lastActionBlockHeight: this.lastActionBlockHeight,
-      planetRaiderLastActionBlockHeight: this.planetRaiderLastActionBlockHeight,
-      raidEnemyLastActionBlockHeight: this.raidEnemyLastActionBlockHeight,
-      chargeLevel: this.chargeLevel,
-      planetRaiderChargeLevel: this.planetRaiderChargeLevel,
-      raidEnemyChargeLevel: this.raidEnemyChargeLevel,
+      lastActionBlockHeight: this.keyPlayers[PLAYER_TYPES.PLAYER].lastActionBlockHeight,
+      planetRaiderLastActionBlockHeight: this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].lastActionBlockHeight,
+      raidEnemyLastActionBlockHeight: this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].lastActionBlockHeight,
+      chargeLevel: this.keyPlayers[PLAYER_TYPES.PLAYER].chargeLevel,
+      planetRaiderChargeLevel: this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].chargeLevel,
+      raidEnemyChargeLevel: this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].chargeLevel,
       transferAmount: this.transferAmount,
       activeMapContainerId: this.activeMapContainerId
     }));
@@ -157,7 +114,20 @@ export class GameState {
       return;
     }
 
-    Object.assign(this, JSON.parse(gameState));
+    const gameStateParsed = JSON.parse(gameState);
+
+    this.mnemonic = gameStateParsed.mnemonic;
+    this.pubkey = gameStateParsed.pubkey;
+    this.keyPlayers[PLAYER_TYPES.PLAYER].id = gameStateParsed.thisPlayerId;
+    this.lastSaveBlockHeight = gameStateParsed.lastSaveBlockHeight;
+    this.keyPlayers[PLAYER_TYPES.PLAYER].lastActionBlockHeight = gameStateParsed.lastActionBlockHeight;
+    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].lastActionBlockHeight = gameStateParsed.planetRaiderLastActionBlockHeight;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].lastActionBlockHeight = gameStateParsed.raidEnemyLastActionBlockHeight;
+    this.keyPlayers[PLAYER_TYPES.PLAYER].chargeLevel = gameStateParsed.chargeLevel;
+    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].chargeLevel = gameStateParsed.planetRaiderChargeLevel;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].chargeLevel = gameStateParsed.raidEnemyChargeLevel;
+    this.transferAmount = gameStateParsed.transferAmount;
+    this.activeMapContainerId = gameStateParsed.activeMapContainerId;
 
     // Properties to re-instantiate
     this.wallet = await this.walletManager.createWallet(this.mnemonic);
@@ -169,7 +139,7 @@ export class GameState {
    * @param {string} id
    */
   setThisPlayerId(id) {
-    this.thisPlayerId = id;
+    this.keyPlayers[PLAYER_TYPES.PLAYER].id = id;
 
     this.save();
   }
@@ -179,63 +149,33 @@ export class GameState {
    */
   setCurrentBlockHeight(height) {
     this.currentBlockHeight = height;
-    this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
+    this.keyPlayers[PLAYER_TYPES.PLAYER].chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.keyPlayers[PLAYER_TYPES.PLAYER].lastActionBlockHeight);
     this.setPlanetShieldHealth();
 
-    if (this.planetPlanetRaidInfo.isRaidActive()) {
-      this.planetRaiderChargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.planetRaiderLastActionBlockHeight);
+    if (this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo.isRaidActive()) {
+      this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].lastActionBlockHeight);
 
-      window.dispatchEvent(new ChargeLevelChangedEvent(this.getPlanetRaiderId(), this.planetRaiderChargeLevel));
+      window.dispatchEvent(new ChargeLevelChangedEvent(this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id, this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].chargeLevel));
     }
 
-    if (this.raidPlanetRaidInfo.isRaidActive()) {
-      this.raidEnemyChargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.raidEnemyLastActionBlockHeight);
+    if (this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.isRaidActive()) {
+      this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].lastActionBlockHeight);
       this.setRaidPlanetShieldHealth();
 
-      window.dispatchEvent(new ChargeLevelChangedEvent(this.getRaidEnemyId(), this.raidEnemyChargeLevel));
+      window.dispatchEvent(new ChargeLevelChangedEvent(this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id, this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].chargeLevel));
     }
 
     this.save();
 
     console.log(`New Block ${height}`);
-    window.dispatchEvent(new ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
-  }
-
-  /**
-   * @param {number} height
-   */
-  setLastActionBlockHeight(height) {
-    this.lastActionBlockHeight = height;
-    this.chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.lastActionBlockHeight);
-    this.save();
-
-    window.dispatchEvent(new ChargeLevelChangedEvent(this.thisPlayerId, this.chargeLevel));
-  }
-
-  /**
-   * @param {number} height
-   */
-  setPlanetRaiderLastActionBlockHeight(height) {
-    this.planetRaiderLastActionBlockHeight = height;
-    this.planetRaiderChargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.planetRaiderLastActionBlockHeight);
-    this.save();
-
-    window.dispatchEvent(new ChargeLevelChangedEvent(this.getPlanetRaiderId(), this.planetRaiderChargeLevel));
-  }
-
-  setRaidEnemyLastActionBlockHeight(height) {
-    this.raidEnemyLastActionBlockHeight = height;
-    this.raidEnemyChargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.raidEnemyLastActionBlockHeight);
-    this.save();
-
-    window.dispatchEvent(new ChargeLevelChangedEvent(this.getRaidEnemyId(), this.raidEnemyChargeLevel));
+    window.dispatchEvent(new ChargeLevelChangedEvent(this.keyPlayers[PLAYER_TYPES.PLAYER].id, this.keyPlayers[PLAYER_TYPES.PLAYER].chargeLevel));
   }
 
   /**
    * @param {Player} player
    */
   setThisPlayer(player) {
-    this.thisPlayer = player;
+    this.keyPlayers[PLAYER_TYPES.PLAYER].player = player;
 
     window.dispatchEvent(new CustomEvent(EVENTS.ALPHA_COUNT_CHANGED));
     window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
@@ -246,14 +186,14 @@ export class GameState {
    * @param {Player} player
    */
   setPlanetRaider(player) {
-    this.planetRaider = player;
+    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].player = player;
   }
 
   /**
    * @param {Player} player
    */
   setRaidEnemy(player) {
-    this.raidEnemy = player;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player = player;
 
     window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED_RAID_ENEMY));
   }
@@ -262,8 +202,8 @@ export class GameState {
    * @param {number} alpha
    */
   setThisPlayerAlpha(alpha) {
-    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('alpha')) {
-      this.thisPlayer.alpha = alpha;
+    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('alpha')) {
+      this.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha = alpha;
       this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ALPHA_COUNT_CHANGED));
@@ -274,8 +214,8 @@ export class GameState {
    * @param {number} ore
    */
   setThisPlayerOre(ore) {
-    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('ore')) {
-      this.thisPlayer.ore = ore;
+    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('ore')) {
+      this.keyPlayers[PLAYER_TYPES.PLAYER].player.ore = ore;
       this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED));
@@ -286,8 +226,8 @@ export class GameState {
    * @param {number} ore
    */
   setRaidEnemyOre(ore) {
-    if (this.raidEnemy && this.raidEnemy.hasOwnProperty('ore')) {
-      this.raidEnemy.ore = ore;
+    if (this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player && this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.hasOwnProperty('ore')) {
+      this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.ore = ore;
       this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED_RAID_ENEMY));
@@ -298,8 +238,8 @@ export class GameState {
    * @param {number} capacity
    */
   setThisPlayerCapacity(capacity) {
-    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('capacity')) {
-      this.thisPlayer.capacity = capacity;
+    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('capacity')) {
+      this.keyPlayers[PLAYER_TYPES.PLAYER].player.capacity = capacity;
       this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
@@ -310,8 +250,8 @@ export class GameState {
    * @param {number} connectionCapacity
    */
   setConnectionCapacity(connectionCapacity) {
-    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('connection_capacity')) {
-      this.thisPlayer.connection_capacity = connectionCapacity;
+    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('connection_capacity')) {
+      this.keyPlayers[PLAYER_TYPES.PLAYER].player.connection_capacity = connectionCapacity;
       this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
@@ -322,8 +262,8 @@ export class GameState {
    * @param {number} load
    */
   setThisPlayerLoad(load) {
-    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('load')) {
-      this.thisPlayer.load = load;
+    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('load')) {
+      this.keyPlayers[PLAYER_TYPES.PLAYER].player.load = load;
       this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
@@ -334,8 +274,8 @@ export class GameState {
    * @param {number} structsLoad
    */
   setThisPlayerStructsLoad(structsLoad) {
-    if (this.thisPlayer && this.thisPlayer.hasOwnProperty('structs_load')) {
-      this.thisPlayer.structs_load = structsLoad;
+    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('structs_load')) {
+      this.keyPlayers[PLAYER_TYPES.PLAYER].player.structs_load = structsLoad;
       this.save();
 
       window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
@@ -343,13 +283,13 @@ export class GameState {
   }
 
   setPlanet(planet) {
-    this.planet = planet;
+    this.keyPlayers[PLAYER_TYPES.PLAYER].planet = planet;
 
     window.dispatchEvent(new CustomEvent(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED));
   }
 
   setRaidPlanet(planet) {
-    this.raidPlanet = planet;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet = planet;
 
     window.dispatchEvent(new CustomEvent(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED_RAID_PLANET));
   }
@@ -358,18 +298,18 @@ export class GameState {
     let health = 100;
 
     if (
-      this.planetPlanetRaidInfo.isRaidActive()
+      this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo.isRaidActive()
       && this.currentBlockHeight
-      && this.planetShieldInfo.block_start_raid
+      && this.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldInfo.block_start_raid
     ) {
       health = this.shieldHealthCalculator.calc(
-        this.planetShieldInfo.planetary_shield,
-        this.planetShieldInfo.block_start_raid,
+        this.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldInfo.planetary_shield,
+        this.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldInfo.block_start_raid,
         this.currentBlockHeight
       );
     }
 
-    this.planetShieldHealth = health;
+    this.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldHealth = health;
 
     window.dispatchEvent(new CustomEvent(EVENTS.SHIELD_HEALTH_CHANGED));
   }
@@ -377,15 +317,15 @@ export class GameState {
   setRaidPlanetShieldHealth() {
     let health = 100;
 
-    if (this.currentBlockHeight && this.raidPlanetShieldInfo.block_start_raid) {
+    if (this.currentBlockHeight && this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid) {
       health = this.shieldHealthCalculator.calc(
-        this.raidPlanetShieldInfo.planetary_shield,
-        this.raidPlanetShieldInfo.block_start_raid,
+        this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield,
+        this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid,
         this.currentBlockHeight
       );
     }
 
-    this.raidPlanetShieldHealth = health;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldHealth = health;
 
     window.dispatchEvent(new CustomEvent(EVENTS.SHIELD_HEALTH_CHANGED_RAID_PLANET));
   }
@@ -394,7 +334,7 @@ export class GameState {
    * @param {PlanetaryShieldInfoDTO} info
    */
   setPlanetShieldInfo(info) {
-    this.planetShieldInfo = info;
+    this.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldInfo = info;
 
     this.setPlanetShieldHealth();
   }
@@ -403,7 +343,7 @@ export class GameState {
    * @param {PlanetaryShieldInfoDTO} info
    */
   setRaidPlanetShieldInfo(info) {
-    this.raidPlanetShieldInfo = info;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo = info;
 
     this.setRaidPlanetShieldHealth();
   }
@@ -413,7 +353,8 @@ export class GameState {
    * @param dispatchEvent
    */
   setPlanetPlanetRaidInfo(info, dispatchEvent = true) {
-    this.planetPlanetRaidInfo = info;
+    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo = info;
+    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id = info.fleet_owner;
     this.save();
 
     if (dispatchEvent) {
@@ -426,7 +367,8 @@ export class GameState {
    * @param dispatchEvent
    */
   setRaidPlanetRaidInfo(info, dispatchEvent = true) {
-    this.raidPlanetRaidInfo = info;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo = info;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id = info.planet_owner;
     this.save();
 
     if (dispatchEvent) {
@@ -439,7 +381,7 @@ export class GameState {
    * @param dispatchEvent
    */
   setPlanetPlanetRaidStatus(status, dispatchEvent = true) {
-    this.planetPlanetRaidInfo.status = status;
+    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo.status = status;
     this.save();
 
     if (dispatchEvent) {
@@ -452,7 +394,7 @@ export class GameState {
    * @param dispatchEvent
    */
   setRaidPlanetRaidStatus(status, dispatchEvent = true) {
-    this.raidPlanetRaidInfo.status = status;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.status = status;
     this.save();
 
     if (dispatchEvent) {
@@ -484,101 +426,11 @@ export class GameState {
   }
 
   /**
-   * @param {Fleet} fleet
-   */
-  setThisPlayerFleet(fleet) {
-    this.thisPlayerFleet = fleet;
-  }
-
-  /**
-   * @param {Fleet} fleet
-   */
-  setPlanetRaiderFleet(fleet) {
-    this.planetRaiderFleet = fleet;
-  }
-
-  /**
-   * @param {Fleet} fleet
-   */
-  setRaidEnemyFleet(fleet) {
-    this.raidEnemyFleet = fleet;
-  }
-
-  /**
-   * @param {Struct[]} structs
-   */
-  setThisPlayerStructs(structs) {
-    this.thisPlayerStructs = {};
-    structs.forEach(struct => {
-      this.thisPlayerStructs[struct.id] = struct;
-    });
-
-    window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED));
-  }
-
-  /**
-   * @param {Struct[]} structs
-   */
-  setPlanetRaiderStructs(structs) {
-    this.planetRaiderStructs = {};
-    structs.forEach(struct => {
-      this.planetRaiderStructs[struct.id] = struct;
-    });
-  }
-
-  /**
-   * @param {Struct[]} structs
-   */
-  setRaidEnemyStructs(structs) {
-    this.raidEnemyStructs = {};
-    structs.forEach(struct => {
-      this.raidEnemyStructs[struct.id] = struct;
-    });
-
-    window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET));
-  }
-
-  /**
-   * @param {Struct} struct
-   */
-  setThisPlayerStruct(struct) {
-    this.thisPlayerStructs[struct.id] = struct;
-
-    window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED));
-  }
-
-  /**
-   * @param {Struct} struct
-   */
-  setPlanetRaiderStruct(struct) {
-    this.planetRaiderStructs[struct.id] = struct;
-  }
-
-  /**
-   * @param {Struct} struct
-   */
-  setRaidEnemyStruct(struct) {
-    this.raidEnemyStructs[struct.id] = struct;
-
-    window.dispatchEvent(new CustomEvent(EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET));
-  }
-
-  /**
    * @param {Struct} struct
    */
   setStruct(struct) {
     const playerType = this.getPlayerTypeById(struct.owner);
-    switch (playerType) {
-      case PLAYER_TYPES.PLAYER:
-        this.setThisPlayerStruct(struct);
-        break;
-      case PLAYER_TYPES.PLANET_RAIDER:
-        this.setPlanetRaiderStruct(struct);
-        break;
-      case PLAYER_TYPES.RAID_ENEMY:
-        this.setRaidEnemyStruct(struct);
-        break;
-    }
+    this.keyPlayers[playerType].setStruct(struct);
   }
 
   /**
@@ -588,24 +440,16 @@ export class GameState {
    * @return {Struct|null} The removed struct, or null if not found
    */
   removeStruct(structId) {
-    const collections = [
-      { structs: this.thisPlayerStructs, ownerCheck: this.thisPlayerId, event: EVENTS.STRUCT_COUNT_CHANGED },
-      { structs: this.planetRaiderStructs, ownerCheck: null, event: null },
-      { structs: this.raidEnemyStructs, ownerCheck: this.raidEnemy?.id, event: EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET }
-    ];
+    Object.keys(PLAYER_TYPES).forEach((playerType) => {
+      if (this.keyPlayers[playerType].structs[structId]) {
+        const removedStruct = this.keyPlayers[playerType].structs[structId];
+        delete this.keyPlayers[playerType].structs[structId];
 
-    for (const { structs, ownerCheck, event } of collections) {
-      if (structs[structId]) {
-        const removedStruct = structs[structId];
-        delete structs[structId];
-
-        if (event && removedStruct.owner === ownerCheck) {
-          window.dispatchEvent(new CustomEvent(event));
-        }
+        window.dispatchEvent(new StructCountChangedEvent(playerType));
 
         return removedStruct;
       }
-    }
+    });
 
     return null;
   }
@@ -661,18 +505,20 @@ export class GameState {
   }
 
   clearPlanetRaidData() {
-    this.planetPlanetRaidInfo = new PlanetRaid();
-    this.planetRaider = null;
-    this.planetRaiderLastActionBlockHeight = 0;
+    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo = new PlanetRaid();
+    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id = '';
+    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].player = null;
+    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].lastActionBlockHeight = 0;
     this.setPlanetShieldHealth();
 
     this.save();
   }
 
   clearRaidData() {
-    this.raidEnemy = null;
-    this.raidEnemyLastActionBlockHeight = 0;
-    this.raidPlanet = null;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id = '';
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player = null;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].lastActionBlockHeight = 0;
+    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet = null;
     this.setRaidPlanetRaidInfo(new PlanetRaid());
 
     this.save();
@@ -683,23 +529,9 @@ export class GameState {
    * @return {string|null}
    */
   getPlayerIdByType(type) {
-    let id = null;
-
-    switch (type) {
-      case PLAYER_TYPES.PLAYER:
-        id = (this.thisPlayer && this.thisPlayer.id)
-          ? this.thisPlayer.id
-          : this.thisPlayerId;
-        break;
-      case PLAYER_TYPES.PLANET_RAIDER:
-        id = (this.planetRaider && this.planetRaider.id) || id;
-        break;
-      case PLAYER_TYPES.RAID_ENEMY:
-        id = (this.raidEnemy && this.raidEnemy.id) || id;
-        break;
-    }
-
-    return id;
+    return (this.keyPlayers[type] && this.keyPlayers[type].id)
+      ? this.keyPlayers[type].id
+      : null;
   }
 
   /**
@@ -707,81 +539,13 @@ export class GameState {
    * @return {string}
    */
   getPlayerTypeById(playerId) {
-    if (this.thisPlayerId === playerId) {
-      return PLAYER_TYPES.PLAYER;
-    }
-
-    if (this.planetRaider && this.planetRaider.id === playerId) {
-      return PLAYER_TYPES.PLANET_RAIDER;
-    }
-
-    if (this.raidEnemy && this.raidEnemy.id === playerId) {
-      return PLAYER_TYPES.RAID_ENEMY;
-    }
+    Object.values(PLAYER_TYPES).forEach(type => {
+      if (this.keyPlayers[type].id === playerId) {
+        return type;
+      }
+    });
 
     throw new Error(`Player with ID ${playerId} has no type`);
-  }
-
-  /**
-   * @return {string}
-   */
-  getPlayerTag() {
-    return this.thisPlayer && this.thisPlayer.tag.length > 0
-      ? `[${this.thisPlayer.tag}]`
-      : '';
-  }
-
-  /**
-   * @return {string}
-   */
-  getPlayerUsername() {
-    return this.thisPlayer && this.thisPlayer.username.length > 0
-      ? `${this.thisPlayer.username}`
-      : 'Name Redacted';
-  }
-
-  /**
-   * @return {null|string}
-   */
-  getPlanetRaiderId() {
-    return this.planetPlanetRaidInfo.fleet_owner
-  }
-
-  /**
-   * @return {null|string}
-   */
-  getRaidEnemyId() {
-    return this.raidPlanetRaidInfo.planet_owner
-  }
-
-  getRaidEnemyUsername() {
-    return this.raidEnemy && this.raidEnemy.username && this.raidEnemy.username.length > 0
-      ? `${this.raidEnemy.username}`
-      : `PID# ${this.getRaidEnemyId()}`;
-  }
-
-  /**
-   * @param {string} type
-   * @return {Fleet}
-   */
-  getFleetByPlayerType(type) {
-    switch (type) {
-      case PLAYER_TYPES.PLAYER:
-        return this.thisPlayerFleet;
-      case PLAYER_TYPES.PLANET_RAIDER:
-        return this.planetRaiderFleet;
-      case PLAYER_TYPES.RAID_ENEMY:
-        return this.raidEnemyFleet;
-      default:
-        return null;
-    }
-  }
-
-  /**
-   * @return {number}
-   */
-  getThisPlayerCharge() {
-    return this.chargeCalculator.calcCharge(this.currentBlockHeight, this.lastActionBlockHeight);
   }
 
   /**
@@ -812,8 +576,8 @@ export class GameState {
   }
 
   printMyPlayer() {
-    console.log('Player ID: ' + this.thisPlayerId);
+    console.log('Player ID: ' + this.keyPlayers[PLAYER_TYPES.PLAYER].id);
     console.log('Singing Account: ' + this.signingAccount.address);
-    console.log('Primary Account: ' + this.thisPlayer.primary_address);
+    console.log('Primary Account: ' + this.keyPlayers[PLAYER_TYPES.PLAYER].player.primary_address);
   }
 }

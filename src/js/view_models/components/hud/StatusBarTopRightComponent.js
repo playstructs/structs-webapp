@@ -1,6 +1,7 @@
 import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../../constants/Events";
 import {MAP_CONTAINER_IDS} from "../../../constants/MapConstants";
+import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 
 export class StatusBarTopRightComponent extends AbstractViewModelComponent {
 
@@ -39,15 +40,15 @@ export class StatusBarTopRightComponent extends AbstractViewModelComponent {
   initPageCode() {
     window.addEventListener(this.shieldHealthChangedEvent, function () {
       document.getElementById(this.hudShieldHealthValueId).innerText = this.isRaidPlanet
-        ? `${this.gameState.raidPlanetShieldHealth}`
-        : `${this.gameState.planetShieldHealth}`;
+        ? `${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldHealth}`
+        : `${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldHealth}`;
     }.bind(this));
 
     window.addEventListener(this.oreCountChangedEvent, function () {
-      if (this.isRaidPlanet && this.gameState.raidEnemy) {
-        document.getElementById(this.hudOreValueId).innerText = `${this.gameState.raidEnemy.ore}`;
-      } else if (!this.isRaidPlanet && this.gameState.thisPlayer) {
-        document.getElementById(this.hudOreValueId).innerText = `${this.gameState.thisPlayer.ore}`;
+      if (this.isRaidPlanet && this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player) {
+        document.getElementById(this.hudOreValueId).innerText = `${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.ore}`;
+      } else if (!this.isRaidPlanet && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player) {
+        document.getElementById(this.hudOreValueId).innerText = `${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore}`;
       }
     }.bind(this));
   }

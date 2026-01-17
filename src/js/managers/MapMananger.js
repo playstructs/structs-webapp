@@ -1,6 +1,7 @@
 import {PLAYER_MAP_ROLES} from "../constants/PlayerMapRoles";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {HUD_IDS} from "../constants/HUDConstants";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class MapManager {
 
@@ -12,16 +13,16 @@ export class MapManager {
   }
 
   configureAlphaBaseMap() {
-    this.gameState.alphaBaseMap.setPlanet(this.gameState.planet);
-    this.gameState.alphaBaseMap.setDefender(this.gameState.thisPlayer);
-    this.gameState.alphaBaseMap.setAttacker(this.gameState.planetRaider);
+    this.gameState.alphaBaseMap.setPlanet(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet);
+    this.gameState.alphaBaseMap.setDefender(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player);
+    this.gameState.alphaBaseMap.setAttacker(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].player);
     this.gameState.alphaBaseMap.setPlayerMapRole(PLAYER_MAP_ROLES.DEFENDER);
   }
 
   configureRaidMap() {
-    this.gameState.raidMap.setPlanet(this.gameState.raidPlanet);
-    this.gameState.raidMap.setDefender(this.gameState.raidEnemy);
-    this.gameState.raidMap.setAttacker(this.gameState.thisPlayer);
+    this.gameState.raidMap.setPlanet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet);
+    this.gameState.raidMap.setDefender(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player);
+    this.gameState.raidMap.setAttacker(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player);
     this.gameState.raidMap.setPlayerMapRole(PLAYER_MAP_ROLES.ATTACKER);
   }
 
@@ -51,7 +52,7 @@ export class MapManager {
       document.getElementById(HUD_IDS.ACTION_BAR_RAID_ENEMY).classList.remove('hidden');
     } else if (mapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE) {
       document.getElementById(HUD_IDS.STATUS_BAR_TOP_RIGHT_ALPHA_BASE).classList.remove('hidden');
-      if (this.gameState.planetRaider) {
+      if (this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].player) {
         document.getElementById(HUD_IDS.ACTION_BAR_ALPHA_BASE_ENEMY).classList.remove('hidden');
       }
     }

@@ -1,5 +1,6 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {RaidStatusUtil} from "../util/RaidStatusUtil";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class RaidEnemyOreListener extends AbstractGrassListener {
   /**
@@ -16,19 +17,19 @@ export class RaidEnemyOreListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'ore'
-      && messageData.subject === `structs.grid.player.${this.gameState.raidPlanetRaidInfo.planet_id}`
+      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id}`
     ) {
       this.gameState.setRaidEnemyOre(messageData.value);
 
       // Update undiscovered ore count too
-      this.guildAPI.getPlanet(this.gameState.raidPlanetRaidInfo.planet_id).then(planet => {
+      this.guildAPI.getPlanet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id).then(planet => {
         this.gameState.setRaidPlanet(planet);
       });
     }
 
     if (
       messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.gameState.raidPlanetRaidInfo.planet_id}`
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id}`
       && this.raidStatusUtil.hasRaidEnded(messageData.detail.status)
     ) {
       this.shouldUnregister = () => true;

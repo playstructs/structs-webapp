@@ -22,6 +22,7 @@ import {PlanetRaidStatusListener} from "../grass_listeners/PlanetRaidStatusListe
 import {StructStatusListener} from "../grass_listeners/StructStatusListener";
 import {StructMineStatusListener} from "../grass_listeners/StructMineStatusListener";
 import {StructRefineStatusListener} from "../grass_listeners/StructRefineStatusListener";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class AuthManager {
 
@@ -198,12 +199,12 @@ export class AuthManager {
       ]);
 
       this.gameState.setThisPlayer(player);
-      this.gameState.setLastActionBlockHeight(height);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
       this.gameState.setStructTypes(structTypes);
-      this.gameState.setThisPlayerFleet(fleet);
-      this.gameState.setThisPlayerStructs(structs);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = fleet;
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructs(structs);
 
-      if (this.gameState.thisPlayer.planet_id) {
+      if (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id) {
 
         const [
           planet,
@@ -211,10 +212,10 @@ export class AuthManager {
           planetPlanetRaidInfo,
           raidPlanetRaidInfo
         ] = await Promise.all([
-          this.guildAPI.getPlanet(this.gameState.thisPlayer.planet_id),
-          this.guildAPI.getPlanetaryShieldInfo(this.gameState.thisPlayer.planet_id),
-          this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.thisPlayer.planet_id),
-          this.guildAPI.getActivePlanetRaidByFleetId(this.gameState.thisPlayer.fleet_id)
+          this.guildAPI.getPlanet(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id),
+          this.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id),
+          this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id),
+          this.guildAPI.getActivePlanetRaidByFleetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id)
         ]);
 
         this.gameState.setPlanet(planet);
@@ -379,7 +380,7 @@ export class AuthManager {
     this.grassManager.registerListener(playerAddressApprovedListener);
 
     await this.signingClientManager.queueMsgAddressRegister(
-      this.gameState.thisPlayerId,
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
       playerAddressPending.address,
       playerAddressPending.pubkey,
       playerAddressPending.signature,

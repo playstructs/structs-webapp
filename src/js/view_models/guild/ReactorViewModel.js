@@ -2,6 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {NumberFormatter} from "../../util/NumberFormatter";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class ReactorViewModel extends AbstractViewModel {
 
@@ -35,7 +36,7 @@ export class ReactorViewModel extends AbstractViewModel {
 
     const [guild, infusion] = await Promise.all([
       this.guildAPI.getGuild(this.guildId),
-      this.guildAPI.getInfusionByPlayerId(this.gameState.thisPlayerId)
+      this.guildAPI.getInfusionByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id)
     ]);
 
     this.guild = guild;

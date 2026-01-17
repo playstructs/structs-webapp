@@ -1,5 +1,6 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {MenuPage} from "../framework/MenuPage";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class PlayerAddressApprovedListener extends AbstractGrassListener {
 
@@ -22,14 +23,14 @@ export class PlayerAddressApprovedListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'player_address'
-      && messageData.subject === `structs.player.${this.gameState.thisGuild.id}.${this.gameState.thisPlayerId}`
+      && messageData.subject === `structs.player.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
       && messageData.status === 'approved'
       && messageData.address === this.playerAddressPending.address
     ) {
       this.shouldUnregister = () => true;
 
       // Refresh device count cache
-      this.guildAPI.getPlayerAddressCount(this.gameState.thisPlayerId, true).then();
+      this.guildAPI.getPlayerAddressCount(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id, true).then();
 
       MenuPage.router.goto('Account', 'deviceActivationComplete');
     }

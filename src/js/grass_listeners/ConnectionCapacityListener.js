@@ -1,4 +1,5 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class ConnectionCapacityListener extends AbstractGrassListener {
   /**
@@ -12,7 +13,7 @@ export class ConnectionCapacityListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'connectionCapacity'
-      && messageData.subject === `structs.grid.substation.${this.gameState.thisPlayer.substation_id}`
+      && messageData.subject === `structs.grid.substation.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.substation_id}`
     ) {
       this.gameState.setConnectionCapacity(messageData.value);
     }

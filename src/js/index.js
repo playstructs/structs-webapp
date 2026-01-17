@@ -28,6 +28,7 @@ import {TaskManager} from "./managers/TaskManager";
 import {TaskStateFactory} from "./factories/TaskStateFactory";
 import {EVENTS} from "./constants/Events";
 import {TASK} from "./constants/TaskConstants";
+import {PLAYER_TYPES} from "./constants/PlayerTypes";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -179,12 +180,12 @@ HUDViewModel.initPageCode();
 
 MenuPage.sui.autoInitAll();
 
-if (!gameState.thisPlayerId) {
+if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
   MenuPage.router.goto('Auth', 'index');
 
   MenuPage.hideLoadingScreen();
 } else {
-  authManager.login(gameState.thisPlayerId).then(() => {
+  authManager.login(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then(() => {
     playerAddressManager.addPlayerAddressMeta().then(() => {
       MenuPage.close();
       MenuPage.router.restore('Fleet', 'index');

@@ -1,5 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class GuildIndexViewModel extends AbstractViewModel {
 
@@ -37,7 +38,7 @@ export class GuildIndexViewModel extends AbstractViewModel {
 
   render () {
 
-    const alphaInfusedPromise = this.guildAPI.getInfusionByPlayerId(this.gameState.thisPlayerId);
+    const alphaInfusedPromise = this.guildAPI.getInfusionByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
     const memberCountPromise = this.guildAPI.countGuildMembers(this.gameState.thisGuild.id);
     const guildCountPromise = this.guildAPI.countGuilds();
 

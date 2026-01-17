@@ -3,6 +3,7 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {RaidStatusUtil} from "../../util/RaidStatusUtil";
 import {PlanetCardBuilder} from "../../builders/PlanetCardBuilder";
 import {EVENTS} from "../../constants/Events";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class FleetIndexViewModel extends AbstractViewModel {
 
@@ -69,8 +70,8 @@ export class FleetIndexViewModel extends AbstractViewModel {
 
   renderRaidLogBtnHTML() {
     if (
-      this.gameState.raidPlanetRaidInfo === null
-      || !this.gameState.raidPlanetRaidInfo.isRaidActive()
+      this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo === null
+      || !this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.isRaidActive()
     ) {
       return '';
     }

@@ -2,6 +2,7 @@ import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {MenuPage} from "../framework/MenuPage";
 import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
 import {PlanetRaidStatusListener} from "./PlanetRaidStatusListener";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class NewPlanetListener extends AbstractGrassListener {
 
@@ -32,14 +33,14 @@ export class NewPlanetListener extends AbstractGrassListener {
 
   handler(messageData) {
     if (
-      this.gameState.thisPlayer
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player
       && messageData.category === 'player_consensus'
-      && messageData.subject === `structs.player.${this.gameState.thisGuild.id}.${this.gameState.thisPlayerId}`
+      && messageData.subject === `structs.player.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
       && messageData.planet_id
     ) {
       this.shouldUnregister = () => true;
 
-      this.gameState.thisPlayer.planet_id = messageData.planet_id;
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id = messageData.planet_id;
       this.guildAPI.getPlanet(messageData.planet_id).then((planet) => {
         this.gameState.setPlanet(planet);
         this.gameState.setPlanetShieldHealth(100);

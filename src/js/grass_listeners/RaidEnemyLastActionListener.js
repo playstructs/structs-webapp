@@ -1,5 +1,6 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {RaidStatusUtil} from "../util/RaidStatusUtil";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class RaidEnemyLastActionListener extends AbstractGrassListener {
   /**
@@ -14,14 +15,14 @@ export class RaidEnemyLastActionListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'lastAction'
-      && messageData.subject === `structs.grid.player.${this.gameState.getRaidEnemyId()}`
+      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id}`
     ) {
-      this.gameState.setRaidEnemyLastActionBlockHeight(messageData.value);
+      this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setLastActionBlockHeight(this.gameState.currentBlockHeight, messageData.value);
     }
 
     if (
       messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.gameState.raidPlanetRaidInfo.planet_id}`
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id}`
       && this.raidStatusUtil.hasRaidEnded(messageData.detail.status)
     ) {
       this.shouldUnregister = () => true;

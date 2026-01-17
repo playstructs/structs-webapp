@@ -6,6 +6,7 @@ import {RaidStatusListener} from "../../grass_listeners/RaidStatusListener";
 import {MAP_CONTAINER_IDS} from "../../constants/MapConstants";
 import {PlanetRaidFactory} from "../../factories/PlanetRaidFactory";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class PreviewViewModel extends AbstractViewModel {
 
@@ -61,7 +62,7 @@ export class PreviewViewModel extends AbstractViewModel {
 
     document.getElementById(this.launchFleetBtnId).addEventListener('click', () => {
       const planetRaid = this.planetRaidFactory.make({
-        fleet_id: this.gameState.thisPlayer.fleet_id,
+        fleet_id: this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id,
         planet_id: this.planet_id,
         planet_owner: this.defender_id,
         status: RAID_STATUS.REQUESTED
@@ -72,7 +73,7 @@ export class PreviewViewModel extends AbstractViewModel {
       MenuPage.router.goto('Fleet', 'index');
 
       this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager, this.mapManager));
-      this.fleetManager.moveFleet(this.gameState.raidPlanetRaidInfo.planet_id).then();
+      this.fleetManager.moveFleet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id).then();
     });
   }
 
