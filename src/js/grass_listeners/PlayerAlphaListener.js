@@ -15,7 +15,7 @@ export class PlayerAlphaListener extends AbstractGrassListener {
       messageData.category === 'alpha'
       && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
     ) {
-      this.gameState.setThisPlayerAlpha(messageData.value);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setAlpha(messageData.value);
     }
   }
 }

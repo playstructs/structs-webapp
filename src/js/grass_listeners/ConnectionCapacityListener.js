@@ -15,7 +15,7 @@ export class ConnectionCapacityListener extends AbstractGrassListener {
       messageData.category === 'connectionCapacity'
       && messageData.subject === `structs.grid.substation.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.substation_id}`
     ) {
-      this.gameState.setConnectionCapacity(messageData.value);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setConnectionCapacity(messageData.value);
     }
   }
 }

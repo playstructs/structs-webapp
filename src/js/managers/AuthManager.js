@@ -160,7 +160,7 @@ export class AuthManager {
     console.log('Login response status:', response);
 
     if (response.success) {
-      this.gameState.setThisPlayerId(playerId); // Must be set before registering many GRASS listeners
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setId(playerId); // Must be set before registering many GRASS listeners
 
       this.grassManager.registerListener(new LastActionListener(this.gameState));
       this.grassManager.registerListener(new PlayerAlphaListener(this.gameState));
@@ -198,7 +198,7 @@ export class AuthManager {
         this.guildAPI.getStructsByPlayerId(playerId)
       ]);
 
-      this.gameState.setThisPlayer(player);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlayer(player);
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
       this.gameState.setStructTypes(structTypes);
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = fleet;

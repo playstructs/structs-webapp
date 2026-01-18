@@ -11,7 +11,6 @@ import {PlanetRaid} from "./PlanetRaid";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {StructTypeCollection} from "./StructTypeCollection";
 import {Struct} from "./Struct";
-import {Player} from "./Player";
 import {StructType} from "./StructType";
 import {KeyPlayer} from "./KeyPlayer";
 import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
@@ -136,15 +135,6 @@ export class GameState {
   }
 
   /**
-   * @param {string} id
-   */
-  setThisPlayerId(id) {
-    this.keyPlayers[PLAYER_TYPES.PLAYER].id = id;
-
-    this.save();
-  }
-
-  /**
    * @param {number} height
    */
   setCurrentBlockHeight(height) {
@@ -169,117 +159,6 @@ export class GameState {
 
     console.log(`New Block ${height}`);
     window.dispatchEvent(new ChargeLevelChangedEvent(this.keyPlayers[PLAYER_TYPES.PLAYER].id, this.keyPlayers[PLAYER_TYPES.PLAYER].chargeLevel));
-  }
-
-  /**
-   * @param {Player} player
-   */
-  setThisPlayer(player) {
-    this.keyPlayers[PLAYER_TYPES.PLAYER].player = player;
-
-    window.dispatchEvent(new CustomEvent(EVENTS.ALPHA_COUNT_CHANGED));
-    window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
-    window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED));
-  }
-
-  /**
-   * @param {Player} player
-   */
-  setPlanetRaider(player) {
-    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].player = player;
-  }
-
-  /**
-   * @param {Player} player
-   */
-  setRaidEnemy(player) {
-    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player = player;
-
-    window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED_RAID_ENEMY));
-  }
-
-  /**
-   * @param {number} alpha
-   */
-  setThisPlayerAlpha(alpha) {
-    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('alpha')) {
-      this.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha = alpha;
-      this.save();
-
-      window.dispatchEvent(new CustomEvent(EVENTS.ALPHA_COUNT_CHANGED));
-    }
-  }
-
-  /**
-   * @param {number} ore
-   */
-  setThisPlayerOre(ore) {
-    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('ore')) {
-      this.keyPlayers[PLAYER_TYPES.PLAYER].player.ore = ore;
-      this.save();
-
-      window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED));
-    }
-  }
-
-  /**
-   * @param {number} ore
-   */
-  setRaidEnemyOre(ore) {
-    if (this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player && this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.hasOwnProperty('ore')) {
-      this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.ore = ore;
-      this.save();
-
-      window.dispatchEvent(new CustomEvent(EVENTS.ORE_COUNT_CHANGED_RAID_ENEMY));
-    }
-  }
-
-  /**
-   * @param {number} capacity
-   */
-  setThisPlayerCapacity(capacity) {
-    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('capacity')) {
-      this.keyPlayers[PLAYER_TYPES.PLAYER].player.capacity = capacity;
-      this.save();
-
-      window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
-    }
-  }
-
-  /**
-   * @param {number} connectionCapacity
-   */
-  setConnectionCapacity(connectionCapacity) {
-    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('connection_capacity')) {
-      this.keyPlayers[PLAYER_TYPES.PLAYER].player.connection_capacity = connectionCapacity;
-      this.save();
-
-      window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
-    }
-  }
-
-  /**
-   * @param {number} load
-   */
-  setThisPlayerLoad(load) {
-    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('load')) {
-      this.keyPlayers[PLAYER_TYPES.PLAYER].player.load = load;
-      this.save();
-
-      window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
-    }
-  }
-
-  /**
-   * @param {number} structsLoad
-   */
-  setThisPlayerStructsLoad(structsLoad) {
-    if (this.keyPlayers[PLAYER_TYPES.PLAYER].player && this.keyPlayers[PLAYER_TYPES.PLAYER].player.hasOwnProperty('structs_load')) {
-      this.keyPlayers[PLAYER_TYPES.PLAYER].player.structs_load = structsLoad;
-      this.save();
-
-      window.dispatchEvent(new CustomEvent(EVENTS.ENERGY_USAGE_CHANGED));
-    }
   }
 
   setPlanet(planet) {

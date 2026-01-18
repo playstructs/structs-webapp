@@ -26,7 +26,7 @@ export class AlphaInfusedChangeListener extends AbstractGrassListener {
       this.shouldUnregister = () => true;
 
       this.guildAPI.getPlayer(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then(player => {
-        this.gameState.setThisPlayer(player); // Refresh alpha count
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlayer(player); // Refresh alpha count
         MenuPage.router.goto('Guild', 'reactor'); // Infusion gets reloaded from Guild controller
       });
 

@@ -52,7 +52,7 @@ export class RaidManager {
       this.guildAPI.getStructsByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id)
     ]);
 
-    this.gameState.setRaidEnemy(player);
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlayer(player);
     this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
     this.gameState.setRaidPlanet(planet);
     this.gameState.setRaidPlanetShieldInfo(shieldInfo);
@@ -82,7 +82,7 @@ export class RaidManager {
       this.guildAPI.getStructsByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id)
     ]);
 
-    this.gameState.setPlanetRaider(player);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setPlayer(player);
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].fleet = fleet;
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setStructs(structs);

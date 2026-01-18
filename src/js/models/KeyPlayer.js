@@ -6,6 +6,9 @@ import {SaveGameStateEvent} from "../events/SaveGameStateEvent";
 import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
 import {Player} from "./Player";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {AlphaCountChangedEvent} from "../events/AlphaCountChangedEvent";
+import {EnergyUsageChangedEvent} from "../events/EnergyUsageChangedEvent";
+import {OreCountChangedEvent} from "../events/OreCountChangedEvent";
 
 export class KeyPlayer {
 
@@ -51,6 +54,36 @@ export class KeyPlayer {
 
   }
 
+  setAlpha(alpha) {
+    if (this.player && this.player.hasOwnProperty('alpha')) {
+      this.player.alpha = alpha;
+
+      window.dispatchEvent(new SaveGameStateEvent());
+      window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {number} connectionCapacity
+   */
+  setConnectionCapacity(connectionCapacity) {
+    if (this.player && this.player.hasOwnProperty('connection_capacity')) {
+      this.player.connection_capacity = connectionCapacity;
+
+      window.dispatchEvent(new SaveGameStateEvent());
+      window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {string} id
+   */
+  setId(id) {
+    this.id = id;
+
+    window.dispatchEvent(new SaveGameStateEvent());
+  }
+
   /**
    * @param {number} currentBlockHeight
    * @param {number} height
@@ -64,6 +97,53 @@ export class KeyPlayer {
   }
 
   /**
+   * @param {number} load
+   */
+  setLoad(load) {
+    if (this.player && this.player.hasOwnProperty('load')) {
+      this.player.load = load;
+
+      window.dispatchEvent(new SaveGameStateEvent());
+      window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {number} ore
+   */
+  setOre(ore) {
+    if (this.player && this.player.hasOwnProperty('ore')) {
+      this.player.ore = ore;
+
+      window.dispatchEvent(new SaveGameStateEvent());
+      window.dispatchEvent(new OreCountChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {Player} player
+   */
+  setPlayer(player) {
+    this.player = player;
+
+    window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
+    window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
+    window.dispatchEvent(new OreCountChangedEvent(this.playerType));
+  }
+
+  /**
+   * @param {number} capacity
+   */
+  setPlayerCapacity(capacity) {
+    if (this.player && this.player.hasOwnProperty('capacity')) {
+      this.player.capacity = capacity;
+
+      window.dispatchEvent(new SaveGameStateEvent());
+      window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
+    }
+  }
+
+  /**
    * @param {Struct[]} structs
    */
   setStructs(structs) {
@@ -73,6 +153,18 @@ export class KeyPlayer {
     });
 
     window.dispatchEvent(new StructCountChangedEvent(this.playerType));
+  }
+
+  /**
+   * @param {number} structsLoad
+   */
+  setStructsLoad(structsLoad) {
+    if (this.player && this.player.hasOwnProperty('structs_load')) {
+      this.player.structs_load = structsLoad;
+
+      window.dispatchEvent(new SaveGameStateEvent());
+      window.dispatchEvent(new EnergyUsageChangedEvent(PLAYER_TYPES.PLAYER));
+    }
   }
 
   /**

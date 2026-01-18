@@ -15,7 +15,7 @@ export class PlayerLoadListener extends AbstractGrassListener {
       messageData.category === 'load'
       && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
     ) {
-      this.gameState.setThisPlayerLoad(messageData.value);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLoad(messageData.value);
     }
   }
 }

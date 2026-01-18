@@ -17,7 +17,11 @@ export class AlphaOwnedComponent extends AbstractViewModelComponent {
     return this.numberFormatter.format(alpha);
   }
 
-  alphaOwnedHandler() {
+  alphaOwnedHandler(event) {
+    if (event.playerType !== PLAYER_TYPES.PLAYER) {
+      return;
+    }
+
     const alphaOwnedLinkElm = document.getElementById(this.elementId);
 
     if (!alphaOwnedLinkElm) {

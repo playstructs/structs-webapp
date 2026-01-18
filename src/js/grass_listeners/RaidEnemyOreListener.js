@@ -19,7 +19,7 @@ export class RaidEnemyOreListener extends AbstractGrassListener {
       messageData.category === 'ore'
       && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id}`
     ) {
-      this.gameState.setRaidEnemyOre(messageData.value);
+      this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setOre(messageData.value);
 
       // Update undiscovered ore count too
       this.guildAPI.getPlanet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id).then(planet => {

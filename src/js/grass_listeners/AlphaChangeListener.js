@@ -25,7 +25,7 @@ export class AlphaChangeListener extends AbstractGrassListener {
         amount = -1 * amount;
       }
 
-      this.gameState.setThisPlayerAlpha(parseInt(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) + amount);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setAlpha(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha + amount);
     }
   }
 }

@@ -26,7 +26,11 @@ export class EnergyUsageComponent extends AbstractViewModelComponent {
     return `${totalLoad}/${totalCapacity}`;
   }
 
-  energyUsageHandler() {
+  energyUsageHandler(event) {
+    if (event.playerType !== PLAYER_TYPES.PLAYER) {
+      return;
+    }
+
     const energyUsageLinkElm = document.getElementById(this.elementId);
 
     if (!energyUsageLinkElm) {
