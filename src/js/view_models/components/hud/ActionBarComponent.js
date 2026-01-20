@@ -114,8 +114,10 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
     const undiscoveredOreContainer = document.getElementById(this.undiscoveredOreContainerId);
     if (undiscoveredOreContainer) {
-      window.addEventListener(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, () => {
-        undiscoveredOreContainer.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
+      window.addEventListener(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, (event) => {
+        if (event.playerType === PLAYER_TYPES.PLAYER) {
+          undiscoveredOreContainer.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
+        }
       });
     }
 

@@ -50,7 +50,7 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
 
         console.log('PLANET RAID ONGOING HANDLER');
 
-        this.gameState.setPlanetPlanetRaidStatus(messageData.detail.status);
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetRaidStatus(messageData.detail.status);
 
       } else if (this.raidStatusUtil.hasRaidEnded(messageData.detail.status)) {
 

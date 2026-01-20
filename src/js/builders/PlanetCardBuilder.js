@@ -5,7 +5,6 @@ import {RAID_STATUS} from "../constants/RaidStatus";
 import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
-import {EVENTS} from "../constants/Events";
 
 export class PlanetCardBuilder {
 
@@ -87,7 +86,10 @@ export class PlanetCardBuilder {
    * @param {PlanetCardComponent} alphaBaseCard
    */
   configureAlphaBaseCardCounterUpdateHandlers(alphaBaseCard) {
-    alphaBaseCard.undiscoveredOreUpdateHandler = () => {
+    alphaBaseCard.undiscoveredOreUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.PLAYER) {
+        return;
+      }
       const display = document.getElementById(`${alphaBaseCard.undiscoveredOreId}-value`);
       if (display) {
         display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
@@ -102,7 +104,10 @@ export class PlanetCardBuilder {
         display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore;
       }
     };
-    alphaBaseCard.shieldHealthUpdateHandler = () => {
+    alphaBaseCard.shieldHealthUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.PLAYER) {
+        return;
+      }
       const display = document.getElementById(`${alphaBaseCard.shieldHealthId}-value`);
       if (display) {
         display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldHealth;
@@ -321,10 +326,10 @@ export class PlanetCardBuilder {
     raidCard.shieldHealth = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldHealth;
     raidCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.RAID_ENEMY);
 
-    raidCard.undiscoveredOreEvent = EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED_RAID_PLANET;
-    raidCard.shieldHealthEvent = EVENTS.SHIELD_HEALTH_CHANGED_RAID_PLANET;
-
-    raidCard.undiscoveredOreUpdateHandler = () => {
+    raidCard.undiscoveredOreUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.RAID_ENEMY) {
+        return;
+      }
       const display = document.getElementById(`${raidCard.undiscoveredOreId}-value`);
       if (display) {
         display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet.undiscovered_ore;
@@ -339,7 +344,10 @@ export class PlanetCardBuilder {
         display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.ore;
       }
     };
-    raidCard.shieldHealthUpdateHandler = () => {
+    raidCard.shieldHealthUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.RAID_ENEMY) {
+        return;
+      }
       const display = document.getElementById(`${raidCard.shieldHealthId}-value`);
       if (display) {
         display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldHealth;

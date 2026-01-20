@@ -5,19 +5,24 @@ import {ChargeCalculator} from "../util/ChargeCalculator";
 import {SaveGameStateEvent} from "../events/SaveGameStateEvent";
 import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
 import {Player} from "./Player";
-import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {AlphaCountChangedEvent} from "../events/AlphaCountChangedEvent";
 import {EnergyUsageChangedEvent} from "../events/EnergyUsageChangedEvent";
 import {OreCountChangedEvent} from "../events/OreCountChangedEvent";
+import {ShieldHealthCalculator} from "../util/ShieldHealthCalculator";
+import {ShieldHealthChangedEvent} from "../events/ShieldHealthChangedEvent";
+import {UndiscoveredOreCountChangedEvent} from "../events/UndiscoveredOreCountChangedEvent";
+import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 
 export class KeyPlayer {
 
   /**
    * @param {string} playerType See PLAYER_TYPES
+   * @param {boolean} planetUsedForMap Whether or not this key player's planet is used for a map
    */
-  constructor(playerType) {
+  constructor(playerType, planetUsedForMap = true) {
 
     this.chargeCalculator = new ChargeCalculator();
+    this.shieldHealthCalculator = new ShieldHealthCalculator();
 
     /** @type {string} See PLAYER_TYPES */
     this.playerType = playerType;
@@ -45,6 +50,9 @@ export class KeyPlayer {
 
     /** @type {PlanetRaid} */
     this.planetRaidInfo = new PlanetRaid();
+
+    /** @type {boolean} Whether or not this key player's planet is used for a map */
+    this.planetUsedForMap = planetUsedForMap;
 
     /** @type {Fleet} */
     this.fleet = null;
@@ -121,6 +129,61 @@ export class KeyPlayer {
   }
 
   /**
+   * @param {Planet} planet
+   */
+  setPlanet(planet) {
+    this.planet = planet;
+
+    window.dispatchEvent(new UndiscoveredOreCountChangedEvent(this.playerType));
+  }
+
+  /**
+   * @param {string} status
+   * @param dispatchEvent
+   */
+  setPlanetRaidStatus(status, dispatchEvent = true) {
+    this.planetRaidInfo.status = status;
+    window.dispatchEvent(new SaveGameStateEvent());
+
+    if (dispatchEvent) {
+      window.dispatchEvent(new PlanetRaidStatusChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {number} currentBlockHeight
+   */
+  setPlanetShieldHealth(currentBlockHeight) {
+    let health = 100;
+
+    if (
+      this.planetRaidInfo.isRaidActive()
+      && currentBlockHeight
+      && this.planetShieldInfo.block_start_raid
+    ) {
+      health = this.shieldHealthCalculator.calc(
+        this.planetShieldInfo.planetary_shield,
+        this.planetShieldInfo.block_start_raid,
+        currentBlockHeight
+      );
+    }
+
+    this.planetShieldHealth = health;
+
+    window.dispatchEvent(new ShieldHealthChangedEvent(this.playerType));
+  }
+
+  /**
+   * @param {PlanetaryShieldInfoDTO} info
+   * @param {number} currentBlockHeight
+   */
+  setPlanetShieldInfo(info, currentBlockHeight) {
+    this.planetShieldInfo = info;
+
+    this.setPlanetShieldHealth(currentBlockHeight);
+  }
+
+  /**
    * @param {Player} player
    */
   setPlayer(player) {
@@ -163,7 +226,7 @@ export class KeyPlayer {
       this.player.structs_load = structsLoad;
 
       window.dispatchEvent(new SaveGameStateEvent());
-      window.dispatchEvent(new EnergyUsageChangedEvent(PLAYER_TYPES.PLAYER));
+      window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
     }
   }
 

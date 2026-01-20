@@ -38,7 +38,7 @@ export class RaidStatusListener extends AbstractGrassListener {
         console.log('RAID INITIATED HANDLER');
 
         // Don't dispatch as we need to wait for the raid enemy info
-        this.gameState.setRaidPlanetRaidStatus(messageData.detail.status, false);
+        this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanetRaidStatus(messageData.detail.status, false);
 
         this.raidManager.initRaidEnemy().then(() => {
           console.log('RAID ENEMY INITIATED DONE');
@@ -55,7 +55,7 @@ export class RaidStatusListener extends AbstractGrassListener {
 
         console.log('RAID ONGOING HANDLER');
 
-        this.gameState.setRaidPlanetRaidStatus(messageData.detail.status);
+        this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanetRaidStatus(messageData.detail.status);
 
         window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield  )));
 

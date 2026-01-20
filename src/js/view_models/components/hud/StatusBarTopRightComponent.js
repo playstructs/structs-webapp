@@ -24,7 +24,6 @@ export class StatusBarTopRightComponent extends AbstractViewModelComponent {
       this.prefix = 'raid-';
       this.theme = 'sui-theme-enemy';
       this.shieldIcon ='sui-icon-enemy-shield-health';
-      this.shieldHealthChangedEvent = EVENTS.SHIELD_HEALTH_CHANGED_RAID_PLANET;
     }
 
     this.startHidden = ((this.gameState.activeMapContainerId === MAP_CONTAINER_IDS.RAID) === this.isRaidPlanet)
@@ -37,10 +36,13 @@ export class StatusBarTopRightComponent extends AbstractViewModelComponent {
   }
 
   initPageCode() {
-    window.addEventListener(this.shieldHealthChangedEvent, function () {
-      document.getElementById(this.hudShieldHealthValueId).innerText = this.isRaidPlanet
-        ? `${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldHealth}`
-        : `${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldHealth}`;
+    window.addEventListener(this.shieldHealthChangedEvent, function (event) {
+      if (
+        (this.isRaidPlanet && event.playerType === PLAYER_TYPES.RAID_ENEMY)
+        || (!this.isRaidPlanet && event.playerType === PLAYER_TYPES.PLAYER)
+      ) {
+        document.getElementById(this.hudShieldHealthValueId).innerText = `${this.gameState.keyPlayers[event.playerType].planetShieldHealth}`;
+      }
     }.bind(this));
 
     window.addEventListener(this.oreCountChangedEvent, function (event) {

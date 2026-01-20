@@ -54,8 +54,8 @@ export class RaidManager {
 
     this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlayer(player);
     this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
-    this.gameState.setRaidPlanet(planet);
-    this.gameState.setRaidPlanetShieldInfo(shieldInfo);
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanet(planet);
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
     this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].fleet = fleet;
     this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setStructs(structs);
   }
@@ -64,7 +64,7 @@ export class RaidManager {
    * @return {Promise<void>}
    */
   async initPlanetRaider() {
-    if (!this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo.isRaidActive()) {
+    if (!this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo.isRaidActive()) {
       return;
     }
 

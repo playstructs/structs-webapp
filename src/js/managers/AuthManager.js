@@ -218,8 +218,8 @@ export class AuthManager {
           this.guildAPI.getActivePlanetRaidByFleetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id)
         ]);
 
-        this.gameState.setPlanet(planet);
-        this.gameState.setPlanetShieldInfo(shieldInfo);
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanet(planet);
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
         this.gameState.setPlanetPlanetRaidInfo(planetPlanetRaidInfo);
         this.gameState.setRaidPlanetRaidInfo(raidPlanetRaidInfo);
 

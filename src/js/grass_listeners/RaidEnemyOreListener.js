@@ -23,7 +23,7 @@ export class RaidEnemyOreListener extends AbstractGrassListener {
 
       // Update undiscovered ore count too
       this.guildAPI.getPlanet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id).then(planet => {
-        this.gameState.setRaidPlanet(planet);
+        this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanet(planet);
       });
     }
 

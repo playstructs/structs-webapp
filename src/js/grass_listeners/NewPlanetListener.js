@@ -42,8 +42,8 @@ export class NewPlanetListener extends AbstractGrassListener {
 
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id = messageData.planet_id;
       this.guildAPI.getPlanet(messageData.planet_id).then((planet) => {
-        this.gameState.setPlanet(planet);
-        this.gameState.setPlanetShieldHealth(100);
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanet(planet);
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetShieldHealth(this.gameState.currentBlockHeight);
         this.grassManager.registerListener(new PlanetRaidStatusListener(
           this.gameState,
           this.guildAPI,

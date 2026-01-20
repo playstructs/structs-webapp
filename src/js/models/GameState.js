@@ -5,8 +5,6 @@ import {ChargeLevelChangedEvent} from "../events/ChargeLevelChangedEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {WalletManager} from "../managers/WalletManager";
 import {GuildAPI} from "../api/GuildAPI";
-import {ShieldHealthCalculator} from "../util/ShieldHealthCalculator";
-import {PlanetaryShieldInfoDTO} from "../dtos/PlanetaryShieldInfoDTO";
 import {PlanetRaid} from "./PlanetRaid";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {StructTypeCollection} from "./StructTypeCollection";
@@ -14,6 +12,7 @@ import {Struct} from "./Struct";
 import {StructType} from "./StructType";
 import {KeyPlayer} from "./KeyPlayer";
 import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
+import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 
 export class GameState {
 
@@ -21,7 +20,6 @@ export class GameState {
     this.chargeCalculator = new ChargeCalculator();
     this.walletManager = new WalletManager();
     this.guildAPI = new GuildAPI();
-    this.shieldHealthCalculator = new ShieldHealthCalculator();
 
     /* Multistep Request Data */
     this.signupRequest = new SignupRequestDTO();
@@ -58,7 +56,7 @@ export class GameState {
     this.keyPlayers = {
       [PLAYER_TYPES.PLAYER]: new KeyPlayer(PLAYER_TYPES.PLAYER),
       [PLAYER_TYPES.RAID_ENEMY]: new KeyPlayer(PLAYER_TYPES.RAID_ENEMY),
-      [PLAYER_TYPES.PLANET_RAIDER]: new KeyPlayer(PLAYER_TYPES.PLANET_RAIDER)
+      [PLAYER_TYPES.PLANET_RAIDER]: new KeyPlayer(PLAYER_TYPES.PLANET_RAIDER, false)
     };
 
     this.structTypes = new StructTypeCollection();
@@ -139,92 +137,21 @@ export class GameState {
    */
   setCurrentBlockHeight(height) {
     this.currentBlockHeight = height;
-    this.keyPlayers[PLAYER_TYPES.PLAYER].chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.keyPlayers[PLAYER_TYPES.PLAYER].lastActionBlockHeight);
-    this.setPlanetShieldHealth();
 
-    if (this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo.isRaidActive()) {
-      this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].lastActionBlockHeight);
+    Object.values(PLAYER_TYPES).forEach(playerType => {
+      if (this.keyPlayers[playerType].player) {
+        this.keyPlayers[playerType].chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.keyPlayers[playerType].lastActionBlockHeight);
 
-      window.dispatchEvent(new ChargeLevelChangedEvent(this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id, this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].chargeLevel));
-    }
-
-    if (this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.isRaidActive()) {
-      this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].chargeLevel = this.chargeCalculator.calc(this.currentBlockHeight, this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].lastActionBlockHeight);
-      this.setRaidPlanetShieldHealth();
-
-      window.dispatchEvent(new ChargeLevelChangedEvent(this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id, this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].chargeLevel));
-    }
+        window.dispatchEvent(new ChargeLevelChangedEvent(this.keyPlayers[playerType].id, this.keyPlayers[playerType].chargeLevel));
+      }
+      if (this.keyPlayers[playerType].planetUsedForMap && this.keyPlayers[playerType].planetRaidInfo.isRaidActive()) {
+        this.keyPlayers[playerType].setPlanetShieldHealth(height);
+      }
+    });
 
     this.save();
 
     console.log(`New Block ${height}`);
-    window.dispatchEvent(new ChargeLevelChangedEvent(this.keyPlayers[PLAYER_TYPES.PLAYER].id, this.keyPlayers[PLAYER_TYPES.PLAYER].chargeLevel));
-  }
-
-  setPlanet(planet) {
-    this.keyPlayers[PLAYER_TYPES.PLAYER].planet = planet;
-
-    window.dispatchEvent(new CustomEvent(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED));
-  }
-
-  setRaidPlanet(planet) {
-    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet = planet;
-
-    window.dispatchEvent(new CustomEvent(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED_RAID_PLANET));
-  }
-
-  setPlanetShieldHealth() {
-    let health = 100;
-
-    if (
-      this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo.isRaidActive()
-      && this.currentBlockHeight
-      && this.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldInfo.block_start_raid
-    ) {
-      health = this.shieldHealthCalculator.calc(
-        this.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldInfo.planetary_shield,
-        this.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldInfo.block_start_raid,
-        this.currentBlockHeight
-      );
-    }
-
-    this.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldHealth = health;
-
-    window.dispatchEvent(new CustomEvent(EVENTS.SHIELD_HEALTH_CHANGED));
-  }
-
-  setRaidPlanetShieldHealth() {
-    let health = 100;
-
-    if (this.currentBlockHeight && this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid) {
-      health = this.shieldHealthCalculator.calc(
-        this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield,
-        this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid,
-        this.currentBlockHeight
-      );
-    }
-
-    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldHealth = health;
-
-    window.dispatchEvent(new CustomEvent(EVENTS.SHIELD_HEALTH_CHANGED_RAID_PLANET));
-  }
-
-  /**
-   * @param {PlanetaryShieldInfoDTO} info
-   */
-  setPlanetShieldInfo(info) {
-    this.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldInfo = info;
-
-    this.setPlanetShieldHealth();
-  }
-
-  /**
-   * @param {PlanetaryShieldInfoDTO} info
-   */
-  setRaidPlanetShieldInfo(info) {
-    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo = info;
-
-    this.setRaidPlanetShieldHealth();
   }
 
   /**
@@ -232,12 +159,12 @@ export class GameState {
    * @param dispatchEvent
    */
   setPlanetPlanetRaidInfo(info, dispatchEvent = true) {
-    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo = info;
+    this.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo = info;
     this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id = info.fleet_owner;
     this.save();
 
     if (dispatchEvent) {
-      window.dispatchEvent(new CustomEvent(EVENTS.PLANET_RAID_STATUS_CHANGED));
+      window.dispatchEvent(new PlanetRaidStatusChangedEvent(PLAYER_TYPES.PLAYER));
     }
   }
 
@@ -251,33 +178,7 @@ export class GameState {
     this.save();
 
     if (dispatchEvent) {
-      window.dispatchEvent(new CustomEvent(EVENTS.RAID_STATUS_CHANGED));
-    }
-  }
-
-  /**
-   * @param {string} status
-   * @param dispatchEvent
-   */
-  setPlanetPlanetRaidStatus(status, dispatchEvent = true) {
-    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo.status = status;
-    this.save();
-
-    if (dispatchEvent) {
-      window.dispatchEvent(new CustomEvent(EVENTS.PLANET_RAID_STATUS_CHANGED));
-    }
-  }
-
-  /**
-   * @param {string} status
-   * @param dispatchEvent
-   */
-  setRaidPlanetRaidStatus(status, dispatchEvent = true) {
-    this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.status = status;
-    this.save();
-
-    if (dispatchEvent) {
-      window.dispatchEvent(new CustomEvent(EVENTS.RAID_STATUS_CHANGED));
+      window.dispatchEvent(new PlanetRaidStatusChangedEvent(PLAYER_TYPES.RAID_ENEMY));
     }
   }
 
@@ -384,11 +285,11 @@ export class GameState {
   }
 
   clearPlanetRaidData() {
-    this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].planetRaidInfo = new PlanetRaid();
+    this.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo = new PlanetRaid();
     this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id = '';
     this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].player = null;
     this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].lastActionBlockHeight = 0;
-    this.setPlanetShieldHealth();
+    this.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetShieldHealth(this.currentBlockHeight);
 
     this.save();
   }

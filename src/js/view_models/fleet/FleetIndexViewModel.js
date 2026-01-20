@@ -63,8 +63,10 @@ export class FleetIndexViewModel extends AbstractViewModel {
     this.alphaBaseCard.initPageCode();
     this.raidCard.initPageCode();
 
-    window.addEventListener(EVENTS.RAID_STATUS_CHANGED, () => {
-      MenuPage.router.goto('Fleet', 'index');
+    window.addEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, (event) => {
+      if (event.playerType === PLAYER_TYPES.PLAYER) {
+        MenuPage.router.goto('Fleet', 'index');
+      }
     })
   }
 
