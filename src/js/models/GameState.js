@@ -319,11 +319,11 @@ export class GameState {
    * @return {string}
    */
   getPlayerTypeById(playerId) {
-    Object.values(PLAYER_TYPES).forEach(type => {
-      if (this.keyPlayers[type].id === playerId) {
-        return type;
+    for (const playerType of Object.values(PLAYER_TYPES)) {
+      if (this.keyPlayers[playerType].id === playerId) {
+        return playerType;
       }
-    });
+    }
 
     throw new Error(`Player with ID ${playerId} has no type`);
   }
