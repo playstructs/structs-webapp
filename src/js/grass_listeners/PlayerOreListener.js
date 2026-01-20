@@ -1,4 +1,5 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class PlayerOreListener extends AbstractGrassListener {
   /**
@@ -14,13 +15,13 @@ export class PlayerOreListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'ore'
-      && messageData.subject === `structs.grid.player.${this.gameState.thisPlayerId}`
+      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
     ) {
-      this.gameState.setThisPlayerOre(messageData.value);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setOre(messageData.value);
 
       // Update undiscovered ore count too
-      this.guildAPI.getPlanet(this.gameState.planet.id).then(planet => {
-        this.gameState.setPlanet(planet);
+      this.guildAPI.getPlanet(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.id).then(planet => {
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanet(planet);
       });
     }
   }

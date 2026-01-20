@@ -6,6 +6,7 @@ import {StructType} from "../../../models/StructType";
 import {RenderDeploymentIndicatorEvent} from "../../../events/RenderDeploymentIndicatorEvent";
 import {PendingBuildAddedEvent} from "../../../events/PendingBuildAddedEvent";
 import {SUICheatsheet} from "../../../sui/SUICheatsheet";
+import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 
 export class DeployOffcanvas extends AbstractViewModelComponent {
 
@@ -97,7 +98,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
         const tileType = this.getTileTypeByStructType(structType);
 
         this.signingClientManager.queueMsgStructBuildInitiate(
-          this.gameState.thisPlayerId,
+          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
           structType.id,
           this.ambit,
           this.slot
@@ -110,7 +111,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
           tileType,
           this.ambit,
           this.slot,
-          this.gameState.thisPlayerId,
+          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
           structType
         );
 
@@ -120,7 +121,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
           tileType,
           this.ambit,
           this.slot,
-          this.gameState.thisPlayerId
+          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
         ));
 
         // Dispatch event to notify that a pending build was added
@@ -129,7 +130,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
           tileType,
           this.ambit,
           this.slot,
-          this.gameState.thisPlayerId,
+          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
           structType
         ));
       });

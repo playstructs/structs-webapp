@@ -1,6 +1,7 @@
 import {AbstractViewModelComponent} from "../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../constants/Events";
 import {GenericResourceComponent} from "./GenericResourceComponent";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class PlanetCardComponent extends AbstractViewModelComponent {
 
@@ -19,7 +20,7 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
 
     this.idPrefix = idPrefix;
     this.isRaidCard = isRaidCard;
-    this.isFleetOnPlanet = (Boolean(isRaidCard) === Boolean(this.gameState.raidPlanetRaidInfo.isRaidActive()));
+    this.isFleetOnPlanet = (Boolean(isRaidCard) === Boolean(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.isRaidActive()));
     this.planetName = '';
 
     this.hasStatusGroup = false;

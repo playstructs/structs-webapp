@@ -1,5 +1,6 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {MenuPage} from "../framework/MenuPage";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class PlayerAddressRevokedListener extends AbstractGrassListener {
 
@@ -22,7 +23,7 @@ export class PlayerAddressRevokedListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'player_address'
-      && messageData.subject === `structs.player.${this.gameState.thisGuild.id}.${this.gameState.thisPlayerId}`
+      && messageData.subject === `structs.player.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
       && messageData.status === 'revoked'
       && messageData.address === this.addressToWatch
     ) {
@@ -31,7 +32,7 @@ export class PlayerAddressRevokedListener extends AbstractGrassListener {
       if (this.gameState.signingAccount.address === this.addressToWatch) {
         MenuPage.router.goto('Auth', 'logout');
       } else {
-        this.guildAPI.getPlayerAddressCount(this.gameState.thisPlayerId, true).then(() => {
+        this.guildAPI.getPlayerAddressCount(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id, true).then(() => {
           MenuPage.router.goto('Account', 'devices');
         });
       }

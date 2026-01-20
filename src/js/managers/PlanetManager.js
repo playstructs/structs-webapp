@@ -1,4 +1,4 @@
-//TODO: Awaiting working stargate ts client
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class PlanetManager {
 
@@ -13,7 +13,7 @@ export class PlanetManager {
 
   async findNewPlanet() {
     await this.signingClientManager.queueMsgPlanetExplore(
-      this.gameState.thisPlayerId
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
     );
   }
 }

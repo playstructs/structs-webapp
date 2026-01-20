@@ -1,4 +1,5 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class AlphaChangeListener extends AbstractGrassListener {
 
@@ -14,9 +15,9 @@ export class AlphaChangeListener extends AbstractGrassListener {
 
   handler(messageData) {
     if (
-      this.gameState.thisPlayerId
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
       && ['sent','received'].includes(messageData.category)
-      && messageData.subject.startsWith(`structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.thisPlayerId}`)
+      && messageData.subject.startsWith(`structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`)
     ) {
       let amount = parseInt(messageData.amount);
 
@@ -24,7 +25,7 @@ export class AlphaChangeListener extends AbstractGrassListener {
         amount = -1 * amount;
       }
 
-      this.gameState.setThisPlayerAlpha(parseInt(this.gameState.thisPlayer.alpha) + amount);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setAlpha(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha + amount);
     }
   }
 }

@@ -5,7 +5,6 @@ import {RAID_STATUS} from "../constants/RaidStatus";
 import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
-import {EVENTS} from "../constants/Events";
 
 export class PlanetCardBuilder {
 
@@ -87,25 +86,37 @@ export class PlanetCardBuilder {
    * @param {PlanetCardComponent} alphaBaseCard
    */
   configureAlphaBaseCardCounterUpdateHandlers(alphaBaseCard) {
-    alphaBaseCard.undiscoveredOreUpdateHandler = () => {
+    alphaBaseCard.undiscoveredOreUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.PLAYER) {
+        return;
+      }
       const display = document.getElementById(`${alphaBaseCard.undiscoveredOreId}-value`);
       if (display) {
-        display.innerHTML = this.gameState.planet.undiscovered_ore;
+        display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
       }
     };
-    alphaBaseCard.alphaOreUpdateHandler = () => {
+    alphaBaseCard.alphaOreUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.PLAYER) {
+        return;
+      }
       const display = document.getElementById(`${alphaBaseCard.alphaOreId}-value`);
       if (display) {
-        display.innerHTML = this.gameState.thisPlayer.ore;
+        display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore;
       }
     };
-    alphaBaseCard.shieldHealthUpdateHandler = () => {
+    alphaBaseCard.shieldHealthUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.PLAYER) {
+        return;
+      }
       const display = document.getElementById(`${alphaBaseCard.shieldHealthId}-value`);
       if (display) {
-        display.innerHTML = this.gameState.planetShieldHealth;
+        display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldHealth;
       }
     };
-    alphaBaseCard.deployedStructsUpdateHandler = () => {
+    alphaBaseCard.deployedStructsUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.PLAYER) {
+        return;
+      }
       const display = document.getElementById(`${alphaBaseCard.deployedStructsId}-value`);
       if (display) {
         display.innerHTML = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.PLAYER);
@@ -122,12 +133,12 @@ export class PlanetCardBuilder {
       return;
     }
 
-    alphaBaseCard.planetName = this.gameState.planet.name;
+    alphaBaseCard.planetName = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.name;
 
     alphaBaseCard.hasStatusGroup = true;
-    alphaBaseCard.undiscoveredOre = this.gameState.planet.undiscovered_ore;
-    alphaBaseCard.alphaOre = this.gameState.thisPlayer.ore;
-    alphaBaseCard.shieldHealth = this.gameState.planetShieldHealth;
+    alphaBaseCard.undiscoveredOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
+    alphaBaseCard.alphaOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore;
+    alphaBaseCard.shieldHealth = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldHealth;
     alphaBaseCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.PLAYER);
 
     this.configureAlphaBaseCardCounterUpdateHandlers(alphaBaseCard);
@@ -144,12 +155,12 @@ export class PlanetCardBuilder {
       return;
     }
 
-    alphaBaseCard.planetName = this.gameState.planet.name;
+    alphaBaseCard.planetName = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.name;
 
     alphaBaseCard.hasStatusGroup = true;
-    alphaBaseCard.undiscoveredOre = this.gameState.planet.undiscovered_ore;
-    alphaBaseCard.alphaOre = this.gameState.thisPlayer.ore;
-    alphaBaseCard.shieldHealth = this.gameState.planetShieldHealth;
+    alphaBaseCard.undiscoveredOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
+    alphaBaseCard.alphaOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore;
+    alphaBaseCard.shieldHealth = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetShieldHealth;
     alphaBaseCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.PLAYER);
 
     this.configureAlphaBaseCardCounterUpdateHandlers(alphaBaseCard);
@@ -178,7 +189,7 @@ export class PlanetCardBuilder {
       return;
     }
 
-    alphaBaseCard.planetName = this.gameState.planet.name;
+    alphaBaseCard.planetName = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.name;
 
     alphaBaseCard.hasAlert = true;
     alphaBaseCard.alertMessage = 'Depart planet?';
@@ -217,11 +228,11 @@ export class PlanetCardBuilder {
       return;
     }
 
-    alphaBaseCard.planetName = this.gameState.planet.name;
+    alphaBaseCard.planetName = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.name;
 
     alphaBaseCard.hasGeneralMessage = true;
     alphaBaseCard.generalMessageIconClass = 'icon-planet';
-    alphaBaseCard.generalMessage = `Fleet has arrived at ${this.gameState.planet.name}.`;
+    alphaBaseCard.generalMessage = `Fleet has arrived at ${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.name}.`;
 
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'View';
@@ -279,11 +290,11 @@ export class PlanetCardBuilder {
       return;
     }
 
-    raidCard.planetName = this.gameState.getRaidEnemyUsername();
+    raidCard.planetName = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].getUsername();
 
     raidCard.hasGeneralMessage = true;
     raidCard.generalMessageIconClass = 'icon-raid';
-    raidCard.generalMessage = `Fleet has begun raid on ${this.gameState.getRaidEnemyUsername()}.`;
+    raidCard.generalMessage = `Fleet has begun raid on ${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].getUsername()}.`;
 
     raidCard.hasPrimaryBtn = true;
     raidCard.primaryBtnLabel = 'View';
@@ -307,38 +318,45 @@ export class PlanetCardBuilder {
       return;
     }
 
-    raidCard.planetName = this.gameState.getRaidEnemyUsername();
+    raidCard.planetName = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].getUsername();
 
     raidCard.hasStatusGroup = true;
-    raidCard.undiscoveredOre = this.gameState.raidPlanet.undiscovered_ore;
-    raidCard.alphaOre = this.gameState.raidEnemy.ore;
-    raidCard.shieldHealth = this.gameState.raidPlanetShieldHealth;
+    raidCard.undiscoveredOre = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet.undiscovered_ore;
+    raidCard.alphaOre = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.ore;
+    raidCard.shieldHealth = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldHealth;
     raidCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.RAID_ENEMY);
 
-    raidCard.undiscoveredOreEvent = EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED_RAID_PLANET;
-    raidCard.alphaOreEvent = EVENTS.ORE_COUNT_CHANGED_RAID_ENEMY;
-    raidCard.shieldHealthEvent = EVENTS.SHIELD_HEALTH_CHANGED_RAID_PLANET;
-    raidCard.deployedStructsEvent = EVENTS.STRUCT_COUNT_CHANGED_RAID_PLANET;
-
-    raidCard.undiscoveredOreUpdateHandler = () => {
+    raidCard.undiscoveredOreUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.RAID_ENEMY) {
+        return;
+      }
       const display = document.getElementById(`${raidCard.undiscoveredOreId}-value`);
       if (display) {
-        display.innerHTML = this.gameState.raidPlanet.undiscovered_ore;
+        display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet.undiscovered_ore;
       }
     };
-    raidCard.alphaOreUpdateHandler = () => {
+    raidCard.alphaOreUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.RAID_ENEMY) {
+        return;
+      }
       const display = document.getElementById(`${raidCard.alphaOreId}-value`);
       if (display) {
-        display.innerHTML = this.gameState.raidEnemy.ore;
+        display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.ore;
       }
     };
-    raidCard.shieldHealthUpdateHandler = () => {
+    raidCard.shieldHealthUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.RAID_ENEMY) {
+        return;
+      }
       const display = document.getElementById(`${raidCard.shieldHealthId}-value`);
       if (display) {
-        display.innerHTML = this.gameState.raidPlanetShieldHealth;
+        display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldHealth;
       }
     };
-    raidCard.deployedStructsUpdateHandler = () => {
+    raidCard.deployedStructsUpdateHandler = (event) => {
+      if (event.playerType !== PLAYER_TYPES.RAID_ENEMY) {
+        return;
+      }
       const display = document.getElementById(`${raidCard.deployedStructsId}-value`);
       if (display) {
         display.innerHTML = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.RAID_ENEMY);
@@ -367,7 +385,7 @@ export class PlanetCardBuilder {
       return;
     }
 
-    raidCard.planetName = this.gameState.getRaidEnemyUsername();
+    raidCard.planetName = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].getUsername();
 
     raidCard.hasAlert = true;
     raidCard.alertMessage = 'Abandon raid?';
@@ -380,7 +398,7 @@ export class PlanetCardBuilder {
     raidCard.primaryBtnLabel = 'Confirm';
     raidCard.primaryBtnHandler = () => {
       MenuPage.router.goto('Fleet', 'index', {raidCardType: PLANET_CARD_TYPES.RAID_LOADING})
-      this.fleetManager.moveFleet(this.gameState.planet.id).then();
+      this.fleetManager.moveFleet(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.id).then();
     }
 
     raidCard.hasSecondaryBtn = true;
@@ -409,7 +427,7 @@ export class PlanetCardBuilder {
 
       type = selectedType;
 
-    } else if (this.gameState.planet.undiscovered_ore === 0) {
+    } else if (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore === 0) {
 
       type = PLANET_CARD_TYPES.ALPHA_BASE_COMPLETED;
 
@@ -436,20 +454,20 @@ export class PlanetCardBuilder {
 
       type = selectedType;
 
-    } else if (this.gameState.raidPlanetRaidInfo.status === RAID_STATUS.REQUESTED) {
+    } else if (this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.status === RAID_STATUS.REQUESTED) {
 
       type = PLANET_CARD_TYPES.RAID_LOADING;
 
     } else if (
       selectedType === PLANET_CARD_TYPES.RAID_STARTED
-      && this.gameState.raidPlanetRaidInfo.status === RAID_STATUS.INITIATED
+      && this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.status === RAID_STATUS.INITIATED
     ) {
 
       type = PLANET_CARD_TYPES.RAID_STARTED;
 
     } else if (
-      this.gameState.raidPlanetRaidInfo.status === RAID_STATUS.INITIATED
-      || this.gameState.raidPlanetRaidInfo.status === RAID_STATUS.ONGOING
+      this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.status === RAID_STATUS.INITIATED
+      || this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.status === RAID_STATUS.ONGOING
     ) {
 
       type = PLANET_CARD_TYPES.RAID_ACTIVE;

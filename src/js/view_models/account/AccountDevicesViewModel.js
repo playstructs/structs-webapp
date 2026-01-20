@@ -3,6 +3,7 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {Blockies} from "../../vendor/Blockies";
 import {UserAgent} from "../../models/UserAgent";
 import {PlayerAddress} from "../../models/PlayerAddress";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class AccountDevicesViewModel extends AbstractViewModel {
 
@@ -65,7 +66,7 @@ export class AccountDevicesViewModel extends AbstractViewModel {
 
     let location = playerAddress.ip; // TODO: When geoip data is added, use that field if set
 
-    if (this.gameState.thisPlayer.primary_address === playerAddress.address) {
+    if (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.primary_address === playerAddress.address) {
       location = `[Primary Device]<br>${location}`;
     }
 
@@ -110,7 +111,7 @@ export class AccountDevicesViewModel extends AbstractViewModel {
   }
 
   render () {
-    this.guildAPI.getPlayerAddressList(this.gameState.thisPlayerId).then((playerAddresses) => {
+    this.guildAPI.getPlayerAddressList(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then((playerAddresses) => {
 
       const deviceListHtml = playerAddresses.reduce((html, playerAddress) => {
         return html + this.renderDevice(playerAddress)

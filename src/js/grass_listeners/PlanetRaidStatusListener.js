@@ -1,6 +1,7 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {RAID_STATUS} from "../constants/RaidStatus";
 import {RaidStatusUtil} from "../util/RaidStatusUtil";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class PlanetRaidStatusListener extends AbstractGrassListener {
   /**
@@ -26,7 +27,7 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.gameState.planet.id}`
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.id}`
     ) {
       console.log('PLANET RAID STATUS LISTENER', messageData);
 
@@ -34,7 +35,7 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
 
         console.log('PLANET RAID INITIATED HANDLER');
 
-        this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.planet.id).then(raidInfo => {
+        this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.id).then(raidInfo => {
           this.gameState.setPlanetPlanetRaidInfo(raidInfo, false);
 
           this.raidManager.initPlanetRaider().then(() => {
@@ -49,7 +50,7 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
 
         console.log('PLANET RAID ONGOING HANDLER');
 
-        this.gameState.setPlanetPlanetRaidStatus(messageData.detail.status);
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetRaidStatus(messageData.detail.status);
 
       } else if (this.raidStatusUtil.hasRaidEnded(messageData.detail.status)) {
 

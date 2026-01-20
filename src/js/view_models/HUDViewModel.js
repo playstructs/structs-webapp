@@ -122,13 +122,13 @@ export class HUDViewModel extends AbstractViewModel {
 
     HUDViewModel.bottomRightActionBarAlphaBase.profileClickHandler = () => {
       MenuPage.router.enablePreviewMode();
-      MenuPage.router.goto('Account', 'profile', {playerId: this.gameState.planetRaider.id});
+      MenuPage.router.goto('Account', 'profile', {playerId: this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].player.id});
       MenuPage.open();
     };
 
     HUDViewModel.bottomRightActionBarRaid.profileClickHandler = () => {
       MenuPage.router.enablePreviewMode();
-      MenuPage.router.goto('Account', 'profile', {playerId: this.gameState.raidEnemy.id});
+      MenuPage.router.goto('Account', 'profile', {playerId: this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.id});
       MenuPage.open();
     };
   }
@@ -205,7 +205,7 @@ export class HUDViewModel extends AbstractViewModel {
       }
       if (
         this.gameState.activeMapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE
-        && this.gameState.planetRaider
+        && this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].player
       ) {
         actionBar = 'bottomRightActionBarAlphaBase';
       }

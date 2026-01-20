@@ -1,5 +1,6 @@
 import {AbstractViewModelComponent} from "../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../constants/Events";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class AlphaOwnedComponent extends AbstractViewModelComponent {
 
@@ -12,11 +13,15 @@ export class AlphaOwnedComponent extends AbstractViewModelComponent {
   }
 
   getAlphaOwned() {
-    let alpha = this.gameState.thisPlayer ? this.gameState.thisPlayer.alpha : 0;
+    let alpha = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha : 0;
     return this.numberFormatter.format(alpha);
   }
 
-  alphaOwnedHandler() {
+  alphaOwnedHandler(event) {
+    if (event.playerType !== PLAYER_TYPES.PLAYER) {
+      return;
+    }
+
     const alphaOwnedLinkElm = document.getElementById(this.elementId);
 
     if (!alphaOwnedLinkElm) {

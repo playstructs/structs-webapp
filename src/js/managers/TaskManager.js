@@ -8,6 +8,7 @@ import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
 import {TaskManagerStatusChangedEvent} from "../events/TaskManagerStatusChangedEvent";
 import {TASK_STATUS} from "../constants/TaskStatus";
 import {OBJECT_TYPES} from "../constants/ObjectTypes";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 
 /*
@@ -566,7 +567,7 @@ export class TaskManager {
             return;
         }
 
-        const work = await this.guildAPI.getWorkByPlayerId(this.gameState.thisPlayerId);
+        const work = await this.guildAPI.getWorkByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
         work.forEach((workTask) => {
             const task = this.taskStateFactory.initTaskFromWork(workTask);
             this.spawn(task);

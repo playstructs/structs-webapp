@@ -2,6 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {NumberFormatter} from "../../util/NumberFormatter";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class AccountProfileViewModel extends AbstractViewModel {
 
@@ -21,7 +22,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
     this.playerId = playerId;
     this.player = null;
     this.guild = null;
-    this.isOwnProfile = (this.playerId === this.gameState.thisPlayerId);
+    this.isOwnProfile = (this.playerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
     this.numberFormatter = new NumberFormatter();
     this.editUsernameBtnId = 'account-profile-edit-username-btn';
     this.copyPidBtnId = 'account-profile-copy-pid-btn';
@@ -43,7 +44,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
   async fetchPageData() {
 
     if (this.isOwnProfile) {
-      this.player = this.gameState.thisPlayer;
+      this.player = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player;
       this.guild = this.gameState.thisGuild;
     } else {
       this.player = await this.guildAPI.getPlayer(this.playerId);

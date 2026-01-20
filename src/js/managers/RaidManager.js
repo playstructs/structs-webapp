@@ -2,6 +2,7 @@ import {RaidEnemyLastActionListener} from "../grass_listeners/RaidEnemyLastActio
 import {RaidEnemyOreListener} from "../grass_listeners/RaidEnemyOreListener";
 import {PlanetRaiderLastActionListener} from "../grass_listeners/PlanetRaiderLastActionListener";
 import {RaidStatusListener} from "../grass_listeners/RaidStatusListener";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class RaidManager {
 
@@ -27,7 +28,7 @@ export class RaidManager {
    * @return {Promise<void>}
    */
   async initRaidEnemy() {
-    if (!this.gameState.raidPlanetRaidInfo.isRaidActive()) {
+    if (!this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.isRaidActive()) {
       return;
     }
 
@@ -43,27 +44,27 @@ export class RaidManager {
       fleet,
       structs,
     ] = await Promise.all([
-      this.guildAPI.getPlayer(this.gameState.raidPlanetRaidInfo.planet_owner),
-      this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.raidPlanetRaidInfo.planet_owner),
-      this.guildAPI.getPlanet(this.gameState.raidPlanetRaidInfo.planet_id),
-      this.guildAPI.getPlanetaryShieldInfo(this.gameState.raidPlanetRaidInfo.planet_id),
-      this.guildAPI.getFleetByPlayerId(this.gameState.raidPlanetRaidInfo.planet_owner),
-      this.guildAPI.getStructsByPlayerId(this.gameState.raidPlanetRaidInfo.planet_owner)
+      this.guildAPI.getPlayer(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id),
+      this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id),
+      this.guildAPI.getPlanet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id),
+      this.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id),
+      this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id),
+      this.guildAPI.getStructsByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id)
     ]);
 
-    this.gameState.setRaidEnemy(player);
-    this.gameState.setRaidEnemyLastActionBlockHeight(height);
-    this.gameState.setRaidPlanet(planet);
-    this.gameState.setRaidPlanetShieldInfo(shieldInfo);
-    this.gameState.setRaidEnemyFleet(fleet);
-    this.gameState.setRaidEnemyStructs(structs);
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlayer(player);
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanet(planet);
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].fleet = fleet;
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setStructs(structs);
   }
 
   /**
    * @return {Promise<void>}
    */
   async initPlanetRaider() {
-    if (!this.gameState.planetPlanetRaidInfo.isRaidActive()) {
+    if (!this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo.isRaidActive()) {
       return;
     }
 
@@ -75,15 +76,15 @@ export class RaidManager {
       fleet,
       structs
     ] = await Promise.all([
-      this.guildAPI.getPlayer(this.gameState.planetPlanetRaidInfo.fleet_owner),
-      this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.planetPlanetRaidInfo.fleet_owner),
-      this.guildAPI.getFleetByPlayerId(this.gameState.planetPlanetRaidInfo.fleet_owner),
-      this.guildAPI.getStructsByPlayerId(this.gameState.planetPlanetRaidInfo.fleet_owner)
+      this.guildAPI.getPlayer(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
+      this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
+      this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
+      this.guildAPI.getStructsByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id)
     ]);
 
-    this.gameState.setPlanetRaider(player);
-    this.gameState.setPlanetRaiderLastActionBlockHeight(height);
-    this.gameState.setPlanetRaiderFleet(fleet);
-    this.gameState.setPlanetRaiderStructs(structs);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setPlayer(player);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].fleet = fleet;
+    this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setStructs(structs);
   }
 }

@@ -1,4 +1,6 @@
 
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
+
 export class FleetManager {
 
   /**
@@ -15,7 +17,7 @@ export class FleetManager {
    */
   async moveFleet(destinationLocationId) {
     await this.signingClientManager.queueMsgFleetMove(
-        this.gameState.thisPlayer.fleet_id,
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id,
         destinationLocationId
     );
   }

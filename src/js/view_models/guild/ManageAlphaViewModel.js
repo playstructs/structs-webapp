@@ -5,6 +5,7 @@ import {NumberFormatter} from "../../util/NumberFormatter";
 import {SystemModal} from "../templates/partials/SystemModal";
 import {AlphaInfusedChangeListener} from "../../grass_listeners/AlphaInfusedChangeListener";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class ManageAlphaViewModel extends AbstractViewModel {
 
@@ -60,7 +61,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     const errorElm = document.querySelector('.manage-alpha-error');
     const ctaBtns = document.querySelector('.manage-alpha-cta-btns');
 
-    if (this.alphaToInfuse < this.gameState.thisPlayer.alpha) {
+    if (this.alphaToInfuse < this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) {
       addBtn.classList.remove('sui-mod-disabled');
       addBtn.disabled = false;
     } else {
@@ -123,7 +124,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     document.getElementById(this.addBtnId).addEventListener('click', (event) => {
       event.preventDefault();
 
-      if (this.alphaToInfuse < this.gameState.thisPlayer.alpha) {
+      if (this.alphaToInfuse < this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) {
         this.alphaToInfuse++;
       }
 
