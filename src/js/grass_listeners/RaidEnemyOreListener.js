@@ -17,7 +17,7 @@ export class RaidEnemyOreListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'ore'
-      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id}`
+      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id}`
     ) {
       this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setOre(messageData.value);
 
