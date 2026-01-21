@@ -56,7 +56,7 @@ export class GameState {
     this.keyPlayers = {
       [PLAYER_TYPES.PLAYER]: new KeyPlayer(PLAYER_TYPES.PLAYER),
       [PLAYER_TYPES.RAID_ENEMY]: new KeyPlayer(PLAYER_TYPES.RAID_ENEMY),
-      [PLAYER_TYPES.PLANET_RAIDER]: new KeyPlayer(PLAYER_TYPES.PLANET_RAIDER, false)
+      [PLAYER_TYPES.PLANET_RAIDER]: new KeyPlayer(PLAYER_TYPES.PLANET_RAIDER, false, PLAYER_TYPES.PLAYER)
     };
 
     this.structTypes = new StructTypeCollection();
@@ -353,6 +353,18 @@ export class GameState {
   getPendingBuild(tileType, ambit, slot, playerId) {
     const key = this.getPendingBuildKey(tileType, ambit, slot, playerId);
     return this.pendingBuilds.get(key) || null;
+  }
+
+  /**
+   * @param {string} playerType
+   * @return {PlanetRaid}
+   */
+  getPlanetRaidInfoForKeyPlayer(playerType) {
+    if (this.keyPlayers[playerType].hasForeignRaidInfo()) {
+      const sourcePlayerType = this.keyPlayers[playerType].getForeignRaidInfoSource();
+      return this.keyPlayers[sourcePlayerType].planetRaidInfo;
+    }
+    return this.keyPlayers[playerType].planetRaidInfo;
   }
 
   printMyPlayer() {

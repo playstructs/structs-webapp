@@ -1,6 +1,5 @@
 import {PlayerCreatedListener} from "../grass_listeners/PlayerCreatedListener";
 import {LoginRequestDTO} from "../dtos/LoginRequestDTO";
-import {LastActionListener} from "../grass_listeners/LastActionListener";
 import {PlayerOreListener} from "../grass_listeners/PlayerOreListener";
 import {PlayerCapacityListener} from "../grass_listeners/PlayerCapacityListener";
 import {PlayerLoadListener} from "../grass_listeners/PlayerLoadListener";
@@ -23,6 +22,7 @@ import {StructStatusListener} from "../grass_listeners/StructStatusListener";
 import {StructMineStatusListener} from "../grass_listeners/StructMineStatusListener";
 import {StructRefineStatusListener} from "../grass_listeners/StructRefineStatusListener";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {KeyPlayerLastActionListener} from "../grass_listeners/KeyPlayerLastActionListener";
 
 export class AuthManager {
 
@@ -162,7 +162,7 @@ export class AuthManager {
     if (response.success) {
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setId(playerId); // Must be set before registering many GRASS listeners
 
-      this.grassManager.registerListener(new LastActionListener(this.gameState));
+      this.grassManager.registerListener(new KeyPlayerLastActionListener(this.gameState, PLAYER_TYPES.PLAYER));
       this.grassManager.registerListener(new PlayerAlphaListener(this.gameState));
       this.grassManager.registerListener(new PlayerOreListener(this.gameState, this.guildAPI));
       this.grassManager.registerListener(new PlayerLoadListener(this.gameState));
