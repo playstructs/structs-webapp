@@ -1,4 +1,4 @@
-import {RaidEnemyOreListener} from "../grass_listeners/RaidEnemyOreListener";
+import {KeyPlayerOreListener} from "../grass_listeners/KeyPlayerOreListener";
 import {RaidStatusListener} from "../grass_listeners/RaidStatusListener";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {KeyPlayerLastActionListener} from "../grass_listeners/KeyPlayerLastActionListener";
@@ -33,7 +33,7 @@ export class RaidManager {
 
     this.grassManager.registerListener(new RaidStatusListener(this.gameState, this, this.mapManager));
     this.grassManager.registerListener(new KeyPlayerLastActionListener(this.gameState, PLAYER_TYPES.RAID_ENEMY));
-    this.grassManager.registerListener(new RaidEnemyOreListener(this.gameState, this.guildAPI));
+    this.grassManager.registerListener(new KeyPlayerOreListener(this.gameState, this.guildAPI, PLAYER_TYPES.RAID_ENEMY));
 
     const [
       player,

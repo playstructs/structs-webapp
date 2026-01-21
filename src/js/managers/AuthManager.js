@@ -1,6 +1,6 @@
 import {PlayerCreatedListener} from "../grass_listeners/PlayerCreatedListener";
 import {LoginRequestDTO} from "../dtos/LoginRequestDTO";
-import {PlayerOreListener} from "../grass_listeners/PlayerOreListener";
+import {KeyPlayerOreListener} from "../grass_listeners/KeyPlayerOreListener";
 import {PlayerCapacityListener} from "../grass_listeners/PlayerCapacityListener";
 import {PlayerLoadListener} from "../grass_listeners/PlayerLoadListener";
 import {PlayerStructsLoadListener} from "../grass_listeners/PlayerStructsLoadListener";
@@ -164,7 +164,7 @@ export class AuthManager {
 
       this.grassManager.registerListener(new KeyPlayerLastActionListener(this.gameState, PLAYER_TYPES.PLAYER));
       this.grassManager.registerListener(new PlayerAlphaListener(this.gameState));
-      this.grassManager.registerListener(new PlayerOreListener(this.gameState, this.guildAPI));
+      this.grassManager.registerListener(new KeyPlayerOreListener(this.gameState, this.guildAPI, PLAYER_TYPES.PLAYER));
       this.grassManager.registerListener(new PlayerLoadListener(this.gameState));
       this.grassManager.registerListener(new PlayerStructsLoadListener(this.gameState));
       this.grassManager.registerListener(new PlayerCapacityListener(this.gameState));

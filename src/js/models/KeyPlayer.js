@@ -256,6 +256,20 @@ export class KeyPlayer {
     return this.foreignRaidInfoKeyPlayer;
   }
 
+  getPlanetId() {
+    if (!this.planetUsedForMap) {
+      return null;
+    }
+
+    if (this.planet) {
+      return this.planet.id;
+    } else if (this.isRaidDependent()) {
+      return this.planetRaidInfo.planet_id;
+    }
+
+    return null;
+  }
+
   /**
    * @return {string}
    */
