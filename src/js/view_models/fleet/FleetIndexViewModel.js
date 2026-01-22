@@ -64,7 +64,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
     this.raidCard.initPageCode();
 
     window.addEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, (event) => {
-      if (event.playerType === PLAYER_TYPES.PLAYER) {
+      if (event.playerType === PLAYER_TYPES.PLAYER || event.playerType === PLAYER_TYPES.RAID_ENEMY) {
         MenuPage.router.goto('Fleet', 'index');
       }
     })
