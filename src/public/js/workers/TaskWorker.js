@@ -276,6 +276,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
 /* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
+/* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! js-sha256 */ "./node_modules/js-sha256/src/sha256.js");
+/* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(js_sha256__WEBPACK_IMPORTED_MODULE_2__);
+
 
 
 
@@ -303,9 +306,11 @@ class TaskState {
     this.block_checkpoint = null;
     this.block_checkpoint_time = null;
     this.block_current_estimated = null;
+    this.result_exists = false;
     this.result_message = null;
     this.result_nonce = null;
     this.result_hash = null;
+    this.result_difficulty = 0;
 
     this.estimated_hashrate = _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.HASHRATE_INITIAL_ESTIMATE;
     this.estimated_block_start_offset = 0;
@@ -361,13 +366,25 @@ class TaskState {
    * @param {string} nonce
    * @param {string} message
    * @param {string} hash
+   * @param {number} difficulty
    */
-  setResult(nonce, message, hash) {
+  setResult(nonce, message, hash, difficulty) {
     this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.COMPLETED;
     this.process_end_time = new Date();
+    this.result_exists = true;
     this.result_message = message;
     this.result_nonce = nonce + this.postfix;
     this.result_hash = hash;
+    this.result_difficulty = difficulty;
+  }
+
+  /**
+   * @param {number} difficulty
+   */
+  setPreviousResult(difficulty) {
+    this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.COMPLETED;
+    this.process_end_time = new Date();
+    this.result_difficulty = difficulty;
   }
 
   getNextNonce() {
@@ -524,6 +541,13 @@ class TaskState {
     );
 
     return Math.max(1, difficulty);
+  }
+
+  /**
+   * Check to see if Hash was built for an acceptable block height
+   */
+  checkResultHashDifficulty() {
+    return this.result_difficulty >= this.getCurrentDifficulty();
   }
 }
 
@@ -7072,7 +7096,7 @@ async function work() {
         const hash = (0,js_sha256__WEBPACK_IMPORTED_MODULE_3__.sha256)(message);
 
         if (difficultyCheck(hash, difficulty)){
-            state.setResult(nonce, message, hash);
+            state.setResult(nonce, message, hash, difficulty);
             postMessage([state]);
             break;
         }
@@ -7084,6 +7108,13 @@ async function work() {
 
         if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_RECALCULATE === 0) {
             difficulty = state.getCurrentDifficulty();
+
+            // Check to see if a previous hash result is now relevant again
+            if (state.result_exists && state.result_difficulty >= difficulty) {
+                state.setPreviousResult(difficulty);
+                postMessage([state]);
+                break;
+            }
         }
         sessionIterations++;
     }
