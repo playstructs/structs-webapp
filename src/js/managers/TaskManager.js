@@ -51,7 +51,15 @@ export class TaskManager {
             this.setState(event.state);
             console.log(this.processes[event.state.getPID()].state)
             if (event.state.isCompleted()) {
-                this.complete(event.state.getPID());
+
+                event.state.setBlockCheckpoint(this.gameState.currentBlockHeight);
+                if (event.state.checkResultHashDifficulty()) {
+                    this.complete(event.state.getPID());
+                } else {
+                    event.state.setStatus(TASK_STATUS.STARTING);
+                    this.spawn(event.state);
+                }
+
             }
         }.bind(this));
 
