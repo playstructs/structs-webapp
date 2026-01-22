@@ -33,7 +33,7 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
     this.alphaOreId = `${this.idPrefix}-planet-card-alpha-ore`;
     this.alphaOreEvent = EVENTS.ORE_COUNT_CHANGED;
 
-    this.shieldHealth = 0;
+    this.shieldHealth = '0%';
     this.shieldHealthId = `${this.idPrefix}-planet-card-shield-health`;
     this.shieldHealthEvent = EVENTS.SHIELD_HEALTH_CHANGED;
 
@@ -134,7 +134,7 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
               this.shieldHealthId,
               this.isRaidCard ? 'sui-icon-enemy-shield-health' : 'sui-icon-shield-health',
               'Planetary Shield',
-              this.shieldHealth + "%",
+              this.shieldHealth,
               true
             )
           }

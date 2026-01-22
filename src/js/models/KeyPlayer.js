@@ -273,6 +273,13 @@ export class KeyPlayer {
   /**
    * @return {string}
    */
+  getPlanetShieldHealth() {
+    return this.planetShieldHealth + "%";
+  }
+
+  /**
+   * @return {string}
+   */
   getTag() {
     return this.player && this.player.tag && this.player.tag.length > 0
       ? `[${this.player.tag}]`
