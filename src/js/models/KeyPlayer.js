@@ -12,14 +12,16 @@ import {ShieldHealthCalculator} from "../util/ShieldHealthCalculator";
 import {ShieldHealthChangedEvent} from "../events/ShieldHealthChangedEvent";
 import {UndiscoveredOreCountChangedEvent} from "../events/UndiscoveredOreCountChangedEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class KeyPlayer {
 
   /**
    * @param {string} playerType See PLAYER_TYPES
    * @param {boolean} planetUsedForMap Whether or not this key player's planet is used for a map
+   * @param {string} foreignRaidInfoKeyPlayer The key player that contains the raid info
    */
-  constructor(playerType, planetUsedForMap = true) {
+  constructor(playerType, planetUsedForMap = true, foreignRaidInfoKeyPlayer = '') {
 
     this.chargeCalculator = new ChargeCalculator();
     this.shieldHealthCalculator = new ShieldHealthCalculator();
@@ -59,6 +61,9 @@ export class KeyPlayer {
 
     /** @type {Object<string, Struct>} */
     this.structs = {};
+
+    /** @type {string} foreignRaidInfoKeyPlayer */
+    this.foreignRaidInfoKeyPlayer = foreignRaidInfoKeyPlayer;
 
   }
 
@@ -247,6 +252,24 @@ export class KeyPlayer {
     return this.chargeCalculator.calcCharge(currentBlockHeight, this.lastActionBlockHeight);
   }
 
+  getForeignRaidInfoSource() {
+    return this.foreignRaidInfoKeyPlayer;
+  }
+
+  getPlanetId() {
+    if (!this.planetUsedForMap) {
+      return null;
+    }
+
+    if (this.planet) {
+      return this.planet.id;
+    } else if (this.isRaidDependent()) {
+      return this.planetRaidInfo.planet_id;
+    }
+
+    return null;
+  }
+
   /**
    * @return {string}
    */
@@ -263,6 +286,20 @@ export class KeyPlayer {
     return this.player && this.player.username && this.player.username.length > 0
       ? `${this.player.username}`
       : `PID# ${this.id}`;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isRaidDependent() {
+    return this.playerType !== PLAYER_TYPES.PLAYER;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  hasForeignRaidInfo() {
+    return !!this.foreignRaidInfoKeyPlayer;
   }
 
 }
