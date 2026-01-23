@@ -51,7 +51,16 @@ export class TaskManager {
             this.setState(event.state);
             console.log(this.processes[event.state.getPID()].state)
             if (event.state.isCompleted()) {
-                this.complete(event.state.getPID());
+
+                event.state.setBlockCheckpoint(this.gameState.currentBlockHeight);
+                // Make sure the hash is acceptable compared to the estimations performed in the worker
+                if (event.state.checkResultHashDifficulty()) {
+                    this.complete(event.state.getPID());
+                } else {
+                    event.state.setStatus(TASK_STATUS.STARTING);
+                    this.spawn(event.state);
+                }
+
             }
         }.bind(this));
 
@@ -127,6 +136,7 @@ export class TaskManager {
                     // submit to guild
 
             let msg;
+            this.sweep(event.state.getPID());
             switch (event.state.task_type) {
                 case TASK_TYPES.RAID:
                     await this.signingClientManager.queueMsgPlanetRaidComplete(

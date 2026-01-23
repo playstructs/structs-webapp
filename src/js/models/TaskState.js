@@ -1,5 +1,6 @@
 import {TASK} from "../constants/TaskConstants";
 import {TASK_STATUS} from "../constants/TaskStatus";
+import {sha256} from "js-sha256";
 
 
 export class TaskState {
@@ -25,9 +26,11 @@ export class TaskState {
     this.block_checkpoint = null;
     this.block_checkpoint_time = null;
     this.block_current_estimated = null;
+    this.result_exists = false;
     this.result_message = null;
     this.result_nonce = null;
     this.result_hash = null;
+    this.result_difficulty = 0;
 
     this.estimated_hashrate = TASK.HASHRATE_INITIAL_ESTIMATE;
     this.estimated_block_start_offset = 0;
@@ -83,13 +86,25 @@ export class TaskState {
    * @param {string} nonce
    * @param {string} message
    * @param {string} hash
+   * @param {number} difficulty
    */
-  setResult(nonce, message, hash) {
+  setResult(nonce, message, hash, difficulty) {
     this.status = TASK_STATUS.COMPLETED;
     this.process_end_time = new Date();
+    this.result_exists = true;
     this.result_message = message;
     this.result_nonce = nonce + this.postfix;
     this.result_hash = hash;
+    this.result_difficulty = difficulty;
+  }
+
+  /**
+   * @param {number} difficulty
+   */
+  setPreviousResult(difficulty) {
+    this.status = TASK_STATUS.COMPLETED;
+    this.process_end_time = new Date();
+    this.result_difficulty = difficulty;
   }
 
   getNextNonce() {
@@ -246,5 +261,12 @@ export class TaskState {
     );
 
     return Math.max(1, difficulty);
+  }
+
+  /**
+   * Check to see if Hash was built for an acceptable block height
+   */
+  checkResultHashDifficulty() {
+    return this.result_difficulty >= this.getCurrentDifficulty();
   }
 }

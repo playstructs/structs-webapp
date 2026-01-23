@@ -43,7 +43,7 @@ async function work() {
         const hash = sha256(message);
 
         if (difficultyCheck(hash, difficulty)){
-            state.setResult(nonce, message, hash);
+            state.setResult(nonce, message, hash, difficulty);
             postMessage([state]);
             break;
         }
@@ -55,6 +55,13 @@ async function work() {
 
         if (state.iterations % TASK.DIFFICULTY_RECALCULATE === 0) {
             difficulty = state.getCurrentDifficulty();
+
+            // Check to see if a previous hash result is now relevant again
+            if (state.result_exists && state.result_difficulty >= difficulty) {
+                state.setPreviousResult(difficulty);
+                postMessage([state]);
+                break;
+            }
         }
         sessionIterations++;
     }
