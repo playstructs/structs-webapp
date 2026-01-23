@@ -136,6 +136,7 @@ export class TaskManager {
                     // submit to guild
 
             let msg;
+            this.sweep(event.state.getPID());
             switch (event.state.task_type) {
                 case TASK_TYPES.RAID:
                     await this.signingClientManager.queueMsgPlanetRaidComplete(
