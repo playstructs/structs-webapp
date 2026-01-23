@@ -53,6 +53,7 @@ export class TaskManager {
             if (event.state.isCompleted()) {
 
                 event.state.setBlockCheckpoint(this.gameState.currentBlockHeight);
+                // Make sure the hash is acceptable compared to the estimations performed in the worker
                 if (event.state.checkResultHashDifficulty()) {
                     this.complete(event.state.getPID());
                 } else {
