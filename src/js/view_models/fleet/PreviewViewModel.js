@@ -98,6 +98,7 @@ export class PreviewViewModel extends AbstractViewModel {
       this.guildAPI.getPlanet(this.planet_id),
       this.guildAPI.getPlayer(this.defender_id),
       this.guildAPI.getStructsByPlayerId(this.defender_id),
+      this.guildAPI.getFleetByPlayerId(this.defender_id),
       (async () => (this.attacker_id === null)
             ? null
             : await this.guildAPI.getPlayer(this.attacker_id)
@@ -106,15 +107,21 @@ export class PreviewViewModel extends AbstractViewModel {
           ? []
           : await this.guildAPI.getStructsByPlayerId(this.attacker_id)
       )(),
+      (async () => (this.attacker_id === null)
+          ? null
+          : await this.guildAPI.getFleetByPlayerId(this.attacker_id)
+      )(),
     ]).then(
       ([
         planet,
         defender,
         defenderStructs,
+        defenderFleet,
         attacker,
-        attackerStructs
+        attackerStructs,
+        attackerFleet,
       ]) => {
-        this.mapManager.configurePreviewMap(planet, defender, attacker);
+        this.mapManager.configurePreviewMap(planet, defender, attacker, defenderFleet, attackerFleet);
         this.gameState.setPreviewDefenderStructs(defenderStructs);
         this.gameState.setPreviewAttackerStructs(attackerStructs);
         this.mapManager.showMap(MAP_CONTAINER_IDS.PREVIEW);

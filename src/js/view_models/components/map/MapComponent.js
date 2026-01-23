@@ -58,6 +58,12 @@ export class MapComponent extends AbstractViewModelComponent {
     /** @type {Player|null} */
     this.defender = null;
 
+    /** @type {Fleet|null} */
+    this.attackerFleet = null;
+
+    /** @type {Fleet|null} */
+    this.defenderFleet = null;
+
     this.perspective = null; // ATTACKER, DEFENDER
 
     this.tileClassNameUtil = new TileClassNameUtil();
@@ -105,6 +111,20 @@ export class MapComponent extends AbstractViewModelComponent {
    */
   setAttacker(player) {
     this.attacker = player;
+  }
+
+  /**
+   * @param {Fleet|null} fleet
+   */
+  setDefenderFleet(fleet) {
+    this.defenderFleet = fleet;
+  }
+
+  /**
+   * @param {Fleet|null} fleet
+   */
+  setAttackerFleet(fleet) {
+    this.attackerFleet = fleet;
   }
 
   /**
@@ -193,6 +213,8 @@ export class MapComponent extends AbstractViewModelComponent {
       this.planet,
       this.defender,
       this.attacker,
+      this.defenderFleet,
+      this.attackerFleet,
       this.structLayerId,
       this.mapId
     );

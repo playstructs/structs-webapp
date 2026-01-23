@@ -45,6 +45,10 @@ export class RaidStatusListener extends AbstractGrassListener {
 
           window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield  )));
 
+          // Also needs updating as the fleet has moved away
+          this.mapManager.configureAlphaBaseMap();
+          this.gameState.alphaBaseMap.render();
+
           this.mapManager.configureRaidMap();
           this.gameState.raidMap.render();
 
@@ -63,16 +67,25 @@ export class RaidStatusListener extends AbstractGrassListener {
 
         console.log('RAID HAS ENDED HANDLER');
 
-        window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.fleet_id));
+        // Player's fleet needs updating as it's been moved back home.
+        this.gameState.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then(playerFleet => {
 
-        // Clear the planet raid info
-        // TODO: Change raid ended handling when map and structs added
-        this.gameState.clearRaidData();
+          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = playerFleet;
 
-        this.mapManager.configureRaidMap();
-        this.gameState.raidMap.render();
+          window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.fleet_id));
 
-        this.shouldUnregister = () => true;
+          // Clear the planet raid info
+          this.gameState.clearRaidData();
+
+          this.mapManager.configureRaidMap();
+          this.gameState.raidMap.render();
+
+          this.mapManager.configureAlphaBaseMap();
+          this.gameState.alphaBaseMap.render();
+
+          this.shouldUnregister = () => true;
+
+        });
       }
     }
   }

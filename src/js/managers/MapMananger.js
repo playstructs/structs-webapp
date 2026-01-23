@@ -15,14 +15,18 @@ export class MapManager {
   configureAlphaBaseMap() {
     this.gameState.alphaBaseMap.setPlanet(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet);
     this.gameState.alphaBaseMap.setDefender(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player);
+    this.gameState.alphaBaseMap.setDefenderFleet(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet);
     this.gameState.alphaBaseMap.setAttacker(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].player);
+    this.gameState.alphaBaseMap.setAttackerFleet(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].fleet);
     this.gameState.alphaBaseMap.setPlayerMapRole(PLAYER_MAP_ROLES.DEFENDER);
   }
 
   configureRaidMap() {
     this.gameState.raidMap.setPlanet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet);
     this.gameState.raidMap.setDefender(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player);
+    this.gameState.raidMap.setDefenderFleet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].fleet);
     this.gameState.raidMap.setAttacker(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player);
+    this.gameState.raidMap.setAttackerFleet(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet);
     this.gameState.raidMap.setPlayerMapRole(PLAYER_MAP_ROLES.ATTACKER);
   }
 
@@ -30,11 +34,15 @@ export class MapManager {
    * @param {Planet} planet
    * @param {Player} defender
    * @param {Player} attacker
+   * @param {Fleet} defenderFleet
+   * @param {Fleet} attackerFleet
    */
-  configurePreviewMap(planet, defender, attacker) {
+  configurePreviewMap(planet, defender, attacker, defenderFleet, attackerFleet) {
     this.gameState.previewMap.setPlanet(planet);
     this.gameState.previewMap.setDefender(defender);
+    this.gameState.previewMap.setDefenderFleet(defenderFleet);
     this.gameState.previewMap.setAttacker(attacker);
+    this.gameState.previewMap.setAttackerFleet(attackerFleet);
     this.gameState.previewMap.setPlayerMapRole(PLAYER_MAP_ROLES.SPECTATOR);
   }
 
