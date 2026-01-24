@@ -43,29 +43,27 @@ export class NewPlanetListener extends AbstractGrassListener {
 
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id = messageData.planet_id;
 
-      this.guildAPI.getPlanet(messageData.planet_id).then((planet) => {
+      Promise.all([
+        this.guildAPI.getPlanet(messageData.planet_id),
+        this.guildAPI.getFleetByPlayerId(playerId),
+        this.guildAPI.getStructsByPlayerId(playerId)
+      ]).then(([planet, fleet, structs]) => {
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanet(planet);
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetShieldHealth(this.gameState.currentBlockHeight);
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = fleet;
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id = fleet.id;
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructs(structs);
 
-        this.guildAPI.getFleetByPlayerId(playerId).then((fleet) => {
-          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = fleet;
-          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id = fleet.id;
+        this.grassManager.registerListener(new PlanetRaidStatusListener(
+          this.gameState,
+          this.guildAPI,
+          this.raidManager,
+          this.mapManager
+        ));
+        this.mapManager.configureAlphaBaseMap();
+        this.gameState.alphaBaseMap.render();
 
-          this.guildAPI.getStructsByPlayerId(playerId).then((structs) => {
-            this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructs(structs);
-
-            this.grassManager.registerListener(new PlanetRaidStatusListener(
-              this.gameState,
-              this.guildAPI,
-              this.raidManager,
-              this.mapManager
-            ));
-            this.mapManager.configureAlphaBaseMap();
-            this.gameState.alphaBaseMap.render();
-
-            MenuPage.router.goto(this.redirectControllerName, this.redirectPageName, this.redirectOptions);
-          });
-        });
+        MenuPage.router.goto(this.redirectControllerName, this.redirectPageName, this.redirectOptions);
       });
     }
   }
