@@ -126,10 +126,12 @@ export class GameState {
     this.transferAmount = gameStateParsed.transferAmount;
     this.activeMapContainerId = gameStateParsed.activeMapContainerId;
 
-    // Properties to re-instantiate
-    this.wallet = await this.walletManager.createWallet(this.mnemonic);
-    const accounts = await this.wallet.getAccountsWithPrivkeys();
-    this.signingAccount = accounts[0];
+    if (this.mnemonic) {
+      // Properties to re-instantiate
+      this.wallet = await this.walletManager.createWallet(this.mnemonic);
+      const accounts = await this.wallet.getAccountsWithPrivkeys();
+      this.signingAccount = accounts[0];
+    }
   }
 
   /**
