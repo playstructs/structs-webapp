@@ -39,11 +39,21 @@ export class NewPlanetListener extends AbstractGrassListener {
       && messageData.planet_id
     ) {
       this.shouldUnregister = () => true;
+      const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
 
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id = messageData.planet_id;
-      this.guildAPI.getPlanet(messageData.planet_id).then((planet) => {
+
+      Promise.all([
+        this.guildAPI.getPlanet(messageData.planet_id),
+        this.guildAPI.getFleetByPlayerId(playerId),
+        this.guildAPI.getStructsByPlayerId(playerId)
+      ]).then(([planet, fleet, structs]) => {
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanet(planet);
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetShieldHealth(this.gameState.currentBlockHeight);
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = fleet;
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id = fleet.id;
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructs(structs);
+
         this.grassManager.registerListener(new PlanetRaidStatusListener(
           this.gameState,
           this.guildAPI,
