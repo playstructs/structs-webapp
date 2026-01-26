@@ -6,7 +6,7 @@ import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {WalletManager} from "../managers/WalletManager";
 import {GuildAPI} from "../api/GuildAPI";
 import {PlanetRaid} from "./PlanetRaid";
-import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
+import {MAP_CONTAINER_IDS, MAP_TYPES} from "../constants/MapConstants";
 import {StructTypeCollection} from "./StructTypeCollection";
 import {Struct} from "./Struct";
 import {StructType} from "./StructType";
@@ -54,9 +54,22 @@ export class GameState {
      * @type {{player: KeyPlayer, raid_enemy: KeyPlayer, planet_raider: KeyPlayer}}
      */
     this.keyPlayers = {
-      [PLAYER_TYPES.PLAYER]: new KeyPlayer(PLAYER_TYPES.PLAYER),
-      [PLAYER_TYPES.RAID_ENEMY]: new KeyPlayer(PLAYER_TYPES.RAID_ENEMY),
-      [PLAYER_TYPES.PLANET_RAIDER]: new KeyPlayer(PLAYER_TYPES.PLANET_RAIDER, false, PLAYER_TYPES.PLAYER)
+      [PLAYER_TYPES.PLAYER]: new KeyPlayer(
+        PLAYER_TYPES.PLAYER,
+        true,
+        MAP_TYPES.ALPHA_BASE
+      ),
+      [PLAYER_TYPES.RAID_ENEMY]: new KeyPlayer(
+        PLAYER_TYPES.RAID_ENEMY,
+        true,
+        MAP_TYPES.RAID
+      ),
+      [PLAYER_TYPES.PLANET_RAIDER]: new KeyPlayer(
+        PLAYER_TYPES.PLANET_RAIDER,
+        false,
+        '',
+        PLAYER_TYPES.PLAYER
+      )
     };
 
     this.structTypes = new StructTypeCollection();

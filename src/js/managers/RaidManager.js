@@ -2,6 +2,7 @@ import {KeyPlayerOreListener} from "../grass_listeners/KeyPlayerOreListener";
 import {RaidStatusListener} from "../grass_listeners/RaidStatusListener";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {KeyPlayerLastActionListener} from "../grass_listeners/KeyPlayerLastActionListener";
+import {StructStatusListener} from "../grass_listeners/StructStatusListener";
 
 export class RaidManager {
 
@@ -10,17 +11,20 @@ export class RaidManager {
    * @param {GuildAPI} guildAPI
    * @param {GrassManager} grassManager
    * @param {MapManager} mapManager
+   * @param {StructManager} structManager
    */
   constructor(
     gameState,
     guildAPI,
     grassManager,
-    mapManager
+    mapManager,
+    structManager
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.grassManager = grassManager;
     this.mapManager = mapManager;
+    this.structManager = structManager;
   }
 
   /**
@@ -34,6 +38,14 @@ export class RaidManager {
     this.grassManager.registerListener(new RaidStatusListener(this.gameState, this, this.mapManager));
     this.grassManager.registerListener(new KeyPlayerLastActionListener(this.gameState, PLAYER_TYPES.RAID_ENEMY));
     this.grassManager.registerListener(new KeyPlayerOreListener(this.gameState, this.guildAPI, PLAYER_TYPES.RAID_ENEMY));
+
+    // Register struct status listener for RAID_ENEMY's planet
+    this.grassManager.registerListener(new StructStatusListener(
+      this.gameState,
+      this.guildAPI,
+      this.structManager,
+      PLAYER_TYPES.RAID_ENEMY
+    ));
 
     const [
       player,

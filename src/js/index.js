@@ -73,7 +73,7 @@ const playerAddressPendingFactory = new PlayerAddressPendingFactory();
 
 const mapManager = new MapManager(gameState);
 
-const raidManager = new RaidManager(gameState, guildAPI, grassManager, mapManager);
+const raidManager = new RaidManager(gameState, guildAPI, grassManager, mapManager, structManager);
 
 const taskStateFactory = new TaskStateFactory();
 
