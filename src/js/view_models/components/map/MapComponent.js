@@ -12,6 +12,7 @@ import {PLAYER_MAP_ROLES} from "../../../constants/PlayerMapRoles";
 import {MAP_PERSPECTIVES} from "../../../constants/MapPerspectives";
 import {MapTileSelectionComponent} from "./MapTileSelectionComponent";
 import {MapStructLayerComponent} from "./MapStructLayerComponent";
+import {MapStructHUDLayerComponent} from "./MapStructHUDLayerComponent";
 import {Planet} from "../../../models/Planet";
 import {Player} from "../../../models/Player";
 
@@ -46,6 +47,7 @@ export class MapComponent extends AbstractViewModelComponent {
     this.ornamentsId = `${this.idPrefix}-map-ornaments`;
     this.markersId = `${this.idPrefix}-map-markers`;
     this.structLayerId = `${this.idPrefix}-map-struct-layer`;
+    this.structHUDLayerId = `${this.idPrefix}-map-struct-hud-layer`;
     this.fogOfWarId = `${this.idPrefix}-map-fog-of-war`;
     this.tileSelectionId = `${this.idPrefix}-map-tile-selection`;
 
@@ -87,6 +89,9 @@ export class MapComponent extends AbstractViewModelComponent {
 
     /** @type {MapStructLayerComponent|null} */
     this.mapStructLayer = null;
+
+    /** @type {MapStructHUDLayerComponent|null} */
+    this.mapStructHUDLayer = null;
 
     /** @type {MapTileSelectionComponent|null} */
     this.mapTileSelection = null;
@@ -219,6 +224,19 @@ export class MapComponent extends AbstractViewModelComponent {
       this.mapId
     );
 
+    this.mapStructHUDLayer = new MapStructHUDLayerComponent(
+      this.gameState,
+      this.structManager,
+      mapColBreakdown,
+      this.planet,
+      this.defender,
+      this.attacker,
+      this.defenderFleet,
+      this.attackerFleet,
+      this.structHUDLayerId,
+      this.mapId
+    );
+
     if (this.enableTileSelectionLayer) {
 
       this.mapTileSelection = new MapTileSelectionComponent(
@@ -245,6 +263,7 @@ export class MapComponent extends AbstractViewModelComponent {
         <div id="${this.ornamentsId}" class="map-ornaments"></div>
         <div id="${this.markersId}" class="map-markers"></div>
         <div id="${this.structLayerId}" class="map-struct-layer"></div>
+        <div id="${this.structHUDLayerId}" class="map-struct-hud-layer"></div>
         <div id="${this.fogOfWarId}" class="map-fog-of-war-anchor"></div>
         <div id="${this.tileSelectionId}" class="map-tile-selection"></div>
       </div>
@@ -268,6 +287,8 @@ export class MapComponent extends AbstractViewModelComponent {
 
     document.getElementById(this.structLayerId).innerHTML = this.mapStructLayer.renderHTML();
 
+    document.getElementById(this.structHUDLayerId).innerHTML = this.mapStructHUDLayer.renderHTML();
+
     if (this.shouldDisplayFogOfWar()) {
       document.getElementById(this.fogOfWarId).innerHTML = this.mapFogOfWar.renderHTML();
     }
@@ -278,5 +299,6 @@ export class MapComponent extends AbstractViewModelComponent {
     }
     
     this.mapStructLayer.initPageCode();
+    this.mapStructHUDLayer.initPageCode();
   }
 }

@@ -1,4 +1,3 @@
-import {MAP_TILE_TYPES} from "../../../constants/MapConstants";
 import {EVENTS} from "../../../constants/Events";
 import {StructStillBuilder} from "../../../builders/StructStillBuilder";
 import {Player} from "../../../models/Player";
@@ -40,13 +39,13 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
       mapColBreakdown,
       planet,
       defender,
-      attacker
+      attacker,
+      defenderFleet,
+      attackerFleet,
+      containerId,
+      mapId
     );
 
-    this.defenderFleet = defenderFleet;
-    this.attackerFleet = attackerFleet;
-    this.containerId = containerId;
-    this.mapId = mapId;
     this.structStillBuilder = new StructStillBuilder(this.gameState);
   }
 
@@ -97,18 +96,6 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
-   * Build CSS selector for finding a struct tile
-   * @param {string} tileType
-   * @param {string} ambit
-   * @param {number} slot
-   * @param {string} playerId
-   * @return {string}
-   */
-  buildTileSelector(tileType, ambit, slot, playerId) {
-    return `.map-struct-layer-tile[data-tile-type="${tileType}"][data-ambit="${ambit}"][data-slot="${slot}"][data-player-id="${playerId}"]`;
-  }
-
-  /**
    * Find and update a single struct tile by position
    * @param {Struct} struct
    */
@@ -123,60 +110,6 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     const container = document.getElementById(this.containerId);
     const tileElement = container.querySelector(selector);
     tileElement.innerHTML = this.renderStructContent(struct);
-  }
-
-  /**
-   * Check if tile has required position data attributes
-   * @param {string} tileType
-   * @param {string} ambit
-   * @param {string} slot
-   * @param {string} playerId
-   * @return {boolean}
-   */
-  hasTilePositionData(tileType, ambit, slot, playerId) {
-    return !!(tileType && ambit && slot !== '' && playerId);
-  }
-
-  /**
-   * Get location info for a tile based on its type and player
-   * @param {string} tileType
-   * @param {string} playerId
-   * @return {{locationType: string, locationId: string|null, isCommandSlot: boolean}|null}
-   */
-  getLocationInfoFromTile(tileType, playerId) {
-    if (tileType === MAP_TILE_TYPES.PLANETARY_SLOT) {
-      return {
-        locationType: 'planet',
-        locationId: this.planet.id,
-        isCommandSlot: false
-      };
-    }
-
-    if (tileType === MAP_TILE_TYPES.COMMAND || tileType === MAP_TILE_TYPES.FLEET) {
-      let locationId = null;
-      if (this.defender && playerId === this.defender.id) {
-        locationId = this.defender.fleet_id;
-      } else if (this.attacker && playerId === this.attacker.id) {
-        locationId = this.attacker.fleet_id;
-      }
-
-      return {
-        locationType: 'fleet',
-        locationId: locationId,
-        isCommandSlot: (tileType === MAP_TILE_TYPES.COMMAND)
-      };
-    }
-
-    return null;
-  }
-
-  /**
-   * @param {string} playerId
-   * @return {boolean}
-   */
-  isFleetOnPlanet(playerId) {
-    return (this.defender.id === playerId && this.defenderFleet?.location_id === this.planet.id)
-      || (this.attacker?.id === playerId && this.attackerFleet?.location_id === this.planet.id);
   }
 
   /**
@@ -255,25 +188,8 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     // Listen for CLEAR_STRUCT_TILE events (when a build is canceled)
     window.addEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
       if (event.mapId === this.mapId) {
-        this.clearStructTile(event.tileType, event.ambit, event.slot, event.playerId);
+        this.clearTile(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });
-  }
-
-  /**
-   * Clear a struct tile by position (e.g., when build is canceled).
-   *
-   * @param {string} tileType
-   * @param {string} ambit
-   * @param {number} slot
-   * @param {string} playerId
-   */
-  clearStructTile(tileType, ambit, slot, playerId) {
-    const selector = this.buildTileSelector(tileType, ambit, slot, playerId);
-    const container = document.getElementById(this.containerId);
-    const tileElement = container.querySelector(selector);
-    if (tileElement) {
-      tileElement.innerHTML = '';
-    }
   }
 }
