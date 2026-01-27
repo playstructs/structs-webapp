@@ -77,5 +77,10 @@ export const
     ALPHA_BASE: 'alpha-base-map-container',
     RAID: 'raid-map-container',
     PREVIEW: 'preview-map-container'
+  },
+
+  MAP_TYPES = {
+    ALPHA_BASE: 'alphaBaseMap',
+    RAID: 'raidMap'
   }
 ;

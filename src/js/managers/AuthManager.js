@@ -177,7 +177,12 @@ export class AuthManager {
       this.grassManager.registerListener(new AlphaChangeListener(this.gameState, this.guildAPI));
 
       // Task related listeners
-      this.grassManager.registerListener(new StructStatusListener(this.gameState, this.guildAPI, this.structManager));
+      this.grassManager.registerListener(new StructStatusListener(
+        this.gameState,
+        this.guildAPI,
+        this.structManager,
+        PLAYER_TYPES.PLAYER
+      ));
       this.grassManager.registerListener(new StructMineStatusListener(this.gameState));
       this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 

@@ -19,9 +19,15 @@ export class KeyPlayer {
   /**
    * @param {string} playerType See PLAYER_TYPES
    * @param {boolean} planetUsedForMap Whether or not this key player's planet is used for a map
+   * @param {string} planetMapType The map type of this planet if it's used for a map.
    * @param {string} foreignRaidInfoKeyPlayer The key player that contains the raid info
    */
-  constructor(playerType, planetUsedForMap = true, foreignRaidInfoKeyPlayer = '') {
+  constructor(
+    playerType,
+    planetUsedForMap,
+    planetMapType = '',
+    foreignRaidInfoKeyPlayer = ''
+  ) {
 
     this.chargeCalculator = new ChargeCalculator();
     this.shieldHealthCalculator = new ShieldHealthCalculator();
@@ -55,6 +61,9 @@ export class KeyPlayer {
 
     /** @type {boolean} Whether or not this key player's planet is used for a map */
     this.planetUsedForMap = planetUsedForMap;
+
+    /** @type {string} The map type of this planet if it's used for a map. */
+    this.planetMapType = planetUsedForMap ? planetMapType : '';
 
     /** @type {Fleet} */
     this.fleet = null;
