@@ -45,22 +45,77 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
 
   /**
    * Render the content for a single HUD tile
-   * @param tileType
-   * @param ambit
-   * @param slot
-   * @param playerId
+   * @param {HTMLElement} tileElement
    */
-  renderStructHUD(tileType, ambit, slot, playerId) {
-    const selector = this.buildTileSelector(tileType, ambit, slot, playerId);
-    const container = document.getElementById(this.containerId);
-    const tileElement = container.querySelector(selector);
-    tileElement.innerHTML = '';
+  renderStructHUD(tileElement) {
+
+    if (!this.hasTilePositionData(
+      tileElement.dataset.tileType,
+      tileElement.dataset.ambit,
+      tileElement.dataset.slot,
+      tileElement.dataset.playerId)
+    ) {
+      return;
+    }
+
+    const locationInfo = this.getLocationInfoFromTile(
+      tileElement.dataset.tileType,
+      tileElement.dataset.playerId
+    );
+
+    if (!locationInfo) {
+      return;
+    }
+
+    const slotNum = parseInt(tileElement.dataset.slot, 10);
+
+    if (locationInfo.locationType === 'planet' || this.isFleetOnPlanet(tileElement.dataset.playerId)) {
+      const struct = this.structManager.getStructByPositionAndPlayerId(
+        tileElement.dataset.playerId,
+        locationInfo.locationType,
+        locationInfo.locationId,
+        tileElement.dataset.ambit,
+        slotNum,
+        locationInfo.isCommandSlot
+      );
+
+      if (!struct) {
+        tileElement.innerHTML = "";
+      } else {
+
+        tileElement.innerHTML = `
+          <div class="map-struct-hud-status-bars">
+            <div class="struct-health-bar">
+              <div class="struct-health-bar-segment mod-filled"></div>
+              <div class="struct-health-bar-segment mod-filled"></div>
+              <div class="struct-health-bar-segment"></div>
+            </div>
+          </div>      
+          <div class="map-struct-hud-status-indicators">
+            <i class="sui-icon sui-icon-sm sui-icon-defended"></i>
+            <i class="sui-icon sui-icon-sm sui-icon-defending"></i>
+            <i class="sui-icon sui-icon-sm sui-icon-stealth-mode"></i>
+            <i class="sui-icon sui-icon-sm sui-icon-destroyed"></i>
+          </div>
+        `;
+
+        }
+    } else {
+      tileElement.innerHTML = "";
+    }
+  }
+
+  renderAllStructHUDs() {
+    const tiles = document.getElementById(this.containerId).querySelectorAll(`.${this.tileClass}`);
+    tiles.forEach(tile => {
+      this.renderStructHUD(tile);
+    });
   }
 
   /**
    * Initialize page code: set up event listeners for future expansion
    */
   initPageCode() {
-    // Future event listeners will be added here
+    this.renderAllStructHUDs();
   }
 }

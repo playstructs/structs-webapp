@@ -14,6 +14,7 @@
 
   /* -- Positioning Start -- */
 
+  --struct-hud-z-index: 400;
   --struct-top-z-index: 300;
   --struct-middle-z-index: 200;
   --struct-bottom-z-index: 100;
@@ -475,7 +476,8 @@ a.sui-text-secondary:hover {
   flex-grow: 1;
 }
 
-.map-struct-layer {
+.map-struct-layer,
+.map-struct-hud-layer {
   position: absolute;
   top: 0;
   left: 0;
@@ -490,7 +492,8 @@ a.sui-text-secondary:hover {
   pointer-events: none;
 }
 
-.map-struct-layer-row {
+.map-struct-layer-row,
+.map-struct-hud-layer-row {
   position: relative;
   display: flex;
   width: 100%;
@@ -513,6 +516,57 @@ a.sui-text-secondary:hover {
 
 .map-struct-layer-tile.mod-side-right {
   transform: scaleX(-1);
+}
+
+.map-struct-hud-layer-tile {
+  position: relative;
+  display: flex;
+  width: var(--tile-width);
+  height: var(--tile-height);
+  align-items: center;
+  justify-content: center;
+  z-index: var(--struct-hud-z-index);
+}
+
+.map-struct-hud-status-bars {
+  position: absolute;
+  top: 10px;
+  display: flex;
+  width: 48px;
+  align-items: center;
+  justify-content: center;
+
+  background-color: var(--border-neutral-dark);
+  border: 2px solid var(--border-neutral-dark);
+}
+
+.map-struct-hud-status-indicators {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  width: var(--tile-width);
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.struct-health-bar {
+  display: flex;
+  width: 100%;
+  height: 4px;
+  justify-content: space-between;
+  gap: 2px;
+}
+
+.struct-health-bar-segment {
+  display: flex;
+  flex: 1 1 100%;
+  background-color: var(--struct-health-bar-damage);
+}
+
+.struct-health-bar-segment.mod-filled {
+  background-color: var(--struct-health-bar-health);
 }
 
 .map-tile-selection {

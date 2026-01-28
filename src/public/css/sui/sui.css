@@ -50,6 +50,8 @@
   --icon-colour-warning: #F3C878;
   --icon-dark: #394958;
   --page-background: #1A2029;
+  --struct-health-bar-health: #EFB719;
+  --struct-health-bar-damage: #CC2D2D;
   --surface-enemy-body: #2E1F3E;
   --surface-enemy-highlight: #5D0C15;
   --surface-enemy-inverted: #E64D40;
@@ -275,42 +277,54 @@ a.sui-mod-disabled:visited {
 
 /* ---- Icons Start ---- */
 
-.sui-icon-xs {
+.sui-icon-xs,
+.sui-icon.sui-icon-xs,
+i.sui-icon.sui-icon-xs {
   width: var(--icon-xs);
   height: var(--icon-xs);
 
   font-size: var(--icon-xs);
 }
 
-.sui-icon-sm {
+.sui-icon-sm,
+.sui-icon.sui-icon-sm,
+i.sui-icon.sui-icon-sm {
   width: var(--icon-sm);
   height: var(--icon-sm);
 
   font-size: var(--icon-sm);
 }
 
-.sui-icon-md {
+.sui-icon-md,
+.sui-icon.sui-icon-md,
+i.sui-icon.sui-icon-md {
   width: var(--icon-md);
   height: var(--icon-md);
 
   font-size: var(--icon-md);
 }
 
-.sui-icon-lg {
+.sui-icon-lg,
+.sui-icon.sui-icon-lg,
+i.sui-icon.sui-icon-lg {
   width: var(--icon-lg);
   height: var(--icon-lg);
 
   font-size: var(--icon-lg);
 }
 
-.sui-icon-xl {
+.sui-icon-xl,
+.sui-icon.sui-icon-xl,
+i.sui-icon.sui-icon-xl {
   width: var(--icon-xl);
   height: var(--icon-xl);
 
   font-size: var(--icon-xl);
 }
 
-.sui-icon-xxl {
+.sui-icon-xxl,
+.sui-icon.sui-icon-xxl,
+i.sui-icon.sui-icon-xxl {
   width: var(--icon-xxl);
   height: var(--icon-xxl);
 
