@@ -1,4 +1,5 @@
 import {GenericMapLayerComponent} from "./GenericMapLayerComponent";
+import {Struct} from "../../../models/Struct"
 
 
 export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
@@ -44,71 +45,61 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderHealthBar(struct) {
+    const structType = this.gameState.structTypes.getStructTypeById(struct.type);
+    const segments = [];
+
+    for (let i = 0; i < structType.max_health; i++) {
+      segments.push(`<div class="struct-health-bar-segment ${(i < struct.health) ? 'mod-filled' : ''}"></div>`);
+    }
+
+    return `
+      <div class="struct-health-bar">
+        ${segments.join('')}
+      </div>
+    `;
+  }
+
+  /**
    * Render the content for a single HUD tile
    * @param {HTMLElement} tileElement
+   * @param {Struct|null} struct
    */
-  renderStructHUD(tileElement) {
-
-    if (!this.hasTilePositionData(
-      tileElement.dataset.tileType,
-      tileElement.dataset.ambit,
-      tileElement.dataset.slot,
-      tileElement.dataset.playerId)
-    ) {
-      return;
-    }
-
-    const locationInfo = this.getLocationInfoFromTile(
-      tileElement.dataset.tileType,
-      tileElement.dataset.playerId
-    );
-
-    if (!locationInfo) {
-      return;
-    }
-
-    const slotNum = parseInt(tileElement.dataset.slot, 10);
-
-    if (locationInfo.locationType === 'planet' || this.isFleetOnPlanet(tileElement.dataset.playerId)) {
-      const struct = this.structManager.getStructByPositionAndPlayerId(
-        tileElement.dataset.playerId,
-        locationInfo.locationType,
-        locationInfo.locationId,
-        tileElement.dataset.ambit,
-        slotNum,
-        locationInfo.isCommandSlot
-      );
-
-      if (!struct) {
-        tileElement.innerHTML = "";
-      } else {
-
-        tileElement.innerHTML = `
-          <div class="map-struct-hud-status-bars">
-            <div class="struct-health-bar">
-              <div class="struct-health-bar-segment mod-filled"></div>
-              <div class="struct-health-bar-segment mod-filled"></div>
-              <div class="struct-health-bar-segment"></div>
-            </div>
-          </div>      
-          <div class="map-struct-hud-status-indicators">
-            <i class="sui-icon sui-icon-sm sui-icon-defended"></i>
-            <i class="sui-icon sui-icon-sm sui-icon-defending"></i>
-            <i class="sui-icon sui-icon-sm sui-icon-stealth-mode"></i>
-            <i class="sui-icon sui-icon-sm sui-icon-destroyed"></i>
-          </div>
-        `;
-
-        }
+  renderStructHUD(tileElement, struct = null) {
+    if (struct) {
+      tileElement.innerHTML = `
+        <div class="map-struct-hud-status-bars">
+          ${this.renderHealthBar(struct)}
+        </div>      
+        <div class="map-struct-hud-status-indicators">
+          <i class="sui-icon sui-icon-sm sui-icon-defended"></i>
+          <i class="sui-icon sui-icon-sm sui-icon-defending"></i>
+          <i class="sui-icon sui-icon-sm sui-icon-stealth-mode"></i>
+          <i class="sui-icon sui-icon-sm sui-icon-destroyed"></i>
+        </div>
+      `;
     } else {
-      tileElement.innerHTML = "";
+      tileElement.innerHTML = '';
+    }
+  }
+
+  /**
+   * @param tileElement
+   */
+  renderStructHUDFromTileElement(tileElement) {
+    const renderParams = this.buildMapStructTilRenderParamsFromTileElement(tileElement);
+    if (renderParams) {
+      this.renderStructHUD(renderParams.tileElement, renderParams.struct);
     }
   }
 
   renderAllStructHUDs() {
     const tiles = document.getElementById(this.containerId).querySelectorAll(`.${this.tileClass}`);
     tiles.forEach(tile => {
-      this.renderStructHUD(tile);
+      this.renderStructHUDFromTileElement(tile);
     });
   }
 

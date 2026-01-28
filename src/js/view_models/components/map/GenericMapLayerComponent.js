@@ -6,6 +6,7 @@ import {
   MAP_DEFAULT_COMMAND_COL_COUNT
 } from "../../../constants/MapConstants";
 import {Player} from "../../../models/Player";
+import {MapStructTileRenderParamsDTO} from "../../../dtos/MapStructTileRenderParamsDTO";
 
 
 export class GenericMapLayerComponent extends AbstractViewModelComponent {
@@ -475,5 +476,39 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
     if (tileElement) {
       tileElement.innerHTML = '';
     }
+  }
+
+  buildMapStructTilRenderParamsFromTileElement(tileElement) {
+    const renderParams = new MapStructTileRenderParamsDTO();
+    renderParams.tileElement = tileElement;
+
+    const tileType = tileElement.getAttribute('data-tile-type');
+    const ambit = tileElement.getAttribute('data-ambit');
+    const slot = tileElement.getAttribute('data-slot');
+    const playerId = tileElement.getAttribute('data-player-id');
+
+    if (!this.hasTilePositionData(tileType, ambit, slot, playerId)) {
+      return null;
+    }
+
+    const locationInfo = this.getLocationInfoFromTile(tileType, playerId);
+    if (!locationInfo) {
+      return null;
+    }
+
+    const slotNum = parseInt(slot, 10);
+
+    if (locationInfo.locationType === 'planet' || this.isFleetOnPlanet(playerId)) {
+      renderParams.struct = this.structManager.getStructByPositionAndPlayerId(
+        playerId,
+        locationInfo.locationType,
+        locationInfo.locationId,
+        ambit,
+        slotNum,
+        locationInfo.isCommandSlot
+      );
+    }
+
+    return renderParams;
   }
 }
