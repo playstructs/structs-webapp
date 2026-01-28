@@ -96,56 +96,30 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
-   * Find and update a single struct tile by position
+   * @param {HTMLElement} tileElement
    * @param {Struct} struct
    */
-  renderStruct(struct) {
-    const tileType = this.structManager.getTileTypeFromStruct(struct);
-    if (!tileType) {
-      return;
-    }
-
-    const ambit = struct.operating_ambit ? struct.operating_ambit.toUpperCase() : '';
-    const selector = this.buildTileSelector(tileType, ambit, struct.slot, struct.owner);
-    const container = document.getElementById(this.containerId);
-    const tileElement = container.querySelector(selector);
+  renderStruct(tileElement, struct) {
     tileElement.innerHTML = this.renderStructContent(struct);
   }
 
   /**
-   * Update a single tile with struct data
    * @param {HTMLElement} tileElement
    */
-  updateTileWithStruct(tileElement) {
-    const tileType = tileElement.getAttribute('data-tile-type');
-    const ambit = tileElement.getAttribute('data-ambit');
-    const slot = tileElement.getAttribute('data-slot');
-    const playerId = tileElement.getAttribute('data-player-id');
-
-    if (!this.hasTilePositionData(tileType, ambit, slot, playerId)) {
-      return;
+  renderStructFromTileElement(tileElement) {
+    const renderParams = this.buildMapStructTilRenderParamsFromTileElement(tileElement);
+    if (renderParams) {
+      this.renderStruct(renderParams.tileElement, renderParams.struct);
     }
+  }
 
-    const locationInfo = this.getLocationInfoFromTile(tileType, playerId);
-    if (!locationInfo) {
-      return;
-    }
-
-    const slotNum = parseInt(slot, 10);
-
-    if (locationInfo.locationType === 'planet' || this.isFleetOnPlanet(playerId)) {
-      const struct = this.structManager.getStructByPositionAndPlayerId(
-        playerId,
-        locationInfo.locationType,
-        locationInfo.locationId,
-        ambit,
-        slotNum,
-        locationInfo.isCommandSlot
-      );
-
-      tileElement.innerHTML = this.renderStructContent(struct);
-    } else {
-      tileElement.innerHTML = "";
+  /**
+   * @param {Struct} struct
+   */
+  renderStructFromStruct(struct) {
+    const renderParams = this.buildMapStructTilRenderParamsFromStruct(struct);
+    if (renderParams) {
+      this.renderStruct(renderParams.tileElement, renderParams.struct);
     }
   }
 
@@ -155,7 +129,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   renderAllStructs() {
     const container = document.getElementById(this.containerId);
     const tiles = container.querySelectorAll('.map-struct-layer-tile');
-    tiles.forEach(tileElement => this.updateTileWithStruct(tileElement));
+    tiles.forEach(tileElement => this.renderStructFromTileElement(tileElement));
   }
 
   /**
@@ -175,7 +149,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     // Listen for RENDER_STRUCT events
     window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
       if (event.containerId === this.containerId) {
-        this.renderStruct(event.struct);
+        this.renderStructFromStruct(event.struct);
       }
     });
 

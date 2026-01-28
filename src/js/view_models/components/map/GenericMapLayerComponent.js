@@ -7,6 +7,7 @@ import {
 } from "../../../constants/MapConstants";
 import {Player} from "../../../models/Player";
 import {MapStructTileRenderParamsDTO} from "../../../dtos/MapStructTileRenderParamsDTO";
+import {Struct} from "../../../models/Struct";
 
 
 export class GenericMapLayerComponent extends AbstractViewModelComponent {
@@ -507,6 +508,32 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
         slotNum,
         locationInfo.isCommandSlot
       );
+    }
+
+    return renderParams;
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {MapStructTileRenderParamsDTO|null}
+   */
+  buildMapStructTilRenderParamsFromStruct(struct) {
+    const renderParams = new MapStructTileRenderParamsDTO();
+    renderParams.struct = struct;
+
+    const tileType = this.structManager.getTileTypeFromStruct(struct);
+
+    if (!tileType) {
+      return null;
+    }
+
+    const ambit = struct.operating_ambit ? struct.operating_ambit.toUpperCase() : '';
+    const selector = this.buildTileSelector(tileType, ambit, struct.slot, struct.owner);
+    const container = document.getElementById(this.containerId);
+    renderParams.tileElement = container.querySelector(selector);
+
+    if (!renderParams.tileElement) {
+      return null;
     }
 
     return renderParams;
