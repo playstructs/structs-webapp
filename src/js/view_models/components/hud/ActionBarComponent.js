@@ -576,7 +576,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
     // Build action buttons based on struct type capabilities
     // Pass online state to disable buttons when offline
-    const actionButtons = this.buildStructActionButtons(structType, isOnline);
+    const actionButtons = this.buildStructActionButtons(struct, structType, isOnline);
 
     document.getElementById(this.actionChunkId).innerHTML = `
       <div class="sui-screen sui-screen-full-width">
@@ -832,12 +832,20 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
   /**
    * @param {array} buttons
+   * @param {Struct} struct
    * @param {StructType} structType
    * @param {boolean} isOnline
    */
-  buildStealthModeActionButton(buttons, structType, isOnline) {
+  buildStealthModeActionButton(buttons, struct, structType, isOnline) {
     if (structType.stealth_systems) {
-      const btnClass = isOnline ? 'sui-mod-default' : 'sui-mod-disabled';
+      let btnClass;
+      if (!isOnline) {
+        btnClass = 'sui-mod-disabled';
+      } else if (struct.isHidden()) {
+        btnClass = 'sui-mod-active-defense';
+      } else {
+        btnClass = 'sui-mod-default';
+      }
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-stealth-btn"
@@ -862,9 +870,23 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-stealth-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
-          console.log('Action: STEALTH_TOGGLE', {
-            structId: struct.id
-          });
+          if (struct.isHidden()) {
+            // Deactivate stealth mode
+            this.signingClientManager.queueMsgStructStealthDeactivate(struct.id).then(() => {
+              struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
+              // Update button to default state
+              btn.classList.remove('sui-mod-active-defense');
+              btn.classList.add('sui-mod-default');
+            });
+          } else {
+            // Activate stealth mode
+            this.signingClientManager.queueMsgStructStealthActivate(struct.id).then(() => {
+              struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
+              // Update button to active state
+              btn.classList.remove('sui-mod-default');
+              btn.classList.add('sui-mod-active-defense');
+            });
+          }
         });
       }
     }
@@ -952,16 +974,17 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * Builds the HTML for struct action buttons based on struct type capabilities.
    *
+   * @param {Struct} struct
    * @param {StructType} structType
    * @param {boolean} isOnline - Whether the struct is online (buttons are disabled when offline)
    * @return {string} HTML for action buttons
    */
-  buildStructActionButtons(structType, isOnline = true) {
+  buildStructActionButtons(struct, structType, isOnline = true) {
     const buttons = [];
 
     this.buildPrimaryWeaponActionButton(buttons, structType, isOnline);
     this.buildSecondaryWeaponActionButton(buttons, structType, isOnline);
-    this.buildStealthModeActionButton(buttons, structType, isOnline);
+    this.buildStealthModeActionButton(buttons, struct, structType, isOnline);
     this.buildMoveActionButton(buttons, structType, isOnline);
     this.buildDefendActionButton(buttons, structType, isOnline);
 
