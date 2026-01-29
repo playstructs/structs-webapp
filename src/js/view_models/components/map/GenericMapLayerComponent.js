@@ -6,6 +6,8 @@ import {
   MAP_DEFAULT_COMMAND_COL_COUNT
 } from "../../../constants/MapConstants";
 import {Player} from "../../../models/Player";
+import {MapStructTileRenderParamsDTO} from "../../../dtos/MapStructTileRenderParamsDTO";
+import {Struct} from "../../../models/Struct";
 
 
 export class GenericMapLayerComponent extends AbstractViewModelComponent {
@@ -19,6 +21,10 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
    * @param {(Planet|null)} planet
    * @param {Player|null} defender
    * @param {Player|null} attacker
+   * @param {Fleet|null} defenderFleet
+   * @param {Fleet|null} attackerFleet
+   * @param {string} containerId
+   * @param {string} mapId
    */
   constructor(
     gameState,
@@ -29,6 +35,10 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
     planet,
     defender,
     attacker,
+    defenderFleet = null,
+    attackerFleet = null,
+    containerId = "",
+    mapId = ""
   ) {
     super(gameState);
     this.tileRowClass = tileRowClass;
@@ -39,6 +49,10 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
     this.planet = planet;
     this.defender = defender;
     this.attacker = attacker;
+    this.defenderFleet = defenderFleet;
+    this.attackerFleet = attackerFleet;
+    this.containerId = containerId;
+    this.mapId = mapId;
   }
 
   /**
@@ -53,6 +67,72 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
     } else {
       return 'right';
     }
+  }
+
+  /**
+   * Check if tile has required position data attributes
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {string} slot
+   * @param {string} playerId
+   * @return {boolean}
+   */
+  hasTilePositionData(tileType, ambit, slot, playerId) {
+    return !!(tileType && ambit && slot !== '' && playerId);
+  }
+
+  /**
+   * Build CSS selector for finding a struct tile
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @return {string}
+   */
+  buildTileSelector(tileType, ambit, slot, playerId) {
+    return `.${this.tileClass}[data-tile-type="${tileType}"][data-ambit="${ambit}"][data-slot="${slot}"][data-player-id="${playerId}"]`;
+  }
+
+  /**
+   * Get location info for a tile based on its type and player
+   * @param {string} tileType
+   * @param {string} playerId
+   * @return {{locationType: string, locationId: string|null, isCommandSlot: boolean}|null}
+   */
+  getLocationInfoFromTile(tileType, playerId) {
+    if (tileType === MAP_TILE_TYPES.PLANETARY_SLOT) {
+      return {
+        locationType: 'planet',
+        locationId: this.planet.id,
+        isCommandSlot: false
+      };
+    }
+
+    if (tileType === MAP_TILE_TYPES.COMMAND || tileType === MAP_TILE_TYPES.FLEET) {
+      let locationId = null;
+      if (this.defender && playerId === this.defender.id) {
+        locationId = this.defender.fleet_id;
+      } else if (this.attacker && playerId === this.attacker.id) {
+        locationId = this.attacker.fleet_id;
+      }
+
+      return {
+        locationType: 'fleet',
+        locationId: locationId,
+        isCommandSlot: (tileType === MAP_TILE_TYPES.COMMAND)
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {boolean}
+   */
+  isFleetOnPlanet(playerId) {
+    return (this.defender.id === playerId && this.defenderFleet?.location_id === this.planet.id)
+      || (this.attacker?.id === playerId && this.attackerFleet?.location_id === this.planet.id);
   }
 
   /**
@@ -380,5 +460,82 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
     }
 
     return html;
+  }
+
+  /**
+   * Clear a tile by position (e.g., when build is canceled).
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   */
+  clearTile(tileType, ambit, slot, playerId) {
+    const selector = this.buildTileSelector(tileType, ambit, slot, playerId);
+    const container = document.getElementById(this.containerId);
+    const tileElement = container.querySelector(selector);
+    if (tileElement) {
+      tileElement.innerHTML = '';
+    }
+  }
+
+  buildMapStructTilRenderParamsFromTileElement(tileElement) {
+    const renderParams = new MapStructTileRenderParamsDTO();
+    renderParams.tileElement = tileElement;
+
+    const tileType = tileElement.getAttribute('data-tile-type');
+    const ambit = tileElement.getAttribute('data-ambit');
+    const slot = tileElement.getAttribute('data-slot');
+    const playerId = tileElement.getAttribute('data-player-id');
+
+    if (!this.hasTilePositionData(tileType, ambit, slot, playerId)) {
+      return null;
+    }
+
+    const locationInfo = this.getLocationInfoFromTile(tileType, playerId);
+    if (!locationInfo) {
+      return null;
+    }
+
+    const slotNum = parseInt(slot, 10);
+
+    if (locationInfo.locationType === 'planet' || this.isFleetOnPlanet(playerId)) {
+      renderParams.struct = this.structManager.getStructByPositionAndPlayerId(
+        playerId,
+        locationInfo.locationType,
+        locationInfo.locationId,
+        ambit,
+        slotNum,
+        locationInfo.isCommandSlot
+      );
+    }
+
+    return renderParams;
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {MapStructTileRenderParamsDTO|null}
+   */
+  buildMapStructTilRenderParamsFromStruct(struct) {
+    const renderParams = new MapStructTileRenderParamsDTO();
+    renderParams.struct = struct;
+
+    const tileType = this.structManager.getTileTypeFromStruct(struct);
+
+    if (!tileType) {
+      return null;
+    }
+
+    const ambit = struct.operating_ambit ? struct.operating_ambit.toUpperCase() : '';
+    const selector = this.buildTileSelector(tileType, ambit, struct.slot, struct.owner);
+    const container = document.getElementById(this.containerId);
+    renderParams.tileElement = container.querySelector(selector);
+
+    if (!renderParams.tileElement) {
+      return null;
+    }
+
+    return renderParams;
   }
 }

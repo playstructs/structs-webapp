@@ -1,4 +1,3 @@
-import {MAP_TILE_TYPES} from "../../../constants/MapConstants";
 import {EVENTS} from "../../../constants/Events";
 import {StructStillBuilder} from "../../../builders/StructStillBuilder";
 import {Player} from "../../../models/Player";
@@ -40,13 +39,13 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
       mapColBreakdown,
       planet,
       defender,
-      attacker
+      attacker,
+      defenderFleet,
+      attackerFleet,
+      containerId,
+      mapId
     );
 
-    this.defenderFleet = defenderFleet;
-    this.attackerFleet = attackerFleet;
-    this.containerId = containerId;
-    this.mapId = mapId;
     this.structStillBuilder = new StructStillBuilder(this.gameState);
   }
 
@@ -97,122 +96,30 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
-   * Build CSS selector for finding a struct tile
-   * @param {string} tileType
-   * @param {string} ambit
-   * @param {number} slot
-   * @param {string} playerId
-   * @return {string}
-   */
-  buildTileSelector(tileType, ambit, slot, playerId) {
-    return `.map-struct-layer-tile[data-tile-type="${tileType}"][data-ambit="${ambit}"][data-slot="${slot}"][data-player-id="${playerId}"]`;
-  }
-
-  /**
-   * Find and update a single struct tile by position
+   * @param {HTMLElement} tileElement
    * @param {Struct} struct
    */
-  renderStruct(struct) {
-    const tileType = this.structManager.getTileTypeFromStruct(struct);
-    if (!tileType) {
-      return;
-    }
-
-    const ambit = struct.operating_ambit ? struct.operating_ambit.toUpperCase() : '';
-    const selector = this.buildTileSelector(tileType, ambit, struct.slot, struct.owner);
-    const container = document.getElementById(this.containerId);
-    const tileElement = container.querySelector(selector);
+  renderStruct(tileElement, struct) {
     tileElement.innerHTML = this.renderStructContent(struct);
   }
 
   /**
-   * Check if tile has required position data attributes
-   * @param {string} tileType
-   * @param {string} ambit
-   * @param {string} slot
-   * @param {string} playerId
-   * @return {boolean}
-   */
-  hasTilePositionData(tileType, ambit, slot, playerId) {
-    return !!(tileType && ambit && slot !== '' && playerId);
-  }
-
-  /**
-   * Get location info for a tile based on its type and player
-   * @param {string} tileType
-   * @param {string} playerId
-   * @return {{locationType: string, locationId: string|null, isCommandSlot: boolean}|null}
-   */
-  getLocationInfoFromTile(tileType, playerId) {
-    if (tileType === MAP_TILE_TYPES.PLANETARY_SLOT) {
-      return {
-        locationType: 'planet',
-        locationId: this.planet.id,
-        isCommandSlot: false
-      };
-    }
-
-    if (tileType === MAP_TILE_TYPES.COMMAND || tileType === MAP_TILE_TYPES.FLEET) {
-      let locationId = null;
-      if (this.defender && playerId === this.defender.id) {
-        locationId = this.defender.fleet_id;
-      } else if (this.attacker && playerId === this.attacker.id) {
-        locationId = this.attacker.fleet_id;
-      }
-
-      return {
-        locationType: 'fleet',
-        locationId: locationId,
-        isCommandSlot: (tileType === MAP_TILE_TYPES.COMMAND)
-      };
-    }
-
-    return null;
-  }
-
-  /**
-   * @param {string} playerId
-   * @return {boolean}
-   */
-  isFleetOnPlanet(playerId) {
-    return (this.defender.id === playerId && this.defenderFleet?.location_id === this.planet.id)
-      || (this.attacker?.id === playerId && this.attackerFleet?.location_id === this.planet.id);
-  }
-
-  /**
-   * Update a single tile with struct data
    * @param {HTMLElement} tileElement
    */
-  updateTileWithStruct(tileElement) {
-    const tileType = tileElement.getAttribute('data-tile-type');
-    const ambit = tileElement.getAttribute('data-ambit');
-    const slot = tileElement.getAttribute('data-slot');
-    const playerId = tileElement.getAttribute('data-player-id');
-
-    if (!this.hasTilePositionData(tileType, ambit, slot, playerId)) {
-      return;
+  renderStructFromTileElement(tileElement) {
+    const renderParams = this.buildMapStructTilRenderParamsFromTileElement(tileElement);
+    if (renderParams) {
+      this.renderStruct(renderParams.tileElement, renderParams.struct);
     }
+  }
 
-    const locationInfo = this.getLocationInfoFromTile(tileType, playerId);
-    if (!locationInfo) {
-      return;
-    }
-
-    const slotNum = parseInt(slot, 10);
-
-    if (locationInfo.locationType === 'planet' || this.isFleetOnPlanet(playerId)) {
-      const struct = this.structManager.getStructByPositionAndPlayerId(
-        playerId,
-        locationInfo.locationType,
-        locationInfo.locationId,
-        ambit,
-        slotNum,
-        locationInfo.isCommandSlot
-      );
-
-      tileElement.innerHTML = this.renderStructContent(struct);
-    } else {
-      tileElement.innerHTML = "";
+  /**
+   * @param {Struct} struct
+   */
+  renderStructFromStruct(struct) {
+    const renderParams = this.buildMapStructTilRenderParamsFromStruct(struct);
+    if (renderParams) {
+      this.renderStruct(renderParams.tileElement, renderParams.struct);
     }
   }
 
@@ -222,7 +129,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   renderAllStructs() {
     const container = document.getElementById(this.containerId);
     const tiles = container.querySelectorAll('.map-struct-layer-tile');
-    tiles.forEach(tileElement => this.updateTileWithStruct(tileElement));
+    tiles.forEach(tileElement => this.renderStructFromTileElement(tileElement));
   }
 
   /**
@@ -234,20 +141,20 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
 
     // Listen for RENDER_ALL_STRUCTS events
     window.addEventListener(EVENTS.RENDER_ALL_STRUCTS, (event) => {
-      if (event.containerId === this.containerId) {
+      if (event.mapId === this.mapId) {
         this.renderAllStructs();
       }
     });
 
     // Listen for RENDER_STRUCT events
     window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
-      if (event.containerId === this.containerId) {
-        this.renderStruct(event.struct);
+      if (event.mapId === this.mapId) {
+        this.renderStructFromStruct(event.struct);
       }
     });
 
     window.addEventListener(EVENTS.RENDER_DEPLOYMENT_INDICATOR, (event) => {
-      if (event.containerId === this.containerId) {
+      if (event.mapId === this.mapId) {
         this.renderDeploymentIndicator(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });
@@ -255,25 +162,8 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     // Listen for CLEAR_STRUCT_TILE events (when a build is canceled)
     window.addEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
       if (event.mapId === this.mapId) {
-        this.clearStructTile(event.tileType, event.ambit, event.slot, event.playerId);
+        this.clearTile(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });
-  }
-
-  /**
-   * Clear a struct tile by position (e.g., when build is canceled).
-   *
-   * @param {string} tileType
-   * @param {string} ambit
-   * @param {number} slot
-   * @param {string} playerId
-   */
-  clearStructTile(tileType, ambit, slot, playerId) {
-    const selector = this.buildTileSelector(tileType, ambit, slot, playerId);
-    const container = document.getElementById(this.containerId);
-    const tileElement = container.querySelector(selector);
-    if (tileElement) {
-      tileElement.innerHTML = '';
-    }
   }
 }

@@ -46,7 +46,11 @@ class StructManager
             SELECT 
               s.*, 
               COALESCE(sa_health.val, 0) AS health,
-              COALESCE(sa_status.val, 0) AS status
+              COALESCE(sa_status.val, 0) AS status,
+              sd_is_defender.protected_struct_id,
+              to_jsonb(COALESCE((SELECT array_agg(sd.defending_struct_id ORDER BY sd.defending_struct_id ASC)
+               FROM struct_defender sd
+               WHERE sd.protected_struct_id = s.id), ARRAY[]::text[])) AS defending_struct_ids
             FROM struct s
             LEFT JOIN struct_attribute sa_health
               ON s.id = sa_health.object_id
@@ -54,6 +58,8 @@ class StructManager
             LEFT JOIN struct_attribute sa_status
               ON s.id = sa_status.object_id
               AND sa_status.attribute_type = \'status\'
+            LEFT JOIN struct_defender sd_is_defender
+              ON s.id = sd_is_defender.defending_struct_id
             WHERE 
               s.is_destroyed = false
               AND s.location_id = :planet_id
@@ -88,7 +94,11 @@ class StructManager
             SELECT 
               s.*, 
               COALESCE(sa_health.val, 0) AS health,
-              COALESCE(sa_status.val, 0) AS status
+              COALESCE(sa_status.val, 0) AS status,
+              sd_is_defender.protected_struct_id,
+              to_jsonb(COALESCE((SELECT array_agg(sd.defending_struct_id ORDER BY sd.defending_struct_id ASC)
+               FROM struct_defender sd
+               WHERE sd.protected_struct_id = s.id), ARRAY[]::text[])) AS defending_struct_ids
             FROM struct s
             LEFT JOIN struct_attribute sa_health
               ON s.id = sa_health.object_id
@@ -96,6 +106,8 @@ class StructManager
             LEFT JOIN struct_attribute sa_status
               ON s.id = sa_status.object_id
               AND sa_status.attribute_type = \'status\'
+            LEFT JOIN struct_defender sd_is_defender
+              ON s.id = sd_is_defender.defending_struct_id
             WHERE s.owner = :player_id
             AND s.is_destroyed = false
             ORDER BY s.location_type, s.location_id, s.slot;
@@ -124,7 +136,11 @@ class StructManager
             SELECT 
               s.*, 
               COALESCE(sa_health.val, 0) AS health,
-              COALESCE(sa_status.val, 0) AS status
+              COALESCE(sa_status.val, 0) AS status,
+              sd_is_defender.protected_struct_id,
+              to_jsonb(COALESCE((SELECT array_agg(sd.defending_struct_id ORDER BY sd.defending_struct_id ASC)
+               FROM struct_defender sd
+               WHERE sd.protected_struct_id = s.id), ARRAY[]::text[])) AS defending_struct_ids
             FROM struct s
             LEFT JOIN struct_attribute sa_health
               ON s.id = sa_health.object_id
@@ -132,6 +148,8 @@ class StructManager
             LEFT JOIN struct_attribute sa_status
               ON s.id = sa_status.object_id
               AND sa_status.attribute_type = \'status\'
+            LEFT JOIN struct_defender sd_is_defender
+              ON s.id = sd_is_defender.defending_struct_id
             WHERE s.id = :struct_id
             LIMIT 1;
         ';
