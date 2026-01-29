@@ -64,6 +64,72 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderIndicatorIsDefended(struct) {
+    return !struct.isDestroyed() && struct.isDefended()
+      ? `<i class="sui-icon sui-icon-sm sui-icon-defended"></i>`
+      : '';
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderIndicatorIsDefending(struct) {
+    return !struct.isDestroyed() && struct.isDefending()
+      ? `<i class="sui-icon sui-icon-sm sui-icon-defending"></i>`
+      : '';
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderIndicatorIsHidden(struct) {
+    return !struct.isDestroyed() && struct.isHidden()
+      ? `<i class="sui-icon sui-icon-sm sui-icon-stealth-mode"></i>`
+      : '';
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderIndicatorIsDestroyed(struct) {
+    return struct.isDestroyed()
+      ? `<i class="sui-icon sui-icon-sm sui-icon-destroyed"></i>`
+      : '';
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderIndicatorIsOffline(struct) {
+    return !struct.isDestroyed() && !struct.isOnline()
+      ? `<i class="sui-icon sui-icon-sm sui-icon-no-power"></i>`
+      : '';
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderStatusIndicators(struct) {
+    return `
+      <div class="map-struct-hud-status-indicators">
+        ${this.renderIndicatorIsDestroyed(struct)}
+        ${this.renderIndicatorIsOffline(struct)}
+        ${this.renderIndicatorIsDefended(struct)}
+        ${this.renderIndicatorIsDefending(struct)}
+        ${this.renderIndicatorIsHidden(struct)}
+      </div>
+    `;
+  }
+
+  /**
    * Render the content for a single HUD tile
    * @param {HTMLElement} tileElement
    * @param {Struct|null} struct
@@ -74,12 +140,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
         <div class="map-struct-hud-status-bars">
           ${this.renderHealthBar(struct)}
         </div>      
-        <div class="map-struct-hud-status-indicators">
-          <i class="sui-icon sui-icon-sm sui-icon-defended"></i>
-          <i class="sui-icon sui-icon-sm sui-icon-defending"></i>
-          <i class="sui-icon sui-icon-sm sui-icon-stealth-mode"></i>
-          <i class="sui-icon sui-icon-sm sui-icon-destroyed"></i>
-        </div>
+        ${this.renderStatusIndicators(struct)}
       `;
     } else {
       tileElement.innerHTML = '';

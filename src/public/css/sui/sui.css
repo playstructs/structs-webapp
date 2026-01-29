@@ -485,6 +485,13 @@ i.sui-icon-local {
   background-image: url("/img/sui/icon/icon-local.png");
 }
 
+i.sui-icon-no-power {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+
+  background-image: url("/img/sui/icon/icon-no-power.png");
+}
+
 i.sui-icon-player-indicator {
   width: var(--icon-xs);
   height: var(--icon-xs);

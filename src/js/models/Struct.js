@@ -34,6 +34,12 @@ export class Struct {
 
     /** @type {number|null} */
     this.status = null;
+
+    /** @type {string|null} the ID of the struct that this struct is protecting => */
+    this.protected_struct_id = null;
+
+    /** @type {string[]} the IDs of the structs that are defending this struct <=> */
+    this.defending_struct_ids = [];
   }
 
   /**
@@ -62,6 +68,20 @@ export class Struct {
    */
   isStored() {
     return (this.status & STRUCT_STATUS_FLAGS.STORED) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isDefending() {
+    return !!this.protected_struct_id;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isDefended() {
+    return this.defending_struct_ids.length > 0;
   }
 
   /**
