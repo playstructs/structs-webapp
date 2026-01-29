@@ -1,5 +1,6 @@
 import {GenericMapLayerComponent} from "./GenericMapLayerComponent";
 import {Struct} from "../../../models/Struct"
+import {EVENTS} from "../../../constants/Events";
 
 
 export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
@@ -49,6 +50,10 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
    * @return {string}
    */
   renderHealthBar(struct) {
+    if (!struct.isBuilt()) {
+      return '';
+    }
+
     const structType = this.gameState.structTypes.getStructTypeById(struct.type);
     const segments = [];
 
@@ -108,7 +113,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
    * @return {string}
    */
   renderIndicatorIsOffline(struct) {
-    return !struct.isDestroyed() && !struct.isOnline()
+    return !struct.isDestroyed() && struct.isBuilt() && !struct.isOnline()
       ? `<i class="sui-icon sui-icon-sm sui-icon-no-power"></i>`
       : '';
   }
@@ -135,7 +140,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
    * @param {Struct|null} struct
    */
   renderStructHUD(tileElement, struct = null) {
-    if (struct) {
+    if (struct && struct.isBuilt()) {
       tileElement.innerHTML = `
         <div class="map-struct-hud-status-bars">
           ${this.renderHealthBar(struct)}
@@ -148,10 +153,20 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
-   * @param tileElement
+   * @param {HTMLElement} tileElement
    */
   renderStructHUDFromTileElement(tileElement) {
     const renderParams = this.buildMapStructTilRenderParamsFromTileElement(tileElement);
+    if (renderParams) {
+      this.renderStructHUD(renderParams.tileElement, renderParams.struct);
+    }
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  renderStructHUDFromStruct(struct) {
+    const renderParams = this.buildMapStructTilRenderParamsFromStruct(struct);
     if (renderParams) {
       this.renderStructHUD(renderParams.tileElement, renderParams.struct);
     }
@@ -169,5 +184,11 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
    */
   initPageCode() {
     this.renderAllStructHUDs();
+
+    window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
+      if (event.mapId === this.mapId) {
+        this.renderStructHUDFromStruct(event.struct);
+      }
+    });
   }
 }

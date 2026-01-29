@@ -80,7 +80,7 @@ export class StructStatusListener extends AbstractGrassListener {
     }
 
     // Dispatch event to update the struct layer
-    const renderStructEvent = new RenderStructEvent(this.gameState[mapType].structLayerId, struct);
+    const renderStructEvent = new RenderStructEvent(this.gameState[mapType].mapId, struct);
     window.dispatchEvent(renderStructEvent);
 
     // Dispatch event to update the tile selection layer's struct ID

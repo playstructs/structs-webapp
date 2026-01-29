@@ -141,20 +141,20 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
 
     // Listen for RENDER_ALL_STRUCTS events
     window.addEventListener(EVENTS.RENDER_ALL_STRUCTS, (event) => {
-      if (event.containerId === this.containerId) {
+      if (event.mapId === this.mapId) {
         this.renderAllStructs();
       }
     });
 
     // Listen for RENDER_STRUCT events
     window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
-      if (event.containerId === this.containerId) {
+      if (event.mapId === this.mapId) {
         this.renderStructFromStruct(event.struct);
       }
     });
 
     window.addEventListener(EVENTS.RENDER_DEPLOYMENT_INDICATOR, (event) => {
-      if (event.containerId === this.containerId) {
+      if (event.mapId === this.mapId) {
         this.renderDeploymentIndicator(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });

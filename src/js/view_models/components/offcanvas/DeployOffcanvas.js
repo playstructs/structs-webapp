@@ -117,7 +117,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
 
         // Dispatch event to render deployment indicator on struct layer
         window.dispatchEvent(new RenderDeploymentIndicatorEvent(
-          this.gameState.alphaBaseMap.structLayerId,
+          this.gameState.alphaBaseMap.mapId,
           tileType,
           this.ambit,
           this.slot,
@@ -126,7 +126,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
 
         // Dispatch event to notify that a pending build was added
         window.dispatchEvent(new PendingBuildAddedEvent(
-          this.gameState.alphaBaseMap.structLayerId,
+          this.gameState.alphaBaseMap.mapId,
           tileType,
           this.ambit,
           this.slot,
