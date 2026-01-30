@@ -3,9 +3,6 @@ import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TASK_TYPES} from "../constants/TaskTypes";
 import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
 import {TaskCmdSpawnEvent} from "../events/TaskCmdSpawnEvent";
-import {RenderStructEvent} from "../events/RenderStructEvent";
-import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
-import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {STRUCT_STATUS_FLAGS} from "../constants/StructConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
@@ -56,58 +53,7 @@ export class StructStatusListener extends AbstractGrassListener {
     return false;
   }
 
-  /**
-   * @param {string} structId
-   * @param {boolean} removePendingBuild
-   * @return {Promise<Struct|null>}
-   */
-  async refreshStruct(structId, removePendingBuild = false) {
-    const struct = await this.guildAPI.getStruct(structId);
-    this.gameState.setStruct(struct);
 
-    const tileType = this.structManager.getTileTypeFromStruct(struct);
-    const ambit = struct.operating_ambit.toUpperCase();
-    const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
-
-    if (!mapType) {
-      console.warn(`StructStatusListener: No map type for target player type ${this.targetPlayerType}`);
-      return null;
-    }
-
-    // Remove pending build from gameState
-    if (tileType && removePendingBuild) {
-      this.gameState.removePendingBuild(tileType, ambit, struct.slot, struct.owner);
-    }
-
-    // Dispatch event to update the struct layer
-    const renderStructEvent = new RenderStructEvent(this.gameState[mapType].mapId, struct);
-    window.dispatchEvent(renderStructEvent);
-
-    // Dispatch event to update the tile selection layer's struct ID
-    if (tileType) {
-      const updateTileEvent = new UpdateTileStructIdEvent(
-        this.gameState[mapType].mapId,
-        tileType,
-        ambit,
-        struct.slot,
-        struct.owner,
-        struct.id
-      );
-      window.dispatchEvent(updateTileEvent);
-
-      // Dispatch event to refresh action bar if this struct's tile is currently selected
-      const refreshActionBarEvent = new RefreshActionBarIfSelectedEvent(
-        tileType,
-        ambit,
-        struct.slot,
-        struct.owner,
-        struct.id
-      );
-      window.dispatchEvent(refreshActionBarEvent);
-    }
-
-    return struct;
-  }
 
   handler(messageData) {
     const targetPlanetId = this.gameState.keyPlayers[this.targetPlayerType].getPlanetId();
@@ -125,7 +71,10 @@ export class StructStatusListener extends AbstractGrassListener {
       && messageData.detail.block > 0
     ) {
 
-      this.refreshStruct(messageData.detail.struct_id).then((struct) => {
+      this.structManager.refreshStruct(
+        messageData.detail.struct_id,
+        this.gameState.keyPlayers[this.targetPlayerType].planetMapType
+      ).then((struct) => {
 
         if (struct && this.getOwnerPlayerType(struct.owner) === PLAYER_TYPES.PLAYER) {
           window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(
@@ -149,7 +98,11 @@ export class StructStatusListener extends AbstractGrassListener {
         && (messageData.detail.status & STRUCT_STATUS_FLAGS.BUILT) > 0
       );
 
-      this.refreshStruct(messageData.detail.struct_id, removePendingBuild).then((struct) => {
+      this.structManager.refreshStruct(
+        messageData.detail.struct_id,
+        this.gameState.keyPlayers[this.targetPlayerType].planetMapType,
+        removePendingBuild
+      ).then((struct) => {
 
         // Only kill build tasks for the player's own structs
         if (

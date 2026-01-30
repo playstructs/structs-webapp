@@ -61,7 +61,7 @@ const blockGrassManager = new GrassManager(
 const signingClientManager = new SigningClientManager(gameState);
 global.signingClientManager = signingClientManager;
 
-const structManager = new StructManager(gameState, signingClientManager);
+const structManager = new StructManager(gameState, guildAPI, signingClientManager);
 
 const planetManager = new PlanetManager(gameState, signingClientManager);
 

@@ -1,4 +1,5 @@
 import {EVENTS} from "../constants/Events";
+import {Struct} from "../models/Struct";
 
 export class RenderStructEvent extends CustomEvent {
   /**

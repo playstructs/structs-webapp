@@ -188,4 +188,12 @@ export class StructType {
     return this.power_generation
       && this.power_generation !== STRUCT_POWER_GENERATION.NO_POWER_GENERATION;
   }
+
+  /**
+   * Checks if the struct type has the ability to move.
+   * @return {boolean}
+   */
+  isMovable() {
+    return this.movable;
+  }
 }
