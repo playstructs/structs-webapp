@@ -81,6 +81,7 @@ import {FEE} from "../constants/Fee";
 import {AMBIT_ENUM} from "../constants/Ambits";
 import {TASK} from "../constants/TaskConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {LOCATION_TYPE_INDEX} from "../constants/LocationTypes";
 
 export class SigningClientManager {
 
@@ -824,13 +825,14 @@ export class SigningClientManager {
    */
   async queueMsgStructMove(structId, locationType, ambit, slot) {
     this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
+    const locationTypeIndex = LOCATION_TYPE_INDEX[locationType.toLowerCase()];
     const ambitNumber = AMBIT_ENUM[ambit.toUpperCase()];
     this.queue({
       typeUrl: '/structs.structs.MsgStructMove',
       value: MsgStructMove.fromPartial({
         creator: this.gameState.signingAccount.address,
         structId: structId,
-        locationType: locationType,
+        locationType: locationTypeIndex,
         ambit: ambitNumber,
         slot: slot
       }),

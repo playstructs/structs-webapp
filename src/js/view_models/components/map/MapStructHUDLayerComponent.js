@@ -190,5 +190,12 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
         this.renderStructHUDFromStruct(event.struct);
       }
     });
+
+    // Listen for CLEAR_STRUCT_TILE events (when a build is canceled)
+    window.addEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
+      if (event.mapId === this.mapId) {
+        this.clearTile(event.tileType, event.ambit, event.slot, event.playerId);
+      }
+    });
   }
 }

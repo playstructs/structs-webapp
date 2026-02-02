@@ -137,18 +137,23 @@ const fleetController = new FleetController(
 
 gameState.alphaBaseMap = new MapComponent(
   gameState,
+  signingClientManager,
   structManager,
   MAP_CONTAINER_IDS.ALPHA_BASE,
   'alpha-base'
 );
+
 gameState.raidMap = new MapComponent(
   gameState,
+  signingClientManager,
   structManager,
   MAP_CONTAINER_IDS.RAID,
   'raid'
 );
+
 gameState.previewMap = new MapComponent(
   gameState,
+  signingClientManager,
   structManager,
   MAP_CONTAINER_IDS.PREVIEW,
   'preview',

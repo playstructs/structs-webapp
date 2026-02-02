@@ -13,6 +13,7 @@ import {StructType} from "./StructType";
 import {KeyPlayer} from "./KeyPlayer";
 import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
+import {Guild} from "./Guild";
 
 export class GameState {
 

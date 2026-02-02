@@ -15,7 +15,10 @@ export class StructType {
   constructor() {
     this.id = null;
     this.type = null;
+
+    /** @type {string|null} */
     this.category = null;
+
     this.build_limit = null;
     this.build_difficulty = null;
     this.build_draw = null;
