@@ -20,6 +20,7 @@ import {StructTypeFactory} from "../factories/StructTypeFactory";
 import {StructFactory} from "../factories/StructFactory";
 import {FleetFactory} from "../factories/FleetFactory";
 import {WorkFactory} from "../factories/WorkFactory";
+import {Struct} from "../models/Struct";
 
 export class GuildAPI {
 

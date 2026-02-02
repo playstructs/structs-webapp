@@ -13,6 +13,7 @@ import {StructType} from "./StructType";
 import {KeyPlayer} from "./KeyPlayer";
 import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
+import {Guild} from "./Guild";
 
 export class GameState {
 
@@ -93,6 +94,9 @@ export class GameState {
      * @type {Map<string, {structType: StructType, timestamp: number}>}
      */
     this.pendingBuilds = new Map();
+
+    /** @type {string|null} A struct action (see STRUCT_ACTIONS) that is currently selected but requires further input. */
+    this.actionRequiringInput = null;
 
     /* Allow saving from other classes without cyclical references. */
     window.addEventListener(EVENTS.SAVE_GAME_STATE, this.save.bind(this));
@@ -299,6 +303,17 @@ export class GameState {
     });
   }
 
+  /**
+   * @param {string|null} structAction
+   */
+  setActionRequiringInput(structAction) {
+    this.actionRequiringInput = structAction;
+  }
+
+  clearActionRequiringInput() {
+    this.setActionRequiringInput(null);
+  }
+
   clearPlanetRaidData() {
     this.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo = new PlanetRaid();
     this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id = '';
@@ -317,6 +332,13 @@ export class GameState {
     this.setRaidPlanetRaidInfo(new PlanetRaid());
 
     this.save();
+  }
+
+  /**
+   * @return {string|null}
+   */
+  getActionRequiringInput() {
+    return this.actionRequiringInput;
   }
 
   /**

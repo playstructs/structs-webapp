@@ -614,6 +614,11 @@ a.sui-text-secondary:hover {
   background: url("/img/focus/focus-enemy.png") no-repeat center;
 }
 
+.map-tile-selection-tile.focus-move {
+  background: url("/img/focus/focus-move.gif") no-repeat center;
+  cursor: pointer;
+}
+
 .map-container {
   position: absolute;
   top: 0;

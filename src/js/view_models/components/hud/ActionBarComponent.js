@@ -5,7 +5,9 @@ import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {DeployOffcanvas} from "../offcanvas/DeployOffcanvas";
 import {Struct} from "../../../models/Struct";
 import {StructType} from "../../../models/StructType";
-import {STRUCT_CATEGORIES, STRUCT_EQUIPMENT_ICON_MAP, STRUCT_STATUS_FLAGS} from "../../../constants/StructConstants";
+import {STRUCT_ACTIONS, STRUCT_CATEGORIES, STRUCT_EQUIPMENT_ICON_MAP, STRUCT_STATUS_FLAGS} from "../../../constants/StructConstants";
+import {ShowMoveTargetsEvent} from "../../../events/ShowMoveTargetsEvent";
+import {ClearMoveTargetsEvent} from "../../../events/ClearMoveTargetsEvent";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
 import {NumberFormatter} from "../../../util/NumberFormatter";
 
@@ -899,7 +901,14 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    */
   buildMoveActionButton(buttons, structType, isOnline) {
     if (structType.movable) {
-      const btnClass = isOnline ? 'sui-mod-default' : 'sui-mod-disabled';
+      let btnClass;
+      if (!isOnline) {
+        btnClass = 'sui-mod-disabled';
+      } else if (this.gameState.getActionRequiringInput() === STRUCT_ACTIONS.MOVE) {
+        btnClass = 'sui-mod-active-defense';
+      } else {
+        btnClass = 'sui-mod-default';
+      }
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-move-btn"
@@ -924,9 +933,25 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-move-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
-          console.log('Action: MOVE', {
-            structId: struct.id
-          });
+          const currentAction = this.gameState.getActionRequiringInput();
+
+          if (currentAction === STRUCT_ACTIONS.MOVE) {
+            // Deactivate move mode
+            this.gameState.clearActionRequiringInput();
+            btn.classList.remove('sui-mod-active-defense');
+            btn.classList.add('sui-mod-default');
+
+            // Clear move target indicators
+            window.dispatchEvent(new ClearMoveTargetsEvent(this.gameState.alphaBaseMap.mapId));
+          } else {
+            // Activate move mode
+            this.gameState.setActionRequiringInput(STRUCT_ACTIONS.MOVE);
+            btn.classList.remove('sui-mod-default');
+            btn.classList.add('sui-mod-active-defense');
+
+            // Show move target indicators on empty command tiles
+            window.dispatchEvent(new ShowMoveTargetsEvent(this.gameState.alphaBaseMap.mapId, struct));
+          }
         });
       }
     }

@@ -7,18 +7,23 @@ import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
 import {HUDViewModel} from "../view_models/HUDViewModel";
 import {RefreshActionBarEvent} from "../events/RefreshActionBarEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
+import {RenderStructEvent} from "../events/RenderStructEvent";
 
 export class StructManager {
 
   /**
    * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
    * @param {SigningClientManager} signingClientManager
    */
   constructor(
     gameState,
+    guildAPI,
     signingClientManager
   ) {
     this.gameState = gameState;
+    this.guildAPI = guildAPI;
     this.signingClientManager = signingClientManager;
   }
 
@@ -312,5 +317,53 @@ export class StructManager {
       }
     }
     return `${fleetStructCount}+${planetaryStructCount}`;
+  }
+
+  /**
+   * @param {string} structId
+   * @param {string} mapType
+   * @param {boolean} removePendingBuild
+   * @return {Promise<Struct|null>}
+   */
+  async refreshStruct(structId, mapType, removePendingBuild = false) {
+    const struct = await this.guildAPI.getStruct(structId);
+    this.gameState.setStruct(struct);
+
+    const tileType = this.getTileTypeFromStruct(struct);
+    const ambit = struct.operating_ambit.toUpperCase();
+
+    // Remove pending build from gameState
+    if (tileType && removePendingBuild) {
+      this.gameState.removePendingBuild(tileType, ambit, struct.slot, struct.owner);
+    }
+
+    // Dispatch event to update the struct layer
+    const renderStructEvent = new RenderStructEvent(this.gameState[mapType].mapId, struct);
+    window.dispatchEvent(renderStructEvent);
+
+    // Dispatch event to update the tile selection layer's struct ID
+    if (tileType) {
+      const updateTileEvent = new UpdateTileStructIdEvent(
+        this.gameState[mapType].mapId,
+        tileType,
+        ambit,
+        struct.slot,
+        struct.owner,
+        struct.id
+      );
+      window.dispatchEvent(updateTileEvent);
+
+      // Dispatch event to refresh action bar if this struct's tile is currently selected
+      const refreshActionBarEvent = new RefreshActionBarIfSelectedEvent(
+        tileType,
+        ambit,
+        struct.slot,
+        struct.owner,
+        struct.id
+      );
+      window.dispatchEvent(refreshActionBarEvent);
+    }
+
+    return struct;
   }
 }

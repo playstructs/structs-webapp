@@ -15,7 +15,10 @@ export class StructType {
   constructor() {
     this.id = null;
     this.type = null;
+
+    /** @type {string|null} */
     this.category = null;
+
     this.build_limit = null;
     this.build_difficulty = null;
     this.build_draw = null;
@@ -187,5 +190,13 @@ export class StructType {
   hasPowerGeneration() {
     return this.power_generation
       && this.power_generation !== STRUCT_POWER_GENERATION.NO_POWER_GENERATION;
+  }
+
+  /**
+   * Checks if the struct type has the ability to move.
+   * @return {boolean}
+   */
+  isMovable() {
+    return this.movable;
   }
 }

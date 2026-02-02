@@ -10,12 +10,16 @@ import {EVENTS} from "../../../constants/Events";
 import {HUDViewModel} from "../../HUDViewModel";
 import {Planet} from "../../../models/Planet";
 import {Player} from "../../../models/Player";
+import {STRUCT_ACTIONS} from "../../../constants/StructConstants";
+import {ClearMoveTargetsEvent} from "../../../events/ClearMoveTargetsEvent";
+import {Struct} from "../../../models/Struct";
 
 
 export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
   /**
    * @param {GameState} gameState
+   * @param {SigningClientManager} signingClientManager
    * @param {StructManager} structManager
    * @param {string[]} mapColBreakdown
    * @param {Planet|null} planet
@@ -26,6 +30,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
    */
   constructor(
     gameState,
+    signingClientManager,
     structManager,
     mapColBreakdown,
     planet,
@@ -35,6 +40,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     mapId = ""
   ) {
     super(gameState);
+    this.signingClientManager = signingClientManager;
     this.structManager = structManager;
     this.mapColBreakdown = mapColBreakdown;
     this.dividerIndex = this.mapColBreakdown.lastIndexOf(MAP_COL_DIVIDER);
@@ -49,6 +55,9 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     /** @type {Player} */
     this.attacker = attacker;
+
+    /** @type {Struct|null} - The struct currently being moved */
+    this.structBeingMoved = null;
   }
 
   /**
@@ -506,10 +515,98 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     }
   }
 
+  /**
+   * Show move target indicators on valid empty command tiles.
+   *
+   * @param {Struct} struct - The struct being moved
+   */
+  showMoveTargets(struct) {
+    this.structBeingMoved = struct;
+    const container = document.getElementById(this.containerId);
+
+    // Get all command tiles on the player's side (defender) that are empty
+    const commandTiles = container.querySelectorAll(
+      `.map-tile-selection-tile[data-tile-type="${MAP_TILE_TYPES.COMMAND}"][data-player-id="${this.defender.id}"]`
+    );
+
+    commandTiles.forEach(tile => {
+      const structId = tile.getAttribute('data-struct-id');
+      const tileAmbit = tile.getAttribute('data-ambit');
+
+      // Only show indicator on empty tiles in the same ambit (command structs move within ambit)
+      // or empty tiles in any ambit if the struct can move across ambits
+      const structType = this.gameState.structTypes.getStructTypeById(struct.type);
+      const possibleAmbits = structType.possible_ambit_array || [struct.operating_ambit.toLowerCase()];
+
+      if (!structId && possibleAmbits.includes(tileAmbit.toLowerCase())) {
+        tile.classList.add('focus-move');
+      }
+    });
+  }
+
+  /**
+   * Clear all move target indicators.
+   */
+  clearMoveTargets() {
+    this.structBeingMoved = null;
+    const container = document.getElementById(this.containerId);
+
+    container.querySelectorAll('.map-tile-selection-tile.focus-move').forEach(tile => {
+      tile.classList.remove('focus-move');
+    });
+  }
+
+  /**
+   * Handle a click on a move target tile.
+   *
+   * @param {HTMLElement} tile - The tile that was clicked
+   */
+  async handleMoveTargetClick(tile) {
+    if (!this.structBeingMoved) {
+      return;
+    }
+
+    const ambit = tile.getAttribute('data-ambit');
+    const slot = parseInt(tile.getAttribute('data-slot'), 10);
+
+    // Send move message to chain
+    await this.signingClientManager.queueMsgStructMove(
+      this.structBeingMoved.id,
+      this.structBeingMoved.location_type,
+      ambit,
+      slot
+    );
+
+    // Reset action state
+    this.gameState.clearActionRequiringInput();
+
+    // Update focus to the new tile
+    this.addFocusToSourceTile(tile);
+
+    // Dispatch event to clear move targets on all maps
+    window.dispatchEvent(new ClearMoveTargetsEvent(this.mapId));
+  }
+
   initPageCode() {
-    document.querySelectorAll('a.map-tile-selection-tile').forEach(tile => {
-      tile.addEventListener('click', (e) => {
-        //TODO: When actions are engaged, need to use a different function for focus
+    const container = document.getElementById(this.containerId);
+
+    container.querySelectorAll('a.map-tile-selection-tile').forEach(tile => {
+      tile.addEventListener('click', async (e) => {
+        const currentAction = this.gameState.getActionRequiringInput();
+
+        // Check if we're in move mode and clicked on a valid move target
+        if (currentAction === STRUCT_ACTIONS.MOVE && e.currentTarget.classList.contains('focus-move')) {
+          await this.handleMoveTargetClick(e.currentTarget);
+          return;
+        }
+
+        // If we're in move mode but clicked elsewhere, cancel the move
+        if (currentAction === STRUCT_ACTIONS.MOVE) {
+          this.clearMoveTargets();
+          this.gameState.clearActionRequiringInput();
+          window.dispatchEvent(new ClearMoveTargetsEvent(this.mapId));
+        }
+
         this.addFocusToSourceTile(e.currentTarget);
         HUDViewModel.showActionBar(e.currentTarget);
         console.log(e.currentTarget);
@@ -526,6 +623,20 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
           event.playerId,
           event.structId
         );
+      }
+    });
+
+    // Listen for SHOW_MOVE_TARGETS events
+    window.addEventListener(EVENTS.SHOW_MOVE_TARGETS, (event) => {
+      if (event.mapId === this.mapId) {
+        this.showMoveTargets(event.struct);
+      }
+    });
+
+    // Listen for CLEAR_MOVE_TARGETS events
+    window.addEventListener(EVENTS.CLEAR_MOVE_TARGETS, (event) => {
+      if (event.mapId === this.mapId) {
+        this.clearMoveTargets();
       }
     });
   }
