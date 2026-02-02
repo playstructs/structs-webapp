@@ -2,7 +2,7 @@ import {KeyPlayerOreListener} from "../grass_listeners/KeyPlayerOreListener";
 import {RaidStatusListener} from "../grass_listeners/RaidStatusListener";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {KeyPlayerLastActionListener} from "../grass_listeners/KeyPlayerLastActionListener";
-import {StructStatusListener} from "../grass_listeners/StructStatusListener";
+import {StructListener} from "../grass_listeners/StructListener";
 
 export class RaidManager {
 
@@ -40,7 +40,7 @@ export class RaidManager {
     this.grassManager.registerListener(new KeyPlayerOreListener(this.gameState, this.guildAPI, PLAYER_TYPES.RAID_ENEMY));
 
     // Register struct status listener for RAID_ENEMY's planet
-    this.grassManager.registerListener(new StructStatusListener(
+    this.grassManager.registerListener(new StructListener(
       this.gameState,
       this.guildAPI,
       this.structManager,

@@ -577,8 +577,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       slot
     );
 
-    // Clear move targets and reset action state
-    this.clearMoveTargets();
+    // Reset action state
     this.gameState.clearActionRequiringInput();
 
     // Update focus to the new tile

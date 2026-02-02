@@ -9,7 +9,7 @@ import {ClearStructTileEvent} from "../events/ClearStructTileEvent";
 import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
 import {HUDViewModel} from "../view_models/HUDViewModel";
 
-export class StructStatusListener extends AbstractGrassListener {
+export class StructListener extends AbstractGrassListener {
 
   /**
    * @param {GameState} gameState
@@ -171,7 +171,14 @@ export class StructStatusListener extends AbstractGrassListener {
   }
 
   handler(messageData) {
-    const subject = `structs.planet.${this.gameState.keyPlayers[this.targetPlayerType].getPlanetId()}`;
+    const targetPlanetId = this.gameState.keyPlayers[this.targetPlayerType].getPlanetId();
+
+    // Skip if we don't have a target planet ID yet
+    if (!targetPlanetId) {
+      return;
+    }
+
+    const subject = `structs.planet.${targetPlanetId}`;
 
     this.handleStructBlockBuildStart(subject, messageData);
     this.handleStructStatus(subject, messageData);
