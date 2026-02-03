@@ -7,7 +7,6 @@ import {STRUCT_STATUS_FLAGS} from "../constants/StructConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {ClearStructTileEvent} from "../events/ClearStructTileEvent";
 import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
-import {HUDViewModel} from "../view_models/HUDViewModel";
 
 export class StructListener extends AbstractGrassListener {
 
@@ -110,6 +109,8 @@ export class StructListener extends AbstractGrassListener {
       removePendingBuild
     ).then((struct) => {
 
+      this.gameState.actionBarLock.clear();
+
       // Only kill build tasks for the player's own structs
       if (
         removePendingBuild
@@ -166,7 +167,7 @@ export class StructListener extends AbstractGrassListener {
 
     // Refresh the struct at its new location
     this.structManager.refreshStruct(structId, mapType).then(() => {
-      HUDViewModel.refreshActionBar();
+      this.gameState.actionBarLock.clear();
     });
   }
 

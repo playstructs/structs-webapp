@@ -14,6 +14,7 @@ import {KeyPlayer} from "./KeyPlayer";
 import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 import {Guild} from "./Guild";
+import {ActionBarLock} from "./ActionBarLock";
 
 export class GameState {
 
@@ -95,8 +96,8 @@ export class GameState {
      */
     this.pendingBuilds = new Map();
 
-    /** @type {string|null} A struct action (see STRUCT_ACTIONS) that is currently selected but requires further input. */
-    this.actionRequiringInput = null;
+    /** @type {ActionBarLock} The current struct action (see STRUCT_ACTIONS) that holds the lock. */
+    this.actionBarLock = new ActionBarLock();
 
     /* Allow saving from other classes without cyclical references. */
     window.addEventListener(EVENTS.SAVE_GAME_STATE, this.save.bind(this));
@@ -303,17 +304,6 @@ export class GameState {
     });
   }
 
-  /**
-   * @param {string|null} structAction
-   */
-  setActionRequiringInput(structAction) {
-    this.actionRequiringInput = structAction;
-  }
-
-  clearActionRequiringInput() {
-    this.setActionRequiringInput(null);
-  }
-
   clearPlanetRaidData() {
     this.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo = new PlanetRaid();
     this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id = '';
@@ -332,13 +322,6 @@ export class GameState {
     this.setRaidPlanetRaidInfo(new PlanetRaid());
 
     this.save();
-  }
-
-  /**
-   * @return {string|null}
-   */
-  getActionRequiringInput() {
-    return this.actionRequiringInput;
   }
 
   /**

@@ -566,6 +566,9 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       return;
     }
 
+    // The lock the action bar until we hear the grass notification from the struct move action
+    this.gameState.actionBarLock.lock();
+
     const ambit = tile.getAttribute('data-ambit');
     const slot = parseInt(tile.getAttribute('data-slot'), 10);
 
@@ -576,9 +579,6 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       ambit,
       slot
     );
-
-    // Reset action state
-    this.gameState.clearActionRequiringInput();
 
     // Update focus to the new tile
     this.addFocusToSourceTile(tile);
@@ -592,7 +592,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     container.querySelectorAll('a.map-tile-selection-tile').forEach(tile => {
       tile.addEventListener('click', async (e) => {
-        const currentAction = this.gameState.getActionRequiringInput();
+        const currentAction = this.gameState.actionBarLock.getCurrentAction();
 
         // Check if we're in move mode and clicked on a valid move target
         if (currentAction === STRUCT_ACTIONS.MOVE && e.currentTarget.classList.contains('focus-move')) {
@@ -603,7 +603,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
         // If we're in move mode but clicked elsewhere, cancel the move
         if (currentAction === STRUCT_ACTIONS.MOVE) {
           this.clearMoveTargets();
-          this.gameState.clearActionRequiringInput();
+          this.gameState.actionBarLock.clear(false);
           window.dispatchEvent(new ClearMoveTargetsEvent(this.mapId));
         }
 

@@ -260,6 +260,11 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     slot = null,
     structId = null
   ) {
+    if (side === 'left' && this.gameState.actionBarLock.isLocked()) {
+      this.showExecutingActionBar();
+      return;
+    }
+
     const struct = this.structManager.getStructById(structId);
 
     // If the struct is building, show the building action bar
@@ -283,6 +288,28 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     } else {
       this.showEmptyTileActionBar(tileType, ambitOrTileLabel, side, slot);
     }
+  }
+
+  showExecutingActionBar() {
+    document.getElementById(this.actionChunkId).innerHTML = `
+      <div class="sui-screen sui-screen-full-width">
+        <div id="${this.headerScreenId}" class="sui-screen-info">Executing</div>
+      </div>
+
+      <div class="sui-action-bar-bottom-row">
+
+        <div id="${this.propertiesScreenId}" class="sui-screen">
+          <div class="sui-screen-properties">
+            <div id="${this.progressBarId}" class="sui-action-bar-progress-bar-wrapper">
+              <div class="sui-action-bar-progress-bar sui-mod-animated"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    this.showActionChunk();
   }
 
   /**
@@ -873,6 +900,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       if (btn) {
         btn.addEventListener('click', () => {
           if (struct.isHidden()) {
+            this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_DEACTIVATE);
+            this.gameState.actionBarLock.lock();
+
             // Deactivate stealth mode
             this.signingClientManager.queueMsgStructStealthDeactivate(struct.id).then(() => {
               struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
@@ -881,6 +911,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
               btn.classList.add('sui-mod-default');
             });
           } else {
+            this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_ACTIVATE);
+            this.gameState.actionBarLock.lock();
+
             // Activate stealth mode
             this.signingClientManager.queueMsgStructStealthActivate(struct.id).then(() => {
               struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
@@ -901,14 +934,10 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    */
   buildMoveActionButton(buttons, structType, isOnline) {
     if (structType.movable) {
-      let btnClass;
-      if (!isOnline) {
-        btnClass = 'sui-mod-disabled';
-      } else if (this.gameState.getActionRequiringInput() === STRUCT_ACTIONS.MOVE) {
-        btnClass = 'sui-mod-active-defense';
-      } else {
-        btnClass = 'sui-mod-default';
-      }
+      const btnClass = isOnline
+        ? 'sui-mod-default'
+        : 'sui-mod-disabled';
+
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-move-btn"
@@ -933,11 +962,10 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-move-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
-          const currentAction = this.gameState.getActionRequiringInput();
 
-          if (currentAction === STRUCT_ACTIONS.MOVE) {
+          if (btn.classList.contains('sui-mod-active-defense')) {
             // Deactivate move mode
-            this.gameState.clearActionRequiringInput();
+            this.gameState.actionBarLock.clear(false);
             btn.classList.remove('sui-mod-active-defense');
             btn.classList.add('sui-mod-default');
 
@@ -945,7 +973,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             window.dispatchEvent(new ClearMoveTargetsEvent(this.gameState.alphaBaseMap.mapId));
           } else {
             // Activate move mode
-            this.gameState.setActionRequiringInput(STRUCT_ACTIONS.MOVE);
+            this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.MOVE);
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-defense');
 
