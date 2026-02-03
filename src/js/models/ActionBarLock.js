@@ -11,8 +11,9 @@ export class ActionBarLock {
   setCurrentAction(action) {
     if (this.locked) {
       console.warn(`Cannot set current action, ActionBarLock is locked for action ${this.currentAction}`);
+    } else {
+      this.currentAction = action;
     }
-    this.currentAction = action;
   }
 
   /**
@@ -38,8 +39,8 @@ export class ActionBarLock {
   }
 
   clear() {
-    this.setCurrentAction('');
     this.unlock();
+    this.setCurrentAction('');
   }
 
 }
