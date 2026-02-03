@@ -566,6 +566,12 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       return;
     }
 
+    // The lock the action bar until we hear the grass notification from the struct move action
+    this.gameState.actionBarLock.lock();
+
+    // Refresh action bar to show progress bar
+    HUDViewModel.refreshActionBar();
+
     const ambit = tile.getAttribute('data-ambit');
     const slot = parseInt(tile.getAttribute('data-slot'), 10);
 

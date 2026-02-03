@@ -260,6 +260,11 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     slot = null,
     structId = null
   ) {
+    if (side === 'left' && this.gameState.actionBarLock.isLocked()) {
+      this.showExecutingActionBar();
+      return;
+    }
+
     const struct = this.structManager.getStructById(structId);
 
     // If the struct is building, show the building action bar
@@ -283,6 +288,28 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     } else {
       this.showEmptyTileActionBar(tileType, ambitOrTileLabel, side, slot);
     }
+  }
+
+  showExecutingActionBar() {
+    document.getElementById(this.actionChunkId).innerHTML = `
+      <div class="sui-screen sui-screen-full-width">
+        <div id="${this.headerScreenId}" class="sui-screen-info">Executing</div>
+      </div>
+
+      <div class="sui-action-bar-bottom-row">
+
+        <div id="${this.propertiesScreenId}" class="sui-screen">
+          <div class="sui-screen-properties">
+            <div id="${this.progressBarId}" class="sui-action-bar-progress-bar-wrapper">
+              <div class="sui-action-bar-progress-bar sui-mod-animated"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    this.showActionChunk();
   }
 
   /**

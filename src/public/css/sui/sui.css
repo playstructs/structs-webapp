@@ -1534,6 +1534,18 @@ a.sui-screen-portrait:hover {
   box-shadow: -2px 0 0 0 var(--surface-player-inverted), 2px 0 0 0 var(--surface-player-inverted), 0 -2px 0 0 var(--surface-player-inverted), 0 2px 0 0 var(--surface-player-inverted);
 }
 
+.sui-action-bar-progress-bar.sui-mod-animated {
+  background: repeating-linear-gradient(90deg, currentColor 0 2px, #0000 0 4px) 0/0 no-repeat content-box content-box;
+
+  animation: sui-action-bar-progress-bar-keyframe 12s infinite steps(12);
+}
+
+@keyframes sui-action-bar-progress-bar-keyframe {
+  100% {
+    background-size:120%;
+  }
+}
+
 .sui-action-bar-progress-bar-chunk {
   display: flex;
   width: 2px;
