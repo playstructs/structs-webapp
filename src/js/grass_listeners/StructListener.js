@@ -166,6 +166,7 @@ export class StructListener extends AbstractGrassListener {
 
     // Refresh the struct at its new location
     this.structManager.refreshStruct(structId, mapType).then(() => {
+      this.gameState.actionBarLock.clear();
       HUDViewModel.refreshActionBar();
     });
   }

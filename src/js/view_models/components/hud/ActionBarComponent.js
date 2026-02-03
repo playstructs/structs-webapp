@@ -901,14 +901,10 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    */
   buildMoveActionButton(buttons, structType, isOnline) {
     if (structType.movable) {
-      let btnClass;
-      if (!isOnline) {
-        btnClass = 'sui-mod-disabled';
-      } else if (this.gameState.getActionRequiringInput() === STRUCT_ACTIONS.MOVE) {
-        btnClass = 'sui-mod-active-defense';
-      } else {
-        btnClass = 'sui-mod-default';
-      }
+      const btnClass = isOnline
+        ? 'sui-mod-default'
+        : 'sui-mod-disabled';
+
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-move-btn"
@@ -933,11 +929,10 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-move-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
-          const currentAction = this.gameState.getActionRequiringInput();
 
-          if (currentAction === STRUCT_ACTIONS.MOVE) {
+          if (btn.classList.contains('sui-mod-active-defense')) {
             // Deactivate move mode
-            this.gameState.clearActionRequiringInput();
+            this.gameState.actionBarLock.clear();
             btn.classList.remove('sui-mod-active-defense');
             btn.classList.add('sui-mod-default');
 
@@ -945,7 +940,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             window.dispatchEvent(new ClearMoveTargetsEvent(this.gameState.alphaBaseMap.mapId));
           } else {
             // Activate move mode
-            this.gameState.setActionRequiringInput(STRUCT_ACTIONS.MOVE);
+            this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.MOVE);
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-defense');
 

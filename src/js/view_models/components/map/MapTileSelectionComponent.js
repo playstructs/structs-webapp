@@ -577,9 +577,6 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       slot
     );
 
-    // Reset action state
-    this.gameState.clearActionRequiringInput();
-
     // Update focus to the new tile
     this.addFocusToSourceTile(tile);
 
@@ -592,7 +589,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     container.querySelectorAll('a.map-tile-selection-tile').forEach(tile => {
       tile.addEventListener('click', async (e) => {
-        const currentAction = this.gameState.getActionRequiringInput();
+        const currentAction = this.gameState.actionBarLock.getCurrentAction();
 
         // Check if we're in move mode and clicked on a valid move target
         if (currentAction === STRUCT_ACTIONS.MOVE && e.currentTarget.classList.contains('focus-move')) {
@@ -603,7 +600,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
         // If we're in move mode but clicked elsewhere, cancel the move
         if (currentAction === STRUCT_ACTIONS.MOVE) {
           this.clearMoveTargets();
-          this.gameState.clearActionRequiringInput();
+          this.gameState.actionBarLock.clear();
           window.dispatchEvent(new ClearMoveTargetsEvent(this.mapId));
         }
 
