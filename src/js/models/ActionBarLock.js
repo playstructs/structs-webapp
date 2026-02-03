@@ -1,3 +1,5 @@
+import {HUDViewModel} from "../view_models/HUDViewModel";
+
 export class ActionBarLock {
 
   constructor() {
@@ -25,10 +27,21 @@ export class ActionBarLock {
 
   lock() {
     this.locked = true;
+
+    // Refresh the action bar to show the executing progress bar
+    HUDViewModel.refreshActionBar();
   }
 
-  unlock() {
+  /**
+   * @param {boolean} refreshActionBar
+   */
+  unlock(refreshActionBar = true) {
     this.locked = false;
+
+    if (refreshActionBar) {
+      // Refresh the action bar to end the executing progress bar and show the relevant action bar
+      HUDViewModel.refreshActionBar();
+    }
   }
 
   /**
@@ -38,8 +51,11 @@ export class ActionBarLock {
     return this.locked;
   }
 
-  clear() {
-    this.unlock();
+  /**
+   * @param {boolean} refreshActionBar
+   */
+  clear(refreshActionBar = true) {
+    this.unlock(refreshActionBar);
     this.setCurrentAction('');
   }
 

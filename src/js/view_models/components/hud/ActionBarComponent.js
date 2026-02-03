@@ -900,6 +900,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       if (btn) {
         btn.addEventListener('click', () => {
           if (struct.isHidden()) {
+            this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_DEACTIVATE);
+            this.gameState.actionBarLock.lock();
+
             // Deactivate stealth mode
             this.signingClientManager.queueMsgStructStealthDeactivate(struct.id).then(() => {
               struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
@@ -908,6 +911,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
               btn.classList.add('sui-mod-default');
             });
           } else {
+            this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_ACTIVATE);
+            this.gameState.actionBarLock.lock();
+
             // Activate stealth mode
             this.signingClientManager.queueMsgStructStealthActivate(struct.id).then(() => {
               struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
@@ -959,7 +965,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
           if (btn.classList.contains('sui-mod-active-defense')) {
             // Deactivate move mode
-            this.gameState.actionBarLock.clear();
+            this.gameState.actionBarLock.clear(false);
             btn.classList.remove('sui-mod-active-defense');
             btn.classList.add('sui-mod-default');
 

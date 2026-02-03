@@ -569,9 +569,6 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     // The lock the action bar until we hear the grass notification from the struct move action
     this.gameState.actionBarLock.lock();
 
-    // Refresh action bar to show progress bar
-    HUDViewModel.refreshActionBar();
-
     const ambit = tile.getAttribute('data-ambit');
     const slot = parseInt(tile.getAttribute('data-slot'), 10);
 
@@ -606,7 +603,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
         // If we're in move mode but clicked elsewhere, cancel the move
         if (currentAction === STRUCT_ACTIONS.MOVE) {
           this.clearMoveTargets();
-          this.gameState.actionBarLock.clear();
+          this.gameState.actionBarLock.clear(false);
           window.dispatchEvent(new ClearMoveTargetsEvent(this.mapId));
         }
 
