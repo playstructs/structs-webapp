@@ -3,6 +3,7 @@ import {StructStillBuilder} from "../../../builders/StructStillBuilder";
 import {Player} from "../../../models/Player";
 import {Struct} from "../../../models/Struct";
 import {GenericMapLayerComponent} from "./GenericMapLayerComponent";
+import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 
 
 export class MapStructLayerComponent extends GenericMapLayerComponent {
@@ -133,6 +134,29 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * Mark enemy structs as invalid selections when entering defend mode.
+   */
+  showDefendTargets() {
+    const container = document.getElementById(this.containerId);
+    const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const tiles = container.querySelectorAll(`.map-struct-layer-tile[data-side="right"][data-player-id^="1"]:not([data-player-id="${playerId}"])`);
+    tiles.forEach(tile => {
+      tile.classList.add('mod-invalid-selection');
+    });
+  }
+
+  /**
+   * Clear all defend target indicators.
+   */
+  clearDefendTargets() {
+    const container = document.getElementById(this.containerId);
+    const tiles = container.querySelectorAll('.map-struct-layer-tile.mod-invalid-selection');
+    tiles.forEach(tile => {
+      tile.classList.remove('mod-invalid-selection');
+    });
+  }
+
+  /**
    * Initialize page code: populate structs and set up event listeners
    */
   initPageCode() {
@@ -163,6 +187,20 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     window.addEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
       if (event.mapId === this.mapId) {
         this.clearTile(event.tileType, event.ambit, event.slot, event.playerId);
+      }
+    });
+
+    // Listen for SHOW_DEFEND_TARGETS events
+    window.addEventListener(EVENTS.SHOW_DEFEND_TARGETS, (event) => {
+      if (event.mapId === this.mapId) {
+        this.showDefendTargets();
+      }
+    });
+
+    // Listen for CLEAR_DEFEND_TARGETS events
+    window.addEventListener(EVENTS.CLEAR_DEFEND_TARGETS, (event) => {
+      if (event.mapId === this.mapId) {
+        this.clearDefendTargets();
       }
     });
   }

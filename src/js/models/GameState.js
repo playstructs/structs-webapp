@@ -387,6 +387,18 @@ export class GameState {
     return this.keyPlayers[playerType].planetRaidInfo;
   }
 
+  /** @return {null|string} */
+  getActiveMapId() {
+    const mapContainerElm = document.getElementById(this.activeMapContainerId);
+    if (mapContainerElm) {
+      const mapElm = mapContainerElm.querySelector('.map');
+      if (mapElm) {
+        return mapElm.id
+      }
+    }
+    return null;
+  }
+
   printMyPlayer() {
     console.log('Player ID: ' + this.keyPlayers[PLAYER_TYPES.PLAYER].id);
     console.log('Singing Account: ' + this.signingAccount.address);

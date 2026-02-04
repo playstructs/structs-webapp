@@ -1,9 +1,17 @@
 import {HUDViewModel} from "../view_models/HUDViewModel";
+import {Struct} from "./Struct";
 
 export class ActionBarLock {
 
   constructor() {
+
+    /** @type {string} See STRUCT_ACTIONS */
     this.currentAction = '';
+
+    /** @type {Struct} The struct that is the source of this action. */
+    this.actionSourceStruct = null;
+
+    /** @type {boolean} */
     this.locked = false;
   }
 
@@ -56,7 +64,22 @@ export class ActionBarLock {
    */
   clear(refreshActionBar = true) {
     this.unlock(refreshActionBar);
+    this.setActionSourceStruct(null);
     this.setCurrentAction('');
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  setActionSourceStruct(struct) {
+    this.actionSourceStruct = struct;
+  }
+
+  /**
+   * @return {Struct}
+   */
+  getActionSourceStruct() {
+    return this.actionSourceStruct;
   }
 
 }

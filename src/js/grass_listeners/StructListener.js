@@ -22,7 +22,7 @@ export class StructListener extends AbstractGrassListener {
     structManager,
     targetPlayerType = PLAYER_TYPES.PLAYER
   ) {
-    super('STRUCTS_STATUS_CHANGE');
+    super('STRUCT_CHANGE');
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.structManager = structManager;
@@ -171,6 +171,68 @@ export class StructListener extends AbstractGrassListener {
     });
   }
 
+  /**
+   * @param {string} subject
+   * @param {object} messageData
+   */
+  handleStructDefenseAdd(subject, messageData) {
+    if (!(
+      messageData.category === 'struct_defense_add'
+      && messageData.subject === subject
+    )) {
+      return;
+    }
+
+    const defenderStructId = messageData.detail.defender_struct_id;
+    const protectedStructId = messageData.detail.protected_struct_id;
+    const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
+
+    // Refresh both the defender and protected structs
+    Promise.all([
+      this.structManager.refreshStruct(defenderStructId, mapType),
+      this.structManager.refreshStruct(protectedStructId, mapType)
+    ]).then(() => {
+      // Only clear actionBarLock if this was triggered by the current player's action
+      if (
+        this.gameState.actionBarLock.getCurrentAction() === 'DEFENSE_SET'
+        && this.gameState.actionBarLock.isLocked()
+      ) {
+        this.gameState.actionBarLock.clear();
+      }
+    });
+  }
+
+  /**
+   * @param {string} subject
+   * @param {object} messageData
+   */
+  handleStructDefenseRemove(subject, messageData) {
+    if (!(
+      messageData.category === 'struct_defense_remove'
+      && messageData.subject === subject
+    )) {
+      return;
+    }
+
+    const defenderStructId = messageData.detail.defender_struct_id;
+    const protectedStructId = messageData.detail.protected_struct_id;
+    const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
+
+    // Refresh both the defender and protected structs
+    Promise.all([
+      this.structManager.refreshStruct(defenderStructId, mapType),
+      this.structManager.refreshStruct(protectedStructId, mapType)
+    ]).then(() => {
+      // Only clear actionBarLock if this was triggered by the current player's action
+      if (
+        this.gameState.actionBarLock.getCurrentAction() === 'DEFENSE_CLEAR'
+        && this.gameState.actionBarLock.isLocked()
+      ) {
+        this.gameState.actionBarLock.clear();
+      }
+    });
+  }
+
   handler(messageData) {
     const targetPlanetId = this.gameState.keyPlayers[this.targetPlayerType].getPlanetId();
 
@@ -184,5 +246,7 @@ export class StructListener extends AbstractGrassListener {
     this.handleStructBlockBuildStart(subject, messageData);
     this.handleStructStatus(subject, messageData);
     this.handleStructMove(subject, messageData);
+    this.handleStructDefenseAdd(subject, messageData);
+    this.handleStructDefenseRemove(subject, messageData);
   }
 }
