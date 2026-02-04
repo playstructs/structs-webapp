@@ -88,10 +88,18 @@ export class SigningClientManager {
   /**
    * @param {GameState} gameState
    */
-  constructor(gameState) {
-    console.log('Initiating Signing Client Manager');
+  constructor(gameState, debug = false) {
+    console.info('Initiating Signing Client Manager');
     this.gameState = gameState;
-    this.wsUrl = `ws://${window.location.hostname}:26657`;
+
+    // TODO Make this value more dynamic
+    // Possibly a database setting or env, provided via server
+    //this.wsUrl = `ws://${window.location.hostname}:26657`;
+    this.debug = debug;
+    this.wsUrl = debug
+        ? `ws://reactor.oh.energy:26657`
+        : `ws://${window.location.hostname}:26657`;
+
     this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
 
     this.messageQueue = [];
@@ -108,7 +116,7 @@ export class SigningClientManager {
    * @return {Promise<void>}
    */
   async initSigningClient(wallet) {
-    console.log("Initializing signing client...");
+    console.debug("Initializing signing client...");
     this.gameState.signingClient = await SigningStargateClient.connectWithSigner(
       this.wsUrl,
       wallet,
@@ -116,7 +124,7 @@ export class SigningClientManager {
         registry: this.registry,
       },
     );
-    console.log("Signing client initialized.");
+    console.info("Signing client initialized.");
   }
 
   async transactQueue() {
@@ -127,19 +135,34 @@ export class SigningClientManager {
         let processMessageQueue = [...this.messageQueue];
         this.messageQueue.splice(0,processMessageQueue.length);
 
-        console.log('Running TransactQueue');
-        console.log(processMessageQueue);
+        console.debug('Running TransactQueue');
+        console.info(processMessageQueue);
         // TODO establish a maximum of messages to include in a single transaction
         try {
-          await this.gameState.signingClient.signAndBroadcast(
+          const response = await this.gameState.signingClient.signAndBroadcast(
               this.gameState.signingAccount.address,
               processMessageQueue,
               FEE
           );
+
+          if (this.debug) {
+            if (response.code === 0 ) {
+              console.debug('Transaction Successful: Code 0');
+            } else {
+              console.warn('Transaction Failed: Code ', response.code);
+            }
+
+            console.debug('Transaction Hash:', response.transactionHash);
+            console.debug('Height:', response.height);
+            console.debug('Msg Responses:', response.msgResponses.map(msg => ({
+              typeUrl: msg.typeUrl,
+              value: this.registry.decode(msg)
+            })));
+            console.debug('Events:', response.events);
+
+          }
         } catch (error) {
-          // There is always an error because our node hates this for some reason
-          // Sign and Broadcast Error: Error: {"code":-32603,"message":"Internal error","data":"the TxIndexer.Search method is not supported"}
-          //console.log('Sign and Broadcast Error:', error);
+          console.warn('Sign and Broadcast Error:', error);
         }
       }
     }
