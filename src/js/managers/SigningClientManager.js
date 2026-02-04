@@ -88,14 +88,17 @@ export class SigningClientManager {
   /**
    * @param {GameState} gameState
    */
-  constructor(gameState) {
+  constructor(gameState, debug = false) {
     console.info('Initiating Signing Client Manager');
     this.gameState = gameState;
 
     // TODO Make this value more dynamic
     // Possibly a database setting or env, provided via server
     //this.wsUrl = `ws://${window.location.hostname}:26657`;
-    this.wsUrl = `ws://reactor.oh.energy:26657`;
+    this.debug = debug;
+    this.wsUrl = debug
+        ? `ws://reactor.oh.energy:26657`
+        : `ws://${window.location.hostname}:26657`;
 
     this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
 
@@ -142,19 +145,22 @@ export class SigningClientManager {
               FEE
           );
 
-          if (response.code === 0 ) {
-            console.debug('Transaction Successful: Code 0');
-          } else {
-            console.warn('Transaction Failed: Code ', response.code);
-          }
+          if (this.debug) {
+            if (response.code === 0 ) {
+              console.debug('Transaction Successful: Code 0');
+            } else {
+              console.warn('Transaction Failed: Code ', response.code);
+            }
 
-          console.debug('Transaction Hash:', response.transactionHash);
-          console.debug('Height:', response.height);
-          console.debug('Msg Responses:', response.msgResponses.map(msg => ({
-            typeUrl: msg.typeUrl,
-            value: this.registry.decode(msg)
-          })));
-          console.debug('Events:', response.events);
+            console.debug('Transaction Hash:', response.transactionHash);
+            console.debug('Height:', response.height);
+            console.debug('Msg Responses:', response.msgResponses.map(msg => ({
+              typeUrl: msg.typeUrl,
+              value: this.registry.decode(msg)
+            })));
+            console.debug('Events:', response.events);
+
+          }
         } catch (error) {
           console.warn('Sign and Broadcast Error:', error);
         }
