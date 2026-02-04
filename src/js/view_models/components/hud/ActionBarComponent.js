@@ -8,6 +8,8 @@ import {StructType} from "../../../models/StructType";
 import {STRUCT_ACTIONS, STRUCT_CATEGORIES, STRUCT_EQUIPMENT_ICON_MAP, STRUCT_STATUS_FLAGS} from "../../../constants/StructConstants";
 import {ShowMoveTargetsEvent} from "../../../events/ShowMoveTargetsEvent";
 import {ClearMoveTargetsEvent} from "../../../events/ClearMoveTargetsEvent";
+import {ShowDefendTargetsEvent} from "../../../events/ShowDefendTargetsEvent";
+import {ClearDefendTargetsEvent} from "../../../events/ClearDefendTargetsEvent";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
 import {NumberFormatter} from "../../../util/NumberFormatter";
 
@@ -970,15 +972,16 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             btn.classList.add('sui-mod-default');
 
             // Clear move target indicators
-            window.dispatchEvent(new ClearMoveTargetsEvent(this.gameState.alphaBaseMap.mapId));
+            window.dispatchEvent(new ClearMoveTargetsEvent(this.gameState.getActiveMapId()));
           } else {
             // Activate move mode
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.MOVE);
+            this.gameState.actionBarLock.setActionSourceStruct(struct);
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-defense');
 
             // Show move target indicators on empty command tiles
-            window.dispatchEvent(new ShowMoveTargetsEvent(this.gameState.alphaBaseMap.mapId, struct));
+            window.dispatchEvent(new ShowMoveTargetsEvent(this.gameState.getActiveMapId()));
           }
         });
       }
@@ -987,12 +990,21 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
   /**
    * @param {array} buttons
+   * @param {Struct} struct
    * @param {StructType} structType
    * @param {boolean} isOnline
    */
-  buildDefendActionButton(buttons, structType, isOnline) {
+  buildDefendActionButton(buttons, struct, structType, isOnline) {
     if (structType.category === STRUCT_CATEGORIES.FLEET) {
-      const btnClass = isOnline ? 'sui-mod-default' : 'sui-mod-disabled';
+      let btnClass;
+      if (!isOnline) {
+        btnClass = 'sui-mod-disabled';
+      } else if (struct.isDefending()) {
+        btnClass = 'sui-mod-active-defense';
+      } else {
+        btnClass = 'sui-mod-default';
+      }
+
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-defend-btn"
@@ -1008,17 +1020,53 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     }
   }
 
+  /**
+   * @param {Struct} struct
+   * @param {StructType} structType
+   */
   attachDefendButtonHandler(struct, structType) {
     if (structType.category === STRUCT_CATEGORIES.FLEET) {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-defend-btn`);
       if (btn) {
-        btn.addEventListener('click', () => {
-          console.log('Action: DEFEND', {
-            structId: struct.id,
-            unitDefenses: structType.unit_defenses_label,
-            oreDefenses: structType.ore_reserve_defenses_label,
-            planetaryDefenses: structType.planetary_defenses_label
-          });
+        btn.addEventListener('click', async () => {
+          const currentAction = this.gameState.actionBarLock.getCurrentAction();
+
+          if (struct.isDefending()) {
+            // Struct is currently defending another struct - clicking clears the defense
+            this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEFENSE_CLEAR);
+            this.gameState.actionBarLock.setActionSourceStruct(struct);
+            this.gameState.actionBarLock.lock();
+
+            // Update button to default state while processing
+            btn.classList.remove('sui-mod-active-defense');
+            btn.classList.add('sui-mod-default');
+
+            // Send defense clear message to chain
+            await this.signingClientManager.queueMsgStructDefenseClear(struct.id);
+
+          } else if (currentAction === STRUCT_ACTIONS.DEFENSE_SET) {
+            // Already in defense selection mode - cancel it
+            this.gameState.actionBarLock.clear(false);
+
+            // Update button to default state
+            btn.classList.remove('sui-mod-active-defense');
+            btn.classList.add('sui-mod-default');
+
+            // Clear defend target indicators
+            window.dispatchEvent(new ClearDefendTargetsEvent(this.gameState.getActiveMapId()));
+
+          } else {
+            // Activate defense selection mode
+            this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEFENSE_SET);
+            this.gameState.actionBarLock.setActionSourceStruct(struct);
+
+            // Update button to active state
+            btn.classList.remove('sui-mod-default');
+            btn.classList.add('sui-mod-active-defense');
+
+            // Mark enemy structs as invalid
+            window.dispatchEvent(new ShowDefendTargetsEvent(this.gameState.getActiveMapId()));
+          }
         });
       }
     }
@@ -1039,7 +1087,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.buildSecondaryWeaponActionButton(buttons, structType, isOnline);
     this.buildStealthModeActionButton(buttons, struct, structType, isOnline);
     this.buildMoveActionButton(buttons, structType, isOnline);
-    this.buildDefendActionButton(buttons, structType, isOnline);
+    this.buildDefendActionButton(buttons, struct, structType, isOnline);
 
     return buttons.join('');
   }

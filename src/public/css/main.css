@@ -518,6 +518,10 @@ a.sui-text-secondary:hover {
   transform: scaleX(-1);
 }
 
+.map-struct-layer-tile.mod-invalid-selection {
+  opacity: 0.5;
+}
+
 .map-struct-hud-layer-tile {
   position: relative;
   display: flex;

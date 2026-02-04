@@ -12,7 +12,8 @@ import {Planet} from "../../../models/Planet";
 import {Player} from "../../../models/Player";
 import {STRUCT_ACTIONS} from "../../../constants/StructConstants";
 import {ClearMoveTargetsEvent} from "../../../events/ClearMoveTargetsEvent";
-import {Struct} from "../../../models/Struct";
+import {ClearDefendTargetsEvent} from "../../../events/ClearDefendTargetsEvent";
+import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 
 
 export class MapTileSelectionComponent extends AbstractViewModelComponent {
@@ -55,9 +56,6 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     /** @type {Player} */
     this.attacker = attacker;
-
-    /** @type {Struct|null} - The struct currently being moved */
-    this.structBeingMoved = null;
   }
 
   /**
@@ -517,16 +515,15 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
   /**
    * Show move target indicators on valid empty command tiles.
-   *
-   * @param {Struct} struct - The struct being moved
    */
-  showMoveTargets(struct) {
-    this.structBeingMoved = struct;
+  showMoveTargets() {
     const container = document.getElementById(this.containerId);
+    const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const structBeingMoved = this.gameState.actionBarLock.getActionSourceStruct();
 
     // Get all command tiles on the player's side (defender) that are empty
     const commandTiles = container.querySelectorAll(
-      `.map-tile-selection-tile[data-tile-type="${MAP_TILE_TYPES.COMMAND}"][data-player-id="${this.defender.id}"]`
+      `.map-tile-selection-tile[data-tile-type="${MAP_TILE_TYPES.COMMAND}"][data-player-id="${playerId}"]`
     );
 
     commandTiles.forEach(tile => {
@@ -535,8 +532,8 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
       // Only show indicator on empty tiles in the same ambit (command structs move within ambit)
       // or empty tiles in any ambit if the struct can move across ambits
-      const structType = this.gameState.structTypes.getStructTypeById(struct.type);
-      const possibleAmbits = structType.possible_ambit_array || [struct.operating_ambit.toLowerCase()];
+      const structType = this.gameState.structTypes.getStructTypeById(structBeingMoved.type);
+      const possibleAmbits = structType.possible_ambit_array || [structBeingMoved.operating_ambit.toLowerCase()];
 
       if (!structId && possibleAmbits.includes(tileAmbit.toLowerCase())) {
         tile.classList.add('focus-move');
@@ -548,12 +545,36 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
    * Clear all move target indicators.
    */
   clearMoveTargets() {
-    this.structBeingMoved = null;
     const container = document.getElementById(this.containerId);
-
     container.querySelectorAll('.map-tile-selection-tile.focus-move').forEach(tile => {
       tile.classList.remove('focus-move');
     });
+  }
+
+  /**
+   * Handle a click on a defend target tile.
+   *
+   * @param {HTMLElement} tile - The tile that was clicked
+   */
+  async handleDefendTargetClick(tile) {
+    const protectedStructId = tile.getAttribute('data-struct-id');
+    if (!protectedStructId) {
+      return;
+    }
+
+    // Lock the action bar until we hear the grass notification from the struct defend action
+    this.gameState.actionBarLock.lock();
+
+    // Clear defend target indicators
+    window.dispatchEvent(new ClearDefendTargetsEvent(this.mapId));
+
+    const defendingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+    // Send defend set message to chain
+    await this.signingClientManager.queueMsgStructDefenseSet(
+      defendingStruct.id,
+      protectedStructId
+    );
   }
 
   /**
@@ -562,20 +583,17 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
    * @param {HTMLElement} tile - The tile that was clicked
    */
   async handleMoveTargetClick(tile) {
-    if (!this.structBeingMoved) {
-      return;
-    }
-
     // The lock the action bar until we hear the grass notification from the struct move action
     this.gameState.actionBarLock.lock();
 
     const ambit = tile.getAttribute('data-ambit');
     const slot = parseInt(tile.getAttribute('data-slot'), 10);
+    const structBeingMoved = this.gameState.actionBarLock.getActionSourceStruct();
 
     // Send move message to chain
     await this.signingClientManager.queueMsgStructMove(
-      this.structBeingMoved.id,
-      this.structBeingMoved.location_type,
+      structBeingMoved.id,
+      structBeingMoved.location_type,
       ambit,
       slot
     );
@@ -607,6 +625,27 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
           window.dispatchEvent(new ClearMoveTargetsEvent(this.mapId));
         }
 
+        // Check if we're in defend mode
+        if (currentAction === STRUCT_ACTIONS.DEFENSE_SET) {
+          const structId = e.currentTarget.getAttribute('data-struct-id');
+          const playerId = e.currentTarget.getAttribute('data-player-id');
+          const defendingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+          // Check if clicked on a valid defend target (friendly struct, not the defending struct itself)
+          const isValidTarget = structId 
+            && structId !== defendingStruct.id
+            && playerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+
+          if (isValidTarget) {
+            await this.handleDefendTargetClick(e.currentTarget);
+            return;
+          }
+
+          // Clicked elsewhere (invalid or empty tile), cancel the defense
+          window.dispatchEvent(new ClearDefendTargetsEvent(this.mapId));
+          this.gameState.actionBarLock.clear(false);
+        }
+
         this.addFocusToSourceTile(e.currentTarget);
         HUDViewModel.showActionBar(e.currentTarget);
         console.log(e.currentTarget);
@@ -629,7 +668,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     // Listen for SHOW_MOVE_TARGETS events
     window.addEventListener(EVENTS.SHOW_MOVE_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
-        this.showMoveTargets(event.struct);
+        this.showMoveTargets();
       }
     });
 
