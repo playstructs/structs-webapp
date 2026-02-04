@@ -91,7 +91,12 @@ export class SigningClientManager {
   constructor(gameState) {
     console.log('Initiating Signing Client Manager');
     this.gameState = gameState;
-    this.wsUrl = `ws://${window.location.hostname}:26657`;
+
+    // TODO Make this value more dynamic
+    // Possibly a database setting or env, provided via server
+    //this.wsUrl = `ws://${window.location.hostname}:26657`;
+    this.wsUrl = `ws://reactor.oh.energy:26657`;
+
     this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
 
     this.messageQueue = [];
@@ -131,15 +136,21 @@ export class SigningClientManager {
         console.log(processMessageQueue);
         // TODO establish a maximum of messages to include in a single transaction
         try {
-          await this.gameState.signingClient.signAndBroadcast(
+          const response = await this.gameState.signingClient.signAndBroadcast(
               this.gameState.signingAccount.address,
               processMessageQueue,
               FEE
           );
+          console.log('Transaction Hash:', response.transactionHash);
+          console.log('Code:', response.code);
+          console.log('Height:', response.height);
+          console.log('Msg Responses:', response.msgResponses.map(msg => ({
+            typeUrl: msg.typeUrl,
+            value: this.registry.decode(msg)
+          })));
+          console.log('Events:', response.events);
         } catch (error) {
-          // There is always an error because our node hates this for some reason
-          // Sign and Broadcast Error: Error: {"code":-32603,"message":"Internal error","data":"the TxIndexer.Search method is not supported"}
-          //console.log('Sign and Broadcast Error:', error);
+          console.log('Sign and Broadcast Error:', error);
         }
       }
     }
