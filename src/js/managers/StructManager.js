@@ -37,10 +37,21 @@ export class StructManager {
   }
 
   /**
+   * @param {Struct} struct
+   * @param {string} planetId
+   * @return {boolean}
+   */
+  isStructOnPlanet(struct, planetId) {
+    return (struct.location_type === 'planet' && struct.location_id === planetId)
+      || (struct.location_type === 'fleet' && this.gameState.getFleetByPlayerId(struct.owner)?.location_id === planetId);
+  }
+
+  /**
    * Get a struct by its owner, and it's position on planet or in fleet
    * @param {string} playerId - The id of the struct owner
    * @param {string} locationType - "fleet" or "planet"
    * @param {string} locationId - Fleet ID or Planet ID
+   * @param {string} mapPlanetId - the planet to look for the struct on
    * @param {string} ambit - "space", "air", "land", "water"
    * @param {number} slot - Slot number
    * @param {boolean} isCommandSlot - Whether the slot is a command slot or just a planetary or fleet slot
@@ -50,6 +61,7 @@ export class StructManager {
     playerId,
     locationType,
     locationId,
+    mapPlanetId,
     ambit,
     slot,
     isCommandSlot
@@ -73,6 +85,7 @@ export class StructManager {
       && struct.operating_ambit.toLowerCase() === ambit.toLowerCase()
       && `${struct.slot}` === `${slot}`
       && this.isCommandStruct(struct) === isCommandSlot
+      && this.isStructOnPlanet(struct, mapPlanetId)
     ) || null;
   }
 
@@ -81,6 +94,7 @@ export class StructManager {
    * @param {string} playerId - The id of the struct owner
    * @param {string} locationType - "fleet" or "planet"
    * @param {string} locationId - Fleet ID or Planet ID
+   * @param {string} mapPlanetId - the planet to look for the struct on
    * @param {string} ambit - "space", "air", "land", "water"
    * @param {string|number} slot - Slot number
    * @param {boolean} isCommandSlot - Whether the slot is a command slot or just a planetary or fleet slot
@@ -90,6 +104,7 @@ export class StructManager {
     playerId,
     locationType,
     locationId,
+    mapPlanetId,
     ambit,
     slot,
     isCommandSlot
@@ -98,7 +113,7 @@ export class StructManager {
       return "";
     }
 
-    const struct = this.getStructByPositionAndPlayerId(playerId, locationType, locationId, ambit, parseInt(slot), isCommandSlot);
+    const struct = this.getStructByPositionAndPlayerId(playerId, locationType, locationId, mapPlanetId, ambit, parseInt(slot), isCommandSlot);
     return struct ? struct.id : '';
   }
 

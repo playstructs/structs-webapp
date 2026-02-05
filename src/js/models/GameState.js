@@ -15,6 +15,7 @@ import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 import {Guild} from "./Guild";
 import {ActionBarLock} from "./ActionBarLock";
+import {Fleet} from "./Fleet";
 
 export class GameState {
 
@@ -394,6 +395,20 @@ export class GameState {
       const mapElm = mapContainerElm.querySelector('.map');
       if (mapElm) {
         return mapElm.id
+      }
+    }
+    return null;
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Fleet}
+   */
+  getFleetByPlayerId(playerId) {
+    const playerTypes = Object.values(PLAYER_TYPES);
+    for (let i = 0; i < playerTypes.length; i++) {
+      if (this.keyPlayers[playerTypes[i]].id === playerId) {
+        return this.keyPlayers[playerTypes[i]].fleet;
       }
     }
     return null;

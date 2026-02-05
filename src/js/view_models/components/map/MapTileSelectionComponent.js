@@ -269,7 +269,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     // Command structs are always slot 0
     const structId = hasAvailableSlot 
-      ? this.structManager.getStructIdByPositionAndPlayerId(playerId,'fleet', fleetId, ambit, 0, true)
+      ? this.structManager.getStructIdByPositionAndPlayerId(playerId,'fleet', fleetId, this.planet.id, ambit, 0, true)
       : '';
 
     return this.renderSelectionTileHTML(
@@ -304,7 +304,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       : MAP_TILE_TYPES.PLANETARY_SLOT;
 
     const structId = slot !== '' 
-      ? this.structManager.getStructIdByPositionAndPlayerId(this.defender.id, 'planet', this.planet.id, ambit, slot, false)
+      ? this.structManager.getStructIdByPositionAndPlayerId(this.defender.id, 'planet', this.planet.id, this.planet.id, ambit, slot, false)
       : '';
 
     return this.renderSelectionTileHTML(
@@ -335,7 +335,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     }
 
     const structId = slot !== ''
-      ? this.structManager.getStructIdByPositionAndPlayerId(this.defender.id, 'fleet', this.defender.fleet_id, ambit, slot, false)
+      ? this.structManager.getStructIdByPositionAndPlayerId(this.defender.id, 'fleet', this.defender.fleet_id, this.planet.id, ambit, slot, false)
       : '';
 
     return this.renderSelectionTileHTML(
@@ -366,7 +366,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     }
 
     const structId = slot !== ''
-      ? this.structManager.getStructIdByPositionAndPlayerId(this.attacker.id,'fleet', this.attacker.fleet_id, ambit, slot, false)
+      ? this.structManager.getStructIdByPositionAndPlayerId(this.attacker.id,'fleet', this.attacker.fleet_id, this.planet.id, ambit, slot, false)
       : '';
 
     return this.renderSelectionTileHTML(

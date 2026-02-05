@@ -127,15 +127,6 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
   }
 
   /**
-   * @param {string} playerId
-   * @return {boolean}
-   */
-  isFleetOnPlanet(playerId) {
-    return (this.defender.id === playerId && this.defenderFleet?.location_id === this.planet.id)
-      || (this.attacker?.id === playerId && this.attackerFleet?.location_id === this.planet.id);
-  }
-
-  /**
    * @param {string} tileType the tile type. See MAP_TILE_TYPES constant array.
    * @param {string} side the side of the map the tile is on
    * @param {string} playerId the ID of the player that owns the tile or empty if no one does such as a transition tile.
@@ -499,16 +490,15 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
 
     const slotNum = parseInt(slot, 10);
 
-    if (locationInfo.locationType === 'planet' || this.isFleetOnPlanet(playerId)) {
-      renderParams.struct = this.structManager.getStructByPositionAndPlayerId(
-        playerId,
-        locationInfo.locationType,
-        locationInfo.locationId,
-        ambit,
-        slotNum,
-        locationInfo.isCommandSlot
-      );
-    }
+    renderParams.struct = this.structManager.getStructByPositionAndPlayerId(
+      playerId,
+      locationInfo.locationType,
+      locationInfo.locationId,
+      this.planet.id,
+      ambit,
+      slotNum,
+      locationInfo.isCommandSlot
+    );
 
     return renderParams;
   }
