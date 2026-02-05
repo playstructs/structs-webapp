@@ -79,6 +79,35 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     return this.selectedStruct ? this.selectedStruct.id : null;
   }
 
+  /**
+   * @param {ChargeLevelChangedEvent} event
+   */
+  updateActionButtons(event) {
+    if (
+      this.playerType === PLAYER_TYPES.PLAYER
+      && event.playerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+      && this.selectedStruct
+      && this.selectedStruct.isOnline()
+    ) {
+      const charge = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight);
+      const actionButtons = document.getElementById(this.actionChunkId).querySelectorAll('.sui-action-bar-btn-group a.sui-panel-btn');
+      actionButtons.forEach(actionButton => {
+        if (
+          parseInt(actionButton.getAttribute('data-action-charge')) <= charge
+          && actionButton.classList.contains('sui-mod-disabled')
+        ) {
+          const isActive = parseInt(actionButton.getAttribute('data-active-defense') || 0);
+          if (isActive) {
+            actionButton.classList.add('sui-mod-active-defense');
+          } else {
+            actionButton.classList.add('sui-mod-default');
+          }
+          actionButton.classList.remove('sui-mod-disabled');
+        }
+      });
+    }
+  }
+
   initPageCode() {
     window.addEventListener(EVENTS.CHARGE_LEVEL_CHANGED, function (event) {
       if (event.playerId === this.gameState.getPlayerIdByType(this.playerType)) {
@@ -98,6 +127,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         }
 
       }
+
+      this.updateActionButtons(event);
+
     }.bind(this));
 
     document.getElementById(this.playerChunkPortraitId).addEventListener('click', this.profileClickHandler.bind(this));
@@ -527,7 +559,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @return {{image: string, state: string, canToggle: boolean}}
    */
   getPanelSwitchState(struct, structType) {
-    if (struct.isOnline()) {
+    if (this.isActionAvailable(struct, 0, true)) {
       return {
         image: '/img/sui/panel/panel-switch-on.png',
         state: 'on',
@@ -535,11 +567,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       };
     }
 
-    // Struct is offline - check if player has enough charge to activate
-    const playerCharge = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight);
-    const activateCharge = structType.activate_charge || 0;
-
-    if (playerCharge >= activateCharge) {
+    if (this.isActionAvailable(struct, structType.activate_charge, false)) {
       return {
         image: '/img/sui/panel/panel-switch-off.png',
         state: 'off',
@@ -558,15 +586,16 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * Handles panel switch click to toggle struct online/offline state.
    *
    * @param {Struct} struct
+   * @param {StructType} structType
    */
-  handlePanelSwitchClick(struct) {
-    if (struct.isOnline()) {
+  handlePanelSwitchClick(struct, structType) {
+    if (this.isActionAvailable(struct, 0, true)) {
       // Turn off: deactivate the struct
       this.signingClientManager.queueMsgStructDeactivate(struct.id).then(() => {
         struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
         this.showStructActionBar(struct);
       });
-    } else {
+    } else if (this.isActionAvailable(struct, structType.activate_charge, false)){
       // Turn on: activate the struct
       this.signingClientManager.queueMsgStructActivate(struct.id).then(() => {
         struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
@@ -606,8 +635,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     }
 
     // Build action buttons based on struct type capabilities
-    // Pass online state to disable buttons when offline
-    const actionButtons = this.buildStructActionButtons(struct, structType, isOnline);
+    const actionButtons = this.buildStructActionButtons(struct, structType);
 
     document.getElementById(this.actionChunkId).innerHTML = `
       <div class="sui-screen sui-screen-full-width">
@@ -642,7 +670,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     // Attach panel switch handler if it can be toggled
     if (panelSwitchState.canToggle) {
       document.getElementById(this.panelSwitchId).addEventListener('click', () => {
-        this.handlePanelSwitchClick(struct);
+        this.handlePanelSwitchClick(struct, structType);
       });
     }
 
@@ -772,16 +800,30 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   }
 
   /**
-   * @param {array} buttons
-   * @param {StructType} structType
-   * @param {boolean} isOnline
+   * @param {Struct} struct
+   * @param {number} actionCharge
+   * @param {boolean} isOnlineAction
+   * @return {boolean}
    */
-  buildPrimaryWeaponActionButton(buttons, structType, isOnline) {
+  isActionAvailable(struct, actionCharge = 0, isOnlineAction = true) {
+    return (struct.isOnline() === isOnlineAction)
+      && struct.owner === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+      && (!actionCharge || actionCharge <= this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight));
+  }
+
+  /**
+   * @param {array} buttons
+   * @param {Struct} struct
+   * @param {StructType} structType
+   */
+  buildPrimaryWeaponActionButton(buttons, struct, structType) {
     if (structType.hasPrimaryWeapon()) {
       const iconClass = structType.primary_weapon_control === 'guided'
         ? 'icon-smart-weapon'
         : 'icon-ballistic-weapon';
-      const btnClass = isOnline ? 'sui-mod-default' : 'sui-mod-disabled';
+      const btnClass = this.isActionAvailable(struct, structType.primary_weapon_charge)
+        ? 'sui-mod-default'
+        : 'sui-mod-disabled';
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-primary-weapon-btn"
@@ -790,6 +832,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           title="${structType.primary_weapon_label || 'Primary Weapon'}"
           data-sui-cheatsheet="${structType.type}"
           data-selected-property="primary_weapon"
+          data-action-charge="${structType.primary_weapon_charge}"
         >
           <i class="sui-icon-md ${iconClass}"></i>
         </a>
@@ -806,11 +849,13 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-primary-weapon-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
-          console.log('Action: PRIMARY_WEAPON_ATTACK', {
-            structId: struct.id,
-            weapon: structType.primary_weapon,
-            label: structType.primary_weapon_label
-          });
+          if (this.isActionAvailable(struct, structType.primary_weapon_charge)) {
+            console.log('Action: PRIMARY_WEAPON_ATTACK', {
+              structId: struct.id,
+              weapon: structType.primary_weapon,
+              label: structType.primary_weapon_label
+            });
+          }
         });
       }
     }
@@ -818,15 +863,17 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
   /**
    * @param {array} buttons
+   * @param {Struct} struct
    * @param {StructType} structType
-   * @param {boolean} isOnline
    */
-  buildSecondaryWeaponActionButton(buttons, structType, isOnline) {
+  buildSecondaryWeaponActionButton(buttons, struct, structType) {
     if (structType.hasSecondaryWeapon()) {
       const iconClass = structType.secondary_weapon_control === 'guided'
         ? 'icon-smart-weapon'
         : 'icon-ballistic-weapon';
-      const btnClass = isOnline ? 'sui-mod-default' : 'sui-mod-disabled';
+      const btnClass = this.isActionAvailable(struct, structType.secondary_weapon_charge)
+        ? 'sui-mod-default'
+        : 'sui-mod-disabled';
       buttons.push(`
         <a 
           id="${this.getActionBtnIdPrefix()}-secondary-weapon-btn"
@@ -835,6 +882,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           title="${structType.secondary_weapon_label || 'Secondary Weapon'}"
           data-sui-cheatsheet="${structType.type}"
           data-selected-property="secondary_weapon"
+          data-action-charge="${structType.secondary_weapon_charge}"
         >
           <i class="sui-icon-md ${iconClass}"></i>
         </a>
@@ -851,11 +899,13 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-secondary-weapon-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
-          console.log('Action: SECONDARY_WEAPON_ATTACK', {
-            structId: struct.id,
-            weapon: structType.secondary_weapon,
-            label: structType.secondary_weapon_label
-          });
+          if (this.isActionAvailable(struct, structType.secondary_weapon_charge)) {
+            console.log('Action: SECONDARY_WEAPON_ATTACK', {
+              structId: struct.id,
+              weapon: structType.secondary_weapon,
+              label: structType.secondary_weapon_label
+            });
+          }
         });
       }
     }
@@ -865,12 +915,11 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {array} buttons
    * @param {Struct} struct
    * @param {StructType} structType
-   * @param {boolean} isOnline
    */
-  buildStealthModeActionButton(buttons, struct, structType, isOnline) {
+  buildStealthModeActionButton(buttons, struct, structType) {
     if (structType.stealth_systems) {
       let btnClass;
-      if (!isOnline) {
+      if (!this.isActionAvailable(struct, structType.stealth_activate_charge)) {
         btnClass = 'sui-mod-disabled';
       } else if (struct.isHidden()) {
         btnClass = 'sui-mod-active-defense';
@@ -885,6 +934,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           title="Stealth Mode"
           data-sui-cheatsheet="${structType.type}"
           data-selected-property="unit_defenses"
+          data-action-charge="${structType.stealth_activate_charge}"
+          data-active-defense="${struct.isHidden() ? 1 : 0}"
         >
           <i class="sui-icon-md icon-stealth"></i>
         </a>
@@ -901,6 +952,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-stealth-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
+          if (!this.isActionAvailable(struct, structType.stealth_activate_charge)) {
+            return;
+          }
           if (struct.isHidden()) {
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_DEACTIVATE);
             this.gameState.actionBarLock.lock();
@@ -909,6 +963,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.signingClientManager.queueMsgStructStealthDeactivate(struct.id).then(() => {
               struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
               // Update button to default state
+              btn.setAttribute('data-active-defense', '0');
               btn.classList.remove('sui-mod-active-defense');
               btn.classList.add('sui-mod-default');
             });
@@ -920,6 +975,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.signingClientManager.queueMsgStructStealthActivate(struct.id).then(() => {
               struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
               // Update button to active state
+              btn.setAttribute('data-active-defense', '1');
               btn.classList.remove('sui-mod-default');
               btn.classList.add('sui-mod-active-defense');
             });
@@ -931,12 +987,12 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
   /**
    * @param {array} buttons
+   * @param {Struct} struct
    * @param {StructType} structType
-   * @param {boolean} isOnline
    */
-  buildMoveActionButton(buttons, structType, isOnline) {
+  buildMoveActionButton(buttons, struct, structType) {
     if (structType.movable) {
-      const btnClass = isOnline
+      const btnClass = this.isActionAvailable(struct, structType.move_charge)
         ? 'sui-mod-default'
         : 'sui-mod-disabled';
 
@@ -948,6 +1004,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           title="Move"
           data-sui-cheatsheet="${structType.type}"
           data-selected-property="movable"
+          data-action-charge="${structType.move_charge}"
         >
           <i class="sui-icon-md icon-move"></i>
         </a>
@@ -964,6 +1021,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-move-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
+          if (!this.isActionAvailable(struct, structType.move_charge)) {
+            return;
+          }
 
           if (btn.classList.contains('sui-mod-active-defense')) {
             // Deactivate move mode
@@ -992,12 +1052,11 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {array} buttons
    * @param {Struct} struct
    * @param {StructType} structType
-   * @param {boolean} isOnline
    */
-  buildDefendActionButton(buttons, struct, structType, isOnline) {
+  buildDefendActionButton(buttons, struct, structType) {
     if (structType.category === STRUCT_CATEGORIES.FLEET) {
       let btnClass;
-      if (!isOnline) {
+      if (!this.isActionAvailable(struct, structType.defend_change_charge)) {
         btnClass = 'sui-mod-disabled';
       } else if (struct.isDefending()) {
         btnClass = 'sui-mod-active-defense';
@@ -1013,6 +1072,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           title="Defend"
           data-sui-cheatsheet="${structType.type}"
           data-action-button="defend"
+          data-action-charge="${structType.defend_change_charge}"
+          data-active-defense="${struct.isDefending() ? 1 : 0}"
         >
           <i class="sui-icon-md icon-defend"></i>
         </a>
@@ -1029,6 +1090,10 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-defend-btn`);
       if (btn) {
         btn.addEventListener('click', async () => {
+          if (!this.isActionAvailable(struct, structType.defend_change_charge)) {
+            return;
+          }
+
           const currentAction = this.gameState.actionBarLock.getCurrentAction();
 
           if (struct.isDefending()) {
@@ -1038,6 +1103,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.gameState.actionBarLock.lock();
 
             // Update button to default state while processing
+            btn.setAttribute('data-active-defense', '0');
             btn.classList.remove('sui-mod-active-defense');
             btn.classList.add('sui-mod-default');
 
@@ -1049,6 +1115,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.gameState.actionBarLock.clear(false);
 
             // Update button to default state
+            btn.setAttribute('data-active-defense', '0');
             btn.classList.remove('sui-mod-active-defense');
             btn.classList.add('sui-mod-default');
 
@@ -1061,6 +1128,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.gameState.actionBarLock.setActionSourceStruct(struct);
 
             // Update button to active state
+            btn.setAttribute('data-active-defense', '1');
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-defense');
 
@@ -1077,17 +1145,16 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    *
    * @param {Struct} struct
    * @param {StructType} structType
-   * @param {boolean} isOnline - Whether the struct is online (buttons are disabled when offline)
    * @return {string} HTML for action buttons
    */
-  buildStructActionButtons(struct, structType, isOnline = true) {
+  buildStructActionButtons(struct, structType) {
     const buttons = [];
 
-    this.buildPrimaryWeaponActionButton(buttons, structType, isOnline);
-    this.buildSecondaryWeaponActionButton(buttons, structType, isOnline);
-    this.buildStealthModeActionButton(buttons, struct, structType, isOnline);
-    this.buildMoveActionButton(buttons, structType, isOnline);
-    this.buildDefendActionButton(buttons, struct, structType, isOnline);
+    this.buildPrimaryWeaponActionButton(buttons, struct, structType);
+    this.buildSecondaryWeaponActionButton(buttons, struct, structType);
+    this.buildStealthModeActionButton(buttons, struct, structType);
+    this.buildMoveActionButton(buttons, struct, structType);
+    this.buildDefendActionButton(buttons, struct, structType);
 
     return buttons.join('');
   }
