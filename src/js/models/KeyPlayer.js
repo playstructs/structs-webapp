@@ -13,6 +13,7 @@ import {ShieldHealthChangedEvent} from "../events/ShieldHealthChangedEvent";
 import {UndiscoveredOreCountChangedEvent} from "../events/UndiscoveredOreCountChangedEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {Fleet} from "./Fleet";
 
 export class KeyPlayer {
 
