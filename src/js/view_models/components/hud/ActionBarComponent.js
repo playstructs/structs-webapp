@@ -527,7 +527,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @return {{image: string, state: string, canToggle: boolean}}
    */
   getPanelSwitchState(struct, structType) {
-    if (struct.isOnline()) {
+    if (this.isActionAvailable(struct, 0, true)) {
       return {
         image: '/img/sui/panel/panel-switch-on.png',
         state: 'on',
@@ -535,11 +535,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       };
     }
 
-    // Struct is offline - check if player has enough charge to activate
-    const playerCharge = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight);
-    const activateCharge = structType.activate_charge || 0;
-
-    if (playerCharge >= activateCharge) {
+    if (this.isActionAvailable(struct, structType.activate_charge, false)) {
       return {
         image: '/img/sui/panel/panel-switch-off.png',
         state: 'off',
@@ -558,15 +554,16 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * Handles panel switch click to toggle struct online/offline state.
    *
    * @param {Struct} struct
+   * @param {StructType} structType
    */
-  handlePanelSwitchClick(struct) {
-    if (struct.isOnline()) {
+  handlePanelSwitchClick(struct, structType) {
+    if (this.isActionAvailable(struct, 0, true)) {
       // Turn off: deactivate the struct
       this.signingClientManager.queueMsgStructDeactivate(struct.id).then(() => {
         struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
         this.showStructActionBar(struct);
       });
-    } else {
+    } else if (this.isActionAvailable(struct, structType.activate_charge, false)){
       // Turn on: activate the struct
       this.signingClientManager.queueMsgStructActivate(struct.id).then(() => {
         struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
@@ -641,7 +638,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     // Attach panel switch handler if it can be toggled
     if (panelSwitchState.canToggle) {
       document.getElementById(this.panelSwitchId).addEventListener('click', () => {
-        this.handlePanelSwitchClick(struct);
+        this.handlePanelSwitchClick(struct, structType);
       });
     }
 
@@ -773,10 +770,11 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * @param {Struct} struct
    * @param {number} actionCharge
+   * @param {boolean} isOnlineAction
    * @return {boolean}
    */
-  isActionAvailable(struct, actionCharge = 0) {
-    return struct.isOnline()
+  isActionAvailable(struct, actionCharge = 0, isOnlineAction = true) {
+    return (struct.isOnline() === isOnlineAction)
       && struct.owner === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
       && (!actionCharge || actionCharge <= this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight));
   }
