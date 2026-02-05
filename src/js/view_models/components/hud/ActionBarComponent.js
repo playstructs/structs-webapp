@@ -79,6 +79,35 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     return this.selectedStruct ? this.selectedStruct.id : null;
   }
 
+  /**
+   * @param {ChargeLevelChangedEvent} event
+   */
+  updateActionButtons(event) {
+    if (
+      this.playerType === PLAYER_TYPES.PLAYER
+      && event.playerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+      && this.selectedStruct
+      && this.selectedStruct.isOnline()
+    ) {
+      const charge = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight);
+      const actionButtons = document.getElementById(this.actionChunkId).querySelectorAll('.sui-action-bar-btn-group a.sui-panel-btn');
+      actionButtons.forEach(actionButton => {
+        if (
+          parseInt(actionButton.getAttribute('data-action-charge')) <= charge
+          && actionButton.classList.contains('sui-mod-disabled')
+        ) {
+          const isActive = parseInt(actionButton.getAttribute('data-active-defense') || 0);
+          if (isActive) {
+            actionButton.classList.add('sui-mod-active-defense');
+          } else {
+            actionButton.classList.add('sui-mod-default');
+          }
+          actionButton.classList.remove('sui-mod-disabled');
+        }
+      });
+    }
+  }
+
   initPageCode() {
     window.addEventListener(EVENTS.CHARGE_LEVEL_CHANGED, function (event) {
       if (event.playerId === this.gameState.getPlayerIdByType(this.playerType)) {
@@ -98,6 +127,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         }
 
       }
+
+      this.updateActionButtons(event);
+
     }.bind(this));
 
     document.getElementById(this.playerChunkPortraitId).addEventListener('click', this.profileClickHandler.bind(this));
@@ -903,6 +935,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           data-sui-cheatsheet="${structType.type}"
           data-selected-property="unit_defenses"
           data-action-charge="${structType.stealth_activate_charge}"
+          data-active-defense="${struct.isHidden() ? 1 : 0}"
         >
           <i class="sui-icon-md icon-stealth"></i>
         </a>
@@ -930,6 +963,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.signingClientManager.queueMsgStructStealthDeactivate(struct.id).then(() => {
               struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
               // Update button to default state
+              btn.setAttribute('data-active-defense', '0');
               btn.classList.remove('sui-mod-active-defense');
               btn.classList.add('sui-mod-default');
             });
@@ -941,6 +975,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.signingClientManager.queueMsgStructStealthActivate(struct.id).then(() => {
               struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
               // Update button to active state
+              btn.setAttribute('data-active-defense', '1');
               btn.classList.remove('sui-mod-default');
               btn.classList.add('sui-mod-active-defense');
             });
@@ -1038,6 +1073,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           data-sui-cheatsheet="${structType.type}"
           data-action-button="defend"
           data-action-charge="${structType.defend_change_charge}"
+          data-active-defense="${struct.isDefending() ? 1 : 0}"
         >
           <i class="sui-icon-md icon-defend"></i>
         </a>
@@ -1067,6 +1103,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.gameState.actionBarLock.lock();
 
             // Update button to default state while processing
+            btn.setAttribute('data-active-defense', '0');
             btn.classList.remove('sui-mod-active-defense');
             btn.classList.add('sui-mod-default');
 
@@ -1078,6 +1115,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.gameState.actionBarLock.clear(false);
 
             // Update button to default state
+            btn.setAttribute('data-active-defense', '0');
             btn.classList.remove('sui-mod-active-defense');
             btn.classList.add('sui-mod-default');
 
@@ -1090,6 +1128,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.gameState.actionBarLock.setActionSourceStruct(struct);
 
             // Update button to active state
+            btn.setAttribute('data-active-defense', '1');
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-defense');
 
