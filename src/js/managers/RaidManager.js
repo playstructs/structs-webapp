@@ -101,4 +101,9 @@ export class RaidManager {
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].fleet = fleet;
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setStructs(structs);
   }
+
+  async refreshRaidFleet() {
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].fleet = await this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id);
+    this.gameState.raidMap.setDefenderFleet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].fleet);
+  }
 }

@@ -15,7 +15,6 @@ import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 import {Guild} from "./Guild";
 import {ActionBarLock} from "./ActionBarLock";
-import {Fleet} from "./Fleet";
 
 export class GameState {
 
