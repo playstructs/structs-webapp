@@ -8,6 +8,7 @@ import {
 import {Player} from "../../../models/Player";
 import {MapStructTileRenderParamsDTO} from "../../../dtos/MapStructTileRenderParamsDTO";
 import {Struct} from "../../../models/Struct";
+import {Fleet} from "../../../models/Fleet";
 
 
 export class GenericMapLayerComponent extends AbstractViewModelComponent {
@@ -470,6 +471,19 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
     }
   }
 
+  /**
+   * @param {string} playerId
+   * @return {Fleet|null}
+   */
+  getFleetByPlayerId(playerId) {
+    if (this.attackerFleet?.owner === playerId) {
+      return this.attackerFleet;
+    } else if (this.defenderFleet?.owner === playerId) {
+      return this.defenderFleet;
+    }
+    return null;
+  }
+
   buildMapStructTilRenderParamsFromTileElement(tileElement) {
     const renderParams = new MapStructTileRenderParamsDTO();
     renderParams.tileElement = tileElement;
@@ -489,6 +503,7 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
     }
 
     const slotNum = parseInt(slot, 10);
+    const fleet = this.getFleetByPlayerId(playerId);
 
     renderParams.struct = this.structManager.getStructByPositionAndPlayerId(
       playerId,
@@ -497,7 +512,8 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
       this.planet.id,
       ambit,
       slotNum,
-      locationInfo.isCommandSlot
+      locationInfo.isCommandSlot,
+      fleet
     );
 
     return renderParams;

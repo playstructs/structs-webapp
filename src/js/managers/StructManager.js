@@ -9,6 +9,7 @@ import {RefreshActionBarEvent} from "../events/RefreshActionBarEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {RenderStructEvent} from "../events/RenderStructEvent";
+import {Fleet} from "../models/Fleet";
 
 export class StructManager {
 
@@ -39,11 +40,12 @@ export class StructManager {
   /**
    * @param {Struct} struct
    * @param {string} planetId
+   * @param {Fleet} fleet
    * @return {boolean}
    */
-  isStructOnPlanet(struct, planetId) {
+  isStructOnPlanet(struct, planetId, fleet = null) {
     return (struct.location_type === 'planet' && struct.location_id === planetId)
-      || (struct.location_type === 'fleet' && this.gameState.getFleetByPlayerId(struct.owner)?.location_id === planetId);
+      || (struct.location_type === 'fleet' && fleet?.location_id === planetId);
   }
 
   /**
@@ -55,6 +57,7 @@ export class StructManager {
    * @param {string} ambit - "space", "air", "land", "water"
    * @param {number} slot - Slot number
    * @param {boolean} isCommandSlot - Whether the slot is a command slot or just a planetary or fleet slot
+   * @param {Fleet} fleet - The fleet belonging to the player, required for fleet structs
    * @return {Struct|null}
    */
   getStructByPositionAndPlayerId(
@@ -64,7 +67,8 @@ export class StructManager {
     mapPlanetId,
     ambit,
     slot,
-    isCommandSlot
+    isCommandSlot,
+    fleet
   ) {
 
     /**
@@ -85,7 +89,7 @@ export class StructManager {
       && struct.operating_ambit.toLowerCase() === ambit.toLowerCase()
       && `${struct.slot}` === `${slot}`
       && this.isCommandStruct(struct) === isCommandSlot
-      && this.isStructOnPlanet(struct, mapPlanetId)
+      && this.isStructOnPlanet(struct, mapPlanetId, fleet)
     ) || null;
   }
 
@@ -98,6 +102,7 @@ export class StructManager {
    * @param {string} ambit - "space", "air", "land", "water"
    * @param {string|number} slot - Slot number
    * @param {boolean} isCommandSlot - Whether the slot is a command slot or just a planetary or fleet slot
+   * @param {Fleet} fleet - The fleet belonging to the player, required for fleet structs
    * @return {string}
    */
   getStructIdByPositionAndPlayerId(
@@ -107,13 +112,14 @@ export class StructManager {
     mapPlanetId,
     ambit,
     slot,
-    isCommandSlot
+    isCommandSlot,
+    fleet
   ) {
     if (slot === "") {
       return "";
     }
 
-    const struct = this.getStructByPositionAndPlayerId(playerId, locationType, locationId, mapPlanetId, ambit, parseInt(slot), isCommandSlot);
+    const struct = this.getStructByPositionAndPlayerId(playerId, locationType, locationId, mapPlanetId, ambit, parseInt(slot), isCommandSlot, fleet);
     return struct ? struct.id : '';
   }
 
