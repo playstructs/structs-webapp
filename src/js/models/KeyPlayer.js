@@ -319,4 +319,11 @@ export class KeyPlayer {
     return !!this.foreignRaidInfoKeyPlayer;
   }
 
+  /**
+   * @param {string} fleetId
+   */
+  isFleetOwner(fleetId) {
+    return fleetId && this.fleet?.id === fleetId;
+  }
+
 }

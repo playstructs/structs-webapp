@@ -88,5 +88,19 @@ export class RaidStatusListener extends AbstractGrassListener {
         });
       }
     }
+
+    /**
+     * Handles the special case where the player is raiding a planet
+     * and the raid enemy's fleet leaves or arrives during the battle.
+     */
+    if (
+      (messageData.category === 'fleet_depart' || messageData.category === 'fleet_arrive')
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].getPlanetId()}`
+      && this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].isFleetOwner(messageData.detail?.fleet_id)
+    ) {
+      this.raidManager.refreshRaidFleet().then(() => {
+        this.gameState.raidMap.render();
+      })
+    }
   }
 }
