@@ -400,20 +400,6 @@ export class GameState {
     return null;
   }
 
-  /**
-   * @param {string} playerId
-   * @return {Fleet}
-   */
-  getFleetByPlayerId(playerId) {
-    const playerTypes = Object.values(PLAYER_TYPES);
-    for (let i = 0; i < playerTypes.length; i++) {
-      if (this.keyPlayers[playerTypes[i]].id === playerId) {
-        return this.keyPlayers[playerTypes[i]].fleet;
-      }
-    }
-    return null;
-  }
-
   printMyPlayer() {
     console.log('Player ID: ' + this.keyPlayers[PLAYER_TYPES.PLAYER].id);
     console.log('Singing Account: ' + this.signingAccount.address);
