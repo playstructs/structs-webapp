@@ -4,6 +4,7 @@ import {Player} from "../../../models/Player";
 import {Struct} from "../../../models/Struct";
 import {GenericMapLayerComponent} from "./GenericMapLayerComponent";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
+import {AmbitUtil} from "../../../util/AmbitUtil";
 
 
 export class MapStructLayerComponent extends GenericMapLayerComponent {
@@ -48,6 +49,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     );
 
     this.structStillBuilder = new StructStillBuilder(this.gameState);
+    this.ambitUtil = new AmbitUtil();
   }
 
   /**
@@ -102,6 +104,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
    */
   renderStruct(tileElement, struct) {
     tileElement.innerHTML = this.renderStructContent(struct);
+    tileElement.setAttribute('data-struct-id', struct ? struct.id : '');
   }
 
   /**
@@ -157,6 +160,48 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * Mark enemy structs as invalid selections when entering attack mode
+   * if their operating ambit does not fall within the weapon's ambit array.
+   *
+   * @param {string[]} weaponAmbitsArray - Valid target ambits for the weapon (e.g. ["space", "air"])
+   */
+  showAttackTargets(weaponAmbitsArray) {
+    const container = document.getElementById(this.containerId);
+    const attackingPlayerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+    const tiles = container.querySelectorAll(`.map-struct-layer-tile[data-struct-id^="5"]`);
+
+    tiles.forEach(tile => {
+      const ambit = tile.getAttribute('data-ambit');
+      const playerId = tile.getAttribute('data-player-id');
+      const structId = tile.getAttribute('data-struct-id');
+
+      // Mark as invalid if the struct's operating ambit is not in the weapon's ambit array
+      // or the struct belongs to the player except if it's the attacking struct
+      if (
+        attackingStruct.id !== structId
+        && (
+          attackingPlayerId === playerId
+          || !this.ambitUtil.contains(weaponAmbitsArray, ambit, attackingStruct.operating_ambit)
+        )
+      ) {
+        tile.classList.add('mod-invalid-selection');
+      }
+    });
+  }
+
+  /**
+   * Clear all attack target indicators.
+   */
+  clearAttackTargets() {
+    const container = document.getElementById(this.containerId);
+    const tiles = container.querySelectorAll('.map-struct-layer-tile.mod-invalid-selection');
+    tiles.forEach(tile => {
+      tile.classList.remove('mod-invalid-selection');
+    });
+  }
+
+  /**
    * Initialize page code: populate structs and set up event listeners
    */
   initPageCode() {
@@ -201,6 +246,20 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     window.addEventListener(EVENTS.CLEAR_DEFEND_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.clearDefendTargets();
+      }
+    });
+
+    // Listen for SHOW_ATTACK_TARGETS events
+    window.addEventListener(EVENTS.SHOW_ATTACK_TARGETS, (event) => {
+      if (event.mapId === this.mapId) {
+        this.showAttackTargets(event.weaponAmbitsArray);
+      }
+    });
+
+    // Listen for CLEAR_ATTACK_TARGETS events
+    window.addEventListener(EVENTS.CLEAR_ATTACK_TARGETS, (event) => {
+      if (event.mapId === this.mapId) {
+        this.clearAttackTargets();
       }
     });
   }

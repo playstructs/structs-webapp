@@ -103,6 +103,10 @@ export const
     "Tank": "",
     "World Engine": "Consumes Alpha Matter to generate Energy."
   },
+  STRUCT_WEAPON_SYSTEM = {
+    PRIMARY_WEAPON: 'primaryWeapon',
+    SECONDARY_WEAPON: 'secondaryWeapon'
+  },
   STRUCT_WEAPON_CONTROL = {
     GUIDED: 'guided',
     UNGUIDED: 'unguided'
@@ -123,7 +127,8 @@ export const
   STRUCT_ACTIONS = {
     ACTIVATE: 'ACTIVATE',
     DEACTIVATE: 'DEACTIVATE',
-    ATTACK: 'ATTACK',
+    ATTACK_PRIMARY_WEAPON: 'ATTACK_PRIMARY_WEAPON',
+    ATTACK_SECONDARY_WEAPON: 'ATTACK_SECONDARY_WEAPON',
     DEFENSE_SET: 'DEFENSE_SET',
     DEFENSE_CLEAR: 'DEFENSE_CLEAR',
     MOVE: 'MOVE',

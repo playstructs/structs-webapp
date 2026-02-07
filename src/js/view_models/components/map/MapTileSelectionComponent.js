@@ -10,10 +10,12 @@ import {EVENTS} from "../../../constants/Events";
 import {HUDViewModel} from "../../HUDViewModel";
 import {Planet} from "../../../models/Planet";
 import {Player} from "../../../models/Player";
-import {STRUCT_ACTIONS} from "../../../constants/StructConstants";
+import {STRUCT_ACTIONS, STRUCT_WEAPON_SYSTEM} from "../../../constants/StructConstants";
 import {ClearMoveTargetsEvent} from "../../../events/ClearMoveTargetsEvent";
 import {ClearDefendTargetsEvent} from "../../../events/ClearDefendTargetsEvent";
+import {ClearAttackTargetsEvent} from "../../../events/ClearAttackTargetsEvent";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
+import {AmbitUtil} from "../../../util/AmbitUtil";
 
 
 export class MapTileSelectionComponent extends AbstractViewModelComponent {
@@ -45,6 +47,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     mapId = ""
   ) {
     super(gameState);
+    this.ambitUtil = new AmbitUtil();
     this.signingClientManager = signingClientManager;
     this.structManager = structManager;
     this.mapColBreakdown = mapColBreakdown;
@@ -627,6 +630,37 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * Handle a click on a valid attack target tile.
+   *
+   * @param {HTMLElement} tile - The tile that was clicked
+   * @param {string} currentAction - The current action (ATTACK_PRIMARY_WEAPON or ATTACK_SECONDARY_WEAPON)
+   */
+  async handleAttackTargetClick(tile, currentAction) {
+    const targetStructId = tile.getAttribute('data-struct-id');
+    if (!targetStructId) {
+      return;
+    }
+
+    // Lock the action bar until we hear the grass notification from the struct attack action
+    this.gameState.actionBarLock.lock();
+
+    // Clear attack target indicators
+    window.dispatchEvent(new ClearAttackTargetsEvent(this.mapId));
+
+    const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+    const weaponSystem = (currentAction === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON)
+      ? STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
+      : STRUCT_WEAPON_SYSTEM.SECONDARY_WEAPON;
+
+    // Send attack message to chain
+    await this.signingClientManager.queueMsgStructAttack(
+      attackingStruct.id,
+      [targetStructId],
+      weaponSystem
+    );
+  }
+
+  /**
    * Handle a click on a move target tile.
    *
    * @param {HTMLElement} tile - The tile that was clicked
@@ -672,6 +706,40 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
           this.clearMoveTargets();
           this.gameState.actionBarLock.clear(false);
           window.dispatchEvent(new ClearMoveTargetsEvent(this.mapId));
+        }
+
+        // Check if we're in attack mode (primary or secondary weapon)
+        if (
+          currentAction === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON
+          || currentAction === STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON
+        ) {
+          const targetStructId = e.currentTarget.getAttribute('data-struct-id');
+          const targetPlayerId = e.currentTarget.getAttribute('data-player-id');
+          const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+          // Valid target: enemy struct whose ambit is within the weapon's ambit array
+          const isEnemy = targetPlayerId
+            && targetPlayerId !== this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+
+          if (targetStructId && isEnemy) {
+            const targetStruct = this.structManager.getStructById(targetStructId);
+            const attackerStructType = this.gameState.structTypes.getStructTypeById(attackingStruct.type);
+            const weaponAmbitsArray = (currentAction === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON)
+              ? attackerStructType.primary_weapon_ambits_array
+              : attackerStructType.secondary_weapon_ambits_array;
+
+            if (
+              targetStruct
+              && this.ambitUtil.contains(weaponAmbitsArray, targetStruct.operating_ambit, attackingStruct.operating_ambit)
+            ) {
+              await this.handleAttackTargetClick(e.currentTarget, currentAction);
+              return;
+            }
+          }
+
+          // Invalid target or empty tile - cancel attack mode
+          window.dispatchEvent(new ClearAttackTargetsEvent(this.mapId));
+          this.gameState.actionBarLock.clear(false);
         }
 
         // Check if we're in defend mode

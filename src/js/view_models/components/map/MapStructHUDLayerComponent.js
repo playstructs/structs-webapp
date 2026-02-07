@@ -147,8 +147,10 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
         </div>      
         ${this.renderStatusIndicators(struct)}
       `;
+      tileElement.setAttribute('data-struct-id', struct.id);
     } else {
       tileElement.innerHTML = '';
+      tileElement.setAttribute('data-struct-id', '');
     }
   }
 

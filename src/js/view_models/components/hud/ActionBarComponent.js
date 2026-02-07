@@ -10,6 +10,8 @@ import {ShowMoveTargetsEvent} from "../../../events/ShowMoveTargetsEvent";
 import {ClearMoveTargetsEvent} from "../../../events/ClearMoveTargetsEvent";
 import {ShowDefendTargetsEvent} from "../../../events/ShowDefendTargetsEvent";
 import {ClearDefendTargetsEvent} from "../../../events/ClearDefendTargetsEvent";
+import {ShowAttackTargetsEvent} from "../../../events/ShowAttackTargetsEvent";
+import {ClearAttackTargetsEvent} from "../../../events/ClearAttackTargetsEvent";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
 import {NumberFormatter} from "../../../util/NumberFormatter";
 
@@ -849,12 +851,38 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-primary-weapon-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
-          if (this.isActionAvailable(struct, structType.primary_weapon_charge)) {
-            console.log('Action: PRIMARY_WEAPON_ATTACK', {
-              structId: struct.id,
-              weapon: structType.primary_weapon,
-              label: structType.primary_weapon_label
-            });
+          if (!this.isActionAvailable(struct, structType.primary_weapon_charge)) {
+            return;
+          }
+
+          const currentAction = this.gameState.actionBarLock.getCurrentAction();
+
+          if (currentAction === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON) {
+            // Already in primary weapon mode - cancel
+            this.gameState.actionBarLock.clear(false);
+            btn.classList.remove('sui-mod-active-offense');
+            btn.classList.add('sui-mod-default');
+            window.dispatchEvent(new ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
+          } else {
+            // If secondary weapon mode was active, reset its button
+            if (currentAction === STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON) {
+              const secBtn = document.getElementById(`${this.getActionBtnIdPrefix()}-secondary-weapon-btn`);
+              if (secBtn) {
+                secBtn.classList.remove('sui-mod-active-offense');
+                secBtn.classList.add('sui-mod-default');
+              }
+              window.dispatchEvent(new ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
+            }
+
+            // Activate primary weapon mode
+            this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON);
+            this.gameState.actionBarLock.setActionSourceStruct(struct);
+            btn.classList.remove('sui-mod-default');
+            btn.classList.add('sui-mod-active-offense');
+            window.dispatchEvent(new ShowAttackTargetsEvent(
+              this.gameState.getActiveMapId(),
+              structType.primary_weapon_ambits_array
+            ));
           }
         });
       }
@@ -899,12 +927,38 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-secondary-weapon-btn`);
       if (btn) {
         btn.addEventListener('click', () => {
-          if (this.isActionAvailable(struct, structType.secondary_weapon_charge)) {
-            console.log('Action: SECONDARY_WEAPON_ATTACK', {
-              structId: struct.id,
-              weapon: structType.secondary_weapon,
-              label: structType.secondary_weapon_label
-            });
+          if (!this.isActionAvailable(struct, structType.secondary_weapon_charge)) {
+            return;
+          }
+
+          const currentAction = this.gameState.actionBarLock.getCurrentAction();
+
+          if (currentAction === STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON) {
+            // Already in secondary weapon mode - cancel
+            this.gameState.actionBarLock.clear(false);
+            btn.classList.remove('sui-mod-active-offense');
+            btn.classList.add('sui-mod-default');
+            window.dispatchEvent(new ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
+          } else {
+            // If primary weapon mode was active, reset its button
+            if (currentAction === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON) {
+              const priBtn = document.getElementById(`${this.getActionBtnIdPrefix()}-primary-weapon-btn`);
+              if (priBtn) {
+                priBtn.classList.remove('sui-mod-active-offense');
+                priBtn.classList.add('sui-mod-default');
+              }
+              window.dispatchEvent(new ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
+            }
+
+            // Activate secondary weapon mode
+            this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON);
+            this.gameState.actionBarLock.setActionSourceStruct(struct);
+            btn.classList.remove('sui-mod-default');
+            btn.classList.add('sui-mod-active-offense');
+            window.dispatchEvent(new ShowAttackTargetsEvent(
+              this.gameState.getActiveMapId(),
+              structType.secondary_weapon_ambits_array
+            ));
           }
         });
       }
