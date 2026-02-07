@@ -150,6 +150,7 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
         data-player-id="${playerId}"
         data-ambit="${ambit}"
         data-slot="${slot}"
+        data-struct-id=""
       ></div>
     `;
   }
@@ -468,6 +469,7 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
     const tileElement = container.querySelector(selector);
     if (tileElement) {
       tileElement.innerHTML = '';
+      tileElement.setAttribute('data-struct-id', '');
     }
   }
 

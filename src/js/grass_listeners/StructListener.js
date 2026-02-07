@@ -3,7 +3,7 @@ import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TASK_TYPES} from "../constants/TaskTypes";
 import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
 import {TaskCmdSpawnEvent} from "../events/TaskCmdSpawnEvent";
-import {STRUCT_STATUS_FLAGS} from "../constants/StructConstants";
+import {STRUCT_ACTIONS, STRUCT_STATUS_FLAGS} from "../constants/StructConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {ClearStructTileEvent} from "../events/ClearStructTileEvent";
 import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
@@ -194,7 +194,7 @@ export class StructListener extends AbstractGrassListener {
     ]).then(() => {
       // Only clear actionBarLock if this was triggered by the current player's action
       if (
-        this.gameState.actionBarLock.getCurrentAction() === 'DEFENSE_SET'
+        this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.DEFENSE_SET
         && this.gameState.actionBarLock.isLocked()
       ) {
         this.gameState.actionBarLock.clear();
@@ -225,7 +225,57 @@ export class StructListener extends AbstractGrassListener {
     ]).then(() => {
       // Only clear actionBarLock if this was triggered by the current player's action
       if (
-        this.gameState.actionBarLock.getCurrentAction() === 'DEFENSE_CLEAR'
+        this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.DEFENSE_CLEAR
+        && this.gameState.actionBarLock.isLocked()
+      ) {
+        this.gameState.actionBarLock.clear();
+      }
+    });
+  }
+
+  /**
+   * @param {string} subject
+   * @param {object} messageData
+   */
+  handleStructAttack(subject, messageData) {
+    if (!(
+      messageData.category === 'struct_attack'
+      && messageData.subject === subject
+    )) {
+      return;
+    }
+
+    const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
+    const structIdsToRefresh = new Set();
+
+    // Always refresh the attacker struct
+    if (messageData.detail.attackerStructId) {
+      structIdsToRefresh.add(messageData.detail.attackerStructId);
+    }
+
+    // Refresh targets and blockers from each shot detail
+    if (messageData.detail.eventAttackShotDetail) {
+      for (let i = 0; i < messageData.detail.eventAttackShotDetail.length; i++) {
+        const shot = messageData.detail.eventAttackShotDetail[i];
+        if (shot.targetStructId) {
+          structIdsToRefresh.add(shot.targetStructId);
+        }
+        if (shot.blockedByStructId) {
+          structIdsToRefresh.add(shot.blockedByStructId);
+        }
+      }
+    }
+
+    // Refresh all involved structs
+    const refreshPromises = Array.from(structIdsToRefresh).map(
+      structId => this.structManager.refreshStruct(structId, mapType)
+    );
+
+    Promise.all(refreshPromises).then(() => {
+      // Only clear actionBarLock if this was triggered by the current player's attack action
+      if (
+        (this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON
+          || this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON)
         && this.gameState.actionBarLock.isLocked()
       ) {
         this.gameState.actionBarLock.clear();
@@ -248,5 +298,6 @@ export class StructListener extends AbstractGrassListener {
     this.handleStructMove(subject, messageData);
     this.handleStructDefenseAdd(subject, messageData);
     this.handleStructDefenseRemove(subject, messageData);
+    this.handleStructAttack(subject, messageData);
   }
 }
