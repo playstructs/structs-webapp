@@ -40,6 +40,9 @@ export class Struct {
 
     /** @type {string[]} the IDs of the structs that are defending this struct <=> */
     this.defending_struct_ids = [];
+
+    /** @type {number|null} */
+    this.destroyed_block = null;
   }
 
   /**
