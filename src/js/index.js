@@ -177,6 +177,7 @@ blockGrassManager.init();
 const hudContainer = document.getElementById('hud-container');
 
 await gameState.load();
+gameState.settings = await guildAPI.getSettings();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
 HUDViewModel.init(gameState, signingClientManager, structManager, taskManager);
