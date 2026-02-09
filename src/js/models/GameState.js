@@ -15,6 +15,7 @@ import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 import {Guild} from "./Guild";
 import {ActionBarLock} from "./ActionBarLock";
+import {Settings} from "./Settings";
 
 export class GameState {
 
@@ -48,6 +49,9 @@ export class GameState {
     this.previewMap = null;
 
     /* API Primed Data */
+
+    /** @type {Settings} */
+    this.settings = null;
 
     /** @type {Guild} */
     this.thisGuild = null;

@@ -60,7 +60,13 @@ export class PreviewViewModel extends AbstractViewModel {
       return;
     }
 
-    document.getElementById(this.launchFleetBtnId).addEventListener('click', () => {
+    const launchFleetBtnElm = document.getElementById(this.launchFleetBtnId);
+
+    if (!launchFleetBtnElm) {
+      return;
+    }
+
+    launchFleetBtnElm.addEventListener('click', () => {
       const planetRaid = this.planetRaidFactory.make({
         fleet_id: this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id,
         planet_id: this.planet_id,

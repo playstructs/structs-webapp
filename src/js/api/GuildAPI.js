@@ -21,6 +21,11 @@ import {StructFactory} from "../factories/StructFactory";
 import {FleetFactory} from "../factories/FleetFactory";
 import {WorkFactory} from "../factories/WorkFactory";
 import {Struct} from "../models/Struct";
+import {SettingFactory} from "../factories/SettingFactory";
+import {Settings} from "../models/Settings";
+import {Player} from "../models/Player";
+import {Infusion} from "../models/Infusion";
+import {Fleet} from "../models/Fleet";
 
 export class GuildAPI {
 
@@ -44,6 +49,7 @@ export class GuildAPI {
     this.structFactory = new StructFactory();
     this.fleetFactory = new FleetFactory();
     this.workFactory = new WorkFactory();
+    this.settingFactory = new SettingFactory();
 
   }
 
@@ -747,5 +753,15 @@ export class GuildAPI {
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.structFactory.make(response.data);
+  }
+
+  /**
+   * @return {Promise<Settings>}
+   */
+  async getSettings() {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/setting`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return this.settingFactory.parseList(response.data);
   }
 }
