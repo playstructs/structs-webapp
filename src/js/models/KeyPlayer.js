@@ -14,6 +14,8 @@ import {UndiscoveredOreCountChangedEvent} from "../events/UndiscoveredOreCountCh
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {Fleet} from "./Fleet";
+import {TrackDestroyedStructsEvent} from "../events/TrackDestroyedStructsEvent";
+import {TrackDestroyedStructEvent} from "../events/TrackDestroyedStructEvent";
 
 export class KeyPlayer {
 
@@ -231,6 +233,7 @@ export class KeyPlayer {
     });
 
     window.dispatchEvent(new StructCountChangedEvent(this.playerType));
+    window.dispatchEvent(new TrackDestroyedStructsEvent(this.playerType));
   }
 
   /**
@@ -252,6 +255,7 @@ export class KeyPlayer {
     this.structs[struct.id] = struct;
 
     window.dispatchEvent(new StructCountChangedEvent(this.playerType));
+    window.dispatchEvent(new TrackDestroyedStructEvent(this.playerType, struct.id));
   }
 
   /**

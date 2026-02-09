@@ -29,6 +29,7 @@ import {TaskStateFactory} from "./factories/TaskStateFactory";
 import {EVENTS} from "./constants/Events";
 import {TASK} from "./constants/TaskConstants";
 import {PLAYER_TYPES} from "./constants/PlayerTypes";
+import {DestroyedStructManager} from "./managers/DestroyedStructManager";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -80,6 +81,9 @@ const taskStateFactory = new TaskStateFactory();
 const taskManager = new TaskManager(gameState, guildAPI, signingClientManager, taskStateFactory);
 global.taskManager = taskManager;
 
+const destroyedStructManager = new DestroyedStructManager(gameState, structManager);
+global.destroyedStructManager = destroyedStructManager;
+
 const authManager = new AuthManager(
   gameState,
   guildAPI,
@@ -92,7 +96,8 @@ const authManager = new AuthManager(
   raidManager,
   mapManager,
   taskManager,
-  structManager
+  structManager,
+  destroyedStructManager
 );
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);

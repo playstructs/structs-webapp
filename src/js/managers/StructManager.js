@@ -387,4 +387,25 @@ export class StructManager {
 
     return struct;
   }
+
+  /**
+   * @param {Struct} struct
+   * @param {string} playerType
+   */
+  getMapIdByPlayerTypeAndStruct(struct, playerType) {
+
+    let onPlanet = (struct.location_type === 'fleet')
+      ? this.gameState.keyPlayers[playerType].fleet?.location_id
+      : struct.location_id;
+
+    if (this.gameState.alphaBaseMap.planet && onPlanet === this.gameState.alphaBaseMap.planet.id) {
+      return this.gameState.alphaBaseMap.mapId;
+    }
+
+    if (this.gameState.raidMap.planet && onPlanet === this.gameState.raidMap.planet.id) {
+      return this.gameState.raidMap.mapId;
+    }
+
+    return null;
+  }
 }

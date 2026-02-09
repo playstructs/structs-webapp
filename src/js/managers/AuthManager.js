@@ -39,6 +39,7 @@ export class AuthManager {
    * @param {MapManager} mapManager
    * @param {TaskManager} taskManager
    * @param {StructManager} structManager
+   * @param {DestroyedStructManager} destroyedStructManager
    */
   constructor(
     gameState,
@@ -52,7 +53,8 @@ export class AuthManager {
     raidManager,
     mapManager,
     taskManager,
-    structManager
+    structManager,
+    destroyedStructManager,
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -66,7 +68,7 @@ export class AuthManager {
     this.mapManager = mapManager;
     this.taskManager = taskManager;
     this.structManager = structManager;
-
+    this.destroyedStructManager = destroyedStructManager;
   }
 
   /**
@@ -188,6 +190,8 @@ export class AuthManager {
 
       await this.signingClientManager.initSigningClient(this.gameState.wallet);
       await this.playerAddressManager.addPlayerAddressMeta();
+
+      this.destroyedStructManager.init();
 
       const [
         player,
