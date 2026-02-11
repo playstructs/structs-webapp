@@ -95,6 +95,7 @@
 
   --loading-screen-z-index: 10000;
   --popup-z-index: 2000;
+  --notification-dialogue-z-index: 1500;
   --menu-page-z-index: 1000;
   --hud-z-index: 50;
   --map-z-index: 10;
@@ -1302,6 +1303,14 @@ a.sui-screen-nav-item:visited {
 
 .sui-screen-dialogue.sui-theme-neutral strong {
   color: var(--text-neutral-primary);
+}
+
+.sui-screen-dialogue.sui-theme-neutral strong.sui-text-primary {
+  color: var(--text-player-primary);
+}
+
+.sui-screen-dialogue.sui-theme-neutral strong.sui-text-destructive {
+  color: var(--text-enemy-primary);
 }
 
 .sui-screen-portrait,

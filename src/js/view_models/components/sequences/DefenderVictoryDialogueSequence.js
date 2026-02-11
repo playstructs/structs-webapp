@@ -1,0 +1,15 @@
+import {NotificationDialogueSequence} from "../../../framework/NotificationDialogueSequence";
+import {NotificationDialogueSequenceStep} from "../../../framework/NotificationDialogueSequenceStep";
+
+export class DefenderVictoryDialogueSequence extends NotificationDialogueSequence {
+  constructor() {
+    super();
+
+    this.dialogueSequence = [
+      new NotificationDialogueSequenceStep(
+        '<i class="sui-icon-md icon-success sui-text-primary"></i>',
+        '<strong class="sui-text-primary">Victory!</strong> You successfully repelled the enemy\'s attack.',
+      )
+    ];
+  }
+}

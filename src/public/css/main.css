@@ -710,6 +710,19 @@ a.sui-text-secondary:hover {
 
 /* Menu Page Component Styling End */
 
+/* Notification Dialogue Component Styling Start */
+
+#notification-dialogue {
+  position: fixed;
+  bottom: 0;
+  z-index: var(--notification-dialogue-z-index);
+  display: flex;
+  min-height: 64px;
+  width: 100%;
+}
+
+/* Notification Dialogue Component Styling End */
+
 /* Loading Screen Start */
 
 #loading-screen {
@@ -2073,6 +2086,11 @@ only screen and (min-height: 1024px) {
     transform-origin: 0 0;
   }
 
+  #notification-dialogue {
+    transform: scale(2);
+    transform-origin: bottom left;
+  }
+
   #sui-offcanvas.sui-mod-right {
     transform-origin: top right;
   }
@@ -2082,6 +2100,10 @@ only screen and (min-height: 1024px) {
   #loading-screen {
     width: 50vw;
     height: 50vh;
+  }
+
+  #notification-dialogue {
+    width: 50vw;
   }
 
   #sui-offcanvas {
@@ -2100,6 +2122,11 @@ only screen and (min-height: 2048px) {
     transform-origin: 0 0;
   }
 
+  #notification-dialogue {
+    transform: scale(4);
+    transform-origin: bottom left;
+  }
+
   #sui-offcanvas.sui-mod-right {
     transform-origin: top right;
   }
@@ -2109,6 +2136,10 @@ only screen and (min-height: 2048px) {
   #loading-screen {
     width: 25vw;
     height: 25vh;
+  }
+
+  #notification-dialogue {
+    width: 25vw;
   }
 
   #sui-offcanvas {

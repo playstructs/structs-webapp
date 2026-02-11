@@ -30,6 +30,7 @@ import {EVENTS} from "./constants/Events";
 import {TASK} from "./constants/TaskConstants";
 import {PLAYER_TYPES} from "./constants/PlayerTypes";
 import {DestroyedStructManager} from "./managers/DestroyedStructManager";
+import {NotificationDialogue} from "./framework/NotificationDialogue";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -174,6 +175,8 @@ MenuPage.router.registerController(guildController);
 MenuPage.router.registerController(fleetController);
 MenuPage.initListeners();
 MenuPage.sui.cheatsheet.setContentBuilder(new CheatsheetContentBuilder(gameState));
+
+NotificationDialogue.initListeners();
 
 grassManager.init();
 blockGrassManager.registerListener(blockListener);
