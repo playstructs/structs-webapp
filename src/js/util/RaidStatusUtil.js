@@ -14,4 +14,20 @@ export class RaidStatusUtil {
       || raidStatus === RAID_STATUS.ATTACKER_RETREATED
     );
   }
+
+  /**
+   * @param {string} raidStatus
+   * @return {boolean}
+   */
+  isAttackerDefeated(raidStatus) {
+    return raidStatus === RAID_STATUS.ATTACKER_DEFEATED;
+  }
+
+  /**
+   * @param {string} raidStatus
+   * @return {boolean}
+   */
+  isRaidSuccessful(raidStatus) {
+    return raidStatus === RAID_STATUS.RAID_SUCCESSFUL;
+  }
 }

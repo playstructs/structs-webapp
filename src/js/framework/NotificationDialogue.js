@@ -1,3 +1,4 @@
+import {HUDViewModel} from "../view_models/HUDViewModel";
 
 export class NotificationDialogue {
 
@@ -78,9 +79,11 @@ export class NotificationDialogue {
     NotificationDialogue.clearDialogueScreen();
     NotificationDialogue.setDialogueScreenThemeToNeutral();
     NotificationDialogue.clearDialogueBtnAHandler();
+    HUDViewModel.show();
   }
 
   static showDialoguePanel() {
+    HUDViewModel.hide();
     document.getElementById(NotificationDialogue.dialoguePanelId).classList.remove('hidden');
   }
 

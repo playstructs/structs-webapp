@@ -17,6 +17,8 @@ export class HUDViewModel extends AbstractViewModel {
   /** @type {SigningClientManager} */
   static signingClientManager;
 
+  static containerId = 'hud-container';
+
   /** @type {StatusBarTopLeftComponent} */
   static topLeftStatusBar;
 
@@ -314,5 +316,19 @@ export class HUDViewModel extends AbstractViewModel {
       current.slot,
       current.structId
     );
+  }
+
+  static hide() {
+    const container = document.getElementById(this.containerId);
+    if (container) {
+      container.classList.add('hidden')
+    }
+  }
+
+  static show() {
+    const container = document.getElementById(this.containerId);
+    if (container) {
+      container.classList.remove('hidden')
+    }
   }
 }

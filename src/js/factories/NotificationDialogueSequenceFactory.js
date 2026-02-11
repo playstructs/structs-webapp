@@ -5,12 +5,14 @@ import {DefenderVictoryDialogueSequence} from "../view_models/components/sequenc
 import {
   DefeatedByDefenderDialogueSequence
 } from "../view_models/components/sequences/DefeatedByDefenderDialogueSequence";
+import {NotificationDialogueSequence} from "../framework/NotificationDialogueSequence";
 
 export class NotificationDialogueSequenceFactory {
 
   /**
    * @param {string} sequenceName See NOTIFICATION_DIALOGUE_SEQUENCES
    * @param {object} params
+   * @return {NotificationDialogueSequence}
    */
   make(sequenceName, params = {}) {
     switch (sequenceName) {
