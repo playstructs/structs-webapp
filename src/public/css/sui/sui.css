@@ -96,6 +96,7 @@
   --loading-screen-z-index: 10000;
   --popup-z-index: 2000;
   --notification-dialogue-z-index: 1500;
+  --banner-z-index: 1250;
   --menu-page-z-index: 1000;
   --hud-z-index: 50;
   --map-z-index: 10;

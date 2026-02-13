@@ -3,11 +3,11 @@ export class NotificationDialogueSequenceStep {
   /**
    * @param {string} indicatorContent
    * @param {string} screenContent
-   * @param {function} stepScript
+   * @param {function} btnAExtraAction
    */
-  constructor(indicatorContent, screenContent, stepScript = () => {}) {
+  constructor(indicatorContent, screenContent, btnAExtraAction = () => {}) {
     this.indicatorContent = indicatorContent;
     this.screenContent = screenContent;
-    this.stepScript = stepScript;
+    this.btnAExtraAction = btnAExtraAction;
   }
 }

@@ -23,8 +23,6 @@ export class NotificationDialogueSequence {
       NotificationDialogue.setDialogueIndicatorContent(step.indicatorContent)
       NotificationDialogue.setDialogueScreenContent(step.screenContent);
 
-      step.stepScript();
-
       this.dialogueIndex++;
     }
   }
@@ -32,14 +30,29 @@ export class NotificationDialogueSequence {
   start() {
     NotificationDialogue.hideAndClearDialoguePanel();
 
+    let pendingAction = null;
+
     NotificationDialogue.dialogueBtnAHandler = () => {
-      this.step();
+      const actionResult = this.dialogueSequence[this.dialogueIndex - 1]?.btnAExtraAction();
+
+      if (actionResult instanceof Promise) {
+        pendingAction = actionResult;
+      }
 
       if (this.dialogueIndex === this.dialogueSequence.length) {
-        this.dialogueIndex++;
-        this.actionOnSequenceEnd();
         NotificationDialogue.hideAndClearDialoguePanel();
+
+        if (pendingAction) {
+          pendingAction.then(() => {
+            this.actionOnSequenceEnd();
+          });
+        } else {
+          this.actionOnSequenceEnd();
+        }
+        return;
       }
+
+      this.step();
     };
 
     this.step();

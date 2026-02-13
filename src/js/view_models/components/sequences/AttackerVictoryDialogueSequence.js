@@ -1,9 +1,12 @@
 import {NotificationDialogueSequence} from "../../../framework/NotificationDialogueSequence";
 import {NotificationDialogueSequenceStep} from "../../../framework/NotificationDialogueSequenceStep";
+import {VictoryBannerViewModel} from "../../banners/VictoryBannerViewModel";
 
 export class AttackerVictoryDialogueSequence extends NotificationDialogueSequence {
   constructor(alphaOreRecovered) {
     super();
+
+    this.bannerViewModel = new VictoryBannerViewModel();
 
     this.alphaOreRecovered = alphaOreRecovered;
 
@@ -11,6 +14,7 @@ export class AttackerVictoryDialogueSequence extends NotificationDialogueSequenc
       new NotificationDialogueSequenceStep(
         '<i class="sui-icon-md icon-success sui-text-primary"></i>',
         '<strong class="sui-text-primary">Victory!</strong> The enemy\'s planetary shield has been defeated.',
+        () => this.bannerViewModel.close()
       ),
       new NotificationDialogueSequenceStep(
         '<i class="sui-icon-md icon-success sui-text-primary"></i>',
@@ -21,5 +25,9 @@ export class AttackerVictoryDialogueSequence extends NotificationDialogueSequenc
         'Your fleet will now return to base.',
       ),
     ];
+
+    this.initPageCode = () => {
+      this.bannerViewModel.render();
+    }
   }
 }
