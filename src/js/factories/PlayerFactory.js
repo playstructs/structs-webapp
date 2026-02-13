@@ -18,6 +18,7 @@ export class PlayerFactory {
     player.structs_load = this.convertFromPreciseNumber(player.structs_load);
     player.capacity = this.convertFromPreciseNumber(player.capacity);
     player.connection_capacity = this.convertFromPreciseNumber(player.connection_capacity);
+    player.ore = parseInt(player.ore);
     return player;
   }
 }

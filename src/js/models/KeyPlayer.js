@@ -134,11 +134,11 @@ export class KeyPlayer {
   }
 
   /**
-   * @param {number} ore
+   * @param {number|string} ore
    */
   setOre(ore) {
     if (this.player && this.player.hasOwnProperty('ore')) {
-      this.player.ore = ore;
+      this.player.ore = parseInt(ore);
 
       window.dispatchEvent(new SaveGameStateEvent());
       window.dispatchEvent(new OreCountChangedEvent(this.playerType));

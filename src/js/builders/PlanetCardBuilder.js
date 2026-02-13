@@ -167,7 +167,7 @@ export class PlanetCardBuilder {
 
     alphaBaseCard.hasAlert = true;
     alphaBaseCard.alertIconColorClass = 'sui-text-primary';
-    alphaBaseCard.alertMessage = 'All Alpha recovered.';
+    alphaBaseCard.alertMessage = 'All Alpha extracted.';
 
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'Command';
