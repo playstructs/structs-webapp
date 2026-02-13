@@ -88,18 +88,21 @@ export class RaidManager {
       player,
       height,
       fleet,
-      structs
+      structs,
+      shieldInfo
     ] = await Promise.all([
       this.guildAPI.getPlayer(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
       this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
       this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
-      this.guildAPI.getStructsByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id)
+      this.guildAPI.getStructsByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
+      this.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo.planet_id),
     ]);
 
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setPlayer(player);
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].fleet = fleet;
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setStructs(structs);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
   }
 
   async refreshRaidFleet() {

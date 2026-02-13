@@ -710,6 +710,38 @@ a.sui-text-secondary:hover {
 
 /* Menu Page Component Styling End */
 
+/* BannerLayer Layer Styling Start */
+
+#banner-layer {
+  position: fixed;
+  z-index: var(--banner-z-index);
+  display: flex;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  flex-direction:column;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+}
+
+/* BannerLayer Layer Styling End */
+
+/* Notification Dialogue Component Styling Start */
+
+#notification-dialogue {
+  position: fixed;
+  bottom: 0;
+  z-index: var(--notification-dialogue-z-index);
+  display: flex;
+  min-height: 64px;
+  width: 100%;
+}
+
+/* Notification Dialogue Component Styling End */
+
 /* Loading Screen Start */
 
 #loading-screen {
@@ -2013,6 +2045,11 @@ a.offcanvas-struct-container.sui-mod-disabled {
   z-index: var(--struct-bottom-z-index);
 }
 
+.raid-end-banner {
+  display: flex;
+  flex: 1 1 auto;
+}
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */
@@ -2063,6 +2100,7 @@ a.offcanvas-struct-container.sui-mod-disabled {
 @media only screen and (min-width: 1152px),
 only screen and (min-height: 1024px) {
   #menu-page-layout,
+  #banner-layer,
   #hud-container,
   #alpha-base-map-container,
   #raid-map-container,
@@ -2073,15 +2111,25 @@ only screen and (min-height: 1024px) {
     transform-origin: 0 0;
   }
 
+  #notification-dialogue {
+    transform: scale(2);
+    transform-origin: bottom left;
+  }
+
   #sui-offcanvas.sui-mod-right {
     transform-origin: top right;
   }
 
   #menu-page-layout,
+  #banner-layer,
   #hud-container,
   #loading-screen {
     width: 50vw;
     height: 50vh;
+  }
+
+  #notification-dialogue {
+    width: 50vw;
   }
 
   #sui-offcanvas {
@@ -2091,6 +2139,7 @@ only screen and (min-height: 1024px) {
 @media only screen and (min-width: 2304px),
 only screen and (min-height: 2048px) {
   #menu-page-layout,
+  #banner-layer,
   #hud-container,
   #alpha-base-map-container,
   #raid-map-container,
@@ -2100,15 +2149,25 @@ only screen and (min-height: 2048px) {
     transform-origin: 0 0;
   }
 
+  #notification-dialogue {
+    transform: scale(4);
+    transform-origin: bottom left;
+  }
+
   #sui-offcanvas.sui-mod-right {
     transform-origin: top right;
   }
 
   #menu-page-layout,
+  #banner-layer,
   #hud-container,
   #loading-screen {
     width: 25vw;
     height: 25vh;
+  }
+
+  #notification-dialogue {
+    width: 25vw;
   }
 
   #sui-offcanvas {
