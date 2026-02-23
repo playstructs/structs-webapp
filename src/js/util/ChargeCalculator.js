@@ -30,7 +30,7 @@ export class ChargeCalculator {
    * @return {number}
    */
   calcCharge(currentBlockHeight, lastActionBlockHeight) {
-    return currentBlockHeight - lastActionBlockHeight;
+    return currentBlockHeight - (lastActionBlockHeight + 1);
   }
 
   /**
