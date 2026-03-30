@@ -2,6 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {UserAgent} from "../../models/UserAgent";
 import {PERMISSIONS} from "../../constants/Permissions";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {SetAddressPermissionsRequestDTO} from "../../dtos/SetAddressPermissionsRequestDTO";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
 
