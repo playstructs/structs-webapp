@@ -52,7 +52,7 @@ export class AccountDeviceViewModel extends AbstractViewModel {
           ? this.permissionManager.getManageDevicesPermissions()
           : 0);
         request.permissions |= document.getElementById(this.transferAssetsCheckboxId).checked
-          ? PERMISSIONS.ASSETS
+          ? PERMISSIONS.ASSETS_ALL
           : 0;
 
         const options = new MenuWaitingOptions();
@@ -112,7 +112,7 @@ export class AccountDeviceViewModel extends AbstractViewModel {
       }
 
       const isCheckedManageDevices = (parseInt(playerAddress.permissions) & this.permissionManager.getManageDevicesPermissions()) === this.permissionManager.getManageDevicesPermissions();
-      const isCheckedTransferAssets = (parseInt(playerAddress.permissions) & PERMISSIONS.ASSETS) === PERMISSIONS.ASSETS;
+      const isCheckedTransferAssets = (parseInt(playerAddress.permissions) & PERMISSIONS.ASSETS_ALL) === PERMISSIONS.ASSETS_ALL;
 
       MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 

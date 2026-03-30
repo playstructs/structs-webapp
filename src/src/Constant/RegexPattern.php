@@ -14,7 +14,7 @@ class RegexPattern
 
     public const string INT = '/^[0-9]+$/';
 
-    public const string PERMISSIONS = '/^[0-9]{1,3}$/';
+    public const string PERMISSIONS = '/^[0-9]{1,8}$/';
 
     public const string PUBKEY = '/^[a-zA-Z0-9]+$/';
 
