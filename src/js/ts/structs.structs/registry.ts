@@ -98,6 +98,11 @@ import { QueryGetInfusionRequest } from "./types/structs/structs/query";
 import { QueryAllInfusionResponse } from "./types/structs/structs/query";
 import { EventProviderAddressDetail } from "./types/structs/structs/events";
 import { MsgGuildUpdateEndpoint } from "./types/structs/structs/tx";
+import { MsgGuildUpdateEntryRank } from "./types/structs/structs/tx";
+import { MsgPermissionGuildRankSet } from "./types/structs/structs/tx";
+import { MsgPermissionGuildRankRevoke } from "./types/structs/structs/tx";
+import { MsgPlayerUpdateGuildRank } from "./types/structs/structs/tx";
+import { MsgPlayerUpdateGuildRankResponse } from "./types/structs/structs/tx";
 import { MsgAgreementDurationIncrease } from "./types/structs/structs/tx";
 import { QueryAllAllocationResponse } from "./types/structs/structs/query";
 import { QueryAllReactorResponse } from "./types/structs/structs/query";
@@ -623,6 +628,11 @@ const msgTypes: Array<[string, GeneratedType]>  = [
     ["/structs.structs.QueryAllPlanetResponse", QueryAllPlanetResponse],
     ["/structs.structs.QueryAllProviderResponse", QueryAllProviderResponse],
     ["/structs.structs.EventAlphaInfuseDetail", EventAlphaInfuseDetail],
+    ["/structs.structs.MsgGuildUpdateEntryRank", MsgGuildUpdateEntryRank],
+    ["/structs.structs.MsgPermissionGuildRankSet", MsgPermissionGuildRankSet],
+    ["/structs.structs.MsgPermissionGuildRankRevoke", MsgPermissionGuildRankRevoke],
+    ["/structs.structs.MsgPlayerUpdateGuildRank", MsgPlayerUpdateGuildRank],
+    ["/structs.structs.MsgPlayerUpdateGuildRankResponse", MsgPlayerUpdateGuildRankResponse],
     
 ];
 
