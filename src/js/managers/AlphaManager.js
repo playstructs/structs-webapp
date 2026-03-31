@@ -25,7 +25,6 @@ export class AlphaManager {
    */
   async transferAlpha(recipientAddress, alphaAmount) {
     await this.signingClientManager.queueMsgPlayerSend(
-      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.primary_address,
       recipientAddress,
       [{

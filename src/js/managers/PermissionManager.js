@@ -7,17 +7,20 @@ export class PermissionManager {
    */
   getDefaultPlayerPermissions() {
     return PERMISSIONS.PLAY
-      | PERMISSIONS.ASSOCIATIONS
-      | PERMISSIONS.GRID;
+      | PERMISSIONS.SOURCE_ALLOCATION
+      | PERMISSIONS.GUILD_MEMBERSHIP
+      | PERMISSIONS.SUBSTATION_CONNECTION
+      | PERMISSIONS.ALLOCATION_CONNECTION
+      | PERMISSIONS.HASH_ALL;
   }
 
   /**
    * @return {number}
    */
   getManageDevicesPermissions() {
-    return PERMISSIONS.UPDATE
-      | PERMISSIONS.DELETE
-      | PERMISSIONS.PERMISSIONS;
+    return PERMISSIONS.ADMIN
+      | PERMISSIONS.UPDATE
+      | PERMISSIONS.DELETE;
   }
 
   /**

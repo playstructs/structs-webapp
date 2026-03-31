@@ -12,15 +12,23 @@ import {
   MsgAllocationDelete,
   MsgAllocationUpdate,
   MsgAllocationTransfer,
+  MsgGuildCreate,
   MsgGuildBankMint,
   MsgGuildBankRedeem,
   MsgGuildBankConfiscateAndBurn,
+  MsgGuildUpdateOwnerId,
   MsgGuildUpdateEntrySubstationId,
+  MsgGuildUpdateEndpoint,
+  MsgGuildUpdateJoinInfusionMinimum,
+  MsgGuildUpdateJoinInfusionMinimumBypassByInvite,
+  MsgGuildUpdateJoinInfusionMinimumBypassByRequest,
+  MsgGuildUpdateEntryRank,
   MsgGuildMembershipInvite,
   MsgGuildMembershipInviteApprove,
   MsgGuildMembershipInviteDeny,
   MsgGuildMembershipInviteRevoke,
   MsgGuildMembershipJoin,
+  MsgGuildMembershipJoinProxy,
   MsgGuildMembershipKick,
   MsgGuildMembershipRequest,
   MsgGuildMembershipRequestApprove,
@@ -32,8 +40,10 @@ import {
   MsgPermissionRevokeOnAddress,
   MsgPermissionSetOnObject,
   MsgPermissionSetOnAddress,
+  MsgPermissionGuildRankSet,
+  MsgPermissionGuildRankRevoke,
   MsgPlayerUpdatePrimaryAddress,
-  MsgPlayerResume,
+  MsgPlayerUpdateGuildRank,
   MsgPlayerSend,
   MsgStructActivate,
   MsgStructDeactivate,
@@ -68,8 +78,6 @@ import {
   MsgProviderUpdateDurationMinimum,
   MsgProviderUpdateDurationMaximum,
   MsgProviderUpdateAccessPolicy,
-  MsgProviderGuildGrant,
-  MsgProviderGuildRevoke,
   MsgProviderDelete,
   MsgReactorInfuse,
   MsgReactorBeginMigration,
@@ -194,17 +202,15 @@ export class SigningClientManager {
   }
 
 /**
-   * @param {string} fromPlayerId
    * @param {string} fromAddress
    * @param {string} toAddress
    * @param {Array<{denom: string, amount: string}>} amount
    */
-  async queueMsgPlayerSend(fromPlayerId, fromAddress, toAddress, amount) {
+  async queueMsgPlayerSend(fromAddress, toAddress, amount) {
     this.queue({
       typeUrl: '/structs.structs.MsgPlayerSend',
       value: MsgPlayerSend.fromPartial({
         creator: this.gameState.signingAccount.address,
-        playerId: fromPlayerId,
         fromAddress: fromAddress,
         toAddress: toAddress,
         amount: amount
@@ -450,6 +456,23 @@ export class SigningClientManager {
   }
 
   /**
+   * @param {string} reactorId
+   * @param {string} endpoint
+   * @param {string} entrySubstationId
+   */
+  async queueMsgGuildCreate(reactorId, endpoint, entrySubstationId) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildCreate',
+      value: MsgGuildCreate.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        reactorId: reactorId,
+        endpoint: endpoint,
+        entrySubstationId: entrySubstationId
+      }),
+    });
+  }
+
+  /**
    * @param {string} guildId
    * @param {string} entrySubstationId
    */
@@ -460,6 +483,94 @@ export class SigningClientManager {
         creator: this.gameState.signingAccount.address,
         guildId: guildId,
         entrySubstationId: entrySubstationId
+      }),
+    });
+  }
+
+  /**
+   * @param {string} guildId
+   * @param {string} owner
+   */
+  async queueMsgGuildUpdateOwnerId(guildId, owner) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildUpdateOwnerId',
+      value: MsgGuildUpdateOwnerId.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        guildId: guildId,
+        owner: owner
+      }),
+    });
+  }
+
+  /**
+   * @param {string} guildId
+   * @param {string} endpoint
+   */
+  async queueMsgGuildUpdateEndpoint(guildId, endpoint) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildUpdateEndpoint',
+      value: MsgGuildUpdateEndpoint.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        guildId: guildId,
+        endpoint: endpoint
+      }),
+    });
+  }
+
+  /**
+   * @param {string} guildId
+   * @param {number} joinInfusionMinimum
+   */
+  async queueMsgGuildUpdateJoinInfusionMinimum(guildId, joinInfusionMinimum) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildUpdateJoinInfusionMinimum',
+      value: MsgGuildUpdateJoinInfusionMinimum.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        guildId: guildId,
+        joinInfusionMinimum: joinInfusionMinimum
+      }),
+    });
+  }
+
+  /**
+   * @param {string} guildId
+   * @param {number} guildJoinBypassLevel
+   */
+  async queueMsgGuildUpdateJoinInfusionMinimumBypassByInvite(guildId, guildJoinBypassLevel) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildUpdateJoinInfusionMinimumBypassByInvite',
+      value: MsgGuildUpdateJoinInfusionMinimumBypassByInvite.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        guildId: guildId,
+        guildJoinBypassLevel: guildJoinBypassLevel
+      }),
+    });
+  }
+
+  /**
+   * @param {string} guildId
+   * @param {number} guildJoinBypassLevel
+   */
+  async queueMsgGuildUpdateJoinInfusionMinimumBypassByRequest(guildId, guildJoinBypassLevel) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildUpdateJoinInfusionMinimumBypassByRequest',
+      value: MsgGuildUpdateJoinInfusionMinimumBypassByRequest.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        guildId: guildId,
+        guildJoinBypassLevel: guildJoinBypassLevel
+      }),
+    });
+  }
+
+  /**
+   * @param {number} newEntryRank
+   */
+  async queueMsgGuildUpdateEntryRank(newEntryRank) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildUpdateEntryRank',
+      value: MsgGuildUpdateEntryRank.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        newEntryRank: newEntryRank
       }),
     });
   }
@@ -543,6 +654,25 @@ export class SigningClientManager {
         playerId: playerId,
         substationId: substationId,
         infusionId: infusionId
+      }),
+    });
+  }
+
+  /**
+   * @param {string} address
+   * @param {string} substationId
+   * @param {string} proofPubKey
+   * @param {string} proofSignature
+   */
+  async queueMsgGuildMembershipJoinProxy(address, substationId, proofPubKey, proofSignature) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildMembershipJoinProxy',
+      value: MsgGuildMembershipJoinProxy.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        address: address,
+        substationId: substationId,
+        proofPubKey: proofPubKey,
+        proofSignature: proofSignature
       }),
     });
   }
@@ -723,15 +853,49 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {string} playerId
+   * @param {string} objectId
+   * @param {string} guildId
+   * @param {number} permission
+   * @param {number} rank
+   */
+  async queueMsgPermissionGuildRankSet(objectId, guildId, permission, rank) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgPermissionGuildRankSet',
+      value: MsgPermissionGuildRankSet.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        objectId: objectId,
+        guildId: guildId,
+        permission: permission,
+        rank: rank
+      }),
+    });
+  }
+
+  /**
+   * @param {string} objectId
+   * @param {string} guildId
+   * @param {number} permission
+   */
+  async queueMsgPermissionGuildRankRevoke(objectId, guildId, permission) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgPermissionGuildRankRevoke',
+      value: MsgPermissionGuildRankRevoke.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        objectId: objectId,
+        guildId: guildId,
+        permission: permission
+      }),
+    });
+  }
+
+  /**
    * @param {string} primaryAddress
    */
-  async queueMsgPlayerUpdatePrimaryAddress(playerId, primaryAddress) {
+  async queueMsgPlayerUpdatePrimaryAddress(primaryAddress) {
     this.queue({
       typeUrl: '/structs.structs.MsgPlayerUpdatePrimaryAddress',
       value: MsgPlayerUpdatePrimaryAddress.fromPartial({
         creator: this.gameState.signingAccount.address,
-        playerId: playerId,
         primaryAddress: primaryAddress
       }),
     });
@@ -739,13 +903,15 @@ export class SigningClientManager {
 
   /**
    * @param {string} playerId
+   * @param {number} guildRank
    */
-  async queueMsgPlayerResume(playerId) {
+  async queueMsgPlayerUpdateGuildRank(playerId, guildRank) {
     this.queue({
-      typeUrl: '/structs.structs.MsgPlayerResume',
-      value: MsgPlayerResume.fromPartial({
+      typeUrl: '/structs.structs.MsgPlayerUpdateGuildRank',
+      value: MsgPlayerUpdateGuildRank.fromPartial({
         creator: this.gameState.signingAccount.address,
-        playerId: playerId
+        playerId: playerId,
+        guildRank: guildRank
       }),
     });
   }
@@ -1214,36 +1380,6 @@ export class SigningClientManager {
         creator: this.gameState.signingAccount.address,
         providerId: providerId,
         accessPolicy: accessPolicy
-      }),
-    });
-  }
-
-  /**
-   * @param {string} providerId
-   * @param {string[]} guildId
-   */
-  async queueMsgProviderGuildGrant(providerId, guildId) {
-    this.queue({
-      typeUrl: '/structs.structs.MsgProviderGuildGrant',
-      value: MsgProviderGuildGrant.fromPartial({
-        creator: this.gameState.signingAccount.address,
-        providerId: providerId,
-        guildId: guildId
-      }),
-    });
-  }
-
-  /**
-   * @param {string} providerId
-   * @param {string[]} guildId
-   */
-  async queueMsgProviderGuildRevoke(providerId, guildId) {
-    this.queue({
-      typeUrl: '/structs.structs.MsgProviderGuildRevoke',
-      value: MsgProviderGuildRevoke.fromPartial({
-        creator: this.gameState.signingAccount.address,
-        providerId: providerId,
-        guildId: guildId
       }),
     });
   }

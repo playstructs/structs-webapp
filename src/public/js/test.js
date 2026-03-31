@@ -14,13 +14,35 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 const PERMISSIONS = {
   PLAY: 1,
-  UPDATE: 2,
-  DELETE: 4,
-  ASSETS: 8,
-  ASSOCIATIONS: 16,
-  GRID: 32,
-  PERMISSIONS: 64
+  ADMIN: 2,
+  UPDATE: 4,
+  DELETE: 8,
+  TOKEN_TRANSFER: 16,
+  TOKEN_INFUSE: 32,
+  TOKEN_MIGRATE: 64,
+  TOKEN_DEFUSE: 128,
+  SOURCE_ALLOCATION: 256,
+  GUILD_MEMBERSHIP: 512,
+  SUBSTATION_CONNECTION: 1024,
+  ALLOCATION_CONNECTION: 2048,
+  GUILD_TOKEN_BURN: 4096,
+  GUILD_TOKEN_MINT: 8192,
+  GUILD_ENDPOINT_UPDATE: 16384,
+  GUILD_JOIN_CONSTRAINTS_UPDATE: 32768,
+  GUILD_SUBSTATION_UPDATE: 65536,
+  PROVIDER_WITHDRAW: 131072,
+  PROVIDER_OPEN: 262144,
+  REACTOR_GUILD_CREATE: 524288,
+  HASH_BUILD: 1048576,
+  HASH_MINE: 2097152,
+  HASH_REFINE: 4194304,
+  HASH_RAID: 8388608,
+
+  ASSETS_ALL: 16 | 32 | 64 | 128,
+  HASH_ALL: 1048576 | 2097152 | 4194304 | 8388608,
+  ALL: (1 << 24) - 1,
 };
+
 
 /***/ }),
 
@@ -180,17 +202,20 @@ class PermissionManager {
    */
   getDefaultPlayerPermissions() {
     return _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.PLAY
-      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.ASSOCIATIONS
-      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GRID;
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.SOURCE_ALLOCATION
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GUILD_MEMBERSHIP
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.SUBSTATION_CONNECTION
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.ALLOCATION_CONNECTION
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.HASH_ALL;
   }
 
   /**
    * @return {number}
    */
   getManageDevicesPermissions() {
-    return _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.UPDATE
-      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.DELETE
-      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.PERMISSIONS;
+    return _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.ADMIN
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.UPDATE
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.DELETE;
   }
 
   /**
@@ -309,35 +334,35 @@ class PermissionManagerTest extends _framework_DTestFramework__WEBPACK_IMPORTED_
     return [
       {
         permissionsToAdd: [],
-        expected: 49
+        expected: 15732481
       },
       {
         permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY],
-        expected: 49
+        expected: 15732481
       },
       {
-        permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS],
-        expected: 57
+        permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS_ALL],
+        expected: 15732721
       },
       {
-        permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PERMISSIONS],
-        expected: 113
+        permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ADMIN],
+        expected: 15732483
       },
       {
         permissionsToAdd: [
-          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS,
-          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PERMISSIONS
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS_ALL,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ADMIN
         ],
-        expected: 121
+        expected: 15732723
       },
       {
         permissionsToAdd: [
-          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS,
-          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PERMISSIONS,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS_ALL,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ADMIN,
           _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.UPDATE,
           _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.DELETE
         ],
-        expected: 127
+        expected: 15732735
       },
     ];
   });
@@ -354,35 +379,47 @@ class PermissionManagerTest extends _framework_DTestFramework__WEBPACK_IMPORTED_
   }, function() {
     return [
       {
-        initialPermissions: 49,
+        initialPermissions: 15732481,
         permissionsToRemove: [],
-        expected: 49
+        expected: 15732481
       },
       {
         initialPermissions: _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY
-          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSOCIATIONS
-          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GRID,
-        permissionsToRemove: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSOCIATIONS],
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.SOURCE_ALLOCATION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GUILD_MEMBERSHIP
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.SUBSTATION_CONNECTION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ALLOCATION_CONNECTION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.HASH_ALL,
+        permissionsToRemove: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GUILD_MEMBERSHIP],
         expected: _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY
-          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GRID
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.SOURCE_ALLOCATION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.SUBSTATION_CONNECTION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ALLOCATION_CONNECTION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.HASH_ALL
       },
       {
         initialPermissions: _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ADMIN
           | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.UPDATE
           | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.DELETE
-          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS
-          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSOCIATIONS
-          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GRID
-          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PERMISSIONS,
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS_ALL
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.SOURCE_ALLOCATION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GUILD_MEMBERSHIP
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.SUBSTATION_CONNECTION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ALLOCATION_CONNECTION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.HASH_ALL,
         permissionsToRemove: [
           _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.UPDATE,
-          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS,
-          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GRID,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS_ALL,
+          _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.HASH_ALL,
         ],
         expected: _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ADMIN
           | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.DELETE
-          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSOCIATIONS
-          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PERMISSIONS
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.SOURCE_ALLOCATION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.GUILD_MEMBERSHIP
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.SUBSTATION_CONNECTION
+          | _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ALLOCATION_CONNECTION
       }
     ];
   });

@@ -21,35 +21,35 @@ export class PermissionManagerTest extends DTestSuite {
     return [
       {
         permissionsToAdd: [],
-        expected: 49
+        expected: 15732481
       },
       {
         permissionsToAdd: [PERMISSIONS.PLAY],
-        expected: 49
+        expected: 15732481
       },
       {
-        permissionsToAdd: [PERMISSIONS.ASSETS],
-        expected: 57
+        permissionsToAdd: [PERMISSIONS.ASSETS_ALL],
+        expected: 15732721
       },
       {
-        permissionsToAdd: [PERMISSIONS.PERMISSIONS],
-        expected: 113
+        permissionsToAdd: [PERMISSIONS.ADMIN],
+        expected: 15732483
       },
       {
         permissionsToAdd: [
-          PERMISSIONS.ASSETS,
-          PERMISSIONS.PERMISSIONS
+          PERMISSIONS.ASSETS_ALL,
+          PERMISSIONS.ADMIN
         ],
-        expected: 121
+        expected: 15732723
       },
       {
         permissionsToAdd: [
-          PERMISSIONS.ASSETS,
-          PERMISSIONS.PERMISSIONS,
+          PERMISSIONS.ASSETS_ALL,
+          PERMISSIONS.ADMIN,
           PERMISSIONS.UPDATE,
           PERMISSIONS.DELETE
         ],
-        expected: 127
+        expected: 15732735
       },
     ];
   });
@@ -66,35 +66,47 @@ export class PermissionManagerTest extends DTestSuite {
   }, function() {
     return [
       {
-        initialPermissions: 49,
+        initialPermissions: 15732481,
         permissionsToRemove: [],
-        expected: 49
+        expected: 15732481
       },
       {
         initialPermissions: PERMISSIONS.PLAY
-          | PERMISSIONS.ASSOCIATIONS
-          | PERMISSIONS.GRID,
-        permissionsToRemove: [PERMISSIONS.ASSOCIATIONS],
+          | PERMISSIONS.SOURCE_ALLOCATION
+          | PERMISSIONS.GUILD_MEMBERSHIP
+          | PERMISSIONS.SUBSTATION_CONNECTION
+          | PERMISSIONS.ALLOCATION_CONNECTION
+          | PERMISSIONS.HASH_ALL,
+        permissionsToRemove: [PERMISSIONS.GUILD_MEMBERSHIP],
         expected: PERMISSIONS.PLAY
-          | PERMISSIONS.GRID
+          | PERMISSIONS.SOURCE_ALLOCATION
+          | PERMISSIONS.SUBSTATION_CONNECTION
+          | PERMISSIONS.ALLOCATION_CONNECTION
+          | PERMISSIONS.HASH_ALL
       },
       {
         initialPermissions: PERMISSIONS.PLAY
+          | PERMISSIONS.ADMIN
           | PERMISSIONS.UPDATE
           | PERMISSIONS.DELETE
-          | PERMISSIONS.ASSETS
-          | PERMISSIONS.ASSOCIATIONS
-          | PERMISSIONS.GRID
-          | PERMISSIONS.PERMISSIONS,
+          | PERMISSIONS.ASSETS_ALL
+          | PERMISSIONS.SOURCE_ALLOCATION
+          | PERMISSIONS.GUILD_MEMBERSHIP
+          | PERMISSIONS.SUBSTATION_CONNECTION
+          | PERMISSIONS.ALLOCATION_CONNECTION
+          | PERMISSIONS.HASH_ALL,
         permissionsToRemove: [
           PERMISSIONS.UPDATE,
-          PERMISSIONS.ASSETS,
-          PERMISSIONS.GRID,
+          PERMISSIONS.ASSETS_ALL,
+          PERMISSIONS.HASH_ALL,
         ],
         expected: PERMISSIONS.PLAY
+          | PERMISSIONS.ADMIN
           | PERMISSIONS.DELETE
-          | PERMISSIONS.ASSOCIATIONS
-          | PERMISSIONS.PERMISSIONS
+          | PERMISSIONS.SOURCE_ALLOCATION
+          | PERMISSIONS.GUILD_MEMBERSHIP
+          | PERMISSIONS.SUBSTATION_CONNECTION
+          | PERMISSIONS.ALLOCATION_CONNECTION
       }
     ];
   });

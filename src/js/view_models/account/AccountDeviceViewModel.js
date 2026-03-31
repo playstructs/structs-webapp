@@ -2,6 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {UserAgent} from "../../models/UserAgent";
 import {PERMISSIONS} from "../../constants/Permissions";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {SetAddressPermissionsRequestDTO} from "../../dtos/SetAddressPermissionsRequestDTO";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
 
@@ -32,72 +33,81 @@ export class AccountDeviceViewModel extends AbstractViewModel {
     this.saveDeviceChangesBtnId = 'saveDeviceChangesBtn';
 
     this.isPrimaryDevice = (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.primary_address === this.deviceAddress.address);
+    this.isCurrentDevice = (this.gameState.signingAccount.address === this.deviceAddress.address);
+    this.canEditPermissions = true;
   }
 
   initPageCode() {
-    document.getElementById(`${this.cancelDeviceChangesBtnId}`).addEventListener(
-      'click',
-      () => {
-        MenuPage.router.goto('Account', 'devices');
-      }
-    );
-
-    document.getElementById(this.saveDeviceChangesBtnId).addEventListener(
-      'click',
-      () => {
-        const request = new SetAddressPermissionsRequestDTO();
-        request.address = this.playerAddressDetails.address;
-        request.permissions = this.permissionManager.getDefaultPlayerPermissions();
-        request.permissions |= (document.getElementById(this.manageDevicesCheckboxId).checked
-          ? this.permissionManager.getManageDevicesPermissions()
-          : 0);
-        request.permissions |= document.getElementById(this.transferAssetsCheckboxId).checked
-          ? PERMISSIONS.ASSETS
-          : 0;
-
-        const options = new MenuWaitingOptions();
-        options.headerBtnLabel = 'Manage Device';
-        options.waitingMessage = 'Saving changes.';
-
-        MenuPage.router.goto('Generic', 'menuWaiting', options);
-
-        this.guildAPI.setAddressPermissions(request).then(() => {
+    if (this.canEditPermissions) {
+      document.getElementById(`${this.cancelDeviceChangesBtnId}`).addEventListener(
+        'click',
+        () => {
           MenuPage.router.goto('Account', 'devices');
-        });
-      }
-    );
-
-    document.getElementById(this.deviceLogoutBtnId).addEventListener(
-      'click',
-      () => {
-        if (!this.isPrimaryDevice && this.playerAddressDetails.alpha) {
-          MenuPage.router.goto('Auth', 'logoutAssetsWarning', this.playerAddressDetails);
-        } else if (this.playerAddressDetails.isOnlyManagingDevice) {
-          MenuPage.router.goto('Auth', 'logoutPermissionsWarning', this.playerAddressDetails);
-        } else if (this.isPrimaryDevice) {
-          MenuPage.router.goto('Auth', 'logout');
-        } else {
-          MenuPage.router.goto('Auth', 'logout', this.playerAddressDetails);
         }
-    });
+      );
+
+      document.getElementById(this.saveDeviceChangesBtnId).addEventListener(
+        'click',
+        () => {
+          const request = new SetAddressPermissionsRequestDTO();
+          request.address = this.playerAddressDetails.address;
+          request.permissions = this.permissionManager.getDefaultPlayerPermissions();
+          request.permissions |= (document.getElementById(this.manageDevicesCheckboxId).checked
+            ? this.permissionManager.getManageDevicesPermissions()
+            : 0);
+          request.permissions |= document.getElementById(this.transferAssetsCheckboxId).checked
+            ? PERMISSIONS.ASSETS_ALL
+            : 0;
+
+          const options = new MenuWaitingOptions();
+          options.headerBtnLabel = 'Manage Device';
+          options.waitingMessage = 'Saving changes.';
+
+          MenuPage.router.goto('Generic', 'menuWaiting', options);
+
+          this.guildAPI.setAddressPermissions(request).then(() => {
+            MenuPage.router.goto('Account', 'devices');
+          });
+        }
+      );
+    }
+
+    const logoutBtn = document.getElementById(this.deviceLogoutBtnId);
+    if (logoutBtn) {
+      logoutBtn.addEventListener(
+        'click',
+        () => {
+          if (!this.isPrimaryDevice && this.playerAddressDetails.alpha) {
+            MenuPage.router.goto('Auth', 'logoutAssetsWarning', this.playerAddressDetails);
+          } else if (this.playerAddressDetails.isOnlyManagingDevice) {
+            MenuPage.router.goto('Auth', 'logoutPermissionsWarning', this.playerAddressDetails);
+          } else if (this.isPrimaryDevice) {
+            MenuPage.router.goto('Auth', 'logout');
+          } else {
+            MenuPage.router.goto('Auth', 'logout', this.playerAddressDetails);
+          }
+      });
+    }
   }
 
   render() {
+    const fetchTargetDevice = this.guildAPI.getPlayerAddress(this.deviceAddress.address);
+    const fetchCurrentDevice = this.isCurrentDevice
+      ? fetchTargetDevice
+      : this.guildAPI.getPlayerAddress(this.gameState.signingAccount.address);
 
-    this.guildAPI.getPlayerAddress(this.deviceAddress.address).then((playerAddress) => {
+    Promise.all([fetchTargetDevice, fetchCurrentDevice]).then(([playerAddress, currentDevicePlayerAddress]) => {
       this.playerAddressDetails = playerAddress;
       this.playerAddressDetails.isOnlyManagingDevice = this.deviceAddress.isOnlyManagingDevice;
+
+      const currentDevicePermissions = parseInt(currentDevicePlayerAddress.permissions);
+      this.canEditPermissions =
+        (currentDevicePermissions & this.permissionManager.getManageDevicesPermissions()) === this.permissionManager.getManageDevicesPermissions();
 
       const userAgent = new UserAgent(playerAddress.user_agent);
 
       let location = playerAddress.ip; // TODO: When geoip data is added, use that field if set
-      let logoutSection = `
-        <a 
-          href="javascript:void(0)"
-          id="${this.deviceLogoutBtnId}"
-          class="sui-screen-btn sui-mod-destructive"
-        >Log Out</a>
-      `;
+      let logoutSection = '';
 
       if (this.isPrimaryDevice) {
         location = `[PRIMARY DEVICE]<br>${location}`;
@@ -109,10 +119,19 @@ export class AccountDeviceViewModel extends AbstractViewModel {
             </div>
           </div>
         `;
+      } else if (this.isCurrentDevice || this.canEditPermissions) {
+        logoutSection = `
+          <a 
+            href="javascript:void(0)"
+            id="${this.deviceLogoutBtnId}"
+            class="sui-screen-btn sui-mod-destructive"
+          >Log Out</a>
+        `;
       }
 
       const isCheckedManageDevices = (parseInt(playerAddress.permissions) & this.permissionManager.getManageDevicesPermissions()) === this.permissionManager.getManageDevicesPermissions();
-      const isCheckedTransferAssets = (parseInt(playerAddress.permissions) & PERMISSIONS.ASSETS) === PERMISSIONS.ASSETS;
+      const isCheckedTransferAssets = (parseInt(playerAddress.permissions) & PERMISSIONS.ASSETS_ALL) === PERMISSIONS.ASSETS_ALL;
+      const checkboxDisabledAttr = this.canEditPermissions ? '' : 'disabled';
 
       MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
@@ -152,6 +171,7 @@ export class AccountDeviceViewModel extends AbstractViewModel {
                 name="${this.manageDevicesCheckboxId}" 
                 id="${this.manageDevicesCheckboxId}"
                 ${isCheckedManageDevices ? 'checked' : ''}
+                ${checkboxDisabledAttr}
               >
               <span class="sui-checkbox-display"></span>
               <label for="${this.manageDevicesCheckboxId}">Manage Devices</label>
@@ -163,12 +183,14 @@ export class AccountDeviceViewModel extends AbstractViewModel {
                 name="${this.transferAssetsCheckboxId}"
                 id="${this.transferAssetsCheckboxId}"
                 ${isCheckedTransferAssets ? 'checked' : ''}
+                ${checkboxDisabledAttr}
               >
               <span class="sui-checkbox-display"></span>
               <label for="${this.transferAssetsCheckboxId}">Transfer Assets</label>
             </div>
           </div>
           
+          ${this.canEditPermissions ? `
           <div class="account-new-device-confirm-section">
             <a 
               href="javascript: void(0)" 
@@ -181,6 +203,7 @@ export class AccountDeviceViewModel extends AbstractViewModel {
               class="sui-screen-btn sui-mod-primary"
             >Save</a>
           </div>
+          ` : ''}
           
         </div>
       `);

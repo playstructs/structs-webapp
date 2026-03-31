@@ -41,7 +41,7 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
           ? this.permissionManager.getManageDevicesPermissions()
           : 0);
         this.playerAddressPending.permissions |= document.getElementById(this.transferAssetsCheckboxId).checked
-          ? PERMISSIONS.ASSETS
+          ? PERMISSIONS.ASSETS_ALL
           : 0;
 
         MenuPage.router.goto('Account', 'activatingDevice', this.playerAddressPending);
