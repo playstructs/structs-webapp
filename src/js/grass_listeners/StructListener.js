@@ -7,6 +7,9 @@ import {STRUCT_ACTIONS, STRUCT_STATUS_FLAGS} from "../constants/StructConstants"
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {ClearStructTileEvent} from "../events/ClearStructTileEvent";
 import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
+import {AnimationEventFactory} from "../factories/AnimationEventFactory";
+import {AnimationEvent} from "../events/AnimationEvent";
+import {ANIMATION} from "../constants/AnimationConstants";
 
 export class StructListener extends AbstractGrassListener {
 
@@ -27,6 +30,7 @@ export class StructListener extends AbstractGrassListener {
     this.guildAPI = guildAPI;
     this.structManager = structManager;
     this.targetPlayerType = targetPlayerType;
+    this.animationEventFactory = new AnimationEventFactory();
   }
 
   /**
@@ -97,16 +101,38 @@ export class StructListener extends AbstractGrassListener {
       return;
     }
 
-    // Check to see if the status has changed to Built (feature flag 2)
-    const removePendingBuild = (
+    let removePendingBuild = false;
+    let renderStruct = true;
+    const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
+
+    if (
       (messageData.detail.status_old & STRUCT_STATUS_FLAGS.BUILT) === 0
       && (messageData.detail.status & STRUCT_STATUS_FLAGS.BUILT) > 0
-    );
+    ) {
+      removePendingBuild = true;
+
+    } else if (
+      (messageData.detail.status_old & STRUCT_STATUS_FLAGS.HIDDEN) === 0
+      && (messageData.detail.status & STRUCT_STATUS_FLAGS.HIDDEN) > 0
+    ) {
+      renderStruct = false;
+      const animationEvent = this.animationEventFactory.makeStealthActivateAnimationEvent(messageData.detail.struct_id);
+      this.gameState.animationEventQueue.enqueue(animationEvent);
+
+    } else if (
+      (messageData.detail.status_old & STRUCT_STATUS_FLAGS.HIDDEN) > 0
+      && (messageData.detail.status & STRUCT_STATUS_FLAGS.HIDDEN) === 0
+    ) {
+      renderStruct = false;
+      const animationEvent = this.animationEventFactory.makeStealthDeactivateAnimationEvent(messageData.detail.struct_id);
+      this.gameState.animationEventQueue.enqueue(animationEvent);
+    }
 
     this.structManager.refreshStruct(
       messageData.detail.struct_id,
-      this.gameState.keyPlayers[this.targetPlayerType].planetMapType,
-      removePendingBuild
+      mapType,
+      removePendingBuild,
+      renderStruct
     ).then((struct) => {
 
       this.gameState.actionBarLock.clear();
@@ -134,41 +160,50 @@ export class StructListener extends AbstractGrassListener {
       return;
     }
 
-    // Handle struct move - clear old position and refresh at new location
     const structId = messageData.detail.struct_id;
     const oldStruct = this.structManager.getStructById(structId);
     const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
     const mapId = this.gameState[mapType]?.mapId;
 
-    // Clear the old tile if we have the old struct data
-    if (oldStruct && mapId) {
-      const oldTileType = this.structManager.getTileTypeFromStruct(oldStruct);
-      const oldAmbit = oldStruct.operating_ambit.toUpperCase();
+    // 1. Enqueue depart animation
+    const departEvent = new AnimationEvent(
+      structId,
+      [ANIMATION.NAMES.MOVE.DEPART],
+      false,
+      false
+    );
 
-      // Clear the struct layer at old position
-      window.dispatchEvent(new ClearStructTileEvent(
-        mapId,
-        oldTileType,
-        oldAmbit,
-        oldStruct.slot,
-        oldStruct.owner
-      ));
+    departEvent.onAnimationEnd = async () => {
+      if (oldStruct && mapId) {
+        const oldTileType = this.structManager.getTileTypeFromStruct(oldStruct);
+        const oldAmbit = oldStruct.operating_ambit.toUpperCase();
 
-      // Clear the struct ID from the old tile selection layer
-      window.dispatchEvent(new UpdateTileStructIdEvent(
-        mapId,
-        oldTileType,
-        oldAmbit,
-        oldStruct.slot,
-        oldStruct.owner,
-        ''
-      ));
-    }
+        window.dispatchEvent(new ClearStructTileEvent(
+          mapId, oldTileType, oldAmbit, oldStruct.slot, oldStruct.owner
+        ));
+        window.dispatchEvent(new UpdateTileStructIdEvent(
+          mapId, oldTileType, oldAmbit, oldStruct.slot, oldStruct.owner, ''
+        ));
+      }
 
-    // Refresh the struct at its new location
-    this.structManager.refreshStruct(structId, mapType).then(() => {
+      await this.structManager.refreshStruct(structId, mapType);
+    };
+
+    this.gameState.animationEventQueue.enqueue(departEvent);
+
+    // 2. Enqueue arrive animation (plays after depart + side effects complete)
+    const arriveEvent = new AnimationEvent(
+      structId,
+      [ANIMATION.NAMES.MOVE.ARRIVE],
+      false,
+      true
+    );
+
+    arriveEvent.onAnimationEnd = () => {
       this.gameState.actionBarLock.clear();
-    });
+    };
+
+    this.gameState.animationEventQueue.enqueue(arriveEvent);
   }
 
   /**
@@ -189,8 +224,8 @@ export class StructListener extends AbstractGrassListener {
 
     // Refresh both the defender and protected structs
     Promise.all([
-      this.structManager.refreshStruct(defenderStructId, mapType),
-      this.structManager.refreshStruct(protectedStructId, mapType)
+      this.structManager.refreshStruct(defenderStructId, mapType, false, false),
+      this.structManager.refreshStruct(protectedStructId, mapType, false, false)
     ]).then(() => {
       // Only clear actionBarLock if this was triggered by the current player's action
       if (
@@ -220,8 +255,8 @@ export class StructListener extends AbstractGrassListener {
 
     // Refresh both the defender and protected structs
     Promise.all([
-      this.structManager.refreshStruct(defenderStructId, mapType),
-      this.structManager.refreshStruct(protectedStructId, mapType)
+      this.structManager.refreshStruct(defenderStructId, mapType, false, false),
+      this.structManager.refreshStruct(protectedStructId, mapType, false, false)
     ]).then(() => {
       // Only clear actionBarLock if this was triggered by the current player's action
       if (
@@ -248,27 +283,181 @@ export class StructListener extends AbstractGrassListener {
     const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
     const structIdsToRefresh = new Set();
 
-    // Always refresh the attacker struct
-    if (messageData.detail.attackerStructId) {
-      structIdsToRefresh.add(messageData.detail.attackerStructId);
-    }
+    structIdsToRefresh.add(messageData.detail.attackerStructId);
 
-    // Refresh targets and blockers from each shot detail
-    if (messageData.detail.eventAttackShotDetail) {
-      for (let i = 0; i < messageData.detail.eventAttackShotDetail.length; i++) {
-        const shot = messageData.detail.eventAttackShotDetail[i];
-        if (shot.targetStructId) {
-          structIdsToRefresh.add(shot.targetStructId);
+    for (let i = 0; i < messageData.detail.eventAttackShotDetail.length; i++) {
+
+      const eventAttackShotDetail = messageData.detail.eventAttackShotDetail[i];
+
+      let defenderCounterDestroyedAttacker = false;
+
+      for (let j = 0; j < eventAttackShotDetail.eventAttackDefenderCounterDetail.length; j++) {
+
+        const eventAttackDefenderCounterDetail = eventAttackShotDetail.eventAttackDefenderCounterDetail[j];
+
+        // i. Play counterByStruct attack animation
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeAttackAnimationEvent(
+            eventAttackDefenderCounterDetail.counterByStructId,
+            eventAttackDefenderCounterDetail.counterByStructWeaponSystem
+          )
+        );
+
+        // ii. Play attackerStruct receiving damage animation
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeReceiveDamageAnimationEvent(
+            messageData.detail.attackerStructId,
+            eventAttackDefenderCounterDetail.counterByStructType,
+            eventAttackDefenderCounterDetail.counterByStructOperatingAmbit,
+            eventAttackDefenderCounterDetail.counterByStructWeaponSystem,
+            messageData.detail.attackerStructType,
+            messageData.detail.attackerStructOperatingAmbit,
+            messageData.detail.attackerStructLocationType,
+            messageData.detail.attackerHealthMax,
+            messageData.detail.attackerHealthBefore,
+            messageData.detail.attackerHealthAfter
+          )
+        );
+
+        if (eventAttackDefenderCounterDetail.counterDestroyedAttacker) {
+          this.gameState.animationEventQueue.enqueue(
+            this.animationEventFactory.makeDestroyAnimationEvent(
+              messageData.detail.attackerStructId,
+              messageData.detail.attackerStructOperatingAmbit
+            )
+          );
+
+          defenderCounterDestroyedAttacker = true;
+          break;
         }
-        if (shot.blockedByStructId) {
-          structIdsToRefresh.add(shot.blockedByStructId);
+      }
+
+      if (!defenderCounterDestroyedAttacker) {
+        // b. If not counterDestroyedAttacker, play attackerStruct attack animation
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeAttackAnimationEvent(
+            messageData.detail.attackerStructId,
+            messageData.detail.weaponSystem
+          )
+        );
+      }
+
+      if (eventAttackShotDetail.evaded) {
+        // c. If evaded, play targetStruct evade animation
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeReceiveDamageAnimationEvent(
+            eventAttackShotDetail.targetStructId,
+            messageData.detail.attackerStructType,
+            messageData.detail.attackerStructOperatingAmbit,
+            messageData.detail.weaponSystem,
+            eventAttackShotDetail.targetStructType,
+            eventAttackShotDetail.targetStructOperatingAmbit,
+            eventAttackShotDetail.targetStructLocationType,
+            eventAttackShotDetail.targetHealthMax,
+            eventAttackShotDetail.targetHealthBefore,
+            eventAttackShotDetail.targetHealthAfter,
+            eventAttackShotDetail.evaded,
+            eventAttackShotDetail.evadedCause
+          )
+        );
+      }
+
+      if (eventAttackShotDetail.blocked) {
+        // d. If blocked, play blockedByStruct receiving damage animation
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeReceiveDamageAnimationEvent(
+            eventAttackShotDetail.blockedByStructId,
+            messageData.detail.attackerStructType,
+            messageData.detail.attackerStructOperatingAmbit,
+            messageData.detail.weaponSystem,
+            eventAttackShotDetail.blockedByStructType,
+            eventAttackShotDetail.blockedByStructOperatingAmbit,
+            eventAttackShotDetail.blockedByStructLocationType,
+            eventAttackShotDetail.blockerHealthMax,
+            eventAttackShotDetail.blockerHealthBefore,
+            eventAttackShotDetail.blockerHealthAfter
+          )
+        );
+
+        if (eventAttackShotDetail.blockerDestroyed) {
+          this.gameState.animationEventQueue.enqueue(
+            this.animationEventFactory.makeDestroyAnimationEvent(
+              eventAttackShotDetail.blockedByStructId,
+              eventAttackShotDetail.blockedByStructOperatingAmbit
+            )
+          );
         }
+
+        structIdsToRefresh.add(eventAttackShotDetail.blockedByStructId);
+      }
+
+      if (parseInt(eventAttackShotDetail.targetHealthBefore) !== parseInt(eventAttackShotDetail.targetHealthAfter)) {
+        // e. If targetHealthBefore !== targetHealthAfter, play targetStruct receive damage animation
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeReceiveDamageAnimationEvent(
+            eventAttackShotDetail.targetStructId,
+            messageData.detail.attackerStructType,
+            messageData.detail.attackerStructOperatingAmbit,
+            messageData.detail.weaponSystem,
+            eventAttackShotDetail.targetStructType,
+            eventAttackShotDetail.targetStructOperatingAmbit,
+            eventAttackShotDetail.targetStructLocationType,
+            eventAttackShotDetail.targetHealthMax,
+            eventAttackShotDetail.targetHealthBefore,
+            eventAttackShotDetail.targetHealthAfter
+          )
+        );
+
+        if (eventAttackShotDetail.targetDestroyed) {
+          this.gameState.animationEventQueue.enqueue(
+            this.animationEventFactory.makeDestroyAnimationEvent(
+              eventAttackShotDetail.targetStructId,
+              eventAttackShotDetail.targetStructOperatingAmbit
+            )
+          );
+        }
+
+        structIdsToRefresh.add(eventAttackShotDetail.targetStructId);
+      }
+
+      if (!eventAttackShotDetail.targetDestroyed && eventAttackShotDetail.targetCountered) {
+        // f. If targetHealthAfter > 0 and targetCountered, play targetStruct attack animation
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeAttackAnimationEvent(
+            eventAttackShotDetail.targetStructId,
+            eventAttackShotDetail.targetCounterWeaponSystem
+          )
+        );
+
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeReceiveDamageAnimationEvent(
+            messageData.detail.attackerStructId,
+            eventAttackShotDetail.targetStructType,
+            eventAttackShotDetail.targetStructOperatingAmbit,
+            eventAttackShotDetail.targetCounterWeaponSystem,
+            messageData.detail.attackerStructType,
+            messageData.detail.attackerStructOperatingAmbit,
+            messageData.detail.attackerStructLocationType,
+            messageData.detail.attackerHealthMax,
+            messageData.detail.attackerHealthBefore,
+            messageData.detail.attackerHealthAfter
+          )
+        );
+      }
+
+      if (eventAttackShotDetail.targetCounterDestroyedAttacker) {
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeDestroyAnimationEvent(
+            messageData.detail.attackerStructId,
+            messageData.detail.attackerStructOperatingAmbit
+          )
+        );
       }
     }
 
     // Refresh all involved structs
     const refreshPromises = Array.from(structIdsToRefresh).map(
-      structId => this.structManager.refreshStruct(structId, mapType)
+      structId => this.structManager.refreshStruct(structId, mapType, false, false)
     );
 
     Promise.all(refreshPromises).then(() => {

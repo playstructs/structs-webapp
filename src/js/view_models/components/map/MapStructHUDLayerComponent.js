@@ -187,7 +187,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   initPageCode() {
     this.renderAllStructHUDs();
 
-    window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
+    window.addEventListener(EVENTS.RENDER_STRUCT_HUD, (event) => {
       if (event.mapId === this.mapId) {
         this.renderStructHUDFromStruct(event.struct);
       }
@@ -197,6 +197,20 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
     window.addEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
       if (event.mapId === this.mapId) {
         this.clearTile(event.tileType, event.ambit, event.slot, event.playerId);
+      }
+    });
+
+    // Hide the HUD while animations are playing for the tile and show HUD after they're finished
+    window.addEventListener(EVENTS.ANIMATION, (event) => {
+      const tile = document.querySelector(`#${this.mapId} .map-struct-hud-layer-tile[data-struct-id="${event.structId}"]`);
+      if (tile) {
+        tile.classList.add('invisible');
+      }
+    });
+    window.addEventListener(EVENTS.ANIMATION_END, (event) => {
+      const tile = document.querySelector(`#${this.mapId} .map-struct-hud-layer-tile[data-struct-id="${event.structId}"]`);
+      if (tile) {
+       tile.classList.remove('invisible');
       }
     });
   }

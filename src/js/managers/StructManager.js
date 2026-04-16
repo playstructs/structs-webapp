@@ -9,7 +9,9 @@ import {RefreshActionBarEvent} from "../events/RefreshActionBarEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {RenderStructEvent} from "../events/RenderStructEvent";
+import {RenderStructHUDEvent} from "../events/RenderStructHUDEvent";
 import {Fleet} from "../models/Fleet";
+import {AnimationEventFactory} from "../factories/AnimationEventFactory";
 
 export class StructManager {
 
@@ -26,6 +28,7 @@ export class StructManager {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.signingClientManager = signingClientManager;
+    this.animationEventFactory = new AnimationEventFactory();
   }
 
   /**
@@ -344,9 +347,17 @@ export class StructManager {
    * @param {string} structId
    * @param {string} mapType
    * @param {boolean} removePendingBuild
+   * @param {boolean} renderStruct
+   * @param {AnimationEvent} animationToAutoplay
    * @return {Promise<Struct|null>}
    */
-  async refreshStruct(structId, mapType, removePendingBuild = false) {
+  async refreshStruct(
+    structId,
+    mapType,
+    removePendingBuild = false,
+    renderStruct = true,
+    animationToAutoplay = null
+  ) {
     const struct = await this.guildAPI.getStruct(structId);
     this.gameState.setStruct(struct);
 
@@ -356,11 +367,27 @@ export class StructManager {
     // Remove pending build from gameState
     if (tileType && removePendingBuild) {
       this.gameState.removePendingBuild(tileType, ambit, struct.slot, struct.owner);
+
+      if (!animationToAutoplay) {
+        animationToAutoplay = this.animationEventFactory.makeDeploymentAnimationEvent(
+          struct.id,
+          ambit
+        );
+      }
     }
 
     // Dispatch event to update the struct layer
-    const renderStructEvent = new RenderStructEvent(this.gameState[mapType].mapId, struct);
-    window.dispatchEvent(renderStructEvent);
+    if (renderStruct) {
+      const renderStructEvent = new RenderStructEvent(
+        this.gameState[mapType].mapId,
+        struct,
+        animationToAutoplay
+      );
+      window.dispatchEvent(renderStructEvent);
+    }
+
+    const renderStructHUDEvent = new RenderStructHUDEvent(this.gameState[mapType].mapId, struct);
+    window.dispatchEvent(renderStructHUDEvent);
 
     // Dispatch event to update the tile selection layer's struct ID
     if (tileType) {

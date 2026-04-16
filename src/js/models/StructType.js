@@ -199,4 +199,22 @@ export class StructType {
   isMovable() {
     return this.movable;
   }
+
+  /**
+   * Checks if the struct type has defensive maneuver capability.
+   * @return {boolean}
+   */
+  hasDefensiveManeuver() {
+    return this.unit_defenses
+      && this.unit_defenses === STRUCT_UNIT_DEFENSES.DEFENSIVE_MANEUVER;
+  }
+
+  /**
+   * Checks if the struct type has signal jamming capability.
+   * @return {boolean}
+   */
+  hasSignalJamming() {
+    return this.unit_defenses
+      && this.unit_defenses === STRUCT_UNIT_DEFENSES.SIGNAL_JAMMING;
+  }
 }

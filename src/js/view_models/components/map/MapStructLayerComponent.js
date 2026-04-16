@@ -5,6 +5,7 @@ import {Struct} from "../../../models/Struct";
 import {GenericMapLayerComponent} from "./GenericMapLayerComponent";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {AmbitUtil} from "../../../util/AmbitUtil";
+import {MapStructViewerComponent} from "../MapStructViewerComponent";
 
 
 export class MapStructLayerComponent extends GenericMapLayerComponent {
@@ -50,6 +51,9 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
 
     this.structStillBuilder = new StructStillBuilder(this.gameState);
     this.ambitUtil = new AmbitUtil();
+
+    /** @type {Object<string, MapStructViewerComponent>} */
+    this.mapStructViewers = {};
   }
 
   /**
@@ -78,33 +82,45 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
-   * Render the content inside a struct tile (struct image or building indicator)
-   * @param {Struct|null} struct
-   * @return {string}
-   */
-  renderStructContent(struct) {
-    if (!struct) {
-      return '';
-    }
-
-    if (!struct.isBuilt()) {
-      return this.renderDeploymentIndicatorHTML();
-    }
-
-    const structType = this.gameState.structTypes.getStructTypeById(struct.type)
-
-    // Completed struct - render the struct image
-    const structStill = this.structStillBuilder.build(structType.type);
-    return structStill.renderHTML();
-  }
-
-  /**
    * @param {HTMLElement} tileElement
    * @param {Struct} struct
+   * @param {AnimationEvent} animationToAutoplay the animation to autoplay once the struct is rendered and ready to play animations
    */
-  renderStruct(tileElement, struct) {
-    tileElement.innerHTML = this.renderStructContent(struct);
-    tileElement.setAttribute('data-struct-id', struct ? struct.id : '');
+  renderStruct(tileElement, struct, animationToAutoplay = null) {
+    if (!struct) {
+
+      tileElement.innerHTML = '';
+      const oldStructId = tileElement.getAttribute('data-struct-id');
+      if (oldStructId) {
+        delete this.mapStructViewers[oldStructId];
+        tileElement.setAttribute('data-struct-id', '');
+      }
+
+    } else if (!struct.isBuilt()) {
+
+      tileElement.innerHTML = this.renderDeploymentIndicatorHTML();
+      tileElement.setAttribute('data-struct-id', struct.id);
+
+    } else {
+
+      this.mapStructViewers[struct.id] = new MapStructViewerComponent(
+        this.gameState,
+        this.structManager,
+        struct.id,
+        struct.type
+      );
+      tileElement.innerHTML = this.mapStructViewers[struct.id].renderHTML();
+      tileElement.setAttribute('data-struct-id', struct.id);
+      if (animationToAutoplay) {
+        this.mapStructViewers[struct.id].init(
+          animationToAutoplay.animationNames,
+          animationToAutoplay.showStructStillDuringAnimation,
+          animationToAutoplay.showStructStillAfterAnimation
+        );
+      } else {
+        this.mapStructViewers[struct.id].init();
+      }
+    }
   }
 
   /**
@@ -119,11 +135,12 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
 
   /**
    * @param {Struct} struct
+   * @param {AnimationEvent} animationToAutoplay the animation to autoplay once the struct is rendered and ready to play animations
    */
-  renderStructFromStruct(struct) {
+  renderStructFromStruct(struct, animationToAutoplay = null) {
     const renderParams = this.buildMapStructTilRenderParamsFromStruct(struct);
     if (renderParams) {
-      this.renderStruct(renderParams.tileElement, renderParams.struct);
+      this.renderStruct(renderParams.tileElement, renderParams.struct, animationToAutoplay);
     }
   }
 
@@ -215,10 +232,21 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
       }
     });
 
+    // Listen for ANIMATION events
+    window.addEventListener(EVENTS.ANIMATION, (event) => {
+      if (this.mapStructViewers[event.structId]) {
+        this.mapStructViewers[event.structId].play(
+          event.animationNames,
+          event.showStructStillDuringAnimation,
+          event.showStructStillAfterAnimation
+        );
+      }
+    });
+
     // Listen for RENDER_STRUCT events
     window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
       if (event.mapId === this.mapId) {
-        this.renderStructFromStruct(event.struct);
+        this.renderStructFromStruct(event.struct, event.animationToAutoplay);
       }
     });
 

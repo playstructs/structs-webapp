@@ -1,5 +1,6 @@
 import {StructStillRenderer} from "../view_models/components/StructStillRenderer";
 import {STRUCT_VARIANTS} from "../constants/StructConstants";
+import {StructType} from "../models/StructType";
 
 export class StructStillBuilder {
 
@@ -12,9 +13,10 @@ export class StructStillBuilder {
   }
   
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildBattleship() {
+  buildBattleship(structType) {
     const topDetailLayers = [];
 
     const structVariants = {};
@@ -25,6 +27,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -32,9 +35,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildCommandShip() {
+  buildCommandShip(structType) {
     const topDetailLayers = [
       this.structImageDir + '/cmd-ship/cmd-ship-top-weapon.png'
     ];
@@ -48,6 +52,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -55,9 +60,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildCruiser() {
+  buildCruiser(structType) {
     const topDetailLayers = [
       this.structImageDir + '/cruiser/cruiser-top-weapon-ballistic.png',
       this.structImageDir + '/cruiser/cruiser-top-weapon-smart.png',
@@ -73,6 +79,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -80,9 +87,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildDestroyer() {
+  buildDestroyer(structType) {
     const topDetailLayers = [
       this.structImageDir + '/destroyer/destroyer-top-weapon.png'
     ];
@@ -97,6 +105,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -104,9 +113,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildOreExtractor() {
+  buildOreExtractor(structType) {
     const topDetailLayers = [
       this.structImageDir + '/extractor/extractor-top-drill.png'
     ];
@@ -119,6 +129,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -126,9 +137,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildFrigate() {
+  buildFrigate(structType) {
     const topDetailLayers = [];
 
     const structVariants = {};
@@ -141,6 +153,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -148,9 +161,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildFieldGenerator() {
+  buildFieldGenerator(structType) {
     const topDetailLayers = [
       this.structImageDir + '/generator/generator-top-tube.png'
     ];
@@ -163,6 +177,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -170,9 +185,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildHighAltitudeInterceptor() {
+  buildHighAltitudeInterceptor(structType) {
     const topDetailLayers = [];
 
     const structVariants = {};
@@ -185,6 +201,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -192,9 +209,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildJammingSatellite() {
+  buildJammingSatellite(structType) {
     const topDetailLayers = [
       this.structImageDir + '/jamming-sat/jamming-sat-top-weapon.png'
     ];
@@ -207,6 +225,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -214,9 +233,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildMobileArtillery() {
+  buildMobileArtillery(structType) {
     const topDetailLayers = [
       this.structImageDir + '/mobile-artillery/mobile-artillery-top-weapon.png'
     ];
@@ -229,6 +249,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -236,9 +257,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildOrbitalShieldGenerator() {
+  buildOrbitalShieldGenerator(structType) {
     const topDetailLayers = [
       this.structImageDir + '/orb-shield/orb-shield-top-weapon.png'
     ];
@@ -251,6 +273,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -258,9 +281,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildOreBunker() {
+  buildOreBunker(structType) {
     const topDetailLayers = [
       this.structImageDir + '/ore-bunker/ore-bunker-top-weapon.png'
     ];
@@ -273,6 +297,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -280,9 +305,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildPlanetaryDefenseCannon() {
+  buildPlanetaryDefenseCannon(structType) {
     const topDetailLayers = [
       this.structImageDir + '/pdc/pdc-top-weapon.png'
     ];
@@ -295,6 +321,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -302,9 +329,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildPursuitFighter() {
+  buildPursuitFighter(structType) {
     const topDetailLayers = [];
 
     const structVariants = {};
@@ -317,6 +345,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -324,9 +353,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildOreRefinery() {
+  buildOreRefinery(structType) {
     const topDetailLayers = [
       this.structImageDir + '/refinery/refinery-top-bays.png'
     ];
@@ -339,6 +369,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -346,9 +377,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildSAMLauncher() {
+  buildSAMLauncher(structType) {
     const topDetailLayers = [
       this.structImageDir + '/sam-launcher/sam-launcher-top-weapon.png'
     ];
@@ -361,6 +393,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -368,9 +401,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildStarfighter() {
+  buildStarfighter(structType) {
     const topDetailLayers = [
       this.structImageDir + '/starfighter/starfighter-top-weapon-ballistic.png'
     ];
@@ -385,6 +419,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -392,9 +427,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildStealthBomber() {
+  buildStealthBomber(structType) {
     const topDetailLayers = [];
 
     const structVariants = {};
@@ -407,6 +443,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -414,9 +451,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildSubmersible() {
+  buildSubmersible(structType) {
     const topDetailLayers = [
       this.structImageDir + '/submersible/submersible-top-weapon.png'
     ];
@@ -431,6 +469,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -438,9 +477,10 @@ export class StructStillBuilder {
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildTank() {
+  buildTank(structType) {
     const topDetailLayers = [
       this.structImageDir + '/tank/tank-top-weapon.png'
     ];
@@ -453,6 +493,7 @@ export class StructStillBuilder {
 
     return new StructStillRenderer(
       this.gameState,
+      structType,
       topDetailLayers,
       structVariants,
       bottomDetailLayers
@@ -460,16 +501,16 @@ export class StructStillBuilder {
   }
   
   /**
-   * @param {string} structType
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
   build(structType) {
-    const structTypeClean = structType.replace(/[^a-zA-Z0-9]/g, '');
+    const structTypeClean = structType.type.replace(/[^a-zA-Z0-9]/g, '');
 
     if (!this[`build${structTypeClean}`]) {
-      throw new Error(`No struct still for struct type ${structType}`);
+      throw new Error(`No struct still for struct type ${structType.type}`);
     }
 
-    return this[`build${structTypeClean}`]();
+    return this[`build${structTypeClean}`](structType);
   }
 }

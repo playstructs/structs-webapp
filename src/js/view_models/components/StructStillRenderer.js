@@ -1,27 +1,30 @@
 import {AbstractViewModelComponent} from "../../framework/AbstractViewModelComponent";
 import {STRUCT_VARIANTS} from "../../constants/StructConstants";
+import {StructType} from "../../models/StructType";
 
 export class StructStillRenderer extends AbstractViewModelComponent {
 
   /**
    * @param {GameState} gameState
+   * @param {StructType} structType
    * @param {string[]} topDetailLayers
    * @param {object} structVariants
    * @param {string[]} bottomDetailLayers
    */
   constructor(
     gameState,
+    structType,
     topDetailLayers,
     structVariants,
     bottomDetailLayers
   ) {
     super(gameState);
 
+    /** @type {StructType} */
+    this.structType = structType;
     this.topDetailLayers = topDetailLayers;
     this.structVariants = structVariants;
     this.bottomDetailLayers = bottomDetailLayers;
-
-    this.defaultVariant = STRUCT_VARIANTS.BASE;
   }
 
   /**
@@ -64,10 +67,22 @@ export class StructStillRenderer extends AbstractViewModelComponent {
   }
 
   /**
+   * @param {number} currentHealth
    * @param {string} structVariant
    * @return {string}
    */
-  renderHTML(structVariant = this.defaultVariant) {
+  renderHTML(currentHealth = -1, structVariant = '') {
+
+    if (currentHealth === 0) {
+      return `<div class="struct-still"></div>`;
+    }
+
+    if (structVariant === '') {
+      structVariant = (0 < currentHealth && currentHealth < this.structType.max_health)
+        ? STRUCT_VARIANTS.DMG
+        : STRUCT_VARIANTS.BASE;
+    }
+
     return `
       <div class="struct-still">
         ${this.renderTopDetailLayers()}

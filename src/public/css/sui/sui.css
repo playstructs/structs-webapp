@@ -2680,7 +2680,7 @@ label.sui-form-element-group-label {
 /* ---- Utility Classes Start ---- */
 
 .sui-flip-horizontal {
-  transform: scale(-1);
+  transform: scaleX(-1);
 }
 
 /* ---- Utility Classes End ---- */

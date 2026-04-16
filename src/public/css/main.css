@@ -2014,7 +2014,8 @@ a.offcanvas-struct-container.sui-mod-disabled {
 }
 
 .struct-still,
-.deployment-indicator {
+.deployment-indicator,
+.map-struct-viewer {
   position: relative;
   display: flex;
   max-width: 100%;
@@ -2027,6 +2028,27 @@ a.offcanvas-struct-container.sui-mod-disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.map-struct-viewer-layer {
+  position: absolute;
+  display: flex;
+  top: 0;
+  left: 0;
+  max-width: 100%;
+  max-height: 100%;
+  width: var(--tile-width);
+  height: var(--tile-height);
+  padding: 0;
+  border: 0 none;
+  margin: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.invisible {
+  visibility: hidden !important;
 }
 
 .struct-still img,
@@ -2092,6 +2114,8 @@ a.offcanvas-struct-container.sui-mod-disabled {
 .hidden-background {
   background: transparent !important;
 }
+
+.flip
 
 /* Utility Classes End */
 

@@ -103,6 +103,9 @@ export class GameState {
     /** @type {ActionBarLock} The current struct action (see STRUCT_ACTIONS) that holds the lock. */
     this.actionBarLock = new ActionBarLock();
 
+    /** @type {AnimationEventQueue} */
+    this.animationEventQueue = null;
+
     /* Allow saving from other classes without cyclical references. */
     window.addEventListener(EVENTS.SAVE_GAME_STATE, this.save.bind(this));
   }
