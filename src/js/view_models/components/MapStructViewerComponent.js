@@ -87,6 +87,47 @@ export class MapStructViewerComponent {
   }
 
   /**
+   * @param {boolean} isActive whether the struct should be rendered in a stealth-active state
+   */
+  setStealthActive(isActive) {
+    const structStillContainer = document.getElementById(this.structStillContainerId);
+    if (!structStillContainer) {
+      return;
+    }
+    if (isActive) {
+      structStillContainer.classList.add('struct-stealth-active');
+    } else {
+      structStillContainer.classList.remove('struct-stealth-active');
+    }
+  }
+
+  /**
+   * Render the struct still HTML for this struct's current game state.
+   * @return {string}
+   */
+  renderStructStillInnerHTML() {
+    const struct = this.structManager.getStructById(this.structId);
+    if (!struct) {
+      return '';
+    }
+    const structStill = this.structStillBuilder.build(this.structType);
+    return structStill.renderHTML(struct.health);
+  }
+
+  /**
+   * Refresh only the struct still image from current game state, preserving any
+   * state classes (e.g. struct-stealth-active) on the container and leaving all
+   * other animation layers untouched.
+   */
+  updateStructStill() {
+    const structStillContainer = document.getElementById(this.structStillContainerId);
+    if (!structStillContainer) {
+      return;
+    }
+    structStillContainer.innerHTML = this.renderStructStillInnerHTML();
+  }
+
+  /**
    * @param {boolean} showStructStillDuringAnimation
    * @param {boolean} showStructStillAfterAnimation
    */
@@ -127,8 +168,15 @@ export class MapStructViewerComponent {
       }
 
       animation.onCompleteCallback = () => {
+        if (animationName === ANIMATION.NAMES.STEALTH.ACTIVATE) {
+          this.setStealthActive(true);
+        } else if (animationName === ANIMATION.NAMES.STEALTH.DEACTIVATE) {
+          this.setStealthActive(false);
+        }
+
         pendingCount--;
         if (pendingCount === 0) {
+          this.updateStructStill();
           if (this.showStructStillAfterAnimation) {
             this.showStructStill();
           }
@@ -240,11 +288,11 @@ export class MapStructViewerComponent {
 
   renderHTML() {
     const struct = this.structManager.getStructById(this.structId);
-    const structStill = this.structStillBuilder.build(this.structType);
+    const stealthClass = struct && struct.isHidden() ? ' struct-stealth-active' : '';
 
     return `
       <div class="map-struct-viewer">
-        <div id="${this.structStillContainerId}" class="map-struct-viewer-layer" style="z-index:${this.getLayerZIndex()}">${structStill.renderHTML(struct.health)}</div>
+        <div id="${this.structStillContainerId}" class="map-struct-viewer-layer${stealthClass}" style="z-index:${this.getLayerZIndex()}">${this.renderStructStillInnerHTML()}</div>
 
         ${this.renderAttackSecondaryWeaponHTML()}
         ${this.renderAttackPrimaryWeaponHTML()}

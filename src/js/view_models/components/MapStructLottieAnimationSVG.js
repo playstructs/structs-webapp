@@ -59,6 +59,9 @@ export class MapStructLottieAnimationSVG {
 
   configStructImages() {
     const struct = this.structManager.getStructById(this.structId);
+    if (!struct) {
+      return;
+    }
     const structStillRenderer = this.structStillBuilder.build(this.structType);
 
     let structInitSrc = structStillRenderer.structVariants[STRUCT_VARIANTS.DMG];
@@ -82,6 +85,7 @@ export class MapStructLottieAnimationSVG {
 
   play() {
     this.animation.stop();
+    this.configStructImages();
     this.show();
     this.animation.play();
   }

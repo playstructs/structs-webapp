@@ -2051,6 +2051,10 @@ a.offcanvas-struct-container.sui-mod-disabled {
   visibility: hidden !important;
 }
 
+.struct-stealth-active {
+  opacity: 0.5;
+}
+
 .struct-still img,
 .deployment-indicator img {
   position: absolute;
