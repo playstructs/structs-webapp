@@ -1,5 +1,4 @@
 import {EVENTS} from "../../constants/Events";
-import {STRUCT_VARIANTS} from "../../constants/StructConstants";
 import {StructStillBuilder} from "../../builders/StructStillBuilder";
 import {StructType} from "../../models/StructType"
 
@@ -48,13 +47,15 @@ export class MapStructLottieAnimationSVG {
     const gContainer = originalSVGImage.parentNode;
     gContainer.innerHTML = '';
 
-    const svgImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-    svgImage.setAttributeNS(null, 'height', `${originalSVGImage.height.baseVal.valueAsString}`);
-    svgImage.setAttributeNS(null, 'width', `${originalSVGImage.width.baseVal.valueAsString}`);
-    svgImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', newImageSrc);
-    svgImage.setAttributeNS(null, 'visibility', 'visible');
+    if (newImageSrc) {
+      const svgImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      svgImage.setAttributeNS(null, 'height', `${originalSVGImage.height.baseVal.valueAsString}`);
+      svgImage.setAttributeNS(null, 'width', `${originalSVGImage.width.baseVal.valueAsString}`);
+      svgImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', newImageSrc);
+      svgImage.setAttributeNS(null, 'visibility', 'visible');
 
-    gContainer.append(svgImage);
+      gContainer.append(svgImage);
+    }
   }
 
   configStructImages() {
@@ -64,15 +65,17 @@ export class MapStructLottieAnimationSVG {
     }
     const structStillRenderer = this.structStillBuilder.build(this.structType);
 
-    let structInitSrc = structStillRenderer.structVariants[STRUCT_VARIANTS.DMG];
-    let structDmgSrc = structStillRenderer.structVariants[STRUCT_VARIANTS.DMG];
+    let structInitSrc = structStillRenderer.structVariantDmg;
 
     if (this.structType.max_health === struct.health) {
-      structInitSrc = structStillRenderer.structVariants[STRUCT_VARIANTS.BASE];
+      structInitSrc = structStillRenderer.structVariantBase;
     }
 
+    this.swapImage('.struct_top_layer_1', structStillRenderer.topDetailLayer1);
+    this.swapImage('.struct_top_layer_2', structStillRenderer.topDetailLayer2);
     this.swapImage('.struct_init', structInitSrc);
-    this.swapImage('.struct_dmg', structDmgSrc);
+    this.swapImage('.struct_dmg', structStillRenderer.structVariantDmg);
+    this.swapImage('.struct_bottom_layer_1', structStillRenderer.bottomDetailLayer1)
   }
 
   show() {

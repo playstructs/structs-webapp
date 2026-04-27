@@ -1,0 +1,25 @@
+import {
+  STRUCT_EQUIPMENT,
+  STRUCT_STILL_LAYERS,
+  STRUCT_WATER_RIPPLE,
+  STRUCT_WEAPON_SYSTEM
+} from "../constants/StructConstants";
+
+export class StructTypeArtSet {
+  constructor(structType) {
+    this.structType = structType;
+    this[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE] = '';
+    this[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG] = '';
+    this[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON] = '';
+    this[STRUCT_WEAPON_SYSTEM.SECONDARY_WEAPON] = '';
+    this[STRUCT_EQUIPMENT.PASSIVE_WEAPONRY] = '';
+    this[STRUCT_EQUIPMENT.UNIT_DEFENSES] = '';
+    this[STRUCT_EQUIPMENT.ORE_RESERVE_DEFENSES] = '';
+    this[STRUCT_EQUIPMENT.PLANETARY_DEFENSES] = '';
+    this[STRUCT_EQUIPMENT.PLANETARY_MINING] = '';
+    this[STRUCT_EQUIPMENT.PLANETARY_REFINERY] = '';
+    this[STRUCT_EQUIPMENT.POWER_GENERATION] = '';
+    this[STRUCT_WATER_RIPPLE] = '';
+  }
+}
+

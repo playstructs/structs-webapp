@@ -27,11 +27,6 @@ export const
     FLEET: 'fleet',
     PLANET: 'planet'
   },
-  STRUCT_VARIANTS = {
-    BASE: 'base',
-    DMG: 'dmg',
-    BLINK: 'blink'
-  },
   STRUCT_PRIMARY_WEAPON = {
     UNGUIDED_WEAPONRY: 'unguidedWeaponry',
     GUIDED_WEAPONRY: 'guidedWeaponry',
@@ -158,5 +153,19 @@ export const
     MOVE: 'MOVE',
     STEALTH_ACTIVATE: 'STEALTH_ACTIVATE',
     STEALTH_DEACTIVATE: 'STEALTH_DEACTIVATE'
+  },
+  STRUCT_WATER_RIPPLE = 'waterRipple',
+  STRUCT_EQUIPMENT = {
+    PASSIVE_WEAPONRY: 'passiveWeaponry',
+    UNIT_DEFENSES: 'unitDefenses',
+    ORE_RESERVE_DEFENSES: 'oreReserveDefenses',
+    PLANETARY_DEFENSES: 'planetaryDefenses',
+    PLANETARY_MINING: 'planetaryMining',
+    PLANETARY_REFINERY: 'planetaryRefinery',
+    POWER_GENERATION: 'powerGeneration',
+  },
+  STRUCT_STILL_LAYERS = {
+    STRUCT_VARIANT_BASE: 'structVariantBase',
+    STRUCT_VARIANT_DMG: 'structVariantDmg',
   }
 ;
