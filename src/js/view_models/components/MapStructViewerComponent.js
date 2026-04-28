@@ -12,12 +12,15 @@ export class MapStructViewerComponent {
    * @param {StructManager} structManager
    * @param {string} structId
    * @param {number} structTypeId
+   * @param {string|null} mapId the id of the map that owns this viewer; included on
+   * dispatched AnimationEndEvents so listeners can filter by their own map
    */
-  constructor(gameState, structManager, structId, structTypeId) {
+  constructor(gameState, structManager, structId, structTypeId, mapId = null) {
     this.gameState = gameState;
     this.structManager = structManager;
     this.structId = structId;
     this.structTypeId = structTypeId;
+    this.mapId = mapId;
     this.layerZIndex = 0;
 
     this.lottieCustomPlayer = new LottieCustomPlayer();
@@ -180,7 +183,7 @@ export class MapStructViewerComponent {
           if (this.showStructStillAfterAnimation) {
             this.showStructStill();
           }
-          window.dispatchEvent(new AnimationEndEvent(animationName, this.structId));
+          window.dispatchEvent(new AnimationEndEvent(animationName, this.structId, this.mapId));
         }
       };
     }

@@ -104,6 +104,7 @@ export class StructListener extends AbstractGrassListener {
     let removePendingBuild = false;
     let renderStruct = true;
     const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
+    const mapId = this.gameState[mapType]?.mapId ?? null;
 
     if (
       (messageData.detail.status_old & STRUCT_STATUS_FLAGS.BUILT) === 0
@@ -116,7 +117,10 @@ export class StructListener extends AbstractGrassListener {
       && (messageData.detail.status & STRUCT_STATUS_FLAGS.HIDDEN) > 0
     ) {
       renderStruct = false;
-      const animationEvent = this.animationEventFactory.makeStealthActivateAnimationEvent(messageData.detail.struct_id);
+      const animationEvent = this.animationEventFactory.makeStealthActivateAnimationEvent(
+        messageData.detail.struct_id,
+        mapId
+      );
       this.gameState.animationEventQueue.enqueue(animationEvent);
 
     } else if (
@@ -124,7 +128,10 @@ export class StructListener extends AbstractGrassListener {
       && (messageData.detail.status & STRUCT_STATUS_FLAGS.HIDDEN) === 0
     ) {
       renderStruct = false;
-      const animationEvent = this.animationEventFactory.makeStealthDeactivateAnimationEvent(messageData.detail.struct_id);
+      const animationEvent = this.animationEventFactory.makeStealthDeactivateAnimationEvent(
+        messageData.detail.struct_id,
+        mapId
+      );
       this.gameState.animationEventQueue.enqueue(animationEvent);
     }
 
@@ -170,7 +177,9 @@ export class StructListener extends AbstractGrassListener {
       structId,
       [ANIMATION.NAMES.MOVE.DEPART],
       false,
-      false
+      false,
+      {},
+      mapId ?? null
     );
 
     departEvent.onAnimationEnd = async () => {
@@ -196,7 +205,9 @@ export class StructListener extends AbstractGrassListener {
       structId,
       [ANIMATION.NAMES.MOVE.ARRIVE],
       false,
-      true
+      true,
+      {},
+      mapId ?? null
     );
 
     arriveEvent.onAnimationEnd = () => {
@@ -281,6 +292,7 @@ export class StructListener extends AbstractGrassListener {
     }
 
     const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
+    const mapId = this.gameState[mapType]?.mapId ?? null;
     const structIdsToRefresh = new Set();
 
     structIdsToRefresh.add(messageData.detail.attackerStructId);
@@ -299,7 +311,8 @@ export class StructListener extends AbstractGrassListener {
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeAttackAnimationEvent(
             eventAttackDefenderCounterDetail.counterByStructId,
-            eventAttackDefenderCounterDetail.counterByStructWeaponSystem
+            eventAttackDefenderCounterDetail.counterByStructWeaponSystem,
+            mapId
           )
         );
 
@@ -315,7 +328,10 @@ export class StructListener extends AbstractGrassListener {
             messageData.detail.attackerStructLocationType,
             messageData.detail.attackerHealthMax,
             messageData.detail.attackerHealthBefore,
-            messageData.detail.attackerHealthAfter
+            messageData.detail.attackerHealthAfter,
+            false,
+            '',
+            mapId
           )
         );
 
@@ -323,7 +339,8 @@ export class StructListener extends AbstractGrassListener {
           this.gameState.animationEventQueue.enqueue(
             this.animationEventFactory.makeDestroyAnimationEvent(
               messageData.detail.attackerStructId,
-              messageData.detail.attackerStructOperatingAmbit
+              messageData.detail.attackerStructOperatingAmbit,
+              mapId
             )
           );
 
@@ -337,7 +354,8 @@ export class StructListener extends AbstractGrassListener {
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeAttackAnimationEvent(
             messageData.detail.attackerStructId,
-            messageData.detail.weaponSystem
+            messageData.detail.weaponSystem,
+            mapId
           )
         );
       }
@@ -357,7 +375,8 @@ export class StructListener extends AbstractGrassListener {
             eventAttackShotDetail.targetHealthBefore,
             eventAttackShotDetail.targetHealthAfter,
             eventAttackShotDetail.evaded,
-            eventAttackShotDetail.evadedCause
+            eventAttackShotDetail.evadedCause,
+            mapId
           )
         );
       }
@@ -375,7 +394,10 @@ export class StructListener extends AbstractGrassListener {
             eventAttackShotDetail.blockedByStructLocationType,
             eventAttackShotDetail.blockerHealthMax,
             eventAttackShotDetail.blockerHealthBefore,
-            eventAttackShotDetail.blockerHealthAfter
+            eventAttackShotDetail.blockerHealthAfter,
+            false,
+            '',
+            mapId
           )
         );
 
@@ -383,7 +405,8 @@ export class StructListener extends AbstractGrassListener {
           this.gameState.animationEventQueue.enqueue(
             this.animationEventFactory.makeDestroyAnimationEvent(
               eventAttackShotDetail.blockedByStructId,
-              eventAttackShotDetail.blockedByStructOperatingAmbit
+              eventAttackShotDetail.blockedByStructOperatingAmbit,
+              mapId
             )
           );
         }
@@ -404,7 +427,10 @@ export class StructListener extends AbstractGrassListener {
             eventAttackShotDetail.targetStructLocationType,
             eventAttackShotDetail.targetHealthMax,
             eventAttackShotDetail.targetHealthBefore,
-            eventAttackShotDetail.targetHealthAfter
+            eventAttackShotDetail.targetHealthAfter,
+            false,
+            '',
+            mapId
           )
         );
 
@@ -412,7 +438,8 @@ export class StructListener extends AbstractGrassListener {
           this.gameState.animationEventQueue.enqueue(
             this.animationEventFactory.makeDestroyAnimationEvent(
               eventAttackShotDetail.targetStructId,
-              eventAttackShotDetail.targetStructOperatingAmbit
+              eventAttackShotDetail.targetStructOperatingAmbit,
+              mapId
             )
           );
         }
@@ -425,7 +452,8 @@ export class StructListener extends AbstractGrassListener {
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeAttackAnimationEvent(
             eventAttackShotDetail.targetStructId,
-            eventAttackShotDetail.targetCounterWeaponSystem
+            eventAttackShotDetail.targetCounterWeaponSystem,
+            mapId
           )
         );
 
@@ -440,7 +468,10 @@ export class StructListener extends AbstractGrassListener {
             messageData.detail.attackerStructLocationType,
             messageData.detail.attackerHealthMax,
             messageData.detail.attackerHealthBefore,
-            messageData.detail.attackerHealthAfter
+            messageData.detail.attackerHealthAfter,
+            false,
+            '',
+            mapId
           )
         );
       }
@@ -449,7 +480,8 @@ export class StructListener extends AbstractGrassListener {
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeDestroyAnimationEvent(
             messageData.detail.attackerStructId,
-            messageData.detail.attackerStructOperatingAmbit
+            messageData.detail.attackerStructOperatingAmbit,
+            mapId
           )
         );
       }

@@ -18,36 +18,51 @@ export class AnimationEventFactory {
 
   /**
    * @param {string} structId the id of the struct that activated stealth mode
+   * @param {string|null} mapId the id of the map the animation should play on
    * @return {AnimationEvent} an event specifying the animation to play when stealth mode is activated
    */
-  makeStealthActivateAnimationEvent(structId) {
+  makeStealthActivateAnimationEvent(structId, mapId = null) {
     return new AnimationEvent(
       structId,
-      [ANIMATION.NAMES.STEALTH.ACTIVATE]
+      [ANIMATION.NAMES.STEALTH.ACTIVATE],
+      false,
+      true,
+      {},
+      mapId
     );
   }
 
   /**
    * @param {string} structId the id of the struct that deactivated stealth mode
+   * @param {string|null} mapId the id of the map the animation should play on
    * @return {AnimationEvent} an event specifying the animation to play when stealth mode is deactivated
    */
-  makeStealthDeactivateAnimationEvent(structId) {
+  makeStealthDeactivateAnimationEvent(structId, mapId = null) {
     return new AnimationEvent(
       structId,
-      [ANIMATION.NAMES.STEALTH.DEACTIVATE]
+      [ANIMATION.NAMES.STEALTH.DEACTIVATE],
+      false,
+      true,
+      {},
+      mapId
     );
   }
 
   /**
    * @param {string} attackStructId the id of the attacking struct
    * @param {string} weaponSystem the weapon system being used by the attacking struct such as primaryWeapon, secondaryWeapon or planetaryDefenses
+   * @param {string|null} mapId the id of the map the animation should play on
    * @return {AnimationEvent} an event specifying the animation to play for the attacking struct
    */
-  makeAttackAnimationEvent(attackStructId, weaponSystem) {
+  makeAttackAnimationEvent(attackStructId, weaponSystem, mapId = null) {
     const weaponSystemFormatted = this.caseConverter.convert(weaponSystem, UPPER_SNAKE_CASE);
     return new AnimationEvent(
       attackStructId,
-      [ANIMATION.NAMES.ATTACK[weaponSystemFormatted]]
+      [ANIMATION.NAMES.ATTACK[weaponSystemFormatted]],
+      false,
+      true,
+      {},
+      mapId
     );
   }
 
@@ -64,6 +79,7 @@ export class AnimationEventFactory {
    * @param {string|number} targetHealthAfter the health of the struct being targeted after receiving damage
    * @param {boolean} evaded whether or not the struct being targeted evaded the attack
    * @param {string} evadedCause the unit defenses used to evade the attack
+   * @param {string|null} mapId the id of the map the animation should play on
    * @return {AnimationEvent|null} an event specifying the animation to play for the target struct
    */
   makeReceiveDamageAnimationEvent(
@@ -78,7 +94,8 @@ export class AnimationEventFactory {
     targetHealthBefore,
     targetHealthAfter,
     evaded = false,
-    evadedCause = ''
+    evadedCause = '',
+    mapId = null
   ) {
 
     attackStructOperatingAmbit = attackStructOperatingAmbit.toUpperCase();
@@ -104,7 +121,8 @@ export class AnimationEventFactory {
         ],
         false,
         true,
-        { ...options, projectile: ANIMATION.PROJECTILES.TORPEDO }
+        { ...options, projectile: ANIMATION.PROJECTILES.TORPEDO },
+        mapId
       );
     }
 
@@ -114,7 +132,8 @@ export class AnimationEventFactory {
         [ANIMATION.NAMES.EVADE],
         false,
         true,
-        options
+        options,
+        mapId
       );
     }
 
@@ -396,35 +415,44 @@ export class AnimationEventFactory {
       animationNames,
       showStructStillDuringAnimation,
       true,
-      { ...options, projectile: projectile }
+      { ...options, projectile: projectile },
+      mapId
     );
   }
 
   /**
    * @param {string} structId the id of the struct that was destroyed
    * @param {string} ambit the current ambit of the struct that was destroyed
+   * @param {string|null} mapId the id of the map the animation should play on
    * @return {AnimationEvent} an event specifying the animation to play for the struct that was destroyed
    */
-  makeDestroyAnimationEvent(structId, ambit) {
+  makeDestroyAnimationEvent(structId, ambit, mapId = null) {
     const ambitFormatted = ambit.toUpperCase();
     return new AnimationEvent(
       structId,
       [ANIMATION.NAMES.DESTROY[ambitFormatted]],
       false,
-      false
+      false,
+      {},
+      mapId
     );
   }
 
   /**
    * @param {string} structId the id of the struct that was deployed
    * @param {string} ambit the current ambit of the struct that was deployed
+   * @param {string|null} mapId the id of the map the animation should play on
    * @return {AnimationEvent} an event specifying the animation to play for the struct that was deployed
    */
-  makeDeploymentAnimationEvent(structId, ambit) {
+  makeDeploymentAnimationEvent(structId, ambit, mapId = null) {
     const ambitFormatted = ambit.toUpperCase();
     return new AnimationEvent(
       structId,
-      [ANIMATION.NAMES.DEPLOYMENT[ambitFormatted]]
+      [ANIMATION.NAMES.DEPLOYMENT[ambitFormatted]],
+      false,
+      true,
+      {},
+      mapId
     );
   }
 }

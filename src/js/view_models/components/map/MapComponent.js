@@ -278,7 +278,22 @@ export class MapComponent extends AbstractViewModelComponent {
     `;
   }
 
+  destroyMapStructLayer() {
+    if (this.mapStructLayer) {
+      this.mapStructLayer.destroy();
+    }
+  }
+
+  destroyMapStructHUDLayer() {
+    if (this.mapStructHUDLayer) {
+      this.mapStructHUDLayer.destroy();
+    }
+  }
+
   render() {
+    this.destroyMapStructLayer();
+    this.destroyMapStructHUDLayer();
+
     document.getElementById(this.containerId).innerHTML = this.renderHTML();
 
     if (this.planet === null) {

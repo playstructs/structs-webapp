@@ -363,6 +363,7 @@ export class StructManager {
 
     const tileType = this.getTileTypeFromStruct(struct);
     const ambit = struct.operating_ambit.toUpperCase();
+    const mapId = this.gameState[mapType]?.mapId ?? null;
 
     // Remove pending build from gameState
     if (tileType && removePendingBuild) {
@@ -371,7 +372,8 @@ export class StructManager {
       if (!animationToAutoplay) {
         animationToAutoplay = this.animationEventFactory.makeDeploymentAnimationEvent(
           struct.id,
-          ambit
+          ambit,
+          mapId
         );
       }
     }

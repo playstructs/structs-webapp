@@ -43,6 +43,31 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
       containerId,
       mapId
     );
+
+    /** @type {Array<{event: string, handler: EventListener}>} */
+    this.windowEventHandlers = [];
+  }
+
+  /**
+   * Register a window event listener and remember it so it can be removed in destroy().
+   *
+   * @param {string} event
+   * @param {EventListener} handler
+   */
+  addWindowEventListener(event, handler) {
+    window.addEventListener(event, handler);
+    this.windowEventHandlers.push({event, handler});
+  }
+
+  /**
+   * Remove all window event listeners registered by this component.
+   */
+  destroy() {
+    for (let i = 0; i < this.windowEventHandlers.length; i++) {
+      const {event, handler} = this.windowEventHandlers[i];
+      window.removeEventListener(event, handler);
+    }
+    this.windowEventHandlers = [];
   }
 
   /**
@@ -187,27 +212,32 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   initPageCode() {
     this.renderAllStructHUDs();
 
-    window.addEventListener(EVENTS.RENDER_STRUCT_HUD, (event) => {
+    this.addWindowEventListener(EVENTS.RENDER_STRUCT_HUD, (event) => {
       if (event.mapId === this.mapId) {
         this.renderStructHUDFromStruct(event.struct);
       }
     });
 
-    // Listen for CLEAR_STRUCT_TILE events (when a build is canceled)
-    window.addEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
+    this.addWindowEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
       if (event.mapId === this.mapId) {
         this.clearTile(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });
 
     // Hide the HUD while animations are playing for the tile and show HUD after they're finished
-    window.addEventListener(EVENTS.ANIMATION, (event) => {
+    this.addWindowEventListener(EVENTS.ANIMATION, (event) => {
+      if (event.mapId && event.mapId !== this.mapId) {
+        return;
+      }
       const tile = document.querySelector(`#${this.mapId} .map-struct-hud-layer-tile[data-struct-id="${event.structId}"]`);
       if (tile) {
         tile.classList.add('invisible');
       }
     });
-    window.addEventListener(EVENTS.ANIMATION_END, (event) => {
+    this.addWindowEventListener(EVENTS.ANIMATION_END, (event) => {
+      if (event.mapId && event.mapId !== this.mapId) {
+        return;
+      }
       const tile = document.querySelector(`#${this.mapId} .map-struct-hud-layer-tile[data-struct-id="${event.structId}"]`);
       if (tile) {
        tile.classList.remove('invisible');

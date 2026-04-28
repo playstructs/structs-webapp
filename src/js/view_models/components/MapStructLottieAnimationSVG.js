@@ -25,6 +25,7 @@ export class MapStructLottieAnimationSVG {
     this.lottieContainerId = lottieContainerId;
     this.lottieLoadOptions = lottieLoadOptions;
     this.animation = null;
+    this.isLoaded = false;
 
     this.lottieLoadOptions.autoplay = false;
 
@@ -87,6 +88,21 @@ export class MapStructLottieAnimationSVG {
   }
 
   play() {
+    if (!this.animation) {
+      // First-time play: lazily load the Lottie data and let the DOMLoaded
+      // callback (customizeLottie) trigger playback once the JSON + images
+      // have finished downloading.
+      this.load(true);
+      return;
+    }
+
+    if (!this.isLoaded) {
+      // Animation has been requested but the JSON/images aren't ready yet.
+      // The pending DOMLoaded callback will autoplay, so just no-op here to
+      // avoid issuing a duplicate play() against an unloaded Lottie.
+      return;
+    }
+
     this.animation.stop();
     this.configStructImages();
     this.show();
@@ -95,7 +111,9 @@ export class MapStructLottieAnimationSVG {
 
   stop() {
     this.hide();
-    this.animation.stop();
+    if (this.animation) {
+      this.animation.stop();
+    }
   }
 
   /**
@@ -103,6 +121,7 @@ export class MapStructLottieAnimationSVG {
    * @return {Promise<void>}
    */
   async customizeLottie(autoplayAfterCustomized) {
+    this.isLoaded = true;
     this.configStructImages();
 
     if (autoplayAfterCustomized) {
@@ -120,18 +139,37 @@ export class MapStructLottieAnimationSVG {
   }
 
   /**
-   * Load the animation, customize the structure art and add event listeners.
+   * Initialize the wrapper without fetching the Lottie data. Pass
+   * `autoplayAfterInit = true` to eagerly load and autoplay; otherwise the
+   * animation is loaded lazily on the first play() call.
    *
    * @param {boolean} autoplayAfterInit
    */
   init(autoplayAfterInit) {
     this.hide();
 
+    if (autoplayAfterInit) {
+      this.load(true);
+    }
+  }
+
+  /**
+   * Load the Lottie animation data and register completion handlers. Safe
+   * to call multiple times; subsequent calls are no-ops.
+   *
+   * @param {boolean} autoplayAfterCustomized whether to autoplay once
+   * customizeLottie runs after DOMLoaded
+   */
+  load(autoplayAfterCustomized = false) {
+    if (this.animation) {
+      return;
+    }
+
     const {lottie} = window;
     const {loadAnimation} = lottie;
     const animation = loadAnimation(this.lottieLoadOptions);
 
-    animation.addEventListener('DOMLoaded', this.customizeLottie.bind(this, autoplayAfterInit));
+    animation.addEventListener('DOMLoaded', this.customizeLottie.bind(this, autoplayAfterCustomized));
 
     animation.addEventListener('complete', () => {
       this.hide();

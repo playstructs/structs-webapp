@@ -54,6 +54,9 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
 
     /** @type {Object<string, MapStructViewerComponent>} */
     this.mapStructViewers = {};
+
+    /** @type {Array<{event: string, handler: EventListener}>} */
+    this.windowEventHandlers = [];
   }
 
   /**
@@ -107,7 +110,8 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
         this.gameState,
         this.structManager,
         struct.id,
-        struct.type
+        struct.type,
+        this.mapId
       );
       tileElement.innerHTML = this.mapStructViewers[struct.id].renderHTML();
       tileElement.setAttribute('data-struct-id', struct.id);
@@ -219,21 +223,45 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * Register a window event listener and remember it so it can be removed in destroy().
+   *
+   * @param {string} event
+   * @param {EventListener} handler
+   */
+  addWindowEventListener(event, handler) {
+    window.addEventListener(event, handler);
+    this.windowEventHandlers.push({event, handler});
+  }
+
+  /**
+   * Remove all window event listeners registered by this component and clear viewer references.
+   */
+  destroy() {
+    for (let i = 0; i < this.windowEventHandlers.length; i++) {
+      const {event, handler} = this.windowEventHandlers[i];
+      window.removeEventListener(event, handler);
+    }
+    this.windowEventHandlers = [];
+    this.mapStructViewers = {};
+  }
+
+  /**
    * Initialize page code: populate structs and set up event listeners
    */
   initPageCode() {
     // Populate initial structs
     this.renderAllStructs();
 
-    // Listen for RENDER_ALL_STRUCTS events
-    window.addEventListener(EVENTS.RENDER_ALL_STRUCTS, (event) => {
+    this.addWindowEventListener(EVENTS.RENDER_ALL_STRUCTS, (event) => {
       if (event.mapId === this.mapId) {
         this.renderAllStructs();
       }
     });
 
-    // Listen for ANIMATION events
-    window.addEventListener(EVENTS.ANIMATION, (event) => {
+    this.addWindowEventListener(EVENTS.ANIMATION, (event) => {
+      if (event.mapId && event.mapId !== this.mapId) {
+        return;
+      }
       if (this.mapStructViewers[event.structId]) {
         this.mapStructViewers[event.structId].play(
           event.animationNames,
@@ -243,49 +271,43 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
       }
     });
 
-    // Listen for RENDER_STRUCT events
-    window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
+    this.addWindowEventListener(EVENTS.RENDER_STRUCT, (event) => {
       if (event.mapId === this.mapId) {
         this.renderStructFromStruct(event.struct, event.animationToAutoplay);
       }
     });
 
-    window.addEventListener(EVENTS.RENDER_DEPLOYMENT_INDICATOR, (event) => {
+    this.addWindowEventListener(EVENTS.RENDER_DEPLOYMENT_INDICATOR, (event) => {
       if (event.mapId === this.mapId) {
         this.renderDeploymentIndicator(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });
 
-    // Listen for CLEAR_STRUCT_TILE events (when a build is canceled)
-    window.addEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
+    this.addWindowEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
       if (event.mapId === this.mapId) {
         this.clearTile(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });
 
-    // Listen for SHOW_DEFEND_TARGETS events
-    window.addEventListener(EVENTS.SHOW_DEFEND_TARGETS, (event) => {
+    this.addWindowEventListener(EVENTS.SHOW_DEFEND_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.showDefendTargets();
       }
     });
 
-    // Listen for CLEAR_DEFEND_TARGETS events
-    window.addEventListener(EVENTS.CLEAR_DEFEND_TARGETS, (event) => {
+    this.addWindowEventListener(EVENTS.CLEAR_DEFEND_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.clearDefendTargets();
       }
     });
 
-    // Listen for SHOW_ATTACK_TARGETS events
-    window.addEventListener(EVENTS.SHOW_ATTACK_TARGETS, (event) => {
+    this.addWindowEventListener(EVENTS.SHOW_ATTACK_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.showAttackTargets(event.weaponAmbitsArray);
       }
     });
 
-    // Listen for CLEAR_ATTACK_TARGETS events
-    window.addEventListener(EVENTS.CLEAR_ATTACK_TARGETS, (event) => {
+    this.addWindowEventListener(EVENTS.CLEAR_ATTACK_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.clearAttackTargets();
       }
