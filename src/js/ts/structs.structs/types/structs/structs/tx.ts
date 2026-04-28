@@ -201,6 +201,18 @@ export interface MsgGuildUpdateEntryRank {
   newEntryRank: number;
 }
 
+export interface MsgGuildUpdateName {
+  creator: string;
+  guildId: string;
+  name: string;
+}
+
+export interface MsgGuildUpdatePfp {
+  creator: string;
+  guildId: string;
+  pfp: string;
+}
+
 export interface MsgGuildUpdateResponse {
 }
 
@@ -244,6 +256,8 @@ export interface MsgGuildMembershipJoinProxy {
   substationId: string;
   proofPubKey: string;
   proofSignature: string;
+  playerName: string;
+  playerPfp: string;
 }
 
 export interface MsgGuildMembershipKick {
@@ -361,6 +375,15 @@ export interface MsgPlanetRaidCompleteResponse {
   oreStolen: number;
 }
 
+export interface MsgPlanetUpdateName {
+  creator: string;
+  planetId: string;
+  name: string;
+}
+
+export interface MsgPlanetUpdateResponse {
+}
+
 export interface MsgPlayerUpdatePrimaryAddress {
   creator: string;
   primaryAddress: string;
@@ -376,6 +399,21 @@ export interface MsgPlayerUpdateGuildRank {
 }
 
 export interface MsgPlayerUpdateGuildRankResponse {
+}
+
+export interface MsgPlayerUpdateName {
+  creator: string;
+  playerId: string;
+  name: string;
+}
+
+export interface MsgPlayerUpdatePfp {
+  creator: string;
+  playerId: string;
+  pfp: string;
+}
+
+export interface MsgPlayerUpdateResponse {
 }
 
 export interface MsgPlayerResume {
@@ -607,6 +645,21 @@ export interface MsgSubstationCreate {
 
 export interface MsgSubstationCreateResponse {
   substationId: string;
+}
+
+export interface MsgSubstationUpdateName {
+  creator: string;
+  substationId: string;
+  name: string;
+}
+
+export interface MsgSubstationUpdatePfp {
+  creator: string;
+  substationId: string;
+  pfp: string;
+}
+
+export interface MsgSubstationUpdateResponse {
 }
 
 export interface MsgSubstationDelete {
@@ -3758,7 +3811,7 @@ export const MsgGuildMembershipJoin: MessageFns<MsgGuildMembershipJoin> = {
 };
 
 function createBaseMsgGuildMembershipJoinProxy(): MsgGuildMembershipJoinProxy {
-  return { creator: "", address: "", substationId: "", proofPubKey: "", proofSignature: "" };
+  return { creator: "", address: "", substationId: "", proofPubKey: "", proofSignature: "", playerName: "", playerPfp: "" };
 }
 
 export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy> = {
@@ -3777,6 +3830,12 @@ export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy
     }
     if (message.proofSignature !== "") {
       writer.uint32(42).string(message.proofSignature);
+    }
+    if (message.playerName !== "") {
+      writer.uint32(50).string(message.playerName);
+    }
+    if (message.playerPfp !== "") {
+      writer.uint32(58).string(message.playerPfp);
     }
     return writer;
   },
@@ -3828,6 +3887,22 @@ export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy
           message.proofSignature = reader.string();
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.playerName = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.playerPfp = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3844,6 +3919,8 @@ export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy
       substationId: isSet(object.substationId) ? globalThis.String(object.substationId) : "",
       proofPubKey: isSet(object.proofPubKey) ? globalThis.String(object.proofPubKey) : "",
       proofSignature: isSet(object.proofSignature) ? globalThis.String(object.proofSignature) : "",
+      playerName: isSet(object.playerName) ? globalThis.String(object.playerName) : "",
+      playerPfp: isSet(object.playerPfp) ? globalThis.String(object.playerPfp) : "",
     };
   },
 
@@ -3864,6 +3941,12 @@ export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy
     if (message.proofSignature !== "") {
       obj.proofSignature = message.proofSignature;
     }
+    if (message.playerName !== "") {
+      obj.playerName = message.playerName;
+    }
+    if (message.playerPfp !== "") {
+      obj.playerPfp = message.playerPfp;
+    }
     return obj;
   },
 
@@ -3877,6 +3960,8 @@ export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy
     message.substationId = object.substationId ?? "";
     message.proofPubKey = object.proofPubKey ?? "";
     message.proofSignature = object.proofSignature ?? "";
+    message.playerName = object.playerName ?? "";
+    message.playerPfp = object.playerPfp ?? "";
     return message;
   },
 };
@@ -11466,6 +11551,779 @@ export const MsgPlayerSendResponse: MessageFns<MsgPlayerSendResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<MsgPlayerSendResponse>, I>>(_: I): MsgPlayerSendResponse {
     const message = createBaseMsgPlayerSendResponse();
+    return message;
+  },
+};
+
+function createBaseMsgGuildUpdateName(): MsgGuildUpdateName {
+  return { creator: "", guildId: "", name: "" };
+}
+
+export const MsgGuildUpdateName: MessageFns<MsgGuildUpdateName> = {
+  encode(message: MsgGuildUpdateName, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.guildId !== "") {
+      writer.uint32(18).string(message.guildId);
+    }
+    if (message.name !== "") {
+      writer.uint32(26).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgGuildUpdateName {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgGuildUpdateName();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgGuildUpdateName {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+    };
+  },
+
+  toJSON(message: MsgGuildUpdateName): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgGuildUpdateName>, I>>(base?: I): MsgGuildUpdateName {
+    return MsgGuildUpdateName.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgGuildUpdateName>, I>>(object: I): MsgGuildUpdateName {
+    const message = createBaseMsgGuildUpdateName();
+    message.creator = object.creator ?? "";
+    message.guildId = object.guildId ?? "";
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgGuildUpdatePfp(): MsgGuildUpdatePfp {
+  return { creator: "", guildId: "", pfp: "" };
+}
+
+export const MsgGuildUpdatePfp: MessageFns<MsgGuildUpdatePfp> = {
+  encode(message: MsgGuildUpdatePfp, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.guildId !== "") {
+      writer.uint32(18).string(message.guildId);
+    }
+    if (message.pfp !== "") {
+      writer.uint32(26).string(message.pfp);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgGuildUpdatePfp {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgGuildUpdatePfp();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.pfp = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgGuildUpdatePfp {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      pfp: isSet(object.pfp) ? globalThis.String(object.pfp) : "",
+    };
+  },
+
+  toJSON(message: MsgGuildUpdatePfp): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.pfp !== "") {
+      obj.pfp = message.pfp;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgGuildUpdatePfp>, I>>(base?: I): MsgGuildUpdatePfp {
+    return MsgGuildUpdatePfp.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgGuildUpdatePfp>, I>>(object: I): MsgGuildUpdatePfp {
+    const message = createBaseMsgGuildUpdatePfp();
+    message.creator = object.creator ?? "";
+    message.guildId = object.guildId ?? "";
+    message.pfp = object.pfp ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgPlanetUpdateName(): MsgPlanetUpdateName {
+  return { creator: "", planetId: "", name: "" };
+}
+
+export const MsgPlanetUpdateName: MessageFns<MsgPlanetUpdateName> = {
+  encode(message: MsgPlanetUpdateName, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.planetId !== "") {
+      writer.uint32(18).string(message.planetId);
+    }
+    if (message.name !== "") {
+      writer.uint32(26).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgPlanetUpdateName {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgPlanetUpdateName();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.planetId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgPlanetUpdateName {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      planetId: isSet(object.planetId) ? globalThis.String(object.planetId) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+    };
+  },
+
+  toJSON(message: MsgPlanetUpdateName): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.planetId !== "") {
+      obj.planetId = message.planetId;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgPlanetUpdateName>, I>>(base?: I): MsgPlanetUpdateName {
+    return MsgPlanetUpdateName.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgPlanetUpdateName>, I>>(object: I): MsgPlanetUpdateName {
+    const message = createBaseMsgPlanetUpdateName();
+    message.creator = object.creator ?? "";
+    message.planetId = object.planetId ?? "";
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgPlanetUpdateResponse(): MsgPlanetUpdateResponse {
+  return {};
+}
+
+export const MsgPlanetUpdateResponse: MessageFns<MsgPlanetUpdateResponse> = {
+  encode(_: MsgPlanetUpdateResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgPlanetUpdateResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgPlanetUpdateResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgPlanetUpdateResponse {
+    return {};
+  },
+
+  toJSON(_: MsgPlanetUpdateResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgPlanetUpdateResponse>, I>>(base?: I): MsgPlanetUpdateResponse {
+    return MsgPlanetUpdateResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgPlanetUpdateResponse>, I>>(_: I): MsgPlanetUpdateResponse {
+    const message = createBaseMsgPlanetUpdateResponse();
+    return message;
+  },
+};
+
+function createBaseMsgPlayerUpdateName(): MsgPlayerUpdateName {
+  return { creator: "", playerId: "", name: "" };
+}
+
+export const MsgPlayerUpdateName: MessageFns<MsgPlayerUpdateName> = {
+  encode(message: MsgPlayerUpdateName, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(18).string(message.playerId);
+    }
+    if (message.name !== "") {
+      writer.uint32(26).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgPlayerUpdateName {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgPlayerUpdateName();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgPlayerUpdateName {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+    };
+  },
+
+  toJSON(message: MsgPlayerUpdateName): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgPlayerUpdateName>, I>>(base?: I): MsgPlayerUpdateName {
+    return MsgPlayerUpdateName.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgPlayerUpdateName>, I>>(object: I): MsgPlayerUpdateName {
+    const message = createBaseMsgPlayerUpdateName();
+    message.creator = object.creator ?? "";
+    message.playerId = object.playerId ?? "";
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgPlayerUpdatePfp(): MsgPlayerUpdatePfp {
+  return { creator: "", playerId: "", pfp: "" };
+}
+
+export const MsgPlayerUpdatePfp: MessageFns<MsgPlayerUpdatePfp> = {
+  encode(message: MsgPlayerUpdatePfp, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(18).string(message.playerId);
+    }
+    if (message.pfp !== "") {
+      writer.uint32(26).string(message.pfp);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgPlayerUpdatePfp {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgPlayerUpdatePfp();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.pfp = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgPlayerUpdatePfp {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      pfp: isSet(object.pfp) ? globalThis.String(object.pfp) : "",
+    };
+  },
+
+  toJSON(message: MsgPlayerUpdatePfp): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.pfp !== "") {
+      obj.pfp = message.pfp;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgPlayerUpdatePfp>, I>>(base?: I): MsgPlayerUpdatePfp {
+    return MsgPlayerUpdatePfp.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgPlayerUpdatePfp>, I>>(object: I): MsgPlayerUpdatePfp {
+    const message = createBaseMsgPlayerUpdatePfp();
+    message.creator = object.creator ?? "";
+    message.playerId = object.playerId ?? "";
+    message.pfp = object.pfp ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgPlayerUpdateResponse(): MsgPlayerUpdateResponse {
+  return {};
+}
+
+export const MsgPlayerUpdateResponse: MessageFns<MsgPlayerUpdateResponse> = {
+  encode(_: MsgPlayerUpdateResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgPlayerUpdateResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgPlayerUpdateResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgPlayerUpdateResponse {
+    return {};
+  },
+
+  toJSON(_: MsgPlayerUpdateResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgPlayerUpdateResponse>, I>>(base?: I): MsgPlayerUpdateResponse {
+    return MsgPlayerUpdateResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgPlayerUpdateResponse>, I>>(_: I): MsgPlayerUpdateResponse {
+    const message = createBaseMsgPlayerUpdateResponse();
+    return message;
+  },
+};
+
+function createBaseMsgSubstationUpdateName(): MsgSubstationUpdateName {
+  return { creator: "", substationId: "", name: "" };
+}
+
+export const MsgSubstationUpdateName: MessageFns<MsgSubstationUpdateName> = {
+  encode(message: MsgSubstationUpdateName, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.substationId !== "") {
+      writer.uint32(18).string(message.substationId);
+    }
+    if (message.name !== "") {
+      writer.uint32(26).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgSubstationUpdateName {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgSubstationUpdateName();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.substationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgSubstationUpdateName {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      substationId: isSet(object.substationId) ? globalThis.String(object.substationId) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+    };
+  },
+
+  toJSON(message: MsgSubstationUpdateName): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.substationId !== "") {
+      obj.substationId = message.substationId;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgSubstationUpdateName>, I>>(base?: I): MsgSubstationUpdateName {
+    return MsgSubstationUpdateName.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgSubstationUpdateName>, I>>(object: I): MsgSubstationUpdateName {
+    const message = createBaseMsgSubstationUpdateName();
+    message.creator = object.creator ?? "";
+    message.substationId = object.substationId ?? "";
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgSubstationUpdatePfp(): MsgSubstationUpdatePfp {
+  return { creator: "", substationId: "", pfp: "" };
+}
+
+export const MsgSubstationUpdatePfp: MessageFns<MsgSubstationUpdatePfp> = {
+  encode(message: MsgSubstationUpdatePfp, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.substationId !== "") {
+      writer.uint32(18).string(message.substationId);
+    }
+    if (message.pfp !== "") {
+      writer.uint32(26).string(message.pfp);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgSubstationUpdatePfp {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgSubstationUpdatePfp();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.substationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.pfp = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgSubstationUpdatePfp {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      substationId: isSet(object.substationId) ? globalThis.String(object.substationId) : "",
+      pfp: isSet(object.pfp) ? globalThis.String(object.pfp) : "",
+    };
+  },
+
+  toJSON(message: MsgSubstationUpdatePfp): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.substationId !== "") {
+      obj.substationId = message.substationId;
+    }
+    if (message.pfp !== "") {
+      obj.pfp = message.pfp;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgSubstationUpdatePfp>, I>>(base?: I): MsgSubstationUpdatePfp {
+    return MsgSubstationUpdatePfp.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgSubstationUpdatePfp>, I>>(object: I): MsgSubstationUpdatePfp {
+    const message = createBaseMsgSubstationUpdatePfp();
+    message.creator = object.creator ?? "";
+    message.substationId = object.substationId ?? "";
+    message.pfp = object.pfp ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgSubstationUpdateResponse(): MsgSubstationUpdateResponse {
+  return {};
+}
+
+export const MsgSubstationUpdateResponse: MessageFns<MsgSubstationUpdateResponse> = {
+  encode(_: MsgSubstationUpdateResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgSubstationUpdateResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgSubstationUpdateResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgSubstationUpdateResponse {
+    return {};
+  },
+
+  toJSON(_: MsgSubstationUpdateResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgSubstationUpdateResponse>, I>>(base?: I): MsgSubstationUpdateResponse {
+    return MsgSubstationUpdateResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgSubstationUpdateResponse>, I>>(_: I): MsgSubstationUpdateResponse {
+    const message = createBaseMsgSubstationUpdateResponse();
     return message;
   },
 };

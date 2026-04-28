@@ -315,6 +315,16 @@ import { MsgProviderResponse } from "./types/structs/structs/tx";
 import { QueryAllPlanetResponse } from "./types/structs/structs/query";
 import { QueryAllProviderResponse } from "./types/structs/structs/query";
 import { EventAlphaInfuseDetail } from "./types/structs/structs/events";
+import { MsgGuildUpdateName } from "./types/structs/structs/tx";
+import { MsgGuildUpdatePfp } from "./types/structs/structs/tx";
+import { MsgPlayerUpdateName } from "./types/structs/structs/tx";
+import { MsgPlayerUpdatePfp } from "./types/structs/structs/tx";
+import { MsgPlayerUpdateResponse } from "./types/structs/structs/tx";
+import { MsgPlanetUpdateName } from "./types/structs/structs/tx";
+import { MsgPlanetUpdateResponse } from "./types/structs/structs/tx";
+import { MsgSubstationUpdateName } from "./types/structs/structs/tx";
+import { MsgSubstationUpdatePfp } from "./types/structs/structs/tx";
+import { MsgSubstationUpdateResponse } from "./types/structs/structs/tx";
 
 const msgTypes: Array<[string, GeneratedType]>  = [
     ["/structs.structs.MsgFleetMoveResponse", MsgFleetMoveResponse],
@@ -633,6 +643,16 @@ const msgTypes: Array<[string, GeneratedType]>  = [
     ["/structs.structs.MsgPermissionGuildRankRevoke", MsgPermissionGuildRankRevoke],
     ["/structs.structs.MsgPlayerUpdateGuildRank", MsgPlayerUpdateGuildRank],
     ["/structs.structs.MsgPlayerUpdateGuildRankResponse", MsgPlayerUpdateGuildRankResponse],
+    ["/structs.structs.MsgGuildUpdateName", MsgGuildUpdateName],
+    ["/structs.structs.MsgGuildUpdatePfp", MsgGuildUpdatePfp],
+    ["/structs.structs.MsgPlayerUpdateName", MsgPlayerUpdateName],
+    ["/structs.structs.MsgPlayerUpdatePfp", MsgPlayerUpdatePfp],
+    ["/structs.structs.MsgPlayerUpdateResponse", MsgPlayerUpdateResponse],
+    ["/structs.structs.MsgPlanetUpdateName", MsgPlanetUpdateName],
+    ["/structs.structs.MsgPlanetUpdateResponse", MsgPlanetUpdateResponse],
+    ["/structs.structs.MsgSubstationUpdateName", MsgSubstationUpdateName],
+    ["/structs.structs.MsgSubstationUpdatePfp", MsgSubstationUpdatePfp],
+    ["/structs.structs.MsgSubstationUpdateResponse", MsgSubstationUpdateResponse],
     
 ];
 

@@ -21,26 +21,26 @@ export class PermissionManagerTest extends DTestSuite {
     return [
       {
         permissionsToAdd: [],
-        expected: 15732481
+        expected: 32509697
       },
       {
         permissionsToAdd: [PERMISSIONS.PLAY],
-        expected: 15732481
+        expected: 32509697
       },
       {
         permissionsToAdd: [PERMISSIONS.ASSETS_ALL],
-        expected: 15732721
+        expected: 32509937
       },
       {
         permissionsToAdd: [PERMISSIONS.ADMIN],
-        expected: 15732483
+        expected: 32509699
       },
       {
         permissionsToAdd: [
           PERMISSIONS.ASSETS_ALL,
           PERMISSIONS.ADMIN
         ],
-        expected: 15732723
+        expected: 32509939
       },
       {
         permissionsToAdd: [
@@ -49,7 +49,7 @@ export class PermissionManagerTest extends DTestSuite {
           PERMISSIONS.UPDATE,
           PERMISSIONS.DELETE
         ],
-        expected: 15732735
+        expected: 32509951
       },
     ];
   });
@@ -66,9 +66,9 @@ export class PermissionManagerTest extends DTestSuite {
   }, function() {
     return [
       {
-        initialPermissions: 15732481,
+        initialPermissions: 32509697,
         permissionsToRemove: [],
-        expected: 15732481
+        expected: 32509697
       },
       {
         initialPermissions: PERMISSIONS.PLAY
