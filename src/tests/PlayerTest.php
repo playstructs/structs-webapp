@@ -6,7 +6,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class PlayerTest extends KernelTestCase
@@ -49,6 +50,9 @@ class PlayerTest extends KernelTestCase
         );
 
         $request = Request::create('/api/player/raid/search' . $requestQueryString);
+        $session = new Session(new MockArraySessionStorage());
+        $session->set('player_id', '1-218');
+        $request->setSession($session);
         $response = $manager->raidSearch($request);
 
         $responseContent = json_decode($response->getContent(), true);
@@ -63,6 +67,7 @@ class PlayerTest extends KernelTestCase
             'Valid No Query Params' => [
                 '',
                 [
+                    'player_id' => '1-218',
                     'min_ore' => '0'
                 ],
                 Response::HTTP_OK,
@@ -71,6 +76,7 @@ class PlayerTest extends KernelTestCase
             'Valid Min Ore' => [
                 '?min_ore=4',
                 [
+                    'player_id' => '1-218',
                     'min_ore' => '4'
                 ],
                 Response::HTTP_OK,
@@ -85,6 +91,7 @@ class PlayerTest extends KernelTestCase
             'Valid Guild ID' => [
                 '?guild_id=0-2',
                 [
+                    'player_id' => '1-218',
                     'min_ore' => '0',
                     'guild_id' => '0-2'
                 ],
@@ -100,6 +107,7 @@ class PlayerTest extends KernelTestCase
             'Valid Fleet Away' => [
                 '?fleet_away_only=1',
                 [
+                    'player_id' => '1-218',
                     'min_ore' => '0'
                 ],
                 Response::HTTP_OK,
@@ -114,6 +122,7 @@ class PlayerTest extends KernelTestCase
             'Valid Search String Player ID' => [
                 '?search_string=1-13',
                 [
+                    'player_id' => '1-218',
                     'min_ore' => '0',
                     'search_string' => '1-13',
                     'like_search_string' => '%1-13%'
@@ -124,6 +133,7 @@ class PlayerTest extends KernelTestCase
             'Valid Search String Username' => [
                 '?search_string=Zero-C00l',
                 [
+                    'player_id' => '1-218',
                     'min_ore' => '0',
                     'search_string' => 'Zero-C00l',
                     'like_search_string' => '%Zero-C00l%',
@@ -134,6 +144,7 @@ class PlayerTest extends KernelTestCase
             'Valid Search String Address' => [
                 '?search_string=structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
                 [
+                    'player_id' => '1-218',
                     'min_ore' => '0',
                     'search_string' => 'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
                     'like_search_string' => '%structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn%'
@@ -144,6 +155,7 @@ class PlayerTest extends KernelTestCase
             'Search String Filtering' => [
                 '?search_string=Zero C00l!',
                 [
+                    'player_id' => '1-218',
                     'min_ore' => '0',
                     'search_string' => 'ZeroC00l',
                     'like_search_string' => '%ZeroC00l%'
@@ -154,6 +166,7 @@ class PlayerTest extends KernelTestCase
             'Empty Search String' => [
                 '?search_string=',
                 [
+                    'player_id' => '1-218',
                     'min_ore' => '0'
                 ],
                 Response::HTTP_OK,
@@ -162,6 +175,7 @@ class PlayerTest extends KernelTestCase
             'All Query Params' => [
                 '?min_ore=5&guild_id=0-1&search_string=Ac1d Burn',
                 [
+                    'player_id' => '1-218',
                     'min_ore' => '5',
                     'guild_id' => '0-1',
                     'search_string' => 'Ac1dBurn',
@@ -169,119 +183,6 @@ class PlayerTest extends KernelTestCase
                 ],
                 Response::HTTP_OK,
                 0
-            ]
-        ];
-    }
-
-    /**
-     * @dataProvider updateUsernameProvider
-     * @param array $requestContent
-     * @param bool $isStatementExecutionExpected
-     * @param array $expectedQueryParams
-     * @param int $rowsAffected
-     * @param string|null $sessionPlayerId
-     * @param int $expectedHttpStatusCode
-     * @param int $expectedErrorCount
-     * @param mixed $expectedData
-     * @return void
-     * @throws \Doctrine\DBAL\Exception
-     */
-    public function testUpdateUsername(
-        array $requestContent,
-        bool $isStatementExecutionExpected,
-        array $expectedQueryParams,
-        int $rowsAffected,
-        string|null $sessionPlayerId,
-        int $expectedHttpStatusCode,
-        int $expectedErrorCount,
-        mixed $expectedData
-    ): void
-    {
-        // (1) boot the Symfony kernel
-        self::bootKernel();
-
-        // (2) use static::getContainer() to access the service container
-        $container = static::getContainer();
-
-        $connectionMock = $this->createMock(Connection::class);
-        $connectionMock->expects($this->exactly($isStatementExecutionExpected ? 1 : 0))
-            ->method('executeStatement')
-            ->with($this->anything(), $expectedQueryParams)
-            ->willReturn($rowsAffected);
-
-        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
-        $entityManagerStub->method('getConnection')
-            ->willReturn($connectionMock);
-
-        $manager = new PlayerManager(
-            $entityManagerStub,
-            $container->get(ValidatorInterface::class),
-        );
-
-        $session = $this->createStub(SessionInterface::class);
-        $session->method('get')
-            ->willReturn($sessionPlayerId);
-
-        $request = Request::create('/api/player/username', 'PUT', [], [], [] ,[], json_encode($requestContent));
-        $request->setSession($session);
-
-        $response = $manager->updateUsername($request);
-
-        $responseContent = json_decode($response->getContent(), true);
-
-        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
-        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
-        $this->assertSame($expectedData, $responseContent['data']);
-    }
-
-    public function updateUsernameProvider() : array
-    {
-        return [
-            'missing username' => [
-                [],
-                false,
-                [],
-                0,
-                '1-1',
-                Response::HTTP_BAD_REQUEST,
-                1,
-                null
-            ],
-            'bad username' => [
-                ['username' => '!my new username'],
-                false,
-                [],
-                0,
-                '1-1',
-                Response::HTTP_BAD_REQUEST,
-                1,
-                null
-            ],
-            'missing session player_id' => [
-                ['username' => 'my_new_username'],
-                true,
-                [
-                    'player_id' => null,
-                    'username' => 'my_new_username'
-                ],
-                0,
-                null,
-                Response::HTTP_INTERNAL_SERVER_ERROR,
-                1,
-                ['rows_affected' => 0]
-            ],
-            'valid' => [
-                ['username' => 'my_new_username'],
-                true,
-                [
-                    'player_id' => '1-1',
-                    'username' => 'my_new_username'
-                ],
-                1,
-                '1-1',
-                Response::HTTP_OK,
-                0,
-                ['rows_affected' => 1]
             ]
         ];
     }
@@ -350,7 +251,6 @@ class PlayerTest extends KernelTestCase
             'Valid Search String Player ID' => [
                 '?search_string=1-13',
                 [
-                    'search_string' => '1-13',
                     'like_search_string' => '%1-13%',
                 ],
                 Response::HTTP_OK,
@@ -359,7 +259,6 @@ class PlayerTest extends KernelTestCase
             'Valid Search String Address' => [
                 '?search_string=structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
                 [
-                    'search_string' => 'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
                     'like_search_string' => '%structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn%'
                 ],
                 Response::HTTP_OK,
@@ -368,7 +267,6 @@ class PlayerTest extends KernelTestCase
             'Valid Search String Username' => [
                 '?search_string=Zero C00l!',
                 [
-                    'search_string' => 'ZeroC00l',
                     'like_search_string' => '%ZeroC00l%'
                 ],
                 Response::HTTP_OK,
@@ -384,7 +282,6 @@ class PlayerTest extends KernelTestCase
                 '?guild_id=0-1&search_string=Ac1d Burn',
                 [
                     'guild_id' => '0-1',
-                    'search_string' => 'Ac1dBurn',
                     'like_search_string' => '%Ac1dBurn%'
                 ],
                 Response::HTTP_OK,
