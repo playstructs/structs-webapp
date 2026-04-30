@@ -119,7 +119,8 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
         this.mapStructViewers[struct.id].init(
           animationToAutoplay.animationNames,
           animationToAutoplay.showStructStillDuringAnimation,
-          animationToAutoplay.showStructStillAfterAnimation
+          animationToAutoplay.showStructStillAfterAnimation,
+          animationToAutoplay.options
         );
       } else {
         this.mapStructViewers[struct.id].init();
@@ -266,7 +267,8 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
         this.mapStructViewers[event.structId].play(
           event.animationNames,
           event.showStructStillDuringAnimation,
-          event.showStructStillAfterAnimation
+          event.showStructStillAfterAnimation,
+          event.options
         );
       }
     });

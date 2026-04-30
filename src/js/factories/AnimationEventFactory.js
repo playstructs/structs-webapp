@@ -52,16 +52,24 @@ export class AnimationEventFactory {
    * @param {string} attackStructId the id of the attacking struct
    * @param {string} weaponSystem the weapon system being used by the attacking struct such as primaryWeapon, secondaryWeapon or planetaryDefenses
    * @param {string|null} mapId the id of the map the animation should play on
+   * @param {number|null} attackStructHealthAfter the attacking struct's health at
+   * the point in the sequence at which this animation ends; when provided, the
+   * still/HUD will render at this partial value instead of falling back to
+   * gameState (which already holds the final post-attack value)
    * @return {AnimationEvent} an event specifying the animation to play for the attacking struct
    */
-  makeAttackAnimationEvent(attackStructId, weaponSystem, mapId = null) {
+  makeAttackAnimationEvent(attackStructId, weaponSystem, mapId = null, attackStructHealthAfter = null) {
     const weaponSystemFormatted = this.caseConverter.convert(weaponSystem, UPPER_SNAKE_CASE);
+    const options = {};
+    if (attackStructHealthAfter !== null && attackStructHealthAfter !== undefined) {
+      options.healthAfter = parseInt('' + attackStructHealthAfter);
+    }
     return new AnimationEvent(
       attackStructId,
       [ANIMATION.NAMES.ATTACK[weaponSystemFormatted]],
       false,
       true,
-      {},
+      options,
       mapId
     );
   }
@@ -74,7 +82,6 @@ export class AnimationEventFactory {
    * @param {string} targetStructType the StructType.type of the struct being targeted
    * @param {string} targetStructOperatingAmbit the current ambit of the struct being targeted
    * @param {string} targetStructCategory whether the struct being targeted is fleet or planetary
-   * @param {string|number} targetHealthMax the max health of the struct being targeted
    * @param {string|number} targetHealthBefore the health of the struct being targeted before receiving damage
    * @param {string|number} targetHealthAfter the health of the struct being targeted after receiving damage
    * @param {boolean} evaded whether or not the struct being targeted evaded the attack
@@ -90,7 +97,6 @@ export class AnimationEventFactory {
     targetStructType,
     targetStructOperatingAmbit,
     targetStructCategory,
-    targetHealthMax,
     targetHealthBefore,
     targetHealthAfter,
     evaded = false,
@@ -100,15 +106,11 @@ export class AnimationEventFactory {
 
     attackStructOperatingAmbit = attackStructOperatingAmbit.toUpperCase();
     targetStructOperatingAmbit = targetStructOperatingAmbit.toUpperCase();
-    targetHealthMax = parseInt('' + targetHealthMax);
     targetHealthBefore = parseInt('' + targetHealthBefore);
     targetHealthAfter = parseInt('' + targetHealthAfter);
 
     const options = {
-      targetHealthMax: targetHealthMax,
-      targetHealthBefore: targetHealthBefore,
-      targetHealthAfter: targetHealthAfter,
-      playCount: evaded ? 1 : (targetHealthBefore - targetHealthAfter),
+      healthAfter: targetHealthAfter,
     };
 
     // --- Evasion cases ---
@@ -119,18 +121,16 @@ export class AnimationEventFactory {
         [
           ANIMATION.NAMES.EVADE,
         ],
-        false,
+        true,
         true,
         { ...options, projectile: ANIMATION.PROJECTILES.TORPEDO },
         mapId
       );
-    }
-
-    if (evaded) {
+    } else if (evaded) {
       return new AnimationEvent(
         targetStructId,
         [ANIMATION.NAMES.EVADE],
-        false,
+        true,
         true,
         options,
         mapId
@@ -401,7 +401,6 @@ export class AnimationEventFactory {
           targetStructType: targetStructType,
           targetStructOperatingAmbit: targetStructOperatingAmbit,
           targetStructCategory: targetStructCategory,
-          targetHealthMax: targetHealthMax,
           targetHealthBefore: targetHealthBefore,
           targetHealthAfter: targetHealthAfter,
           evaded: evaded,
@@ -433,7 +432,7 @@ export class AnimationEventFactory {
       [ANIMATION.NAMES.DESTROY[ambitFormatted]],
       false,
       false,
-      {},
+      { healthAfter: 0 },
       mapId
     );
   }

@@ -46,6 +46,12 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
 
     /** @type {Array<{event: string, handler: EventListener}>} */
     this.windowEventHandlers = [];
+
+    // Buffer of RENDER_STRUCT_HUD requests that arrived while the animation
+    // queue was playing. Keyed by structId so that repeated requests collapse
+    // to the latest struct snapshot. Flushed when ANIMATION_QUEUE_EMPTY fires.
+    /** @type {Map<string, Struct>} */
+    this.deferredHudRenders = new Map();
   }
 
   /**
@@ -68,22 +74,28 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
       window.removeEventListener(event, handler);
     }
     this.windowEventHandlers = [];
+    this.deferredHudRenders.clear();
   }
 
   /**
    * @param {Struct} struct
+   * @param {number|null} healthOverride if non-null, render the bar at this health
+   * value instead of struct.health (used to show partial state mid-attack-sequence)
    * @return {string}
    */
-  renderHealthBar(struct) {
+  renderHealthBar(struct, healthOverride = null) {
     if (!struct.isBuilt()) {
       return '';
     }
 
     const structType = this.gameState.structTypes.getStructTypeById(struct.type);
     const segments = [];
+    const health = (healthOverride !== null && healthOverride !== undefined)
+      ? healthOverride
+      : struct.health;
 
     for (let i = 0; i < structType.max_health; i++) {
-      segments.push(`<div class="struct-health-bar-segment ${(i < struct.health) ? 'mod-filled' : ''}"></div>`);
+      segments.push(`<div class="struct-health-bar-segment ${(i < health) ? 'mod-filled' : ''}"></div>`);
     }
 
     return `
@@ -163,12 +175,14 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
    * Render the content for a single HUD tile
    * @param {HTMLElement} tileElement
    * @param {Struct|null} struct
+   * @param {number|null} healthOverride if non-null, render the health bar at this
+   * value instead of struct.health (used to show partial state mid-attack-sequence)
    */
-  renderStructHUD(tileElement, struct = null) {
+  renderStructHUD(tileElement, struct = null, healthOverride = null) {
     if (struct && struct.isBuilt()) {
       tileElement.innerHTML = `
         <div class="map-struct-hud-status-bars">
-          ${this.renderHealthBar(struct)}
+          ${this.renderHealthBar(struct, healthOverride)}
         </div>      
         ${this.renderStatusIndicators(struct)}
       `;
@@ -191,11 +205,13 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
 
   /**
    * @param {Struct} struct
+   * @param {number|null} healthOverride if non-null, render the health bar at this
+   * value instead of struct.health
    */
-  renderStructHUDFromStruct(struct) {
+  renderStructHUDFromStruct(struct, healthOverride = null) {
     const renderParams = this.buildMapStructTilRenderParamsFromStruct(struct);
     if (renderParams) {
-      this.renderStructHUD(renderParams.tileElement, renderParams.struct);
+      this.renderStructHUD(renderParams.tileElement, renderParams.struct, healthOverride);
     }
   }
 
@@ -213,9 +229,29 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
     this.renderAllStructHUDs();
 
     this.addWindowEventListener(EVENTS.RENDER_STRUCT_HUD, (event) => {
-      if (event.mapId === this.mapId) {
-        this.renderStructHUDFromStruct(event.struct);
+      if (event.mapId !== this.mapId) {
+        return;
       }
+      // While the animation queue is playing, defer applying gameState-based
+      // HUD renders. Animation lifecycles drive partial-state HUD content via
+      // ANIMATION_END's healthAfter, and applying gameState mid-sequence would
+      // clobber that partial state with the (already-final) post-attack value.
+      // The deferred render is flushed once the queue goes idle.
+      if (this.gameState.animationEventQueue && this.gameState.animationEventQueue.isPlaying) {
+        this.deferredHudRenders.set(event.struct.id, event.struct);
+        return;
+      }
+      this.renderStructHUDFromStruct(event.struct);
+    });
+
+    this.addWindowEventListener(EVENTS.ANIMATION_QUEUE_EMPTY, () => {
+      if (this.deferredHudRenders.size === 0) {
+        return;
+      }
+      for (const struct of this.deferredHudRenders.values()) {
+        this.renderStructHUDFromStruct(struct);
+      }
+      this.deferredHudRenders.clear();
     });
 
     this.addWindowEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
@@ -239,9 +275,22 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
         return;
       }
       const tile = document.querySelector(`#${this.mapId} .map-struct-hud-layer-tile[data-struct-id="${event.structId}"]`);
-      if (tile) {
-       tile.classList.remove('invisible');
+      if (!tile) {
+        return;
       }
+
+      // When the animation carries a partial health value (e.g. from a multi-source
+      // attack sequence), re-render the HUD content at that health before revealing
+      // it. Without this, gameState already holds the final post-attack health, so
+      // the HUD would jump to the final state after the first counter animation.
+      if (event.healthAfter !== null && event.healthAfter !== undefined) {
+        const struct = this.structManager.getStructById(event.structId);
+        if (struct) {
+          this.renderStructHUD(tile, struct, event.healthAfter);
+        }
+      }
+
+      tile.classList.remove('invisible');
     });
   }
 }

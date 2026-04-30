@@ -105,29 +105,41 @@ export class MapStructViewerComponent {
   }
 
   /**
-   * Render the struct still HTML for this struct's current game state.
+   * Render the struct still HTML using either an explicit health value or, when
+   * none is provided, the struct's current health from gameState. The override
+   * is used during multi-source attack sequences where gameState already holds
+   * the final health but the visual should reflect the per-animation partial
+   * state.
+   *
+   * @param {number|null} healthOverride
    * @return {string}
    */
-  renderStructStillInnerHTML() {
+  renderStructStillInnerHTML(healthOverride = null) {
     const struct = this.structManager.getStructById(this.structId);
     if (!struct) {
       return '';
     }
     const structStill = this.structStillBuilder.build(this.structType);
-    return structStill.renderHTML(struct.health);
+    const health = (healthOverride !== null && healthOverride !== undefined)
+      ? healthOverride
+      : struct.health;
+    return structStill.renderHTML(health);
   }
 
   /**
-   * Refresh only the struct still image from current game state, preserving any
-   * state classes (e.g. struct-stealth-active) on the container and leaving all
-   * other animation layers untouched.
+   * Refresh only the struct still image, preserving any state classes (e.g.
+   * struct-stealth-active) on the container and leaving all other animation
+   * layers untouched. Pass `healthOverride` to render a specific (partial)
+   * health value rather than the current gameState value.
+   *
+   * @param {number|null} healthOverride
    */
-  updateStructStill() {
+  updateStructStill(healthOverride = null) {
     const structStillContainer = document.getElementById(this.structStillContainerId);
     if (!structStillContainer) {
       return;
     }
-    structStillContainer.innerHTML = this.renderStructStillInnerHTML();
+    structStillContainer.innerHTML = this.renderStructStillInnerHTML(healthOverride);
   }
 
   /**
@@ -156,11 +168,20 @@ export class MapStructViewerComponent {
 
   /**
    * @param {string[]} animationNames
+   * @param {object} options optional values from the originating AnimationEvent;
+   * `healthAfter` is read here to drive partial-state still/HUD rendering for
+   * multi-source attack sequences (where gameState already holds the final
+   * post-attack value but the visual should reflect this animation's partial
+   * snapshot)
    */
-  prepareAnimationLifecycle(animationNames) {
+  prepareAnimationLifecycle(animationNames, options = {}) {
     this.resetAnimationCallbacks();
 
     let pendingCount = animationNames.length;
+
+    const healthAfter = (options && options.healthAfter !== undefined && options.healthAfter !== null)
+      ? parseInt('' + options.healthAfter)
+      : null;
 
     for (let i = 0; i < animationNames.length; i++) {
       const animationName = animationNames[i];
@@ -179,11 +200,16 @@ export class MapStructViewerComponent {
 
         pendingCount--;
         if (pendingCount === 0) {
-          this.updateStructStill();
+          this.updateStructStill(healthAfter);
           if (this.showStructStillAfterAnimation) {
             this.showStructStill();
           }
-          window.dispatchEvent(new AnimationEndEvent(animationName, this.structId, this.mapId));
+          window.dispatchEvent(new AnimationEndEvent(
+            animationName,
+            this.structId,
+            this.mapId,
+            healthAfter
+          ));
         }
       };
     }
@@ -193,17 +219,19 @@ export class MapStructViewerComponent {
    * @param {string[]} animationNames
    * @param {boolean} showStructStillDuringAnimation whether or not to show the still struct image while the animation plays
    * @param {boolean} showStructStillAfterAnimation whether or not the still struct image should still be shown after the animations ends
+   * @param {object} options the originating AnimationEvent's options (e.g. healthAfter)
    */
   play(
     animationNames,
     showStructStillDuringAnimation = false,
-    showStructStillAfterAnimation = true
+    showStructStillAfterAnimation = true,
+    options = {}
   ) {
     this.preparePlaybackState(
       showStructStillDuringAnimation,
       showStructStillAfterAnimation
     );
-    this.prepareAnimationLifecycle(animationNames);
+    this.prepareAnimationLifecycle(animationNames, options);
 
     for (let i = 0; i < animationNames.length; i++) {
       this.lottieCustomPlayer.play(animationNames[i]);
@@ -214,11 +242,13 @@ export class MapStructViewerComponent {
    * @param {string[]} animationNames the names of the animations to play after initialization
    * @param {boolean} showStructStillDuringAnimation whether or not to show the still struct image while the animation plays
    * @param {boolean} showStructStillAfterAnimation whether or not the still struct image should still be shown after the animations ends
+   * @param {object} options the originating AnimationEvent's options (e.g. healthAfter)
    */
   init(
     animationNames = [],
     showStructStillDuringAnimation = false,
-    showStructStillAfterAnimation = true
+    showStructStillAfterAnimation = true,
+    options = {}
   ) {
     this.registerAnimations();
 
@@ -227,7 +257,7 @@ export class MapStructViewerComponent {
         showStructStillDuringAnimation,
         showStructStillAfterAnimation
       );
-      this.prepareAnimationLifecycle(animationNames);
+      this.prepareAnimationLifecycle(animationNames, options);
     } else {
       this.showStructStillAfterAnimation = true;
       this.lottieCustomPlayer.hideAll();

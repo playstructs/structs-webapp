@@ -297,6 +297,14 @@ export class StructListener extends AbstractGrassListener {
 
     structIdsToRefresh.add(messageData.detail.attackerStructId);
 
+    // Track the attacker's running health across all shots/counters so each
+    // animation event for the attacker can carry the partial health value at
+    // the point in the sequence at which it ends. Without this, gameState
+    // (refreshed in parallel with the queue) would hold the final post-attack
+    // health and the still/HUD would jump straight to that final state after
+    // the first counter animation.
+    let runningAttackerHealth = parseInt('' + (messageData.detail.attackerHealthBefore || 0));
+
     for (let i = 0; i < messageData.detail.eventAttackShotDetail.length; i++) {
 
       const eventAttackShotDetail = messageData.detail.eventAttackShotDetail[i];
@@ -316,6 +324,11 @@ export class StructListener extends AbstractGrassListener {
           )
         );
 
+        const counterDamage = parseInt('' + (eventAttackDefenderCounterDetail.counterDamage || 0));
+        const attackerHealthBeforeCounter = runningAttackerHealth;
+        const attackerHealthAfterCounter = Math.max(0, attackerHealthBeforeCounter - counterDamage);
+        runningAttackerHealth = attackerHealthAfterCounter;
+
         // ii. Play attackerStruct receiving damage animation
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeReceiveDamageAnimationEvent(
@@ -326,9 +339,8 @@ export class StructListener extends AbstractGrassListener {
             messageData.detail.attackerStructType,
             messageData.detail.attackerStructOperatingAmbit,
             messageData.detail.attackerStructLocationType,
-            messageData.detail.attackerHealthMax,
-            messageData.detail.attackerHealthBefore,
-            messageData.detail.attackerHealthAfter,
+            attackerHealthBeforeCounter,
+            attackerHealthAfterCounter,
             false,
             '',
             mapId
@@ -350,12 +362,16 @@ export class StructListener extends AbstractGrassListener {
       }
 
       if (!defenderCounterDestroyedAttacker) {
-        // b. If not counterDestroyedAttacker, play attackerStruct attack animation
+        // b. If not counterDestroyedAttacker, play attackerStruct attack animation.
+        //    Thread runningAttackerHealth so the still/HUD don't snap to the final
+        //    gameState health when this animation ends; the target counter (if any)
+        //    is still ahead of us in the queue.
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeAttackAnimationEvent(
             messageData.detail.attackerStructId,
             messageData.detail.weaponSystem,
-            mapId
+            mapId,
+            runningAttackerHealth
           )
         );
       }
@@ -371,7 +387,6 @@ export class StructListener extends AbstractGrassListener {
             eventAttackShotDetail.targetStructType,
             eventAttackShotDetail.targetStructOperatingAmbit,
             eventAttackShotDetail.targetStructLocationType,
-            eventAttackShotDetail.targetHealthMax,
             eventAttackShotDetail.targetHealthBefore,
             eventAttackShotDetail.targetHealthAfter,
             eventAttackShotDetail.evaded,
@@ -392,7 +407,6 @@ export class StructListener extends AbstractGrassListener {
             eventAttackShotDetail.blockedByStructType,
             eventAttackShotDetail.blockedByStructOperatingAmbit,
             eventAttackShotDetail.blockedByStructLocationType,
-            eventAttackShotDetail.blockerHealthMax,
             eventAttackShotDetail.blockerHealthBefore,
             eventAttackShotDetail.blockerHealthAfter,
             false,
@@ -425,7 +439,6 @@ export class StructListener extends AbstractGrassListener {
             eventAttackShotDetail.targetStructType,
             eventAttackShotDetail.targetStructOperatingAmbit,
             eventAttackShotDetail.targetStructLocationType,
-            eventAttackShotDetail.targetHealthMax,
             eventAttackShotDetail.targetHealthBefore,
             eventAttackShotDetail.targetHealthAfter,
             false,
@@ -448,14 +461,23 @@ export class StructListener extends AbstractGrassListener {
       }
 
       if (!eventAttackShotDetail.targetDestroyed && eventAttackShotDetail.targetCountered) {
-        // f. If targetHealthAfter > 0 and targetCountered, play targetStruct attack animation
+        // f. If targetHealthAfter > 0 and targetCountered, play targetStruct attack animation.
+        //    Thread targetHealthAfter so the still/HUD reflect the post-damage value when this
+        //    animation ends; otherwise the still would fall back to gameState (which may not
+        //    have refreshed yet) and visually flash backward to the pre-damage health.
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeAttackAnimationEvent(
             eventAttackShotDetail.targetStructId,
             eventAttackShotDetail.targetCounterWeaponSystem,
-            mapId
+            mapId,
+            eventAttackShotDetail.targetHealthAfter
           )
         );
+
+        const targetCounterDamage = parseInt('' + (eventAttackShotDetail.targetCounteredDamage || 0));
+        const attackerHealthBeforeTargetCounter = runningAttackerHealth;
+        const attackerHealthAfterTargetCounter = Math.max(0, attackerHealthBeforeTargetCounter - targetCounterDamage);
+        runningAttackerHealth = attackerHealthAfterTargetCounter;
 
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeReceiveDamageAnimationEvent(
@@ -466,9 +488,8 @@ export class StructListener extends AbstractGrassListener {
             messageData.detail.attackerStructType,
             messageData.detail.attackerStructOperatingAmbit,
             messageData.detail.attackerStructLocationType,
-            messageData.detail.attackerHealthMax,
-            messageData.detail.attackerHealthBefore,
-            messageData.detail.attackerHealthAfter,
+            attackerHealthBeforeTargetCounter,
+            attackerHealthAfterTargetCounter,
             false,
             '',
             mapId

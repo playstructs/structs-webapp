@@ -18,8 +18,15 @@ export class AnimationEventQueue extends Queue {
 
   playNext() {
     if (this.isEmpty()) {
+      const wasPlaying = this.isPlaying;
       this.isPlaying = false;
       this.currentEvent = null;
+      // Notify listeners that the queue has just transitioned to idle so they
+      // can flush any work they deferred while animations were in flight (e.g.
+      // HUD renders that would otherwise have clobbered partial-state frames).
+      if (wasPlaying) {
+        window.dispatchEvent(new CustomEvent(EVENTS.ANIMATION_QUEUE_EMPTY));
+      }
       return;
     }
 
