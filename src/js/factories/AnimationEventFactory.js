@@ -288,6 +288,18 @@ export class AnimationEventFactory {
         )
         && weaponSystem === STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
       )
+      || (
+        attackStructType === STRUCT_TYPES.PLANETARY_DEFENSE_CANNON
+        && (
+          attackStructOperatingAmbit === AMBITS.LAND
+          || attackStructOperatingAmbit === AMBITS.WATER
+        )
+        && (
+          targetStructOperatingAmbit === AMBITS.WATER
+          || targetStructOperatingAmbit === AMBITS.LAND
+        )
+        && weaponSystem === STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
+      )
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.ANGLED.DOWN.CANNON);
       animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.DOWN.DEFAULT[firstOrLast]);
@@ -296,6 +308,25 @@ export class AnimationEventFactory {
     }
 
     // --- Angled up cases ---
+
+    // - Angled up cannon -
+    else if (
+      attackStructType === STRUCT_TYPES.PLANETARY_DEFENSE_CANNON
+      && (
+        attackStructOperatingAmbit === AMBITS.LAND
+        || attackStructOperatingAmbit === AMBITS.WATER
+      )
+      && (
+        targetStructOperatingAmbit === AMBITS.SPACE
+        || targetStructOperatingAmbit === AMBITS.AIR
+      )
+      && weaponSystem === STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
+    ) {
+      animationNames.push(ANIMATION.NAMES.IMPACT.ANGLED.UP.CANNON);
+      animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.UP.DEFAULT[firstOrLast]);
+
+      projectile = ANIMATION.PROJECTILES.CANNON;
+    }
 
     // - Angled up missile -
     else if (

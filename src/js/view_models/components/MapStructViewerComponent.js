@@ -4,6 +4,7 @@ import {MapStructLottieAnimationSVG} from "./MapStructLottieAnimationSVG";
 import {StructStillBuilder} from "../../builders/StructStillBuilder";
 import {CaseConverter, LOWER_SNAKE_CASE} from "../../util/CaseConverter";
 import {AnimationEndEvent} from "../../events/AnimationEndEvent";
+import {STRUCT_TYPES} from "../../constants/StructConstants";
 
 export class MapStructViewerComponent {
 
@@ -47,6 +48,7 @@ export class MapStructViewerComponent {
     this.impactAngledUpMissileAnimationContainerId = `impactAngledUpMissileAnimation-${this.structId}`;
     this.impactAngledUpTorpedoAnimationContainerId = `impactAngledUpTorpedoAnimation-${this.structId}`;
     this.impactAngledUpGatlingAnimationContainerId = `impactAngledUpGatlingAnimation-${this.structId}`;
+    this.impactAngledUpCannonAnimationContainerId = `impactAngledUpCannonAnimation-${this.structId}`;
     this.impactHorizontalCannonAnimationContainerId = `impactHorizontalCannonAnimation-${this.structId}`;
     this.impactHorizontalGatlingAnimationContainerId = `impactHorizontalGatlingAnimation-${this.structId}`;
     this.impactHorizontalMissileAnimationContainerId = `impactHorizontalMissileAnimation-${this.structId}`;
@@ -300,7 +302,7 @@ export class MapStructViewerComponent {
   }
 
   renderAttackPrimaryWeaponHTML() {
-    if (!this.structType.hasPrimaryWeapon()) {
+    if (!this.structType.hasPrimaryWeapon() && this.structType.type !== STRUCT_TYPES.PLANETARY_DEFENSE_CANNON) {
       return '';
     }
 
@@ -352,6 +354,7 @@ export class MapStructViewerComponent {
         <div id="${this.impactHorizontalMissileAnimationContainerId}" class="map-struct-viewer-layer sui-flip-horizontal" style="z-index:${this.getLayerZIndex()}"></div>
         <div id="${this.impactHorizontalGatlingAnimationContainerId}" class="map-struct-viewer-layer sui-flip-horizontal" style="z-index:${this.getLayerZIndex()}"></div>
         <div id="${this.impactHorizontalCannonAnimationContainerId}" class="map-struct-viewer-layer sui-flip-horizontal" style="z-index:${this.getLayerZIndex()}"></div>
+        <div id="${this.impactAngledUpCannonAnimationContainerId}" class="map-struct-viewer-layer sui-flip-horizontal" style="z-index:${this.getLayerZIndex()}"></div>
         <div id="${this.impactAngledUpGatlingAnimationContainerId}" class="map-struct-viewer-layer sui-flip-horizontal" style="z-index:${this.getLayerZIndex()}"></div>
         <div id="${this.impactAngledUpTorpedoAnimationContainerId}" class="map-struct-viewer-layer sui-flip-horizontal" style="z-index:${this.getLayerZIndex()}"></div>
         <div id="${this.impactAngledUpMissileAnimationContainerId}" class="map-struct-viewer-layer sui-flip-horizontal" style="z-index:${this.getLayerZIndex()}"></div>
@@ -483,6 +486,21 @@ export class MapStructViewerComponent {
         loop: false,
         autoplay: false,
         path: `/lottie/impact_angled_down_torpedo/data.json`
+      }
+    ));
+    this.lottieCustomPlayer.registerAnimation(new MapStructLottieAnimationSVG(
+      this.gameState,
+      this.structManager,
+      ANIMATION.NAMES.IMPACT.ANGLED.UP.CANNON,
+      this.structId,
+      this.structType,
+      this.impactAngledUpCannonAnimationContainerId,
+      {
+        container: document.getElementById(this.impactAngledUpCannonAnimationContainerId),
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        path: `/lottie/impact_angled_up_cannon/data.json`
       }
     ));
     this.lottieCustomPlayer.registerAnimation(new MapStructLottieAnimationSVG(
@@ -917,7 +935,7 @@ export class MapStructViewerComponent {
   }
 
   registerAttackPrimaryWeaponAnimation() {
-    if (!this.structType.hasPrimaryWeapon()) {
+    if (!this.structType.hasPrimaryWeapon() && this.structType.type !== STRUCT_TYPES.PLANETARY_DEFENSE_CANNON) {
       return;
     }
 

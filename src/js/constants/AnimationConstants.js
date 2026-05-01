@@ -35,6 +35,7 @@ export const
             TORPEDO: 'IMPACT_ANGLED_DOWN_TORPEDO'
           },
           UP: {
+            CANNON: 'IMPACT_ANGLED_UP_CANNON',
             GATLING: 'IMPACT_ANGLED_UP_GATLING',
             MISSILE: 'IMPACT_ANGLED_UP_MISSILE',
             TORPEDO: 'IMPACT_ANGLED_UP_TORPEDO'

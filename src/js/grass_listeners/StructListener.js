@@ -3,7 +3,7 @@ import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TASK_TYPES} from "../constants/TaskTypes";
 import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
 import {TaskCmdSpawnEvent} from "../events/TaskCmdSpawnEvent";
-import {STRUCT_ACTIONS, STRUCT_STATUS_FLAGS} from "../constants/StructConstants";
+import {STRUCT_ACTIONS, STRUCT_STATUS_FLAGS, STRUCT_TYPES, STRUCT_WEAPON_SYSTEM} from "../constants/StructConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {ClearStructTileEvent} from "../events/ClearStructTileEvent";
 import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
@@ -505,6 +505,59 @@ export class StructListener extends AbstractGrassListener {
             mapId
           )
         );
+      }
+    }
+
+    if (messageData.detail.planetaryDefenseCannonDamageToAttacker) {
+
+      // The message doesn't carry the PDC struct id, but the listener is scoped
+      // to a single planet (this.targetPlayerType's planet) and there is at most
+      // one planetary defense cannon per planet, so we can locate it by struct
+      // type among the structs owned by this listener's target player.
+      const planetaryDefenseCannonStruct = this.gameState.getPlanetaryDefenseStructByKeyPlayer(this.targetPlayerType);
+
+      const planetaryDefenseCannonDamage = parseInt(messageData.detail.planetaryDefenseCannonDamage);
+      const attackerHealthBeforePDCCounter = runningAttackerHealth;
+      const attackerHealthAfterPDCCounter = Math.max(0, attackerHealthBeforePDCCounter - planetaryDefenseCannonDamage);
+      runningAttackerHealth = attackerHealthAfterPDCCounter;
+
+      if (planetaryDefenseCannonStruct) {
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeAttackAnimationEvent(
+            planetaryDefenseCannonStruct.id,
+            STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON,
+            mapId
+          )
+        );
+
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeReceiveDamageAnimationEvent(
+            messageData.detail.attackerStructId,
+            STRUCT_TYPES.PLANETARY_DEFENSE_CANNON,
+            planetaryDefenseCannonStruct.operating_ambit,
+            STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON,
+            messageData.detail.attackerStructType,
+            messageData.detail.attackerStructOperatingAmbit,
+            messageData.detail.attackerStructLocationType,
+            attackerHealthBeforePDCCounter,
+            attackerHealthAfterPDCCounter,
+            false,
+            '',
+            mapId
+          )
+        );
+
+        structIdsToRefresh.add(planetaryDefenseCannonStruct.id);
+
+        if (messageData.detail.planetaryDefenseCannonDamageDestroyedAttacker) {
+          this.gameState.animationEventQueue.enqueue(
+            this.animationEventFactory.makeDestroyAnimationEvent(
+              messageData.detail.attackerStructId,
+              messageData.detail.attackerStructOperatingAmbit,
+              mapId
+            )
+          );
+        }
       }
     }
 
