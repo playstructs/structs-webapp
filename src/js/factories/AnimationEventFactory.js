@@ -2,7 +2,6 @@ import {ANIMATION} from "../constants/AnimationConstants";
 import {AnimationEvent} from "../events/AnimationEvent";
 import {CaseConverter, UPPER_SNAKE_CASE} from "../util/CaseConverter";
 import {
-  STRUCT_CATEGORIES,
   STRUCT_TYPES,
   STRUCT_UNIT_DEFENSES,
   STRUCT_WEAPON_SYSTEM
@@ -138,7 +137,6 @@ export class AnimationEventFactory {
     }
 
     let animationNames = [];
-    let showStructStillDuringAnimation = (targetStructCategory === STRUCT_CATEGORIES.PLANET);
     let firstOrLast = (targetHealthAfter > 0) ? ANIMATION.NAMES.FIRST : ANIMATION.NAMES.LAST;
     let projectile = '';
 
@@ -160,10 +158,7 @@ export class AnimationEventFactory {
       )
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.HORIZONTAL.CANNON);
-
-      if (!showStructStillDuringAnimation) {
-        animationNames.push(ANIMATION.NAMES.SHAKE.HORIZONTAL.DEFAULT[firstOrLast]);
-      }
+      animationNames.push(ANIMATION.NAMES.SHAKE.HORIZONTAL.DEFAULT[firstOrLast]);
 
       projectile = ANIMATION.PROJECTILES.CANNON;
     }
@@ -195,10 +190,7 @@ export class AnimationEventFactory {
       )
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.HORIZONTAL.MISSILE);
-
-      if (!showStructStillDuringAnimation) {
-        animationNames.push(ANIMATION.NAMES.SHAKE.HORIZONTAL.DEFAULT[firstOrLast]);
-      }
+      animationNames.push(ANIMATION.NAMES.SHAKE.HORIZONTAL.DEFAULT[firstOrLast]);
 
       projectile = ANIMATION.PROJECTILES.MISSILE;
     }
@@ -211,10 +203,7 @@ export class AnimationEventFactory {
       && weaponSystem === STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.HORIZONTAL.TORPEDO);
-
-      if (!showStructStillDuringAnimation) {
-        animationNames.push(ANIMATION.NAMES.SHAKE.HORIZONTAL.DEFAULT[firstOrLast]);
-      }
+      animationNames.push(ANIMATION.NAMES.SHAKE.HORIZONTAL.DEFAULT[firstOrLast]);
 
       projectile = ANIMATION.PROJECTILES.TORPEDO;
     }
@@ -227,10 +216,7 @@ export class AnimationEventFactory {
       && weaponSystem === STRUCT_WEAPON_SYSTEM.SECONDARY_WEAPON
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.HORIZONTAL.GATLING);
-
-      if (!showStructStillDuringAnimation) {
-        animationNames.push(ANIMATION.NAMES.SHAKE.HORIZONTAL.GATLING[firstOrLast]);
-      }
+      animationNames.push(ANIMATION.NAMES.SHAKE.HORIZONTAL.GATLING[firstOrLast]);
 
       projectile = ANIMATION.PROJECTILES.GATLING;
     }
@@ -253,10 +239,7 @@ export class AnimationEventFactory {
       )
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.ANGLED.DOWN.MISSILE);
-
-      if (!showStructStillDuringAnimation) {
-        animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.DOWN.DEFAULT[firstOrLast]);
-      }
+      animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.DOWN.DEFAULT[firstOrLast]);
 
       projectile = ANIMATION.PROJECTILES.MISSILE;
     }
@@ -280,10 +263,7 @@ export class AnimationEventFactory {
       )
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.ANGLED.DOWN.TORPEDO);
-
-      if (!showStructStillDuringAnimation) {
-        animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.DOWN.DEFAULT[firstOrLast]);
-      }
+      animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.DOWN.DEFAULT[firstOrLast]);
 
       projectile = ANIMATION.PROJECTILES.TORPEDO;
     }
@@ -310,10 +290,7 @@ export class AnimationEventFactory {
       )
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.ANGLED.DOWN.CANNON);
-
-      if (!showStructStillDuringAnimation) {
-        animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.DOWN.DEFAULT[firstOrLast]);
-      }
+      animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.DOWN.DEFAULT[firstOrLast]);
 
       projectile = ANIMATION.PROJECTILES.CANNON;
     }
@@ -342,10 +319,7 @@ export class AnimationEventFactory {
       )
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.ANGLED.UP.MISSILE);
-
-      if (!showStructStillDuringAnimation) {
-        animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.UP.DEFAULT[firstOrLast]);
-      }
+      animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.UP.DEFAULT[firstOrLast]);
 
       projectile = ANIMATION.PROJECTILES.MISSILE;
     }
@@ -366,10 +340,7 @@ export class AnimationEventFactory {
       )
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.ANGLED.UP.TORPEDO);
-
-      if (!showStructStillDuringAnimation) {
-        animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.UP.DEFAULT[firstOrLast]);
-      }
+      animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.UP.DEFAULT[firstOrLast]);
 
       projectile = ANIMATION.PROJECTILES.TORPEDO;
     }
@@ -382,10 +353,7 @@ export class AnimationEventFactory {
       && weaponSystem === STRUCT_WEAPON_SYSTEM.SECONDARY_WEAPON
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.ANGLED.UP.GATLING);
-
-      if (!showStructStillDuringAnimation) {
-        animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.UP.GATLING[firstOrLast]);
-      }
+      animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.UP.GATLING[firstOrLast]);
 
       projectile = ANIMATION.PROJECTILES.GATLING;
     }
@@ -412,7 +380,7 @@ export class AnimationEventFactory {
     return new AnimationEvent(
       targetStructId,
       animationNames,
-      showStructStillDuringAnimation,
+      false,
       true,
       { ...options, projectile: projectile },
       mapId
