@@ -124,7 +124,8 @@ const accountController = new AccountController(
   authManager,
   permissionManager,
   alphaManager,
-  grassManager
+  grassManager,
+  signingClientManager
 );
 const genericController = new GenericController(
   gameState

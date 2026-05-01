@@ -425,15 +425,6 @@ export class GuildAPI {
   }
 
   /**
-   * @param {string} username
-   * @return {Promise<GuildAPIResponse>}
-   */
-  async setUsername(username) {
-    const jsonResponse = await this.ajax.put(`${this.apiUrl}/player/username`, {username});
-    return this.guildAPIResponseFactory.make(jsonResponse);
-  }
-
-  /**
    * @param {string} playerId
    * @param {number} page
    * @return {Promise<Transaction[]>}

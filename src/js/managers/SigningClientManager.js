@@ -6,6 +6,7 @@ import {
   MsgAddressRegister,
   MsgPlanetExplore,
   MsgPlanetRaidComplete,
+  MsgPlanetUpdateName,
   MsgAddressRevoke,
   MsgFleetMove,
   MsgAllocationCreate,
@@ -23,6 +24,8 @@ import {
   MsgGuildUpdateJoinInfusionMinimumBypassByInvite,
   MsgGuildUpdateJoinInfusionMinimumBypassByRequest,
   MsgGuildUpdateEntryRank,
+  MsgGuildUpdateName,
+  MsgGuildUpdatePfp,
   MsgGuildMembershipInvite,
   MsgGuildMembershipInviteApprove,
   MsgGuildMembershipInviteDeny,
@@ -44,6 +47,8 @@ import {
   MsgPermissionGuildRankRevoke,
   MsgPlayerUpdatePrimaryAddress,
   MsgPlayerUpdateGuildRank,
+  MsgPlayerUpdateName,
+  MsgPlayerUpdatePfp,
   MsgPlayerSend,
   MsgStructActivate,
   MsgStructDeactivate,
@@ -66,6 +71,8 @@ import {
   MsgSubstationPlayerConnect,
   MsgSubstationPlayerDisconnect,
   MsgSubstationPlayerMigrate,
+  MsgSubstationUpdateName,
+  MsgSubstationUpdatePfp,
   MsgAgreementOpen,
   MsgAgreementClose,
   MsgAgreementCapacityIncrease,
@@ -190,22 +197,6 @@ export class SigningClientManager {
    * @param {string} toAddress
    * @param {Array<{denom: string, amount: string}>} amount
    */
-  async queueMsgBankSend(fromAddress, toAddress, amount) {
-    this.queue({
-      typeUrl: '/cosmos.bank.v1beta1.MsgSend',
-      value: {
-        fromAddress: fromAddress,
-        toAddress: toAddress,
-        amount: amount
-      },
-    });
-  }
-
-/**
-   * @param {string} fromAddress
-   * @param {string} toAddress
-   * @param {Array<{denom: string, amount: string}>} amount
-   */
   async queueMsgPlayerSend(fromAddress, toAddress, amount) {
     this.queue({
       typeUrl: '/structs.structs.MsgPlayerSend',
@@ -295,6 +286,21 @@ export class SigningClientManager {
         fleetId: fleetId,
         proof: proof,
         nonce: nonce
+      }),
+    });
+  }
+
+  /**
+   * @param {string} planetId
+   * @param {string} name
+   */
+  async queueMsgPlanetUpdateName(planetId, name) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgPlanetUpdateName',
+      value: MsgPlanetUpdateName.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        planetId: planetId,
+        name: name
       }),
     });
   }
@@ -519,6 +525,36 @@ export class SigningClientManager {
 
   /**
    * @param {string} guildId
+   * @param {string} name
+   */
+  async queueMsgGuildUpdateName(guildId, name) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildUpdateName',
+      value: MsgGuildUpdateName.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        guildId: guildId,
+        name: name
+      }),
+    });
+  }
+
+  /**
+   * @param {string} guildId
+   * @param {string} pfp
+   */
+  async queueMsgGuildUpdatePfp(guildId, pfp) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildUpdatePfp',
+      value: MsgGuildUpdatePfp.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        guildId: guildId,
+        pfp: pfp
+      }),
+    });
+  }
+
+  /**
+   * @param {string} guildId
    * @param {number} joinInfusionMinimum
    */
   async queueMsgGuildUpdateJoinInfusionMinimum(guildId, joinInfusionMinimum) {
@@ -663,8 +699,10 @@ export class SigningClientManager {
    * @param {string} substationId
    * @param {string} proofPubKey
    * @param {string} proofSignature
+   * @param {string} playerName
+   * @param {string} playerPfp
    */
-  async queueMsgGuildMembershipJoinProxy(address, substationId, proofPubKey, proofSignature) {
+  async queueMsgGuildMembershipJoinProxy(address, substationId, proofPubKey, proofSignature, playerName, playerPfp) {
     this.queue({
       typeUrl: '/structs.structs.MsgGuildMembershipJoinProxy',
       value: MsgGuildMembershipJoinProxy.fromPartial({
@@ -672,7 +710,9 @@ export class SigningClientManager {
         address: address,
         substationId: substationId,
         proofPubKey: proofPubKey,
-        proofSignature: proofSignature
+        proofSignature: proofSignature,
+        playerName: playerName,
+        playerPfp: playerPfp
       }),
     });
   }
@@ -917,6 +957,36 @@ export class SigningClientManager {
   }
 
   /**
+   * @param {string} playerId
+   * @param {string} name
+   */
+  async queueMsgPlayerUpdateName(playerId, name) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgPlayerUpdateName',
+      value: MsgPlayerUpdateName.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        playerId: playerId,
+        name: name
+      }),
+    });
+  }
+
+  /**
+   * @param {string} playerId
+   * @param {string} pfp
+   */
+  async queueMsgPlayerUpdatePfp(playerId, pfp) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgPlayerUpdatePfp',
+      value: MsgPlayerUpdatePfp.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        playerId: playerId,
+        pfp: pfp
+      }),
+    });
+  }
+
+  /**
    * @param {string} structId
    */
   async queueMsgStructActivate(structId) {
@@ -1100,6 +1170,36 @@ export class SigningClientManager {
         creator: this.gameState.signingAccount.address,
         owner: owner,
         allocationId: allocationId
+      }),
+    });
+  }
+
+  /**
+   * @param {string} substationId
+   * @param {string} name
+   */
+  async queueMsgSubstationUpdateName(substationId, name) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgSubstationUpdateName',
+      value: MsgSubstationUpdateName.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        substationId: substationId,
+        name: name
+      }),
+    });
+  }
+
+  /**
+   * @param {string} substationId
+   * @param {string} pfp
+   */
+  async queueMsgSubstationUpdatePfp(substationId, pfp) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgSubstationUpdatePfp',
+      value: MsgSubstationUpdatePfp.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        substationId: substationId,
+        pfp: pfp
       }),
     });
   }

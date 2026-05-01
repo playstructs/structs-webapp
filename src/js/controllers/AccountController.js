@@ -28,6 +28,7 @@ export class AccountController extends AbstractController {
    * @param {PermissionManager} permissionManager
    * @param {AlphaManager} alphaManager
    * @param {GrassManager} grassManager
+   * @param {SigningClientManager} signingClientManager
    */
   constructor(
     gameState,
@@ -35,7 +36,8 @@ export class AccountController extends AbstractController {
     authManager,
     permissionManager,
     alphaManager,
-    grassManager
+    grassManager,
+    signingClientManager
   ) {
     super('Account', gameState);
     this.guildAPI = guildAPI;
@@ -43,6 +45,7 @@ export class AccountController extends AbstractController {
     this.permissionManager = permissionManager;
     this.alphaManager = alphaManager;
     this.grassManager = grassManager;
+    this.signingClientManager = signingClientManager;
   }
 
   index() {
@@ -128,7 +131,12 @@ export class AccountController extends AbstractController {
   }
 
   changeUsername() {
-    const viewModel = new AccountChangeUsername(this.gameState, this.guildAPI);
+    const viewModel = new AccountChangeUsername(
+      this.gameState,
+      this.guildAPI,
+      this.permissionManager,
+      this.signingClientManager
+    );
     viewModel.render();
   }
 
