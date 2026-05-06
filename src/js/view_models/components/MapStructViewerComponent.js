@@ -382,6 +382,16 @@ export class MapStructViewerComponent {
     this.registerAttackSecondaryWeaponAnimation();
   }
 
+  /**
+   * Tear down all lottie players owned by this viewer. Must be called before
+   * the viewer is dereferenced (e.g. when its tile is cleared or the viewer
+   * is replaced), otherwise lottie-web's internal animation registry keeps
+   * the JSON, image bitmaps, rAF subscription, and DOM listeners alive.
+   */
+  destroy() {
+    this.lottieCustomPlayer.destroyAll();
+  }
+
   registerStandardAnimations() {
     this.lottieCustomPlayer.registerAnimation(new MapStructLottieAnimationSVG(
       this.gameState,

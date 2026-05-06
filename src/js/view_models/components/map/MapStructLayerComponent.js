@@ -85,6 +85,20 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * Destroy and forget the viewer associated with `structId` (if any). This
+   * releases the underlying lottie players so their frame caches, image
+   * bitmaps, DOM listeners, and SVG renderers can be garbage collected.
+   *
+   * @param {string} structId
+   */
+  destroyMapStructViewer(structId) {
+    if (structId && this.mapStructViewers[structId]) {
+      this.mapStructViewers[structId].destroy();
+      delete this.mapStructViewers[structId];
+    }
+  }
+
+  /**
    * @param {HTMLElement} tileElement
    * @param {Struct} struct
    * @param {AnimationEvent} animationToAutoplay the animation to autoplay once the struct is rendered and ready to play animations
@@ -92,19 +106,32 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   renderStruct(tileElement, struct, animationToAutoplay = null) {
     if (!struct) {
 
-      tileElement.innerHTML = '';
       const oldStructId = tileElement.getAttribute('data-struct-id');
+      this.destroyMapStructViewer(oldStructId);
+      tileElement.innerHTML = '';
       if (oldStructId) {
-        delete this.mapStructViewers[oldStructId];
         tileElement.setAttribute('data-struct-id', '');
       }
 
     } else if (!struct.isBuilt()) {
 
+      // Defensive: if the tile previously held a built struct (whose viewer
+      // we own), tear it down before the deployment-indicator overwrite so
+      // its lottie players don't leak.
+      const oldStructId = tileElement.getAttribute('data-struct-id');
+      if (oldStructId && oldStructId !== struct.id) {
+        this.destroyMapStructViewer(oldStructId);
+      }
       tileElement.innerHTML = this.renderDeploymentIndicatorHTML();
       tileElement.setAttribute('data-struct-id', struct.id);
 
     } else {
+
+      // Tear down any prior viewer at this key (same struct re-rendering on a
+      // status/build/move event) before we overwrite the reference, otherwise
+      // lottie-web's internal registry keeps every previously-played
+      // animation alive for the lifetime of the page.
+      this.destroyMapStructViewer(struct.id);
 
       this.mapStructViewers[struct.id] = new MapStructViewerComponent(
         this.gameState,
@@ -235,7 +262,9 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
-   * Remove all window event listeners registered by this component and clear viewer references.
+   * Remove all window event listeners registered by this component, destroy
+   * every owned struct viewer (releasing its lottie players), and clear
+   * viewer references.
    */
   destroy() {
     for (let i = 0; i < this.windowEventHandlers.length; i++) {
@@ -243,6 +272,12 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
       window.removeEventListener(event, handler);
     }
     this.windowEventHandlers = [];
+
+    for (const structId in this.mapStructViewers) {
+      if (Object.prototype.hasOwnProperty.call(this.mapStructViewers, structId)) {
+        this.mapStructViewers[structId].destroy();
+      }
+    }
     this.mapStructViewers = {};
   }
 

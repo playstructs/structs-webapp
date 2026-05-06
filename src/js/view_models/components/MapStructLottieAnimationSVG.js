@@ -178,4 +178,37 @@ export class MapStructLottieAnimationSVG {
 
     this.animation = animation;
   }
+
+  /**
+   * Tear down the underlying lottie player and release references so the
+   * animation's frame cache, image bitmaps, internal listeners, and SVG
+   * renderer can be garbage collected. Safe to call when the animation was
+   * never loaded.
+   */
+  destroy() {
+    // Drop our own callback first so any in-flight 'complete' event that
+    // fires during lottie teardown can't re-enter wrapper logic against a
+    // half-destroyed instance.
+    this.onCompleteCallback = () => {};
+
+    if (this.animation) {
+      try {
+        this.animation.destroy();
+      } catch (e) {
+        // lottie can throw if destroy is invoked on a partially-initialized
+        // animation (e.g. JSON fetch in flight). Swallow so a single bad
+        // animation can't block teardown of the rest of the viewer.
+      }
+      this.animation = null;
+    }
+
+    this.isLoaded = false;
+
+    // Drop the strong reference to the (possibly already detached) DOM
+    // container so it can be reclaimed even if something else still holds
+    // a reference to this wrapper.
+    if (this.lottieLoadOptions) {
+      this.lottieLoadOptions.container = null;
+    }
+  }
 }

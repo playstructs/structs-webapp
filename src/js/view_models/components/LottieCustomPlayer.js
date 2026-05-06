@@ -59,4 +59,14 @@ export class LottieCustomPlayer {
       this.animations[i].init(autoplay);
     }
   }
+
+  /**
+   * Destroy every registered animation and clear the registry.
+   */
+  destroyAll() {
+    for (let i = 0; i < this.animations.length; i++) {
+      this.animations[i].destroy();
+    }
+    this.animations = [];
+  }
 }
