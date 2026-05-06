@@ -5,6 +5,7 @@ import {Struct} from "../../../models/Struct";
 import {GenericMapLayerComponent} from "./GenericMapLayerComponent";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {AmbitUtil} from "../../../util/AmbitUtil";
+import {MapStructViewerComponent} from "../MapStructViewerComponent";
 
 
 export class MapStructLayerComponent extends GenericMapLayerComponent {
@@ -50,6 +51,12 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
 
     this.structStillBuilder = new StructStillBuilder(this.gameState);
     this.ambitUtil = new AmbitUtil();
+
+    /** @type {Object<string, MapStructViewerComponent>} */
+    this.mapStructViewers = {};
+
+    /** @type {Array<{event: string, handler: EventListener}>} */
+    this.windowEventHandlers = [];
   }
 
   /**
@@ -78,33 +85,74 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
-   * Render the content inside a struct tile (struct image or building indicator)
-   * @param {Struct|null} struct
-   * @return {string}
+   * Destroy and forget the viewer associated with `structId` (if any). This
+   * releases the underlying lottie players so their frame caches, image
+   * bitmaps, DOM listeners, and SVG renderers can be garbage collected.
+   *
+   * @param {string} structId
    */
-  renderStructContent(struct) {
-    if (!struct) {
-      return '';
+  destroyMapStructViewer(structId) {
+    if (structId && this.mapStructViewers[structId]) {
+      this.mapStructViewers[structId].destroy();
+      delete this.mapStructViewers[structId];
     }
-
-    if (!struct.isBuilt()) {
-      return this.renderDeploymentIndicatorHTML();
-    }
-
-    const structType = this.gameState.structTypes.getStructTypeById(struct.type)
-
-    // Completed struct - render the struct image
-    const structStill = this.structStillBuilder.build(structType.type);
-    return structStill.renderHTML();
   }
 
   /**
    * @param {HTMLElement} tileElement
    * @param {Struct} struct
+   * @param {AnimationEvent} animationToAutoplay the animation to autoplay once the struct is rendered and ready to play animations
    */
-  renderStruct(tileElement, struct) {
-    tileElement.innerHTML = this.renderStructContent(struct);
-    tileElement.setAttribute('data-struct-id', struct ? struct.id : '');
+  renderStruct(tileElement, struct, animationToAutoplay = null) {
+    if (!struct) {
+
+      const oldStructId = tileElement.getAttribute('data-struct-id');
+      this.destroyMapStructViewer(oldStructId);
+      tileElement.innerHTML = '';
+      if (oldStructId) {
+        tileElement.setAttribute('data-struct-id', '');
+      }
+
+    } else if (!struct.isBuilt()) {
+
+      // Defensive: if the tile previously held a built struct (whose viewer
+      // we own), tear it down before the deployment-indicator overwrite so
+      // its lottie players don't leak.
+      const oldStructId = tileElement.getAttribute('data-struct-id');
+      if (oldStructId && oldStructId !== struct.id) {
+        this.destroyMapStructViewer(oldStructId);
+      }
+      tileElement.innerHTML = this.renderDeploymentIndicatorHTML();
+      tileElement.setAttribute('data-struct-id', struct.id);
+
+    } else {
+
+      // Tear down any prior viewer at this key (same struct re-rendering on a
+      // status/build/move event) before we overwrite the reference, otherwise
+      // lottie-web's internal registry keeps every previously-played
+      // animation alive for the lifetime of the page.
+      this.destroyMapStructViewer(struct.id);
+
+      this.mapStructViewers[struct.id] = new MapStructViewerComponent(
+        this.gameState,
+        this.structManager,
+        struct.id,
+        struct.type,
+        this.mapId
+      );
+      tileElement.innerHTML = this.mapStructViewers[struct.id].renderHTML();
+      tileElement.setAttribute('data-struct-id', struct.id);
+      if (animationToAutoplay) {
+        this.mapStructViewers[struct.id].init(
+          animationToAutoplay.animationNames,
+          animationToAutoplay.showStructStillDuringAnimation,
+          animationToAutoplay.showStructStillAfterAnimation,
+          animationToAutoplay.options
+        );
+      } else {
+        this.mapStructViewers[struct.id].init();
+      }
+    }
   }
 
   /**
@@ -119,11 +167,12 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
 
   /**
    * @param {Struct} struct
+   * @param {AnimationEvent} animationToAutoplay the animation to autoplay once the struct is rendered and ready to play animations
    */
-  renderStructFromStruct(struct) {
+  renderStructFromStruct(struct, animationToAutoplay = null) {
     const renderParams = this.buildMapStructTilRenderParamsFromStruct(struct);
     if (renderParams) {
-      this.renderStruct(renderParams.tileElement, renderParams.struct);
+      this.renderStruct(renderParams.tileElement, renderParams.struct, animationToAutoplay);
     }
   }
 
@@ -202,62 +251,100 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * Register a window event listener and remember it so it can be removed in destroy().
+   *
+   * @param {string} event
+   * @param {EventListener} handler
+   */
+  addWindowEventListener(event, handler) {
+    window.addEventListener(event, handler);
+    this.windowEventHandlers.push({event, handler});
+  }
+
+  /**
+   * Remove all window event listeners registered by this component, destroy
+   * every owned struct viewer (releasing its lottie players), and clear
+   * viewer references.
+   */
+  destroy() {
+    for (let i = 0; i < this.windowEventHandlers.length; i++) {
+      const {event, handler} = this.windowEventHandlers[i];
+      window.removeEventListener(event, handler);
+    }
+    this.windowEventHandlers = [];
+
+    for (const structId in this.mapStructViewers) {
+      if (Object.prototype.hasOwnProperty.call(this.mapStructViewers, structId)) {
+        this.mapStructViewers[structId].destroy();
+      }
+    }
+    this.mapStructViewers = {};
+  }
+
+  /**
    * Initialize page code: populate structs and set up event listeners
    */
   initPageCode() {
     // Populate initial structs
     this.renderAllStructs();
 
-    // Listen for RENDER_ALL_STRUCTS events
-    window.addEventListener(EVENTS.RENDER_ALL_STRUCTS, (event) => {
+    this.addWindowEventListener(EVENTS.RENDER_ALL_STRUCTS, (event) => {
       if (event.mapId === this.mapId) {
         this.renderAllStructs();
       }
     });
 
-    // Listen for RENDER_STRUCT events
-    window.addEventListener(EVENTS.RENDER_STRUCT, (event) => {
-      if (event.mapId === this.mapId) {
-        this.renderStructFromStruct(event.struct);
+    this.addWindowEventListener(EVENTS.ANIMATION, (event) => {
+      if (event.mapId && event.mapId !== this.mapId) {
+        return;
+      }
+      if (this.mapStructViewers[event.structId]) {
+        this.mapStructViewers[event.structId].play(
+          event.animationNames,
+          event.showStructStillDuringAnimation,
+          event.showStructStillAfterAnimation,
+          event.options
+        );
       }
     });
 
-    window.addEventListener(EVENTS.RENDER_DEPLOYMENT_INDICATOR, (event) => {
+    this.addWindowEventListener(EVENTS.RENDER_STRUCT, (event) => {
+      if (event.mapId === this.mapId) {
+        this.renderStructFromStruct(event.struct, event.animationToAutoplay);
+      }
+    });
+
+    this.addWindowEventListener(EVENTS.RENDER_DEPLOYMENT_INDICATOR, (event) => {
       if (event.mapId === this.mapId) {
         this.renderDeploymentIndicator(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });
 
-    // Listen for CLEAR_STRUCT_TILE events (when a build is canceled)
-    window.addEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
+    this.addWindowEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {
       if (event.mapId === this.mapId) {
         this.clearTile(event.tileType, event.ambit, event.slot, event.playerId);
       }
     });
 
-    // Listen for SHOW_DEFEND_TARGETS events
-    window.addEventListener(EVENTS.SHOW_DEFEND_TARGETS, (event) => {
+    this.addWindowEventListener(EVENTS.SHOW_DEFEND_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.showDefendTargets();
       }
     });
 
-    // Listen for CLEAR_DEFEND_TARGETS events
-    window.addEventListener(EVENTS.CLEAR_DEFEND_TARGETS, (event) => {
+    this.addWindowEventListener(EVENTS.CLEAR_DEFEND_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.clearDefendTargets();
       }
     });
 
-    // Listen for SHOW_ATTACK_TARGETS events
-    window.addEventListener(EVENTS.SHOW_ATTACK_TARGETS, (event) => {
+    this.addWindowEventListener(EVENTS.SHOW_ATTACK_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.showAttackTargets(event.weaponAmbitsArray);
       }
     });
 
-    // Listen for CLEAR_ATTACK_TARGETS events
-    window.addEventListener(EVENTS.CLEAR_ATTACK_TARGETS, (event) => {
+    this.addWindowEventListener(EVENTS.CLEAR_ATTACK_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.clearAttackTargets();
       }

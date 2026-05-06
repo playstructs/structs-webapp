@@ -16,6 +16,7 @@ import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEve
 import {Guild} from "./Guild";
 import {ActionBarLock} from "./ActionBarLock";
 import {Settings} from "./Settings";
+import {STRUCT_TYPES} from "../constants/StructConstants";
 
 export class GameState {
 
@@ -102,6 +103,9 @@ export class GameState {
 
     /** @type {ActionBarLock} The current struct action (see STRUCT_ACTIONS) that holds the lock. */
     this.actionBarLock = new ActionBarLock();
+
+    /** @type {AnimationEventQueue} */
+    this.animationEventQueue = null;
 
     /* Allow saving from other classes without cyclical references. */
     window.addEventListener(EVENTS.SAVE_GAME_STATE, this.save.bind(this));
@@ -401,6 +405,22 @@ export class GameState {
       }
     }
     return null;
+  }
+
+  /**
+   * @param {string|null} playerType
+   * @return {Struct|null}
+   */
+  getPlanetaryDefenseStructByKeyPlayer(playerType) {
+    const keyPlayer = playerType ? this.keyPlayers[playerType] : null;
+    const pdcStructType = this.structTypes.getStructType(STRUCT_TYPES.PLANETARY_DEFENSE_CANNON);
+    if (!keyPlayer || !pdcStructType) {
+      return null;
+    }
+    return Object.values(keyPlayer.structs).find(struct =>
+      struct.type === pdcStructType.id
+      && struct.location_type === 'planet'
+    ) || null;
   }
 
   printMyPlayer() {

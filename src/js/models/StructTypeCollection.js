@@ -26,7 +26,7 @@ export class StructTypeCollection {
   }
 
   /**
-   * @param {String} id
+   * @param {number} id
    * @return {StructType}
    */
   getStructTypeById(id) {

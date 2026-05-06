@@ -1,5 +1,12 @@
 import {StructStillRenderer} from "../view_models/components/StructStillRenderer";
-import {STRUCT_VARIANTS} from "../constants/StructConstants";
+import {
+  STRUCT_EQUIPMENT,
+  STRUCT_STILL_LAYERS,
+  STRUCT_WATER_RIPPLE,
+  STRUCT_WEAPON_SYSTEM
+} from "../constants/StructConstants";
+import {StructType} from "../models/StructType";
+import {StructTypeArtSetBuilder} from "./StructTypeArtSetBuilder";
 
 export class StructStillBuilder {
 
@@ -8,468 +15,380 @@ export class StructStillBuilder {
    */
   constructor(gameState) {
     this.gameState = gameState;
-    this.structImageDir = '/img/structs';
+    this.structTypeArtSetBuilder = new StructTypeArtSetBuilder();
   }
   
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildBattleship() {
-    const topDetailLayers = [];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/battleship/battleship-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/battleship/battleship-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildBattleship(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      '',
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildCommandShip() {
-    const topDetailLayers = [
-      this.structImageDir + '/cmd-ship/cmd-ship-top-weapon.png'
-    ];
-    
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/cmd-ship/cmd-ship-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/cmd-ship/cmd-ship-struct-dmg.png';
-    structVariants[STRUCT_VARIANTS.BLINK] = this.structImageDir + '/cmd-ship/cmd-ship-struct-blink.png';
-    
-    const bottomDetailLayers = [];
+  buildCommandShip(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildCruiser() {
-    const topDetailLayers = [
-      this.structImageDir + '/cruiser/cruiser-top-weapon-ballistic.png',
-      this.structImageDir + '/cruiser/cruiser-top-weapon-smart.png',
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/cruiser/cruiser-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/cruiser/cruiser-struct-dmg.png';
-
-    const bottomDetailLayers = [
-      this.structImageDir + '/cruiser/cruiser-bottom-ripples.png'
-    ];
+  buildCruiser(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON],
+      art[STRUCT_WEAPON_SYSTEM.SECONDARY_WEAPON],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      art[STRUCT_WATER_RIPPLE]
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildDestroyer() {
-    const topDetailLayers = [
-      this.structImageDir + '/destroyer/destroyer-top-weapon.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/destroyer/destroyer-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/destroyer/destroyer-struct-dmg.png';
-
-    const bottomDetailLayers = [
-      this.structImageDir + '/destroyer/destroyer-bottom-ripples.png'
-    ];
+  buildDestroyer(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      art[STRUCT_WATER_RIPPLE]
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildOreExtractor() {
-    const topDetailLayers = [
-      this.structImageDir + '/extractor/extractor-top-drill.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/extractor/extractor-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/extractor/extractor-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildOreExtractor(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_EQUIPMENT.PLANETARY_MINING],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildFrigate() {
-    const topDetailLayers = [];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/frigate/frigate-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/frigate/frigate-struct-dmg.png';
-
-    const bottomDetailLayers = [
-      this.structImageDir + '/frigate/frigate-bottom-weapon.png'
-    ];
+  buildFrigate(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      '',
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON]
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildFieldGenerator() {
-    const topDetailLayers = [
-      this.structImageDir + '/generator/generator-top-tube.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/generator/generator-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/generator/generator-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildFieldGenerator(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_EQUIPMENT.POWER_GENERATION],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildHighAltitudeInterceptor() {
-    const topDetailLayers = [];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/interceptor/interceptor-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/interceptor/interceptor-struct-dmg.png';
-
-    const bottomDetailLayers = [
-      this.structImageDir + '/interceptor/interceptor-bottom-weapon.png'
-    ];
+  buildHighAltitudeInterceptor(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      '',
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON]
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildJammingSatellite() {
-    const topDetailLayers = [
-      this.structImageDir + '/jamming-sat/jamming-sat-top-weapon.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/jamming-sat/jamming-sat-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/jamming-sat/jamming-sat-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildJammingSatellite(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_EQUIPMENT.PLANETARY_DEFENSES],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildMobileArtillery() {
-    const topDetailLayers = [
-      this.structImageDir + '/mobile-artillery/mobile-artillery-top-weapon.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/mobile-artillery/mobile-artillery-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/mobile-artillery/mobile-artillery-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildMobileArtillery(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildOrbitalShieldGenerator() {
-    const topDetailLayers = [
-      this.structImageDir + '/orb-shield/orb-shield-top-weapon.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/orb-shield/orb-shield-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/orb-shield/orb-shield-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildOrbitalShieldGenerator(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_EQUIPMENT.ORE_RESERVE_DEFENSES],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildOreBunker() {
-    const topDetailLayers = [
-      this.structImageDir + '/ore-bunker/ore-bunker-top-weapon.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/ore-bunker/ore-bunker-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/ore-bunker/ore-bunker-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildOreBunker(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_EQUIPMENT.ORE_RESERVE_DEFENSES],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildPlanetaryDefenseCannon() {
-    const topDetailLayers = [
-      this.structImageDir + '/pdc/pdc-top-weapon.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/pdc/pdc-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/pdc/pdc-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildPlanetaryDefenseCannon(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_EQUIPMENT.PLANETARY_DEFENSES],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildPursuitFighter() {
-    const topDetailLayers = [];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/pursuit-fighter/pursuit-fighter-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/pursuit-fighter/pursuit-fighter-struct-dmg.png';
-
-    const bottomDetailLayers = [
-      this.structImageDir + '/pursuit-fighter/pursuit-fighter-bottom-weapon.png'
-    ];
+  buildPursuitFighter(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      '',
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON]
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildOreRefinery() {
-    const topDetailLayers = [
-      this.structImageDir + '/refinery/refinery-top-bays.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/refinery/refinery-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/refinery/refinery-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildOreRefinery(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_EQUIPMENT.PLANETARY_REFINERY],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildSAMLauncher() {
-    const topDetailLayers = [
-      this.structImageDir + '/sam-launcher/sam-launcher-top-weapon.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/sam-launcher/sam-launcher-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/sam-launcher/sam-launcher-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildSAMLauncher(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildStarfighter() {
-    const topDetailLayers = [
-      this.structImageDir + '/starfighter/starfighter-top-weapon-ballistic.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/starfighter/starfighter-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/starfighter/starfighter-struct-dmg.png';
-
-    const bottomDetailLayers = [
-      this.structImageDir + '/starfighter/starfighter-bottom-weapon-smart.png'
-    ];
+  buildStarfighter(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_WEAPON_SYSTEM.SECONDARY_WEAPON],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON]
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildStealthBomber() {
-    const topDetailLayers = [];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/stealth-bomber/stealth-bomber-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/stealth-bomber/stealth-bomber-struct-dmg.png';
-
-    const bottomDetailLayers = [
-      this.structImageDir + '/stealth-bomber/stealth-bomber-bottom-weapon.png'
-    ];
+  buildStealthBomber(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      '',
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON]
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildSubmersible() {
-    const topDetailLayers = [
-      this.structImageDir + '/submersible/submersible-top-weapon.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/submersible/submersible-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/submersible/submersible-struct-dmg.png';
-
-    const bottomDetailLayers = [
-      this.structImageDir + '/submersible/submersible-bottom-ripples.png'
-    ];
+  buildSubmersible(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      art[STRUCT_WATER_RIPPLE]
     );
   }
 
   /**
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
-  buildTank() {
-    const topDetailLayers = [
-      this.structImageDir + '/tank/tank-top-weapon.png'
-    ];
-
-    const structVariants = {};
-    structVariants[STRUCT_VARIANTS.BASE] = this.structImageDir + '/tank/tank-struct-base.png';
-    structVariants[STRUCT_VARIANTS.DMG] = this.structImageDir + '/tank/tank-struct-dmg.png';
-
-    const bottomDetailLayers = [];
+  buildTank(structType) {
+    const art = this.structTypeArtSetBuilder.build(structType);
 
     return new StructStillRenderer(
       this.gameState,
-      topDetailLayers,
-      structVariants,
-      bottomDetailLayers
+      structType,
+      art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON],
+      '',
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE],
+      art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
+      ''
     );
   }
   
   /**
-   * @param {string} structType
+   * @param {StructType} structType
    * @return {StructStillRenderer}
    */
   build(structType) {
-    const structTypeClean = structType.replace(/[^a-zA-Z0-9]/g, '');
+    const structTypeClean = structType.type.replace(/[^a-zA-Z0-9]/g, '');
 
     if (!this[`build${structTypeClean}`]) {
-      throw new Error(`No struct still for struct type ${structType}`);
+      throw new Error(`No struct still for struct type ${structType.type}`);
     }
 
-    return this[`build${structTypeClean}`]();
+    return this[`build${structTypeClean}`](structType);
   }
 }

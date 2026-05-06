@@ -144,7 +144,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
      return `
         <div class="offcanvas-struct-list-layout">
           ${this.deployableStructTypes.map(structType => {
-            const structStill = this.structStillBuilder.build(structType.type);
+            const structStill = this.structStillBuilder.build(structType);
             const deploymentBlocker = this.structManager.getDeploymentBlocker(structType);
             const disabledClassName = deploymentBlocker ? this.disabledClassName : '';
             return `

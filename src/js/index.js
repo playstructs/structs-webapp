@@ -31,6 +31,7 @@ import {TASK} from "./constants/TaskConstants";
 import {PLAYER_TYPES} from "./constants/PlayerTypes";
 import {DestroyedStructManager} from "./managers/DestroyedStructManager";
 import {NotificationDialogue} from "./framework/NotificationDialogue";
+import {AnimationEventQueue} from "./data_structures/AnimationEventQueue";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -84,6 +85,10 @@ global.taskManager = taskManager;
 
 const destroyedStructManager = new DestroyedStructManager(gameState, structManager);
 global.destroyedStructManager = destroyedStructManager;
+
+const animationEventQueue = new AnimationEventQueue();
+animationEventQueue.initListeners();
+gameState.animationEventQueue = animationEventQueue;
 
 const authManager = new AuthManager(
   gameState,
