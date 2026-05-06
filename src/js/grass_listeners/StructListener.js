@@ -25,7 +25,7 @@ export class StructListener extends AbstractGrassListener {
     structManager,
     targetPlayerType = PLAYER_TYPES.PLAYER
   ) {
-    super('STRUCT_CHANGE');
+    super(`STRUCT_CHANGE_${targetPlayerType}`);
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.structManager = structManager;
