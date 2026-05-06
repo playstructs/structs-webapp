@@ -37,10 +37,11 @@ const PERMISSIONS = {
   HASH_MINE: 2097152,
   HASH_REFINE: 4194304,
   HASH_RAID: 8388608,
+  GUILD_UGC_UPDATE: 16777216,
 
   ASSETS_ALL: 16 | 32 | 64 | 128,
   HASH_ALL: 1048576 | 2097152 | 4194304 | 8388608,
-  ALL: (1 << 24) - 1,
+  ALL: (1 << 25) - 1,
 };
 
 
@@ -206,7 +207,8 @@ class PermissionManager {
       | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GUILD_MEMBERSHIP
       | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.SUBSTATION_CONNECTION
       | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.ALLOCATION_CONNECTION
-      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.HASH_ALL;
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.HASH_ALL
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GUILD_UGC_UPDATE;
   }
 
   /**
@@ -334,26 +336,26 @@ class PermissionManagerTest extends _framework_DTestFramework__WEBPACK_IMPORTED_
     return [
       {
         permissionsToAdd: [],
-        expected: 15732481
+        expected: 32509697
       },
       {
         permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY],
-        expected: 15732481
+        expected: 32509697
       },
       {
         permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS_ALL],
-        expected: 15732721
+        expected: 32509937
       },
       {
         permissionsToAdd: [_constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ADMIN],
-        expected: 15732483
+        expected: 32509699
       },
       {
         permissionsToAdd: [
           _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ASSETS_ALL,
           _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.ADMIN
         ],
-        expected: 15732723
+        expected: 32509939
       },
       {
         permissionsToAdd: [
@@ -362,7 +364,7 @@ class PermissionManagerTest extends _framework_DTestFramework__WEBPACK_IMPORTED_
           _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.UPDATE,
           _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.DELETE
         ],
-        expected: 15732735
+        expected: 32509951
       },
     ];
   });
@@ -379,9 +381,9 @@ class PermissionManagerTest extends _framework_DTestFramework__WEBPACK_IMPORTED_
   }, function() {
     return [
       {
-        initialPermissions: 15732481,
+        initialPermissions: 32509697,
         permissionsToRemove: [],
-        expected: 15732481
+        expected: 32509697
       },
       {
         initialPermissions: _constants_Permissions__WEBPACK_IMPORTED_MODULE_2__.PERMISSIONS.PLAY
