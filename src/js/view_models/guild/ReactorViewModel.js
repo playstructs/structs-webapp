@@ -85,7 +85,18 @@ export class ReactorViewModel extends AbstractViewModel {
                     </div>
                   </div>
                   <div class="sui-data-card-row">
-                    <div class="sui-text-hint">Cooldown</div>
+                    <div class="sui-text-hint">
+                      Cooldown
+                      <a 
+                        id="cooldown-tip"
+                        class="sui-text-secondary"
+                        href="javascript: void(0)" 
+                        data-sui-tooltip="When removed from a Reactor, Alpha Matter must cool down before use."
+                        data-sui-mod-placement="bottom"
+                      >
+                        <i class="sui-icon icon-tip"></i>
+                      </a>
+                    </div>
                     <div>
                       ${
                         this.genericResourceComponent.renderHTML(
@@ -138,7 +149,17 @@ export class ReactorViewModel extends AbstractViewModel {
             <div class="sui-data-card-header sui-text-header">Reactor Details</div>
             <div class="sui-data-card-body">
               <div class="sui-data-card-row">
-                <div>Guild Minimum</div>
+                <div>
+                  Guild Minimum
+                  <a 
+                    id="guild-minimum-tip"
+                    class="sui-text-secondary"
+                    href="javascript: void(0)" 
+                    data-sui-tooltip="The minimum Alpha Matter that must be infused for Guild Membership."
+                  >
+                    <i class="sui-icon icon-tip"></i>
+                  </a>
+                </div>
                 <div>
                   ${
                     this.genericResourceComponent.renderHTML(
@@ -151,14 +172,34 @@ export class ReactorViewModel extends AbstractViewModel {
                 </div>
               </div>
               <div class="sui-data-card-row">
-                <div>Reactor Efficiency</div>
+                <div>
+                  Reactor Efficiency
+                  <a 
+                    id="reactor-efficiency-tip"
+                    class="sui-text-secondary"
+                    href="javascript: void(0)" 
+                    data-sui-tooltip="The amount of Energy supplied for each additional Alpha Matter infused."
+                  >
+                    <i class="sui-icon icon-tip"></i>
+                  </a>
+                </div>
                 <div>
                   ${this.numberFormatter.format(this.guild.reactor_ratio)} <i class="sui-icon sui-icon-md sui-icon-energy"></i> /
                   1 <i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>
                 </div>
               </div>
               <div class="sui-data-card-row">
-                <div>Commission</div>
+                <div>
+                  Commission
+                  <a 
+                    id="commission-tip"
+                    class="sui-text-secondary"
+                    href="javascript: void(0)" 
+                    data-sui-tooltip="The percentage of Energy taken by the guild."
+                  >
+                    <i class="sui-icon icon-tip"></i>
+                  </a>
+                </div>
                 <div>
                   ${
                     this.genericResourceComponent.renderHTML(
