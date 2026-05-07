@@ -149,7 +149,8 @@ export class ScanResultsViewModel extends AbstractViewModel {
         count,
         'scan',
         'Fleet',
-        'scan'
+        'scanResults',
+        this.raidSearchRequest
       );
 
       if (count) {
@@ -186,6 +187,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
       MenuPage.hideAndClearDialoguePanel();
 
       this.initPageCode();
+      pagination.init();
     });
 
   }
