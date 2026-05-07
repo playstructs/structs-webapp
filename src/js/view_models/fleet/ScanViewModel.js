@@ -103,7 +103,19 @@ export class ScanViewModel extends AbstractViewModel {
             <div class="sui-data-card-body sui-mod-spacing-xl">
             
               <label class="sui-input-text" for="${this.minVulnerableOreId}">
-                <span>Min. Vulnerable Ore</span>
+                <span>
+                  Min. Vulnerable Ore&nbsp;
+                  <a 
+                    id="min-vulnerable-ore-tip"
+                    class="sui-text-secondary"
+                    href="javascript: void(0)" 
+                    data-sui-tooltip="Extracted Ore that has not been refined is vulnerable to theft."
+                    data-sui-mod-placement="bottom"
+                  >
+                    <i class="sui-icon icon-tip"></i>
+                  </a>
+                </span>
+                
                 <div class="sui-input-stepper">
                   <button class="sui-screen-btn sui-mod-secondary">
                     <i class="sui-icon sui-icon-md icon-subtract"></i>
@@ -161,7 +173,17 @@ export class ScanViewModel extends AbstractViewModel {
               <div class="common-inline-text-input-group-container">
                 <div class="common-inline-text-input-controls-container">
                   <label class="sui-input-text" for="${this.playerSearchInputId}">
-                    <span>Player Search</span>
+                    <span>
+                      Player Search&nbsp;
+                      <a 
+                        id="player-search-tip" 
+                        class="sui-text-secondary"
+                        href="javascript: void(0)" 
+                        data-sui-tooltip="Enter a player's Display Name, Player Id, or Blockchain Address"
+                      >
+                        <i class="sui-icon icon-tip"></i>
+                      </a>
+                    </span>
                     <input
                       type="text"
                       name="${this.playerSearchInputId}"
