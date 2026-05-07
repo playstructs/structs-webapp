@@ -59,7 +59,6 @@ export class AuthController extends AbstractController {
     this.guildAPI = guildAPI;
     this.walletManager = walletManager;
     this.authManager  = authManager;
-    this.mnemonic = null;
   }
 
   index() {
@@ -122,7 +121,7 @@ export class AuthController extends AbstractController {
    * @param {object} options
    */
   signupRecoveryKeyConfirmFail(options) {
-    const viewModel = new RecoveryKeyCreationViewModel(this.mnemonic);
+    const viewModel = new RecoveryKeyCreationViewModel(this.gameState.mnemonic);
     viewModel.render(options.view);
   }
 
