@@ -90,7 +90,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
     let discordBtn = '';
     let guildBtn = '';
 
-    if (this.guild.socials.discord_server) {
+    if (this.guild.socials?.discord_server) {
       discordBtn = `
         <a 
           href="${this.guild.socials.discord_server}" 
@@ -100,14 +100,15 @@ export class GuildProfileViewModel extends AbstractViewModel {
       `;
     }
 
-    if (this.guild.id !== this.gameState.thisGuild.id) {
-      guildBtn = `
-        <a 
-          href="javascript: void(0)" 
-          class="sui-screen-btn sui-mod-primary"
-        >Join Guild</a>
-      `;
-    }
+    // Switching guilds from the UI is out of scope for the MVP
+    // if (this.guild.id !== this.gameState.thisGuild.id) {
+    //   guildBtn = `
+    //     <a
+    //       href="javascript: void(0)"
+    //       class="sui-screen-btn sui-mod-primary"
+    //     >Join Guild</a>
+    //   `;
+    // }
 
     if (discordBtn === '' && guildBtn === '') {
       return '';
