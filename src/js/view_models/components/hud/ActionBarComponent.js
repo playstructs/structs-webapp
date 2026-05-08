@@ -513,17 +513,24 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
     const cancelBtnId = `${this.playerType}-action-bar-cancel-btn`;
 
-    const cancelBtn = `
-      <div class="sui-action-bar-btn-group">
-        <a 
-          id="${cancelBtnId}"
-          href="javascript: void(0)"
-          class="sui-panel-btn sui-mod-default"
-        >
-          <i class="sui-icon-md icon-close"></i>
-        </a>
-      </div>
-    `;
+    // Only the owning player can cancel a build in progress
+    const isOwnedByPlayer = struct.owner === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+
+    const cancelBtn = isOwnedByPlayer
+      ? `
+        <div class="sui-action-bar-btn-group">
+          <a 
+            id="${cancelBtnId}"
+            href="javascript: void(0)"
+            class="sui-panel-btn sui-mod-default"
+          >
+            <i class="sui-icon-md icon-close"></i>
+          </a>
+        </div>
+      `
+      : '' ;
+
+    const propertyIconLinkId = `${this.playerType}-action-bar-property-tile-type`;
 
     document.getElementById(this.actionChunkId).innerHTML = `
       <div class="sui-screen sui-screen-full-width">
@@ -534,9 +541,18 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
         <div id="${this.propertiesScreenId}" class="sui-screen">
           <div class="sui-screen-properties">
-            <div id="${this.progressBarId}" class="sui-action-bar-progress-bar-wrapper">
-              ${this.renderProgressBar(percentageToComplete)}
-            </div>
+           ${ isOwnedByPlayer
+              ? `
+                <div id="${this.progressBarId}" class="sui-action-bar-progress-bar-wrapper">
+                  ${this.renderProgressBar(percentageToComplete)}
+                </div>
+              `
+              : `
+                <a id="${propertyIconLinkId}" href="javascript: void(0)" data-sui-cheatsheet="enemy-struct-deploying">
+                  <i class="sui-icon-md icon-wreckage"></i>
+                </a>
+              `
+            }
           </div>
         </div>
 
@@ -545,10 +561,11 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       </div>
     `;
 
-    // Attach cancel button handler
-    document.getElementById(cancelBtnId).addEventListener('click', function () {
-      this.structManager.cancelStructBuild(struct);
-    }.bind(this));
+    if (isOwnedByPlayer) {
+      document.getElementById(cancelBtnId).addEventListener('click', function () {
+        this.structManager.cancelStructBuild(struct);
+      }.bind(this));
+    }
 
     this.showActionChunk();
   }
