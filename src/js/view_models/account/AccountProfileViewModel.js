@@ -167,7 +167,17 @@ export class AccountProfileViewModel extends AbstractViewModel {
                 <div>${this.guild.name}</div>
               </div>
               <div class="sui-data-card-row">
-                <div>Player ID</div>
+                <div>
+                  Player ID
+                  <a 
+                    id="player-id-tip"
+                    class="sui-text-secondary"
+                    href="javascript: void(0)" 
+                    data-sui-tooltip="The unique in-game identifier for the player."
+                  >
+                    <i class="sui-icon icon-tip"></i>
+                  </a>
+                </div>
                 <div>
                   #${this.playerId}
                   <a id="${this.copyPidBtnId2}" href="javascript: void(0)">
@@ -176,7 +186,17 @@ export class AccountProfileViewModel extends AbstractViewModel {
                 </div>
               </div>
               <div class="sui-data-card-row">
-                <div>Blockchain Address</div>
+                <div>
+                  Blockchain Address
+                  <a 
+                    id="blockchain-address-tip"
+                    class="sui-text-secondary"
+                    href="javascript: void(0)" 
+                    data-sui-tooltip="The public wallet address for the player."
+                  >
+                    <i class="sui-icon icon-tip"></i>
+                  </a>
+                </div>
                 <div>
                   Copy Address
                   <a id="${this.copyAddressBtnId}" href="javascript:void(0)">
