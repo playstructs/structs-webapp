@@ -41,7 +41,7 @@ export class AccountRecipientSearchResults extends AbstractViewModel {
       </div>
     `;
 
-    if (!playerSearchResultDTO.pfp) {
+    if (!playerSearchResultDTO.id) {
       html = `
         <div class="sui-result-row-portrait-icon sui-text-secondary">
           <i class="sui-icon sui-icon-md icon-unknown"></i>

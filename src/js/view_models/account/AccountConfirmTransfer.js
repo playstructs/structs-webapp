@@ -72,35 +72,8 @@ export class AccountConfirmTransfer extends AbstractViewModel {
     return html;
   }
 
-  /**
-   * @param {PlayerSearchResultDTO} playerSearchResultDTO
-   * @return {string}
-   */
-  renderRecipientDataRows(playerSearchResultDTO) {
-    return `
-      <div class="sui-data-card-row">
-        <div>Recipient</div>
-        <div>${this.renderNameHTML(playerSearchResultDTO)}</div>
-      </div>
-    `
-    + playerSearchResultDTO.id
-      ? `
-        <div class="sui-data-card-row">
-          <div>Player ID</div>
-          <div>${playerSearchResultDTO.id}</div>
-        </div>
-      `
-      : `
-        <div class="sui-data-card-row">
-          <div>Blockchain Address</div>
-          <div>${playerSearchResultDTO.address}</div>
-        </div>
-      `;
-  }
-
   render () {
     const amount = this.numberFormatter.format(this.gameState.transferAmount);
-    const recipientDataRows = this.renderRecipientDataRows(this.playerSearchResultDTO);
 
     MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
@@ -125,7 +98,18 @@ export class AccountConfirmTransfer extends AbstractViewModel {
               </div>
             </div>
             
-            ${recipientDataRows}
+            <div class="sui-data-card-row">
+              <div>Recipient</div>
+              <div style="text-align: right">
+                ${this.renderNameHTML(this.playerSearchResultDTO)}
+                <br>
+                ${
+                  this.playerSearchResultDTO.id
+                    ? '#' + this.playerSearchResultDTO.id
+                    : this.playerSearchResultDTO.address
+                }
+              </div>
+            </div>
 
           </div>
         </div>

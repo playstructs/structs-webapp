@@ -39,7 +39,7 @@ export class AccountRecipientViewModel extends AbstractViewModel {
       </div>
     `;
 
-    if (!playerSearchResultDTO.pfp) {
+    if (!playerSearchResultDTO.id) {
       html = `
         <div class="profile-header-image-container sui-text-disabled">
           <i class="sui-icon sui-icon-xl icon-unknown"></i>
@@ -126,7 +126,7 @@ export class AccountRecipientViewModel extends AbstractViewModel {
               <i class="sui-icon icon-tip"></i>
             </a>
           </div>
-          <div>${playerSearchResultDTO.id}</div>
+          <div>#${playerSearchResultDTO.id}</div>
         </div>
       `
       : '';
