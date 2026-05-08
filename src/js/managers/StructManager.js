@@ -331,12 +331,13 @@ export class StructManager {
    */
   getStructCountByPlayerType(playerType) {
     const structs = this.getStructsByPlayerType(playerType);
+    const isFleetAway = this.gameState.keyPlayers[playerType]?.fleet?.status === 'away';
     let planetaryStructCount = 0;
     let fleetStructCount = 0;
     for (const struct of Object.values(structs)) {
       if (struct.location_type === 'planet') {
         planetaryStructCount++;
-      } else if (struct.location_type === 'fleet') {
+      } else if (struct.location_type === 'fleet' && !isFleetAway) {
         fleetStructCount++;
       }
     }
