@@ -666,6 +666,12 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           'There is nothing of interest here yet.'
         );
         break;
+      case 'enemy-struct-deploying':
+        html = this.renderer.renderContentForEmptyTileHTML(
+          'Enemy Struct Deploying',
+          'A new enemy struct is being deployed.'
+        );
+        break;
       case 'icon-undiscovered-ore':
         html = this.renderUndiscoveredOre(dataset);
         break;

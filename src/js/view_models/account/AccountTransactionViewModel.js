@@ -106,7 +106,7 @@ export class AccountTransactionViewModel extends AbstractViewModel {
             
               <div class="sui-data-card-row">
                 <div>Transaction ID</div>
-                <div>${this.txId}</div>
+                <div>#${this.txId}</div>
               </div>
               
               <div class="sui-data-card-row">

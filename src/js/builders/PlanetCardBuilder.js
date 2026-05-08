@@ -299,6 +299,7 @@ export class PlanetCardBuilder {
     raidCard.hasPrimaryBtn = true;
     raidCard.primaryBtnLabel = 'View';
     raidCard.primaryBtnHandler = () => {
+      MenuPage.router.goto('Fleet', 'index');
       this.showRaidMap();
     }
 

@@ -90,7 +90,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
     let discordBtn = '';
     let guildBtn = '';
 
-    if (this.guild.socials.discord_server) {
+    if (this.guild.socials?.discord_server) {
       discordBtn = `
         <a 
           href="${this.guild.socials.discord_server}" 
@@ -100,14 +100,15 @@ export class GuildProfileViewModel extends AbstractViewModel {
       `;
     }
 
-    if (this.guild.id !== this.gameState.thisGuild.id) {
-      guildBtn = `
-        <a 
-          href="javascript: void(0)" 
-          class="sui-screen-btn sui-mod-primary"
-        >Join Guild</a>
-      `;
-    }
+    // Switching guilds from the UI is out of scope for the MVP
+    // if (this.guild.id !== this.gameState.thisGuild.id) {
+    //   guildBtn = `
+    //     <a
+    //       href="javascript: void(0)"
+    //       class="sui-screen-btn sui-mod-primary"
+    //     >Join Guild</a>
+    //   `;
+    // }
 
     if (discordBtn === '' && guildBtn === '') {
       return '';
@@ -169,7 +170,17 @@ export class GuildProfileViewModel extends AbstractViewModel {
             <div class="sui-data-card-header sui-text-header">Guild Power</div>
             <div class="sui-data-card-body">
               <div class="sui-data-card-row">
-                <div>Guild Minimum</div>
+                <div>
+                  Guild Minimum
+                  <a 
+                    id="guild-minimum-tip"
+                    class="sui-text-secondary"
+                    href="javascript: void(0)" 
+                    data-sui-tooltip="The minimum Alpha Matter that must be infused for Guild Membership."
+                  >
+                    <i class="sui-icon icon-tip"></i>
+                  </a>
+                </div>
                 <div>
                   ${
                     this.genericResourceComponent.renderHTML(
@@ -182,7 +193,17 @@ export class GuildProfileViewModel extends AbstractViewModel {
                 </div>
               </div>
               <div class="sui-data-card-row">
-                <div>Avg. Base Energy Supply</div>
+                <div>
+                  Avg. Base Energy Supply
+                  <a 
+                    id="avg-base-energy-supply-tip"
+                    class="sui-text-secondary"
+                    href="javascript: void(0)" 
+                    data-sui-tooltip="The average amount of Energy supplied to members."
+                  >
+                    <i class="sui-icon icon-tip"></i>
+                  </a>
+                </div>
                 <div>
                   ${
                     this.genericResourceComponent.renderHTML(
@@ -195,7 +216,17 @@ export class GuildProfileViewModel extends AbstractViewModel {
                 </div>
               </div>
               <div class="sui-data-card-row">
-                <div>Alpha Efficiency</div>
+                <div>
+                  Alpha Efficiency
+                  <a 
+                    id="alpha-efficiency-tip"
+                    class="sui-text-secondary"
+                    href="javascript: void(0)" 
+                    data-sui-tooltip="The amount of Energy supplied for each additional Alpha Matter infused."
+                  >
+                    <i class="sui-icon icon-tip"></i>
+                  </a>
+                </div>
                 <div>
                   ${this.numberFormatter.format(this.guild.reactor_ratio)} <i class="sui-icon sui-icon-md sui-icon-energy"></i> /
                   1 <i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>

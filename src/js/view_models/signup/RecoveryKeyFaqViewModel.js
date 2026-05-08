@@ -10,6 +10,13 @@ export class RecoveryKeyFaqViewModel extends AbstractViewModel {
   constructor(backButtonHandler) {
     super();
     this.backButtonHandler = backButtonHandler;
+    this.loginFromAnotherDeviceLinkId = 'recovery-key-faq-login-from-another-device-link';
+  }
+
+  initPageCode() {
+    document.getElementById(this.loginFromAnotherDeviceLinkId).addEventListener('click', () => {
+      MenuPage.router.goto('Auth', 'loginActivateDevice');
+    });
   }
 
   render() {
@@ -40,7 +47,11 @@ export class RecoveryKeyFaqViewModel extends AbstractViewModel {
         </div>
         <div class="recovery-key-faq-question-group">
           <div class="sui-text-secondary">I want to log in on a new device. Do I need my recovery Key?</div>
-          <div>No. If you currently have access to a logged-in device, you can log in a new device by using the Login From Another Device option.<br> 
+          <div>No. If you currently have access to a logged-in device, you can log in a new device by using the <a
+              href="javascript:void(0)"
+              id="${this.loginFromAnotherDeviceLinkId}"
+              class="sui-text-secondary"
+            >Login From Another Device</a> option.<br>
             <br>
             Note: this option is only available if the logged-in device has Account Management permissions.<br>
             <br>
@@ -55,5 +66,6 @@ export class RecoveryKeyFaqViewModel extends AbstractViewModel {
     MenuPage.hideAndClearDialoguePanel();
 
     pageHeader.init();
+    this.initPageCode();
   }
 }

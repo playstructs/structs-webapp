@@ -174,7 +174,17 @@ export class AccountDeviceViewModel extends AbstractViewModel {
                 ${checkboxDisabledAttr}
               >
               <span class="sui-checkbox-display"></span>
-              <label for="${this.manageDevicesCheckboxId}">Manage Devices</label>
+              <label for="${this.manageDevicesCheckboxId}">
+                Manage Devices
+                <a 
+                  id="manage-devices-tip"
+                  class="sui-text-secondary"
+                  href="javascript: void(0)" 
+                  data-sui-tooltip="The ability to logout other devices or change their permissions."
+                >
+                  <i class="sui-icon icon-tip"></i>
+                </a>
+              </label>
             </div>
             <div class="sui-checkbox-container">
               <input 
@@ -186,7 +196,17 @@ export class AccountDeviceViewModel extends AbstractViewModel {
                 ${checkboxDisabledAttr}
               >
               <span class="sui-checkbox-display"></span>
-              <label for="${this.transferAssetsCheckboxId}">Transfer Assets</label>
+              <label for="${this.transferAssetsCheckboxId}">
+                Transfer Assets
+                <a 
+                  id="transfer-assets-tip"
+                  class="sui-text-secondary"
+                  href="javascript: void(0)" 
+                  data-sui-tooltip="The ability to send Alpha to other accounts."
+                >
+                  <i class="sui-icon icon-tip"></i>
+                </a>
+              </label>
             </div>
           </div>
           

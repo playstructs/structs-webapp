@@ -338,6 +338,7 @@ i.sui-icon {
 
   background-position: center;
   background-size: cover;
+  vertical-align: middle;
 }
 
 i.sui-icon-air {
@@ -2198,7 +2199,6 @@ label.sui-form-element-group-label {
 }
 
 .sui-screen-body {
-  padding: var(--spacing-xl);
   flex: 1 0 0;
 }
 
@@ -2673,6 +2673,7 @@ label.sui-form-element-group-label {
 }
 
 .sui-offcanvas-body {
+  padding: var(--spacing-xl);
   align-self: stretch;
 }
 

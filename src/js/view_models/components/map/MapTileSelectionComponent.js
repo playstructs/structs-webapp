@@ -121,7 +121,13 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     `;
   }
 
-  renderFogOfWarTileHTML(mapColType) {
+  /**
+   * @param {string} mapColType
+   * @param {string} tileLabel the label for the fog of war tile. Should be the current ambit for
+   *   ambit rows or the transition tile label for transition rows.
+   * @return {string}
+   */
+  renderFogOfWarTileHTML(mapColType, tileLabel = '') {
     if (this.attacker) {
       return '';
     }
@@ -146,7 +152,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
         '',
         '',
         '',
-        'Unknown Territory'
+        tileLabel
       );
     }
 
@@ -211,7 +217,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     const tileLabel = this.getTransitionTileLabel(topAmbit, bottomAmbit, isFinalTransition);
 
     for (let c = 0; c < this.mapColBreakdown.length; c++) {
-      tiles += this.renderFogOfWarTileHTML(this.mapColBreakdown[c])
+      tiles += this.renderFogOfWarTileHTML(this.mapColBreakdown[c], tileLabel)
         || this.renderSelectionTileHTML(
           MAP_TILE_TYPES.TRANSITION,
           this.getTileSide(c),
@@ -824,7 +830,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
           const mapColType = this.mapColBreakdown[c];
           let side = this.getTileSide(c);
 
-          html += this.renderFogOfWarTileHTML(mapColType)
+          html += this.renderFogOfWarTileHTML(mapColType, currentAmbit.toUpperCase())
             || this.renderCommandTileHTML(mapColType, side, currentAmbit, commandSlotTracker)
             || this.renderPlanetaryTileHTML(
               mapColType,

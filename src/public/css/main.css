@@ -2134,7 +2134,8 @@ only screen and (min-height: 1024px) {
   #raid-map-container,
   #preview-map-container,
   #loading-screen,
-  #sui-offcanvas {
+  #sui-offcanvas,
+  #sui-cheatsheet-container {
     transform: scale(2);
     transform-origin: 0 0;
   }
@@ -2174,7 +2175,8 @@ only screen and (min-height: 2048px) {
   #alpha-base-map-container,
   #raid-map-container,
   #preview-map-container,
-  #loading-screen {
+  #loading-screen,
+  #sui-cheatsheet-container {
     transform: scale(4);
     transform-origin: 0 0;
   }

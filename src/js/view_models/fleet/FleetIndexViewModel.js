@@ -79,7 +79,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
     }
 
     return `
-      <div>
+      <div class="hidden">
         <a href="javascript: void(0)" class="fleet-card-log-btn">
           <div class="fleet-card-log-btn-icon-wrapper">
             <i class="sui-icon sui-icon-sm icon-combat-log sui-text-secondary"></i>
@@ -105,7 +105,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
           
             ${this.alphaBaseCard.renderHTML()}
             
-            <div>
+            <div class="hidden">
               <a href="javascript: void(0)" class="fleet-card-log-btn">
                 <div class="fleet-card-log-btn-icon-wrapper">
                   <i class="sui-icon sui-icon-sm icon-combat-log sui-text-secondary"></i>

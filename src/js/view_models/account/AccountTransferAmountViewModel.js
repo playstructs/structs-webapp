@@ -1,5 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class AccountTransferAmountViewModel extends AbstractViewModel {
 
@@ -12,6 +13,7 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
     this.amountInputId = 'transferAmountInput';
     this.nextBtnId = 'transferAmountNextBtn';
     this.gameState.setTransferAmount(0);
+    this.maxTransfer = Math.min(parseInt(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) || 0, 99);
   }
 
   initPageCode() {
@@ -23,7 +25,10 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
 
     const inputStepperChangeHandler = () => {
       const nextBtn = document.getElementById(this.nextBtnId);
-      if (document.getElementById(this.amountInputId).value > 0) {
+      if (
+        0 < document.getElementById(this.amountInputId).value
+        && document.getElementById(this.amountInputId).value <= this.maxTransfer
+      ) {
         nextBtn.disabled = false;
         nextBtn.classList.add('sui-mod-primary');
         nextBtn.classList.remove('sui-mod-disabled');
@@ -36,6 +41,7 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
 
     decreaseBtn.addEventListener('click', inputStepperChangeHandler);
     increaseBtn.addEventListener('click', inputStepperChangeHandler);
+    amountInput.addEventListener('input', inputStepperChangeHandler);
 
     document.getElementById(this.nextBtnId).addEventListener('click', () => {
       this.gameState.setTransferAmount(parseInt(document.getElementById(this.amountInputId).value));
@@ -65,7 +71,7 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
               type="number"
               step="1"
               min="0"
-              max="99"
+              max="${this.maxTransfer}"
               value="0"
             >
             <button class="sui-screen-btn sui-mod-secondary">

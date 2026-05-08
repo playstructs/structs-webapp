@@ -39,7 +39,7 @@ export class AccountRecipientViewModel extends AbstractViewModel {
       </div>
     `;
 
-    if (!playerSearchResultDTO.pfp) {
+    if (!playerSearchResultDTO.id) {
       html = `
         <div class="profile-header-image-container sui-text-disabled">
           <i class="sui-icon sui-icon-xl icon-unknown"></i>
@@ -115,8 +115,18 @@ export class AccountRecipientViewModel extends AbstractViewModel {
     return playerSearchResultDTO.id
       ? `
         <div class="sui-data-card-row">
-          <div>Player ID</div>
-          <div>${playerSearchResultDTO.id}</div>
+          <div>
+            Player ID
+            <a 
+              id="player-id-tip"
+              class="sui-text-secondary"
+              href="javascript: void(0)" 
+              data-sui-tooltip="The unique in-game identifier for the player."
+            >
+              <i class="sui-icon icon-tip"></i>
+            </a>
+          </div>
+          <div>#${playerSearchResultDTO.id}</div>
         </div>
       `
       : '';
@@ -130,7 +140,17 @@ export class AccountRecipientViewModel extends AbstractViewModel {
     return playerSearchResultDTO.address
       ? `
         <div class="sui-data-card-row">
-          <div>Blockchain Address</div>
+          <div>
+            Blockchain Address
+            <a 
+              id="blockchain-address-tip"
+              class="sui-text-secondary"
+              href="javascript: void(0)" 
+              data-sui-tooltip="The public wallet address for the player."
+            >
+              <i class="sui-icon icon-tip"></i>
+            </a>
+          </div>
           <div>${playerSearchResultDTO.address}</div>
         </div>
       `

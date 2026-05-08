@@ -56,11 +56,11 @@ export class AccountIndexViewModel extends AbstractViewModel {
         <div class="menu-index-layout">
           <div class="account-menu-index-header-row">
             <div class="account-menu-index-header-player-info">
-              <div class="account-menu-index-header-player-name">
+              <div class="account-menu-index-header-player-name sui-text-header">
                 <span class="sui-text-secondary">${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getTag()}</span>
                 ${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getUsername()}
               </div>
-              <div class="account-menu-index-header-player-id">
+              <div class="account-menu-index-header-player-id sui-text-header">
                 PID #${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}
                 <a id="${this.copyPidBtnId}" href="javascript: void(0)">
                   <i class="sui-icon icon-copy sui-text-secondary"></i>
