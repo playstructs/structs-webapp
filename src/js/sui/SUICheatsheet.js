@@ -10,6 +10,17 @@ export class SUICheatsheet extends SUIFeature {
    */
   static pointerPressedTimer = null;
 
+  /**
+   * Set to true once the long-press timer fires and the cheatsheet is
+   * actually shown. Used to suppress the synthetic `click` event that
+   * browsers fire on release, so that releasing a long-press is not
+   * treated as a click on the underlying element (e.g. an action bar
+   * button).
+   *
+   * @type {boolean}
+   */
+  static cheatsheetWasShown = false;
+
   static OPEN_DELAY = 500;
 
   constructor() {
@@ -51,6 +62,7 @@ export class SUICheatsheet extends SUIFeature {
    */
   pointerPressed(cheatsheetElm, cheatsheetTriggerElm) {
     clearTimeout(SUICheatsheet.pointerPressedTimer);
+    SUICheatsheet.cheatsheetWasShown = false;
 
     // If there is an existing cheatsheet, remove it.
     if (cheatsheetElm.parentElement) {
@@ -80,6 +92,8 @@ export class SUICheatsheet extends SUIFeature {
 
       // Position cheatsheet in best fitting location (tries: top, right, bottom, left)
       this.util.positionBestFitFixed(cheatsheetElm, triggerRect);
+
+      SUICheatsheet.cheatsheetWasShown = true;
 
     }.bind(this), SUICheatsheet.OPEN_DELAY);
   }
@@ -117,8 +131,35 @@ export class SUICheatsheet extends SUIFeature {
       }
     }.bind(this), { passive: true });
 
+    // Suppress the synthetic `click` event that follows the release of a
+    // long-press, so that long-pressing an element to view its cheatsheet
+    // does not also trigger that element's click handler. Capture phase is
+    // used so we run before any handler attached directly to the trigger.
+    document.body.addEventListener('click', function (e) {
+      if (
+        SUICheatsheet.cheatsheetWasShown
+        && e.target.closest('[data-sui-cheatsheet]')
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        // Clear immediately on the success path so a subsequent quick
+        // click on the same (or another) trigger is not also suppressed.
+        SUICheatsheet.cheatsheetWasShown = false;
+      }
+    }, true);
+
     window.addEventListener(releasedEvent, function () {
       this.clearPointerPressedTimer(cheatsheetElm);
+      // Fallback flag-clear in case no synthetic `click` follows the
+      // release (e.g. touchcancel, user dragged off the trigger, or the
+      // browser otherwise does not dispatch a click). The delay is long
+      // enough to outlast platform synthetic-click latency (historically
+      // up to ~300ms on touch) but short enough not to interfere with a
+      // subsequent intentional tap.
+      setTimeout(() => {
+        SUICheatsheet.cheatsheetWasShown = false;
+      }, 350);
     }.bind(this), { passive: true });
   }
 }
