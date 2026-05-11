@@ -42,27 +42,39 @@ export class AccountProfileViewModel extends AbstractViewModel {
   }
 
   async fetchPageData() {
+    const infusionPromise = this.guildAPI.getInfusionByPlayerId(this.playerId);
+    const playerOreStatsPromise = this.guildAPI.getPlayerOreStats(this.playerId);
+    const playerPlanetsCompletedPromise = this.guildAPI.getPlayerPlanetsCompleted(this.playerId);
+    const playerRaidsLaunchedPromise = this.guildAPI.getPlayerRaidsLaunched(this.playerId);
 
+    let playerPromise;
+    let guildPromise;
     if (this.isOwnProfile) {
-      this.player = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player;
-      this.guild = this.gameState.thisGuild;
+      playerPromise = Promise.resolve(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player);
+      guildPromise = Promise.resolve(this.gameState.thisGuild);
     } else {
-      this.player = await this.guildAPI.getPlayer(this.playerId);
-      this.guild = await this.guildAPI.getGuild(this.player.guild_id);
+      playerPromise = this.guildAPI.getPlayer(this.playerId);
+      guildPromise = playerPromise.then((player) => this.guildAPI.getGuild(player.guild_id));
     }
 
     const [
+      player,
+      guild,
       infusion,
       playerOreStats,
       playerPlanetsCompleted,
       playerRaidsLaunched
     ] = await Promise.all([
-      this.guildAPI.getInfusionByPlayerId(this.playerId),
-      this.guildAPI.getPlayerOreStats(this.playerId),
-      this.guildAPI.getPlayerPlanetsCompleted(this.playerId),
-      this.guildAPI.getPlayerRaidsLaunched(this.playerId)
-    ])
+      playerPromise,
+      guildPromise,
+      infusionPromise,
+      playerOreStatsPromise,
+      playerPlanetsCompletedPromise,
+      playerRaidsLaunchedPromise
+    ]);
 
+    this.player = player;
+    this.guild = guild;
     this.alphaInfused = infusion.fuel;
     this.playerOreStats = playerOreStats;
     this.playerPlanetsCompleted = playerPlanetsCompleted;
@@ -117,26 +129,40 @@ export class AccountProfileViewModel extends AbstractViewModel {
     return `${totalLoad}/${totalCapacity}`;
   }
 
-  render () {
-    this.fetchPageData().then(() => {
+  renderPageTemplateHeader() {
+    if (this.isOwnProfile) {
+      MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
-      const editUsernameBtn = this.renderEditUsernameBtnHTML();
+      MenuPage.setPageTemplateHeaderBtn('Profile', true, () => {
+        MenuPage.router.goto('Account', 'index');
+      });
+    } else {
+      MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
 
-      if (this.isOwnProfile) {
-        MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
+      MenuPage.setPageTemplateHeaderBtn('Guild Profile', true, () => {
+        MenuPage.router.back();
+      });
+    }
+  }
 
-        MenuPage.setPageTemplateHeaderBtn('Profile', true, () => {
-          MenuPage.router.goto('Account', 'index');
-        });
-      } else {
-        MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
+  renderSkeleton() {
+    this.renderPageTemplateHeader();
 
-        MenuPage.setPageTemplateHeaderBtn('Guild Profile', true, () => {
-          MenuPage.router.back();
-        });
-      }
+    MenuPage.setPageTemplateContent(`
+      <div class="login-activating-device-layout">
+        <img src="/img/loading-3-dots.gif" class="loading-3-dots" alt="3 dots loading animation"/>
+      </div>
+    `);
 
-      MenuPage.setPageTemplateContent(`
+    MenuPage.hideAndClearDialoguePanel();
+  }
+
+  renderContent() {
+    const editUsernameBtn = this.renderEditUsernameBtnHTML();
+
+    this.renderPageTemplateHeader();
+
+    MenuPage.setPageTemplateContent(`
         <div class="profile-layout">
           <div class="profile-header">
             <div class="profile-header-image-container">
@@ -308,10 +334,15 @@ export class AccountProfileViewModel extends AbstractViewModel {
         </div>
       `);
 
-      MenuPage.hideAndClearDialoguePanel();
+    MenuPage.hideAndClearDialoguePanel();
 
-      this.initPageCode();
+    this.initPageCode();
+  }
 
+  render () {
+    this.renderSkeleton();
+    this.fetchPageData().then(() => {
+      this.renderContent();
     });
   }
 }
