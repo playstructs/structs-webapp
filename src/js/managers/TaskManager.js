@@ -550,11 +550,22 @@ export class TaskManager {
      * @return {TaskProcess|null}
      */
     getBuildProcessByStructId(structId) {
+        return this.getProcessByStructIdAndType(structId, TASK_TYPES.BUILD);
+    }
+
+    /**
+     * Searches for a process associated with a given struct ID and task type.
+     *
+     * @param {string} structId
+     * @param {string} taskType see TASK_TYPES
+     * @return {TaskProcess|null}
+     */
+    getProcessByStructIdAndType(structId, taskType) {
         for (const pid of Object.keys(this.processes)) {
             const process = this.processes[pid];
             const state = process.state;
             if (
-                state.task_type === TASK_TYPES.BUILD
+                state.task_type === taskType
                 && state.object_type === OBJECT_TYPES.STRUCT
                 && state.object_id === structId
             ) {

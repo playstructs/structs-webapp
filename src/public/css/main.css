@@ -522,6 +522,8 @@ a.sui-text-secondary:hover {
   width: 48px;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 2px;
 
   background-color: var(--border-neutral-dark);
   border: 2px solid var(--border-neutral-dark);
@@ -554,6 +556,20 @@ a.sui-text-secondary:hover {
 
 .struct-health-bar-segment.mod-filled {
   background-color: var(--struct-health-bar-health);
+}
+
+.struct-progress-bar {
+  display: flex;
+  width: 100%;
+  height: 2px;
+}
+
+.struct-progress-bar-fill {
+  display: flex;
+  width: 100%;
+  height: 2px;
+  flex-shrink: 0;
+  background: var(--struct-progress-bar-fill);
 }
 
 .map-tile-selection {

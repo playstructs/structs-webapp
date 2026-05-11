@@ -22,6 +22,7 @@ export class MapComponent extends AbstractViewModelComponent {
    * @param {GameState} gameState
    * @param {SigningClientManager} signingClientManager
    * @param {StructManager} structManager
+   * @param {TaskManager} taskManager
    * @param {string} containerId
    * @param {string} idPrefix
    * @param {boolean} enableTileSelectionLayer
@@ -30,6 +31,7 @@ export class MapComponent extends AbstractViewModelComponent {
     gameState,
     signingClientManager,
     structManager,
+    taskManager,
     containerId,
     idPrefix,
     enableTileSelectionLayer = true
@@ -40,6 +42,9 @@ export class MapComponent extends AbstractViewModelComponent {
     this.signingClientManager = signingClientManager;
 
     this.structManager = structManager;
+
+    /** @type {TaskManager} */
+    this.taskManager = taskManager;
 
     this.containerId = containerId;
 
@@ -232,6 +237,7 @@ export class MapComponent extends AbstractViewModelComponent {
     this.mapStructHUDLayer = new MapStructHUDLayerComponent(
       this.gameState,
       this.structManager,
+      this.taskManager,
       mapColBreakdown,
       this.planet,
       this.defender,
