@@ -129,16 +129,6 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
    * @param {Struct} struct
    * @return {string}
    */
-  renderIndicatorIsHidden(struct) {
-    return !struct.isDestroyed() && struct.isHidden()
-      ? `<i class="sui-icon sui-icon-sm sui-icon-stealth-mode"></i>`
-      : '';
-  }
-
-  /**
-   * @param {Struct} struct
-   * @return {string}
-   */
   renderIndicatorIsDestroyed(struct) {
     return struct.isDestroyed()
       ? `<i class="sui-icon sui-icon-sm sui-icon-destroyed"></i>`
@@ -166,7 +156,6 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
         ${this.renderIndicatorIsOffline(struct)}
         ${this.renderIndicatorIsDefended(struct)}
         ${this.renderIndicatorIsDefending(struct)}
-        ${this.renderIndicatorIsHidden(struct)}
       </div>
     `;
   }

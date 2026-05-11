@@ -8,6 +8,14 @@ export class SUIOffcanvas extends SUIFeature {
     this.offcanvasElm = null;
     this.placement = 'left';
     this.theme = 'player';
+
+    // Closes the offcanvas when a click occurs outside of it. Bound here so
+    // the same reference can be added/removed from the document listener.
+    this.handleOutsideClick = (e) => {
+      if (this.offcanvasElm && !this.offcanvasElm.contains(e.target)) {
+        this.close();
+      }
+    };
   }
 
   setPlacement(placement) {
@@ -24,10 +32,19 @@ export class SUIOffcanvas extends SUIFeature {
 
   open() {
     this.offcanvasElm.classList.remove('hidden');
+
+    // Defer attaching so the click that triggered open() does not bubble up
+    // to the document listener and immediately close the offcanvas. The
+    // browser de-duplicates identical (listener, options) pairs, so repeated
+    // open() calls remain safe.
+    setTimeout(() => {
+      document.addEventListener('click', this.handleOutsideClick);
+    }, 0);
   }
 
   close() {
     this.offcanvasElm.classList.add('hidden');
+    document.removeEventListener('click', this.handleOutsideClick);
   }
 
   setHeader(header) {

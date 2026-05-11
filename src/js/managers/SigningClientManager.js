@@ -147,8 +147,13 @@ export class SigningClientManager {
       this.lastBroadcastHeight = this.gameState.currentBlockHeight
       if (this.messageQueue.length > 0) {
 
-        let processMessageQueue = [...this.messageQueue];
+        /* Temporary Fix to prevent batching
+          let processMessageQueue = [...this.messageQueue];
+          this.messageQueue.splice(0,processMessageQueue.length);
+        */
+        let processMessageQueue = [this.messageQueue[0]];
         this.messageQueue.splice(0,processMessageQueue.length);
+
 
         console.debug('Running TransactQueue');
         console.info(processMessageQueue);

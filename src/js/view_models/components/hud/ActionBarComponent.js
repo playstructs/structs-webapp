@@ -679,9 +679,15 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           </div>
         </div>
 
-        <div class="sui-action-bar-btn-group">
-          ${actionButtons}
-        </div>
+        ${
+          actionButtons
+            ? `
+              <div class="sui-action-bar-btn-group">
+                ${actionButtons}
+              </div>
+            `
+            : ''
+        }
 
       </div>
     `;
