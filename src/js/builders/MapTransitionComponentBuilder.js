@@ -38,7 +38,8 @@ export class MapTransitionComponentBuilder extends AbstractViewModelComponent {
     }
 
     if (bottomAmbit === AMBITS.AIR) {
-      layers.push(this.transitionLayerFactory.make('map-transition-ornament-gundam'));
+      // Example of a transition ornament
+      // layers.push(this.transitionLayerFactory.make('map-transition-ornament-flying-pom'));
     }
 
     if (bottomAmbit === AMBITS.LAND) {
@@ -47,7 +48,6 @@ export class MapTransitionComponentBuilder extends AbstractViewModelComponent {
         mapColCount,
         MAP_NAMED_TRANSITIONS.HORIZON
       ));
-      layers.push(this.transitionLayerFactory.make('map-transition-ornament-bill-cipher'));
     }
 
     if (bottomAmbit) {

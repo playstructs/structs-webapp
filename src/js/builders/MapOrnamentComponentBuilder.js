@@ -98,21 +98,6 @@ export class MapOrnamentComponentBuilder {
     let top = 0;
 
     switch(ornamentName) {
-      case MAP_ORNAMENTS.ENTERPRISE:
-
-        height = this.calculateOrnamentAmbitHeight(ornamentAmbit);
-        top = this.calculateOrnamentAmbitTop(ornamentAmbit);
-
-        ornament = new MapOrnamentComponent(
-          this.gameState,
-          'map-ornament-enterprise',
-          width,
-          height,
-          top
-        );
-
-        break;
-
       case MAP_ORNAMENTS.SPACE_MONSTER:
 
         height = this.calculateOrnamentAmbitHeight(ornamentAmbit);
