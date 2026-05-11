@@ -69,7 +69,6 @@ export const
   },
 
   MAP_ORNAMENTS = {
-    ENTERPRISE: 'ENTERPRISE',
     SPACE_MONSTER: 'SPACE_MONSTER'
   },
 

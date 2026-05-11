@@ -340,8 +340,10 @@ export class AccountProfileViewModel extends AbstractViewModel {
   }
 
   render () {
+    const navAtRender = MenuPage.router.navigationId;
     this.renderSkeleton();
     this.fetchPageData().then(() => {
+      if (navAtRender !== MenuPage.router.navigationId) return;
       this.renderContent();
     });
   }
