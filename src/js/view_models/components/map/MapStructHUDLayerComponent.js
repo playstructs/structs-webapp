@@ -259,19 +259,23 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   renderStructHUD(tileElement, struct = null, healthOverride = null) {
     const shouldRender = struct && (!struct.isDestroyed() || struct.isBuilt());
 
-    if (shouldRender) {
-      tileElement.innerHTML = `
-        <div class="map-struct-hud-status-bars">
-          ${this.renderHealthBar(struct, healthOverride)}
-          ${this.renderProgressBar(struct)}
-        </div>      
-        ${this.renderStatusIndicators(struct)}
-      `;
-      tileElement.setAttribute('data-struct-id', struct.id);
-    } else {
+    if (!shouldRender) {
       tileElement.innerHTML = '';
       tileElement.setAttribute('data-struct-id', '');
+      return;
     }
+
+    const healthBarHTML = this.renderHealthBar(struct, healthOverride);
+    const progressBarHTML = this.renderProgressBar(struct);
+    const statusBarsHTML = (healthBarHTML || progressBarHTML)
+      ? `<div class="map-struct-hud-status-bars">${healthBarHTML}${progressBarHTML}</div>`
+      : '';
+
+    tileElement.innerHTML = `
+      ${statusBarsHTML}
+      ${this.renderStatusIndicators(struct)}
+    `;
+    tileElement.setAttribute('data-struct-id', struct.id);
   }
 
   /**
