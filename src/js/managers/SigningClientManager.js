@@ -218,7 +218,6 @@ export class SigningClientManager {
    * @param {string} playerId
    */
   async queueMsgPlanetExplore(playerId) {
-    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgPlanetExplore',
       value: MsgPlanetExplore.fromPartial({
@@ -267,7 +266,6 @@ export class SigningClientManager {
    * @param {string} destinationLocationId
    */
   async queueMsgFleetMove(fleetId, destinationLocationId) {
-    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, this.gameState.currentBlockHeight + 1);
     this.queue({
       typeUrl: '/structs.structs.MsgFleetMove',
       value: MsgFleetMove.fromPartial({

@@ -13,6 +13,13 @@ export class MenuPageRouter {
     this.lastOptions = {};
 
     this.mode = MENU_PAGE_ROUTER_MODES.DEFAULT;
+
+    /**
+     * Incremented on every navigation. Async work started during one navigation
+     * can compare a snapshot of this value against the current one to detect
+     * whether the user has since navigated away.
+     */
+    this.navigationId = 0;
   }
 
   registerController(controller) {
@@ -20,6 +27,8 @@ export class MenuPageRouter {
   }
 
   goto(controllerName, pageName, options = {}) {
+    this.navigationId++;
+
     if (this.mode !== MENU_PAGE_ROUTER_MODES.PREVIEW) {
       if (!(
         this.currentController === controllerName

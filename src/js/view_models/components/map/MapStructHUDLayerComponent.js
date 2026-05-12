@@ -1,6 +1,10 @@
 import {GenericMapLayerComponent} from "./GenericMapLayerComponent";
-import {Struct} from "../../../models/Struct"
+import {Struct} from "../../../models/Struct";
+import {StructType} from "../../../models/StructType";
 import {EVENTS} from "../../../constants/Events";
+import {OBJECT_TYPES} from "../../../constants/ObjectTypes";
+import {STRUCT_TYPES} from "../../../constants/StructConstants";
+import {TASK_TYPES} from "../../../constants/TaskTypes";
 
 
 export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
@@ -8,6 +12,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   /**
    * @param {GameState} gameState
    * @param {StructManager} structManager
+   * @param {TaskManager} taskManager
    * @param {string[]} mapColBreakdown
    * @param {Planet|null} planet
    * @param {Player|null} defender
@@ -20,6 +25,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   constructor(
     gameState,
     structManager,
+    taskManager,
     mapColBreakdown,
     planet,
     defender,
@@ -43,6 +49,9 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
       containerId,
       mapId
     );
+
+    /** @type {TaskManager} */
+    this.taskManager = taskManager;
 
     /** @type {Array<{event: string, handler: EventListener}>} */
     this.windowEventHandlers = [];
@@ -101,6 +110,74 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
     return `
       <div class="struct-health-bar">
         ${segments.join('')}
+      </div>
+    `;
+  }
+
+  /**
+   * Determines which task type's progress bar (if any) should be shown for the
+   * given struct in the HUD layer. Returns null when no progress bar applies.
+   *
+   * @param {Struct} struct
+   * @param {StructType} structType
+   * @return {string|null} a value from TASK_TYPES or null
+   */
+  getProgressBarTaskType(struct, structType) {
+    if (!struct || struct.isDestroyed()) {
+      return null;
+    }
+    if (!struct.isBuilt()) {
+      return TASK_TYPES.BUILD;
+    }
+    if (!struct.isOnline()) {
+      return null;
+    }
+    if (structType && structType.type === STRUCT_TYPES.ORE_EXTRACTOR) {
+      return TASK_TYPES.MINE;
+    }
+    if (structType && structType.type === STRUCT_TYPES.ORE_REFINERY) {
+      return TASK_TYPES.REFINE;
+    }
+    return null;
+  }
+
+  /**
+   * Clamp a fractional percent (0.0 - 1.0) and return it as a CSS percentage.
+   *
+   * @param {number} percent
+   * @return {string}
+   */
+  formatProgressPercent(percent) {
+    const clamped = Math.max(0, Math.min(1, percent || 0));
+    return `${clamped * 100}%`;
+  }
+
+  /**
+   * Render the struct progress bar HTML if applicable for the given struct.
+   *
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderProgressBar(struct) {
+    const structType = this.gameState.structTypes
+      ? this.gameState.structTypes.getStructTypeById(struct.type)
+      : null;
+    const taskType = this.getProgressBarTaskType(struct, structType);
+    if (!taskType) {
+      return '';
+    }
+
+    let percent = 0;
+    if (this.taskManager) {
+      const process = this.taskManager.getProcessByStructIdAndType(struct.id, taskType);
+      if (process) {
+        percent = this.taskManager.getProcessPercentCompleteEstimate(process.state.getPID());
+      }
+    }
+
+    return `
+      <div class="struct-progress-bar" data-task-type="${taskType}">
+        <div class="struct-progress-bar-fill" style="width: ${this.formatProgressPercent(percent)}"></div>
       </div>
     `;
   }
@@ -168,10 +245,13 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
    * value instead of struct.health (used to show partial state mid-attack-sequence)
    */
   renderStructHUD(tileElement, struct = null, healthOverride = null) {
-    if (struct && struct.isBuilt()) {
+    const shouldRender = struct && (!struct.isDestroyed() || struct.isBuilt());
+
+    if (shouldRender) {
       tileElement.innerHTML = `
         <div class="map-struct-hud-status-bars">
           ${this.renderHealthBar(struct, healthOverride)}
+          ${this.renderProgressBar(struct)}
         </div>      
         ${this.renderStatusIndicators(struct)}
       `;
@@ -212,10 +292,74 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * Update only the width of an already rendered progress bar fill for the
+   * given struct, without re-rendering the entire HUD tile. If the tile
+   * currently has no progress bar of the supplied taskType (e.g. the struct
+   * just transitioned from BUILD to MINE), fall back to a full HUD render
+   * so the correct bar appears.
+   *
+   * @param {string} structId
+   * @param {string} taskType see TASK_TYPES
+   * @param {number} percent fractional (0.0 - 1.0)
+   */
+  updateProgressBarFill(structId, taskType, percent) {
+    const tile = document.querySelector(
+      `#${this.mapId} .${this.tileClass}[data-struct-id="${structId}"]`
+    );
+    if (!tile) {
+      return;
+    }
+    const progressBar = tile.querySelector(`.struct-progress-bar[data-task-type="${taskType}"]`);
+    if (!progressBar) {
+      const struct = this.structManager.getStructById(structId);
+      if (struct) {
+        this.renderStructHUD(tile, struct);
+      }
+      return;
+    }
+    const fill = progressBar.querySelector('.struct-progress-bar-fill');
+    if (fill) {
+      fill.style.width = this.formatProgressPercent(percent);
+    }
+  }
+
+  /**
    * Initialize page code: set up event listeners for future expansion
    */
   initPageCode() {
     this.renderAllStructHUDs();
+
+    this.addWindowEventListener(EVENTS.TASK_STATE_CHANGED, (event) => {
+      if (
+        !event.state
+        || event.state.object_type !== OBJECT_TYPES.STRUCT
+      ) {
+        return;
+      }
+
+      const structId = event.state.object_id;
+      const struct = this.structManager.getStructById(structId);
+      if (!struct) {
+        return;
+      }
+
+      const structType = this.gameState.structTypes
+        ? this.gameState.structTypes.getStructTypeById(struct.type)
+        : null;
+      const expectedTaskType = this.getProgressBarTaskType(struct, structType);
+      if (!expectedTaskType) {
+        return;
+      }
+
+      // Use the manager's estimator (factors hashrate + block offset) so the
+      // live update matches the value used by renderProgressBar on the
+      // initial draw and avoids a visible jump on the first tick.
+      this.updateProgressBarFill(
+        structId,
+        expectedTaskType,
+        this.taskManager.getProcessPercentCompleteEstimate(event.state.getPID())
+      );
+    });
 
     this.addWindowEventListener(EVENTS.RENDER_STRUCT_HUD, (event) => {
       if (event.mapId !== this.mapId) {
