@@ -133,6 +133,18 @@ export class StructListener extends AbstractGrassListener {
         mapId
       );
       this.gameState.animationEventQueue.enqueue(animationEvent);
+
+    } else if (
+      (messageData.detail.status_old & STRUCT_STATUS_FLAGS.DESTROYED) === 0
+      && (messageData.detail.status & STRUCT_STATUS_FLAGS.DESTROYED) > 0
+    ) {
+      // The destroy animation enqueued by handleStructAttack drives the visual
+      // teardown, and DestroyedStructManager clears the tile after the sweep
+      // delay. Re-rendering the viewer here would destroy the receive-damage
+      // animations mid-flight (their 'complete' listeners die with the lottie
+      // instance), stalling the animation queue so the destroy animation never
+      // dequeues.
+      renderStruct = false;
     }
 
     this.structManager.refreshStruct(
