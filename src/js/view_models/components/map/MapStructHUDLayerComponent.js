@@ -3,6 +3,7 @@ import {Struct} from "../../../models/Struct";
 import {StructType} from "../../../models/StructType";
 import {EVENTS} from "../../../constants/Events";
 import {OBJECT_TYPES} from "../../../constants/ObjectTypes";
+import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {STRUCT_TYPES} from "../../../constants/StructConstants";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
 
@@ -118,12 +119,23 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
    * Determines which task type's progress bar (if any) should be shown for the
    * given struct in the HUD layer. Returns null when no progress bar applies.
    *
+   * Task progress is calculated locally on each player's machine against their
+   * own task state, so the bar would never advance for structs owned by other
+   * players. Restrict progress bars to structs owned by the current player.
+   *
    * @param {Struct} struct
    * @param {StructType} structType
    * @return {string|null} a value from TASK_TYPES or null
    */
   getProgressBarTaskType(struct, structType) {
     if (!struct || struct.isDestroyed()) {
+      return null;
+    }
+    const currentPlayerId = this.gameState.keyPlayers
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+      ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+      : null;
+    if (!currentPlayerId || struct.owner !== currentPlayerId) {
       return null;
     }
     if (!struct.isBuilt()) {
