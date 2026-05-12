@@ -37,7 +37,7 @@ export class LottieCustomPlayer {
     this.checkHasAnimations();
     for (let i = 0; i < this.animations.length; i++) {
       if (this.animations[i].animationName === animationName) {
-        this.animations[i].play();
+        this.animations[i].play().then();
         break;
       }
     }
