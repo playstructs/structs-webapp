@@ -39,6 +39,21 @@ class StatReadManager
     ];
 
     /**
+     * Family-two stat tables omit object_type, so they implicitly key on a single
+     * entity. The mapping is enforced at request time so callers receive a clear
+     * 400 instead of a silently empty result when they pass the wrong object_key.
+     *
+     * @var array<string, list<string>>
+     */
+    private const FAMILY_TWO_OBJECT_TYPES = [
+        'structs_load' => ['player'],
+        'connection_count' => ['substation'],
+        'connection_capacity' => ['substation'],
+        'struct_health' => ['struct'],
+        'struct_status' => ['struct'],
+    ];
+
+    /**
      * Longest-first prefixes so 10 / 11 win over 1.
      *
      * @var array<string, string>
@@ -160,8 +175,15 @@ class StatReadManager
 
         $isFamilyTwo = isset(self::FAMILY_TWO_TABLES[$metric]);
         if ($isFamilyTwo) {
-            if ($parsed['object_type'] !== 'struct') {
-                $responseContent->errors['object_key_invalid'] = 'This metric requires a struct object_key (5-{index})';
+            $allowed = self::FAMILY_TWO_OBJECT_TYPES[$metric] ?? [];
+            if (!in_array($parsed['object_type'], $allowed, true)) {
+                $expected = [];
+                foreach ($allowed as $type) {
+                    $prefix = array_search($type, self::OBJECT_TYPE_PREFIXES, true);
+                    $expected[] = $prefix === false ? $type : "{$type} ({$prefix}-{index})";
+                }
+                $hint = $expected === [] ? 'no object types are configured for this metric' : implode(' or ', $expected);
+                $responseContent->errors['object_key_invalid'] = "metric '{$metric}' requires object_key for {$hint}";
 
                 return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
             }

@@ -15,7 +15,7 @@ class WorkController extends AbstractController
     /**
      * @throws Exception
      */
-    #[Route('/api/work/all/page/{page}', name: 'api_work_list_all', methods: ['GET'])]
+    #[Route('/api/work/all/page/{page}', name: 'api_work_list_all', requirements: ['page' => '\d+'], methods: ['GET'])]
     public function workListAll(
         int $page,
         EntityManagerInterface $entityManager,
@@ -29,7 +29,7 @@ class WorkController extends AbstractController
     /**
      * @throws Exception
      */
-    #[Route('/api/work/guild/{guild_id}/page/{page}', name: 'api_work_list_by_guild', methods: ['GET'])]
+    #[Route('/api/work/guild/{guild_id}/page/{page}', name: 'api_work_list_by_guild', requirements: ['page' => '\d+'], methods: ['GET'])]
     public function workListByGuild(
         string $guild_id,
         int $page,

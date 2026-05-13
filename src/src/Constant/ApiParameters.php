@@ -10,6 +10,8 @@ class ApiParameters
 
     const string ATTRIBUTE_TYPE = 'attribute_type';
 
+    const string CATEGORY = 'category';
+
     const string CODE = 'code';
 
     const string CONTROLLER = 'controller';
@@ -17,6 +19,8 @@ class ApiParameters
     const string COUNT_ONLY = 'count_only';
 
     const string CREATOR = 'creator';
+
+    const string DEFENDING_STRUCT_ID = 'defending_struct_id';
 
     const string DELEGATOR_ADDRESS = 'delegator_address';
 
@@ -67,6 +71,8 @@ class ApiParameters
     const string PRIMARY_ADDRESS = 'primary_address';
 
     const string PRIMARY_REACTOR_ID = 'primary_reactor_id';
+
+    const string PROTECTED_STRUCT_ID = 'protected_struct_id';
 
     const string PROVIDER_ID = 'provider_id';
 

@@ -16,6 +16,9 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::SLUG)]
     public ?string $attribute_type = null;
 
+    #[Assert\Regex(RegexPattern::SLUG)]
+    public ?string $category = null;
+
     #[Assert\Regex(RegexPattern::CODE)]
     public ?string $code = null;
 
@@ -27,6 +30,9 @@ class ApiRequestParamsDto
 
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $creator = null;
+
+    #[Assert\Regex(RegexPattern::ID)]
+    public ?string $defending_struct_id = null;
 
     #[Assert\Regex(RegexPattern::ADDRESS)]
     public ?string $delegator_address = null;
@@ -105,6 +111,9 @@ class ApiRequestParamsDto
 
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $primary_reactor_id = null;
+
+    #[Assert\Regex(RegexPattern::ID)]
+    public ?string $protected_struct_id = null;
 
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $provider_id = null;
