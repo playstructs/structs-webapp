@@ -14,6 +14,9 @@ class RegexPattern
 
     public const string INT = '/^[0-9]+$/';
 
+    /** Composite game object id: type prefix + hyphen + numeric index (e.g. 5-123, 10-1) */
+    public const string OBJECT_KEY = '/^\d+-\d+$/';
+
     public const string PERMISSIONS = '/^[0-9]{1,8}$/';
 
     public const string PUBKEY = '/^[a-zA-Z0-9]+$/';
@@ -23,6 +26,9 @@ class RegexPattern
     public const string SEARCH_STRING_FILTER = '/[^\p{L}0-9-_]+/';
 
     public const string SIGNATURE = '/^[a-zA-Z0-9]+$/';
+
+    /** Alphanumeric, hyphen, underscore — attribute types, denoms, etc. */
+    public const string SLUG = '/^[a-zA-Z0-9_.-]+$/';
 
     public const string USERNAME = '/^[\p{L}0-9-_]{3,20}$/';
 }
