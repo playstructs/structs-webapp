@@ -630,6 +630,61 @@ a.sui-text-secondary:hover {
   width: 1152px;
 }
 
+.map-pip {
+  position: fixed;
+  top: calc(50vh - 64px);
+  width: var(--tile-width);
+  height: var(--tile-height);
+  z-index: var(--picture-in-picture-z-index);
+  display: none;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.map-pip.mod-visible {
+  display: block;
+}
+
+.map-pip.mod-side-left {
+  left: 26px;
+  border: 1px solid var(--border-focus-friendly-dark);
+}
+
+.map-pip.mod-side-right {
+  right: 26px;
+  border: 1px solid var(--border-focus-enemy-dark);
+}
+
+/*
+ * Terrain tiles and markers ship from their owning components with
+ * map-relative positioning (terrain has none, markers use inline top/left
+ * for absolute map coordinates). Inside the PIP we re-anchor them to (0,0)
+ * so the canonical class names still render correctly inside the 128x128
+ * box.
+ */
+.map-pip .map-terrain-tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.map-pip .map-marker {
+  top: 0 !important;
+  left: 0 !important;
+}
+
+.map-pip-struct {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--tile-width);
+  height: var(--tile-height);
+}
+
+.map-pip.mod-side-right .map-pip-struct {
+  transform: scaleX(-1);
+}
+
 .layer-0 {
   z-index: 0;
 }
@@ -2124,6 +2179,29 @@ a.offcanvas-struct-container.sui-mod-disabled {
 
 /* Media Queries Start */
 
+.map-pip {
+  position: fixed;
+  top: calc(50vh - 64px);
+  top: calc(50dvh - 64px);
+  width: var(--tile-width);
+  height: var(--tile-height);
+  z-index: var(--picture-in-picture-z-index);
+  display: none;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+
+.map-pip.mod-side-left {
+  left: 26px;
+  border: 1px solid var(--border-focus-friendly-dark);
+}
+
+.map-pip.mod-side-right {
+  right: 26px;
+  border: 1px solid var(--border-focus-enemy-dark);
+}
+
 @media only screen and (min-width: 1152px),
 only screen and (min-height: 1024px) {
   #menu-page-layout,
@@ -2134,7 +2212,8 @@ only screen and (min-height: 1024px) {
   #preview-map-container,
   #loading-screen,
   #sui-offcanvas,
-  #sui-cheatsheet-container {
+  #sui-cheatsheet-container,
+  .map-pip {
     transform: scale(2);
     transform-origin: 0 0;
   }
@@ -2144,7 +2223,8 @@ only screen and (min-height: 1024px) {
     transform-origin: bottom left;
   }
 
-  #sui-offcanvas.sui-mod-right {
+  #sui-offcanvas.sui-mod-right,
+  .map-pip.mod-side-right {
     transform-origin: top right;
   }
 
@@ -2164,6 +2244,20 @@ only screen and (min-height: 1024px) {
   #sui-offcanvas {
     height: 50vh;
     height: 50dvh;
+  }
+
+  .map-pip {
+    top: calc(50dvh - 128px);
+  }
+
+  .map-pip.mod-side-left {
+    left: 52px;
+    border-width: 2px;
+  }
+
+  .map-pip.mod-side-right {
+    right: 52px;
+    border-width: 2px;
   }
 }
 @media only screen and (min-width: 2304px),
@@ -2175,7 +2269,8 @@ only screen and (min-height: 2048px) {
   #raid-map-container,
   #preview-map-container,
   #loading-screen,
-  #sui-cheatsheet-container {
+  #sui-cheatsheet-container,
+  .map-pip {
     transform: scale(4);
     transform-origin: 0 0;
   }
@@ -2185,7 +2280,8 @@ only screen and (min-height: 2048px) {
     transform-origin: bottom left;
   }
 
-  #sui-offcanvas.sui-mod-right {
+  #sui-offcanvas.sui-mod-right,
+  .map-pip.mod-side-right {
     transform-origin: top right;
   }
 
@@ -2205,6 +2301,20 @@ only screen and (min-height: 2048px) {
   #sui-offcanvas {
     height: 25vh;
     height: 25dvh;
+  }
+
+  .map-pip {
+    top: calc(50dvh - 256px);
+  }
+
+  .map-pip.mod-side-left {
+    left: 104px;
+    border-width: 4px;
+  }
+
+  .map-pip.mod-side-right {
+    right: 104px;
+    border-width: 4px;
   }
 }
 

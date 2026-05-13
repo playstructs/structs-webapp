@@ -99,6 +99,33 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * Render a `MapStructViewerComponent` into a tile element and initialize
+   * its lottie players, optionally autoplaying a given animation.
+   *
+   * Shared by `renderStruct` (the on-map struct layer) and by the picture-in-
+   * picture component (whose internal struct slot also mounts a viewer).
+   * Centralizing it ensures any future change to the mount + init lifecycle
+   * only needs to happen in one place.
+   *
+   * @param {HTMLElement} tileElement
+   * @param {MapStructViewerComponent} viewer
+   * @param {AnimationEvent|null} animationToAutoplay
+   */
+  static mountStructViewerInTile(tileElement, viewer, animationToAutoplay = null) {
+    tileElement.innerHTML = viewer.renderHTML();
+    if (animationToAutoplay) {
+      viewer.init(
+        animationToAutoplay.animationNames,
+        animationToAutoplay.showStructStillDuringAnimation,
+        animationToAutoplay.showStructStillAfterAnimation,
+        animationToAutoplay.options
+      );
+    } else {
+      viewer.init();
+    }
+  }
+
+  /**
    * @param {HTMLElement} tileElement
    * @param {Struct} struct
    * @param {AnimationEvent} animationToAutoplay the animation to autoplay once the struct is rendered and ready to play animations
@@ -140,18 +167,12 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
         struct.type,
         this.mapId
       );
-      tileElement.innerHTML = this.mapStructViewers[struct.id].renderHTML();
+      MapStructLayerComponent.mountStructViewerInTile(
+        tileElement,
+        this.mapStructViewers[struct.id],
+        animationToAutoplay
+      );
       tileElement.setAttribute('data-struct-id', struct.id);
-      if (animationToAutoplay) {
-        this.mapStructViewers[struct.id].init(
-          animationToAutoplay.animationNames,
-          animationToAutoplay.showStructStillDuringAnimation,
-          animationToAutoplay.showStructStillAfterAnimation,
-          animationToAutoplay.options
-        );
-      } else {
-        this.mapStructViewers[struct.id].init();
-      }
     }
   }
 

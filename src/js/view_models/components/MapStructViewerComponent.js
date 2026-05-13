@@ -15,13 +15,29 @@ export class MapStructViewerComponent {
    * @param {number} structTypeId
    * @param {string|null} mapId the id of the map that owns this viewer; included on
    * dispatched AnimationEndEvents so listeners can filter by their own map
+   * @param {string} idPrefix prepended to every internal lottie/container element id.
+   * Lets multiple viewers (e.g. the on-map viewer and a picture-in-picture viewer)
+   * coexist for the same struct without `document.getElementById` collisions.
+   * @param {boolean} dispatchAnimationEnd whether the viewer should dispatch an
+   * `AnimationEndEvent` on lottie complete. Picture-in-picture / mirror viewers
+   * must pass `false` so they don't drive the global `AnimationEventQueue`.
    */
-  constructor(gameState, structManager, structId, structTypeId, mapId = null) {
+  constructor(
+    gameState,
+    structManager,
+    structId,
+    structTypeId,
+    mapId = null,
+    idPrefix = '',
+    dispatchAnimationEnd = true
+  ) {
     this.gameState = gameState;
     this.structManager = structManager;
     this.structId = structId;
     this.structTypeId = structTypeId;
     this.mapId = mapId;
+    this.idPrefix = idPrefix;
+    this.dispatchAnimationEnd = dispatchAnimationEnd;
     this.layerZIndex = 0;
 
     this.lottieCustomPlayer = new LottieCustomPlayer();
@@ -31,51 +47,51 @@ export class MapStructViewerComponent {
     this.showStructStillAfterAnimation = true;
     this.structType = this.gameState.structTypes.getStructTypeById(structTypeId);
 
-    this.deploymentSpaceAnimationContainerId = `deploymentSpaceAnimation-${this.structId}`;
-    this.deploymentAirAnimationContainerId = `deploymentAirAnimation-${this.structId}`;
-    this.deploymentLandAnimationContainerId = `deploymentLandAnimation-${this.structId}`;
-    this.deploymentWaterAnimationContainerId = `deploymentWaterAnimation-${this.structId}`;
+    this.deploymentSpaceAnimationContainerId = `${this.idPrefix}deploymentSpaceAnimation-${this.structId}`;
+    this.deploymentAirAnimationContainerId = `${this.idPrefix}deploymentAirAnimation-${this.structId}`;
+    this.deploymentLandAnimationContainerId = `${this.idPrefix}deploymentLandAnimation-${this.structId}`;
+    this.deploymentWaterAnimationContainerId = `${this.idPrefix}deploymentWaterAnimation-${this.structId}`;
 
-    this.moveArriveAnimationContainerId = `moveArriveAnimation-${this.structId}`;
-    this.moveDepartAnimationContainerId = `moveDepartAnimation-${this.structId}`;
+    this.moveArriveAnimationContainerId = `${this.idPrefix}moveArriveAnimation-${this.structId}`;
+    this.moveDepartAnimationContainerId = `${this.idPrefix}moveDepartAnimation-${this.structId}`;
 
-    this.stealthActivateAnimationContainerId = `stealthActivateAnimation-${this.structId}`;
-    this.stealthDeactivateAnimationContainerId = `stealthDeactivateAnimation-${this.structId}`;
+    this.stealthActivateAnimationContainerId = `${this.idPrefix}stealthActivateAnimation-${this.structId}`;
+    this.stealthDeactivateAnimationContainerId = `${this.idPrefix}stealthDeactivateAnimation-${this.structId}`;
 
-    this.impactAngledDownCannonAnimationContainerId = `impactAngledDownCannonAnimation-${this.structId}`;
-    this.impactAngledDownMissileAnimationContainerId = `impactAngledDownMissileAnimation-${this.structId}`;
-    this.impactAngledDownTorpedoAnimationContainerId = `impactAngledDownTorpedoAnimation-${this.structId}`;
-    this.impactAngledUpMissileAnimationContainerId = `impactAngledUpMissileAnimation-${this.structId}`;
-    this.impactAngledUpTorpedoAnimationContainerId = `impactAngledUpTorpedoAnimation-${this.structId}`;
-    this.impactAngledUpGatlingAnimationContainerId = `impactAngledUpGatlingAnimation-${this.structId}`;
-    this.impactAngledUpCannonAnimationContainerId = `impactAngledUpCannonAnimation-${this.structId}`;
-    this.impactHorizontalCannonAnimationContainerId = `impactHorizontalCannonAnimation-${this.structId}`;
-    this.impactHorizontalGatlingAnimationContainerId = `impactHorizontalGatlingAnimation-${this.structId}`;
-    this.impactHorizontalMissileAnimationContainerId = `impactHorizontalMissileAnimation-${this.structId}`;
-    this.impactHorizontalTorpedoAnimationContainerId = `impactHorizontalTorpedoAnimation-${this.structId}`;
+    this.impactAngledDownCannonAnimationContainerId = `${this.idPrefix}impactAngledDownCannonAnimation-${this.structId}`;
+    this.impactAngledDownMissileAnimationContainerId = `${this.idPrefix}impactAngledDownMissileAnimation-${this.structId}`;
+    this.impactAngledDownTorpedoAnimationContainerId = `${this.idPrefix}impactAngledDownTorpedoAnimation-${this.structId}`;
+    this.impactAngledUpMissileAnimationContainerId = `${this.idPrefix}impactAngledUpMissileAnimation-${this.structId}`;
+    this.impactAngledUpTorpedoAnimationContainerId = `${this.idPrefix}impactAngledUpTorpedoAnimation-${this.structId}`;
+    this.impactAngledUpGatlingAnimationContainerId = `${this.idPrefix}impactAngledUpGatlingAnimation-${this.structId}`;
+    this.impactAngledUpCannonAnimationContainerId = `${this.idPrefix}impactAngledUpCannonAnimation-${this.structId}`;
+    this.impactHorizontalCannonAnimationContainerId = `${this.idPrefix}impactHorizontalCannonAnimation-${this.structId}`;
+    this.impactHorizontalGatlingAnimationContainerId = `${this.idPrefix}impactHorizontalGatlingAnimation-${this.structId}`;
+    this.impactHorizontalMissileAnimationContainerId = `${this.idPrefix}impactHorizontalMissileAnimation-${this.structId}`;
+    this.impactHorizontalTorpedoAnimationContainerId = `${this.idPrefix}impactHorizontalTorpedoAnimation-${this.structId}`;
 
-    this.evadeAnimationContainerId = `evadeAnimation-${this.structId}`;
+    this.evadeAnimationContainerId = `${this.idPrefix}evadeAnimation-${this.structId}`;
 
-    this.shakeAngledDownDefaultFirstAnimationContainerId = `shakeAngledDownDefaultFirstAnimation-${this.structId}`;
-    this.shakeAngledDownDefaultLastAnimationContainerId = `shakeAngledDownDefaultLastAnimation-${this.structId}`;
-    this.shakeAngledUpDefaultFirstAnimationContainerId = `shakeAngledUpDefaultFirstAnimation-${this.structId}`;
-    this.shakeAngledUpDefaultLastAnimationContainerId = `shakeAngledUpDefaultLastAnimation-${this.structId}`;
-    this.shakeAngledUpGatlingFirstAnimationContainerId = `shakeAngledUpGatlingFirstAnimation-${this.structId}`;
-    this.shakeAngledUpGatlingLastAnimationContainerId = `shakeAngledUpGatlingLastAnimation-${this.structId}`;
-    this.shakeHorizontalDefaultFirstAnimationContainerId = `shakeHorizontalDefaultFirstAnimation-${this.structId}`;
-    this.shakeHorizontalDefaultLastAnimationContainerId = `shakeHorizontalDefaultLastAnimation-${this.structId}`;
-    this.shakeHorizontalGatlingFirstAnimationContainerId = `shakeHorizontalGatlingFirstAnimation-${this.structId}`;
-    this.shakeHorizontalGatlingLastAnimationContainerId = `shakeHorizontalGatlingLastAnimation-${this.structId}`;
+    this.shakeAngledDownDefaultFirstAnimationContainerId = `${this.idPrefix}shakeAngledDownDefaultFirstAnimation-${this.structId}`;
+    this.shakeAngledDownDefaultLastAnimationContainerId = `${this.idPrefix}shakeAngledDownDefaultLastAnimation-${this.structId}`;
+    this.shakeAngledUpDefaultFirstAnimationContainerId = `${this.idPrefix}shakeAngledUpDefaultFirstAnimation-${this.structId}`;
+    this.shakeAngledUpDefaultLastAnimationContainerId = `${this.idPrefix}shakeAngledUpDefaultLastAnimation-${this.structId}`;
+    this.shakeAngledUpGatlingFirstAnimationContainerId = `${this.idPrefix}shakeAngledUpGatlingFirstAnimation-${this.structId}`;
+    this.shakeAngledUpGatlingLastAnimationContainerId = `${this.idPrefix}shakeAngledUpGatlingLastAnimation-${this.structId}`;
+    this.shakeHorizontalDefaultFirstAnimationContainerId = `${this.idPrefix}shakeHorizontalDefaultFirstAnimation-${this.structId}`;
+    this.shakeHorizontalDefaultLastAnimationContainerId = `${this.idPrefix}shakeHorizontalDefaultLastAnimation-${this.structId}`;
+    this.shakeHorizontalGatlingFirstAnimationContainerId = `${this.idPrefix}shakeHorizontalGatlingFirstAnimation-${this.structId}`;
+    this.shakeHorizontalGatlingLastAnimationContainerId = `${this.idPrefix}shakeHorizontalGatlingLastAnimation-${this.structId}`;
 
-    this.destroySpaceAnimationContainerId = `destroySpaceAnimation-${this.structId}`;
-    this.destroyAirAnimationContainerId = `destroyAirAnimation-${this.structId}`;
-    this.destroyLandAnimationContainerId = `destroyLandAnimation-${this.structId}`;
-    this.destroyWaterAnimationContainerId = `destroyWaterAnimation-${this.structId}`;
+    this.destroySpaceAnimationContainerId = `${this.idPrefix}destroySpaceAnimation-${this.structId}`;
+    this.destroyAirAnimationContainerId = `${this.idPrefix}destroyAirAnimation-${this.structId}`;
+    this.destroyLandAnimationContainerId = `${this.idPrefix}destroyLandAnimation-${this.structId}`;
+    this.destroyWaterAnimationContainerId = `${this.idPrefix}destroyWaterAnimation-${this.structId}`;
 
-    this.attackPrimaryWeaponAnimationContainerId = `attackPrimaryWeaponAnimation-${this.structId}`;
-    this.attackSecondaryWeaponAnimationContainerId = `attackSecondaryWeaponAnimation-${this.structId}`;
+    this.attackPrimaryWeaponAnimationContainerId = `${this.idPrefix}attackPrimaryWeaponAnimation-${this.structId}`;
+    this.attackSecondaryWeaponAnimationContainerId = `${this.idPrefix}attackSecondaryWeaponAnimation-${this.structId}`;
 
-    this.structStillContainerId = `structStill-${this.structId}`;
+    this.structStillContainerId = `${this.idPrefix}structStill-${this.structId}`;
   }
 
   getLayerZIndex() {
@@ -214,12 +230,14 @@ export class MapStructViewerComponent {
           if (this.showStructStillAfterAnimation) {
             this.showStructStill();
           }
-          window.dispatchEvent(new AnimationEndEvent(
-            animationName,
-            this.structId,
-            this.mapId,
-            healthAfter
-          ));
+          if (this.dispatchAnimationEnd) {
+            window.dispatchEvent(new AnimationEndEvent(
+              animationName,
+              this.structId,
+              this.mapId,
+              healthAfter
+            ));
+          }
         }
       };
     }
