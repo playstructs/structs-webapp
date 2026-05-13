@@ -84,11 +84,19 @@ export class MapStructViewerComponent {
   }
 
   hideStructStill() {
-    document.getElementById(this.structStillContainerId).classList.add('invisible');
+    const structStillContainer = document.getElementById(this.structStillContainerId);
+    if (!structStillContainer) {
+      return;
+    }
+    structStillContainer.classList.add('invisible');
   }
 
   showStructStill() {
-    document.getElementById(this.structStillContainerId).classList.remove('invisible');
+    const structStillContainer = document.getElementById(this.structStillContainerId);
+    if (!structStillContainer) {
+      return;
+    }
+    structStillContainer.classList.remove('invisible');
   }
 
   /**

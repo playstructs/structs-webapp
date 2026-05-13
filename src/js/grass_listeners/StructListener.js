@@ -72,9 +72,24 @@ export class StructListener extends AbstractGrassListener {
       return;
     }
 
+    // Skip the struct viewer re-render here: this handler only needs the
+    // refreshed struct snapshot to spawn the build progress task. The
+    // deployment indicator was already rendered client-side by
+    // DeployOffcanvas (own structs) or by the initial map sync, and the
+    // BUILT struct_status transition handled in handleStructStatus is what
+    // swaps the indicator out for the built viewer plus deployment animation.
+    // Letting refreshStruct re-render here lets the last block_build_start's
+    // RenderStructEvent race the BUILT transition's deployment animation -
+    // if the block event's API response lands while the animation is in
+    // flight, the struct viewer is torn down and the animation either never
+    // completes or completes against an orphaned wrapper, stalling the
+    // animation queue. RenderStructHUDEvent is still dispatched
+    // unconditionally inside refreshStruct so the build progress bar updates.
     this.structManager.refreshStruct(
       messageData.detail.struct_id,
-      this.gameState.keyPlayers[this.targetPlayerType].planetMapType
+      this.gameState.keyPlayers[this.targetPlayerType].planetMapType,
+      false,
+      false
     ).then((struct) => {
 
       if (struct && this.getOwnerPlayerType(struct.owner) === PLAYER_TYPES.PLAYER) {
@@ -133,6 +148,30 @@ export class StructListener extends AbstractGrassListener {
         mapId
       );
       this.gameState.animationEventQueue.enqueue(animationEvent);
+
+    } else if (
+      (messageData.detail.status_old & STRUCT_STATUS_FLAGS.DESTROYED) === 0
+      && (messageData.detail.status & STRUCT_STATUS_FLAGS.DESTROYED) > 0
+    ) {
+      // The destroy animation enqueued by handleStructAttack drives the visual
+      // teardown, and DestroyedStructManager clears the tile after the sweep
+      // delay. Re-rendering the viewer here would destroy the receive-damage
+      // animations mid-flight (their 'complete' listeners die with the lottie
+      // instance), stalling the animation queue so the destroy animation never
+      // dequeues.
+      renderStruct = false;
+
+    } else {
+      // Any other status transition (e.g. ONLINE/OFFLINE, LOCKED, STORED, or
+      // a follow-up status change emitted alongside a transition we already
+      // handled) doesn't change anything the struct still itself renders -
+      // those indicators live on the HUD layer which is still refreshed by
+      // the RenderStructHUDEvent dispatched unconditionally from refreshStruct.
+      // Re-rendering the struct viewer for these would tear down any in-flight
+      // animation triggered by a previously-matched transition (most notably
+      // the deployment animation autoplayed when BUILT was first set), leaving
+      // the viewer pointing at a wiped DOM and stalling the animation queue.
+      renderStruct = false;
     }
 
     this.structManager.refreshStruct(
