@@ -21,8 +21,8 @@ class StatReadController extends AbstractController
     #[Route(
         '/api/stat/{metric}/object/{object_key}/range/page/{page}',
         name: 'api_stat_range_by_object',
-        methods: ['GET'],
-        requirements: ['page' => '\d+']
+        requirements: ['page' => '\d+'],
+        methods: ['GET']
     )]
     public function statRangeByObject(
         Request $request,
