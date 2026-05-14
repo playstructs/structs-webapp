@@ -13,6 +13,7 @@ import {MAP_PERSPECTIVES} from "../../../constants/MapPerspectives";
 import {MapTileSelectionComponent} from "./MapTileSelectionComponent";
 import {MapStructLayerComponent} from "./MapStructLayerComponent";
 import {MapStructHUDLayerComponent} from "./MapStructHUDLayerComponent";
+import {MapPictureInPictureComponent} from "./MapPictureInPictureComponent";
 import {Planet} from "../../../models/Planet";
 import {Player} from "../../../models/Player";
 
@@ -60,6 +61,7 @@ export class MapComponent extends AbstractViewModelComponent {
     this.structHUDLayerId = `${this.idPrefix}-map-struct-hud-layer`;
     this.fogOfWarId = `${this.idPrefix}-map-fog-of-war`;
     this.tileSelectionId = `${this.idPrefix}-map-tile-selection`;
+    this.pictureInPictureId = `${this.idPrefix}-map-pip`;
 
     /** @type {Planet|null} */
     this.planet = null;
@@ -105,6 +107,9 @@ export class MapComponent extends AbstractViewModelComponent {
 
     /** @type {MapTileSelectionComponent|null} */
     this.mapTileSelection = null;
+
+    /** @type {MapPictureInPictureComponent|null} */
+    this.mapPictureInPicture = null;
   }
 
   /**
@@ -265,6 +270,19 @@ export class MapComponent extends AbstractViewModelComponent {
       );
 
     }
+
+    this.mapPictureInPicture = new MapPictureInPictureComponent(
+      this.gameState,
+      this.structManager,
+      this.tileClassNameUtil,
+      this.mapTileMarkers,
+      mapColBreakdown,
+      this.planet,
+      this.mapId,
+      this.structLayerId,
+      this.pictureInPictureId,
+      this.idPrefix
+    );
   }
 
   /**
@@ -296,9 +314,27 @@ export class MapComponent extends AbstractViewModelComponent {
     }
   }
 
+  /**
+   * Tear down the PIP component (its window listeners and lottie players) and
+   * remove its DOM element. The PIP is rendered at `document.body` level so
+   * it is not wiped out by `${this.containerId}.innerHTML = ...` and must be
+   * cleaned up explicitly across re-renders.
+   */
+  destroyMapPictureInPicture() {
+    if (this.mapPictureInPicture) {
+      this.mapPictureInPicture.destroy();
+      this.mapPictureInPicture = null;
+    }
+    const existing = document.getElementById(this.pictureInPictureId);
+    if (existing && existing.parentNode) {
+      existing.parentNode.removeChild(existing);
+    }
+  }
+
   render() {
     this.destroyMapStructLayer();
     this.destroyMapStructHUDLayer();
+    this.destroyMapPictureInPicture();
 
     document.getElementById(this.containerId).innerHTML = this.renderHTML();
 
@@ -326,8 +362,14 @@ export class MapComponent extends AbstractViewModelComponent {
       document.getElementById(this.tileSelectionId).innerHTML = this.mapTileSelection.renderHTML();
       this.mapTileSelection.initPageCode();
     }
-    
+
+    // The PIP must live outside the (transform-scaled) `.map-container` so it
+    // can be `position: fixed` against the browser viewport. Append it as a
+    // direct child of <body>; destroyMapPictureInPicture() cleans it up.
+    document.body.insertAdjacentHTML('beforeend', this.mapPictureInPicture.renderHTML());
+
     this.mapStructLayer.initPageCode();
     this.mapStructHUDLayer.initPageCode();
+    this.mapPictureInPicture.initPageCode();
   }
 }

@@ -171,4 +171,36 @@ export class MapTileMarkersComponent extends AbstractViewModelComponent {
 
     return `<div class="map-marker ${className}" style="top: ${pos.y}px; left: ${pos.x}px"></div>`;
   }
+
+  /**
+   * Resolve the marker HTML (or null) for a single ambit cell.
+   *
+   * The marker decision in `processCell` depends on a slot tracker that is
+   * consumed left-to-right (or right-to-left) and top-to-bottom across the
+   * ambit, so determining the marker for one cell requires replaying that
+   * walk from (0, 0) up to and including the target cell. This method
+   * encapsulates that replay using `createSlotTracker`, `getColumnIndices`,
+   * and `processCell` directly so callers (e.g. the picture-in-picture
+   * component) don't duplicate marker logic.
+   *
+   * @param {string} targetAmbit
+   * @param {int} targetRow
+   * @param {int} targetCol
+   * @return {string|null} marker HTML for the target cell, or null
+   */
+  getCellMarker(targetAmbit, targetRow, targetCol) {
+    const slotTracker = this.createSlotTracker(targetAmbit);
+    let cellMarker = null;
+
+    for (let r = 0; r < MAP_TILE_ROWS_PER_AMBIT; r++) {
+      for (const c of this.getColumnIndices()) {
+        const result = this.processCell(targetAmbit, r, c, slotTracker);
+        if (r === targetRow && c === targetCol) {
+          cellMarker = result;
+        }
+      }
+    }
+
+    return cellMarker;
+  }
 }

@@ -40,6 +40,8 @@
   --border: #5D7E90;
   --border-enemy: #440D3A;
   --border-enemy-dark: #222034;
+  --border-focus-enemy-dark: #C11F16;
+  --border-focus-friendly-dark: #2A9D9B;
   --border-neutral-dark: #000000;
   --border-player: #133546;
   --border-player-dark: #2E1F3E;
@@ -100,6 +102,7 @@
   --banner-z-index: 1250;
   --menu-page-z-index: 1000;
   --hud-z-index: 50;
+  --picture-in-picture-z-index: 30;
   --map-z-index: 10;
   --menu-z-index: 10;
   --menu-page-fill-background-z-index: -1; /* Relative to --menu-page-z-index */
