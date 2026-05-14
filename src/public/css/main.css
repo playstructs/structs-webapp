@@ -636,23 +636,41 @@ a.sui-text-secondary:hover {
   width: var(--tile-width);
   height: var(--tile-height);
   z-index: var(--picture-in-picture-z-index);
-  display: none;
+  display: block;
   overflow: hidden;
   box-sizing: border-box;
+  visibility: hidden;
+  transition: left 0.5s ease-in-out, right 0.5s ease-in-out;
 }
 
-.map-pip.mod-visible {
-  display: block;
-}
-
+/*
+ * Each side class anchors the PIP's "off-screen rest" position on that side.
+ * `mod-visible` is the on-screen anchor and only takes effect in combination
+ * with a side class. Sliding is driven by JS adding/removing `mod-visible`
+ * while the side class stays put (the side class is only swapped while the
+ * PIP is parked off-screen, so the `left`/`right` jumps that come from
+ * swapping sides are never visible).
+ */
 .map-pip.mod-side-left {
-  left: 26px;
+  visibility: visible;
+  left: -200px;
+  right: auto;
   border: 1px solid var(--border-focus-friendly-dark);
 }
 
 .map-pip.mod-side-right {
-  right: 26px;
+  visibility: visible;
+  left: auto;
+  right: -200px;
   border: 1px solid var(--border-focus-enemy-dark);
+}
+
+.map-pip.mod-side-left.mod-visible {
+  left: 26px;
+}
+
+.map-pip.mod-side-right.mod-visible {
+  right: 26px;
 }
 
 /*
@@ -2179,29 +2197,6 @@ a.offcanvas-struct-container.sui-mod-disabled {
 
 /* Media Queries Start */
 
-.map-pip {
-  position: fixed;
-  top: calc(50vh - 64px);
-  top: calc(50dvh - 64px);
-  width: var(--tile-width);
-  height: var(--tile-height);
-  z-index: var(--picture-in-picture-z-index);
-  display: none;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-
-.map-pip.mod-side-left {
-  left: 26px;
-  border: 1px solid var(--border-focus-friendly-dark);
-}
-
-.map-pip.mod-side-right {
-  right: 26px;
-  border: 1px solid var(--border-focus-enemy-dark);
-}
-
 @media only screen and (min-width: 1152px),
 only screen and (min-height: 1024px) {
   #menu-page-layout,
@@ -2251,13 +2246,21 @@ only screen and (min-height: 1024px) {
   }
 
   .map-pip.mod-side-left {
-    left: 52px;
+    left: -400px;
     border-width: 2px;
   }
 
   .map-pip.mod-side-right {
-    right: 52px;
+    right: -400px;
     border-width: 2px;
+  }
+
+  .map-pip.mod-side-left.mod-visible {
+    left: 52px;
+  }
+
+  .map-pip.mod-side-right.mod-visible {
+    right: 52px;
   }
 }
 @media only screen and (min-width: 2304px),
@@ -2308,13 +2311,21 @@ only screen and (min-height: 2048px) {
   }
 
   .map-pip.mod-side-left {
-    left: 104px;
+    left: -800px;
     border-width: 4px;
   }
 
   .map-pip.mod-side-right {
-    right: 104px;
+    right: -800px;
     border-width: 4px;
+  }
+
+  .map-pip.mod-side-left.mod-visible {
+    left: 104px;
+  }
+
+  .map-pip.mod-side-right.mod-visible {
+    right: 104px;
   }
 }
 

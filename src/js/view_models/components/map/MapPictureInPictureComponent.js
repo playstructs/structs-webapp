@@ -7,6 +7,15 @@ import {MapStructLayerComponent} from "./MapStructLayerComponent";
 import {AttackSequenceAnimationUtil} from "../../../util/AttackSequenceAnimationUtil";
 
 /**
+ * Upper-bound, in milliseconds, on how long to wait for a slide-out
+ * `transitionend` before forcing the post-slide-out work to proceed. The CSS
+ * transition is 500ms; the extra buffer covers timing jitter and the cases
+ * where `transitionend` doesn't fire (e.g. when transitioning to/from `auto`,
+ * or when another class change cancels the in-flight transition).
+ */
+const SLIDE_OUT_FALLBACK_MS = 750;
+
+/**
  * A 128x128 picture-in-picture overlay that mirrors the currently-animating
  * attack-sequence struct when its tile is fully off-screen.
  *
@@ -103,6 +112,32 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
      */
     this.pendingHide = false;
 
+    /**
+     * Render request that will be applied after the current PIP has slid
+     * out. Used to sequence "slide current struct out -> swap contents ->
+     * slide new struct in" when an attack-sequence event targets a struct
+     * other than the one the PIP is currently mirroring.
+     *
+     * @type {{structId: string, tileElement: HTMLElement, animationEvent: AnimationEvent}|null}
+     */
+    this.pendingRender = null;
+
+    /**
+     * `transitionend` handler attached to the PIP container while a
+     * slide-out is in flight. Tracked so it can be removed exactly once.
+     *
+     * @type {EventListener|null}
+     */
+    this.slideOutHandler = null;
+
+    /**
+     * Fallback `setTimeout` id ensuring slide-out post-work runs even if
+     * `transitionend` is skipped or cancelled.
+     *
+     * @type {number|null}
+     */
+    this.slideOutTimeout = null;
+
     /** @type {Array<{target: EventTarget, event: string, handler: EventListener}>} */
     this.windowEventHandlers = [];
   }
@@ -197,9 +232,11 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
   /**
    * Tear down the currently-rendered struct viewer (if any) and clear all PIP
    * markup. Used when transitioning to a new active struct or when destroying
-   * the PIP entirely.
+   * the PIP entirely. Always called only once the PIP is already parked
+   * off-screen (so the cleanup doesn't visibly snap the element).
    */
   clearPipContents() {
+    this.detachSlideOutListener();
     if (this.activeViewer) {
       this.activeViewer.onAnimationsComplete = null;
       this.activeViewer.destroy();
@@ -213,30 +250,162 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
     this.activeStructId = null;
     this.viewerActive = false;
     this.pendingHide = false;
+    this.pendingRender = null;
   }
 
   /**
-   * The PIP viewer's lottie animation reached its final frame. If a hide has
-   * been requested in the meantime (queue empty / next event non-attack), tear
-   * the PIP down now.
+   * The PIP viewer's lottie animation reached its final frame. If a swap or
+   * hide is pending, this is the moment to begin the slide-out: it keeps the
+   * exit visually anchored to "the end of the animation" rather than to "the
+   * moment the next attack-sequence event was dispatched" (which can happen
+   * mid-animation when the on-map and PIP viewers are out of sync).
    */
   handleViewerAnimationsComplete() {
     this.viewerActive = false;
-    if (this.pendingHide) {
-      this.clearPipContents();
+    if (this.pendingHide || this.pendingRender) {
+      this.beginSlideOut();
     }
   }
 
   /**
-   * Mark the PIP for hide. If the viewer is mid-animation, the actual hide
-   * is deferred until `handleViewerAnimationsComplete` fires; otherwise we
-   * hide immediately.
+   * Mark the PIP for hide. If the viewer is still mid-animation, the
+   * slide-out is deferred until `handleViewerAnimationsComplete` fires.
+   * Otherwise the slide-out begins immediately and `clearPipContents` runs
+   * when the CSS transition completes.
    */
   requestHide() {
     this.pendingHide = true;
-    if (!this.viewerActive) {
-      this.clearPipContents();
+    this.pendingRender = null;
+    if (this.viewerActive) {
+      return;
     }
+    this.beginSlideOut();
+  }
+
+  /**
+   * Begin sliding the PIP out of the viewport by removing `mod-visible`,
+   * which lets the CSS transition the active side anchor back to its
+   * off-screen rest position. The completion handler runs from
+   * `transitionend` (or the fallback timer) and decides whether to clear
+   * the PIP or render the pending struct.
+   */
+  beginSlideOut() {
+    const container = this.getContainer();
+    if (!container) {
+      this.handleSlideOutComplete();
+      return;
+    }
+    if (this.slideOutHandler) {
+      // A slide-out is already in flight; its completion handler will pick
+      // up the latest `pendingHide` / `pendingRender` state.
+      return;
+    }
+    if (!container.classList.contains('mod-visible')) {
+      // PIP is already off-screen (e.g. the user scrolled the active
+      // struct's tile back into view, or the PIP never became visible),
+      // so no transition will fire. Skip straight to the post-work.
+      this.handleSlideOutComplete();
+      return;
+    }
+    this.attachSlideOutListener(container);
+    container.classList.remove('mod-visible');
+  }
+
+  /**
+   * Attach a one-shot `transitionend` listener to the PIP container plus a
+   * fallback `setTimeout`. Whichever fires first wins; the other is cleared
+   * in `detachSlideOutListener`.
+   *
+   * @param {HTMLElement} container
+   */
+  attachSlideOutListener(container) {
+    this.detachSlideOutListener();
+
+    const handler = (e) => {
+      // Ignore bubbled transitions from child elements and from properties
+      // other than the slide axes; only `left`/`right` move the PIP.
+      if (e.target !== container) {
+        return;
+      }
+      if (e.propertyName !== 'left' && e.propertyName !== 'right') {
+        return;
+      }
+      this.detachSlideOutListener();
+      this.handleSlideOutComplete();
+    };
+    this.slideOutHandler = handler;
+    container.addEventListener('transitionend', handler);
+
+    this.slideOutTimeout = setTimeout(() => {
+      if (this.slideOutHandler) {
+        this.detachSlideOutListener();
+        this.handleSlideOutComplete();
+      }
+    }, SLIDE_OUT_FALLBACK_MS);
+  }
+
+  detachSlideOutListener() {
+    const container = this.getContainer();
+    if (container && this.slideOutHandler) {
+      container.removeEventListener('transitionend', this.slideOutHandler);
+    }
+    this.slideOutHandler = null;
+    if (this.slideOutTimeout !== null) {
+      clearTimeout(this.slideOutTimeout);
+      this.slideOutTimeout = null;
+    }
+  }
+
+  /**
+   * Slide-out has finished. Apply whichever post-work the current state
+   * implies: clear (hide pending) or render-then-slide-in (swap pending).
+   * If both are set the hide wins, matching the user-facing semantics that
+   * "no continuation" always trumps a queued swap.
+   */
+  handleSlideOutComplete() {
+    if (this.pendingHide) {
+      this.pendingHide = false;
+      this.pendingRender = null;
+      this.clearPipContents();
+      return;
+    }
+    if (this.pendingRender) {
+      const next = this.pendingRender;
+      this.pendingRender = null;
+      const rendered = this.renderForStruct(
+        next.structId,
+        next.tileElement,
+        next.animationEvent
+      );
+      if (rendered) {
+        this.slideIn();
+      } else {
+        this.clearPipContents();
+      }
+    }
+  }
+
+  /**
+   * Force a layout flush so the browser commits the (just-swapped) side
+   * class's off-screen anchor before `mod-visible` is added, then delegate
+   * to `updateVisibility` to add `mod-visible` if (and only if) the active
+   * struct's tile is fully off the user's viewport.
+   *
+   * Without the reflow, the browser would batch the side-class swap with
+   * the subsequent `mod-visible` add, see only the final on-screen anchor,
+   * and skip the slide-in transition entirely.
+   */
+  slideIn() {
+    const container = this.getContainer();
+    if (!container) {
+      return;
+    }
+    // Reading `offsetWidth` forces a synchronous layout, committing the
+    // off-screen state established by `renderForStruct` so the subsequent
+    // `mod-visible` add actually animates `left`/`right`.
+    // eslint-disable-next-line no-unused-expressions
+    container.offsetWidth;
+    this.updateVisibility();
   }
 
   /**
@@ -315,8 +484,14 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
   /**
    * Update the PIP's visibility class based on whether the active struct's
    * tile is fully off-screen. Called on animation events, scroll, and resize.
+   *
+   * Skipped while a slide-out for a pending swap or hide is in progress so
+   * the in-flight transition isn't clobbered by an unrelated scroll/resize.
    */
   updateVisibility() {
+    if (this.pendingRender || this.pendingHide) {
+      return;
+    }
     const container = this.getContainer();
     if (!container) {
       return;
@@ -336,12 +511,15 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
   /**
    * Handle an incoming `EVENTS.ANIMATION` event:
    *  - ignore events for other maps
-   *  - if the animation is part of an attack sequence: re-render the PIP for
-   *    the event's struct, replay the animation in muted mode, and update
-   *    visibility
-   *  - if the animation is not part of an attack sequence: the attack
-   *    sequence has ended on our map, so request a hide (deferred until the
-   *    PIP's current animation finishes playing)
+   *  - non-attack-sequence: request the PIP slide out and clear
+   *  - empty PIP: render the new struct and slide it in
+   *  - same struct (e.g. counter-attack chaining additional animations on
+   *    the struct the PIP is already mirroring): re-render contents in
+   *    place; the PIP stays on its current side and visibility is unchanged
+   *  - different struct: queue the new render and slide the current struct
+   *    out first; the new render and slide-in happen in
+   *    `handleSlideOutComplete` once the transition (and, if it was still
+   *    playing, the PIP's current animation) has finished
    *
    * @param {AnimationEvent|Event} event
    */
@@ -355,7 +533,7 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
     }
 
     if (!AttackSequenceAnimationUtil.includesAttackSequenceAnimation(event.animationNames || [])) {
-      if (this.activeStructId) {
+      if (this.activeStructId || this.pendingRender) {
         this.requestHide();
       }
       return;
@@ -366,18 +544,38 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
       return;
     }
 
-    const rendered = this.renderForStruct(event.structId, tileElement, event);
-    if (!rendered) {
+    if (!this.activeStructId) {
+      const rendered = this.renderForStruct(event.structId, tileElement, event);
+      if (rendered) {
+        this.slideIn();
+      }
       return;
     }
 
-    this.updateVisibility();
+    if (this.activeStructId === event.structId) {
+      this.renderForStruct(event.structId, tileElement, event);
+      return;
+    }
+
+    this.pendingRender = {
+      structId: event.structId,
+      tileElement: tileElement,
+      animationEvent: event,
+    };
+    this.pendingHide = false;
+    if (this.viewerActive) {
+      // Wait for the PIP's current animation to finish first;
+      // `handleViewerAnimationsComplete` will kick off the slide-out.
+      return;
+    }
+    this.beginSlideOut();
   }
 
   /**
    * The global `AnimationEventQueue` just transitioned to idle. If the PIP
    * is still tracking a struct, request a hide; the actual hide is deferred
-   * until the PIP's current animation finishes playing.
+   * until the PIP's current animation finishes playing and then a slide-out
+   * is performed.
    */
   handleAnimationQueueEmpty() {
     if (this.activeStructId) {
@@ -410,6 +608,7 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
    * `MapComponent` can decide whether to remove it.
    */
   destroy() {
+    this.detachSlideOutListener();
     for (let i = 0; i < this.windowEventHandlers.length; i++) {
       const {target, event, handler} = this.windowEventHandlers[i];
       target.removeEventListener(event, handler);
