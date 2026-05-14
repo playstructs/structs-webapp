@@ -453,9 +453,15 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
     const markerHTML = this.mapTileMarkers.getCellMarker(ambit, tilePos.rowIndex, tilePos.colIndex) || '';
 
     container.innerHTML = `
-      ${terrainTileHTML}
-      ${markerHTML}
-      <div class="map-pip-struct"></div>
+      <div class="map-pip-focus"></div>
+      <div class="map-pip-mask">
+        ${terrainTileHTML}
+        ${markerHTML}
+        <div class="map-pip-struct"></div>
+      </div>
+      <div class="map-pip-caret-container">
+        <div class="map-pip-caret"></div>
+      </div>
     `;
     container.classList.remove('mod-side-left', 'mod-side-right');
     container.classList.add(side === 'right' ? 'mod-side-right' : 'mod-side-left');

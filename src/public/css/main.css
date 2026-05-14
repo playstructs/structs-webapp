@@ -637,8 +637,6 @@ a.sui-text-secondary:hover {
   height: var(--tile-height);
   z-index: var(--picture-in-picture-z-index);
   display: block;
-  overflow: hidden;
-  box-sizing: border-box;
   visibility: hidden;
   transition: left 0.5s ease-in-out, right 0.5s ease-in-out;
 }
@@ -655,14 +653,12 @@ a.sui-text-secondary:hover {
   visibility: visible;
   left: -200px;
   right: auto;
-  border: 1px solid var(--border-focus-friendly-dark);
 }
 
 .map-pip.mod-side-right {
   visibility: visible;
   left: auto;
   right: -200px;
-  border: 1px solid var(--border-focus-enemy-dark);
 }
 
 .map-pip.mod-side-left.mod-visible {
@@ -672,6 +668,76 @@ a.sui-text-secondary:hover {
 .map-pip.mod-side-right.mod-visible {
   right: 26px;
 }
+
+.map-pip-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  box-sizing: border-box;
+  width: 118px;
+  height: 118px;
+  border-radius: 8px 8px;
+  margin: 5px 5px;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-pip.mod-side-left .map-pip-mask {
+  border: 1px solid var(--border-focus-friendly-dark);
+}
+
+.map-pip.mod-side-right .map-pip-mask {
+  border: 1px solid var(--border-focus-enemy-dark);
+}
+
+.map-pip-focus {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  width: var(--tile-width);
+  height: var(--tile-height);
+}
+
+.map-pip.mod-side-left .map-pip-focus {
+  background: url("/img/focus/focus-friendly.png") no-repeat center;
+}
+
+.map-pip-caret-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-pip.mod-side-right .map-pip-focus {
+  background: url("/img/focus/focus-enemy.png") no-repeat center;
+}
+
+.map-pip-caret-container .map-pip-caret {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 36px;
+}
+
+.map-pip.mod-side-left .map-pip-caret-container .map-pip-caret {
+  left: -71px;
+  background: url("/img/focus/focus-caret-friendly.png") no-repeat center/cover;
+}
+
+.map-pip.mod-side-right .map-pip-caret-container .map-pip-caret {
+  left: 71px;
+  background: url("/img/focus/focus-caret-enemy.png") no-repeat center/cover;
+  transform: scaleX(-1);
+}
+
 
 /*
  * Terrain tiles and markers ship from their owning components with
