@@ -44,6 +44,17 @@ export class MapStructViewerComponent {
     this.caseConverter = new CaseConverter();
     this.structStillBuilder = new StructStillBuilder(this.gameState);
 
+    /**
+     * Optional hook invoked from `prepareAnimationLifecycle` after the last
+     * animation in a play/init cycle completes. Fires regardless of
+     * `dispatchAnimationEnd` so muted viewers (e.g. the picture-in-picture
+     * mirror) can still observe their own completion without driving the
+     * global `AnimationEventQueue`.
+     *
+     * @type {function(): void}
+     */
+    this.onAnimationsComplete = null;
+
     this.showStructStillAfterAnimation = true;
     this.structType = this.gameState.structTypes.getStructTypeById(structTypeId);
 
@@ -229,6 +240,9 @@ export class MapStructViewerComponent {
           this.updateStructStill(healthAfter);
           if (this.showStructStillAfterAnimation) {
             this.showStructStill();
+          }
+          if (typeof this.onAnimationsComplete === 'function') {
+            this.onAnimationsComplete();
           }
           if (this.dispatchAnimationEnd) {
             window.dispatchEvent(new AnimationEndEvent(

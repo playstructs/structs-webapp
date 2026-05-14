@@ -86,6 +86,23 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
     /** @type {MapStructViewerComponent|null} */
     this.activeViewer = null;
 
+    /**
+     * True while the PIP viewer's lottie animation is in flight.
+     * Flipped to false in `handleViewerAnimationsComplete`.
+     *
+     * @type {boolean}
+     */
+    this.viewerActive = false;
+
+    /**
+     * True when the attack sequence has produced a "no continuation" signal
+     * (queue empty or next event is not an attack-sequence animation) and we
+     * are waiting for the PIP's current animation to finish before hiding.
+     *
+     * @type {boolean}
+     */
+    this.pendingHide = false;
+
     /** @type {Array<{target: EventTarget, event: string, handler: EventListener}>} */
     this.windowEventHandlers = [];
   }
@@ -184,6 +201,7 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
    */
   clearPipContents() {
     if (this.activeViewer) {
+      this.activeViewer.onAnimationsComplete = null;
       this.activeViewer.destroy();
       this.activeViewer = null;
     }
@@ -193,6 +211,32 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
       container.classList.remove('mod-visible', 'mod-side-left', 'mod-side-right');
     }
     this.activeStructId = null;
+    this.viewerActive = false;
+    this.pendingHide = false;
+  }
+
+  /**
+   * The PIP viewer's lottie animation reached its final frame. If a hide has
+   * been requested in the meantime (queue empty / next event non-attack), tear
+   * the PIP down now.
+   */
+  handleViewerAnimationsComplete() {
+    this.viewerActive = false;
+    if (this.pendingHide) {
+      this.clearPipContents();
+    }
+  }
+
+  /**
+   * Mark the PIP for hide. If the viewer is mid-animation, the actual hide
+   * is deferred until `handleViewerAnimationsComplete` fires; otherwise we
+   * hide immediately.
+   */
+  requestHide() {
+    this.pendingHide = true;
+    if (!this.viewerActive) {
+      this.clearPipContents();
+    }
   }
 
   /**
@@ -229,6 +273,7 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
     }
 
     if (this.activeViewer) {
+      this.activeViewer.onAnimationsComplete = null;
       this.activeViewer.destroy();
       this.activeViewer = null;
     }
@@ -255,11 +300,14 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
       this.viewerIdPrefix,
       false
     );
+    this.activeViewer.onAnimationsComplete = () => this.handleViewerAnimationsComplete();
 
     const structSlot = container.querySelector('.map-pip-struct');
     MapStructLayerComponent.mountStructViewerInTile(structSlot, this.activeViewer, animationEvent);
 
     this.activeStructId = structId;
+    this.viewerActive = true;
+    this.pendingHide = false;
 
     return true;
   }
@@ -288,9 +336,12 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
   /**
    * Handle an incoming `EVENTS.ANIMATION` event:
    *  - ignore events for other maps
-   *  - ignore non-attack-sequence animations
-   *  - re-render the PIP for the event's struct, replay the animation in
-   *    muted mode, and update visibility
+   *  - if the animation is part of an attack sequence: re-render the PIP for
+   *    the event's struct, replay the animation in muted mode, and update
+   *    visibility
+   *  - if the animation is not part of an attack sequence: the attack
+   *    sequence has ended on our map, so request a hide (deferred until the
+   *    PIP's current animation finishes playing)
    *
    * @param {AnimationEvent|Event} event
    */
@@ -299,8 +350,14 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
       !event
       || !event.structId
       || (event.mapId && event.mapId !== this.mapId)
-      || !AttackSequenceAnimationUtil.includesAttackSequenceAnimation(event.animationNames || [])
     ) {
+      return;
+    }
+
+    if (!AttackSequenceAnimationUtil.includesAttackSequenceAnimation(event.animationNames || [])) {
+      if (this.activeStructId) {
+        this.requestHide();
+      }
       return;
     }
 
@@ -318,6 +375,17 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * The global `AnimationEventQueue` just transitioned to idle. If the PIP
+   * is still tracking a struct, request a hide; the actual hide is deferred
+   * until the PIP's current animation finishes playing.
+   */
+  handleAnimationQueueEmpty() {
+    if (this.activeStructId) {
+      this.requestHide();
+    }
+  }
+
+  /**
    * @param {string} eventName
    * @param {EventListener|function} handler
    * @param {EventTarget} target
@@ -329,6 +397,7 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
 
   initPageCode() {
     this.addEventListenerTracked(EVENTS.ANIMATION, (event) => this.handleAnimation(event));
+    this.addEventListenerTracked(EVENTS.ANIMATION_QUEUE_EMPTY, () => this.handleAnimationQueueEmpty());
 
     const visibilityHandler = () => this.updateVisibility();
     this.addEventListenerTracked('scroll', visibilityHandler, window);
