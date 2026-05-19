@@ -636,24 +636,108 @@ a.sui-text-secondary:hover {
   width: var(--tile-width);
   height: var(--tile-height);
   z-index: var(--picture-in-picture-z-index);
-  display: none;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.map-pip.mod-visible {
   display: block;
+  visibility: hidden;
+  transition: left 0.5s ease-in-out, right 0.5s ease-in-out;
 }
 
+/*
+ * Each side class anchors the PIP's "off-screen rest" position on that side.
+ * `mod-visible` is the on-screen anchor and only takes effect in combination
+ * with a side class. Sliding is driven by JS adding/removing `mod-visible`
+ * while the side class stays put (the side class is only swapped while the
+ * PIP is parked off-screen, so the `left`/`right` jumps that come from
+ * swapping sides are never visible).
+ */
 .map-pip.mod-side-left {
-  left: 26px;
-  border: 1px solid var(--border-focus-friendly-dark);
+  visibility: visible;
+  left: -200px;
+  right: auto;
 }
 
 .map-pip.mod-side-right {
+  visibility: visible;
+  left: auto;
+  right: -200px;
+}
+
+.map-pip.mod-side-left.mod-visible {
+  left: 26px;
+}
+
+.map-pip.mod-side-right.mod-visible {
   right: 26px;
+}
+
+.map-pip-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  box-sizing: border-box;
+  width: 118px;
+  height: 118px;
+  border-radius: 8px 8px;
+  margin: 5px 5px;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-pip.mod-side-left .map-pip-mask {
+  border: 1px solid var(--border-focus-friendly-dark);
+}
+
+.map-pip.mod-side-right .map-pip-mask {
   border: 1px solid var(--border-focus-enemy-dark);
 }
+
+.map-pip-focus {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  width: var(--tile-width);
+  height: var(--tile-height);
+}
+
+.map-pip.mod-side-left .map-pip-focus {
+  background: url("/img/focus/focus-friendly.png") no-repeat center;
+}
+
+.map-pip-caret-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-pip.mod-side-right .map-pip-focus {
+  background: url("/img/focus/focus-enemy.png") no-repeat center;
+}
+
+.map-pip-caret-container .map-pip-caret {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 36px;
+}
+
+.map-pip.mod-side-left .map-pip-caret-container .map-pip-caret {
+  left: -71px;
+  background: url("/img/focus/focus-caret-friendly.png") no-repeat center/cover;
+}
+
+.map-pip.mod-side-right .map-pip-caret-container .map-pip-caret {
+  left: 71px;
+  background: url("/img/focus/focus-caret-enemy.png") no-repeat center/cover;
+  transform: scaleX(-1);
+}
+
 
 /*
  * Terrain tiles and markers ship from their owning components with
@@ -2179,29 +2263,6 @@ a.offcanvas-struct-container.sui-mod-disabled {
 
 /* Media Queries Start */
 
-.map-pip {
-  position: fixed;
-  top: calc(50vh - 64px);
-  top: calc(50dvh - 64px);
-  width: var(--tile-width);
-  height: var(--tile-height);
-  z-index: var(--picture-in-picture-z-index);
-  display: none;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-
-.map-pip.mod-side-left {
-  left: 26px;
-  border: 1px solid var(--border-focus-friendly-dark);
-}
-
-.map-pip.mod-side-right {
-  right: 26px;
-  border: 1px solid var(--border-focus-enemy-dark);
-}
-
 @media only screen and (min-width: 1152px),
 only screen and (min-height: 1024px) {
   #menu-page-layout,
@@ -2251,13 +2312,21 @@ only screen and (min-height: 1024px) {
   }
 
   .map-pip.mod-side-left {
-    left: 52px;
+    left: -400px;
     border-width: 2px;
   }
 
   .map-pip.mod-side-right {
-    right: 52px;
+    right: -400px;
     border-width: 2px;
+  }
+
+  .map-pip.mod-side-left.mod-visible {
+    left: 52px;
+  }
+
+  .map-pip.mod-side-right.mod-visible {
+    right: 52px;
   }
 }
 @media only screen and (min-width: 2304px),
@@ -2308,13 +2377,21 @@ only screen and (min-height: 2048px) {
   }
 
   .map-pip.mod-side-left {
-    left: 104px;
+    left: -800px;
     border-width: 4px;
   }
 
   .map-pip.mod-side-right {
-    right: 104px;
+    right: -800px;
     border-width: 4px;
+  }
+
+  .map-pip.mod-side-left.mod-visible {
+    left: 104px;
+  }
+
+  .map-pip.mod-side-right.mod-visible {
+    right: 104px;
   }
 }
 
