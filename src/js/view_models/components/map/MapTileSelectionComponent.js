@@ -517,18 +517,25 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
   }
 
   /**
-   * Add the relevant focus cursor to a selected tile.
-   * Use this when you select a tile without an action engaged.
-   *
-   * @param {HTMLElement|object} tile
+   * Clear the focus cursor
    */
-  addFocusToSourceTile(tile) {
+  clearFocusCursor() {
     document.querySelectorAll('a.map-tile-selection-tile.focus-source').forEach(focusedTile => {
       focusedTile.classList.remove('focus-source');
       focusedTile.classList.remove('focus-friendly');
       focusedTile.classList.remove('focus-neutral');
       focusedTile.classList.remove('focus-enemy');
     });
+  }
+
+  /**
+   * Add the relevant focus cursor to a selected tile.
+   * Use this when you select a tile without an action engaged.
+   *
+   * @param {HTMLElement|object} tile
+   */
+  addFocusToSourceTile(tile) {
+    this.clearFocusCursor();
 
     tile.classList.add('focus-source');
 
@@ -786,6 +793,10 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
           event.structId
         );
       }
+    });
+
+    window.addEventListener(EVENTS.CLEAR_TILE_SELECTION, () => {
+      this.clearFocusCursor();
     });
 
     // Listen for SHOW_MOVE_TARGETS events

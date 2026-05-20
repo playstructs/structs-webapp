@@ -8,6 +8,9 @@ import {MenuPage} from "../framework/MenuPage";
 import {HUD_IDS} from "../constants/HUDConstants";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {MENU_PAGE_ROUTER_MODES} from "../constants/MenuPageRouterModes";
+import {ClearMoveTargetsEvent} from "../events/ClearMoveTargetsEvent";
+import {ClearAttackTargetsEvent} from "../events/ClearAttackTargetsEvent";
+import {ClearDefendTargetsEvent} from "../events/ClearDefendTargetsEvent";
 
 export class HUDViewModel extends AbstractViewModel {
 
@@ -180,6 +183,23 @@ export class HUDViewModel extends AbstractViewModel {
           );
         }
       }
+    });
+
+    window.addEventListener(EVENTS.CLEAR_TILE_SELECTION, () => {
+      HUDViewModel.hideActionBarActionChunks();
+      HUDViewModel.currentSelectedTile = null;
+
+      const mapIds = [
+        HUDViewModel.gameState.alphaBaseMap.mapId,
+        HUDViewModel.gameState.raidMap.mapId,
+      ];
+      mapIds.forEach((mapId) => {
+        window.dispatchEvent(new ClearMoveTargetsEvent(mapId));
+        window.dispatchEvent(new ClearAttackTargetsEvent(mapId));
+        window.dispatchEvent(new ClearDefendTargetsEvent(mapId));
+      });
+
+      HUDViewModel.gameState.actionBarLock.clear(false);
     });
   }
 
