@@ -44,6 +44,10 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
 
         this.mapManager.configureAlphaBaseMap()
         this.gameState.alphaBaseMap.render();
+
+        if (this.gameState.activeMapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE) {
+          this.mapManager.showHUDForMap(MAP_CONTAINER_IDS.ALPHA_BASE);
+        }
       });
     });
   }
