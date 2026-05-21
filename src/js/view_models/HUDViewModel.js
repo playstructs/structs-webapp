@@ -8,6 +8,9 @@ import {MenuPage} from "../framework/MenuPage";
 import {HUD_IDS} from "../constants/HUDConstants";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {MENU_PAGE_ROUTER_MODES} from "../constants/MenuPageRouterModes";
+import {ClearMoveTargetsEvent} from "../events/ClearMoveTargetsEvent";
+import {ClearAttackTargetsEvent} from "../events/ClearAttackTargetsEvent";
+import {ClearDefendTargetsEvent} from "../events/ClearDefendTargetsEvent";
 
 export class HUDViewModel extends AbstractViewModel {
 
@@ -181,6 +184,23 @@ export class HUDViewModel extends AbstractViewModel {
         }
       }
     });
+
+    window.addEventListener(EVENTS.CLEAR_TILE_SELECTION, () => {
+      HUDViewModel.hideActionBarActionChunks();
+      HUDViewModel.currentSelectedTile = null;
+
+      const mapIds = [
+        HUDViewModel.gameState.alphaBaseMap.mapId,
+        HUDViewModel.gameState.raidMap.mapId,
+      ];
+      mapIds.forEach((mapId) => {
+        window.dispatchEvent(new ClearMoveTargetsEvent(mapId));
+        window.dispatchEvent(new ClearAttackTargetsEvent(mapId));
+        window.dispatchEvent(new ClearDefendTargetsEvent(mapId));
+      });
+
+      HUDViewModel.gameState.actionBarLock.clear(false);
+    });
   }
 
   static render() {
@@ -220,6 +240,29 @@ export class HUDViewModel extends AbstractViewModel {
     HUDViewModel.bottomLeftActionBar.hideActionChunk();
     HUDViewModel.bottomRightActionBarAlphaBase.hideActionChunk();
     HUDViewModel.bottomRightActionBarRaid.hideActionChunk();
+  }
+
+  /**
+   * @param {HTMLElement} clickedDomElement
+   * @return {boolean}
+   */
+  static isCurrentSelectedTile(clickedDomElement) {
+    const current = HUDViewModel.currentSelectedTile;
+    if (!current) {
+      return false;
+    }
+
+    let slot = parseInt(clickedDomElement.dataset.slot, 10);
+    if (isNaN(slot)) {
+      slot = null;
+    }
+
+    return (
+      current.tileType === clickedDomElement.dataset.tileType
+      && current.ambit.toUpperCase() === clickedDomElement.dataset.ambit.toUpperCase()
+      && current.slot === slot
+      && current.playerId === clickedDomElement.dataset.playerId
+    );
   }
 
   /**

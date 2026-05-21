@@ -5,6 +5,7 @@ import {RAID_STATUS} from "../constants/RaidStatus";
 import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {ClearTileSelectionEvent} from "../events/ClearTileSelectionEvent";
 
 export class PlanetCardBuilder {
 
@@ -63,12 +64,14 @@ export class PlanetCardBuilder {
   showAlphaBaseMap() {
     this.gameState.setActiveMapContainerId(MAP_CONTAINER_IDS.ALPHA_BASE);
     this.mapManager.showMap(MAP_CONTAINER_IDS.ALPHA_BASE);
+    window.dispatchEvent(new ClearTileSelectionEvent());
     MenuPage.close();
   }
 
   showRaidMap() {
     this.gameState.setActiveMapContainerId(MAP_CONTAINER_IDS.RAID);
     this.mapManager.showMap(MAP_CONTAINER_IDS.RAID);
+    window.dispatchEvent(new ClearTileSelectionEvent());
     MenuPage.close();
   }
 
