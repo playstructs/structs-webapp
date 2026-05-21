@@ -832,6 +832,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    */
   isActionAvailable(struct, actionCharge = 0, isOnlineAction = true) {
     return (struct.isOnline() === isOnlineAction)
+      && !this.gameState.actionBarLock.isLocked()
       && struct.owner === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
       && (!actionCharge || actionCharge <= this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight));
   }

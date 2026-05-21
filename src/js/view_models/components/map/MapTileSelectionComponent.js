@@ -14,6 +14,7 @@ import {STRUCT_ACTIONS, STRUCT_WEAPON_SYSTEM} from "../../../constants/StructCon
 import {ClearMoveTargetsEvent} from "../../../events/ClearMoveTargetsEvent";
 import {ClearDefendTargetsEvent} from "../../../events/ClearDefendTargetsEvent";
 import {ClearAttackTargetsEvent} from "../../../events/ClearAttackTargetsEvent";
+import {ClearTileSelectionEvent} from "../../../events/ClearTileSelectionEvent";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {AmbitUtil} from "../../../util/AmbitUtil";
 
@@ -706,6 +707,18 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     container.querySelectorAll('a.map-tile-selection-tile').forEach(tile => {
       tile.addEventListener('click', async (e) => {
+        if (this.gameState.actionBarLock.isLocked()) {
+          return;
+        }
+
+        if (
+          !this.gameState.actionBarLock.getCurrentAction()
+          && HUDViewModel.isCurrentSelectedTile(e.currentTarget)
+        ) {
+          window.dispatchEvent(new ClearTileSelectionEvent());
+          return;
+        }
+
         const currentAction = this.gameState.actionBarLock.getCurrentAction();
 
         // Check if we're in move mode and clicked on a valid move target

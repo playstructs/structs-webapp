@@ -243,6 +243,29 @@ export class HUDViewModel extends AbstractViewModel {
   }
 
   /**
+   * @param {HTMLElement} clickedDomElement
+   * @return {boolean}
+   */
+  static isCurrentSelectedTile(clickedDomElement) {
+    const current = HUDViewModel.currentSelectedTile;
+    if (!current) {
+      return false;
+    }
+
+    let slot = parseInt(clickedDomElement.dataset.slot, 10);
+    if (isNaN(slot)) {
+      slot = null;
+    }
+
+    return (
+      current.tileType === clickedDomElement.dataset.tileType
+      && current.ambit.toUpperCase() === clickedDomElement.dataset.ambit.toUpperCase()
+      && current.slot === slot
+      && current.playerId === clickedDomElement.dataset.playerId
+    );
+  }
+
+  /**
    * @param {HTMLElement|object} clickedDomElement
    */
   static showActionBar(clickedDomElement) {
