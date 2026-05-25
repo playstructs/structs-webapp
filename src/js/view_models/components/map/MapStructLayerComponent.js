@@ -6,6 +6,7 @@ import {GenericMapLayerComponent} from "./GenericMapLayerComponent";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {AmbitUtil} from "../../../util/AmbitUtil";
 import {MapStructViewerComponent} from "../MapStructViewerComponent";
+import {Planet} from "../../../models/Planet";
 
 
 export class MapStructLayerComponent extends GenericMapLayerComponent {
@@ -370,5 +371,12 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
         this.clearAttackTargets();
       }
     });
+
+    this.addWindowEventListener(EVENTS.SHOW_STRUCT_STILL, (event) => {
+      if (event.mapId === this.mapId) {
+        // Refresh the struct still
+        this.mapStructViewers[event.structId].showStructStill();
+      }
+    })
   }
 }

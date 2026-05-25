@@ -14,6 +14,7 @@ import {ShowAttackTargetsEvent} from "../../../events/ShowAttackTargetsEvent";
 import {ClearAttackTargetsEvent} from "../../../events/ClearAttackTargetsEvent";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
 import {NumberFormatter} from "../../../util/NumberFormatter";
+import {ShowStructStillEvent} from "../../../events/ShowStructStillEvent";
 
 export class ActionBarComponent extends AbstractViewModelComponent {
 
@@ -613,12 +614,14 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       this.signingClientManager.queueMsgStructDeactivate(struct.id).then(() => {
         struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
         this.showStructActionBar(struct);
+        window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
       });
     } else if (this.isActionAvailable(struct, structType.activate_charge, false)){
       // Turn on: activate the struct
       this.signingClientManager.queueMsgStructActivate(struct.id).then(() => {
         struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
         this.showStructActionBar(struct);
+        window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
       });
     }
   }

@@ -33,4 +33,19 @@ export class Queue {
   getSize() {
     return this.list.size;
   }
+
+  /**
+   * @param {function(*): boolean} predicate
+   * @return {boolean}
+   */
+  some(predicate) {
+    let node = this.list.head;
+    while (node) {
+      if (predicate(node.value)) {
+        return true;
+      }
+      node = node.next;
+    }
+    return false;
+  }
 }
