@@ -139,12 +139,12 @@ class LedgerManager
               l.direction,
               l.time,
               pa.player_id AS counterparty_player_id,
-              pm.username AS counterparty_username
+              p.username AS counterparty_username
             FROM ledger l
             LEFT JOIN player_address pa
               ON l.counterparty = pa.address
-            LEFT JOIN player_meta pm
-              ON pa.player_id = pm.id
+            LEFT JOIN player p
+              ON pa.player_id = p.id
             WHERE l.id = :tx_id
             LIMIT 1;
         ';
