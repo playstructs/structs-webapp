@@ -518,14 +518,25 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
   }
 
   /**
-   * Clear the focus cursor
+   * @param {HTMLElement|object} tile
    */
-  clearFocusCursor() {
+  clearFocusCursorFromTile(tile) {
+    tile.classList.remove('focus-source');
+    tile.classList.remove('focus-friendly');
+    tile.classList.remove('focus-neutral');
+    tile.classList.remove('focus-enemy');
+  }
+
+  /**
+   * Clear the focus cursor
+   *
+   * @param {boolean} clearSelected if true, clear the currently selected tile too
+   */
+  clearFocusCursor(clearSelected = true) {
     document.querySelectorAll('a.map-tile-selection-tile.focus-source').forEach(focusedTile => {
-      focusedTile.classList.remove('focus-source');
-      focusedTile.classList.remove('focus-friendly');
-      focusedTile.classList.remove('focus-neutral');
-      focusedTile.classList.remove('focus-enemy');
+      if (clearSelected || !HUDViewModel.isCurrentSelectedTile(focusedTile)) {
+        this.clearFocusCursorFromTile(focusedTile);
+      }
     });
   }
 
@@ -534,9 +545,10 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
    * Use this when you select a tile without an action engaged.
    *
    * @param {HTMLElement|object} tile
+   * @param {boolean} clearSelected if false, don't clear the currently selected tile
    */
-  addFocusToSourceTile(tile) {
-    this.clearFocusCursor();
+  addFocusToSourceTile(tile, clearSelected = true) {
+    this.clearFocusCursor(clearSelected);
 
     tile.classList.add('focus-source');
 
@@ -695,6 +707,13 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       slot
     );
 
+    if (
+      HUDViewModel.currentSelectedTile
+      && HUDViewModel.currentSelectedTile.structId === structBeingMoved.id
+    ) {
+      HUDViewModel.updateSelectedTilePosition(tile, structBeingMoved.id);
+    }
+
     // Update focus to the new tile
     this.addFocusToSourceTile(tile);
 
@@ -808,8 +827,8 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       }
     });
 
-    window.addEventListener(EVENTS.CLEAR_TILE_SELECTION, () => {
-      this.clearFocusCursor();
+    window.addEventListener(EVENTS.CLEAR_TILE_SELECTION, (event) => {
+      this.clearFocusCursor(event.clearSelected);
     });
 
     // Listen for SHOW_MOVE_TARGETS events
@@ -823,6 +842,26 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     window.addEventListener(EVENTS.CLEAR_MOVE_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.clearMoveTargets();
+      }
+    });
+
+    window.addEventListener(EVENTS.ANIMATION, (event) => {
+      if (event.mapId === this.mapId) {
+        const selector = `.map-tile-selection-tile[data-struct-id="${event.structId}"]`;
+        const tileElement = document.getElementById(this.containerId).querySelector(selector);
+        if (tileElement) {
+          this.addFocusToSourceTile(tileElement, false);
+        }
+      }
+    });
+
+    window.addEventListener(EVENTS.ANIMATION_END, (event) => {
+      if (event.mapId === this.mapId) {
+        const selector = `.map-tile-selection-tile[data-struct-id="${event.structId}"]`;
+        const tileElement = document.getElementById(this.containerId).querySelector(selector);
+        if (tileElement && !HUDViewModel.isCurrentSelectedTile(tileElement)) {
+          this.clearFocusCursorFromTile(tileElement);
+        }
       }
     });
   }

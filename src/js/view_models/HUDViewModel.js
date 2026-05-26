@@ -266,6 +266,32 @@ export class HUDViewModel extends AbstractViewModel {
   }
 
   /**
+   * Point selection at a new tile without opening the action bar (e.g. while it is locked during a move).
+   *
+   * @param {HTMLElement} clickedDomElement
+   * @param {string|null} structId when set, kept on the selection (destination tiles may not have data-struct-id yet)
+   */
+  static updateSelectedTilePosition(clickedDomElement, structId = null) {
+    let slot = parseInt(clickedDomElement.dataset.slot, 10);
+    if (isNaN(slot)) {
+      slot = null;
+    }
+
+    const tileType = clickedDomElement.dataset.tileType;
+    const tileLabel = clickedDomElement.dataset.tileLabel || clickedDomElement.dataset.ambit;
+
+    HUDViewModel.currentSelectedTile = {
+      tileType: tileType,
+      ambit: clickedDomElement.dataset.ambit,
+      slot: slot,
+      playerId: clickedDomElement.dataset.playerId,
+      side: clickedDomElement.dataset.side,
+      structId: structId ?? clickedDomElement.dataset.structId ?? null,
+      tileLabel: tileLabel
+    };
+  }
+
+  /**
    * @param {HTMLElement|object} clickedDomElement
    */
   static showActionBar(clickedDomElement) {
