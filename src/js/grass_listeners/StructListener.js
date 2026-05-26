@@ -164,13 +164,12 @@ export class StructListener extends AbstractGrassListener {
     } else {
       // Any other status transition (e.g. ONLINE/OFFLINE, LOCKED, STORED, or
       // a follow-up status change emitted alongside a transition we already
-      // handled) doesn't change anything the struct still itself renders -
-      // those indicators live on the HUD layer which is still refreshed by
-      // the RenderStructHUDEvent dispatched unconditionally from refreshStruct.
-      // Re-rendering the struct viewer for these would tear down any in-flight
-      // animation triggered by a previously-matched transition (most notably
-      // the deployment animation autoplayed when BUILT was first set), leaving
-      // the viewer pointing at a wiped DOM and stalling the animation queue.
+      // handled) doesn't warrant a full struct viewer re-render — most
+      // indicators live on the HUD layer, which is still refreshed by the
+      // RenderStructHUDEvent dispatched unconditionally from refreshStruct.
+      // ONLINE/OFFLINE is handled there via ShowStructStillEvent so extractors
+      // and refineries can swap between the still image and active-loop
+      // animation without tearing down in-flight lottie playback.
       renderStruct = false;
     }
 

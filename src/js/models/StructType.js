@@ -217,4 +217,12 @@ export class StructType {
     return this.unit_defenses
       && this.unit_defenses === STRUCT_UNIT_DEFENSES.SIGNAL_JAMMING;
   }
+
+  /**
+   * Checks if the struct type has a process that runs while it is online.
+   * @return {boolean}
+   */
+  hasOnlineProcess() {
+    return this.hasPlanetaryMining() || this.hasPlanetaryRefinery();
+  }
 }

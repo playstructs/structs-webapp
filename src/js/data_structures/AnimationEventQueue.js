@@ -35,6 +35,22 @@ export class AnimationEventQueue extends Queue {
     window.dispatchEvent(this.currentEvent);
   }
 
+  /**
+   * @param {string} structId
+   * @return {boolean}
+   */
+  isStructAnimating(structId) {
+    if (
+      this.isPlaying
+      && this.currentEvent
+      && this.currentEvent.structId === structId
+    ) {
+      return true;
+    }
+
+    return this.some(event => event && event.structId === structId);
+  }
+
   initListeners() {
     window.addEventListener(EVENTS.ANIMATION_END, async () => {
       if (this.currentEvent && this.currentEvent.onAnimationEnd) {

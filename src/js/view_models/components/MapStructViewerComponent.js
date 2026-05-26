@@ -102,6 +102,7 @@ export class MapStructViewerComponent {
     this.attackPrimaryWeaponAnimationContainerId = `${this.idPrefix}attackPrimaryWeaponAnimation-${this.structId}`;
     this.attackSecondaryWeaponAnimationContainerId = `${this.idPrefix}attackSecondaryWeaponAnimation-${this.structId}`;
 
+    this.activeLoopContainerId = `${this.idPrefix}activeLoop-${this.structId}`;
     this.structStillContainerId = `${this.idPrefix}structStill-${this.structId}`;
   }
 
@@ -112,18 +113,42 @@ export class MapStructViewerComponent {
 
   hideStructStill() {
     const structStillContainer = document.getElementById(this.structStillContainerId);
+
     if (!structStillContainer) {
       return;
     }
+
+    const activeLoopAnimation = this.lottieCustomPlayer.getAnimation(ANIMATION.NAMES.ACTIVE_LOOP);
+
+    if (activeLoopAnimation) {
+      activeLoopAnimation.stop();
+    }
+
     structStillContainer.classList.add('invisible');
   }
 
   showStructStill() {
     const structStillContainer = document.getElementById(this.structStillContainerId);
+
     if (!structStillContainer) {
       return;
     }
-    structStillContainer.classList.remove('invisible');
+
+    if (this.structType.hasOnlineProcess()) {
+
+      const struct = this.structManager.getStructById(this.structId);
+      const activeLoopAnimation = this.lottieCustomPlayer.getAnimation(ANIMATION.NAMES.ACTIVE_LOOP);
+
+      if (struct && struct.isOnline()) {
+        structStillContainer.classList.add('invisible');
+        this.lottieCustomPlayer.play(ANIMATION.NAMES.ACTIVE_LOOP);
+      } else {
+        activeLoopAnimation.stop();
+        structStillContainer.classList.remove('invisible');
+      }
+    } else {
+      structStillContainer.classList.remove('invisible');
+    }
   }
 
   /**
@@ -361,6 +386,16 @@ export class MapStructViewerComponent {
     `;
   }
 
+  renderActiveLoopHTML() {
+    if (!this.structType.hasOnlineProcess()) {
+      return '';
+    }
+
+    return `
+      <div id="${this.activeLoopContainerId}" class="map-struct-viewer-layer" style="z-index:${this.getLayerZIndex()}"></div>
+    `;
+  }
+
   renderHTML() {
     const struct = this.structManager.getStructById(this.structId);
     const stealthClass = struct && struct.isHidden() ? ' struct-stealth-active' : '';
@@ -369,6 +404,7 @@ export class MapStructViewerComponent {
       <div class="map-struct-viewer">
         <div id="${this.structStillContainerId}" class="map-struct-viewer-layer${stealthClass}" style="z-index:${this.getLayerZIndex()}">${this.renderStructStillInnerHTML()}</div>
 
+        ${this.renderActiveLoopHTML()}
         ${this.renderAttackSecondaryWeaponHTML()}
         ${this.renderAttackPrimaryWeaponHTML()}
 
@@ -420,6 +456,7 @@ export class MapStructViewerComponent {
     this.registerEvadeAnimation();
     this.registerAttackPrimaryWeaponAnimation();
     this.registerAttackSecondaryWeaponAnimation();
+    this.registerActiveLoopAnimation();
   }
 
   /**
@@ -1028,6 +1065,30 @@ export class MapStructViewerComponent {
         loop: false,
         autoplay: false,
         path: `/lottie/attack_secondary_weapon/${structTypeDirectory}/data.json`
+      }
+    ));
+  }
+
+  registerActiveLoopAnimation() {
+    if (!this.structType.hasOnlineProcess()) {
+      return;
+    }
+
+    const structTypeDirectory = this.caseConverter.convert(this.structType.type, LOWER_SNAKE_CASE);
+
+    this.lottieCustomPlayer.registerAnimation(new MapStructLottieAnimationSVG(
+      this.gameState,
+      this.structManager,
+      ANIMATION.NAMES.ACTIVE_LOOP,
+      this.structId,
+      this.structType,
+      this.activeLoopContainerId,
+      {
+        container: document.getElementById(this.activeLoopContainerId),
+        renderer: 'svg',
+        loop: true,
+        autoplay: false,
+        path: `/lottie/active_loop/${structTypeDirectory}/data.json`
       }
     ));
   }
