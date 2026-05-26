@@ -2302,7 +2302,8 @@ only screen and (min-height: 1024px) {
     width: 50vw;
   }
 
-  #sui-offcanvas {
+  #sui-offcanvas.sui-mod-left,
+  #sui-offcanvas.sui-mod-right {
     height: 50vh;
     height: 50dvh;
   }
@@ -2367,7 +2368,8 @@ only screen and (min-height: 2048px) {
     width: 25vw;
   }
 
-  #sui-offcanvas {
+  #sui-offcanvas.sui-mod-left,
+  #sui-offcanvas.sui-mod-right {
     height: 25vh;
     height: 25dvh;
   }

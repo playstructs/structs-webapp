@@ -10,6 +10,7 @@ import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {RenderStructEvent} from "../events/RenderStructEvent";
 import {RenderStructHUDEvent} from "../events/RenderStructHUDEvent";
+import {ShowStructStillEvent} from "../events/ShowStructStillEvent";
 import {Fleet} from "../models/Fleet";
 import {AnimationEventFactory} from "../factories/AnimationEventFactory";
 
@@ -359,6 +360,9 @@ export class StructManager {
     renderStruct = true,
     animationToAutoplay = null
   ) {
+    const oldStruct = this.getStructById(structId);
+    const wasOnline = oldStruct ? oldStruct.isOnline() : null;
+
     const struct = await this.guildAPI.getStruct(structId);
     this.gameState.setStruct(struct);
 
@@ -387,6 +391,19 @@ export class StructManager {
         animationToAutoplay
       );
       window.dispatchEvent(renderStructEvent);
+    } else if (
+      tileType
+      && mapId
+      && wasOnline !== null
+      && wasOnline !== struct.isOnline()
+      && !this.gameState.animationEventQueue?.isStructAnimating(struct.id)
+    ) {
+      // ONLINE/OFFLINE transitions swap the struct still for an active-loop
+      // animation on extractors/refineries; refresh the viewer without a full
+      // re-render so in-flight animations aren't torn down. Skip while this
+      // struct has a current or queued animation — showStructStill() runs again
+      // when that animation completes (showStructStillAfterAnimation).
+      window.dispatchEvent(new ShowStructStillEvent(mapId, struct.id));
     }
 
     const renderStructHUDEvent = new RenderStructHUDEvent(this.gameState[mapType].mapId, struct);
