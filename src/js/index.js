@@ -66,7 +66,7 @@ global.signingClientManager = signingClientManager;
 
 const structManager = new StructManager(gameState, guildAPI, signingClientManager);
 
-const planetManager = new PlanetManager(gameState, signingClientManager);
+const planetManager = new PlanetManager(gameState, signingClientManager, guildAPI);
 
 const playerAddressManager = new PlayerAddressManager(gameState, guildAPI);
 

@@ -98,6 +98,7 @@ import { QueryGetInfusionRequest } from "./types/structs/structs/query";
 import { QueryAllInfusionResponse } from "./types/structs/structs/query";
 import { EventProviderAddressDetail } from "./types/structs/structs/events";
 import { MsgGuildUpdateEndpoint } from "./types/structs/structs/tx";
+import { MsgGuildUpdatePrimaryReactor } from "./types/structs/structs/tx";
 import { MsgGuildUpdateEntryRank } from "./types/structs/structs/tx";
 import { MsgPermissionGuildRankSet } from "./types/structs/structs/tx";
 import { MsgPermissionGuildRankRevoke } from "./types/structs/structs/tx";
@@ -426,6 +427,7 @@ const msgTypes: Array<[string, GeneratedType]>  = [
     ["/structs.structs.QueryAllInfusionResponse", QueryAllInfusionResponse],
     ["/structs.structs.EventProviderAddressDetail", EventProviderAddressDetail],
     ["/structs.structs.MsgGuildUpdateEndpoint", MsgGuildUpdateEndpoint],
+    ["/structs.structs.MsgGuildUpdatePrimaryReactor", MsgGuildUpdatePrimaryReactor],
     ["/structs.structs.MsgAgreementDurationIncrease", MsgAgreementDurationIncrease],
     ["/structs.structs.QueryAllAllocationResponse", QueryAllAllocationResponse],
     ["/structs.structs.QueryAllReactorResponse", QueryAllReactorResponse],
