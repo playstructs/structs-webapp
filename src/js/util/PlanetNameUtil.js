@@ -104,7 +104,7 @@ export class PlanetNameUtil {
    * @param {string[]} [bannedWords=[]]
    * @return {string}
    */
-  generate(targetBaseNameLength = 5, bannedWords = []) {
+  static generate(targetBaseNameLength = 5, bannedWords = []) {
     let name = '';
 
     while (true) {
