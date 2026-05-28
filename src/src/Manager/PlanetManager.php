@@ -52,7 +52,7 @@ class PlanetManager
               p.air_slots,
               p.land_slots,
               p.water_slots,
-              pm.name,
+              p.name,
               COALESCE((
                 SELECT g.val 
                 FROM grid g
@@ -60,8 +60,6 @@ class PlanetManager
                 AND g.attribute_type=\'ore\'
               ), 0) as undiscovered_ore
             FROM planet p
-            LEFT JOIN planet_meta pm
-              ON p.id = pm.id
             WHERE p.id = :planet_id
             LIMIT 1;
         ';

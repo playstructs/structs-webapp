@@ -263,15 +263,15 @@ class AuthManager
             SELECT
               pa.player_id,
               gm.tag,
-              pm.username,
-              pm.pfp
+              p.username,
+              p.pfp
             FROM player_address_activation_code paac
             INNER JOIN player_address pa
               ON pa.address = paac.logged_in_address
             INNER JOIN guild_meta gm
               ON pa.guild_id = gm.id
-            INNER JOIN player_meta pm
-              ON pa.player_id = pm.id
+            INNER JOIN player p
+              ON pa.player_id = p.id
             WHERE paac.code = :code;
         ';
 

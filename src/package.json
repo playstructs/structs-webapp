@@ -6,7 +6,8 @@
   "directories": {},
   "scripts": {
     "dev": "webpack --watch --mode=development",
-    "build": "webpack --mode=production"
+    "build": "webpack --mode=production",
+    "proto:sync": "echo 'From structsd v0.17.0: cd proto && buf generate --template buf.gen.ts.yaml, then copy types into src/js/ts/structs.structs/'"
   },
   "repository": {
     "type": "git",

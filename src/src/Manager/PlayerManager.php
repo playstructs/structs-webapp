@@ -65,9 +65,9 @@ class PlayerManager
                 ) ft 
                 LIMIT 1
               ) as fleet,
-              pm.username,
-              pm.pfp,
-              gm.name AS guild_name,
+              p.username,
+              p.pfp,
+              COALESCE(NULLIF(gu.name, \'\'), gm.name) AS guild_name,
               gm.tag,
               COALESCE((
                 SELECT vpi.balance
@@ -106,11 +106,10 @@ class PlayerManager
                 AND g.attribute_type=\'connectionCapacity\'
               ), 0) as connection_capacity
             FROM player p
+            LEFT JOIN guild gu
+              ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
-              ON p.guild_id = gm.id
-            LEFT JOIN player_meta pm
-              ON p.id = pm.id
-              AND p.guild_id = pm.guild_id
+              ON gu.id = gm.id
             WHERE p.id = :player_id
             LIMIT 1;
         ';
@@ -209,7 +208,7 @@ class PlayerManager
             $querySearchFilter = "
                 AND (
                     p.id = :search_string
-                    OR pm.username ILIKE :like_search_string
+                    OR p.username ILIKE :like_search_string
                     OR pa.address = :search_string
                 )
             ";
@@ -219,9 +218,9 @@ class PlayerManager
             SELECT
               p.id,
               p.planet_id,
-              pm.username,
-              pm.pfp,
-              gm.name AS guild_name,
+              p.username,
+              p.pfp,
+              COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
               f.status AS fleet_status,
               COALESCE(planet_ore.val, 0) AS undiscovered_ore,
@@ -233,11 +232,10 @@ class PlayerManager
               ON p.id = pa.player_id
             LEFT JOIN fleet f
               ON p.fleet_id = f.id
-            LEFT JOIN player_meta pm
-              ON p.id = pm.id
-              AND p.guild_id = pm.guild_id
+            LEFT JOIN guild gu
+              ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
-              ON p.guild_id = gm.id
+              ON gu.id = gm.id
             LEFT JOIN grid AS planet_ore
               ON planet_ore.object_id = p.planet_id
               AND planet_ore.attribute_type='ore'
@@ -255,8 +253,8 @@ class PlayerManager
               $querySearchFilter
             GROUP BY
               p.id,
-              pm.username,
-              pm.pfp,
+              p.username,
+              p.pfp,
               guild_name,
               gm.tag,
               f.status,
@@ -279,11 +277,10 @@ class PlayerManager
                       ON p.id = pa.player_id
                     LEFT JOIN fleet f
                       ON p.fleet_id = f.id
-                    LEFT JOIN player_meta pm
-                      ON p.id = pm.id
-                      AND p.guild_id = pm.guild_id
+                    LEFT JOIN guild gu
+                      ON p.guild_id = gu.id
                     LEFT JOIN guild_meta gm
-                      ON p.guild_id = gm.id
+                      ON gu.id = gm.id
                     LEFT JOIN grid AS planet_ore
                       ON planet_ore.object_id = p.planet_id
                       AND planet_ore.attribute_type='ore'
@@ -366,19 +363,18 @@ class PlayerManager
             SELECT
               p.id,
               pa.address,
-              pm.username,
-              pm.pfp,
-              gm.name AS guild_name,
+              p.username,
+              p.pfp,
+              COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
               COALESCE(vpi.balance, 0) as alpha
             FROM player_address pa
             LEFT JOIN player p
               ON p.id = pa.player_id
-            LEFT JOIN player_meta pm
-              ON p.id = pm.id
-              AND p.guild_id = pm.guild_id
+            LEFT JOIN guild gu
+              ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
-              ON p.guild_id = gm.id
+              ON gu.id = gm.id
             LEFT JOIN view.player_inventory vpi
               ON p.id = vpi.player_id
               AND vpi.denom = 'alpha'
@@ -389,22 +385,21 @@ class PlayerManager
             SELECT
               p.id,
               p.primary_address AS address,
-              pm.username,
-              pm.pfp,
-              gm.name AS guild_name,
+              p.username,
+              p.pfp,
+              COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
               COALESCE(vpi.balance, 0) as alpha
             FROM player p
-            LEFT JOIN player_meta pm
-              ON p.id = pm.id
-              AND p.guild_id = pm.guild_id
+            LEFT JOIN guild gu
+              ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
-              ON p.guild_id = gm.id
+              ON gu.id = gm.id
             LEFT JOIN view.player_inventory vpi
               ON p.id = vpi.player_id
               AND vpi.denom = 'alpha'
             WHERE p.id ILIKE :like_search_string
-              OR pm.username ILIKE :like_search_string
+              OR p.username ILIKE :like_search_string
               $queryGuildIdFilter
             LIMIT 25;
         ";

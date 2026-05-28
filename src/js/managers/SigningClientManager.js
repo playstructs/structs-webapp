@@ -20,6 +20,7 @@ import {
   MsgGuildUpdateOwnerId,
   MsgGuildUpdateEntrySubstationId,
   MsgGuildUpdateEndpoint,
+  MsgGuildUpdatePrimaryReactor,
   MsgGuildUpdateJoinInfusionMinimum,
   MsgGuildUpdateJoinInfusionMinimumBypassByInvite,
   MsgGuildUpdateJoinInfusionMinimumBypassByRequest,
@@ -216,13 +217,15 @@ export class SigningClientManager {
 
   /**
    * @param {string} playerId
+   * @param {string} [name='']
    */
-  async queueMsgPlanetExplore(playerId) {
+  async queueMsgPlanetExplore(playerId, name = '') {
     this.queue({
       typeUrl: '/structs.structs.MsgPlanetExplore',
       value: MsgPlanetExplore.fromPartial({
         creator: this.gameState.signingAccount.address,
-        playerId: playerId
+        playerId: playerId,
+        name: name
       }),
     });
   }
@@ -522,6 +525,21 @@ export class SigningClientManager {
         creator: this.gameState.signingAccount.address,
         guildId: guildId,
         endpoint: endpoint
+      }),
+    });
+  }
+
+  /**
+   * @param {string} guildId
+   * @param {string} reactorId
+   */
+  async queueMsgGuildUpdatePrimaryReactor(guildId, reactorId) {
+    this.queue({
+      typeUrl: '/structs.structs.MsgGuildUpdatePrimaryReactor',
+      value: MsgGuildUpdatePrimaryReactor.fromPartial({
+        creator: this.gameState.signingAccount.address,
+        guildId: guildId,
+        reactorId: reactorId
       }),
     });
   }

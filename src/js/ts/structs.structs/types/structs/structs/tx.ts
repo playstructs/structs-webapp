@@ -178,6 +178,12 @@ export interface MsgGuildUpdateEndpoint {
   endpoint: string;
 }
 
+export interface MsgGuildUpdatePrimaryReactor {
+  creator: string;
+  guildId: string;
+  reactorId: string;
+}
+
 export interface MsgGuildUpdateJoinInfusionMinimum {
   creator: string;
   guildId: string;
@@ -356,6 +362,7 @@ export interface MsgPermissionResponse {
 export interface MsgPlanetExplore {
   creator: string;
   playerId: string;
+  name: string;
 }
 
 export interface MsgPlanetExploreResponse {
@@ -2855,6 +2862,100 @@ export const MsgGuildUpdateEndpoint: MessageFns<MsgGuildUpdateEndpoint> = {
     message.creator = object.creator ?? "";
     message.guildId = object.guildId ?? "";
     message.endpoint = object.endpoint ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgGuildUpdatePrimaryReactor(): MsgGuildUpdatePrimaryReactor {
+  return { creator: "", guildId: "", reactorId: "" };
+}
+
+export const MsgGuildUpdatePrimaryReactor: MessageFns<MsgGuildUpdatePrimaryReactor> = {
+  encode(message: MsgGuildUpdatePrimaryReactor, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.guildId !== "") {
+      writer.uint32(18).string(message.guildId);
+    }
+    if (message.reactorId !== "") {
+      writer.uint32(26).string(message.reactorId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgGuildUpdatePrimaryReactor {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgGuildUpdatePrimaryReactor();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.reactorId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgGuildUpdatePrimaryReactor {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      reactorId: isSet(object.reactorId) ? globalThis.String(object.reactorId) : "",
+    };
+  },
+
+  toJSON(message: MsgGuildUpdatePrimaryReactor): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.reactorId !== "") {
+      obj.reactorId = message.reactorId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgGuildUpdatePrimaryReactor>, I>>(base?: I): MsgGuildUpdatePrimaryReactor {
+    return MsgGuildUpdatePrimaryReactor.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgGuildUpdatePrimaryReactor>, I>>(
+    object: I,
+  ): MsgGuildUpdatePrimaryReactor {
+    const message = createBaseMsgGuildUpdatePrimaryReactor();
+    message.creator = object.creator ?? "";
+    message.guildId = object.guildId ?? "";
+    message.reactorId = object.reactorId ?? "";
     return message;
   },
 };
@@ -5409,7 +5510,7 @@ export const MsgPermissionResponse: MessageFns<MsgPermissionResponse> = {
 };
 
 function createBaseMsgPlanetExplore(): MsgPlanetExplore {
-  return { creator: "", playerId: "" };
+  return { creator: "", playerId: "", name: "" };
 }
 
 export const MsgPlanetExplore: MessageFns<MsgPlanetExplore> = {
@@ -5419,6 +5520,9 @@ export const MsgPlanetExplore: MessageFns<MsgPlanetExplore> = {
     }
     if (message.playerId !== "") {
       writer.uint32(18).string(message.playerId);
+    }
+    if (message.name !== "") {
+      writer.uint32(26).string(message.name);
     }
     return writer;
   },
@@ -5446,6 +5550,14 @@ export const MsgPlanetExplore: MessageFns<MsgPlanetExplore> = {
           message.playerId = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5459,6 +5571,7 @@ export const MsgPlanetExplore: MessageFns<MsgPlanetExplore> = {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
     };
   },
 
@@ -5470,6 +5583,9 @@ export const MsgPlanetExplore: MessageFns<MsgPlanetExplore> = {
     if (message.playerId !== "") {
       obj.playerId = message.playerId;
     }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
     return obj;
   },
 
@@ -5480,6 +5596,7 @@ export const MsgPlanetExplore: MessageFns<MsgPlanetExplore> = {
     const message = createBaseMsgPlanetExplore();
     message.creator = object.creator ?? "";
     message.playerId = object.playerId ?? "";
+    message.name = object.name ?? "";
     return message;
   },
 };
@@ -12354,6 +12471,7 @@ export interface Msg {
   GuildUpdateOwnerId(request: MsgGuildUpdateOwnerId): Promise<MsgGuildUpdateResponse>;
   GuildUpdateEntrySubstationId(request: MsgGuildUpdateEntrySubstationId): Promise<MsgGuildUpdateResponse>;
   GuildUpdateEndpoint(request: MsgGuildUpdateEndpoint): Promise<MsgGuildUpdateResponse>;
+  GuildUpdatePrimaryReactor(request: MsgGuildUpdatePrimaryReactor): Promise<MsgGuildUpdateResponse>;
   GuildUpdateJoinInfusionMinimum(request: MsgGuildUpdateJoinInfusionMinimum): Promise<MsgGuildUpdateResponse>;
   GuildUpdateJoinInfusionMinimumBypassByInvite(
     request: MsgGuildUpdateJoinInfusionMinimumBypassByInvite,
@@ -12449,6 +12567,7 @@ export class MsgClientImpl implements Msg {
     this.GuildUpdateOwnerId = this.GuildUpdateOwnerId.bind(this);
     this.GuildUpdateEntrySubstationId = this.GuildUpdateEntrySubstationId.bind(this);
     this.GuildUpdateEndpoint = this.GuildUpdateEndpoint.bind(this);
+    this.GuildUpdatePrimaryReactor = this.GuildUpdatePrimaryReactor.bind(this);
     this.GuildUpdateJoinInfusionMinimum = this.GuildUpdateJoinInfusionMinimum.bind(this);
     this.GuildUpdateJoinInfusionMinimumBypassByInvite = this.GuildUpdateJoinInfusionMinimumBypassByInvite.bind(this);
     this.GuildUpdateJoinInfusionMinimumBypassByRequest = this.GuildUpdateJoinInfusionMinimumBypassByRequest.bind(this);
@@ -12627,6 +12746,12 @@ export class MsgClientImpl implements Msg {
   GuildUpdateEndpoint(request: MsgGuildUpdateEndpoint): Promise<MsgGuildUpdateResponse> {
     const data = MsgGuildUpdateEndpoint.encode(request).finish();
     const promise = this.rpc.request(this.service, "GuildUpdateEndpoint", data);
+    return promise.then((data) => MsgGuildUpdateResponse.decode(new BinaryReader(data)));
+  }
+
+  GuildUpdatePrimaryReactor(request: MsgGuildUpdatePrimaryReactor): Promise<MsgGuildUpdateResponse> {
+    const data = MsgGuildUpdatePrimaryReactor.encode(request).finish();
+    const promise = this.rpc.request(this.service, "GuildUpdatePrimaryReactor", data);
     return promise.then((data) => MsgGuildUpdateResponse.decode(new BinaryReader(data)));
   }
 

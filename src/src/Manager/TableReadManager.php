@@ -225,17 +225,13 @@ class TableReadManager
 
     // --- banned_word ---
 
-    public function bannedWordAll(int $page): Response
+    public function bannedWordAll(): Response
     {
-        [$limit, $offset] = $this->limitOffset($page);
         $sql = "SELECT value, created_at, updated_at
             FROM structs.banned_word
-            ORDER BY updated_at DESC NULLS LAST, value
-            LIMIT $limit OFFSET $offset";
-        $params = [ApiParameters::PAGE => (string) $page];
-        $required = [ApiParameters::PAGE];
+            ORDER BY value";
 
-        return $this->queryAll($this->entityManager, $this->apiRequestParsingManager, $sql, $params, $required);
+        return $this->queryAll($this->entityManager, $this->apiRequestParsingManager, $sql, [], []);
     }
 
     // --- defusion ---

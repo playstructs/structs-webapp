@@ -144,6 +144,23 @@ export class GuildAPI {
   }
 
   /**
+   * @return {Promise<string[]>}
+   */
+  async getBannedWords() {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/banned-word/all`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+
+    if (!Array.isArray(response.data)) {
+      throw new GuildAPIError('Banned word list response was not an array.');
+    }
+
+    return response.data
+      .filter((row) => row.value)
+      .map((row) => String(row.value).toLowerCase());
+  }
+
+  /**
    * @return {Promise<Guild>}
    */
   async getThisGuild() {
