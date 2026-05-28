@@ -67,7 +67,7 @@ class PlayerManager
               ) as fleet,
               p.username,
               p.pfp,
-              COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
+              COALESCE(NULLIF(gu.name, \'\'), gm.name) AS guild_name,
               gm.tag,
               COALESCE((
                 SELECT vpi.balance

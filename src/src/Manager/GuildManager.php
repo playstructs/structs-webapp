@@ -44,14 +44,14 @@ class GuildManager
         $query = '
             SELECT
               g.id,
-              COALESCE(NULLIF(g.name, ''), gm.name) AS name
+              COALESCE(NULLIF(g.name, \'\'), gm.name) AS name
             FROM guild g
             LEFT JOIN guild_meta gm
               ON g.id = gm.id
             INNER JOIN player p
               ON g.id = p.guild_id
-            GROUP BY g.id, COALESCE(NULLIF(g.name, ''), gm.name)
-            ORDER BY COALESCE(NULLIF(g.name, ''), gm.name), g.id;
+            GROUP BY g.id, COALESCE(NULLIF(g.name, \'\'), gm.name)
+            ORDER BY COALESCE(NULLIF(g.name, \'\'), gm.name), g.id;
         ';
 
         return $this->queryAll(
@@ -71,7 +71,7 @@ class GuildManager
     public function getGuildName(string $guild_id): Response
     {
         $query = '
-            SELECT COALESCE(NULLIF(g.name, ''), gm.name) AS name
+            SELECT COALESCE(NULLIF(g.name, \'\'), gm.name) AS name
             FROM guild g
             LEFT JOIN guild_meta gm
               ON g.id = gm.id
@@ -154,7 +154,7 @@ class GuildManager
               g.entry_substation_id,
               g.creator,
               g.owner,
-              COALESCE(NULLIF(g.name, ''), gm.name) AS name,
+              COALESCE(NULLIF(g.name, \'\'), gm.name) AS name,
               gm.description,
               gm.tag,
               gm.logo,
@@ -274,7 +274,7 @@ class GuildManager
               p.guild_id,
               p.username,
               p.pfp,
-              COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
+              COALESCE(NULLIF(gu.name, \'\'), gm.name) AS guild_name,
               gm.tag,
               SUM(COALESCE(vpi.balance, 0)) as alpha
             FROM player p
@@ -324,7 +324,7 @@ class GuildManager
               g.entry_substation_id,
               g.creator,
               g.owner,
-              COALESCE(NULLIF(g.name, ''), gm.name) AS name,
+              COALESCE(NULLIF(g.name, \'\'), gm.name) AS name,
               gm.description,
               gm.tag,
               gm.logo,
@@ -367,7 +367,7 @@ class GuildManager
         $query = '
             SELECT
               p.guild_id,
-              COALESCE(NULLIF(g.name, ''), gm.name) AS name,
+              COALESCE(NULLIF(g.name, \'\'), gm.name) AS name,
               gm.logo,
               COALESCE(gf.fuel, 0) AS alpha,
               COUNT(1) AS members
@@ -384,8 +384,8 @@ class GuildManager
               GROUP BY vr.guild_id
             ) AS gf
               ON g.id = gf.guild_id
-            GROUP BY p.guild_id, COALESCE(NULLIF(g.name, ''), gm.name), gm.logo, alpha
-            ORDER BY members DESC, alpha DESC, COALESCE(NULLIF(g.name, ''), gm.name);
+            GROUP BY p.guild_id, COALESCE(NULLIF(g.name, \'\'), gm.name), gm.logo, alpha
+            ORDER BY members DESC, alpha DESC, COALESCE(NULLIF(g.name, \'\'), gm.name);
         ';
 
         return $this->queryAll(
