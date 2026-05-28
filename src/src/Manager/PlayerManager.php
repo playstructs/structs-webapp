@@ -67,7 +67,7 @@ class PlayerManager
               ) as fleet,
               p.username,
               p.pfp,
-              COALESCE(gu.name, gm.name) AS guild_name,
+              COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
               COALESCE((
                 SELECT vpi.balance
@@ -220,7 +220,7 @@ class PlayerManager
               p.planet_id,
               p.username,
               p.pfp,
-              COALESCE(gu.name, gm.name) AS guild_name,
+              COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
               f.status AS fleet_status,
               COALESCE(planet_ore.val, 0) AS undiscovered_ore,
@@ -365,7 +365,7 @@ class PlayerManager
               pa.address,
               p.username,
               p.pfp,
-              COALESCE(gu.name, gm.name) AS guild_name,
+              COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
               COALESCE(vpi.balance, 0) as alpha
             FROM player_address pa
@@ -387,7 +387,7 @@ class PlayerManager
               p.primary_address AS address,
               p.username,
               p.pfp,
-              COALESCE(gu.name, gm.name) AS guild_name,
+              COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
               COALESCE(vpi.balance, 0) as alpha
             FROM player p
