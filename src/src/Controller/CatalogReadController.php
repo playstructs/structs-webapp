@@ -145,13 +145,12 @@ class CatalogReadController extends AbstractController
 
     // --- banned_word ---
 
-    #[Route('/api/banned-word/all/page/{page}', name: 'api_banned_word_all', requirements: ['page' => self::PAGE_REQUIREMENT], methods: ['GET'])]
+    #[Route('/api/banned-word/all', name: 'api_banned_word_all', methods: ['GET'])]
     public function bannedWordAll(
-        int $page,
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
     ): Response {
-        return $this->manager($entityManager, $validator)->bannedWordAll($page);
+        return $this->manager($entityManager, $validator)->bannedWordAll();
     }
 
     // --- defusion ---
