@@ -349,7 +349,7 @@ export class StructStillBuilder {
   buildSubmersible(structType) {
     const art = this.structTypeArtSetBuilder.build(structType);
 
-    return new StructStillRenderer(
+    const renderer = new StructStillRenderer(
       this.gameState,
       structType,
       art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON],
@@ -358,6 +358,9 @@ export class StructStillBuilder {
       art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG],
       art[STRUCT_WATER_RIPPLE]
     );
+    renderer.structVariantHidden = art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_HIDDEN];
+
+    return renderer;
   }
 
   /**

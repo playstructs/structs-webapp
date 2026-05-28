@@ -30,6 +30,7 @@ export class StructStillRenderer extends AbstractViewModelComponent {
     this.topDetailLayer2 = topDetailLayer2;
     this.structVariantBase = structVariantBase;
     this.structVariantDmg = structVariantDmg;
+    this.structVariantHidden = '';
     this.bottomDetailLayer1 = bottomDetailLayer1;
   }
 
@@ -51,17 +52,25 @@ export class StructStillRenderer extends AbstractViewModelComponent {
   }
 
   /**
+   * @param {string} structVariant
    * @return {string}
    */
-  renderTopDetailLayers() {
+  renderTopDetailLayers(structVariant) {
+    if (structVariant === STRUCT_STILL_LAYERS.STRUCT_VARIANT_HIDDEN) {
+      return '';
+    }
     return this.renderLayerHtml(this.topDetailLayer1, 'top')
       + this.renderLayerHtml(this.topDetailLayer2, 'top');
   }
 
   /**
+   * @param {string} structVariant
    * @return {string}
    */
-  renderBottomDetailLayers() {
+  renderBottomDetailLayers(structVariant) {
+    if (structVariant === STRUCT_STILL_LAYERS.STRUCT_VARIANT_HIDDEN) {
+      return '';
+    }
     return this.renderLayerHtml(this.bottomDetailLayer1, 'bottom');
   }
 
@@ -95,9 +104,9 @@ export class StructStillRenderer extends AbstractViewModelComponent {
 
     return `
       <div class="struct-still">
-        ${this.renderTopDetailLayers()}
+        ${this.renderTopDetailLayers(structVariant)}
         ${this.renderStructVariant(structVariant)}
-        ${this.renderBottomDetailLayers()}
+        ${this.renderBottomDetailLayers(structVariant)}
       </div>
     `;
   }

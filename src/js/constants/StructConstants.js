@@ -167,5 +167,6 @@ export const
   STRUCT_STILL_LAYERS = {
     STRUCT_VARIANT_BASE: 'structVariantBase',
     STRUCT_VARIANT_DMG: 'structVariantDmg',
+    STRUCT_VARIANT_HIDDEN: 'structVariantHidden',
   }
 ;
