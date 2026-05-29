@@ -277,6 +277,7 @@ export class StructTypeArtSetBuilder {
 
     art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE] = this.structImageDir + '/submersible/submersible-struct-base.png';
     art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG] = this.structImageDir + '/submersible/submersible-struct-dmg.png';
+    art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_HIDDEN] = this.structImageDir + '/submersible/submersible-struct-hidden.png';
     art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON] = this.structImageDir + '/submersible/submersible-top-weapon.png';
     art[STRUCT_WATER_RIPPLE] = this.structImageDir + '/submersible/submersible-bottom-ripples.png';
 

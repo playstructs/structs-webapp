@@ -4,7 +4,7 @@ import {MapStructLottieAnimationSVG} from "./MapStructLottieAnimationSVG";
 import {StructStillBuilder} from "../../builders/StructStillBuilder";
 import {CaseConverter, LOWER_SNAKE_CASE} from "../../util/CaseConverter";
 import {AnimationEndEvent} from "../../events/AnimationEndEvent";
-import {STRUCT_TYPES} from "../../constants/StructConstants";
+import {STRUCT_STILL_LAYERS, STRUCT_TYPES} from "../../constants/StructConstants";
 
 export class MapStructViewerComponent {
 
@@ -159,10 +159,18 @@ export class MapStructViewerComponent {
     if (!structStillContainer) {
       return;
     }
-    if (isActive) {
-      structStillContainer.classList.add('struct-stealth-active');
+
+    if (this.structType.type === STRUCT_TYPES.SUBMERSIBLE) {
+      structStillContainer.innerHTML = this.renderStructStillInnerHTML(
+        null,
+        isActive
+      );
     } else {
-      structStillContainer.classList.remove('struct-stealth-active');
+      if (isActive) {
+        structStillContainer.classList.add('struct-stealth-active');
+      } else {
+        structStillContainer.classList.remove('struct-stealth-active');
+      }
     }
   }
 
@@ -174,9 +182,10 @@ export class MapStructViewerComponent {
    * state.
    *
    * @param {number|null} healthOverride
+   * @param {boolean} isHidden
    * @return {string}
    */
-  renderStructStillInnerHTML(healthOverride = null) {
+  renderStructStillInnerHTML(healthOverride = null, isHidden = false) {
     const struct = this.structManager.getStructById(this.structId);
     if (!struct) {
       return '';
@@ -185,7 +194,10 @@ export class MapStructViewerComponent {
     const health = (healthOverride !== null && healthOverride !== undefined)
       ? healthOverride
       : struct.health;
-    return structStill.renderHTML(health);
+    const variantOverride = (isHidden && this.structType.type === STRUCT_TYPES.SUBMERSIBLE)
+      ? STRUCT_STILL_LAYERS.STRUCT_VARIANT_HIDDEN
+      : '';
+    return structStill.renderHTML(health, variantOverride);
   }
 
   /**
@@ -195,13 +207,14 @@ export class MapStructViewerComponent {
    * health value rather than the current gameState value.
    *
    * @param {number|null} healthOverride
+   * @param {boolean} isHidden
    */
-  updateStructStill(healthOverride = null) {
+  updateStructStill(healthOverride = null, isHidden = false) {
     const structStillContainer = document.getElementById(this.structStillContainerId);
     if (!structStillContainer) {
       return;
     }
-    structStillContainer.innerHTML = this.renderStructStillInnerHTML(healthOverride);
+    structStillContainer.innerHTML = this.renderStructStillInnerHTML(healthOverride, isHidden);
   }
 
   /**
@@ -254,7 +267,9 @@ export class MapStructViewerComponent {
       }
 
       animation.onCompleteCallback = () => {
+        let isHidden = false;
         if (animationName === ANIMATION.NAMES.STEALTH.ACTIVATE) {
+          isHidden = true;
           this.setStealthActive(true);
         } else if (animationName === ANIMATION.NAMES.STEALTH.DEACTIVATE) {
           this.setStealthActive(false);
@@ -262,7 +277,7 @@ export class MapStructViewerComponent {
 
         pendingCount--;
         if (pendingCount === 0) {
-          this.updateStructStill(healthAfter);
+          this.updateStructStill(healthAfter, isHidden);
           if (this.showStructStillAfterAnimation) {
             this.showStructStill();
           }
@@ -398,11 +413,14 @@ export class MapStructViewerComponent {
 
   renderHTML() {
     const struct = this.structManager.getStructById(this.structId);
-    const stealthClass = struct && struct.isHidden() ? ' struct-stealth-active' : '';
+    const isHidden = struct && struct.isHidden();
+    const stealthClass = isHidden && this.structType.type !== STRUCT_TYPES.SUBMERSIBLE
+      ? ' struct-stealth-active'
+      : '';
 
     return `
       <div class="map-struct-viewer">
-        <div id="${this.structStillContainerId}" class="map-struct-viewer-layer${stealthClass}" style="z-index:${this.getLayerZIndex()}">${this.renderStructStillInnerHTML()}</div>
+        <div id="${this.structStillContainerId}" class="map-struct-viewer-layer${stealthClass}" style="z-index:${this.getLayerZIndex()}">${this.renderStructStillInnerHTML(null, isHidden)}</div>
 
         ${this.renderActiveLoopHTML()}
         ${this.renderAttackSecondaryWeaponHTML()}
@@ -949,6 +967,8 @@ export class MapStructViewerComponent {
       return;
     }
 
+    const structTypeDirectory = this.caseConverter.convert(this.structType.type, LOWER_SNAKE_CASE);
+
     this.lottieCustomPlayer.registerAnimation(new MapStructLottieAnimationSVG(
       this.gameState,
       this.structManager,
@@ -961,7 +981,7 @@ export class MapStructViewerComponent {
         renderer: 'svg',
         loop: false,
         autoplay: false,
-        path: `/lottie/stealth_activate/data.json`
+        path: `/lottie/stealth_activate/${structTypeDirectory}/data.json`
       }
     ));
     this.lottieCustomPlayer.registerAnimation(new MapStructLottieAnimationSVG(
@@ -976,7 +996,7 @@ export class MapStructViewerComponent {
         renderer: 'svg',
         loop: false,
         autoplay: false,
-        path: `/lottie/stealth_deactivate/data.json`
+        path: `/lottie/stealth_deactivate/${structTypeDirectory}/data.json`
       }
     ));
   }
