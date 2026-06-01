@@ -55,7 +55,6 @@ const grassManager = new GrassManager(
   `ws://${window.location.hostname}:1443`,
   "structs.>"
 );
-window.grassManager = grassManager;
 
 const blockGrassManager = new GrassManager(
   `ws://${window.location.hostname}:1443`,

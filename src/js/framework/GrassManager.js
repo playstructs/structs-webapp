@@ -66,31 +66,20 @@ export class GrassManager {
     if (this.running) return;
     this.running = true;
     this.backoffMs = 1000;
-    this._supervise(); // fire-and-forget supervised loop
+    this._runSupervisor();
   }
 
   /**
-   * Force a fresh connection. Safe to call externally (resume-check / watchdog).
-   * @return {Promise<void>}
+   * Kick off the supervised loop without leaving a floating promise. Any
+   * unexpected rejection is logged and the supervisor flag is cleared so a
+   * later init()/reconnect() can restart it cleanly.
+   * @private
    */
-  async reconnect() {
-    console.info('[GrassManager] reconnect requested:', this.subject);
-    this.running = true;
-    this.backoffMs = 1000;
-    try { await this.nc?.close(); } catch (e) {} // ends the for-await; loop re-connects
-    if (!this.supervising) this._supervise();
-  }
-
-  /**
-   * Stop the stream entirely.
-   * @return {Promise<void>}
-   */
-  async close() {
-    this.running = false;
-    try { this.subscription?.unsubscribe(); } catch (e) {}
-    try { await this.nc?.close(); } catch (e) {}
-    this.subscription = null;
-    this.nc = null;
+  _runSupervisor() {
+    this._supervise().catch((e) => {
+      console.warn('[GrassManager] supervise loop crashed:', this.subject, e);
+      this.supervising = false;
+    });
   }
 
   /**
