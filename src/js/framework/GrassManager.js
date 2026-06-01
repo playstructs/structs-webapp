@@ -66,18 +66,13 @@ export class GrassManager {
     if (this.running) return;
     this.running = true;
     this.backoffMs = 1000;
-    this._runSupervisor();
-  }
 
-  /**
-   * Kick off the supervised loop without leaving a floating promise. Any
-   * unexpected rejection is logged and the supervisor flag is cleared so a
-   * later init()/reconnect() can restart it cleanly.
-   * @private
-   */
-  _runSupervisor() {
+    // Kick off the supervised loop without leaving a floating promise. If it
+    // ever rejects (defensive — every await inside it is already guarded),
+    // reset to a clean stopped state so a later init() can restart it.
     this._supervise().catch((e) => {
       console.warn('[GrassManager] supervise loop crashed:', this.subject, e);
+      this.running = false;
       this.supervising = false;
     });
   }
