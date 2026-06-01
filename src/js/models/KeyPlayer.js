@@ -81,7 +81,7 @@ export class KeyPlayer {
 
   setAlpha(alpha) {
     if (this.player && this.player.hasOwnProperty('alpha')) {
-      this.player.alpha = alpha;
+      this.player.alpha = parseInt(alpha);
 
       window.dispatchEvent(new SaveGameStateEvent());
       window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
