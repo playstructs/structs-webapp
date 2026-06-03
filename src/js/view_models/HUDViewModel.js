@@ -51,12 +51,16 @@ export class HUDViewModel extends AbstractViewModel {
    * @param {SigningClientManager} signingClientManager
    * @param {StructManager} structManager
    * @param {TaskManager} taskManager
+   * @param {AlphaManager} alphaManager
+   * @param {GrassManager} grassManager
    */
   static init(
     gameState,
     signingClientManager,
     structManager,
-    taskManager
+    taskManager,
+    alphaManager,
+    grassManager
   ) {
     HUDViewModel.gameState = gameState;
     HUDViewModel.signingClientManager = signingClientManager;
@@ -83,6 +87,8 @@ export class HUDViewModel extends AbstractViewModel {
       signingClientManager,
       structManager,
       taskManager,
+      alphaManager,
+      grassManager,
       PLAYER_TYPES.PLAYER,
       'left',
       HUD_IDS.ACTION_BAR_PLAYER
@@ -93,6 +99,8 @@ export class HUDViewModel extends AbstractViewModel {
       signingClientManager,
       structManager,
       taskManager,
+      alphaManager,
+      grassManager,
       PLAYER_TYPES.PLANET_RAIDER,
       'right',
       HUD_IDS.ACTION_BAR_ALPHA_BASE_ENEMY
@@ -103,6 +111,8 @@ export class HUDViewModel extends AbstractViewModel {
       signingClientManager,
       structManager,
       taskManager,
+      alphaManager,
+      grassManager,
       PLAYER_TYPES.RAID_ENEMY,
       'right',
       HUD_IDS.ACTION_BAR_RAID_ENEMY

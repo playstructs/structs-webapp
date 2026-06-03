@@ -623,6 +623,22 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
   }
 
   /**
+   * @param {object} dataset
+   * @return {string}
+   */
+  renderPowerGeneration(dataset) {
+    return this.renderer.renderContentHTML(
+      'Power Generation',
+      null,
+      null,
+      `
+        Alpha Matter: ${dataset.fuel}<br>
+        Power Generation: ${this.numberFormatter.format(dataset.energy)}
+      `
+    );
+  }
+
+  /**
    * @param {object} dataset triggering element's data attributes
    * @return {string}
    */
@@ -691,6 +707,17 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           null,
           'This Struct is not receiving power. It’s abilities are not active.'
         );
+        break;
+      case 'icon-attention':
+        html = this.renderer.renderContentHTML(
+          'No Alpha Infused',
+          null,
+          null,
+          `Consume Alpha Matter to generate Energy.`
+        );
+        break;
+      case 'icon-refine':
+        html = this.renderPowerGeneration(dataset);
         break;
       default:
         const structType = this.gameState.structTypes.getStructType(dataset.suiCheatsheet);

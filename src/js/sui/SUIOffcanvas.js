@@ -8,6 +8,7 @@ export class SUIOffcanvas extends SUIFeature {
     this.offcanvasElm = null;
     this.placement = 'left';
     this.theme = 'player';
+    this.narrow = 'narrow';
 
     // Closes the offcanvas when a click occurs outside of it. Bound here so
     // the same reference can be added/removed from the document listener.
@@ -30,8 +31,22 @@ export class SUIOffcanvas extends SUIFeature {
     this.offcanvasElm.classList.add(`sui-theme-${this.theme}`);
   }
 
-  open() {
+  hide() {
+    this.offcanvasElm.classList.add('hidden');
+    this.offcanvasElm.classList.remove(`sui-mod-${this.narrow}`);
+  }
+
+  unhide() {
     this.offcanvasElm.classList.remove('hidden');
+    this.offcanvasElm.classList.remove(`sui-mod-${this.narrow}`);
+  }
+
+  open(qualitativeWidth = '') {
+    this.unhide();
+
+    if (qualitativeWidth) {
+      this.offcanvasElm.classList.add(`sui-mod-${this[qualitativeWidth]}`);
+    }
 
     // Defer attaching so the click that triggered open() does not bubble up
     // to the document listener and immediately close the offcanvas. The
@@ -43,7 +58,7 @@ export class SUIOffcanvas extends SUIFeature {
   }
 
   close() {
-    this.offcanvasElm.classList.add('hidden');
+    this.hide();
     document.removeEventListener('click', this.handleOutsideClick);
   }
 
@@ -109,7 +124,7 @@ export class SUIOffcanvas extends SUIFeature {
 
     this.offcanvasElm = document.createElement('div');
     this.offcanvasElm.id = `sui-offcanvas`;
-    this.offcanvasElm.classList.add('hidden');
+    this.hide();
     this.offcanvasElm.classList.add('sui-panel');
     this.setPlacement(this.placement);
     this.setTheme(this.theme);

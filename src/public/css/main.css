@@ -2117,6 +2117,15 @@ img.guild-reactor-img {
   inset: 0;
 }
 
+.offcanvas-consume-alpha-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xxxl, 32px);
+  flex: 1 0 0;
+  align-self: stretch;
+}
+
 .offcanvas-struct-list-layout {
   display: flex;
   align-items: flex-start;
