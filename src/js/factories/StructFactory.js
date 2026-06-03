@@ -11,6 +11,7 @@ export class StructFactory extends AbstractFactory {
     const struct = new Struct();
     Object.assign(struct, obj);
     struct.defending_struct_ids = JSON.parse(obj.defending_struct_ids);
+    struct.fuel = parseInt(obj.fuel || 0);
     return struct;
   }
 

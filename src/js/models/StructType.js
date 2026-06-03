@@ -223,6 +223,8 @@ export class StructType {
    * @return {boolean}
    */
   hasOnlineProcess() {
-    return this.hasPlanetaryMining() || this.hasPlanetaryRefinery();
+    return this.hasPlanetaryMining()
+      || this.hasPlanetaryRefinery()
+      || this.hasPowerGeneration();
   }
 }

@@ -50,8 +50,14 @@ class StructManager
               sd_is_defender.protected_struct_id,
               to_jsonb(COALESCE((SELECT array_agg(sd.defending_struct_id ORDER BY sd.defending_struct_id ASC)
                FROM struct_defender sd
-               WHERE sd.protected_struct_id = s.id), ARRAY[]::text[])) AS defending_struct_ids
+               WHERE sd.protected_struct_id = s.id), ARRAY[]::text[])) AS defending_struct_ids,
+              CASE
+                WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN UNIT_LEGACY_FORMAT(COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0), \'ualpha\')
+                ELSE 0
+              END AS fuel
             FROM struct s
+            INNER JOIN struct_type st
+              ON s.type = st.id
             LEFT JOIN struct_attribute sa_health
               ON s.id = sa_health.object_id
               AND sa_health.attribute_type = \'health\'
@@ -104,8 +110,14 @@ class StructManager
               sd_is_defender.protected_struct_id,
               to_jsonb(COALESCE((SELECT array_agg(sd.defending_struct_id ORDER BY sd.defending_struct_id ASC)
                FROM struct_defender sd
-               WHERE sd.protected_struct_id = s.id), ARRAY[]::text[])) AS defending_struct_ids
+               WHERE sd.protected_struct_id = s.id), ARRAY[]::text[])) AS defending_struct_ids,
+              CASE
+                WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN UNIT_LEGACY_FORMAT(COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0), \'ualpha\')
+                ELSE 0
+              END AS fuel
             FROM struct s
+            INNER JOIN struct_type st
+              ON s.type = st.id    
             LEFT JOIN struct_attribute sa_health
               ON s.id = sa_health.object_id
               AND sa_health.attribute_type = \'health\'
