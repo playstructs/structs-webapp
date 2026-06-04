@@ -134,7 +134,7 @@ export class MapStructViewerComponent {
       return;
     }
 
-    if (this.structType.hasOnlineProcess()) {
+    if (this.structType.hasActiveLoopAnimation()) {
 
       const struct = this.structManager.getStructById(this.structId);
       const activeLoopAnimation = this.lottieCustomPlayer.getAnimation(ANIMATION.NAMES.ACTIVE_LOOP);
@@ -402,7 +402,7 @@ export class MapStructViewerComponent {
   }
 
   renderActiveLoopHTML() {
-    if (!this.structType.hasOnlineProcess()) {
+    if (!this.structType.hasActiveLoopAnimation()) {
       return '';
     }
 
@@ -1090,7 +1090,7 @@ export class MapStructViewerComponent {
   }
 
   registerActiveLoopAnimation() {
-    if (!this.structType.hasOnlineProcess()) {
+    if (!this.structType.hasActiveLoopAnimation()) {
       return;
     }
 
