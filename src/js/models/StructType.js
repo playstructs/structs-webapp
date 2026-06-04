@@ -7,7 +7,7 @@ import {
   STRUCT_PLANETARY_DEFENSES,
   STRUCT_PLANETARY_MINING,
   STRUCT_PLANETARY_REFINERY,
-  STRUCT_POWER_GENERATION
+  STRUCT_POWER_GENERATION, STRUCT_TYPES
 } from "../constants/StructConstants";
 
 export class StructType {
@@ -219,12 +219,14 @@ export class StructType {
   }
 
   /**
-   * Checks if the struct type has a process that runs while it is online.
+   * Checks if the struct type has an associated active loop animation that runs while it is online.
    * @return {boolean}
    */
-  hasOnlineProcess() {
+  hasActiveLoopAnimation() {
     return this.hasPlanetaryMining()
       || this.hasPlanetaryRefinery()
-      || this.hasPowerGeneration();
+      || this.hasPowerGeneration()
+      || this.type === STRUCT_TYPES.ORBITAL_SHIELD_GENERATOR
+      || this.type === STRUCT_TYPES.ORE_BUNKER;
   }
 }
