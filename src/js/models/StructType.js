@@ -42,6 +42,7 @@ export class StructType {
     this.primary_weapon_recoil_damage = null;
     this.primary_weapon_shot_success_rate_numerator = null;
     this.primary_weapon_shot_success_rate_denominator = null;
+    this.primary_weapon_armour_piercing = null;
     this.secondary_weapon = null;
     this.secondary_weapon_label = null;
     this.secondary_weapon_description = null;
@@ -57,6 +58,7 @@ export class StructType {
     this.secondary_weapon_recoil_damage = null;
     this.secondary_weapon_shot_success_rate_numerator = null;
     this.secondary_weapon_shot_success_rate_denominator = null;
+    this.secondary_weapon_armour_piercing = null;
     this.passive_weaponry = null;
     this.passive_weaponry_label = null;
     this.passive_weaponry_description = null;

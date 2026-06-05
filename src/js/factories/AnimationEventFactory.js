@@ -148,7 +148,7 @@ export class AnimationEventFactory {
         attackStructType === STRUCT_TYPES.BATTLESHIP
         && attackStructOperatingAmbit === AMBITS.SPACE
         && targetStructOperatingAmbit === AMBITS.SPACE
-        && weaponSystem === STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
+        && weaponSystem === STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON // TODO: For backwards compatibility, remove when Battleship has two weapons
       )
       || (
         attackStructType === STRUCT_TYPES.TANK
@@ -182,6 +182,12 @@ export class AnimationEventFactory {
         && attackStructOperatingAmbit === AMBITS.AIR
         && targetStructOperatingAmbit === AMBITS.AIR
         && weaponSystem === STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
+      )
+      || (
+        attackStructType === STRUCT_TYPES.BATTLESHIP
+        && attackStructOperatingAmbit === AMBITS.SPACE
+        && targetStructOperatingAmbit === AMBITS.SPACE
+        && weaponSystem === STRUCT_WEAPON_SYSTEM.SECONDARY_WEAPON
       )
       || (
         attackStructType === STRUCT_TYPES.COMMAND_SHIP
