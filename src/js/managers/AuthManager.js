@@ -23,6 +23,7 @@ import {StructMineStatusListener} from "../grass_listeners/StructMineStatusListe
 import {StructRefineStatusListener} from "../grass_listeners/StructRefineStatusListener";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {KeyPlayerLastActionListener} from "../grass_listeners/KeyPlayerLastActionListener";
+import {KeyPlayerShieldChangeStatusListener} from "../grass_listeners/KeyPlayerShieldChangeStatusListener";
 
 export class AuthManager {
 
@@ -167,6 +168,7 @@ export class AuthManager {
       this.grassManager.registerListener(new KeyPlayerLastActionListener(this.gameState, PLAYER_TYPES.PLAYER));
       this.grassManager.registerListener(new PlayerAlphaListener(this.gameState));
       this.grassManager.registerListener(new KeyPlayerOreListener(this.gameState, this.guildAPI, PLAYER_TYPES.PLAYER));
+      this.grassManager.registerListener(new KeyPlayerShieldChangeStatusListener(this.gameState, PLAYER_TYPES.PLAYER));
       this.grassManager.registerListener(new PlayerLoadListener(this.gameState));
       this.grassManager.registerListener(new PlayerStructsLoadListener(this.gameState));
       this.grassManager.registerListener(new PlayerCapacityListener(this.gameState));

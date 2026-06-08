@@ -1,5 +1,4 @@
 import {EVENTS} from "../constants/Events";
-import {FEE} from "../constants/Fee";
 import {TASK} from "../constants/TaskConstants";
 import {TASK_TYPES} from "../constants/TaskTypes";
 import {TASK_MANAGER_STATUS} from "../constants/TaskManagerStatus";
@@ -9,6 +8,7 @@ import {TaskManagerStatusChangedEvent} from "../events/TaskManagerStatusChangedE
 import {TASK_STATUS} from "../constants/TaskStatus";
 import {OBJECT_TYPES} from "../constants/ObjectTypes";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {RAID_STATUS} from "../constants/RaidStatus";
 
 
 /*
@@ -264,6 +264,8 @@ export class TaskManager {
 
             this.runningQueueRemove(pid);
             this.waitingQueueRemove(pid);
+
+            delete this.processes[pid];
 
             this.runNext();
         }
@@ -591,7 +593,35 @@ export class TaskManager {
         const work = await this.guildAPI.getWorkByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
         work.forEach((workTask) => {
             const task = this.taskStateFactory.initTaskFromWork(workTask);
+
+            // A raid task may only run while the targeted planet's shield is
+            // vulnerable. The backend work record can persist outside that
+            // window, so don't restore (and make sure we tear down) a raid task
+            // whose planet is no longer SHIELD_VULNERABLE.
+            if (
+                task.task_type === TASK_TYPES.RAID
+                && !this.isRaidTaskShieldVulnerable(task)
+            ) {
+                return;
+            }
+
             this.spawn(task);
         });
+    }
+
+    /**
+     * Determines whether the planet targeted by a raid task currently has a
+     * vulnerable shield, which is the only state in which the raid task is
+     * allowed to run.
+     *
+     * @param {TaskState} task
+     * @return {boolean}
+     */
+    isRaidTaskShieldVulnerable(task) {
+        const raidInfo = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo;
+        return (
+            raidInfo.planet_id === task.target_id
+            && raidInfo.status === RAID_STATUS.SHIELD_VULNERABLE
+        );
     }
 }

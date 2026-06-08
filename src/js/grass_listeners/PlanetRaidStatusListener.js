@@ -62,6 +62,16 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
     this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetRaidStatus(messageData.detail.status);
   }
 
+  raidShieldVulnerable(messageData) {
+    if (messageData.detail.status !== RAID_STATUS.SHIELD_VULNERABLE) {
+      return;
+    }
+
+    console.log('PLANET RAID SHIELD VULNERABLE HANDLER');
+
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetRaidStatus(messageData.detail.status);
+  }
+
   raidEndActions() {
     this.gameState.clearPlanetRaidData();
 
@@ -116,6 +126,7 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
 
       this.raidInitiated(messageData);
       this.raidOngoing(messageData);
+      this.raidShieldVulnerable(messageData);
       this.raidEnded(messageData);
     }
   }
