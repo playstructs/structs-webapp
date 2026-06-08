@@ -9,7 +9,7 @@ import {TaskStateChangedEvent} from "../events/TaskStateChangedEvent";
 export class TaskProcess {
 
   /**
-   * @param {TaskState} _state
+   * @param {TaskState} state
    */
   constructor(state) {
     this.worker = null;
@@ -84,8 +84,10 @@ export class TaskProcess {
   }
 
   clearWorker() {
+    if (this.worker) {
       this.worker.terminate();
-      this.worker = null;
+    }
+    this.worker = null;
   }
 
   /**
