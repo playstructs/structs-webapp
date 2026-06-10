@@ -7,7 +7,7 @@ import {
   STRUCT_PLANETARY_DEFENSES,
   STRUCT_PLANETARY_MINING,
   STRUCT_PLANETARY_REFINERY,
-  STRUCT_POWER_GENERATION
+  STRUCT_POWER_GENERATION, STRUCT_TYPES
 } from "../constants/StructConstants";
 
 export class StructType {
@@ -42,6 +42,7 @@ export class StructType {
     this.primary_weapon_recoil_damage = null;
     this.primary_weapon_shot_success_rate_numerator = null;
     this.primary_weapon_shot_success_rate_denominator = null;
+    this.primary_weapon_armour_piercing = null;
     this.secondary_weapon = null;
     this.secondary_weapon_label = null;
     this.secondary_weapon_description = null;
@@ -57,6 +58,7 @@ export class StructType {
     this.secondary_weapon_recoil_damage = null;
     this.secondary_weapon_shot_success_rate_numerator = null;
     this.secondary_weapon_shot_success_rate_denominator = null;
+    this.secondary_weapon_armour_piercing = null;
     this.passive_weaponry = null;
     this.passive_weaponry_label = null;
     this.passive_weaponry_description = null;
@@ -219,10 +221,14 @@ export class StructType {
   }
 
   /**
-   * Checks if the struct type has a process that runs while it is online.
+   * Checks if the struct type has an associated active loop animation that runs while it is online.
    * @return {boolean}
    */
-  hasOnlineProcess() {
-    return this.hasPlanetaryMining() || this.hasPlanetaryRefinery();
+  hasActiveLoopAnimation() {
+    return this.hasPlanetaryMining()
+      || this.hasPlanetaryRefinery()
+      || this.hasPowerGeneration()
+      || this.type === STRUCT_TYPES.ORBITAL_SHIELD_GENERATOR
+      || this.type === STRUCT_TYPES.ORE_BUNKER;
   }
 }

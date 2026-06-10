@@ -43,6 +43,9 @@ export class Struct {
 
     /** @type {number|null} */
     this.destroyed_block = null;
+
+    /** @type {number|null} amount of alpha infused in the struct */
+    this.fuel = null;
   }
 
   /**

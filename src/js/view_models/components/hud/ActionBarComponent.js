@@ -15,6 +15,7 @@ import {ClearAttackTargetsEvent} from "../../../events/ClearAttackTargetsEvent";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
 import {NumberFormatter} from "../../../util/NumberFormatter";
 import {ShowStructStillEvent} from "../../../events/ShowStructStillEvent";
+import {ConsumeAlphaOffcanvas} from "../offcanvas/ConsumeAlphaOffcanvas";
 
 export class ActionBarComponent extends AbstractViewModelComponent {
 
@@ -23,6 +24,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {SigningClientManager} signingClientManager
    * @param {StructManager} structManager
    * @param {TaskManager} taskManager
+   * @param {AlphaManager} alphaManager
+   * @param {GrassManager} grassManager
    * @param {string} playerType
    * @param {string} align left or right
    * @param {string} id
@@ -32,6 +35,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     signingClientManager,
     structManager,
     taskManager,
+    alphaManager,
+    grassManager,
     playerType,
     align,
     id
@@ -42,6 +47,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.signingClientManager = signingClientManager;
     this.structManager = structManager;
     this.taskManager = taskManager;
+    this.alphaManager = alphaManager;
+    this.grassManager = grassManager;
     this.numberFormatter = new NumberFormatter();
 
     /* Style */
@@ -791,6 +798,30 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   /**
    * @param {Struct} struct
    * @param {StructType} structType
+   * @return {string[]}
+   */
+  buildPowerGeneratorPropertyIcons(struct, structType) {
+    if (!structType.hasPowerGeneration() || !struct.isOnline()) {
+      return [];
+    }
+
+    const icons = [];
+
+    if (struct.isOnline()) {
+      const icon = struct.fuel < 1 ? 'icon-attention' : 'icon-refine';
+      icons.push(`
+        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${struct.fuel}" data-energy="${struct.fuel * structType.generating_rate}">
+          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value">${struct.fuel}</span>
+        </a> 
+      `);
+    }
+
+    return icons;
+  }
+
+  /**
+   * @param {Struct} struct
+   * @param {StructType} structType
    * @return {string}
    */
   buildStructPropertyIcons(struct, structType) {
@@ -816,6 +847,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
     icons = icons.concat(this.buildExtractorPropertyIcons(struct, structType));
     icons = icons.concat(this.buildRefineryPropertyIcons(struct, structType));
+    icons = icons.concat(this.buildPowerGeneratorPropertyIcons(struct, structType));
 
     return icons.join('');
   }
@@ -1222,6 +1254,55 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * @param {array} buttons
+   * @param {Struct} struct
+   * @param {StructType} structType
+   */
+  buildConsumeAlphaActionButton(buttons, struct, structType) {
+    if (structType.hasPowerGeneration()) {
+      const btnClass = this.isActionAvailable(struct)
+        ? 'sui-mod-default'
+        : 'sui-mod-disabled';
+      buttons.push(`
+        <a 
+          id="${this.getActionBtnIdPrefix()}-consume-alpha-btn"
+          href="javascript: void(0)"
+          class="sui-panel-btn ${btnClass}"
+          title="Consume Alpha"
+          data-sui-cheatsheet="${structType.type}"
+          data-selected-property="power_generation"
+          data-action-charge="0"
+        >
+          <i class="sui-icon-md icon-send-alpha"></i>
+        </a>
+      `);
+    }
+  }
+
+  /**
+   * @param {Struct} struct
+   * @param {StructType} structType
+   */
+  attachConsumeAlphaButtonHandler(struct, structType) {
+    if (structType.hasPowerGeneration()) {
+      const btn = document.getElementById(`${this.getActionBtnIdPrefix()}-consume-alpha-btn`);
+      if (!btn) return;
+
+      btn.addEventListener('click', () => {
+        if (!this.isActionAvailable(struct)) return;
+        const offcanvas = new ConsumeAlphaOffcanvas(
+          this.gameState,
+          this.alphaManager,
+          this.grassManager,
+          struct,
+          structType
+        );
+        offcanvas.render();
+      });
+    }
+  }
+
+  /**
    * Builds the HTML for struct action buttons based on struct type capabilities.
    *
    * @param {Struct} struct
@@ -1236,6 +1317,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.buildStealthModeActionButton(buttons, struct, structType);
     this.buildMoveActionButton(buttons, struct, structType);
     this.buildDefendActionButton(buttons, struct, structType);
+    this.buildConsumeAlphaActionButton(buttons, struct, structType);
 
     return buttons.join('');
   }
@@ -1252,6 +1334,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.attachStealthModeButtonHandler(struct, structType);
     this.attachMoveButtonHandler(struct, structType);
     this.attachDefendButtonHandler(struct, structType);
+    this.attachConsumeAlphaButtonHandler(struct, structType);
   }
 
   renderHTML() {

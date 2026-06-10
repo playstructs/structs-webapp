@@ -197,7 +197,7 @@ await gameState.load();
 gameState.settings = await guildAPI.getSettings();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
-HUDViewModel.init(gameState, signingClientManager, structManager, taskManager);
+HUDViewModel.init(gameState, signingClientManager, structManager, taskManager, alphaManager, grassManager);
 hudContainer.innerHTML = HUDViewModel.render();
 HUDViewModel.initPageCode();
 

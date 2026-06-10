@@ -61,4 +61,15 @@ export class AlphaManager {
       }
     );
   }
+
+  /**
+   * @param {string} structId
+   * @param {number} alphaAmount
+   */
+  async structGeneratorInfuse(structId, alphaAmount) {
+    await this.signingClientManager.queueMsgStructGeneratorInfuse(
+      structId,
+      `${this.convertAlphaToUAlpha(alphaAmount)}ualpha`
+    );
+  }
 }
