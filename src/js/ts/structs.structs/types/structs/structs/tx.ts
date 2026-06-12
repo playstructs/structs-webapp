@@ -264,6 +264,7 @@ export interface MsgGuildMembershipJoinProxy {
   proofSignature: string;
   playerName: string;
   playerPfp: string;
+  playerPfpClientRenderAttributes: string;
 }
 
 export interface MsgGuildMembershipKick {
@@ -418,6 +419,12 @@ export interface MsgPlayerUpdatePfp {
   creator: string;
   playerId: string;
   pfp: string;
+}
+
+export interface MsgPlayerUpdatePfpClientRenderAttributes {
+  creator: string;
+  playerId: string;
+  pfpClientRenderAttributes: string;
 }
 
 export interface MsgPlayerUpdateResponse {
@@ -3912,7 +3919,16 @@ export const MsgGuildMembershipJoin: MessageFns<MsgGuildMembershipJoin> = {
 };
 
 function createBaseMsgGuildMembershipJoinProxy(): MsgGuildMembershipJoinProxy {
-  return { creator: "", address: "", substationId: "", proofPubKey: "", proofSignature: "", playerName: "", playerPfp: "" };
+  return {
+    creator: "",
+    address: "",
+    substationId: "",
+    proofPubKey: "",
+    proofSignature: "",
+    playerName: "",
+    playerPfp: "",
+    playerPfpClientRenderAttributes: "",
+  };
 }
 
 export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy> = {
@@ -3937,6 +3953,9 @@ export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy
     }
     if (message.playerPfp !== "") {
       writer.uint32(58).string(message.playerPfp);
+    }
+    if (message.playerPfpClientRenderAttributes !== "") {
+      writer.uint32(66).string(message.playerPfpClientRenderAttributes);
     }
     return writer;
   },
@@ -4004,6 +4023,14 @@ export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy
           message.playerPfp = reader.string();
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.playerPfpClientRenderAttributes = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4022,6 +4049,9 @@ export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy
       proofSignature: isSet(object.proofSignature) ? globalThis.String(object.proofSignature) : "",
       playerName: isSet(object.playerName) ? globalThis.String(object.playerName) : "",
       playerPfp: isSet(object.playerPfp) ? globalThis.String(object.playerPfp) : "",
+      playerPfpClientRenderAttributes: isSet(object.playerPfpClientRenderAttributes)
+        ? globalThis.String(object.playerPfpClientRenderAttributes)
+        : "",
     };
   },
 
@@ -4048,6 +4078,9 @@ export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy
     if (message.playerPfp !== "") {
       obj.playerPfp = message.playerPfp;
     }
+    if (message.playerPfpClientRenderAttributes !== "") {
+      obj.playerPfpClientRenderAttributes = message.playerPfpClientRenderAttributes;
+    }
     return obj;
   },
 
@@ -4063,6 +4096,7 @@ export const MsgGuildMembershipJoinProxy: MessageFns<MsgGuildMembershipJoinProxy
     message.proofSignature = object.proofSignature ?? "";
     message.playerName = object.playerName ?? "";
     message.playerPfp = object.playerPfp ?? "";
+    message.playerPfpClientRenderAttributes = object.playerPfpClientRenderAttributes ?? "";
     return message;
   },
 };
@@ -12171,6 +12205,104 @@ export const MsgPlayerUpdatePfp: MessageFns<MsgPlayerUpdatePfp> = {
     message.creator = object.creator ?? "";
     message.playerId = object.playerId ?? "";
     message.pfp = object.pfp ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgPlayerUpdatePfpClientRenderAttributes(): MsgPlayerUpdatePfpClientRenderAttributes {
+  return { creator: "", playerId: "", pfpClientRenderAttributes: "" };
+}
+
+export const MsgPlayerUpdatePfpClientRenderAttributes: MessageFns<MsgPlayerUpdatePfpClientRenderAttributes> = {
+  encode(message: MsgPlayerUpdatePfpClientRenderAttributes, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(18).string(message.playerId);
+    }
+    if (message.pfpClientRenderAttributes !== "") {
+      writer.uint32(26).string(message.pfpClientRenderAttributes);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgPlayerUpdatePfpClientRenderAttributes {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgPlayerUpdatePfpClientRenderAttributes();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.pfpClientRenderAttributes = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgPlayerUpdatePfpClientRenderAttributes {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      pfpClientRenderAttributes: isSet(object.pfpClientRenderAttributes)
+        ? globalThis.String(object.pfpClientRenderAttributes)
+        : "",
+    };
+  },
+
+  toJSON(message: MsgPlayerUpdatePfpClientRenderAttributes): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.pfpClientRenderAttributes !== "") {
+      obj.pfpClientRenderAttributes = message.pfpClientRenderAttributes;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgPlayerUpdatePfpClientRenderAttributes>, I>>(
+    base?: I,
+  ): MsgPlayerUpdatePfpClientRenderAttributes {
+    return MsgPlayerUpdatePfpClientRenderAttributes.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgPlayerUpdatePfpClientRenderAttributes>, I>>(
+    object: I,
+  ): MsgPlayerUpdatePfpClientRenderAttributes {
+    const message = createBaseMsgPlayerUpdatePfpClientRenderAttributes();
+    message.creator = object.creator ?? "";
+    message.playerId = object.playerId ?? "";
+    message.pfpClientRenderAttributes = object.pfpClientRenderAttributes ?? "";
     return message;
   },
 };

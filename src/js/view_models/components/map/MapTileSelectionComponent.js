@@ -647,11 +647,13 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     window.dispatchEvent(new ClearDefendTargetsEvent(this.mapId));
 
     const defendingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+    const defendingStructType = this.gameState.structTypes.getStructTypeById(defendingStruct.type);
 
     // Send defend set message to chain
     await this.signingClientManager.queueMsgStructDefenseSet(
       defendingStruct.id,
-      protectedStructId
+      protectedStructId,
+      defendingStructType.defend_change_charge
     );
   }
 
@@ -674,15 +676,21 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     window.dispatchEvent(new ClearAttackTargetsEvent(this.mapId));
 
     const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
-    const weaponSystem = (currentAction === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON)
+    const attackingStructType = this.gameState.structTypes.getStructTypeById(attackingStruct.type);
+    const isPrimaryWeapon = currentAction === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON;
+    const weaponSystem = isPrimaryWeapon
       ? STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
       : STRUCT_WEAPON_SYSTEM.SECONDARY_WEAPON;
+    const weaponCharge = isPrimaryWeapon
+      ? attackingStructType.primary_weapon_charge
+      : attackingStructType.secondary_weapon_charge;
 
     // Send attack message to chain
     await this.signingClientManager.queueMsgStructAttack(
       attackingStruct.id,
       [targetStructId],
-      weaponSystem
+      weaponSystem,
+      weaponCharge
     );
   }
 
@@ -698,13 +706,15 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     const ambit = tile.getAttribute('data-ambit');
     const slot = parseInt(tile.getAttribute('data-slot'), 10);
     const structBeingMoved = this.gameState.actionBarLock.getActionSourceStruct();
+    const structBeingMovedType = this.gameState.structTypes.getStructTypeById(structBeingMoved.type);
 
     // Send move message to chain
     await this.signingClientManager.queueMsgStructMove(
       structBeingMoved.id,
       structBeingMoved.location_type,
       ambit,
-      slot
+      slot,
+      structBeingMovedType.move_charge
     );
 
     if (
