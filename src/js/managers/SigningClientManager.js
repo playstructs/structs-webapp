@@ -593,12 +593,13 @@ export class SigningClientManager {
    * @param {string} proofSignature
    * @param {string} playerName
    * @param {string} playerPfp
+   * @param {string} playerPfpClientRenderAttributes
    * @param {object} [options]
    */
-  async queueMsgGuildMembershipJoinProxy(address, substationId, proofPubKey, proofSignature, playerName, playerPfp, options = {}) {
+  async queueMsgGuildMembershipJoinProxy(address, substationId, proofPubKey, proofSignature, playerName, playerPfp, playerPfpClientRenderAttributes, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgGuildMembershipJoinProxy',
-      {address, substationId, proofPubKey, proofSignature, playerName, playerPfp},
+      {address, substationId, proofPubKey, proofSignature, playerName, playerPfp, playerPfpClientRenderAttributes},
       options,
     );
     return this.queue.whenSettled(id);
@@ -844,6 +845,20 @@ export class SigningClientManager {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgPlayerUpdatePfp',
       {playerId, pfp},
+      options,
+    );
+    return this.queue.whenSettled(id);
+  }
+
+  /**
+   * @param {string} playerId
+   * @param {string} pfpClientRenderAttributes
+   * @param {object} [options]
+   */
+  async queueMsgPlayerUpdatePfpClientRenderAttributes(playerId, pfpClientRenderAttributes, options = {}) {
+    const id = this.queue.enqueueImmediate(
+      '/structs.structs.MsgPlayerUpdatePfpClientRenderAttributes',
+      {playerId, pfpClientRenderAttributes},
       options,
     );
     return this.queue.whenSettled(id);

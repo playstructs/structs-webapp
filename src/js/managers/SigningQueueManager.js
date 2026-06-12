@@ -2,31 +2,10 @@ import {TimeoutError} from "@cosmjs/stargate";
 import {EVENTS} from "../constants/Events";
 import {FEE} from "../constants/Fee";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {SIGNING_QUEUE} from "../constants/SigningQueueConstants";
+import {TASK} from "../constants/TaskConstants";
 import {SigningTransaction, TX_STATUS} from "../models/SigningTransaction";
 import {SigningTransactionSettledEvent} from "../events/SigningTransactionSettledEvent";
-
-/**
- * Fallback average block time (ms) used by the estimate helpers until the
- * rolling sample buffer has >= 2 timestamps. Tune to the observed chain rate.
- *
- * @type {number}
- */
-const DEFAULT_BLOCK_TIME_MS = 1500;
-
-/**
- * How many block timestamps to keep for the rolling average.
- *
- * @type {number}
- */
-const BLOCK_TIME_SAMPLE_SIZE = 20;
-
-/**
- * Blocks to poll the chain for a tx after a cosmjs TimeoutError before treating
- * it as a genuine failure.
- *
- * @type {number}
- */
-const TIMEOUT_POLL_BLOCKS = 5;
 
 /**
  * Validate that a payload is safe to persist as JSON. Rejects anything that
@@ -91,11 +70,6 @@ export function assertSerializable(payload) {
  * 1-2 block GRASS lag and is clamped opportunistically once GRASS catches up.
  */
 export class SigningQueueManager {
-  static STORAGE_KEY_PREFIX = 'signingQueue';
-  static STORAGE_VERSION = 1;
-  static DEFAULT_RETRY_LIMIT = 2;
-  /** 30 minutes — older persisted snapshots are quarantined, not replayed. */
-  static MAX_QUEUE_AGE_MS = 30 * 60 * 1000;
 
   /**
    * @param {GameState} gameState
@@ -175,7 +149,7 @@ export class SigningQueueManager {
     // unless explicitly provided. Wiring a caller is a one-liner here later.
     const retryLimit = typeof options.retryLimit === 'number'
       ? options.retryLimit
-      : SigningQueueManager.DEFAULT_RETRY_LIMIT;
+      : SIGNING_QUEUE.DEFAULT_RETRY_LIMIT;
 
     const tx = SigningTransaction.create({
       typeUrl,
@@ -257,7 +231,7 @@ export class SigningQueueManager {
    */
   recordBlockTime() {
     this.blockTimestamps.push(Date.now());
-    if (this.blockTimestamps.length > BLOCK_TIME_SAMPLE_SIZE) {
+    if (this.blockTimestamps.length > SIGNING_QUEUE.BLOCK_TIME_SAMPLE_SIZE) {
       this.blockTimestamps.shift();
     }
   }
@@ -268,7 +242,7 @@ export class SigningQueueManager {
   getAvgBlockMs() {
     const t = this.blockTimestamps;
     if (t.length < 2) {
-      return DEFAULT_BLOCK_TIME_MS;
+      return TASK.ESTIMATED_BLOCK_TIME;
     }
     return (t[t.length - 1] - t[0]) / (t.length - 1);
   }
@@ -501,14 +475,14 @@ export class SigningQueueManager {
   }
 
   /**
-   * Poll the chain for a tx hash for up to TIMEOUT_POLL_BLOCKS block ticks.
+   * Poll the chain for a tx hash for up to SIGNING_QUEUE.TIMEOUT_POLL_BLOCKS block ticks.
    * `inFlight` stays set during the poll (still one logical broadcast).
    *
    * @param {string} txId
    * @return {Promise<object|null>} the indexed tx, or null if not found in time
    */
   async pollForTx(txId) {
-    for (let i = 0; i < TIMEOUT_POLL_BLOCKS; i++) {
+    for (let i = 0; i < SIGNING_QUEUE.TIMEOUT_POLL_BLOCKS; i++) {
       try {
         const found = await this.gameState.signingClient.getTx(txId);
         if (found) {
@@ -544,7 +518,7 @@ export class SigningQueueManager {
         resolve();
       };
       window.addEventListener(EVENTS.BLOCK_HEIGHT_CHANGED, finish);
-      setTimeout(finish, Math.max(DEFAULT_BLOCK_TIME_MS, this.getAvgBlockMs()) * 2);
+      setTimeout(finish, Math.max(TASK.ESTIMATED_BLOCK_TIME, this.getAvgBlockMs()) * 2);
     });
   }
 
@@ -723,7 +697,7 @@ export class SigningQueueManager {
     if (!address || !this.wsUrl) {
       return null;
     }
-    return `${SigningQueueManager.STORAGE_KEY_PREFIX}:${this.wsUrl}:${address}`;
+    return `${SIGNING_QUEUE.STORAGE_KEY_PREFIX}:${this.wsUrl}:${address}`;
   }
 
   /**
@@ -736,7 +710,7 @@ export class SigningQueueManager {
       return;
     }
     const snapshot = {
-      version: SigningQueueManager.STORAGE_VERSION,
+      version: SIGNING_QUEUE.STORAGE_VERSION,
       savedAt: Date.now(),
       savedAtBlock: this.gameState.currentBlockHeight,
       scheduleAnchorHeight: this.scheduleAnchorHeight,
@@ -790,15 +764,15 @@ export class SigningQueueManager {
 
     // Review hardening #2: stale-queue guard (applies before version check).
     if (typeof state.savedAt === 'number'
-      && Date.now() - state.savedAt > SigningQueueManager.MAX_QUEUE_AGE_MS) {
+      && Date.now() - state.savedAt > SIGNING_QUEUE.MAX_QUEUE_AGE_MS) {
       console.warn('[SigningQueueManager] persisted queue is stale; quarantining, starting empty.');
       this.#quarantine(storageKey, raw);
       return;
     }
 
-    if (state.version !== SigningQueueManager.STORAGE_VERSION) {
+    if (state.version !== SIGNING_QUEUE.STORAGE_VERSION) {
       console.warn(
-        `[SigningQueueManager] queue version mismatch (have ${state.version}, want ${SigningQueueManager.STORAGE_VERSION}); starting empty.`
+        `[SigningQueueManager] queue version mismatch (have ${state.version}, want ${SIGNING_QUEUE.STORAGE_VERSION}); starting empty.`
       );
       return;
     }
