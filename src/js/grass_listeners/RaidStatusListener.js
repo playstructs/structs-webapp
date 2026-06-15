@@ -67,7 +67,7 @@ export class RaidStatusListener extends AbstractGrassListener {
   }
 
   raidShieldVulnerable(messageData) {
-    if (messageData.detail.status !== RAID_STATUS.SHIELD_VULNERABLE) {
+    if (messageData.detail.status !== RAID_STATUS.SHIELDS_VULNERABLE) {
       return;
     }
 

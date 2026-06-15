@@ -597,7 +597,7 @@ export class TaskManager {
             // A raid task may only run while the targeted planet's shield is
             // vulnerable. The backend work record can persist outside that
             // window, so don't restore (and make sure we tear down) a raid task
-            // whose planet is no longer SHIELD_VULNERABLE.
+            // whose planet is no longer SHIELDS_VULNERABLE.
             if (
                 task.task_type === TASK_TYPES.RAID
                 && !this.isRaidTaskShieldVulnerable(task)
@@ -621,7 +621,7 @@ export class TaskManager {
         const raidInfo = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo;
         return (
             raidInfo.planet_id === task.target_id
-            && raidInfo.status === RAID_STATUS.SHIELD_VULNERABLE
+            && raidInfo.status === RAID_STATUS.SHIELDS_VULNERABLE
         );
     }
 }

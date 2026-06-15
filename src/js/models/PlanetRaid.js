@@ -14,7 +14,7 @@ export class PlanetRaid {
     return (
         this.status === RAID_STATUS.INITIATED
         || this.status === RAID_STATUS.ONGOING
-        || this.status === RAID_STATUS.SHIELD_VULNERABLE
+        || this.status === RAID_STATUS.SHIELDS_VULNERABLE
     );
   }
 }

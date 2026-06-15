@@ -472,7 +472,7 @@ export class PlanetCardBuilder {
     } else if (
       this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.status === RAID_STATUS.INITIATED
       || this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.status === RAID_STATUS.ONGOING
-      || this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.status === RAID_STATUS.SHIELD_VULNERABLE
+      || this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.status === RAID_STATUS.SHIELDS_VULNERABLE
     ) {
 
       type = PLANET_CARD_TYPES.RAID_ACTIVE;
