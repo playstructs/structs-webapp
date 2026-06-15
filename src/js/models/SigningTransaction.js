@@ -1,3 +1,5 @@
+import {UuidUtil} from "../util/UuidUtil";
+
 /**
  * Lifecycle states for a queued signing transaction.
  *
@@ -105,7 +107,7 @@ export class SigningTransaction {
    */
   static create({ typeUrl, payload, requiresCharge, chargeCost, retryLimit, accountAddress, enqueuedAtBlock }) {
     return new SigningTransaction({
-      id: crypto.randomUUID(),
+      id: UuidUtil.generate(),
       message: { typeUrl, payload },
       accountAddress,
       requiresCharge: !!requiresCharge,
