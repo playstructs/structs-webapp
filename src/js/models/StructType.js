@@ -229,6 +229,7 @@ export class StructType {
       || this.hasPlanetaryRefinery()
       || this.hasPowerGeneration()
       || this.type === STRUCT_TYPES.ORBITAL_SHIELD_GENERATOR
-      || this.type === STRUCT_TYPES.ORE_BUNKER;
+      || this.type === STRUCT_TYPES.ORE_BUNKER
+      || this.type === STRUCT_TYPES.JAMMING_SATELLITE;
   }
 }
