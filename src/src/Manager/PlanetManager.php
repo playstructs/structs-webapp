@@ -198,7 +198,7 @@ class PlanetManager
             INNER JOIN fleet f
               ON pr.fleet_id = f.id
             WHERE pr.planet_id = :planet_id
-            AND pr.status IN (\'initiated\', \'ongoing\')
+            AND pr.status IN (\'initiated\', \'ongoing\', \'shieldsVulnerable\')
             ORDER BY pr.updated_at DESC
             LIMIT 1;
         ';
@@ -233,7 +233,7 @@ class PlanetManager
             INNER JOIN planet p
               ON pr.planet_id = p.id
             WHERE pr.fleet_id = :fleet_id
-            AND pr.status IN (\'initiated\', \'ongoing\')
+            AND pr.status IN (\'initiated\', \'ongoing\', \'shieldsVulnerable\')
             ORDER BY pr.updated_at DESC
             LIMIT 1;
         ';

@@ -43,8 +43,6 @@ export class RaidStatusListener extends AbstractGrassListener {
     this.raidManager.initRaidEnemy().then(() => {
       console.log('RAID ENEMY INITIATED DONE');
 
-      window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield  )));
-
       // Also needs updating as the fleet has moved away
       this.mapManager.configureAlphaBaseMap();
       this.gameState.alphaBaseMap.render();
@@ -65,7 +63,27 @@ export class RaidStatusListener extends AbstractGrassListener {
 
     this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanetRaidStatus(messageData.detail.status);
 
-    window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(messageData.detail.fleet_id, messageData.detail.planet_id, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid, this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield  )));
+    window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.fleet_id));
+  }
+
+  raidShieldVulnerable(messageData) {
+    if (messageData.detail.status !== RAID_STATUS.SHIELDS_VULNERABLE) {
+      return;
+    }
+
+    console.log('RAID SHIELD VULNERABLE HANDLER');
+
+    this.gameState.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id).then(shieldInfo => {
+      this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
+      this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanetRaidStatus(messageData.detail.status);
+
+      window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initRaidTask(
+        messageData.detail.fleet_id,
+        messageData.detail.planet_id,
+        this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid,
+        this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield
+      )));
+    })
   }
 
 
@@ -136,6 +154,7 @@ export class RaidStatusListener extends AbstractGrassListener {
 
       this.raidInitiated(messageData);
       this.raidOngoing(messageData);
+      this.raidShieldVulnerable(messageData);
       this.raidEnded(messageData);
     }
 
