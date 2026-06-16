@@ -374,6 +374,18 @@ export class SigningQueueManager {
       return;
     }
 
+    console.debug('[SigningQueueManager] Broadcasting transaction:', {
+      id: tx.id,
+      typeUrl: tx.message.typeUrl,
+      payload: tx.message.payload,
+      isAction: tx.isAction,
+      chargeCost: tx.chargeCost,
+      attempts: tx.attempts,
+      broadcastAtBlock: tx.broadcastAtBlock,
+      creator: this.gameState.signingAccount.address,
+      msg,
+    });
+
     try {
       const response = await this.gameState.signingClient.signAndBroadcast(
         this.gameState.signingAccount.address,
