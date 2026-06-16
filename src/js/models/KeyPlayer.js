@@ -52,6 +52,9 @@ export class KeyPlayer {
     /** @type {number} GRASS/chain/API confirmed value; read by the signing queue scheduler. */
     this.confirmedLastActionBlockHeight = 0;
 
+    /** @type {boolean} True once the confirmed value has been loaded (API/GRASS); gates charge scheduling. */
+    this.confirmedLastActionLoaded = false;
+
     /** @type {number} */
     this.chargeLevel = 0;
 
@@ -121,6 +124,7 @@ export class KeyPlayer {
   setLastActionBlockHeight(currentBlockHeight, height) {
     this.lastActionBlockHeight = height;
     this.confirmedLastActionBlockHeight = height;
+    this.confirmedLastActionLoaded = true;
     this.chargeLevel = this.chargeCalculator.calc(currentBlockHeight, this.lastActionBlockHeight);
 
     window.dispatchEvent(new SaveGameStateEvent());

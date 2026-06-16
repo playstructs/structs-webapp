@@ -202,6 +202,18 @@ export class SigningQueueManager {
   }
 
   /**
+   * Whether the PLAYER's confirmed last-action height has been loaded from the
+   * API/GRASS yet. The action lane is held until this is true so charge actions
+   * are never scheduled against the default (0) base before it is known.
+   *
+   * @return {boolean}
+   */
+  isConfirmedActionLoaded() {
+    const player = this.gameState.keyPlayers?.[PLAYER_TYPES.PLAYER];
+    return !!player && player.confirmedLastActionLoaded === true;
+  }
+
+  /**
    * Base block for charge math: the later of GRASS lastAction and the internal
    * anchor. Opportunistically clamps the anchor when GRASS has caught up.
    *
@@ -324,8 +336,12 @@ export class SigningQueueManager {
       return;
     }
 
+    // Hold the entire action lane until the confirmed last-action height is
+    // loaded from the API/GRASS. Until then the charge base is unknown (defaults
+    // to 0 = full charge), so broadcasting could send a charge action the chain
+    // rejects. The immediate lane has no charge dependency and still proceeds.
     const head = this.actionQueue[0];
-    if (head && this.projectedChargeAt(H) >= head.chargeCost) {
+    if (head && this.isConfirmedActionLoaded() && this.projectedChargeAt(H) >= head.chargeCost) {
       this.actionQueue.shift();
       this.broadcast(head);
       return;

@@ -120,6 +120,7 @@ export class GameState {
       thisPlayerId: this.keyPlayers[PLAYER_TYPES.PLAYER].id,
       lastSaveBlockHeight: this.lastSaveBlockHeight,
       lastActionBlockHeight: this.keyPlayers[PLAYER_TYPES.PLAYER].lastActionBlockHeight,
+      confirmedLastActionBlockHeight: this.keyPlayers[PLAYER_TYPES.PLAYER].confirmedLastActionBlockHeight,
       planetRaiderLastActionBlockHeight: this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].lastActionBlockHeight,
       raidEnemyLastActionBlockHeight: this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].lastActionBlockHeight,
       chargeLevel: this.keyPlayers[PLAYER_TYPES.PLAYER].chargeLevel,
@@ -144,6 +145,7 @@ export class GameState {
     this.keyPlayers[PLAYER_TYPES.PLAYER].id = gameStateParsed.thisPlayerId;
     this.lastSaveBlockHeight = gameStateParsed.lastSaveBlockHeight;
     this.keyPlayers[PLAYER_TYPES.PLAYER].lastActionBlockHeight = gameStateParsed.lastActionBlockHeight;
+    this.keyPlayers[PLAYER_TYPES.PLAYER].confirmedLastActionBlockHeight = gameStateParsed.confirmedLastActionBlockHeight ?? 0;
     this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].lastActionBlockHeight = gameStateParsed.planetRaiderLastActionBlockHeight;
     this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].lastActionBlockHeight = gameStateParsed.raidEnemyLastActionBlockHeight;
     this.keyPlayers[PLAYER_TYPES.PLAYER].chargeLevel = gameStateParsed.chargeLevel;
