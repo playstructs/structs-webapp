@@ -82,8 +82,6 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
     this.mapManager.showMap(MAP_CONTAINER_IDS.ALPHA_BASE);
     MenuPage.router.goto('Fleet', 'index');
     MenuPage.open();
-
-    this.shouldUnregister = () => true;
   }
 
   raidEnded(messageData) {
