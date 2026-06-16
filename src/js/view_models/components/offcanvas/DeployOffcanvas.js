@@ -7,7 +7,6 @@ import {RenderDeploymentIndicatorEvent} from "../../../events/RenderDeploymentIn
 import {PendingBuildAddedEvent} from "../../../events/PendingBuildAddedEvent";
 import {SUICheatsheet} from "../../../sui/SUICheatsheet";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
-import {CHARGE_STRUCT_BUILD_INITIATE} from "../../../constants/ChargeCosts";
 
 export class DeployOffcanvas extends AbstractViewModelComponent {
 
@@ -103,7 +102,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
           structType.id,
           this.ambit,
           this.slot,
-          structType.build_charge ?? CHARGE_STRUCT_BUILD_INITIATE
+          structType.build_charge
         ).then();
 
         MenuPage.sui.offcanvas.close();

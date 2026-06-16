@@ -3,10 +3,10 @@ export class ChargeCalculator {
     this.chargeLevelThresholds = [
       0,
       1,
-      8,
-      20,
-      39,
-      666
+      2,
+      3,
+      5,
+      8
     ];
   }
 
