@@ -18,7 +18,7 @@ export class KeyPlayerShieldChangeStatusListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'shield_change'
-      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[this.playerType].planet.id}`
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[this.playerType].getPlanetId()}`
     ) {
       const shieldInfo = this.planetaryShieldInfoDTOFactory.make(messageData.detail);
       this.gameState.keyPlayers[this.playerType].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
@@ -27,7 +27,7 @@ export class KeyPlayerShieldChangeStatusListener extends AbstractGrassListener {
     if (
       this.gameState.keyPlayers[this.playerType].isRaidDependent()
       && messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[this.playerType].planet.id}`
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[this.playerType].getPlanetId()}`
       && this.raidStatusUtil.hasRaidEnded(messageData.detail.status)
     ) {
       this.shouldUnregister = () => true;

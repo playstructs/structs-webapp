@@ -16,6 +16,7 @@ import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {Fleet} from "./Fleet";
 import {TrackDestroyedStructsEvent} from "../events/TrackDestroyedStructsEvent";
 import {TrackDestroyedStructEvent} from "../events/TrackDestroyedStructEvent";
+import {DateFormatter} from "../util/DateFormatter";
 
 export class KeyPlayer {
 
@@ -34,6 +35,7 @@ export class KeyPlayer {
 
     this.chargeCalculator = new ChargeCalculator();
     this.shieldHealthCalculator = new ShieldHealthCalculator();
+    this.dateFormatter = new DateFormatter();
 
     /** @type {string} See PLAYER_TYPES */
     this.playerType = playerType;
@@ -56,8 +58,8 @@ export class KeyPlayer {
     /** @type {Planet} */
     this.planet = null;
 
-    /** @type {number} */
-    this.planetShieldHealth = 100;
+    /** @type {string} */
+    this.planetShieldHealth = '∞';
 
     /** @type {PlanetaryShieldInfoDTO} */
     this.planetShieldInfo = new PlanetaryShieldInfoDTO();
@@ -190,21 +192,20 @@ export class KeyPlayer {
    * @param {number} currentBlockHeight
    */
   setPlanetShieldHealth(currentBlockHeight) {
-    let health = 100;
-
     if (
       this.planetRaidInfo.isRaidActive()
       && currentBlockHeight
       && this.planetShieldInfo.block_start_raid
     ) {
-      health = this.shieldHealthCalculator.calc(
+      let health = this.shieldHealthCalculator.getTimeRemainingEstimate(
         this.planetShieldInfo.planetary_shield,
         this.planetShieldInfo.block_start_raid,
         currentBlockHeight
       );
+      this.planetShieldHealth = this.dateFormatter.formatDuration(health);
+    } else {
+      this.planetShieldHealth = '∞';
     }
-
-    this.planetShieldHealth = health;
 
     window.dispatchEvent(new ShieldHealthChangedEvent(this.playerType));
   }
@@ -307,7 +308,7 @@ export class KeyPlayer {
    * @return {string}
    */
   getPlanetShieldHealth() {
-    return this.planetShieldHealth + "%";
+    return this.planetShieldHealth;
   }
 
   /**
