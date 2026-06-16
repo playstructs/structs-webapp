@@ -13,7 +13,7 @@ import {SigningQueueManager} from "./SigningQueueManager";
  *
  * Each queueMsg* builds a plain, JSON-serializable payload (NO `creator` — it
  * is injected at broadcast time from the transaction's accountAddress) and
- * delegates to enqueueImmediate / enqueueCharge. The returned Promise resolves
+ * delegates to enqueueImmediate / enqueueAction. The returned Promise resolves
  * when the transaction reaches a terminal state (succeeded / dropped /
  * cancelled); callers must check `tx.status` before acting on success.
  */
@@ -81,24 +81,24 @@ export class SigningClientManager {
    * @param {number} newIndex
    * @return {boolean}
    */
-  reorderChargeQueue(id, newIndex) {
-    return this.queue.reorderChargeQueue(id, newIndex);
+  reorderActionQueue(id, newIndex) {
+    return this.queue.reorderActionQueue(id, newIndex);
   }
 
   /**
    * @param {string} id
    * @return {boolean}
    */
-  moveChargeItemUp(id) {
-    return this.queue.moveChargeItemUp(id);
+  moveActionItemUp(id) {
+    return this.queue.moveActionItemUp(id);
   }
 
   /**
    * @param {string} id
    * @return {boolean}
    */
-  moveChargeItemDown(id) {
-    return this.queue.moveChargeItemDown(id);
+  moveActionItemDown(id) {
+    return this.queue.moveActionItemDown(id);
   }
 
   /**
@@ -134,9 +134,10 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgPlanetExplore(playerId, name = '', options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgPlanetExplore',
       {playerId, name},
+      0,
       options,
     );
     return this.queue.whenSettled(id);
@@ -178,9 +179,10 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgFleetMove(fleetId, destinationLocationId, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgFleetMove',
       {fleetId, destinationLocationId},
+      0,
       options,
     );
     return this.queue.whenSettled(id);
@@ -869,9 +871,10 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructDeactivate(structId, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgStructDeactivate',
       {structId},
+      0,
       options,
     );
     return this.queue.whenSettled(id);
@@ -1301,7 +1304,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructActivate(structId, chargeCost, options = {}) {
-    const id = this.queue.enqueueCharge(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgStructActivate',
       {structId},
       chargeCost,
@@ -1320,7 +1323,7 @@ export class SigningClientManager {
    */
   async queueMsgStructBuildInitiate(playerId, structTypeId, operatingAmbit, slot, chargeCost, options = {}) {
     const operatingAmbitIndex = AMBIT_ENUM[operatingAmbit.toUpperCase()];
-    const id = this.queue.enqueueCharge(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgStructBuildInitiate',
       {playerId, structTypeId, operatingAmbit: operatingAmbitIndex, slot},
       chargeCost,
@@ -1336,7 +1339,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructDefenseSet(defenderStructId, protectedStructId, chargeCost, options = {}) {
-    const id = this.queue.enqueueCharge(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgStructDefenseSet',
       {defenderStructId, protectedStructId},
       chargeCost,
@@ -1351,7 +1354,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructDefenseClear(defenderStructId, chargeCost, options = {}) {
-    const id = this.queue.enqueueCharge(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgStructDefenseClear',
       {defenderStructId},
       chargeCost,
@@ -1371,7 +1374,7 @@ export class SigningClientManager {
   async queueMsgStructMove(structId, locationType, ambit, slot, chargeCost, options = {}) {
     const locationTypeIndex = LOCATION_TYPE_INDEX[locationType.toLowerCase()];
     const ambitNumber = AMBIT_ENUM[ambit.toUpperCase()];
-    const id = this.queue.enqueueCharge(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgStructMove',
       {structId, locationType: locationTypeIndex, ambit: ambitNumber, slot},
       chargeCost,
@@ -1388,7 +1391,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructAttack(operatingStructId, targetStructId, weaponSystem, chargeCost, options = {}) {
-    const id = this.queue.enqueueCharge(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgStructAttack',
       {operatingStructId, targetStructId, weaponSystem},
       chargeCost,
@@ -1403,7 +1406,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructStealthActivate(structId, chargeCost, options = {}) {
-    const id = this.queue.enqueueCharge(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgStructStealthActivate',
       {structId},
       chargeCost,
@@ -1418,7 +1421,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructStealthDeactivate(structId, chargeCost, options = {}) {
-    const id = this.queue.enqueueCharge(
+    const id = this.queue.enqueueAction(
       '/structs.structs.MsgStructStealthDeactivate',
       {structId},
       chargeCost,

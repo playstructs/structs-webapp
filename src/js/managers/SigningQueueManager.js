@@ -60,7 +60,7 @@ export function assertSerializable(payload) {
 }
 
 /**
- * Owns the transaction queue: two lanes (immediate FIFO + charge-scheduled),
+ * Owns the transaction queue: two lanes (immediate FIFO + ordered action lane),
  * lazy charge gating, persistence, broadcast loop, and settlement.
  *
  * SigningClientManager builds plain payloads and delegates here; this class is
@@ -82,10 +82,10 @@ export class SigningQueueManager {
     this.registry = registry;
     this.wsUrl = wsUrl;
 
-    /** @type {SigningTransaction[]} Non-charge FIFO lane. */
+    /** @type {SigningTransaction[]} Unordered lane; fired ASAP. */
     this.immediateQueue = [];
-    /** @type {SigningTransaction[]} Charge-scheduled lane; head gated lazily. */
-    this.chargeQueue = [];
+    /** @type {SigningTransaction[]} Ordered action lane; head gated lazily on charge. */
+    this.actionQueue = [];
     /** @type {SigningTransaction|null} Tx currently being broadcast. */
     this.inFlight = null;
     /** @type {number} Shared per-block broadcast governor (one tx/block/address). */
@@ -124,25 +124,29 @@ export class SigningQueueManager {
   }
 
   /**
+   * Enqueue an ordered action-lane transaction. A `chargeCost` of 0 means the
+   * action is free but still broadcast in order; only `chargeCost > 0` items
+   * advance the schedule anchor (reset the on-chain charge bar).
+   *
    * @param {string} typeUrl
    * @param {object} payload - Plain JSON object, no `creator`.
-   * @param {number} chargeCost
+   * @param {number} chargeCost - Charge gate; 0 = ordered but free.
    * @param {object} [options]
    * @return {string} transaction id
    */
-  enqueueCharge(typeUrl, payload, chargeCost, options = {}) {
+  enqueueAction(typeUrl, payload, chargeCost, options = {}) {
     return this.#enqueue(typeUrl, payload, true, chargeCost, options);
   }
 
   /**
    * @param {string} typeUrl
    * @param {object} payload
-   * @param {boolean} requiresCharge
+   * @param {boolean} isAction
    * @param {number|null} chargeCost
    * @param {object} options
    * @return {string}
    */
-  #enqueue(typeUrl, payload, requiresCharge, chargeCost, options) {
+  #enqueue(typeUrl, payload, isAction, chargeCost, options) {
     assertSerializable(payload);
 
     // v1: per-tx retryLimit override is accepted but the global default applies
@@ -154,7 +158,7 @@ export class SigningQueueManager {
     const tx = SigningTransaction.create({
       typeUrl,
       payload,
-      requiresCharge,
+      isAction,
       chargeCost,
       retryLimit,
       accountAddress: this.gameState.signingAccount?.address ?? null,
@@ -174,7 +178,7 @@ export class SigningQueueManager {
   appendToLane(tx) {
     tx.status = TX_STATUS.QUEUED;
     tx.error = tx.error ?? null;
-    const lane = tx.requiresCharge ? this.chargeQueue : this.immediateQueue;
+    const lane = tx.isAction ? this.actionQueue : this.immediateQueue;
     lane.push(tx);
     this.persist();
   }
@@ -255,7 +259,7 @@ export class SigningQueueManager {
    */
   #estimateScheduleBlocks() {
     let walking = this.getWalkingBase();
-    return this.chargeQueue.map((tx) => {
+    return this.actionQueue.map((tx) => {
       walking = walking + 1 + tx.chargeCost;
       return {id: tx.id, etaBlockHeight: walking};
     });
@@ -316,13 +320,13 @@ export class SigningQueueManager {
       return;
     }
 
-    const head = this.chargeQueue[0];
+    const head = this.actionQueue[0];
     if (head && this.projectedChargeAt(H) >= head.chargeCost) {
-      this.chargeQueue.shift();
+      this.actionQueue.shift();
       this.broadcast(head);
       return;
     }
-    // Charge head not ready (or empty) → use this block's slot for immediate lane.
+    // Action head not ready (or empty) → use this block's slot for immediate lane.
 
     if (this.immediateQueue.length > 0) {
       const tx = this.immediateQueue.shift();
@@ -440,7 +444,9 @@ export class SigningQueueManager {
 
     tx.status = TX_STATUS.SUCCEEDED;
     tx.error = null;
-    if (tx.requiresCharge) {
+    if (tx.chargeCost > 0) {
+      // Only charge-consuming actions reset the on-chain bar. Free ordered
+      // actions (chargeCost 0) keep their lane order but never anchor.
       // Anchor convention: chain inclusion height when present, else
       // broadcastAtBlock + 1 (matches the old optimistic client convention).
       const anchor = (typeof response.height === 'number' && response.height > 0)
@@ -541,7 +547,7 @@ export class SigningQueueManager {
    */
   #restoreToLaneHead(tx) {
     tx.status = TX_STATUS.QUEUED;
-    const lane = tx.requiresCharge ? this.chargeQueue : this.immediateQueue;
+    const lane = tx.isAction ? this.actionQueue : this.immediateQueue;
     lane.unshift(tx);
     this.persist();
   }
@@ -610,7 +616,7 @@ export class SigningQueueManager {
     if (this.inFlight && this.inFlight.id === id) {
       return false;
     }
-    for (const lane of [this.immediateQueue, this.chargeQueue]) {
+    for (const lane of [this.immediateQueue, this.actionQueue]) {
       const index = lane.findIndex((tx) => tx.id === id);
       if (index !== -1) {
         const [tx] = lane.splice(index, 1);
@@ -624,23 +630,23 @@ export class SigningQueueManager {
   }
 
   /**
-   * Move a charge-lane item to a new index. Refuses for in-flight or unknown ids.
+   * Move an action-lane item to a new index. Refuses for in-flight or unknown ids.
    *
    * @param {string} id
    * @param {number} newIndex
    * @return {boolean}
    */
-  reorderChargeQueue(id, newIndex) {
+  reorderActionQueue(id, newIndex) {
     if (this.inFlight && this.inFlight.id === id) {
       return false;
     }
-    const index = this.chargeQueue.findIndex((tx) => tx.id === id);
+    const index = this.actionQueue.findIndex((tx) => tx.id === id);
     if (index === -1) {
       return false;
     }
-    const clamped = Math.max(0, Math.min(newIndex, this.chargeQueue.length - 1));
-    const [tx] = this.chargeQueue.splice(index, 1);
-    this.chargeQueue.splice(clamped, 0, tx);
+    const clamped = Math.max(0, Math.min(newIndex, this.actionQueue.length - 1));
+    const [tx] = this.actionQueue.splice(index, 1);
+    this.actionQueue.splice(clamped, 0, tx);
     this.persist();
     return true;
   }
@@ -649,24 +655,24 @@ export class SigningQueueManager {
    * @param {string} id
    * @return {boolean}
    */
-  moveChargeItemUp(id) {
-    const index = this.chargeQueue.findIndex((tx) => tx.id === id);
+  moveActionItemUp(id) {
+    const index = this.actionQueue.findIndex((tx) => tx.id === id);
     if (index <= 0) {
       return false;
     }
-    return this.reorderChargeQueue(id, index - 1);
+    return this.reorderActionQueue(id, index - 1);
   }
 
   /**
    * @param {string} id
    * @return {boolean}
    */
-  moveChargeItemDown(id) {
-    const index = this.chargeQueue.findIndex((tx) => tx.id === id);
-    if (index === -1 || index >= this.chargeQueue.length - 1) {
+  moveActionItemDown(id) {
+    const index = this.actionQueue.findIndex((tx) => tx.id === id);
+    if (index === -1 || index >= this.actionQueue.length - 1) {
       return false;
     }
-    return this.reorderChargeQueue(id, index + 1);
+    return this.reorderActionQueue(id, index + 1);
   }
 
   /**
@@ -678,7 +684,7 @@ export class SigningQueueManager {
       return this.inFlight;
     }
     return this.immediateQueue.find((tx) => tx.id === id)
-      ?? this.chargeQueue.find((tx) => tx.id === id)
+      ?? this.actionQueue.find((tx) => tx.id === id)
       ?? null;
   }
 
@@ -716,7 +722,7 @@ export class SigningQueueManager {
       scheduleAnchorHeight: this.scheduleAnchorHeight,
       lastBroadcastHeight: this.lastBroadcastHeight,
       immediateQueue: this.immediateQueue.map((tx) => tx.toJSON()),
-      chargeQueue: this.chargeQueue.map((tx) => tx.toJSON()),
+      actionQueue: this.actionQueue.map((tx) => tx.toJSON()),
       inFlight: this.inFlight ? this.inFlight.toJSON() : null,
     };
     try {
@@ -782,7 +788,7 @@ export class SigningQueueManager {
       this.lastBroadcastHeight = typeof state.lastBroadcastHeight === 'number' ? state.lastBroadcastHeight : 0;
 
       this.immediateQueue = this.#rehydrateLane(state.immediateQueue);
-      this.chargeQueue = this.#rehydrateLane(state.chargeQueue);
+      this.actionQueue = this.#rehydrateLane(state.actionQueue);
 
       if (state.inFlight) {
         const tx = SigningTransaction.fromJSON(state.inFlight);
@@ -803,7 +809,7 @@ export class SigningQueueManager {
     } catch (err) {
       console.error('[SigningQueueManager] rehydrate failed, starting empty:', err);
       this.immediateQueue = [];
-      this.chargeQueue = [];
+      this.actionQueue = [];
       this.inFlight = null;
     }
   }

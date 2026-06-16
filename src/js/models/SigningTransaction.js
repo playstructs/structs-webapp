@@ -37,7 +37,7 @@ const PERSISTED_FIELDS = [
   'id',
   'message',
   'accountAddress',
-  'requiresCharge',
+  'isAction',
   'chargeCost',
   'status',
   'createdAt',
@@ -68,9 +68,9 @@ export class SigningTransaction {
     this.message = fields.message;
     /** @type {string} Owning signer address; persisted; used as `creator` at broadcast. */
     this.accountAddress = fields.accountAddress;
-    /** @type {boolean} */
-    this.requiresCharge = fields.requiresCharge;
-    /** @type {number|null} */
+    /** @type {boolean} True when this tx belongs to the ordered action lane. */
+    this.isAction = fields.isAction;
+    /** @type {number|null} Charge gate for action-lane txs; 0 = ordered but free. */
     this.chargeCost = fields.chargeCost;
     /** @type {string} See {@link TX_STATUS}. */
     this.status = fields.status;
@@ -98,20 +98,20 @@ export class SigningTransaction {
    * @param {object} args
    * @param {string} args.typeUrl
    * @param {object} args.payload - Plain JSON object, no `creator`.
-   * @param {boolean} args.requiresCharge
-   * @param {number|null} args.chargeCost
+   * @param {boolean} args.isAction - True for the ordered action lane.
+   * @param {number|null} args.chargeCost - Charge gate; 0 = ordered but free.
    * @param {number} args.retryLimit
    * @param {string} args.accountAddress
    * @param {number} args.enqueuedAtBlock
    * @return {SigningTransaction}
    */
-  static create({ typeUrl, payload, requiresCharge, chargeCost, retryLimit, accountAddress, enqueuedAtBlock }) {
+  static create({ typeUrl, payload, isAction, chargeCost, retryLimit, accountAddress, enqueuedAtBlock }) {
     return new SigningTransaction({
       id: UuidUtil.generate(),
       message: { typeUrl, payload },
       accountAddress,
-      requiresCharge: !!requiresCharge,
-      chargeCost: requiresCharge ? chargeCost : null,
+      isAction: !!isAction,
+      chargeCost: isAction ? chargeCost : null,
       status: TX_STATUS.QUEUED,
       createdAt: Date.now(),
       enqueuedAtBlock,
@@ -188,7 +188,7 @@ export class SigningTransaction {
       id: obj.id,
       message: { typeUrl: obj.message.typeUrl, payload: obj.message.payload },
       accountAddress: typeof obj.accountAddress === 'string' ? obj.accountAddress : null,
-      requiresCharge: !!obj.requiresCharge,
+      isAction: !!obj.isAction,
       chargeCost: typeof obj.chargeCost === 'number' ? obj.chargeCost : null,
       status: typeof obj.status === 'string' ? obj.status : TX_STATUS.QUEUED,
       createdAt: typeof obj.createdAt === 'number' ? obj.createdAt : Date.now(),
