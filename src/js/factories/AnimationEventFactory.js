@@ -243,6 +243,12 @@ export class AnimationEventFactory {
         && targetStructOperatingAmbit === AMBITS.WATER
         && weaponSystem === STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
       )
+      || (
+        attackStructType === STRUCT_TYPES.FRIGATE
+        && attackStructOperatingAmbit === AMBITS.SPACE
+        && targetStructOperatingAmbit === AMBITS.AIR
+        && weaponSystem === STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
+      )
     ) {
       animationNames.push(ANIMATION.NAMES.IMPACT.ANGLED.DOWN.MISSILE);
       animationNames.push(ANIMATION.NAMES.SHAKE.ANGLED.DOWN.DEFAULT[firstOrLast]);
