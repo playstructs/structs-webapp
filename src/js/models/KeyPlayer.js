@@ -44,8 +44,11 @@ export class KeyPlayer {
     /** @type {Player} */
     this.player = null;
 
-    /** @type {number} */
+    /** @type {number} UI/display value; may be optimistically drained on enqueue. */
     this.lastActionBlockHeight = 0;
+
+    /** @type {number} GRASS/chain/API confirmed value; read by the signing queue scheduler. */
+    this.confirmedLastActionBlockHeight = 0;
 
     /** @type {number} */
     this.chargeLevel = 0;
@@ -115,6 +118,22 @@ export class KeyPlayer {
    */
   setLastActionBlockHeight(currentBlockHeight, height) {
     this.lastActionBlockHeight = height;
+    this.confirmedLastActionBlockHeight = height;
+    this.chargeLevel = this.chargeCalculator.calc(currentBlockHeight, this.lastActionBlockHeight);
+
+    window.dispatchEvent(new SaveGameStateEvent());
+    window.dispatchEvent(new ChargeLevelChangedEvent(this.id, this.chargeLevel));
+  }
+
+  /**
+   * Optimistically drain the displayed charge bar as if an action landed this
+   * block. UI-only: does NOT touch confirmedLastActionBlockHeight, so the signing
+   * queue scheduler keeps using the GRASS/chain-confirmed base.
+   *
+   * @param {number} currentBlockHeight
+   */
+  setOptimisticLastActionBlockHeight(currentBlockHeight) {
+    this.lastActionBlockHeight = currentBlockHeight + 1;
     this.chargeLevel = this.chargeCalculator.calc(currentBlockHeight, this.lastActionBlockHeight);
 
     window.dispatchEvent(new SaveGameStateEvent());

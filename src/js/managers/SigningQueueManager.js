@@ -65,9 +65,11 @@ export function assertSerializable(payload) {
  *
  * SigningClientManager builds plain payloads and delegates here; this class is
  * the single authority for *when and how* a transaction is sent. It never
- * writes KeyPlayer.lastActionBlockHeight — GRASS (KeyPlayerLastActionListener)
- * is the sole gameplay writer. An internal `scheduleAnchorHeight` bridges the
- * 1-2 block GRASS lag and is clamped opportunistically once GRASS catches up.
+ * writes KeyPlayer last-action state and schedules off
+ * KeyPlayer.confirmedLastActionBlockHeight (GRASS/chain confirmed), ignoring the
+ * optimistically-drained display `lastActionBlockHeight`. An internal
+ * `scheduleAnchorHeight` bridges the 1-2 block GRASS lag and is clamped
+ * opportunistically once GRASS catches up.
  */
 export class SigningQueueManager {
 
@@ -188,13 +190,15 @@ export class SigningQueueManager {
   // ---------------------------------------------------------------------------
 
   /**
-   * GRASS-confirmed last action for the PLAYER (never raid key players).
+   * GRASS/chain-confirmed last action for the PLAYER (never raid key players).
+   * Reads the confirmed field, NOT the display `lastActionBlockHeight`, which
+   * may be optimistically drained by the UI when a charge action is queued.
    *
    * @return {number}
    */
   getGrassLastAction() {
     const player = this.gameState.keyPlayers?.[PLAYER_TYPES.PLAYER];
-    return player ? player.lastActionBlockHeight : 0;
+    return player ? player.confirmedLastActionBlockHeight : 0;
   }
 
   /**

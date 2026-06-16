@@ -4,6 +4,7 @@ import {defaultRegistryTypes, SigningStargateClient} from "@cosmjs/stargate";
 import {msgTypes} from "../ts/structs.structs/registry";
 import {AMBIT_ENUM} from "../constants/Ambits";
 import {LOCATION_TYPE_INDEX} from "../constants/LocationTypes";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {SigningQueueManager} from "./SigningQueueManager";
 
 /**
@@ -1294,8 +1295,11 @@ export class SigningClientManager {
   // ---------------------------------------------------------------------------
   // Charge-lane messages (broadcast gated until on-chain charge is sufficient)
   //
-  // No optimistic setLastActionBlockHeight — GRASS (KeyPlayerLastActionListener)
-  // is the sole writer of player lastAction. chargeCost is caller-supplied.
+  // chargeCost is caller-supplied. When chargeCost > 0 we optimistically drain
+  // the DISPLAY charge bar (setOptimisticLastActionBlockHeight) for immediate UI
+  // feedback; this never touches confirmedLastActionBlockHeight, so the queue
+  // scheduler still broadcasts as soon as on-chain charge allows. GRASS
+  // (KeyPlayerLastActionListener) remains the sole writer of confirmed lastAction.
   // ---------------------------------------------------------------------------
 
   /**
@@ -1310,6 +1314,10 @@ export class SigningClientManager {
       chargeCost,
       options,
     );
+    if (chargeCost > 0) {
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+        .setOptimisticLastActionBlockHeight(this.gameState.currentBlockHeight);
+    }
     return this.queue.whenSettled(id);
   }
 
@@ -1329,6 +1337,10 @@ export class SigningClientManager {
       chargeCost,
       options,
     );
+    if (chargeCost > 0) {
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+        .setOptimisticLastActionBlockHeight(this.gameState.currentBlockHeight);
+    }
     return this.queue.whenSettled(id);
   }
 
@@ -1345,6 +1357,10 @@ export class SigningClientManager {
       chargeCost,
       options,
     );
+    if (chargeCost > 0) {
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+        .setOptimisticLastActionBlockHeight(this.gameState.currentBlockHeight);
+    }
     return this.queue.whenSettled(id);
   }
 
@@ -1360,6 +1376,10 @@ export class SigningClientManager {
       chargeCost,
       options,
     );
+    if (chargeCost > 0) {
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+        .setOptimisticLastActionBlockHeight(this.gameState.currentBlockHeight);
+    }
     return this.queue.whenSettled(id);
   }
 
@@ -1380,6 +1400,10 @@ export class SigningClientManager {
       chargeCost,
       options,
     );
+    if (chargeCost > 0) {
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+        .setOptimisticLastActionBlockHeight(this.gameState.currentBlockHeight);
+    }
     return this.queue.whenSettled(id);
   }
 
@@ -1397,6 +1421,10 @@ export class SigningClientManager {
       chargeCost,
       options,
     );
+    if (chargeCost > 0) {
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+        .setOptimisticLastActionBlockHeight(this.gameState.currentBlockHeight);
+    }
     return this.queue.whenSettled(id);
   }
 
@@ -1412,6 +1440,10 @@ export class SigningClientManager {
       chargeCost,
       options,
     );
+    if (chargeCost > 0) {
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+        .setOptimisticLastActionBlockHeight(this.gameState.currentBlockHeight);
+    }
     return this.queue.whenSettled(id);
   }
 
@@ -1427,6 +1459,10 @@ export class SigningClientManager {
       chargeCost,
       options,
     );
+    if (chargeCost > 0) {
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+        .setOptimisticLastActionBlockHeight(this.gameState.currentBlockHeight);
+    }
     return this.queue.whenSettled(id);
   }
 
