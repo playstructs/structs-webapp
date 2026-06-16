@@ -44,6 +44,6 @@ export class DateFormatter {
     if (minutes > 0) {
         return `${minutes}m`;
     }
-    return `${seconds}seconds`;
+    return `${seconds}s`;
   }
 }

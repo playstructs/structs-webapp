@@ -59,7 +59,7 @@ export class KeyPlayer {
     this.planet = null;
 
     /** @type {string} */
-    this.planetShieldHealth = '∞';
+    this.planetShieldHealth = '--';
 
     /** @type {PlanetaryShieldInfoDTO} */
     this.planetShieldInfo = new PlanetaryShieldInfoDTO();
@@ -204,7 +204,7 @@ export class KeyPlayer {
       );
       this.planetShieldHealth = this.dateFormatter.formatDuration(health);
     } else {
-      this.planetShieldHealth = '∞';
+      this.planetShieldHealth = '--';
     }
 
     window.dispatchEvent(new ShieldHealthChangedEvent(this.playerType));
