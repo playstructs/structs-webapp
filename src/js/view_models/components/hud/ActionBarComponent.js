@@ -618,6 +618,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   handlePanelSwitchClick(struct, structType) {
     if (this.isActionAvailable(struct, 0, true)) {
       // Turn off: deactivate the struct
+      this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEACTIVATE);
+      this.gameState.actionBarLock.lock();
       this.signingClientManager.queueMsgStructDeactivate(struct.id).then(() => {
         struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
         this.showStructActionBar(struct);
@@ -625,7 +627,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       });
     } else if (this.isActionAvailable(struct, structType.activate_charge, false)){
       // Turn on: activate the struct
-      this.signingClientManager.queueMsgStructActivate(struct.id).then(() => {
+      this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ACTIVATE);
+      this.gameState.actionBarLock.lock();
+      this.signingClientManager.queueMsgStructActivate(struct.id, structType.activate_charge).then(() => {
         struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
         this.showStructActionBar(struct);
         window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
@@ -1073,7 +1077,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.gameState.actionBarLock.lock();
 
             // Deactivate stealth mode
-            this.signingClientManager.queueMsgStructStealthDeactivate(struct.id).then(() => {
+            this.signingClientManager.queueMsgStructStealthDeactivate(struct.id, structType.stealth_activate_charge).then(() => {
               struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
               // Update button to default state
               btn.setAttribute('data-active-defense', '0');
@@ -1085,7 +1089,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             this.gameState.actionBarLock.lock();
 
             // Activate stealth mode
-            this.signingClientManager.queueMsgStructStealthActivate(struct.id).then(() => {
+            this.signingClientManager.queueMsgStructStealthActivate(struct.id, structType.stealth_activate_charge).then(() => {
               struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
               // Update button to active state
               btn.setAttribute('data-active-defense', '1');
@@ -1221,7 +1225,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             btn.classList.add('sui-mod-default');
 
             // Send defense clear message to chain
-            await this.signingClientManager.queueMsgStructDefenseClear(struct.id);
+            await this.signingClientManager.queueMsgStructDefenseClear(struct.id, structType.defend_change_charge);
 
           } else if (currentAction === STRUCT_ACTIONS.DEFENSE_SET) {
             // Already in defense selection mode - cancel it

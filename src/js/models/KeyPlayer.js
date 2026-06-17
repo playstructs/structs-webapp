@@ -16,6 +16,7 @@ import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {Fleet} from "./Fleet";
 import {TrackDestroyedStructsEvent} from "../events/TrackDestroyedStructsEvent";
 import {TrackDestroyedStructEvent} from "../events/TrackDestroyedStructEvent";
+import {DateFormatter} from "../util/DateFormatter";
 
 export class KeyPlayer {
 
@@ -34,6 +35,7 @@ export class KeyPlayer {
 
     this.chargeCalculator = new ChargeCalculator();
     this.shieldHealthCalculator = new ShieldHealthCalculator();
+    this.dateFormatter = new DateFormatter();
 
     /** @type {string} See PLAYER_TYPES */
     this.playerType = playerType;
@@ -44,8 +46,14 @@ export class KeyPlayer {
     /** @type {Player} */
     this.player = null;
 
-    /** @type {number} */
+    /** @type {number} UI/display value; may be optimistically drained on enqueue. */
     this.lastActionBlockHeight = 0;
+
+    /** @type {number} GRASS/chain/API confirmed value; read by the signing queue scheduler. */
+    this.confirmedLastActionBlockHeight = 0;
+
+    /** @type {boolean} True once the confirmed value has been loaded (API/GRASS); gates charge scheduling. */
+    this.confirmedLastActionLoaded = false;
 
     /** @type {number} */
     this.chargeLevel = 0;
@@ -53,8 +61,8 @@ export class KeyPlayer {
     /** @type {Planet} */
     this.planet = null;
 
-    /** @type {number} */
-    this.planetShieldHealth = 100;
+    /** @type {string} */
+    this.planetShieldHealth = '--';
 
     /** @type {PlanetaryShieldInfoDTO} */
     this.planetShieldInfo = new PlanetaryShieldInfoDTO();
@@ -115,6 +123,23 @@ export class KeyPlayer {
    */
   setLastActionBlockHeight(currentBlockHeight, height) {
     this.lastActionBlockHeight = height;
+    this.confirmedLastActionBlockHeight = height;
+    this.confirmedLastActionLoaded = true;
+    this.chargeLevel = this.chargeCalculator.calc(currentBlockHeight, this.lastActionBlockHeight);
+
+    window.dispatchEvent(new SaveGameStateEvent());
+    window.dispatchEvent(new ChargeLevelChangedEvent(this.id, this.chargeLevel));
+  }
+
+  /**
+   * Optimistically drain the displayed charge bar as if an action landed this
+   * block. UI-only: does NOT touch confirmedLastActionBlockHeight, so the signing
+   * queue scheduler keeps using the GRASS/chain-confirmed base.
+   *
+   * @param {number} currentBlockHeight
+   */
+  setOptimisticLastActionBlockHeight(currentBlockHeight) {
+    this.lastActionBlockHeight = currentBlockHeight + 1;
     this.chargeLevel = this.chargeCalculator.calc(currentBlockHeight, this.lastActionBlockHeight);
 
     window.dispatchEvent(new SaveGameStateEvent());
@@ -171,21 +196,20 @@ export class KeyPlayer {
    * @param {number} currentBlockHeight
    */
   setPlanetShieldHealth(currentBlockHeight) {
-    let health = 100;
-
     if (
       this.planetRaidInfo.isRaidActive()
       && currentBlockHeight
       && this.planetShieldInfo.block_start_raid
     ) {
-      health = this.shieldHealthCalculator.calc(
+      let health = this.shieldHealthCalculator.getTimeRemainingEstimate(
         this.planetShieldInfo.planetary_shield,
         this.planetShieldInfo.block_start_raid,
         currentBlockHeight
       );
+      this.planetShieldHealth = this.dateFormatter.formatDuration(health);
+    } else {
+      this.planetShieldHealth = '--';
     }
-
-    this.planetShieldHealth = health;
 
     window.dispatchEvent(new ShieldHealthChangedEvent(this.playerType));
   }
@@ -288,7 +312,7 @@ export class KeyPlayer {
    * @return {string}
    */
   getPlanetShieldHealth() {
-    return this.planetShieldHealth + "%";
+    return this.planetShieldHealth;
   }
 
   /**

@@ -101,7 +101,8 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
           this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
           structType.id,
           this.ambit,
-          this.slot
+          this.slot,
+          structType.build_charge
         ).then();
 
         MenuPage.sui.offcanvas.close();

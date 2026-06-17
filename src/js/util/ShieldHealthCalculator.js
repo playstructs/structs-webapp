@@ -82,4 +82,48 @@ export class ShieldHealthCalculator {
 
     return Math.ceil(Math.max(shieldHealth, 0));
   }
+
+  /**
+   * Estimate the number of blocks remaining before the shield breaks.
+   *
+   * Mirrors TaskState.getBlockRemainingEstimate: total blocks needed minus the
+   * blocks already elapsed since the raid started.
+   *
+   * @param {number} planetaryShield
+   * @param {number} blockStartRaid
+   * @param {number} currentBlock
+   * @return {number} Blocks remaining (0 once the shield is broken)
+   */
+  getBlockRemainingEstimate(
+    planetaryShield,
+    blockStartRaid,
+    currentBlock
+  ) {
+    // Age represents blocks processed since the raid started
+    const age = Math.max(currentBlock - blockStartRaid, 0);
+
+    const totalBlocksNeeded = this.getTotalBlocksNeededAtHashRate1(blockStartRaid, planetaryShield);
+
+    return Math.max(totalBlocksNeeded - age, 0);
+  }
+
+  /**
+   * Estimate the time remaining before the shield breaks.
+   *
+   * Mirrors TaskState.getTimeRemainingEstimate by converting the blocks
+   * remaining into milliseconds using the estimated block time.
+   *
+   * @param {number} planetaryShield
+   * @param {number} blockStartRaid
+   * @param {number} currentBlock
+   * @return {number} Time remaining in milliseconds (0 once the shield is broken)
+   */
+  getTimeRemainingEstimate(
+    planetaryShield,
+    blockStartRaid,
+    currentBlock
+  ) {
+    const blocksRemaining = this.getBlockRemainingEstimate(planetaryShield, blockStartRaid, currentBlock);
+    return blocksRemaining * TASK.ESTIMATED_BLOCK_TIME;
+  }
 }

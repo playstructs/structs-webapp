@@ -29,4 +29,21 @@ export class DateFormatter {
   formatDatetime(datetimeString) {
     return `${this.formatTime(datetimeString)} ${this.formatDate(datetimeString)}` ;
   }
+
+  /**
+   * @param {number} millisecondsRemaining
+   */
+  formatDuration(millisecondsRemaining) {
+    const seconds = Math.floor(millisecondsRemaining / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+
+    if (hours > 0) {
+        return `${hours}h`;
+    }
+    if (minutes > 0) {
+        return `${minutes}m`;
+    }
+    return `${seconds}s`;
+  }
 }

@@ -320,6 +320,7 @@ import { MsgGuildUpdateName } from "./types/structs/structs/tx";
 import { MsgGuildUpdatePfp } from "./types/structs/structs/tx";
 import { MsgPlayerUpdateName } from "./types/structs/structs/tx";
 import { MsgPlayerUpdatePfp } from "./types/structs/structs/tx";
+import { MsgPlayerUpdatePfpClientRenderAttributes } from "./types/structs/structs/tx";
 import { MsgPlayerUpdateResponse } from "./types/structs/structs/tx";
 import { MsgPlanetUpdateName } from "./types/structs/structs/tx";
 import { MsgPlanetUpdateResponse } from "./types/structs/structs/tx";
@@ -649,6 +650,7 @@ const msgTypes: Array<[string, GeneratedType]>  = [
     ["/structs.structs.MsgGuildUpdatePfp", MsgGuildUpdatePfp],
     ["/structs.structs.MsgPlayerUpdateName", MsgPlayerUpdateName],
     ["/structs.structs.MsgPlayerUpdatePfp", MsgPlayerUpdatePfp],
+    ["/structs.structs.MsgPlayerUpdatePfpClientRenderAttributes", MsgPlayerUpdatePfpClientRenderAttributes],
     ["/structs.structs.MsgPlayerUpdateResponse", MsgPlayerUpdateResponse],
     ["/structs.structs.MsgPlanetUpdateName", MsgPlanetUpdateName],
     ["/structs.structs.MsgPlanetUpdateResponse", MsgPlanetUpdateResponse],

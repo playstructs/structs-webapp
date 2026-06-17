@@ -373,7 +373,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     });
 
     this.addWindowEventListener(EVENTS.SHOW_STRUCT_STILL, (event) => {
-      if (event.mapId === this.mapId) {
+      if (event.mapId === this.mapId && this.mapStructViewers[event.structId]) {
         // Refresh the struct still
         this.mapStructViewers[event.structId].showStructStill();
       }
