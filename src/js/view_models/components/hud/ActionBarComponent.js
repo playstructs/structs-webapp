@@ -618,6 +618,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   handlePanelSwitchClick(struct, structType) {
     if (this.isActionAvailable(struct, 0, true)) {
       // Turn off: deactivate the struct
+      this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEACTIVATE);
       this.gameState.actionBarLock.lock();
       this.signingClientManager.queueMsgStructDeactivate(struct.id).then(() => {
         struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
@@ -626,6 +627,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       });
     } else if (this.isActionAvailable(struct, structType.activate_charge, false)){
       // Turn on: activate the struct
+      this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ACTIVATE);
       this.gameState.actionBarLock.lock();
       this.signingClientManager.queueMsgStructActivate(struct.id, structType.activate_charge).then(() => {
         struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
