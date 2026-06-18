@@ -4,6 +4,7 @@ export class PlayerSearchResultDTO {
     this.address = null;
     this.username = null;
     this.pfp = null;
+    this.pfp_client_render_attributes = null;
     this.guild_name = null;
     this.tag = null;
     this.fleet_status = null;

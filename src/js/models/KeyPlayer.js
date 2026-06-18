@@ -17,6 +17,7 @@ import {Fleet} from "./Fleet";
 import {TrackDestroyedStructsEvent} from "../events/TrackDestroyedStructsEvent";
 import {TrackDestroyedStructEvent} from "../events/TrackDestroyedStructEvent";
 import {DateFormatter} from "../util/DateFormatter";
+import {RenderPlayerPfpEvent} from "../events/RenderPlayerPfpEvent";
 
 export class KeyPlayer {
 
@@ -233,6 +234,7 @@ export class KeyPlayer {
     window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
     window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
     window.dispatchEvent(new OreCountChangedEvent(this.playerType));
+    window.dispatchEvent(new RenderPlayerPfpEvent(this.playerType));
   }
 
   /**

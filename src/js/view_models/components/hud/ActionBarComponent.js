@@ -16,6 +16,7 @@ import {TASK_TYPES} from "../../../constants/TaskTypes";
 import {NumberFormatter} from "../../../util/NumberFormatter";
 import {ShowStructStillEvent} from "../../../events/ShowStructStillEvent";
 import {ConsumeAlphaOffcanvas} from "../offcanvas/ConsumeAlphaOffcanvas";
+import {PfpViewerComponent} from "../PfpViewerComponent";
 
 export class ActionBarComponent extends AbstractViewModelComponent {
 
@@ -59,6 +60,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.id = id;
     this.playerChunkId = `${this.playerType}-action-bar-player-chunk`;
     this.playerChunkPortraitId = `${this.playerType}-action-bar-portrait`;
+    this.playerChunkPortraitImageId = `${this.playerType}-action-bar-portrait-image`;
     this.playerChunkBatteryId = `${this.playerType}-action-bar-battery`;
     this.connectorId = `${this.playerType}-action-bar-connector`;
     this.actionChunkId = `${this.playerType}-action-bar-action-chunk`;
@@ -73,6 +75,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     /* Profile Chunk */
     this.profileClickHandler = function () {};
     this.batteryfilledClass = 'sui-mod-filled';
+
+    /** @type {string|null} Signature of the pfp currently rendered in the portrait. */
+    this.renderedPfpSignature = undefined;
 
     /**
      * Currently selected struct
@@ -144,6 +149,14 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
     document.getElementById(this.playerChunkPortraitId).addEventListener('click', this.profileClickHandler.bind(this));
 
+    // The portrait is first rendered before the key player is loaded, so refresh
+    // it once the player's data (and pfp) becomes available or changes.
+    window.addEventListener(EVENTS.RENDER_PLAYER_PFP, (event) => {
+      if (event.playerType === this.playerType) {
+        this.renderPortraitImage();
+      }
+    });
+
     // Listen for task worker changes to update progress bar
     window.addEventListener(EVENTS.TASK_WORKER_CHANGED, (event) => {
       if (!this.getSelectedStructId() || event.state.object_id !== this.getSelectedStructId()) {
@@ -212,6 +225,47 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     }
   }
 
+  /**
+   * @return {PfpClientRenderAttributes|null}
+   */
+  getCurrentPfpAttributes() {
+    const keyPlayer = this.gameState.keyPlayers[this.playerType];
+    return keyPlayer && keyPlayer.player
+      ? keyPlayer.player.pfp_client_render_attributes
+      : null;
+  }
+
+  /**
+   * Renders the portrait image layers for the current key player and records
+   * the rendered pfp signature so redundant re-renders can be skipped.
+   *
+   * @return {string}
+   */
+  renderPortraitImageHTML() {
+    const pfpAttributes = this.getCurrentPfpAttributes();
+    this.renderedPfpSignature = pfpAttributes ? JSON.stringify(pfpAttributes) : null;
+    return new PfpViewerComponent(pfpAttributes).renderHTML();
+  }
+
+  /**
+   * Updates the portrait image in place when the key player's pfp changes.
+   * Skips the DOM write when the pfp has not changed to avoid flicker.
+   */
+  renderPortraitImage() {
+    const pfpAttributes = this.getCurrentPfpAttributes();
+    const signature = pfpAttributes ? JSON.stringify(pfpAttributes) : null;
+
+    if (signature === this.renderedPfpSignature) {
+      return;
+    }
+
+    const portraitImage = document.getElementById(this.playerChunkPortraitImageId);
+    if (portraitImage) {
+      portraitImage.innerHTML = new PfpViewerComponent(pfpAttributes).renderHTML();
+      this.renderedPfpSignature = signature;
+    }
+  }
+
   renderPortraitChunkHTML() {
     const hoverIcon = this.playerType === PLAYER_TYPES.PLAYER ? 'icon-menu' : 'icon-info';
     return `
@@ -219,7 +273,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   
         <div class="sui-screen">
           <a id="${this.playerChunkPortraitId}" href="javascript: void(0)" class="sui-screen-portrait">
-            <div class="sui-screen-portrait-image"></div>
+            <div id="${this.playerChunkPortraitImageId}" class="sui-screen-portrait-image">${this.renderPortraitImageHTML()}</div>
             <i class="sui-icon-md ${hoverIcon}"></i>
           </a>
         </div>

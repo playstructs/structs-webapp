@@ -1,6 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {NumberFormatter} from "../../util/NumberFormatter";
+import {PfpViewerComponent} from "../components/PfpViewerComponent";
 
 export class MemberRosterViewModel extends AbstractViewModel {
 
@@ -31,12 +32,14 @@ export class MemberRosterViewModel extends AbstractViewModel {
   }
 
   /**
+   * @param {PlayerSearchResultDTO} playerSearchResultDTO
    * @return {string}
    */
-  renderIconHTML() {
+  renderIconHTML(playerSearchResultDTO) {
+    const pfpViewer = new PfpViewerComponent(playerSearchResultDTO.pfp_client_render_attributes);
     return `
       <div class="sui-result-row-portrait">
-        <div class="sui-result-row-portrait-image"></div>
+        <div class="sui-result-row-portrait-image">${pfpViewer.renderHTML()}</div>
       </div>
     `;
   }
@@ -97,7 +100,7 @@ export class MemberRosterViewModel extends AbstractViewModel {
    */
   renderResultRowHTML(playerSearchResultDTO) {
 
-    const iconHTML = this.renderIconHTML();
+    const iconHTML = this.renderIconHTML(playerSearchResultDTO);
     const playerInfoHTML = this.renderPlayerInfoHTML(playerSearchResultDTO);
     const alphaHTML = this.renderAlphaHTML(playerSearchResultDTO);
     const btnId = `player-search-result-${playerSearchResultDTO.id}`;

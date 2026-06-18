@@ -6,5 +6,6 @@ export class SignupRequestDTO {
       this.guild_id = null;
       this.username = null;
       this.pfp = null;
+      this.pfp_client_render_attributes = null;
   }
 }

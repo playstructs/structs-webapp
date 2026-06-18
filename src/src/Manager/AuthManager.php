@@ -95,7 +95,8 @@ class AuthManager
             ],
             [
                 ApiParameters::USERNAME,
-                ApiParameters::PFP
+                ApiParameters::PFP,
+                ApiParameters::PFP_CLIENT_RENDER_ATTRIBUTES
             ]
         );
 
@@ -264,7 +265,8 @@ class AuthManager
               pa.player_id,
               gm.tag,
               p.username,
-              p.pfp
+              p.pfp,
+              p.pfp_client_render_attributes
             FROM player_address_activation_code paac
             INNER JOIN player_address pa
               ON pa.address = paac.logged_in_address

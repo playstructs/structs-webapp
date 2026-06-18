@@ -67,6 +67,7 @@ class PlayerManager
               ) as fleet,
               p.username,
               p.pfp,
+              p.pfp_client_render_attributes,
               COALESCE(NULLIF(gu.name, \'\'), gm.name) AS guild_name,
               gm.tag,
               COALESCE((
@@ -220,6 +221,7 @@ class PlayerManager
               p.planet_id,
               p.username,
               p.pfp,
+              p.pfp_client_render_attributes,
               COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
               f.status AS fleet_status,
@@ -255,6 +257,7 @@ class PlayerManager
               p.id,
               p.username,
               p.pfp,
+              p.pfp_client_render_attributes,
               guild_name,
               gm.tag,
               f.status,
@@ -365,6 +368,7 @@ class PlayerManager
               pa.address,
               p.username,
               p.pfp,
+              p.pfp_client_render_attributes,
               COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
               COALESCE(vpi.balance, 0) as alpha
@@ -387,6 +391,7 @@ class PlayerManager
               p.primary_address AS address,
               p.username,
               p.pfp,
+              p.pfp_client_render_attributes,
               COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
               COALESCE(vpi.balance, 0) as alpha

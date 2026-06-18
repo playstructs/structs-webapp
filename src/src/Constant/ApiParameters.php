@@ -64,6 +64,8 @@ class ApiParameters
 
     const string PFP = 'pfp';
 
+    const string PFP_CLIENT_RENDER_ATTRIBUTES = 'pfp_client_render_attributes';
+
     const string PLANET_ID = 'planet_id';
 
     const string PLAYER_ID = 'player_id';

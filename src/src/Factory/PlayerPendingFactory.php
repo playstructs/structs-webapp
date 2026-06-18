@@ -15,6 +15,7 @@ class PlayerPendingFactory
         $playerPending->setPubkey($requestParams->pubkey);
         $playerPending->setUsername($requestParams->username);
         $playerPending->setPfp($requestParams->pfp);
+        $playerPending->setPfpClientRenderAttributes($requestParams->pfp_client_render_attributes);
         return $playerPending;
     }
 }

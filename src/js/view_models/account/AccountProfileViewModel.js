@@ -3,6 +3,7 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {NumberFormatter} from "../../util/NumberFormatter";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {PfpViewerComponent} from "../components/PfpViewerComponent";
 
 export class AccountProfileViewModel extends AbstractViewModel {
 
@@ -159,6 +160,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
 
   renderContent() {
     const editUsernameBtn = this.renderEditUsernameBtnHTML();
+    const pfpViewer = new PfpViewerComponent(this.player.pfp_client_render_attributes);
 
     this.renderPageTemplateHeader();
 
@@ -166,7 +168,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
         <div class="profile-layout">
           <div class="profile-header">
             <div class="profile-header-image-container">
-              <div class="profile-header-image"></div>
+              <div class="profile-header-image">${pfpViewer.renderHTML()}</div>
             </div>
             <div class="profile-header-info-container">
               <div class="profile-header-info-name sui-text-display">

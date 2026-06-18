@@ -1,6 +1,8 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {ActivationCodeInfoDTO} from "../../dtos/ActivationCodeInfoDTO";
+import {PfpViewerComponent} from "../components/PfpViewerComponent";
+import {PfpClientRenderAttributes} from "../../models/PfpClientRenderAttributes";
 
 export class ActivateDeviceVerifyViewModel extends AbstractViewModel {
 
@@ -50,6 +52,9 @@ export class ActivateDeviceVerifyViewModel extends AbstractViewModel {
     const tag = this.activationCodeInfo.tag ? `[${this.activationCodeInfo.tag}]` : '';
     const username = this.activationCodeInfo.username ? this.activationCodeInfo.username : '';
     const playerId = this.activationCodeInfo.player_id;
+    const pfpViewer = new PfpViewerComponent(
+      PfpClientRenderAttributes.fromJson(this.activationCodeInfo.pfp_client_render_attributes)
+    );
 
     MenuPage.enablePageTemplate(MenuPage.navItemAccountId, false);
 
@@ -62,7 +67,7 @@ export class ActivateDeviceVerifyViewModel extends AbstractViewModel {
         <div>Is this your account?</div>
         
         <div class="login-code-info-container">
-          <div class="set-username-pfp"></div>
+          <div class="set-username-pfp">${pfpViewer.renderHTML()}</div>
           <div class="login-code-info-details">
             <div class="login-code-info-name">
               <div class="sui-text-display sui-text-secondary">${tag}</div>
