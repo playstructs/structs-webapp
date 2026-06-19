@@ -25,6 +25,9 @@ security:
         api_setting:
             pattern: ^/api/setting
             security: false
+        api_pfp:
+            pattern: ^/api/pfp
+            security: false
         api:
             pattern: ^/api/
             security: true
