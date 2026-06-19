@@ -29,6 +29,9 @@ class PlayerPending extends AbstractEntity
     #[ORM\Column]
     public ?string $pfp = null;
 
+    #[ORM\Column]
+    public ?string $pfp_client_render_attributes = null;
+
     public function getPrimaryAddress(): ?string
     {
         return $this->primary_address;
@@ -97,6 +100,18 @@ class PlayerPending extends AbstractEntity
     public function setPfp(?string $pfp): static
     {
         $this->pfp = $pfp;
+
+        return $this;
+    }
+
+    public function getPfpClientRenderAttributes(): ?string
+    {
+        return $this->pfp_client_render_attributes;
+    }
+
+    public function setPfpClientRenderAttributes(?string $pfp_client_render_attributes): static
+    {
+        $this->pfp_client_render_attributes = $pfp_client_render_attributes;
 
         return $this;
     }

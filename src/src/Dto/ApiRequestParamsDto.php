@@ -100,6 +100,9 @@ class ApiRequestParamsDto
     #[Assert\Json]
     public ?string $pfp = null;
 
+    #[Assert\Json]
+    public ?string $pfp_client_render_attributes = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $planet_id = null;
 

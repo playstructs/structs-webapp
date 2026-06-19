@@ -4,6 +4,7 @@ import {NumberFormatter} from "../../util/NumberFormatter";
 import {Pagination} from "../templates/partials/Pagination";
 import {PAGINATION_LIMITS} from "../../constants/PaginationLimits";
 import {PlanetRaidFactory} from "../../factories/PlanetRaidFactory";
+import {PfpViewerComponent} from "../components/PfpViewerComponent";
 
 export class ScanResultsViewModel extends AbstractViewModel {
 
@@ -58,12 +59,14 @@ export class ScanResultsViewModel extends AbstractViewModel {
   }
 
   /**
+   * @param {PlayerSearchResultDTO} playerSearchResultDTO
    * @return {string}
    */
-  renderIconHTML() {
+  renderIconHTML(playerSearchResultDTO) {
+    const pfpViewer = new PfpViewerComponent(playerSearchResultDTO.pfp_client_render_attributes);
     return `
       <div class="sui-result-row-portrait">
-        <div class="sui-result-row-portrait-image"></div>
+        <div class="sui-result-row-portrait-image">${pfpViewer.renderHTML()}</div>
       </div>
     `;
   }
@@ -99,7 +102,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
    */
   renderResultRowHTML(playerSearchResultDTO) {
 
-    const iconHTML = this.renderIconHTML();
+    const iconHTML = this.renderIconHTML(playerSearchResultDTO);
     const playerInfoHTML = this.renderPlayerInfoHTML(playerSearchResultDTO);
     const btnId = `scan-${playerSearchResultDTO.id}`;
 

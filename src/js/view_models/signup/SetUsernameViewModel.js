@@ -2,6 +2,8 @@ import {NavItemDTO} from "../../dtos/NavItemDTO";
 import {MenuPage} from "../../framework/MenuPage";
 import {USERNAME_PATTERN} from "../../constants/RegexPattern";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
+import {PfpViewerComponent} from "../components/PfpViewerComponent";
+import {PfpClientRenderAttributes} from "../../models/PfpClientRenderAttributes";
 
 export class SetUsernameViewModel extends AbstractViewModel {
 
@@ -11,6 +13,9 @@ export class SetUsernameViewModel extends AbstractViewModel {
   constructor(gameState) {
     super();
     this.gameState = gameState;
+    this.pfpContainerId = 'set-username-pfp';
+    this.regeneratePfpBtnId = 'regenerate-pfp-btn';
+    this.pfpViewerComponent = null;
   }
 
   initLottieAnimations() {
@@ -36,7 +41,22 @@ export class SetUsernameViewModel extends AbstractViewModel {
     });
   }
 
+  initPfp() {
+    if (this.gameState.signupRequest.pfp_client_render_attributes) {
+      this.pfpViewerComponent = new PfpViewerComponent(
+        PfpClientRenderAttributes.fromJson(this.gameState.signupRequest.pfp_client_render_attributes)
+      );
+    } else {
+      this.pfpViewerComponent = new PfpViewerComponent(null, true);
+      this.gameState.signupRequest.pfp_client_render_attributes = this.pfpViewerComponent.getPfpJson();
+    }
+
+    this.pfpViewerComponent.mount(document.getElementById(this.pfpContainerId));
+  }
+
   initPageCode() {
+    this.initPfp();
+
     const usernameInput = document.getElementById('username-input');
     usernameInput.addEventListener('keyup', () => {
       const submitBtn = document.getElementById('submit-btn');
@@ -70,9 +90,18 @@ export class SetUsernameViewModel extends AbstractViewModel {
         submitBtnHandler();
       }
     });
+
+    document.getElementById(this.regeneratePfpBtnId).addEventListener('click', () => {
+      this.pfpViewerComponent.rerender(true);
+      this.gameState.signupRequest.pfp_client_render_attributes = this.pfpViewerComponent.getPfpJson();
+    });
   }
 
   renderSuccessfulSubmission() {
+    const regeneratePfpBtn = document.getElementById(this.regeneratePfpBtnId);
+    regeneratePfpBtn.classList.add('hidden');
+    regeneratePfpBtn.disabled = true;
+
     const setUsernameNameSection = document.getElementById('set-username-name-section');
 
     setUsernameNameSection.classList.remove('set-username-input-mode');
@@ -108,8 +137,11 @@ export class SetUsernameViewModel extends AbstractViewModel {
         <div class="set-username-screen-body">
           <div class="set-username-wrapper">
             <div class="set-username-pfp-section">
-              <div class="set-username-pfp">
+              <div id="${this.pfpContainerId}" class="set-username-pfp">
               </div>
+              <button id="${this.regeneratePfpBtnId}" class="set-username-pfp-refresh-btn" type="button">
+                <i class="sui-icon icon-refresh-8 sui-text-secondary"></i>
+              </button>
             </div>
             <div id="set-username-name-section" class="set-username-input-mode">
               <div class="set-username-field-wrapper">
@@ -141,7 +173,7 @@ export class SetUsernameViewModel extends AbstractViewModel {
     MenuPage.disableDialogueBtnB();
     MenuPage.showDialoguePanel();
 
-    this.initLottieAnimations()
+    this.initLottieAnimations();
 
     this.initPageCode();
   }

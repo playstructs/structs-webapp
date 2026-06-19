@@ -122,6 +122,26 @@ export class GuildProfileViewModel extends AbstractViewModel {
     `;
   }
 
+  renderGuildProfilePicture() {
+    let html = `
+      <div class="profile-header-image">
+        <div class="guild-profile-image-placeholder sui-text-secondary">
+          <i class="sui-icon sui-icon-lg icon-unknown"></i>
+        </div>
+      </div>
+    `;
+
+    if (this.guild.logo) {
+      html = `
+        <div class="profile-header-image">
+          <img class="guild-profile-image-wrapper" src="${this.guild.logo}" alt="${this.guild.name} logo"/>
+        </div>
+      `;
+    }
+
+    return html;
+  }
+
   render () {
     this.fetchPageData().then(() => {
 
@@ -135,7 +155,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
         <div class="profile-layout">
           <div class="profile-header">
             <div class="profile-header-image-container">
-              <div class="profile-header-image"></div>
+              ${this.renderGuildProfilePicture()}
             </div>
             <div class="profile-header-info-container">
               <div class="profile-header-info-name sui-text-display">

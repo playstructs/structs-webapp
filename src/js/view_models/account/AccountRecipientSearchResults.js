@@ -1,6 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {NumberFormatter} from "../../util/NumberFormatter";
+import {PfpViewerComponent} from "../components/PfpViewerComponent";
 
 export class AccountRecipientSearchResults extends AbstractViewModel {
 
@@ -35,9 +36,10 @@ export class AccountRecipientSearchResults extends AbstractViewModel {
    * @return {string}
    */
   renderIconHTML(playerSearchResultDTO) {
+    const pfpViewer = new PfpViewerComponent(playerSearchResultDTO.pfp_client_render_attributes);
     let html = `
       <div class="sui-result-row-portrait">
-        <div class="sui-result-row-portrait-image"></div>
+        <div class="sui-result-row-portrait-image">${pfpViewer.renderHTML()}</div>
       </div>
     `;
 

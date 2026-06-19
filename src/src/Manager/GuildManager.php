@@ -274,6 +274,7 @@ class GuildManager
               p.guild_id,
               p.username,
               p.pfp,
+              p.pfp_client_render_attributes,
               COALESCE(NULLIF(gu.name, \'\'), gm.name) AS guild_name,
               gm.tag,
               SUM(COALESCE(vpi.balance, 0)) as alpha
@@ -290,6 +291,7 @@ class GuildManager
               p.guild_id,
               p.username,
               p.pfp,
+              p.pfp_client_render_attributes,
               guild_name,
               gm.tag
             ORDER BY username;

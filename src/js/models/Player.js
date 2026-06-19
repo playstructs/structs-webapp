@@ -8,6 +8,7 @@ export class Player {
     this.fleet_id = null;
     this.username = null;
     this.pfp = null;
+    this.pfp_client_render_attributes = null;
     this.guild_name = null;
     this.tag = null;
     this.alpha = null;

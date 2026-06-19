@@ -1211,14 +1211,44 @@ img.glitch-logo {
 }
 
 .set-username-pfp {
+  position: relative;
   display: flex;
   width: 72px;
   height: 72px;
+  overflow: hidden;
   align-items: center;
   justify-content: center;
-  background-image: url("/img/portrait-placeholder.png");
-  background-repeat: no-repeat;
   box-shadow: -2px 0 0 0 var(--text-player-highlight), 2px 0 0 0 var(--text-player-highlight), 0 -2px 0 0 var(--text-player-highlight), 0 2px 0 0 var(--text-player-highlight);
+}
+
+.pfp-viewer-layer,
+.sui-result-row-portrait img.pfp-viewer-layer {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: block;
+  max-width: none;
+  max-height: none;
+  width: 72px;
+  height: 72px;
+  transform: translateX(-50%);
+  object-fit: cover;
+}
+
+/* Containers smaller than 72px * 72px offset the layers -4px from the top. */
+.sui-screen-portrait-image .pfp-viewer-layer,
+.sui-result-row-portrait img.pfp-viewer-layer {
+  top: -4px;
+}
+
+.set-username-pfp-refresh-btn {
+  display: flex;
+  padding: var(--spacing-sm);
+  border: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  cursor: pointer;
 }
 
 .set-username-screen-body {
@@ -1584,9 +1614,24 @@ img.glitch-logo {
 }
 
 .profile-header-image {
+  position: relative;
   width: 100%;
   height: 100%;
-  background-image: url(/img/portrait-placeholder.png);
+  overflow: hidden;
+}
+
+.guild-profile-image-placeholder {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+img.guild-profile-image-wrapper {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
 }
 
 .profile-header-info-container {

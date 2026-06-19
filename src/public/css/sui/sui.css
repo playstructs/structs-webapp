@@ -1401,11 +1401,10 @@ a.sui-screen-portrait:hover {
 }
 
 .sui-screen-portrait-image {
+  position: relative;
   width: 100%;
   height: 100%;
-
-  background-image: url("/img/portrait-placeholder.png");
-  background-position: -16px -4px;
+  overflow: hidden;
 
   outline: 2px solid rgba(0, 0, 0, 0.20);
   outline-offset: -2px;
@@ -1767,12 +1766,12 @@ a.sui-resource:visited {
 }
 
 .sui-result-row-portrait-image {
+  position: relative;
   box-sizing: border-box;
   width: 44px;
   height: 44px;
+  overflow: hidden;
   border: 1px solid var(--border-subtle);
-
-  background: url("/img/portrait-placeholder.png") top;
 }
 
 .sui-result-row-portrait-icon {
