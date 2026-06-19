@@ -36,7 +36,7 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
 
     console.log('PLANET RAID INITIATED HANDLER');
 
-    this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.id).then(raidInfo => {
+    this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getPlanetId()).then(raidInfo => {
       this.gameState.setPlanetPlanetRaidInfo(raidInfo, false);
 
       this.raidManager.initPlanetRaider().then(() => {
@@ -82,8 +82,6 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
     this.mapManager.showMap(MAP_CONTAINER_IDS.ALPHA_BASE);
     MenuPage.router.goto('Fleet', 'index');
     MenuPage.open();
-
-    this.shouldUnregister = () => true;
   }
 
   raidEnded(messageData) {
@@ -120,7 +118,7 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.id}`
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getPlanetId()}`
     ) {
       console.log('PLANET RAID STATUS LISTENER', messageData);
 
