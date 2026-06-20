@@ -209,9 +209,7 @@ export class PlanetCardBuilder {
       const newPlanetListener = new NewPlanetListener(
         this.gameState,
         this.guildAPI,
-        this.mapManager,
-        this.grassManager,
-        this.raidManager
+        this.mapManager
       );
 
       this.grassManager.registerListener(newPlanetListener);
