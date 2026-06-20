@@ -117,9 +117,7 @@ export class AuthManager {
     const newPlanetListener = new NewPlanetListener(
       this.gameState,
       this.guildAPI,
-      this.mapManager,
-      this.grassManager,
-      this.raidManager
+      this.mapManager
     );
     newPlanetListener.redirectControllerName = 'Auth';
     newPlanetListener.redirectPageName = 'orientation1';
@@ -215,6 +213,13 @@ export class AuthManager {
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = fleet;
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructs(structs);
 
+      this.grassManager.registerListener(new PlanetRaidStatusListener(
+        this.gameState,
+        this.guildAPI,
+        this.raidManager,
+        this.mapManager
+      ));
+
       if (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id) {
 
         const [
@@ -238,13 +243,6 @@ export class AuthManager {
           this.raidManager.initPlanetRaider(),
           this.raidManager.initRaidEnemy(),
         ]);
-
-        this.grassManager.registerListener(new PlanetRaidStatusListener(
-          this.gameState,
-          this.guildAPI,
-          this.raidManager,
-          this.mapManager
-        ));
 
         this.mapManager.configureAlphaBaseMap();
         this.gameState.alphaBaseMap.render();
