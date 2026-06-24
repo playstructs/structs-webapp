@@ -24,6 +24,7 @@ import {StructRefineStatusListener} from "../grass_listeners/StructRefineStatusL
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {KeyPlayerLastActionListener} from "../grass_listeners/KeyPlayerLastActionListener";
 import {KeyPlayerShieldChangeStatusListener} from "../grass_listeners/KeyPlayerShieldChangeStatusListener";
+import {LoginCompleteEvent} from "../events/LoginCompleteEvent";
 
 export class AuthManager {
 
@@ -254,6 +255,8 @@ export class AuthManager {
 
         // Do this last so block height is available
         await this.taskManager.restoreTasksFromDB();
+
+        window.dispatchEvent(new LoginCompleteEvent());
       }
     }
 

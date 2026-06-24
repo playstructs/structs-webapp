@@ -63,7 +63,7 @@ export class KeyPlayer {
     this.planet = null;
 
     /** @type {string} */
-    this.planetShieldHealth = '--';
+    this.planetShieldHealth = '';
 
     /** @type {PlanetaryShieldInfoDTO} */
     this.planetShieldInfo = new PlanetaryShieldInfoDTO();
@@ -209,7 +209,7 @@ export class KeyPlayer {
       );
       this.planetShieldHealth = this.dateFormatter.formatDuration(health);
     } else {
-      this.planetShieldHealth = '--';
+      this.planetShieldHealth = '';
     }
 
     window.dispatchEvent(new ShieldHealthChangedEvent(this.playerType));
@@ -356,4 +356,53 @@ export class KeyPlayer {
     return fleetId && this.fleet?.id === fleetId;
   }
 
+  /**
+   * @return {boolean}
+   */
+  isCommandStructAlive() {
+    return !!(
+      this.fleet?.command_struct
+      && this.structs[this.fleet.command_struct]
+      && !this.structs[this.fleet.command_struct].isDestroyed()
+    );
+  }
+
+  /**
+   * @return {boolean}
+   */
+  arePlanetaryDefensesSecure() {
+    return !!(
+      this.fleet?.isOnStation()
+      && this.isCommandStructAlive()
+    );
+  }
+
+  /**
+   * @return {boolean}
+   */
+  arePlanetaryDefensesVulnerable() {
+    return !this.arePlanetaryDefensesSecure();
+  }
+
+  /**
+   * @return {boolean}
+   */
+  arePlanetaryDefensesBreached() {
+    return !!(
+      this.arePlanetaryDefensesVulnerable()
+      && this.planetRaidInfo.isRaidActive()
+    );
+  }
+
+  /**
+   * @return {string}
+   */
+  getProjectedShieldBreachTime() {
+    let health = this.shieldHealthCalculator.getTimeRemainingEstimate(
+      this.planetShieldInfo.planetary_shield,
+      1,
+      1
+    );
+    return this.dateFormatter.formatDuration(health);
+  }
 }

@@ -16,5 +16,12 @@ export class Fleet {
      this.created_at = null;
      this.updated_at = null;
    }
+
+  /**
+   * @return {boolean}
+   */
+  isOnStation() {
+    return this.status === 'onStation';
+  }
 }
 

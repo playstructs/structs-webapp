@@ -705,6 +705,57 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
   }
 
   /**
+   * @param {object} dataset
+   * @return {string}
+   */
+  renderShieldStatus(dataset) {
+    let textColorClass = '';
+    let statusExplanation = `
+      CMD Ship on station.<br>
+      Planetary Defenses are secured.
+    `;
+    let projectBreachTime = `
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md icon-in-progress"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>Projected Breach Time:</div>
+          <div>${dataset?.projectedBreachTime || 'N/A'}</div>
+        </div>
+      </div>
+    `;
+
+    if (dataset.suiCheatsheet === 'shield-vulnerable') {
+      textColorClass = 'sui-text-warning';
+      statusExplanation = `
+        CMD Ship absent.<br>
+        Planetary Defenses are vulnerable.
+      `;
+    } else if (dataset.suiCheatsheet === 'shield-breached') {
+      textColorClass = 'sui-text-destructive';
+      statusExplanation = `
+        CMD Ship absent.<br>
+        Breach underway.
+      `;
+      projectBreachTime = null;
+    }
+
+    return this.renderer.renderContentHTML(
+      'Planetary Defenses',
+      null,
+      null,
+      `
+        <div class="${textColorClass}">
+          ${statusExplanation}
+        </div>
+      `,
+      null,
+      projectBreachTime
+    );
+  }
+
+  /**
    * @param {object} dataset triggering element's data attributes
    * @return {string}
    */
@@ -784,6 +835,11 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
         break;
       case 'icon-refine':
         html = this.renderPowerGeneration(dataset);
+        break;
+      case 'shield-secure':
+      case 'shield-vulnerable':
+      case 'shield-breached':
+        html = this.renderShieldStatus(dataset);
         break;
       default:
         const structType = this.gameState.structTypes.getStructType(dataset.suiCheatsheet);

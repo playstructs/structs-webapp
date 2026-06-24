@@ -73,13 +73,15 @@ export class HUDViewModel extends AbstractViewModel {
     HUDViewModel.topRightStatusBarAlphaBase = new StatusBarTopRightComponent(
       gameState,
       false,
-      HUD_IDS.STATUS_BAR_TOP_RIGHT_ALPHA_BASE
+      HUD_IDS.STATUS_BAR_TOP_RIGHT_ALPHA_BASE,
+      PLAYER_TYPES.PLAYER
     );
 
     HUDViewModel.topRightStatusBarRaid = new StatusBarTopRightComponent(
       gameState,
       true,
-      HUD_IDS.STATUS_BAR_TOP_RIGHT_RAID
+      HUD_IDS.STATUS_BAR_TOP_RIGHT_RAID,
+      PLAYER_TYPES.RAID_ENEMY
     );
 
     HUDViewModel.bottomLeftActionBar = new ActionBarComponent(
