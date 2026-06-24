@@ -2,6 +2,7 @@ import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelCo
 import {EVENTS} from "../../../constants/Events";
 import {MAP_CONTAINER_IDS} from "../../../constants/MapConstants";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
+import {ShieldStatusComponent} from "../ShieldStatusComponent";
 
 export class StatusBarTopRightComponent extends AbstractViewModelComponent {
 
@@ -9,41 +10,38 @@ export class StatusBarTopRightComponent extends AbstractViewModelComponent {
    * @param {GameState} gameState
    * @param {Boolean} isRaidPlanet
    * @param {string} id
+   * @param {string} planetOwnerPlayerType the type of key player that owns the planet
    */
-  constructor(gameState, isRaidPlanet, id) {
+  constructor(gameState, isRaidPlanet, id, planetOwnerPlayerType) {
     super(gameState);
     this.id = id;
     this.isRaidPlanet = isRaidPlanet;
+    this.planetOwnerPlayerType = planetOwnerPlayerType;
     this.prefix = '';
     this.theme = '';
-    this.shieldIcon = 'sui-icon-shield-health';
-    this.shieldHealthChangedEvent = EVENTS.SHIELD_HEALTH_CHANGED;
     this.oreCountChangedEvent = EVENTS.ORE_COUNT_CHANGED;
 
     if (this.isRaidPlanet) {
       this.prefix = 'raid-';
       this.theme = 'sui-theme-enemy';
-      this.shieldIcon ='sui-icon-enemy-shield-health';
     }
 
     this.startHidden = ((this.gameState.activeMapContainerId === MAP_CONTAINER_IDS.RAID) === this.isRaidPlanet)
       ? '' : 'hidden';
 
-    this.hudShieldHealthValueId = `${this.prefix}hud-shield-health`;
-    this.hudShieldHealthHintId = `${this.prefix}${this.hudShieldHealthValueId}-hint`;
+    this.hudShieldStatusId = `${this.prefix}hud-shield-status`;
     this.hudOreValueId = `${this.prefix}hud-ore`;
     this.hudOreHintId = `${this.prefix}${this.hudOreValueId}-hint`;
+
+    this.shieldStatusComponent = new ShieldStatusComponent(
+      this.gameState,
+      this.planetOwnerPlayerType,
+      this.hudShieldStatusId
+    );
   }
 
   initPageCode() {
-    window.addEventListener(this.shieldHealthChangedEvent, function (event) {
-      if (
-        (this.isRaidPlanet && event.playerType === PLAYER_TYPES.RAID_ENEMY)
-        || (!this.isRaidPlanet && event.playerType === PLAYER_TYPES.PLAYER)
-      ) {
-        document.getElementById(this.hudShieldHealthValueId).innerText = `${this.gameState.keyPlayers[event.playerType].planetShieldHealth}`;
-      }
-    }.bind(this));
+    this.shieldStatusComponent.initPageCode();
 
     window.addEventListener(this.oreCountChangedEvent, function (event) {
       if (
@@ -58,23 +56,15 @@ export class StatusBarTopRightComponent extends AbstractViewModelComponent {
   renderHTML() {
     return `
       <div id="${this.id}" class="sui-status-bar-panel status-bar-panel-top-right ${this.theme} ${this.startHidden}">
-        <a 
-          id="${this.hudShieldHealthHintId}" 
-          class="sui-resource"
-          href="javascript: void(0)" 
-          data-sui-tooltip="Planetary Shield"
-        >
-          <span id="${this.hudShieldHealthValueId}"></span>
-          <i class="sui-icon ${this.shieldIcon}"></i>
-        </a>
+        ${this.shieldStatusComponent.renderHTML()}
         <a 
           id="${this.hudOreHintId}" 
           class="sui-resource"
           href="javascript: void(0)" 
           data-sui-tooltip="Alpha Ore"
         >
-          <span id="${this.hudOreValueId}"></span>
           <i class="sui-icon sui-icon-alpha-ore"></i>
+          <span id="${this.hudOreValueId}"></span>
         </a>
       </div>
     `;

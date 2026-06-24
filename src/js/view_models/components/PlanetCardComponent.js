@@ -2,6 +2,7 @@ import {AbstractViewModelComponent} from "../../framework/AbstractViewModelCompo
 import {EVENTS} from "../../constants/Events";
 import {GenericResourceComponent} from "./GenericResourceComponent";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {ShieldStatusComponent} from "./ShieldStatusComponent";
 
 export class PlanetCardComponent extends AbstractViewModelComponent {
 
@@ -33,9 +34,13 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
     this.alphaOreId = `${this.idPrefix}-planet-card-alpha-ore`;
     this.alphaOreEvent = EVENTS.ORE_COUNT_CHANGED;
 
-    this.shieldHealth = '0%';
     this.shieldHealthId = `${this.idPrefix}-planet-card-shield-health`;
-    this.shieldHealthEvent = EVENTS.SHIELD_HEALTH_CHANGED;
+    this.shieldStatusComponent = new ShieldStatusComponent(
+      this.gameState,
+      this.isRaidCard ? PLAYER_TYPES.RAID_ENEMY : PLAYER_TYPES.PLAYER,
+      this.shieldHealthId,
+      true
+    );
 
     this.deployedStructs = '0+0';
     this.deployedStructsId = `${this.idPrefix}-planet-card-deployed-structs`;
@@ -43,7 +48,6 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
 
     this.undiscoveredOreUpdateHandler = () => {};
     this.alphaOreUpdateHandler = () => {};
-    this.shieldHealthUpdateHandler = () => {};
     this.deployedStructsUpdateHandler = () => {};
 
     this.hasAlert = false;
@@ -71,8 +75,8 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
     if (this.hasStatusGroup) {
       window.addEventListener(this.undiscoveredOreEvent, this.undiscoveredOreUpdateHandler.bind(this));
       window.addEventListener(this.alphaOreEvent, this.alphaOreUpdateHandler.bind(this));
-      window.addEventListener(this.shieldHealthEvent, this.shieldHealthUpdateHandler.bind(this));
       window.addEventListener(this.deployedStructsEvent, this.deployedStructsUpdateHandler.bind(this));
+      this.shieldStatusComponent.initPageCode();
     }
 
     if (this.hasPrimaryBtn) {
@@ -129,15 +133,7 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
           }
         </div>
         <div class="sui-planet-card-status-group-col">
-          ${
-            this.genericResourceComponent.renderHTML(
-              this.shieldHealthId,
-              this.isRaidCard ? 'sui-icon-enemy-shield-health' : 'sui-icon-shield-health',
-              'Planetary Shield',
-              this.shieldHealth,
-              true
-            )
-          }
+          ${this.shieldStatusComponent.renderHTML()}
           
           ${
             this.genericResourceComponent.renderHTML(
