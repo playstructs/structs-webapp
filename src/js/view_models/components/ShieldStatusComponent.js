@@ -87,7 +87,6 @@ export class ShieldStatusComponent extends AbstractViewModelComponent {
         id="${this.elementId}"
         class="sui-resource"
         href="javascript: void(0)" 
-        data-sui-tooltip="Planetary Shield"
         data-sui-mod-placement="bottom"
       >
         <div id="${this.elementIconWrapperId}" class="planetary-shield-symbol-wrapper"></div>
