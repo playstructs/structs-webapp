@@ -2270,6 +2270,12 @@ a.offcanvas-struct-container.sui-mod-disabled {
   flex: 1 1 auto;
 }
 
+.planetary-shield-symbol-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Page Specific Styling Start */
 
 /* Animated Classes Start */

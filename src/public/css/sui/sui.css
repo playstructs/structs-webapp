@@ -2479,7 +2479,6 @@ label.sui-form-element-group-label {
 }
 .sui-planet-card-status-group-col {
   display: flex;
-  min-width: 112px;
   flex: 1 0 0;
   flex-direction: column;
   align-items: flex-start;
