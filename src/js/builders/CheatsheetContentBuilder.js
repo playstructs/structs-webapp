@@ -41,6 +41,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
    * @param {string} weaponLabel
    * @param {string[]} weaponAmbits
    * @param {string} notEquippedValue
+   * @param {boolean} isArmourPiercing
    * @return {string}
    */
   renderWeaponProperty(
@@ -48,7 +49,8 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     weaponLabel,
     weaponDamage,
     weaponAmbits,
-    notEquippedValue
+    notEquippedValue,
+    isArmourPiercing
   ) {
     if (!weaponType || weaponType === notEquippedValue) {
       return '';
@@ -58,6 +60,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     const ambitIcons = weaponAmbits.map(ambit => 
       `<i class="sui-icon sui-icon-${ambit.toLowerCase()}"></i>`
     ).join('');
+    const armourPiercing = isArmourPiercing ? '(+ARMOUR PIERCING)' : '';
 
     return `
       <div class="sui-cheatsheet-property">
@@ -68,6 +71,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           <div>${weaponLabel}</div>
           <div>
             ${weaponDamage} DMG
+            ${armourPiercing}
             ${ambitIcons}
           </div>
         </div>
@@ -167,7 +171,8 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           structType.planetary_defenses_label,
           1,
           AMBIT_ORDER.map(ambit => ambit.toLowerCase()),
-          'noPlanetaryDefense'
+          'noPlanetaryDefense',
+          false
         );
       default:
         const iconClass = STRUCT_EQUIPMENT_ICON_MAP[structType.planetary_defenses];
@@ -183,52 +188,6 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           </div>
         `;
     }
-  }
-
-  /**
-   * @param {StructType} structType
-   * @return {string}
-   */
-  renderArmourPiercingProperty(structType) {
-    if (!structType.primary_weapon_armour_piercing && !structType.secondary_weapon_armour_piercing) {
-      return '';
-    }
-
-    const primaryWeaponAmbits = structType.primary_weapon_armour_piercing
-      ? structType.primary_weapon_ambits_array
-      : [];
-    const secondaryWeaponAmbits = structType.secondary_weapon_armour_piercing
-      ? structType.secondary_weapon_ambits_array
-      : [];
-
-    let primaryAmbitIcons = primaryWeaponAmbits.map(ambit =>
-      `<i class="sui-icon sui-icon-${ambit.toLowerCase()}"></i>`
-    ).join('');
-    primaryAmbitIcons = primaryAmbitIcons
-      ? `${structType.primary_weapon_damage} DMG ${primaryAmbitIcons}`
-      : '';
-
-    let secondaryAmbitIcons = secondaryWeaponAmbits.map(ambit =>
-      `<i class="sui-icon sui-icon-${ambit.toLowerCase()}"></i>`
-    ).join('');
-    secondaryAmbitIcons = secondaryAmbitIcons
-      ? `${structType.secondary_weapon_damage} DMG ${secondaryAmbitIcons}`
-      : '';
-
-    return `
-      <div class="sui-cheatsheet-property">
-        <div class="sui-cheatsheet-property-icon">
-          <i class="sui-icon sui-icon-md icon-mine"></i>
-        </div>
-        <div class="sui-cheatsheet-property-info">
-          <div>Armour Piercing</div>
-          <div>
-            ${primaryAmbitIcons}
-            ${secondaryAmbitIcons}
-          </div>
-        </div>
-      </div>
-    `;
   }
 
   /**
@@ -300,7 +259,8 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
       structType.primary_weapon_label,
       structType.primary_weapon_damage,
       structType.primary_weapon_ambits_array,
-      'noActiveWeaponry'
+      'noActiveWeaponry',
+      structType.primary_weapon_armour_piercing
     );
 
     propertiesHTML += this.renderWeaponProperty(
@@ -308,10 +268,9 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
       structType.secondary_weapon_label,
       structType.secondary_weapon_damage,
       structType.secondary_weapon_ambits_array,
-      'noActiveWeaponry'
+      'noActiveWeaponry',
+      structType.secondary_weapon_armour_piercing
     );
-
-    propertiesHTML += this.renderArmourPiercingProperty(structType);
 
     propertiesHTML += this.renderPassiveWeaponProperty(structType);
 
