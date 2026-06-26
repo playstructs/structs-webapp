@@ -7,6 +7,7 @@ import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
 import {HUDViewModel} from "../view_models/HUDViewModel";
 import {RefreshActionBarEvent} from "../events/RefreshActionBarEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {STRUCT_ACTIONS} from "../constants/StructConstants";
 import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {RenderStructEvent} from "../events/RenderStructEvent";
 import {RenderStructHUDEvent} from "../events/RenderStructHUDEvent";
@@ -256,57 +257,87 @@ export class StructManager {
   }
 
   /**
+   * Requests cancellation of a struct build.
+   *
    * @param {Struct} struct
    */
   cancelStructBuild(struct) {
-    console.log(`Canceling build of struct ${struct.id}`);
-
-    // Get struct position info before removing
-    const tileType = this.getTileTypeFromStruct(struct);
-    const ambit = struct.operating_ambit.toUpperCase();
-    const slot = struct.slot;
-    const playerId = struct.owner;
-    const mapId = this.gameState.alphaBaseMap.mapId;
-
-    // Kill the task worker
-    window.dispatchEvent(new TaskCmdKillEvent(struct.id));
-
-    if (!struct.isDestroyed()) {
-      // Send cancel message to backend (fire and forget)
-      this.signingClientManager.queueMsgStructBuildCancel(
-        struct.id
-      ).then();
+    if (struct.isDestroyed()) {
+      return;
     }
 
-    // Optimistic UI update: remove struct from gameState immediately
-    this.gameState.removeStruct(struct.id);
+    this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.BUILD_CANCEL);
+    this.gameState.actionBarLock.lock();
 
-    // Clear the struct layer tile
-    window.dispatchEvent(new ClearStructTileEvent(
-      mapId,
-      tileType,
-      ambit,
-      slot,
-      playerId
-    ));
+    this.signingClientManager.queueMsgStructBuildCancel(
+      struct.id
+    ).then();
+  }
 
-    // Clear the tile selection's data-struct-id
-    window.dispatchEvent(new UpdateTileStructIdEvent(
-      mapId,
-      tileType,
-      ambit,
-      slot,
-      playerId,
-      ''  // Empty string to clear the struct ID
-    ));
+  /**
+   * Finalizes a build cancel once the chain confirms it.
+   *
+   * @param {string} structId
+   * @param {string|null} mapId
+   */
+  finalizeBuildCancel(structId, mapId) {
+    const struct = this.getStructById(structId);
+    let isOwnStruct = true;
 
-    // Clear currentSelectedTile.structId
-    if (HUDViewModel.currentSelectedTile) {
-      HUDViewModel.currentSelectedTile.structId = null;
+    if (struct) {
+      const tileType = this.getTileTypeFromStruct(struct);
+      const ambit = struct.operating_ambit.toUpperCase();
+      const slot = struct.slot;
+      const playerId = struct.owner;
+      isOwnStruct = playerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+
+      // Kill the build task worker
+      window.dispatchEvent(new TaskCmdKillEvent(structId));
+
+      this.gameState.removeStruct(structId);
+
+      if (tileType) {
+        this.gameState.removePendingBuild(tileType, ambit, slot, playerId);
+      }
+
+      // Clear the struct layer tile
+      window.dispatchEvent(new ClearStructTileEvent(
+        mapId,
+        tileType,
+        ambit,
+        slot,
+        playerId
+      ));
+
+      // Clear the tile selection's data-struct-id
+      window.dispatchEvent(new UpdateTileStructIdEvent(
+        mapId,
+        tileType,
+        ambit,
+        slot,
+        playerId,
+        ''  // Empty string to clear the struct ID
+      ));
+
+      if (
+        HUDViewModel.currentSelectedTile
+        && HUDViewModel.currentSelectedTile.structId === structId
+      ) {
+        HUDViewModel.currentSelectedTile.structId = null;
+      }
     }
 
-    // Refresh the action bar to show empty tile state
-    window.dispatchEvent(new RefreshActionBarEvent());
+    // Release the lock only for the player's own pending cancel; clearing
+    // refreshes the action bar, which now resolves to the empty tile state.
+    if (
+      isOwnStruct
+      && this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.BUILD_CANCEL
+      && this.gameState.actionBarLock.isLocked()
+    ) {
+      this.gameState.actionBarLock.clear();
+    } else {
+      window.dispatchEvent(new RefreshActionBarEvent());
+    }
   }
 
   /**

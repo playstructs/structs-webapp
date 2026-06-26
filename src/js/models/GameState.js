@@ -250,7 +250,7 @@ export class GameState {
    * @return {Struct|null} The removed struct, or null if not found
    */
   removeStruct(structId) {
-    Object.keys(PLAYER_TYPES).forEach((playerType) => {
+    for (const playerType of Object.values(PLAYER_TYPES)) {
       if (this.keyPlayers[playerType].structs[structId]) {
         const removedStruct = this.keyPlayers[playerType].structs[structId];
         delete this.keyPlayers[playerType].structs[structId];
@@ -259,7 +259,7 @@ export class GameState {
 
         return removedStruct;
       }
-    });
+    }
 
     return null;
   }

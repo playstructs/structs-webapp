@@ -121,6 +121,19 @@ export class StructListener extends AbstractGrassListener {
     const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
     const mapId = this.gameState[mapType]?.mapId ?? null;
 
+    // A cancelled build confirms as a transition to DESTROYED on a struct that
+    // was never built (status 33 = MATERIALIZED + DESTROYED).
+    if (
+      (messageData.detail.status_old & STRUCT_STATUS_FLAGS.DESTROYED) === 0
+      && (messageData.detail.status & STRUCT_STATUS_FLAGS.DESTROYED) > 0
+      && (messageData.detail.status & STRUCT_STATUS_FLAGS.BUILT) === 0
+    ) {
+      this.structManager.finalizeBuildCancel(messageData.detail.struct_id, mapId);
+
+      // Skip refreshStruct so the struct isn't re-added.
+      return;
+    }
+
     if (
       (messageData.detail.status_old & STRUCT_STATUS_FLAGS.BUILT) === 0
       && (messageData.detail.status & STRUCT_STATUS_FLAGS.BUILT) > 0
