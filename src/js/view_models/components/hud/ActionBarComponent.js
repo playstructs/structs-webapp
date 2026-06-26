@@ -174,16 +174,18 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const undiscoveredOreContainer = document.getElementById(this.undiscoveredOreContainerId);
     if (undiscoveredOreContainer) {
       window.addEventListener(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, (event) => {
-        if (event.playerType === PLAYER_TYPES.PLAYER) {
-          undiscoveredOreContainer.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
+        if (event.playerType === this.playerType) {
+          undiscoveredOreContainer.innerHTML = this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore;
         }
       });
     }
 
     const oreReadyContainer = document.getElementById(this.oreReadyContainerId);
     if (oreReadyContainer) {
-      window.addEventListener(EVENTS.ORE_COUNT_CHANGED, () => {
-        oreReadyContainer.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore;
+      window.addEventListener(EVENTS.ORE_COUNT_CHANGED, (event) => {
+        if (event.playerType === this.playerType) {
+          oreReadyContainer.innerHTML = this.gameState.keyPlayers[this.playerType].player.ore;
+        }
       });
     }
   }
@@ -802,8 +804,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore}">
-        <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value">${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore}</span>
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore}">
+        <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value">${this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore}</span>
       </a> 
     `);
 
@@ -834,8 +836,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore}">
-        <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value">${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore}</span>
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${this.gameState.keyPlayers[this.playerType].player.ore}">
+        <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value">${this.gameState.keyPlayers[this.playerType].player.ore}</span>
       </a> 
     `);
 
