@@ -13,7 +13,7 @@ export class PlayerCapacityListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'capacity'
-      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
+      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
     ) {
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlayerCapacity(messageData.value);
     }

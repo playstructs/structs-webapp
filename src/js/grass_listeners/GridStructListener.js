@@ -30,7 +30,7 @@ export class GridStructListener extends AbstractGrassListener {
   }
 
   handler(messageData) {
-    if (messageData.subject === `structs.grid.struct.${this.structId}`) {
+    if (messageData.subject === `structs.grid.struct.${this.structId}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`) {
       this.handleFuel(messageData);
     }
   }

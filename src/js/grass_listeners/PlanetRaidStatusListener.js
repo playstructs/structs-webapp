@@ -118,7 +118,7 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getPlanetId()}`
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getPlanetId()}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
     ) {
       console.log('PLANET RAID STATUS LISTENER', messageData);
 

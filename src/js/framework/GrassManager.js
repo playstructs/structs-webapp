@@ -1,4 +1,5 @@
 import * as natsCore from "@nats-io/nats-core";
+import {LOG_LEVEL} from "../constants/GrassConstants";
 
 /**
  * Guild Rapid Alert System Stream
@@ -13,11 +14,15 @@ export class GrassManager {
   /**
    * @param {string} grassServerUrl
    * @param {string} subject
+   * @param {GameState} gameState
+   * @param {string} logLevel
    */
-  constructor(grassServerUrl, subject) {
+  constructor(grassServerUrl, subject, gameState, logLevel = LOG_LEVEL.NONE) {
     this.grassServerUrl = grassServerUrl;
     this.subject = subject;
     this.listeners = new Map();
+    this.gameState = gameState;
+    this.logLevel = logLevel;
 
     // Connection lifecycle state
     this.nc = null;
@@ -57,6 +62,26 @@ export class GrassManager {
    */
   unregisterListener(name) {
     this.listeners.delete(name);
+  }
+
+  /**
+   * @param {object} messageData
+   */
+  logMessageData(messageData) {
+    if (this.logLevel === LOG_LEVEL.NONE) {
+      return;
+    }
+
+    if (this.logLevel === LOG_LEVEL.ALL) {
+      console.log(messageData);
+    }
+
+    if (
+      this.logLevel === LOG_LEVEL.KEY_PLAYER
+      && Object.values(this.gameState.keyPlayers).reduce((isRelevant, keyPlayer) => isRelevant || (!!keyPlayer.id && messageData.subject.includes(keyPlayer.id)), false)
+    ) {
+      console.log(messageData);
+    }
   }
 
   /**
@@ -107,7 +132,7 @@ export class GrassManager {
             continue; // bad frame — skip, don't kill the loop
           }
 
-          console.log(messageData);
+          this.logMessageData(messageData);
 
           if (this.shouldIgnoreMessage(messageData)) continue;
 

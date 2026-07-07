@@ -19,7 +19,7 @@ export class KeyPlayerOreListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'ore'
-      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[this.playerType].id}`
+      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[this.playerType].id}.${this.gameState.keyPlayers[this.playerType].id}`
     ) {
       this.gameState.keyPlayers[this.playerType].setOre(messageData.value);
 
@@ -34,7 +34,7 @@ export class KeyPlayerOreListener extends AbstractGrassListener {
     if (
       this.gameState.keyPlayers[this.playerType].isRaidDependent()
       && messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.gameState.getPlanetRaidInfoForKeyPlayer(this.playerType).planet_id}`
+      && messageData.subject === `structs.planet.${this.gameState.getPlanetRaidInfoForKeyPlayer(this.playerType).planet_id}.${this.gameState.keyPlayers[this.playerType].id}`
       && this.raidStatusUtil.hasRaidEnded(messageData.detail.status)
     ) {
       this.shouldUnregister = () => true;
