@@ -636,13 +636,14 @@ export class StructListener extends AbstractGrassListener {
 
   handler(messageData) {
     const targetPlanetId = this.gameState.keyPlayers[this.targetPlayerType].getPlanetId();
+    const playerId = this.gameState.keyPlayers[this.targetPlayerType].id;
 
     // Skip if we don't have a target planet ID yet
     if (!targetPlanetId) {
       return;
     }
 
-    const subject = `structs.planet.${targetPlanetId}`;
+    const subject = `structs.planet.${targetPlanetId}.${playerId}`;
 
     this.handleStructBlockBuildStart(subject, messageData);
     this.handleStructStatus(subject, messageData);

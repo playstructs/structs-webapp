@@ -14,7 +14,7 @@ export class KeyPlayerShieldChangeStatusListener extends AbstractGrassListener {
   }
 
   handler(messageData) {
-    const planetSubject = `structs.planet.${this.gameState.keyPlayers[this.playerType].getPlanetId()}`;
+    const planetSubject = `structs.planet.${this.gameState.keyPlayers[this.playerType].getPlanetId()}.${this.gameState.keyPlayers[this.playerType].id}`;
 
     // shield_change: update the shield strength only; never touch block_start_raid
     if (messageData.category === 'shield_change' && messageData.subject === planetSubject) {
