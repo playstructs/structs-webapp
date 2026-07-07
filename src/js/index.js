@@ -32,6 +32,7 @@ import {PLAYER_TYPES} from "./constants/PlayerTypes";
 import {DestroyedStructManager} from "./managers/DestroyedStructManager";
 import {NotificationDialogue} from "./framework/NotificationDialogue";
 import {AnimationEventQueue} from "./data_structures/AnimationEventQueue";
+import {LOG_LEVEL} from "./constants/GrassConstants";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -53,12 +54,15 @@ global.walletManager = walletManager;
 
 const grassManager = new GrassManager(
   `ws://${window.location.hostname}:1443`,
-  "structs.>"
+  "structs.>",
+  gameState,
+  LOG_LEVEL.KEY_PLAYER
 );
 
 const blockGrassManager = new GrassManager(
   `ws://${window.location.hostname}:1443`,
-  "consensus"
+  "consensus",
+  gameState
 );
 
 const signingClientManager = new SigningClientManager(gameState);
