@@ -403,6 +403,7 @@ export class StructListener extends AbstractGrassListener {
             this.animationEventFactory.makeDestroyAnimationEvent(
               messageData.detail.attackerStructId,
               messageData.detail.attackerStructOperatingAmbit,
+              messageData.detail.attackerStructLocationType,
               mapId
             )
           );
@@ -471,6 +472,7 @@ export class StructListener extends AbstractGrassListener {
             this.animationEventFactory.makeDestroyAnimationEvent(
               eventAttackShotDetail.blockedByStructId,
               eventAttackShotDetail.blockedByStructOperatingAmbit,
+              eventAttackShotDetail.blockedByStructLocationType,
               mapId
             )
           );
@@ -503,6 +505,7 @@ export class StructListener extends AbstractGrassListener {
             this.animationEventFactory.makeDestroyAnimationEvent(
               eventAttackShotDetail.targetStructId,
               eventAttackShotDetail.targetStructOperatingAmbit,
+              eventAttackShotDetail.targetStructLocationType,
               mapId
             )
           );
@@ -553,6 +556,7 @@ export class StructListener extends AbstractGrassListener {
           this.animationEventFactory.makeDestroyAnimationEvent(
             messageData.detail.attackerStructId,
             messageData.detail.attackerStructOperatingAmbit,
+            messageData.detail.attackerStructLocationType,
             mapId
           )
         );
@@ -605,6 +609,7 @@ export class StructListener extends AbstractGrassListener {
             this.animationEventFactory.makeDestroyAnimationEvent(
               messageData.detail.attackerStructId,
               messageData.detail.attackerStructOperatingAmbit,
+              messageData.detail.attackerStructLocationType,
               mapId
             )
           );
