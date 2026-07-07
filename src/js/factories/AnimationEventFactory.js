@@ -2,6 +2,7 @@ import {ANIMATION} from "../constants/AnimationConstants";
 import {AnimationEvent} from "../events/AnimationEvent";
 import {CaseConverter, UPPER_SNAKE_CASE} from "../util/CaseConverter";
 import {
+  STRUCT_CATEGORIES,
   STRUCT_TYPES,
   STRUCT_UNIT_DEFENSES,
   STRUCT_WEAPON_SYSTEM
@@ -433,11 +434,18 @@ export class AnimationEventFactory {
   /**
    * @param {string} structId the id of the struct that was destroyed
    * @param {string} ambit the current ambit of the struct that was destroyed
+   * @param {string} locationType whether the struct is in a fleet or the planet
    * @param {string|null} mapId the id of the map the animation should play on
    * @return {AnimationEvent} an event specifying the animation to play for the struct that was destroyed
    */
-  makeDestroyAnimationEvent(structId, ambit, mapId = null) {
-    const ambitFormatted = ambit.toUpperCase();
+  makeDestroyAnimationEvent(structId, ambit, locationType, mapId = null) {
+    let ambitFormatted = ambit.toUpperCase();
+
+    // Water based planetary structs sit on platforms and need to show the destroy animation for land
+    if (locationType === STRUCT_CATEGORIES.PLANET && ambitFormatted === AMBITS.WATER) {
+      ambitFormatted = AMBITS.LAND;
+    }
+
     return new AnimationEvent(
       structId,
       [ANIMATION.NAMES.DESTROY[ambitFormatted]],

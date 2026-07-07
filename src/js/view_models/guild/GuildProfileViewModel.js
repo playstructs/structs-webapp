@@ -79,7 +79,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
       <div class="sui-message-inline-alert sui-mod-warning">
         <i class="sui-icon sui-icon-md icon-info"></i>
         <div class="sui-message-inline-alert-text">
-          Players joining a Guild are required to play Structs through that Guild’s external game client.
+          Players joining a Guild are required to play Structs through that Guild's external game client.
           ${guildWebsiteLink}
         </div>
       </div>

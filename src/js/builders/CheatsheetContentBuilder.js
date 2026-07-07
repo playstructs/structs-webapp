@@ -781,7 +781,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           'Unpowered',
           null,
           null,
-          'This Struct is not receiving power. It’s abilities are not active.'
+          `This Struct is not receiving power. It's abilities are not active.`
         );
         break;
       case 'icon-attention':
