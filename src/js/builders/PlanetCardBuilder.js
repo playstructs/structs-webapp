@@ -227,6 +227,7 @@ export class PlanetCardBuilder {
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'View';
     alphaBaseCard.primaryBtnHandler = () => {
+      MenuPage.router.goto('Fleet', 'index');
       this.showAlphaBaseMap();
     }
 
