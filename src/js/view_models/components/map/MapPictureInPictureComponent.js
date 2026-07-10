@@ -9,7 +9,7 @@ import {AttackSequenceAnimationUtil} from "../../../util/AttackSequenceAnimation
 /**
  * Upper-bound, in milliseconds, on how long to wait for a slide-out
  * `transitionend` before forcing the post-slide-out work to proceed. The CSS
- * transition is 500ms; the extra buffer covers timing jitter and the cases
+ * transition is 300ms; the extra buffer covers timing jitter and the cases
  * where `transitionend` doesn't fire (e.g. when transitioning to/from `auto`,
  * or when another class change cancels the in-flight transition).
  */

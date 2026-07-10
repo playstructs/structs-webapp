@@ -94,6 +94,10 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     return this.selectedStruct ? this.selectedStruct.id : null;
   }
 
+  clearSelectedStruct() {
+    this.selectedStruct = null;
+  }
+
   /**
    * @param {ChargeLevelChangedEvent} event
    */

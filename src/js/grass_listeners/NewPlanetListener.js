@@ -2,6 +2,7 @@ import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {MenuPage} from "../framework/MenuPage";
 import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {ClearTileSelectionEvent} from "../events/ClearTileSelectionEvent";
 
 export class NewPlanetListener extends AbstractGrassListener {
 
@@ -41,14 +42,22 @@ export class NewPlanetListener extends AbstractGrassListener {
         this.guildAPI.getFleetByPlayerId(playerId),
         this.guildAPI.getStructsByPlayerId(playerId)
       ]).then(([planet, fleet, structs]) => {
+
+        // Filter fleet structs to prevent abandoned planetary
+        // structs from rendering as destroyed on the new planet.
+        const fleetStructs = structs.filter(struct => struct.location_type === 'fleet');
+
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanet(planet);
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetShieldHealth(this.gameState.currentBlockHeight);
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = fleet;
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id = fleet.id;
-        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructs(structs);
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructs(fleetStructs);
 
         this.mapManager.configureAlphaBaseMap();
         this.gameState.alphaBaseMap.render();
+
+        // Any tile selected on the previous planet is no longer valid so clear it
+        window.dispatchEvent(new ClearTileSelectionEvent());
 
         MenuPage.router.goto(this.redirectControllerName, this.redirectPageName, this.redirectOptions);
       });
