@@ -201,6 +201,11 @@ export class HUDViewModel extends AbstractViewModel {
       HUDViewModel.hideActionBarActionChunks();
       HUDViewModel.currentSelectedTile = null;
 
+      // Drop each action bar's cached struct reference too.
+      HUDViewModel.bottomLeftActionBar.clearSelectedStruct();
+      HUDViewModel.bottomRightActionBarAlphaBase.clearSelectedStruct();
+      HUDViewModel.bottomRightActionBarRaid.clearSelectedStruct();
+
       const mapIds = [
         HUDViewModel.gameState.alphaBaseMap.mapId,
         HUDViewModel.gameState.raidMap.mapId,
