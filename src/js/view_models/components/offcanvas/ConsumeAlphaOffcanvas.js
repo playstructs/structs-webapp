@@ -7,6 +7,7 @@ import {Struct} from "../../../models/Struct";
 import {StructType} from "../../../models/StructType";
 import {STRUCT_ACTIONS} from "../../../constants/StructConstants";
 import {GridStructListener} from "../../../grass_listeners/GridStructListener";
+import {ConsumeAlphaChangeListener} from "../../../grass_listeners/ConsumeAlphaChangeListener";
 
 export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
 
@@ -74,6 +75,7 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
       this.gameState.actionBarLock.lock();
 
       this.grassManager.registerListener(new GridStructListener(this.gameState, this.struct.id));
+      this.grassManager.registerListener(new ConsumeAlphaChangeListener(this.gameState, this.struct.id));
 
       const amount = parseInt(document.getElementById(this.amountInputId).value);
       this.alphaManager.structGeneratorInfuse(this.struct.id, amount).then();
