@@ -14,10 +14,12 @@ export class AlphaChangeListener extends AbstractGrassListener {
   }
 
   handler(messageData) {
+    const subjectPrefix = `structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`;
+
     if (
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
-      && ['sent','received'].includes(messageData.category)
-      && messageData.subject.startsWith(`structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`)
+      && ['sent','received','refined'].includes(messageData.category)
+      && (messageData.subject === subjectPrefix || messageData.subject.startsWith(`${subjectPrefix}.`))
     ) {
       let amount = parseInt(messageData.amount);
 

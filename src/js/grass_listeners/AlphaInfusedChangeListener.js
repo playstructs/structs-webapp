@@ -17,10 +17,14 @@ export class AlphaInfusedChangeListener extends AbstractGrassListener {
   }
 
   handler(messageData) {
+    const infusedPrefix = `structs.inventory.ualpha.infused.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`;
+    const defusingPrefix = `structs.inventory.ualpha.defusing.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`;
+
     if (
       messageData.category === this.category
-      && (messageData.subject.startsWith(`structs.inventory.ualpha.infused.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`)
-        || messageData.subject.startsWith(`structs.inventory.ualpha.defusing.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`)
+      && (
+        messageData.subject === infusedPrefix || messageData.subject.startsWith(`${infusedPrefix}.`)
+        || messageData.subject === defusingPrefix || messageData.subject.startsWith(`${defusingPrefix}.`)
         )
       ) {
       this.shouldUnregister = () => true;
