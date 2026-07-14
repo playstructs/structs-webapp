@@ -226,7 +226,15 @@ class PlayerManager
               gm.tag,
               f.status AS fleet_status,
               COALESCE(planet_ore.val, 0) AS undiscovered_ore,
-              COALESCE(player_ore.val, 0) AS ore
+              COALESCE(player_ore.val, 0) AS ore,
+              (
+                EXISTS (
+                    SELECT 1
+                    FROM planet_raid pr
+                    WHERE pr.planet_id = p.planet_id
+                    AND pr.status IN ('initiated', 'ongoing', 'shieldsVulnerable')
+                )
+              )::int AS under_attack
             FROM player p
             INNER JOIN planet
               ON p.planet_id = planet.id

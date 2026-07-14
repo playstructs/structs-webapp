@@ -1822,6 +1822,12 @@ a.sui-resource:visited {
   color: var(--text-warning);
 }
 
+.sui-badge.sui-mod-destructive {
+  border: 1px solid var(--accent-destructive);
+
+  color: var(--accent-destructive);
+}
+
 .sui-badge.sui-mod-solid {
   border: 1px solid var(--accent-primary);
 

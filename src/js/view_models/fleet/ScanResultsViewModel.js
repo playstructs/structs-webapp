@@ -82,9 +82,13 @@ export class ScanResultsViewModel extends AbstractViewModel {
     let username = playerSearchResultDTO.username
       ? playerSearchResultDTO.username
       : `PID #${playerSearchResultDTO.id}`;
-    let fleetBadge = playerSearchResultDTO.fleet_status === 'away'
-      ? `<span class="sui-badge sui-mod-default">Fleet Away</span>`
-      : `<span class="sui-badge sui-mod-warning">On Station</span>`;
+    let fleetBadge = `<span class="sui-badge sui-mod-warning">On Station</span>`;
+
+    if (Number(playerSearchResultDTO.under_attack) === 1) {
+      fleetBadge = `<span class="sui-badge sui-mod-destructive">Under Attack</span>`;
+    } else if (playerSearchResultDTO.fleet_status === 'away') {
+      fleetBadge = `<span class="sui-badge sui-mod-default">Fleet Away</span>`;
+    }
 
     return `
       <div class="sui-result-row-player-info">
