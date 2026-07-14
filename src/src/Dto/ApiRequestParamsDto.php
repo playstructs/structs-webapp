@@ -79,6 +79,9 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $min_ore = null;
 
+    #[Assert\Choice(['0', '1'])]
+    public ?string $not_under_attack = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $object_id = null;
 

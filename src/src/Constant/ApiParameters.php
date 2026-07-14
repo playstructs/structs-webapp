@@ -50,6 +50,8 @@ class ApiParameters
 
     const string MIN_ORE = 'min_ore';
 
+    const string NOT_UNDER_ATTACK = 'not_under_attack';
+
     const string OBJECT_ID = 'object_id';
 
     const string OBJECT_KEY = 'object_key';
