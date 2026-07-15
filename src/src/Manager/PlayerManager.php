@@ -148,6 +148,7 @@ class PlayerManager
             ApiParameters::MIN_ORE => $request->query->get(ApiParameters::MIN_ORE),
             ApiParameters::SEARCH_STRING => $request->query->get(ApiParameters::SEARCH_STRING),
             ApiParameters::FLEET_AWAY_ONLY => $request->query->get(ApiParameters::FLEET_AWAY_ONLY),
+            ApiParameters::NOT_UNDER_ATTACK => $request->query->get(ApiParameters::NOT_UNDER_ATTACK),
             ApiParameters::COUNT_ONLY => $request->query->get(ApiParameters::COUNT_ONLY),
             ApiParameters::PAGE => $request->query->get(ApiParameters::PAGE),
         ];
@@ -157,6 +158,7 @@ class PlayerManager
             ApiParameters::MIN_ORE,
             ApiParameters::SEARCH_STRING,
             ApiParameters::FLEET_AWAY_ONLY,
+            ApiParameters::NOT_UNDER_ATTACK,
             ApiParameters::COUNT_ONLY,
             ApiParameters::PAGE
         ];
@@ -176,6 +178,7 @@ class PlayerManager
 
         $queryGuildIdFilter = '';
         $queryFleetAwayFilter = '';
+        $queryNotUnderAttackFilter = '';
         $querySearchFilter = '';
         $limit = PaginationLimits::DEFAULT;
         $page = !empty($parsedRequest->params->page) ? $parsedRequest->params->page : 1;
@@ -198,6 +201,20 @@ class PlayerManager
             && $parsedRequest->params->fleet_away_only === '1'
         ) {
             $queryFleetAwayFilter = ' AND f.status = \'away\' ';
+        }
+
+        if (
+            isset($parsedRequest->params->not_under_attack)
+            && $parsedRequest->params->not_under_attack === '1'
+        ) {
+            $queryNotUnderAttackFilter = "
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM planet_raid pr
+                    WHERE pr.planet_id = p.planet_id
+                    AND pr.status IN ('initiated', 'ongoing', 'shieldsVulnerable')
+                )
+            ";
         }
 
         if (
@@ -226,7 +243,15 @@ class PlayerManager
               gm.tag,
               f.status AS fleet_status,
               COALESCE(planet_ore.val, 0) AS undiscovered_ore,
-              COALESCE(player_ore.val, 0) AS ore
+              COALESCE(player_ore.val, 0) AS ore,
+              (
+                EXISTS (
+                    SELECT 1
+                    FROM planet_raid pr
+                    WHERE pr.planet_id = p.planet_id
+                    AND pr.status IN ('initiated', 'ongoing', 'shieldsVulnerable')
+                )
+              )::int AS under_attack
             FROM player p
             INNER JOIN planet
               ON p.planet_id = planet.id
@@ -252,6 +277,7 @@ class PlayerManager
               )
               $queryGuildIdFilter
               $queryFleetAwayFilter
+              $queryNotUnderAttackFilter
               $querySearchFilter
             GROUP BY
               p.id,
@@ -298,6 +324,7 @@ class PlayerManager
                       )
                       $queryGuildIdFilter
                       $queryFleetAwayFilter
+                      $queryNotUnderAttackFilter
                       $querySearchFilter
                     GROUP BY
                       p.id

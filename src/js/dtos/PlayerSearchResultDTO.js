@@ -12,5 +12,6 @@ export class PlayerSearchResultDTO {
     this.undiscovered_ore = null;
     this.ore = null;
     this.planet_id = null;
+    this.under_attack = null;
   }
 }

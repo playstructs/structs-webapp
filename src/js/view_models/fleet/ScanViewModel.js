@@ -20,6 +20,7 @@ export class ScanViewModel extends AbstractViewModel {
     this.minVulnerableOreId = 'minVulnerableOre';
     this.guildFilterSelectId = 'guildFilterSelect';
     this.fleetStatusId = 'fleetStatusCheckbox';
+    this.notUnderAttackId = 'notUnderAttackCheckbox';
     this.searchByStatusBtnId = 'searchByStatusBtn';
     this.playerSearchInputId = 'playerSearch';
     this.playerSearchBtnId = 'playerSearchBtn';
@@ -42,6 +43,7 @@ export class ScanViewModel extends AbstractViewModel {
       raidSearchRequest.min_ore = this.getMinOre();
       raidSearchRequest.guild_id = document.getElementById(this.guildFilterSelectId).value;
       raidSearchRequest.fleet_away_only = document.getElementById(this.fleetStatusId).checked;
+      raidSearchRequest.not_under_attack = document.getElementById(this.notUnderAttackId).checked;
 
       MenuPage.router.goto('Fleet', 'scanResults', raidSearchRequest);
     });
@@ -157,6 +159,20 @@ export class ScanViewModel extends AbstractViewModel {
                   >
                   <span class="sui-checkbox-display"></span>
                   <label for="${this.fleetStatusId}">Fleet Away</label>
+                </div>
+              </label>
+              
+              <label class="sui-input-text">
+                <span>Raid Status</span>
+                <div class="sui-checkbox-container">
+                  <input
+                    type="checkbox"
+                    class="sui-checkbox"
+                    name="${this.notUnderAttackId}"
+                    id="${this.notUnderAttackId}"
+                  >
+                  <span class="sui-checkbox-display"></span>
+                  <label for="${this.notUnderAttackId}">Not Under Attack</label>
                 </div>
               </label>
               
