@@ -8,7 +8,7 @@ import {Player} from "./Player";
 import {AlphaCountChangedEvent} from "../events/AlphaCountChangedEvent";
 import {EnergyUsageChangedEvent} from "../events/EnergyUsageChangedEvent";
 import {OreCountChangedEvent} from "../events/OreCountChangedEvent";
-import {ShieldHealthCalculator} from "../util/ShieldHealthCalculator";
+import {DifficultyEstimator} from "../util/DifficultyEstimator";
 import {ShieldHealthChangedEvent} from "../events/ShieldHealthChangedEvent";
 import {UndiscoveredOreCountChangedEvent} from "../events/UndiscoveredOreCountChangedEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
@@ -35,7 +35,7 @@ export class KeyPlayer {
   ) {
 
     this.chargeCalculator = new ChargeCalculator();
-    this.shieldHealthCalculator = new ShieldHealthCalculator();
+    this.difficultyEstimator = new DifficultyEstimator();
     this.dateFormatter = new DateFormatter();
 
     /** @type {string} See PLAYER_TYPES */
@@ -202,7 +202,7 @@ export class KeyPlayer {
       && currentBlockHeight
       && this.planetShieldInfo.block_start_raid
     ) {
-      let health = this.shieldHealthCalculator.getTimeRemainingEstimate(
+      let health = this.difficultyEstimator.getTimeRemainingEstimate(
         this.planetShieldInfo.planetary_shield,
         this.planetShieldInfo.block_start_raid,
         currentBlockHeight
@@ -398,7 +398,7 @@ export class KeyPlayer {
    * @return {string}
    */
   getProjectedShieldBreachTime() {
-    let health = this.shieldHealthCalculator.getTimeRemainingEstimate(
+    let health = this.difficultyEstimator.getTimeRemainingEstimate(
       this.planetShieldInfo.planetary_shield,
       1,
       1

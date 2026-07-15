@@ -7,6 +7,7 @@ import {
 import {AMBIT_ORDER} from "../constants/Ambits";
 import {StructType} from "../models/StructType";
 import {NumberFormatter} from "../util/NumberFormatter";
+import {DifficultyEstimator} from "../util/DifficultyEstimator";
 
 export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
 
@@ -17,6 +18,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     super();
     this.gameState = gameState;
     this.numberFormatter = new NumberFormatter();
+    this.difficultyEstimator = new DifficultyEstimator();
   }
 
   /**
@@ -248,6 +250,32 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
 
   /**
    * @param {StructType} structType
+   * @return {string}
+   */
+  renderEstimatedBuildTime(structType) {
+    if (structType.build_difficulty === null) {
+      return '';
+    }
+
+    const difficultyTarget = parseInt(structType.build_difficulty);
+    const estInMS = this.difficultyEstimator.getTimeRemainingEstimate(difficultyTarget, 1, 1);
+    const estimatedBuildTime = this.numberFormatter.formatMilliseconds(estInMS);
+
+    return `
+      <div class="sui-cheatsheet-property">
+        <div class="sui-cheatsheet-property-icon">
+          <i class="sui-icon sui-icon-md icon-in-progress"></i>
+        </div>
+        <div class="sui-cheatsheet-property-info">
+          <div>Estimated Build Time:</div>
+          <div>${estimatedBuildTime}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {StructType} structType
    * @param {object} dataset
    * @return {string}
    */
@@ -281,6 +309,8 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     propertiesHTML += this.renderOreReserveDefensesProperty(structType);
 
     propertiesHTML += this.renderPowerGenerationProperty(structType);
+
+    propertiesHTML += this.renderEstimatedBuildTime(structType);
 
     return this.renderer.renderContentHTML(
       `${structType.default_cosmetic_model_number} ${structType.class}`,
