@@ -1333,7 +1333,7 @@ img.glitch-logo {
 
 #computer-connecting-animation {
   width: 384px;
-  height: 128px;
+  max-width: 100%;
 }
 
 .recovery-key-faq-layout {
@@ -1388,6 +1388,7 @@ img.glitch-logo {
 
 .orientation-icon-text-layout {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
 }
@@ -1461,9 +1462,12 @@ img.glitch-logo {
 .hoag-planet-label-box {
   position: absolute;
   top: 85px;
-  left: 234px;
+  /* 50vw − 40px = 132 (half wrapper) − 160 (box width) − 12 (edge gap); keeps the
+     box within the viewport down to 320px while preserving 234px on wide screens. */
+  left: min(234px, 50vw - 40px);
   display: block;
   width: 124px;
+  max-width: calc(100vw - 16px);
   padding: var(--spacing-xl);
   border: 2px solid var(--border);
   background: var(--surface-default);
@@ -1496,7 +1500,15 @@ img.glitch-logo {
   min-height: 308px;
   width: 657px;
   height: 308px;
-  margin-top: 96px;
+}
+
+@media only screen and (max-width: 657px) {
+  #lottie-ship-passing-planet {
+      min-width: calc(657px / 2);
+      min-height: 154px;
+      width: calc(657px / 2);
+      height: 154px;
+    }
 }
 
 #menu-page-template-content {
@@ -2389,6 +2401,12 @@ only screen and (min-height: 1024px) {
   .map-pip.mod-side-right.mod-visible {
     right: 52px;
   }
+
+  .hoag-planet-label-box {
+    top: 85px;
+    left: min(234px, 25vw - 40px);
+    max-width: calc(50vw - 16px);
+  }
 }
 @media only screen and (min-width: 2304px),
 only screen and (min-height: 2048px) {
@@ -2454,6 +2472,12 @@ only screen and (min-height: 2048px) {
 
   .map-pip.mod-side-right.mod-visible {
     right: 104px;
+  }
+
+  .hoag-planet-label-box {
+    top: 85px;
+    left: min(234px, 12.5vw - 40px);
+    max-width: calc(25vw - 16px);
   }
 }
 

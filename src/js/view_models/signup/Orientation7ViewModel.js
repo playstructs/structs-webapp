@@ -53,7 +53,7 @@ export class Orientation7ViewModel extends AbstractViewModel {
         
       <div class="generic-space-background">
         <div class="common-layout-col">
-          <div id="lottie-ship-passing-planet" style="height: 308px"></div>
+          <div id="lottie-ship-passing-planet"></div>
         </div>
       </div>  
         
