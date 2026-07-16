@@ -188,6 +188,7 @@ MenuPage.router.registerController(guildController);
 MenuPage.router.registerController(fleetController);
 MenuPage.initListeners();
 MenuPage.sui.cheatsheet.setContentBuilder(new CheatsheetContentBuilder(gameState));
+global.menuPage = MenuPage;
 
 NotificationDialogue.initListeners();
 
