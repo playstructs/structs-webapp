@@ -34,6 +34,15 @@ export class ChargeCalculator {
   }
 
   /**
+   * @param {number} availableCharge - raw charge available
+   * @param {number} requiredCharge - raw charge cost
+   * @return {boolean}
+   */
+  isChargeLevelSufficient(availableCharge, requiredCharge) {
+    return this.calcChargeLevelByCharge(availableCharge) >= this.calcChargeLevelByCharge(requiredCharge);
+  }
+
+  /**
    * @param {number} currentBlockHeight
    * @param {number} lastActionBlockHeight
    * @return {number}
