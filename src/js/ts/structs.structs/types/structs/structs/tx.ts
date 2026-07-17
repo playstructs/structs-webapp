@@ -533,6 +533,15 @@ export interface MsgStructDeactivate {
   structId: string;
 }
 
+export interface MsgStructDeactivateBatch {
+  creator: string;
+  structId: string[];
+}
+
+export interface MsgStructDeactivateBatchResponse {
+  structs: Struct[];
+}
+
 export interface MsgStructBuildInitiate {
   creator: string;
   playerId: string;
@@ -550,6 +559,11 @@ export interface MsgStructBuildComplete {
 }
 
 export interface MsgStructBuildCancel {
+  creator: string;
+  structId: string;
+}
+
+export interface MsgStructTrash {
   creator: string;
   structId: string;
 }
@@ -7196,6 +7210,146 @@ export const MsgStructDeactivate: MessageFns<MsgStructDeactivate> = {
   },
 };
 
+function createBaseMsgStructDeactivateBatch(): MsgStructDeactivateBatch {
+  return { creator: "", structId: [] };
+}
+
+export const MsgStructDeactivateBatch: MessageFns<MsgStructDeactivateBatch> = {
+  encode(message: MsgStructDeactivateBatch, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    for (const v of message.structId) {
+      writer.uint32(18).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgStructDeactivateBatch {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgStructDeactivateBatch();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.structId.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgStructDeactivateBatch {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      structId: globalThis.Array.isArray(object?.structId)
+        ? object.structId.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: MsgStructDeactivateBatch): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.structId?.length) {
+      obj.structId = message.structId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgStructDeactivateBatch>, I>>(base?: I): MsgStructDeactivateBatch {
+    return MsgStructDeactivateBatch.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgStructDeactivateBatch>, I>>(object: I): MsgStructDeactivateBatch {
+    const message = createBaseMsgStructDeactivateBatch();
+    message.creator = object.creator ?? "";
+    message.structId = object.structId?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseMsgStructDeactivateBatchResponse(): MsgStructDeactivateBatchResponse {
+  return { structs: [] };
+}
+
+export const MsgStructDeactivateBatchResponse: MessageFns<MsgStructDeactivateBatchResponse> = {
+  encode(message: MsgStructDeactivateBatchResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.structs) {
+      Struct.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgStructDeactivateBatchResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgStructDeactivateBatchResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.structs.push(Struct.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgStructDeactivateBatchResponse {
+    return {
+      structs: globalThis.Array.isArray(object?.structs) ? object.structs.map((e: any) => Struct.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: MsgStructDeactivateBatchResponse): unknown {
+    const obj: any = {};
+    if (message.structs?.length) {
+      obj.structs = message.structs.map((e) => Struct.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgStructDeactivateBatchResponse>, I>>(base?: I): MsgStructDeactivateBatchResponse {
+    return MsgStructDeactivateBatchResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgStructDeactivateBatchResponse>, I>>(
+    object: I,
+  ): MsgStructDeactivateBatchResponse {
+    const message = createBaseMsgStructDeactivateBatchResponse();
+    message.structs = object.structs?.map((e) => Struct.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 function createBaseMsgStructBuildInitiate(): MsgStructBuildInitiate {
   return { creator: "", playerId: "", structTypeId: 0, operatingAmbit: 0, slot: 0 };
 }
@@ -7498,6 +7652,82 @@ export const MsgStructBuildCancel: MessageFns<MsgStructBuildCancel> = {
   },
   fromPartial<I extends Exact<DeepPartial<MsgStructBuildCancel>, I>>(object: I): MsgStructBuildCancel {
     const message = createBaseMsgStructBuildCancel();
+    message.creator = object.creator ?? "";
+    message.structId = object.structId ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgStructTrash(): MsgStructTrash {
+  return { creator: "", structId: "" };
+}
+
+export const MsgStructTrash: MessageFns<MsgStructTrash> = {
+  encode(message: MsgStructTrash, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.structId !== "") {
+      writer.uint32(18).string(message.structId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgStructTrash {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgStructTrash();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.structId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgStructTrash {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      structId: isSet(object.structId) ? globalThis.String(object.structId) : "",
+    };
+  },
+
+  toJSON(message: MsgStructTrash): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.structId !== "") {
+      obj.structId = message.structId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgStructTrash>, I>>(base?: I): MsgStructTrash {
+    return MsgStructTrash.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgStructTrash>, I>>(object: I): MsgStructTrash {
+    const message = createBaseMsgStructTrash();
     message.creator = object.creator ?? "";
     message.structId = object.structId ?? "";
     return message;

@@ -312,6 +312,9 @@ import { MsgProviderGuildGrant } from "./types/structs/structs/tx";
 import { QueryAddressResponse } from "./types/structs/structs/query";
 import { MsgGuildMembershipRequestDeny } from "./types/structs/structs/tx";
 import { MsgStructDeactivate } from "./types/structs/structs/tx";
+import { MsgStructDeactivateBatch } from "./types/structs/structs/tx";
+import { MsgStructDeactivateBatchResponse } from "./types/structs/structs/tx";
+import { MsgStructTrash } from "./types/structs/structs/tx";
 import { MsgProviderResponse } from "./types/structs/structs/tx";
 import { QueryAllPlanetResponse } from "./types/structs/structs/query";
 import { QueryAllProviderResponse } from "./types/structs/structs/query";
@@ -637,6 +640,9 @@ const msgTypes: Array<[string, GeneratedType]>  = [
     ["/structs.structs.QueryAddressResponse", QueryAddressResponse],
     ["/structs.structs.MsgGuildMembershipRequestDeny", MsgGuildMembershipRequestDeny],
     ["/structs.structs.MsgStructDeactivate", MsgStructDeactivate],
+    ["/structs.structs.MsgStructDeactivateBatch", MsgStructDeactivateBatch],
+    ["/structs.structs.MsgStructDeactivateBatchResponse", MsgStructDeactivateBatchResponse],
+    ["/structs.structs.MsgStructTrash", MsgStructTrash],
     ["/structs.structs.MsgProviderResponse", MsgProviderResponse],
     ["/structs.structs.QueryAllPlanetResponse", QueryAllPlanetResponse],
     ["/structs.structs.QueryAllProviderResponse", QueryAllProviderResponse],
