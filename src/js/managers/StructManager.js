@@ -152,9 +152,9 @@ export class StructManager {
    */
   getDeploymentBlockerInsufficientCharge(structType) {
     const playerCharge = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight);
-    return playerCharge < structType.build_charge
-      ? 'Insufficient battery'
-      : '';
+    return this.gameState.chargeCalculator.isChargeLevelSufficient(playerCharge, structType.build_charge)
+      ? ''
+      : 'Insufficient battery';
   }
 
   /**
