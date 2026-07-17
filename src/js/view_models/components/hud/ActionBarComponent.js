@@ -112,7 +112,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       const actionButtons = document.getElementById(this.actionChunkId).querySelectorAll('.sui-action-bar-btn-group a.sui-panel-btn');
       actionButtons.forEach(actionButton => {
         if (
-          parseInt(actionButton.getAttribute('data-action-charge')) <= charge
+          this.gameState.chargeCalculator.isChargeLevelSufficient(charge, parseInt(actionButton.getAttribute('data-action-charge')))
           && actionButton.classList.contains('sui-mod-disabled')
         ) {
           const isActive = parseInt(actionButton.getAttribute('data-active-defense') || 0);
@@ -933,7 +933,10 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     return (struct.isOnline() === isOnlineAction)
       && !this.gameState.actionBarLock.isLocked()
       && struct.owner === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
-      && (!actionCharge || actionCharge <= this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight));
+      && (!actionCharge || this.gameState.chargeCalculator.isChargeLevelSufficient(
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight),
+        actionCharge
+      ));
   }
 
   /**
