@@ -882,6 +882,39 @@ export class SigningClientManager {
   }
 
   /**
+   * @param {string[]} structIds
+   * @param {object} [options]
+   */
+  async queueMsgStructDeactivateBatch(structIds, options = {}) {
+    const id = this.queue.enqueueAction(
+      '/structs.structs.MsgStructDeactivateBatch',
+      {structId: structIds},
+      0,
+      options,
+    );
+    return this.queue.whenSettled(id);
+  }
+
+  /**
+   * @param {string} structId
+   * @param {number} chargeCost
+   * @param {object} [options]
+   */
+  async queueMsgStructTrash(structId, chargeCost, options = {}) {
+    const id = this.queue.enqueueAction(
+      '/structs.structs.MsgStructTrash',
+      {structId},
+      chargeCost,
+      options,
+    );
+    if (chargeCost > 0) {
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+        .setOptimisticLastActionBlockHeight(this.gameState.currentBlockHeight);
+    }
+    return this.queue.whenSettled(id);
+  }
+
+  /**
    * @param {string} structId
    * @param {object} [options]
    */
