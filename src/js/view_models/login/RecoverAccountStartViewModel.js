@@ -1,6 +1,7 @@
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {PageHeader} from "../templates/partials/PageHeader";
 import {MenuPage} from "../../framework/MenuPage";
+import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
 
 export class RecoverAccountStartViewModel extends AbstractViewModel {
   /**
@@ -37,12 +38,16 @@ export class RecoverAccountStartViewModel extends AbstractViewModel {
       const recoveryKeyInput = document.getElementById('recovery-key-input');
       recoveryKeyInput.value = recoveryKeyInput.value.replace(/\s\s+/g, ' ');
 
-      MenuPage.router.goto('Auth', 'loggingIn');
+      const waitingOptions = new MenuWaitingOptions();
+      waitingOptions.headerBtnLabel = 'Recover Account';
+      waitingOptions.waitingMessage = 'Recovering your account.';
 
-      this.authManager.loginWithMnemonic(recoveryKeyInput.value).then(async (success) => {
-        if (success) {
-          MenuPage.router.goto('Auth', 'loginRecoverAccountSuccess');
-        } else {
+      MenuPage.router.goto('Generic', 'menuWaiting', waitingOptions);
+
+      // On success the listener registered inside loginWithMnemonic completes the
+      // login and navigates once the new device address is approved on-chain.
+      this.authManager.loginWithMnemonic(recoveryKeyInput.value).then((success) => {
+        if (!success) {
           MenuPage.router.goto('Auth', 'loginRecoverAccountFail');
         }
       });
@@ -70,7 +75,7 @@ export class RecoverAccountStartViewModel extends AbstractViewModel {
 
   async render() {
     const pageHeader = new PageHeader();
-    pageHeader.pageLabel = 'Recovery Account';
+    pageHeader.pageLabel = 'Recover Account';
     pageHeader.showBackButton = true;
     pageHeader.backButtonHandler = () => {
       MenuPage.router.goto('Auth', 'loginActivateDevice');

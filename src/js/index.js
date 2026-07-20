@@ -107,7 +107,8 @@ const authManager = new AuthManager(
   mapManager,
   taskManager,
   structManager,
-  destroyedStructManager
+  destroyedStructManager,
+  permissionManager
 );
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);
