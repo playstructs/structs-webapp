@@ -25,6 +25,8 @@ import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {KeyPlayerLastActionListener} from "../grass_listeners/KeyPlayerLastActionListener";
 import {KeyPlayerShieldChangeStatusListener} from "../grass_listeners/KeyPlayerShieldChangeStatusListener";
 import {LoginCompleteEvent} from "../events/LoginCompleteEvent";
+import {TX_STATUS} from "../models/SigningTransaction";
+import {RecoverAccountAddressApprovedListener} from "../grass_listeners/RecoverAccountAddressApprovedListener";
 
 export class AuthManager {
 
@@ -42,6 +44,7 @@ export class AuthManager {
    * @param {TaskManager} taskManager
    * @param {StructManager} structManager
    * @param {DestroyedStructManager} destroyedStructManager
+   * @param {PermissionManager} permissionManager
    */
   constructor(
     gameState,
@@ -57,6 +60,7 @@ export class AuthManager {
     taskManager,
     structManager,
     destroyedStructManager,
+    permissionManager,
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -71,6 +75,7 @@ export class AuthManager {
     this.taskManager = taskManager;
     this.structManager = structManager;
     this.destroyedStructManager = destroyedStructManager;
+    this.permissionManager = permissionManager;
   }
 
   /**
@@ -269,19 +274,72 @@ export class AuthManager {
    */
   async loginWithMnemonic(mnemonic) {
     try {
-      this.gameState.mnemonic = mnemonic;
+      // Used to authorize the on-chain registration of the new device address
       await this.initWallet(mnemonic);
+      const primaryWallet = this.gameState.wallet;
+      const primaryAddress = this.gameState.signingAccount.address;
 
       const playerId = await this.guildAPI.getPlayerIdByAddressAndGuild(
-        this.gameState.signingAccount.address,
+        primaryAddress,
         this.gameState.thisGuild.id
       );
 
-      return this.login(playerId);
+      // Create a fresh device identity
+      const newMnemonic = this.walletManager.createMnemonic();
+      const newWallet = await this.walletManager.createWallet(newMnemonic);
+      const newAccounts = await newWallet.getAccountsWithPrivkeys();
+      const newAccount = newAccounts[0];
+      const newPubkey = this.walletManager.bytesToHex(newAccount.pubkey);
+
+      // Proof that the new device consents to being registered to the player.
+      const registerMessage = this.guildAPI.buildAddressRegisterMessage(
+        playerId,
+        newAccount.address
+      );
+      const proofSignature = await this.walletManager.createSignatureForProxyMessage(
+        registerMessage,
+        newAccount.privkey
+      );
+
+      this.grassManager.registerListener(new RecoverAccountAddressApprovedListener(
+        this.gameState,
+        this,
+        playerId,
+        newAccount.address,
+        newMnemonic
+      ));
+
+      // Register the new address on-chain, signed by the primary wallet which
+      // already holds the permission to manage the player's devices.
+      await this.signingClientManager.initSigningClient(primaryWallet);
+
+      const permissions = this.permissionManager.getDefaultPlayerPermissions()
+        | this.permissionManager.getManageDevicesPermissions();
+
+      const registerTx = await this.signingClientManager.queueMsgAddressRegister(
+        playerId,
+        newAccount.address,
+        newPubkey,
+        proofSignature,
+        permissions
+      );
+
+      return registerTx.status === TX_STATUS.SUCCEEDED;
     } catch (error) {
       console.log(error);
       return false;
     }
+  }
+
+  /**
+   * @param {string} playerId
+   * @param {string} mnemonic
+   * @return {Promise<boolean>}
+   */
+  async completeMnemonicLogin(playerId, mnemonic) {
+    this.gameState.mnemonic = mnemonic;
+    await this.initWallet(mnemonic);
+    return this.login(playerId);
   }
 
   /**
