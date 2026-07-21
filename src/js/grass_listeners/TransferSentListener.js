@@ -23,8 +23,7 @@ export class TransferSentListener extends AbstractGrassListener {
       this.gameState.thisGuild.id
       && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
       && messageData.category === 'sent'
-      && messageData.subject === `structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}.${this.fromAddress}`
-      && messageData.address === this.fromAddress
+      && messageData.subject === `structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
       && messageData.counterparty === this.toAddress
       && Math.abs(messageData.amount) === this.alphaAmount
     ) {
