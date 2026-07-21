@@ -27,6 +27,7 @@ import {KeyPlayerShieldChangeStatusListener} from "../grass_listeners/KeyPlayerS
 import {LoginCompleteEvent} from "../events/LoginCompleteEvent";
 import {TX_STATUS} from "../models/SigningTransaction";
 import {RecoverAccountAddressApprovedListener} from "../grass_listeners/RecoverAccountAddressApprovedListener";
+import {PERMISSIONS} from "../constants/Permissions";
 
 export class AuthManager {
 
@@ -313,8 +314,7 @@ export class AuthManager {
       // already holds the permission to manage the player's devices.
       await this.signingClientManager.initSigningClient(primaryWallet);
 
-      const permissions = this.permissionManager.getDefaultPlayerPermissions()
-        | this.permissionManager.getManageDevicesPermissions();
+      const permissions = PERMISSIONS.ALL;
 
       const registerTx = await this.signingClientManager.queueMsgAddressRegister(
         playerId,
