@@ -18,6 +18,8 @@ export class RecoverAccountSuccessViewModel extends AbstractViewModel {
 
     MenuPage.enablePageTemplate(MenuPage.navItemAccountId, false);
 
+    MenuPage.showNav();
+
     MenuPage.setPageTemplateHeaderBtn('Recover Account');
 
     MenuPage.setPageTemplateContent(`

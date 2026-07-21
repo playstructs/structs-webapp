@@ -18,6 +18,8 @@ export class ActivateDeviceCompleteViewModel extends AbstractViewModel {
 
     MenuPage.enablePageTemplate(MenuPage.navItemAccountId, false);
 
+    MenuPage.showNav();
+
     MenuPage.setPageTemplateHeaderBtn('Activate Device');
 
     MenuPage.setPageTemplateContent(`
