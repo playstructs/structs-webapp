@@ -11873,8 +11873,7 @@ class TransferSentListener extends _framework_AbstractGrassListener__WEBPACK_IMP
       this.gameState.thisGuild.id
       && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].id
       && messageData.category === 'sent'
-      && messageData.subject === `structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].id}.${this.fromAddress}`
-      && messageData.address === this.fromAddress
+      && messageData.subject === `structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].id}`
       && messageData.counterparty === this.toAddress
       && Math.abs(messageData.amount) === this.alphaAmount
     ) {
@@ -12612,7 +12611,7 @@ class AuthManager {
       await this.signingClientManager.initSigningClient(primaryWallet);
 
       const permissions = this.permissionManager.getDefaultPlayerPermissions()
-        | this.permissionManager.getManageDevicesPermissions();
+          | this.permissionManager.getManageDevicesPermissions();
 
       const registerTx = await this.signingClientManager.queueMsgAddressRegister(
         playerId,
@@ -13042,10 +13041,19 @@ class PermissionManager {
    */
   getDefaultPlayerPermissions() {
     return _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.PLAY
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.ASSETS_ALL
       | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.SOURCE_ALLOCATION
       | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GUILD_MEMBERSHIP
       | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.SUBSTATION_CONNECTION
       | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.ALLOCATION_CONNECTION
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GUILD_TOKEN_BURN
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GUILD_TOKEN_MINT
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GUILD_ENDPOINT_UPDATE
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GUILD_JOIN_CONSTRAINTS_UPDATE
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GUILD_SUBSTATION_UPDATE
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.PROVIDER_WITHDRAW
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.PROVIDER_OPEN
+      | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.REACTOR_GUILD_CREATE
       | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.HASH_ALL
       | _constants_Permissions__WEBPACK_IMPORTED_MODULE_0__.PERMISSIONS.GUILD_UGC_UPDATE;
   }
@@ -14201,6 +14209,39 @@ class SigningClientManager {
       0,
       options,
     );
+    return this.queue.whenSettled(id);
+  }
+
+  /**
+   * @param {string[]} structIds
+   * @param {object} [options]
+   */
+  async queueMsgStructDeactivateBatch(structIds, options = {}) {
+    const id = this.queue.enqueueAction(
+      '/structs.structs.MsgStructDeactivateBatch',
+      {structId: structIds},
+      0,
+      options,
+    );
+    return this.queue.whenSettled(id);
+  }
+
+  /**
+   * @param {string} structId
+   * @param {number} chargeCost
+   * @param {object} [options]
+   */
+  async queueMsgStructTrash(structId, chargeCost, options = {}) {
+    const id = this.queue.enqueueAction(
+      '/structs.structs.MsgStructTrash',
+      {structId},
+      chargeCost,
+      options,
+    );
+    if (chargeCost > 0) {
+      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER]
+        .setOptimisticLastActionBlockHeight(this.gameState.currentBlockHeight);
+    }
     return this.queue.whenSettled(id);
   }
 
@@ -177066,12 +177107,12 @@ var query_99 = __webpack_require__(/*! ./types/structs/structs/query */ "./js/ts
 var tx_125 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
 var tx_126 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
 var tx_127 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
-var query_100 = __webpack_require__(/*! ./types/structs/structs/query */ "./js/ts/structs.structs/types/structs/structs/query.ts");
-var query_101 = __webpack_require__(/*! ./types/structs/structs/query */ "./js/ts/structs.structs/types/structs/structs/query.ts");
-var events_57 = __webpack_require__(/*! ./types/structs/structs/events */ "./js/ts/structs.structs/types/structs/structs/events.ts");
 var tx_128 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
 var tx_129 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
 var tx_130 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
+var query_100 = __webpack_require__(/*! ./types/structs/structs/query */ "./js/ts/structs.structs/types/structs/structs/query.ts");
+var query_101 = __webpack_require__(/*! ./types/structs/structs/query */ "./js/ts/structs.structs/types/structs/structs/query.ts");
+var events_57 = __webpack_require__(/*! ./types/structs/structs/events */ "./js/ts/structs.structs/types/structs/structs/events.ts");
 var tx_131 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
 var tx_132 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
 var tx_133 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
@@ -177080,6 +177121,9 @@ var tx_135 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/stru
 var tx_136 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
 var tx_137 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
 var tx_138 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
+var tx_139 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
+var tx_140 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
+var tx_141 = __webpack_require__(/*! ./types/structs/structs/tx */ "./js/ts/structs.structs/types/structs/structs/tx.ts");
 var msgTypes = [
     ["/structs.structs.MsgFleetMoveResponse", tx_1.MsgFleetMoveResponse],
     ["/structs.structs.MsgPermissionSetOnObject", tx_2.MsgPermissionSetOnObject],
@@ -177389,7 +177433,10 @@ var msgTypes = [
     ["/structs.structs.QueryAddressResponse", query_99.QueryAddressResponse],
     ["/structs.structs.MsgGuildMembershipRequestDeny", tx_125.MsgGuildMembershipRequestDeny],
     ["/structs.structs.MsgStructDeactivate", tx_126.MsgStructDeactivate],
-    ["/structs.structs.MsgProviderResponse", tx_127.MsgProviderResponse],
+    ["/structs.structs.MsgStructDeactivateBatch", tx_127.MsgStructDeactivateBatch],
+    ["/structs.structs.MsgStructDeactivateBatchResponse", tx_128.MsgStructDeactivateBatchResponse],
+    ["/structs.structs.MsgStructTrash", tx_129.MsgStructTrash],
+    ["/structs.structs.MsgProviderResponse", tx_130.MsgProviderResponse],
     ["/structs.structs.QueryAllPlanetResponse", query_100.QueryAllPlanetResponse],
     ["/structs.structs.QueryAllProviderResponse", query_101.QueryAllProviderResponse],
     ["/structs.structs.EventAlphaInfuseDetail", events_57.EventAlphaInfuseDetail],
@@ -177398,17 +177445,17 @@ var msgTypes = [
     ["/structs.structs.MsgPermissionGuildRankRevoke", tx_43.MsgPermissionGuildRankRevoke],
     ["/structs.structs.MsgPlayerUpdateGuildRank", tx_44.MsgPlayerUpdateGuildRank],
     ["/structs.structs.MsgPlayerUpdateGuildRankResponse", tx_45.MsgPlayerUpdateGuildRankResponse],
-    ["/structs.structs.MsgGuildUpdateName", tx_128.MsgGuildUpdateName],
-    ["/structs.structs.MsgGuildUpdatePfp", tx_129.MsgGuildUpdatePfp],
-    ["/structs.structs.MsgPlayerUpdateName", tx_130.MsgPlayerUpdateName],
-    ["/structs.structs.MsgPlayerUpdatePfp", tx_131.MsgPlayerUpdatePfp],
-    ["/structs.structs.MsgPlayerUpdatePfpClientRenderAttributes", tx_132.MsgPlayerUpdatePfpClientRenderAttributes],
-    ["/structs.structs.MsgPlayerUpdateResponse", tx_133.MsgPlayerUpdateResponse],
-    ["/structs.structs.MsgPlanetUpdateName", tx_134.MsgPlanetUpdateName],
-    ["/structs.structs.MsgPlanetUpdateResponse", tx_135.MsgPlanetUpdateResponse],
-    ["/structs.structs.MsgSubstationUpdateName", tx_136.MsgSubstationUpdateName],
-    ["/structs.structs.MsgSubstationUpdatePfp", tx_137.MsgSubstationUpdatePfp],
-    ["/structs.structs.MsgSubstationUpdateResponse", tx_138.MsgSubstationUpdateResponse],
+    ["/structs.structs.MsgGuildUpdateName", tx_131.MsgGuildUpdateName],
+    ["/structs.structs.MsgGuildUpdatePfp", tx_132.MsgGuildUpdatePfp],
+    ["/structs.structs.MsgPlayerUpdateName", tx_133.MsgPlayerUpdateName],
+    ["/structs.structs.MsgPlayerUpdatePfp", tx_134.MsgPlayerUpdatePfp],
+    ["/structs.structs.MsgPlayerUpdatePfpClientRenderAttributes", tx_135.MsgPlayerUpdatePfpClientRenderAttributes],
+    ["/structs.structs.MsgPlayerUpdateResponse", tx_136.MsgPlayerUpdateResponse],
+    ["/structs.structs.MsgPlanetUpdateName", tx_137.MsgPlanetUpdateName],
+    ["/structs.structs.MsgPlanetUpdateResponse", tx_138.MsgPlanetUpdateResponse],
+    ["/structs.structs.MsgSubstationUpdateName", tx_139.MsgSubstationUpdateName],
+    ["/structs.structs.MsgSubstationUpdatePfp", tx_140.MsgSubstationUpdatePfp],
+    ["/structs.structs.MsgSubstationUpdateResponse", tx_141.MsgSubstationUpdateResponse],
 ];
 exports.msgTypes = msgTypes;
 
@@ -196972,8 +197019,8 @@ function isSet(value) {
 // source: structs/structs/tx.proto
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MsgPermissionRevokeOnAddress = exports.MsgPermissionRevokeOnObject = exports.MsgPermissionGrantOnAddress = exports.MsgPermissionGrantOnObject = exports.MsgGuildMembershipResponse = exports.MsgGuildMembershipRequestRevoke = exports.MsgGuildMembershipRequestDeny = exports.MsgGuildMembershipRequestApprove = exports.MsgGuildMembershipRequest = exports.MsgGuildMembershipKick = exports.MsgGuildMembershipJoinProxy = exports.MsgGuildMembershipJoin = exports.MsgGuildMembershipInviteRevoke = exports.MsgGuildMembershipInviteDeny = exports.MsgGuildMembershipInviteApprove = exports.MsgGuildMembershipInvite = exports.MsgGuildUpdateResponse = exports.MsgGuildUpdateEntryRank = exports.MsgGuildUpdateJoinInfusionMinimumBypassByInvite = exports.MsgGuildUpdateJoinInfusionMinimumBypassByRequest = exports.MsgGuildUpdateJoinInfusionMinimum = exports.MsgGuildUpdatePrimaryReactor = exports.MsgGuildUpdateEndpoint = exports.MsgGuildUpdateEntrySubstationId = exports.MsgGuildUpdateOwnerId = exports.MsgGuildCreateResponse = exports.MsgGuildCreate = exports.MsgGuildBankConfiscateAndBurnResponse = exports.MsgGuildBankConfiscateAndBurn = exports.MsgGuildBankRedeemResponse = exports.MsgGuildBankRedeem = exports.MsgGuildBankMintResponse = exports.MsgGuildBankMint = exports.MsgFleetMoveResponse = exports.MsgFleetMove = exports.MsgAllocationTransferResponse = exports.MsgAllocationTransfer = exports.MsgAllocationUpdateResponse = exports.MsgAllocationUpdate = exports.MsgAllocationDeleteResponse = exports.MsgAllocationDelete = exports.MsgAllocationCreateResponse = exports.MsgAllocationCreate = exports.MsgAddressRevokeResponse = exports.MsgAddressRevoke = exports.MsgAddressRegisterResponse = exports.MsgAddressRegister = exports.MsgUpdateParamsResponse = exports.MsgUpdateParams = exports.protobufPackage = void 0;
-exports.MsgSubstationAllocationConnect = exports.MsgSubstationDeleteResponse = exports.MsgSubstationDelete = exports.MsgSubstationCreateResponse = exports.MsgSubstationCreate = exports.MsgStructStorageRecall = exports.MsgStructStorageStash = exports.MsgStructOreRefineryStatusResponse = exports.MsgStructOreRefineryComplete = exports.MsgStructOreMinerStatusResponse = exports.MsgStructOreMinerComplete = exports.MsgStructGeneratorStatusResponse = exports.MsgStructGeneratorInfuse = exports.MsgStructStealthDeactivate = exports.MsgStructStealthActivate = exports.MsgStructAttackResponse = exports.MsgStructAttack = exports.MsgStructMove = exports.MsgStructDefenseClear = exports.MsgStructDefenseSet = exports.MsgStructBuildCompleteAndStash = exports.MsgStructBuildCancel = exports.MsgStructBuildComplete = exports.MsgStructBuildInitiate = exports.MsgStructDeactivate = exports.MsgStructActivate = exports.MsgStructStatusResponse = exports.MsgReactorCancelDefusionResponse = exports.MsgReactorCancelDefusion = exports.MsgReactorDefuseResponse = exports.MsgReactorDefuse = exports.MsgReactorBeginMigrationResponse = exports.MsgReactorBeginMigration = exports.MsgReactorInfuseResponse = exports.MsgReactorInfuse = exports.MsgPlayerResumeResponse = exports.MsgPlayerResume = exports.MsgPlayerUpdateGuildRankResponse = exports.MsgPlayerUpdateGuildRank = exports.MsgPlayerUpdatePrimaryAddressResponse = exports.MsgPlayerUpdatePrimaryAddress = exports.MsgPlanetRaidCompleteResponse = exports.MsgPlanetRaidComplete = exports.MsgPlanetExploreResponse = exports.MsgPlanetExplore = exports.MsgPermissionResponse = exports.MsgPermissionGuildRankRevoke = exports.MsgPermissionGuildRankSet = exports.MsgPermissionSetOnAddress = exports.MsgPermissionSetOnObject = void 0;
-exports.MsgClientImpl = exports.MsgServiceName = exports.MsgSubstationUpdateResponse = exports.MsgSubstationUpdatePfp = exports.MsgSubstationUpdateName = exports.MsgPlayerUpdateResponse = exports.MsgPlayerUpdatePfpClientRenderAttributes = exports.MsgPlayerUpdatePfp = exports.MsgPlayerUpdateName = exports.MsgPlanetUpdateResponse = exports.MsgPlanetUpdateName = exports.MsgGuildUpdatePfp = exports.MsgGuildUpdateName = exports.MsgPlayerSendResponse = exports.MsgPlayerSend = exports.MsgProviderResponse = exports.MsgProviderDelete = exports.MsgProviderGuildRevoke = exports.MsgProviderGuildGrant = exports.MsgProviderUpdateAccessPolicy = exports.MsgProviderUpdateDurationMaximum = exports.MsgProviderUpdateDurationMinimum = exports.MsgProviderUpdateCapacityMaximum = exports.MsgProviderUpdateCapacityMinimum = exports.MsgProviderWithdrawBalance = exports.MsgProviderCreate = exports.MsgAgreementResponse = exports.MsgAgreementDurationIncrease = exports.MsgAgreementCapacityDecrease = exports.MsgAgreementCapacityIncrease = exports.MsgAgreementClose = exports.MsgAgreementOpen = exports.MsgSubstationPlayerMigrateResponse = exports.MsgSubstationPlayerMigrate = exports.MsgSubstationPlayerDisconnectResponse = exports.MsgSubstationPlayerDisconnect = exports.MsgSubstationPlayerConnectResponse = exports.MsgSubstationPlayerConnect = exports.MsgSubstationAllocationDisconnectResponse = exports.MsgSubstationAllocationDisconnect = exports.MsgSubstationAllocationConnectResponse = void 0;
+exports.MsgSubstationCreateResponse = exports.MsgSubstationCreate = exports.MsgStructStorageRecall = exports.MsgStructStorageStash = exports.MsgStructOreRefineryStatusResponse = exports.MsgStructOreRefineryComplete = exports.MsgStructOreMinerStatusResponse = exports.MsgStructOreMinerComplete = exports.MsgStructGeneratorStatusResponse = exports.MsgStructGeneratorInfuse = exports.MsgStructStealthDeactivate = exports.MsgStructStealthActivate = exports.MsgStructAttackResponse = exports.MsgStructAttack = exports.MsgStructMove = exports.MsgStructDefenseClear = exports.MsgStructDefenseSet = exports.MsgStructBuildCompleteAndStash = exports.MsgStructTrash = exports.MsgStructBuildCancel = exports.MsgStructBuildComplete = exports.MsgStructBuildInitiate = exports.MsgStructDeactivateBatchResponse = exports.MsgStructDeactivateBatch = exports.MsgStructDeactivate = exports.MsgStructActivate = exports.MsgStructStatusResponse = exports.MsgReactorCancelDefusionResponse = exports.MsgReactorCancelDefusion = exports.MsgReactorDefuseResponse = exports.MsgReactorDefuse = exports.MsgReactorBeginMigrationResponse = exports.MsgReactorBeginMigration = exports.MsgReactorInfuseResponse = exports.MsgReactorInfuse = exports.MsgPlayerResumeResponse = exports.MsgPlayerResume = exports.MsgPlayerUpdateGuildRankResponse = exports.MsgPlayerUpdateGuildRank = exports.MsgPlayerUpdatePrimaryAddressResponse = exports.MsgPlayerUpdatePrimaryAddress = exports.MsgPlanetRaidCompleteResponse = exports.MsgPlanetRaidComplete = exports.MsgPlanetExploreResponse = exports.MsgPlanetExplore = exports.MsgPermissionResponse = exports.MsgPermissionGuildRankRevoke = exports.MsgPermissionGuildRankSet = exports.MsgPermissionSetOnAddress = exports.MsgPermissionSetOnObject = void 0;
+exports.MsgClientImpl = exports.MsgServiceName = exports.MsgSubstationUpdateResponse = exports.MsgSubstationUpdatePfp = exports.MsgSubstationUpdateName = exports.MsgPlayerUpdateResponse = exports.MsgPlayerUpdatePfpClientRenderAttributes = exports.MsgPlayerUpdatePfp = exports.MsgPlayerUpdateName = exports.MsgPlanetUpdateResponse = exports.MsgPlanetUpdateName = exports.MsgGuildUpdatePfp = exports.MsgGuildUpdateName = exports.MsgPlayerSendResponse = exports.MsgPlayerSend = exports.MsgProviderResponse = exports.MsgProviderDelete = exports.MsgProviderGuildRevoke = exports.MsgProviderGuildGrant = exports.MsgProviderUpdateAccessPolicy = exports.MsgProviderUpdateDurationMaximum = exports.MsgProviderUpdateDurationMinimum = exports.MsgProviderUpdateCapacityMaximum = exports.MsgProviderUpdateCapacityMinimum = exports.MsgProviderWithdrawBalance = exports.MsgProviderCreate = exports.MsgAgreementResponse = exports.MsgAgreementDurationIncrease = exports.MsgAgreementCapacityDecrease = exports.MsgAgreementCapacityIncrease = exports.MsgAgreementClose = exports.MsgAgreementOpen = exports.MsgSubstationPlayerMigrateResponse = exports.MsgSubstationPlayerMigrate = exports.MsgSubstationPlayerDisconnectResponse = exports.MsgSubstationPlayerDisconnect = exports.MsgSubstationPlayerConnectResponse = exports.MsgSubstationPlayerConnect = exports.MsgSubstationAllocationDisconnectResponse = exports.MsgSubstationAllocationDisconnect = exports.MsgSubstationAllocationConnectResponse = exports.MsgSubstationAllocationConnect = exports.MsgSubstationDeleteResponse = exports.MsgSubstationDelete = void 0;
 /* eslint-disable */
 var wire_1 = __webpack_require__(/*! @bufbuild/protobuf/wire */ "./node_modules/@bufbuild/protobuf/dist/cjs/wire/index.js");
 var coin_1 = __webpack_require__(/*! ../../cosmos/base/v1beta1/coin */ "./js/ts/structs.structs/types/cosmos/base/v1beta1/coin.ts");
@@ -202771,6 +202818,137 @@ exports.MsgStructDeactivate = {
         return message;
     },
 };
+function createBaseMsgStructDeactivateBatch() {
+    return { creator: "", structId: [] };
+}
+exports.MsgStructDeactivateBatch = {
+    encode: function (message, writer) {
+        if (writer === void 0) { writer = new wire_1.BinaryWriter(); }
+        if (message.creator !== "") {
+            writer.uint32(10).string(message.creator);
+        }
+        for (var _i = 0, _a = message.structId; _i < _a.length; _i++) {
+            var v = _a[_i];
+            writer.uint32(18).string(v);
+        }
+        return writer;
+    },
+    decode: function (input, length) {
+        var reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        var end = length === undefined ? reader.len : reader.pos + length;
+        var message = createBaseMsgStructDeactivateBatch();
+        while (reader.pos < end) {
+            var tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.creator = reader.string();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.structId.push(reader.string());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON: function (object) {
+        return {
+            creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+            structId: globalThis.Array.isArray(object === null || object === void 0 ? void 0 : object.structId)
+                ? object.structId.map(function (e) { return globalThis.String(e); })
+                : [],
+        };
+    },
+    toJSON: function (message) {
+        var _a;
+        var obj = {};
+        if (message.creator !== "") {
+            obj.creator = message.creator;
+        }
+        if ((_a = message.structId) === null || _a === void 0 ? void 0 : _a.length) {
+            obj.structId = message.structId;
+        }
+        return obj;
+    },
+    create: function (base) {
+        return exports.MsgStructDeactivateBatch.fromPartial(base !== null && base !== void 0 ? base : {});
+    },
+    fromPartial: function (object) {
+        var _a, _b;
+        var message = createBaseMsgStructDeactivateBatch();
+        message.creator = (_a = object.creator) !== null && _a !== void 0 ? _a : "";
+        message.structId = ((_b = object.structId) === null || _b === void 0 ? void 0 : _b.map(function (e) { return e; })) || [];
+        return message;
+    },
+};
+function createBaseMsgStructDeactivateBatchResponse() {
+    return { structs: [] };
+}
+exports.MsgStructDeactivateBatchResponse = {
+    encode: function (message, writer) {
+        if (writer === void 0) { writer = new wire_1.BinaryWriter(); }
+        for (var _i = 0, _a = message.structs; _i < _a.length; _i++) {
+            var v = _a[_i];
+            struct_1.Struct.encode(v, writer.uint32(10).fork()).join();
+        }
+        return writer;
+    },
+    decode: function (input, length) {
+        var reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        var end = length === undefined ? reader.len : reader.pos + length;
+        var message = createBaseMsgStructDeactivateBatchResponse();
+        while (reader.pos < end) {
+            var tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.structs.push(struct_1.Struct.decode(reader, reader.uint32()));
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON: function (object) {
+        return {
+            structs: globalThis.Array.isArray(object === null || object === void 0 ? void 0 : object.structs) ? object.structs.map(function (e) { return struct_1.Struct.fromJSON(e); }) : [],
+        };
+    },
+    toJSON: function (message) {
+        var _a;
+        var obj = {};
+        if ((_a = message.structs) === null || _a === void 0 ? void 0 : _a.length) {
+            obj.structs = message.structs.map(function (e) { return struct_1.Struct.toJSON(e); });
+        }
+        return obj;
+    },
+    create: function (base) {
+        return exports.MsgStructDeactivateBatchResponse.fromPartial(base !== null && base !== void 0 ? base : {});
+    },
+    fromPartial: function (object) {
+        var _a;
+        var message = createBaseMsgStructDeactivateBatchResponse();
+        message.structs = ((_a = object.structs) === null || _a === void 0 ? void 0 : _a.map(function (e) { return struct_1.Struct.fromPartial(e); })) || [];
+        return message;
+    },
+};
 function createBaseMsgStructBuildInitiate() {
     return { creator: "", playerId: "", structTypeId: 0, operatingAmbit: 0, slot: 0 };
 }
@@ -203051,6 +203229,76 @@ exports.MsgStructBuildCancel = {
     fromPartial: function (object) {
         var _a, _b;
         var message = createBaseMsgStructBuildCancel();
+        message.creator = (_a = object.creator) !== null && _a !== void 0 ? _a : "";
+        message.structId = (_b = object.structId) !== null && _b !== void 0 ? _b : "";
+        return message;
+    },
+};
+function createBaseMsgStructTrash() {
+    return { creator: "", structId: "" };
+}
+exports.MsgStructTrash = {
+    encode: function (message, writer) {
+        if (writer === void 0) { writer = new wire_1.BinaryWriter(); }
+        if (message.creator !== "") {
+            writer.uint32(10).string(message.creator);
+        }
+        if (message.structId !== "") {
+            writer.uint32(18).string(message.structId);
+        }
+        return writer;
+    },
+    decode: function (input, length) {
+        var reader = input instanceof wire_1.BinaryReader ? input : new wire_1.BinaryReader(input);
+        var end = length === undefined ? reader.len : reader.pos + length;
+        var message = createBaseMsgStructTrash();
+        while (reader.pos < end) {
+            var tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.creator = reader.string();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.structId = reader.string();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON: function (object) {
+        return {
+            creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+            structId: isSet(object.structId) ? globalThis.String(object.structId) : "",
+        };
+    },
+    toJSON: function (message) {
+        var obj = {};
+        if (message.creator !== "") {
+            obj.creator = message.creator;
+        }
+        if (message.structId !== "") {
+            obj.structId = message.structId;
+        }
+        return obj;
+    },
+    create: function (base) {
+        return exports.MsgStructTrash.fromPartial(base !== null && base !== void 0 ? base : {});
+    },
+    fromPartial: function (object) {
+        var _a, _b;
+        var message = createBaseMsgStructTrash();
         message.creator = (_a = object.creator) !== null && _a !== void 0 ? _a : "";
         message.structId = (_b = object.structId) !== null && _b !== void 0 ? _b : "";
         return message;
