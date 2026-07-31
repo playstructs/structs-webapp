@@ -2,6 +2,7 @@ import {GenericMapLayerComponent} from "./GenericMapLayerComponent";
 import {Struct} from "../../../models/Struct";
 import {StructType} from "../../../models/StructType";
 import {EVENTS} from "../../../constants/Events";
+import {HUDViewModel} from "../../HUDViewModel";
 import {OBJECT_TYPES} from "../../../constants/ObjectTypes";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {STRUCT_TYPES} from "../../../constants/StructConstants";
@@ -235,18 +236,91 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * Get the currently selected struct for this map.
+   *
+   * @return {Struct|null}
+   */
+  getSelectedStruct() {
+    const selectedTile = HUDViewModel.currentSelectedTile;
+    const struct = selectedTile
+      ? this.structManager.getStructById(selectedTile.structId)
+      : null;
+
+    // Check that the struct is from this map
+    if (!struct || !this.buildMapStructTilRenderParamsFromStruct(struct)) {
+      return null;
+    }
+
+    return struct;
+  }
+
+  /**
+   * @param {Struct} struct
+   * @param {Struct|null} selectedStruct
+   * @return {{isDestroyed: boolean, isOffline: boolean, isDefended: boolean, isDefending: boolean}}
+   */
+  getVisibleStatusIndicators(struct, selectedStruct) {
+    if (!selectedStruct || struct.id === selectedStruct.id) {
+      return {isDestroyed: true, isOffline: true, isDefended: true, isDefending: true};
+    }
+
+    const defendingStructIds = selectedStruct.defending_struct_ids || [];
+
+    return {
+      isDestroyed: false,
+      isOffline: false,
+      isDefended: struct.id === selectedStruct.protected_struct_id,
+      isDefending: defendingStructIds.includes(struct.id)
+    };
+  }
+
+  /**
+   * @param {Struct} struct
+   * @param {Struct|null} selectedStruct
+   * @return {string}
+   */
+  renderStatusIndicatorIcons(struct, selectedStruct) {
+    const visible = this.getVisibleStatusIndicators(struct, selectedStruct);
+
+    return `
+      ${visible.isDestroyed ? this.renderIndicatorIsDestroyed(struct) : ''}
+      ${visible.isOffline ? this.renderIndicatorIsOffline(struct) : ''}
+      ${visible.isDefended ? this.renderIndicatorIsDefended(struct) : ''}
+      ${visible.isDefending ? this.renderIndicatorIsDefending(struct) : ''}
+    `;
+  }
+
+  /**
    * @param {Struct} struct
    * @return {string}
    */
   renderStatusIndicators(struct) {
     return `
       <div class="map-struct-hud-status-indicators">
-        ${this.renderIndicatorIsDestroyed(struct)}
-        ${this.renderIndicatorIsOffline(struct)}
-        ${this.renderIndicatorIsDefended(struct)}
-        ${this.renderIndicatorIsDefending(struct)}
+        ${this.renderStatusIndicatorIcons(struct, this.getSelectedStruct())}
       </div>
     `;
+  }
+
+  /**
+   * Re-render the status indicators for every struct on this map.
+   */
+  refreshAllStatusIndicators() {
+    const container = document.getElementById(this.containerId);
+    if (!container) {
+      return;
+    }
+
+    const selectedStruct = this.getSelectedStruct();
+
+    container.querySelectorAll(`.${this.tileClass}`).forEach(tile => {
+      const indicators = tile.querySelector('.map-struct-hud-status-indicators');
+      const struct = this.structManager.getStructById(tile.getAttribute('data-struct-id'));
+
+      if (indicators && struct) {
+        indicators.innerHTML = this.renderStatusIndicatorIcons(struct, selectedStruct);
+      }
+    });
   }
 
   /**
@@ -401,6 +475,10 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
         this.renderStructHUDFromStruct(struct);
       }
       this.deferredHudRenders.clear();
+    });
+
+    this.addWindowEventListener(EVENTS.STRUCT_SELECTION_CHANGED, () => {
+      this.refreshAllStatusIndicators();
     });
 
     this.addWindowEventListener(EVENTS.CLEAR_STRUCT_TILE, (event) => {

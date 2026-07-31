@@ -3408,6 +3408,7 @@ const EVENTS = {
   SHOW_STRUCT_STILL: 'SHOW_STRUCT_STILL',
   SIGNING_TRANSACTION_SETTLED: 'SIGNING_TRANSACTION_SETTLED',
   STRUCT_COUNT_CHANGED: 'STRUCT_COUNT_CHANGED',
+  STRUCT_SELECTION_CHANGED: 'STRUCT_SELECTION_CHANGED',
   TASK_CMD_KILL: 'TASK_CMD_KILL',
   TASK_CMD_MANAGER_PAUSE: 'TASK_CMD_MANAGER_PAUSE',
   TASK_CMD_MANAGER_RESUME: 'TASK_CMD_MANAGER_RESUME',
@@ -6749,6 +6750,35 @@ class StructCountChangedEvent extends CustomEvent {
   constructor(playerType) {
     super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.STRUCT_COUNT_CHANGED);
     this.playerType = playerType;
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/events/StructSelectionChangedEvent.js":
+/*!**************************************************!*\
+  !*** ./js/events/StructSelectionChangedEvent.js ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   StructSelectionChangedEvent: () => (/* binding */ StructSelectionChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class StructSelectionChangedEvent extends CustomEvent {
+
+  /**
+   * @param {string|null} structId the ID of the struct on the newly selected tile or null when
+   *   the selection was cleared or the selected tile holds no struct
+   */
+  constructor(structId = null) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.STRUCT_SELECTION_CHANGED);
+    this.structId = structId;
   }
 }
 
@@ -22212,7 +22242,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../events/ClearMoveTargetsEvent */ "./js/events/ClearMoveTargetsEvent.js");
 /* harmony import */ var _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../events/ClearAttackTargetsEvent */ "./js/events/ClearAttackTargetsEvent.js");
 /* harmony import */ var _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../events/ClearDefendTargetsEvent */ "./js/events/ClearDefendTargetsEvent.js");
+/* harmony import */ var _events_StructSelectionChangedEvent__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../events/StructSelectionChangedEvent */ "./js/events/StructSelectionChangedEvent.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 
@@ -22415,6 +22447,7 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_5__.EVENTS.CLEAR_TILE_SELECTION, () => {
       HUDViewModel.hideActionBarActionChunks();
       HUDViewModel.currentSelectedTile = null;
+      window.dispatchEvent(new _events_StructSelectionChangedEvent__WEBPACK_IMPORTED_MODULE_13__.StructSelectionChangedEvent());
 
       // Drop each action bar's cached struct reference too.
       HUDViewModel.bottomLeftActionBar.clearSelectedStruct();
@@ -22553,6 +22586,8 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
       tileLabel: tileLabel
     };
 
+    window.dispatchEvent(new _events_StructSelectionChangedEvent__WEBPACK_IMPORTED_MODULE_13__.StructSelectionChangedEvent(structId || null));
+
     // Show action bar for both empty and occupied tiles
     // Pass structId to determine if deploy button should be disabled
     HUDViewModel[actionBar].showActionBarFor(
@@ -22590,6 +22625,7 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
     ) {
       // Update the stored struct ID
       HUDViewModel.currentSelectedTile.structId = structId;
+      window.dispatchEvent(new _events_StructSelectionChangedEvent__WEBPACK_IMPORTED_MODULE_13__.StructSelectionChangedEvent(structId || null));
 
       // Refresh the action bar
       const actionBar = HUDViewModel.whichActionBar(current.side);
@@ -31609,10 +31645,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _models_Struct__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../../models/Struct */ "./js/models/Struct.js");
 /* harmony import */ var _models_StructType__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../models/StructType */ "./js/models/StructType.js");
 /* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../../constants/Events */ "./js/constants/Events.js");
-/* harmony import */ var _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../../constants/ObjectTypes */ "./js/constants/ObjectTypes.js");
-/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
-/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../../constants/StructConstants */ "./js/constants/StructConstants.js");
-/* harmony import */ var _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../../../constants/TaskTypes */ "./js/constants/TaskTypes.js");
+/* harmony import */ var _HUDViewModel__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../HUDViewModel */ "./js/view_models/HUDViewModel.js");
+/* harmony import */ var _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../../constants/ObjectTypes */ "./js/constants/ObjectTypes.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../../../constants/StructConstants */ "./js/constants/StructConstants.js");
+/* harmony import */ var _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../../../constants/TaskTypes */ "./js/constants/TaskTypes.js");
+
 
 
 
@@ -31747,23 +31785,23 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
       return null;
     }
     const currentPlayerId = this.gameState.keyPlayers
-      && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER]
-      ? this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER].id
+      && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER]
+      ? this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER].id
       : null;
     if (!currentPlayerId || struct.owner !== currentPlayerId) {
       return null;
     }
     if (!struct.isBuilt()) {
-      return _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_7__.TASK_TYPES.BUILD;
+      return _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_8__.TASK_TYPES.BUILD;
     }
     if (!struct.isOnline()) {
       return null;
     }
-    if (structType && structType.type === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_6__.STRUCT_TYPES.ORE_EXTRACTOR) {
-      return _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_7__.TASK_TYPES.MINE;
+    if (structType && structType.type === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_TYPES.ORE_EXTRACTOR) {
+      return _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_8__.TASK_TYPES.MINE;
     }
-    if (structType && structType.type === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_6__.STRUCT_TYPES.ORE_REFINERY) {
-      return _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_7__.TASK_TYPES.REFINE;
+    if (structType && structType.type === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_TYPES.ORE_REFINERY) {
+      return _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_8__.TASK_TYPES.REFINE;
     }
     return null;
   }
@@ -31850,18 +31888,91 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
   }
 
   /**
+   * Get the currently selected struct for this map.
+   *
+   * @return {Struct|null}
+   */
+  getSelectedStruct() {
+    const selectedTile = _HUDViewModel__WEBPACK_IMPORTED_MODULE_4__.HUDViewModel.currentSelectedTile;
+    const struct = selectedTile
+      ? this.structManager.getStructById(selectedTile.structId)
+      : null;
+
+    // Check that the struct is from this map
+    if (!struct || !this.buildMapStructTilRenderParamsFromStruct(struct)) {
+      return null;
+    }
+
+    return struct;
+  }
+
+  /**
+   * @param {Struct} struct
+   * @param {Struct|null} selectedStruct
+   * @return {{isDestroyed: boolean, isOffline: boolean, isDefended: boolean, isDefending: boolean}}
+   */
+  getVisibleStatusIndicators(struct, selectedStruct) {
+    if (!selectedStruct || struct.id === selectedStruct.id) {
+      return {isDestroyed: true, isOffline: true, isDefended: true, isDefending: true};
+    }
+
+    const defendingStructIds = selectedStruct.defending_struct_ids || [];
+
+    return {
+      isDestroyed: false,
+      isOffline: false,
+      isDefended: struct.id === selectedStruct.protected_struct_id,
+      isDefending: defendingStructIds.includes(struct.id)
+    };
+  }
+
+  /**
+   * @param {Struct} struct
+   * @param {Struct|null} selectedStruct
+   * @return {string}
+   */
+  renderStatusIndicatorIcons(struct, selectedStruct) {
+    const visible = this.getVisibleStatusIndicators(struct, selectedStruct);
+
+    return `
+      ${visible.isDestroyed ? this.renderIndicatorIsDestroyed(struct) : ''}
+      ${visible.isOffline ? this.renderIndicatorIsOffline(struct) : ''}
+      ${visible.isDefended ? this.renderIndicatorIsDefended(struct) : ''}
+      ${visible.isDefending ? this.renderIndicatorIsDefending(struct) : ''}
+    `;
+  }
+
+  /**
    * @param {Struct} struct
    * @return {string}
    */
   renderStatusIndicators(struct) {
     return `
       <div class="map-struct-hud-status-indicators">
-        ${this.renderIndicatorIsDestroyed(struct)}
-        ${this.renderIndicatorIsOffline(struct)}
-        ${this.renderIndicatorIsDefended(struct)}
-        ${this.renderIndicatorIsDefending(struct)}
+        ${this.renderStatusIndicatorIcons(struct, this.getSelectedStruct())}
       </div>
     `;
+  }
+
+  /**
+   * Re-render the status indicators for every struct on this map.
+   */
+  refreshAllStatusIndicators() {
+    const container = document.getElementById(this.containerId);
+    if (!container) {
+      return;
+    }
+
+    const selectedStruct = this.getSelectedStruct();
+
+    container.querySelectorAll(`.${this.tileClass}`).forEach(tile => {
+      const indicators = tile.querySelector('.map-struct-hud-status-indicators');
+      const struct = this.structManager.getStructById(tile.getAttribute('data-struct-id'));
+
+      if (indicators && struct) {
+        indicators.innerHTML = this.renderStatusIndicatorIcons(struct, selectedStruct);
+      }
+    });
   }
 
   /**
@@ -31963,7 +32074,7 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
     this.addWindowEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.TASK_STATE_CHANGED, (event) => {
       if (
         !event.state
-        || event.state.object_type !== _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__.OBJECT_TYPES.STRUCT
+        || event.state.object_type !== _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_5__.OBJECT_TYPES.STRUCT
       ) {
         return;
       }
@@ -32016,6 +32127,10 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
         this.renderStructHUDFromStruct(struct);
       }
       this.deferredHudRenders.clear();
+    });
+
+    this.addWindowEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.STRUCT_SELECTION_CHANGED, () => {
+      this.refreshAllStatusIndicators();
     });
 
     this.addWindowEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.CLEAR_STRUCT_TILE, (event) => {
