@@ -11,6 +11,7 @@ import {MENU_PAGE_ROUTER_MODES} from "../constants/MenuPageRouterModes";
 import {ClearMoveTargetsEvent} from "../events/ClearMoveTargetsEvent";
 import {ClearAttackTargetsEvent} from "../events/ClearAttackTargetsEvent";
 import {ClearDefendTargetsEvent} from "../events/ClearDefendTargetsEvent";
+import {StructSelectionChangedEvent} from "../events/StructSelectionChangedEvent";
 
 export class HUDViewModel extends AbstractViewModel {
 
@@ -200,6 +201,7 @@ export class HUDViewModel extends AbstractViewModel {
     window.addEventListener(EVENTS.CLEAR_TILE_SELECTION, () => {
       HUDViewModel.hideActionBarActionChunks();
       HUDViewModel.currentSelectedTile = null;
+      window.dispatchEvent(new StructSelectionChangedEvent());
 
       // Drop each action bar's cached struct reference too.
       HUDViewModel.bottomLeftActionBar.clearSelectedStruct();
@@ -338,6 +340,8 @@ export class HUDViewModel extends AbstractViewModel {
       tileLabel: tileLabel
     };
 
+    window.dispatchEvent(new StructSelectionChangedEvent(structId || null));
+
     // Show action bar for both empty and occupied tiles
     // Pass structId to determine if deploy button should be disabled
     HUDViewModel[actionBar].showActionBarFor(
@@ -375,6 +379,7 @@ export class HUDViewModel extends AbstractViewModel {
     ) {
       // Update the stored struct ID
       HUDViewModel.currentSelectedTile.structId = structId;
+      window.dispatchEvent(new StructSelectionChangedEvent(structId || null));
 
       // Refresh the action bar
       const actionBar = HUDViewModel.whichActionBar(current.side);
