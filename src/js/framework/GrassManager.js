@@ -78,7 +78,9 @@ export class GrassManager {
 
     if (
       this.logLevel === LOG_LEVEL.KEY_PLAYER
-      && Object.values(this.gameState.keyPlayers).reduce((isRelevant, keyPlayer) => isRelevant || (!!keyPlayer.id && messageData.subject.includes(keyPlayer.id)), false)
+      && Object.values(this.gameState.keyPlayers).reduce((isRelevant, keyPlayer) =>
+        isRelevant || (!!keyPlayer.id && new RegExp(`(^|\\.)${keyPlayer.id}(\\.|$)`).test(messageData.subject))
+      , false)
     ) {
       console.log(messageData);
     }
