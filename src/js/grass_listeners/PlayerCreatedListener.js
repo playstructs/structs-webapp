@@ -15,7 +15,7 @@ export class PlayerCreatedListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'player_consensus'
-      && messageData.subject.startsWith(`structs.player.${this.guildId}`)
+      && messageData.subject.startsWith(`structs.player.${this.guildId}.`)
       && messageData.primary_address === this.playerAddress
     ) {
       console.log(messageData.id);

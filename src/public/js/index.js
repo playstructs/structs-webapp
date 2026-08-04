@@ -8771,7 +8771,9 @@ class GrassManager {
 
     if (
       this.logLevel === _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_1__.LOG_LEVEL.KEY_PLAYER
-      && Object.values(this.gameState.keyPlayers).reduce((isRelevant, keyPlayer) => isRelevant || (!!keyPlayer.id && messageData.subject.includes(keyPlayer.id)), false)
+      && Object.values(this.gameState.keyPlayers).reduce((isRelevant, keyPlayer) =>
+        isRelevant || (!!keyPlayer.id && new RegExp(`(^|\\.)${keyPlayer.id}(\\.|$)`).test(messageData.subject))
+      , false)
     ) {
       console.log(messageData);
     }
@@ -10713,7 +10715,7 @@ class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IM
   handler(messageData) {
     if (
       messageData.category === 'player_consensus'
-      && messageData.subject.startsWith(`structs.player.${this.guildId}`)
+      && messageData.subject.startsWith(`structs.player.${this.guildId}.`)
       && messageData.primary_address === this.playerAddress
     ) {
       console.log(messageData.id);
