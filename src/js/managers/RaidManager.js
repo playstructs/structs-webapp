@@ -5,6 +5,8 @@ import {KeyPlayerLastActionListener} from "../grass_listeners/KeyPlayerLastActio
 import {StructListener} from "../grass_listeners/StructListener";
 import {KeyPlayerShieldChangeStatusListener} from "../grass_listeners/KeyPlayerShieldChangeStatusListener";
 
+const RETRY_DELAY_MS = 2000;
+
 export class RaidManager {
 
   /**
@@ -29,11 +31,40 @@ export class RaidManager {
   }
 
   /**
-   * @return {Promise<void>}
+   * Raid data arrives as a fan-out of parallel GETs, so any one of them
+   * rejecting used to abort the whole chain and leave the enemy permanently
+   * undrawn even though the raid notification had fired. Retrying once degrades
+   * that to a delayed render.
+   *
+   * @param {function(): Promise<void>} load
+   * @param {string} description
+   * @return {Promise<boolean>} whether the data loaded
+   */
+  async loadWithRetry(load, description) {
+    try {
+      await load();
+      return true;
+    } catch (error) {
+      console.warn(`[RaidManager] ${description} failed, retrying:`, error);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+
+    try {
+      await load();
+      return true;
+    } catch (error) {
+      console.error(`[RaidManager] ${description} failed after retry:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * @return {Promise<boolean>}
    */
   async initRaidEnemy() {
     if (!this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.isRaidActive()) {
-      return;
+      return true;
     }
 
     this.grassManager.registerListener(new RaidStatusListener(this.gameState, this, this.mapManager));
@@ -49,6 +80,13 @@ export class RaidManager {
       PLAYER_TYPES.RAID_ENEMY
     ));
 
+    return this.loadWithRetry(() => this.loadRaidEnemyData(), 'raid enemy load');
+  }
+
+  /**
+   * @return {Promise<void>}
+   */
+  async loadRaidEnemyData() {
     const [
       player,
       height,
@@ -77,15 +115,22 @@ export class RaidManager {
   }
 
   /**
-   * @return {Promise<void>}
+   * @return {Promise<boolean>}
    */
   async initPlanetRaider() {
     if (!this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo.isRaidActive()) {
-      return;
+      return true;
     }
 
     this.grassManager.registerListener(new KeyPlayerLastActionListener(this.gameState, PLAYER_TYPES.PLANET_RAIDER));
 
+    return this.loadWithRetry(() => this.loadPlanetRaiderData(), 'planet raider load');
+  }
+
+  /**
+   * @return {Promise<void>}
+   */
+  async loadPlanetRaiderData() {
     const [
       player,
       height,
