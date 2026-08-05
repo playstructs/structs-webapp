@@ -32,6 +32,13 @@ export class GuildAPI {
   constructor() {
     this.apiUrl = '/api';
     this.ajax = new JsonAjaxer();
+
+    /** @type {?function(): Promise<boolean>} */
+    this.reauthenticator = null;
+
+    /** @type {?Promise<boolean>} The single in-flight session recovery, if any. */
+    this.sessionRecovery = null;
+
     this.guildAPIResponseFactory = new GuildAPIResponseFactory();
     this.guildFactory = new GuildFactory();
     this.playerFactory = new PlayerFactory();
@@ -51,6 +58,44 @@ export class GuildAPI {
     this.workFactory = new WorkFactory();
     this.settingFactory = new SettingFactory();
 
+  }
+
+  /**
+   * Install the callback that restores an expired session. Wired at bootstrap
+   * rather than constructed here because signing a fresh login needs the
+   * wallet, which lives above this layer.
+   *
+   * @param {function(): Promise<boolean>} reauthenticator
+   */
+  setReauthenticator(reauthenticator) {
+    this.reauthenticator = reauthenticator;
+    this.ajax.onUnauthorized = () => this.recoverSession();
+  }
+
+  /**
+   * Collapses concurrent 401s onto a single login so that a fan-out of parallel
+   * requests does not trigger one login per request.
+   *
+   * @return {Promise<boolean>}
+   */
+  recoverSession() {
+    if (!this.reauthenticator) {
+      return Promise.resolve(false);
+    }
+
+    if (!this.sessionRecovery) {
+      this.sessionRecovery = Promise.resolve()
+        .then(() => this.reauthenticator())
+        .catch((error) => {
+          console.warn('[GuildAPI] session recovery failed:', error);
+          return false;
+        })
+        .finally(() => {
+          this.sessionRecovery = null;
+        });
+    }
+
+    return this.sessionRecovery;
   }
 
   /**

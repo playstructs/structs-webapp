@@ -40,6 +40,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _models_Player__WEBPACK_IMPORTED_MODULE_25__ = __webpack_require__(/*! ../models/Player */ "./js/models/Player.js");
 /* harmony import */ var _models_Infusion__WEBPACK_IMPORTED_MODULE_26__ = __webpack_require__(/*! ../models/Infusion */ "./js/models/Infusion.js");
 /* harmony import */ var _models_Fleet__WEBPACK_IMPORTED_MODULE_27__ = __webpack_require__(/*! ../models/Fleet */ "./js/models/Fleet.js");
+/* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
 
 
 
@@ -74,6 +75,13 @@ class GuildAPI {
   constructor() {
     this.apiUrl = '/api';
     this.ajax = new _framework_JsonAjaxer__WEBPACK_IMPORTED_MODULE_0__.JsonAjaxer();
+
+    /** @type {?function(): Promise<boolean>} */
+    this.reauthenticator = null;
+
+    /** @type {?Promise<boolean>} The single in-flight session recovery, if any. */
+    this.sessionRecovery = null;
+
     this.guildAPIResponseFactory = new _factories_GuildAPIResponseFactory__WEBPACK_IMPORTED_MODULE_3__.GuildAPIResponseFactory();
     this.guildFactory = new _factories_GuildFactory__WEBPACK_IMPORTED_MODULE_1__.GuildFactory();
     this.playerFactory = new _factories_PlayerFactory__WEBPACK_IMPORTED_MODULE_2__.PlayerFactory();
@@ -93,6 +101,44 @@ class GuildAPI {
     this.workFactory = new _factories_WorkFactory__WEBPACK_IMPORTED_MODULE_21__.WorkFactory();
     this.settingFactory = new _factories_SettingFactory__WEBPACK_IMPORTED_MODULE_23__.SettingFactory();
 
+  }
+
+  /**
+   * Install the callback that restores an expired session. Wired at bootstrap
+   * rather than constructed here because signing a fresh login needs the
+   * wallet, which lives above this layer.
+   *
+   * @param {function(): Promise<boolean>} reauthenticator
+   */
+  setReauthenticator(reauthenticator) {
+    this.reauthenticator = reauthenticator;
+    this.ajax.onUnauthorized = () => this.recoverSession();
+  }
+
+  /**
+   * Collapses concurrent 401s onto a single login so that a fan-out of parallel
+   * requests does not trigger one login per request.
+   *
+   * @return {Promise<boolean>}
+   */
+  recoverSession() {
+    if (!this.reauthenticator) {
+      return Promise.resolve(false);
+    }
+
+    if (!this.sessionRecovery) {
+      this.sessionRecovery = Promise.resolve()
+        .then(() => this.reauthenticator())
+        .catch((error) => {
+          console.warn('[GuildAPI] session recovery failed:', error);
+          return false;
+        })
+        .finally(() => {
+          this.sessionRecovery = null;
+        });
+    }
+
+    return this.sessionRecovery;
   }
 
   /**
@@ -3461,13 +3507,30 @@ const FEE = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   LOG_LEVEL: () => (/* binding */ LOG_LEVEL)
+/* harmony export */   LOG_LEVEL: () => (/* binding */ LOG_LEVEL),
+/* harmony export */   RESUME_CHECK_INTERVAL_MS: () => (/* binding */ RESUME_CHECK_INTERVAL_MS),
+/* harmony export */   STALE_BLOCK_MS: () => (/* binding */ STALE_BLOCK_MS)
 /* harmony export */ });
 const LOG_LEVEL = {
   ALL: 'ALL',
   KEY_PLAYER: 'KEY_PLAYER',
   NONE: 'NONE'
 };
+
+/**
+ * How long the chain clock may go quiet before the stream is treated as
+ * stalled. Calibrated against the `consensus` block cadence of a few seconds,
+ * so this is comfortably longer than any healthy gap.
+ */
+const STALE_BLOCK_MS = 60000;
+
+/**
+ * How often to poll for a stalled stream. Browsers clamp this in a hidden tab,
+ * which is acceptable: a hidden tab only has to be healthy again by the time it
+ * becomes visible, and the resume triggers cover that moment exactly.
+ */
+const RESUME_CHECK_INTERVAL_MS = 30000;
+
 
 /***/ }),
 
@@ -5857,6 +5920,25 @@ class AnimationError extends Error {
 
 /***/ }),
 
+/***/ "./js/errors/AuthenticationError.js":
+/*!******************************************!*\
+  !*** ./js/errors/AuthenticationError.js ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AuthenticationError: () => (/* binding */ AuthenticationError)
+/* harmony export */ });
+/* harmony import */ var _HttpError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./HttpError */ "./js/errors/HttpError.js");
+
+
+class AuthenticationError extends _HttpError__WEBPACK_IMPORTED_MODULE_0__.HttpError {}
+
+
+/***/ }),
+
 /***/ "./js/errors/GuildAPIError.js":
 /*!************************************!*\
   !*** ./js/errors/GuildAPIError.js ***!
@@ -5869,6 +5951,34 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   GuildAPIError: () => (/* binding */ GuildAPIError)
 /* harmony export */ });
 class GuildAPIError extends Error {}
+
+/***/ }),
+
+/***/ "./js/errors/HttpError.js":
+/*!********************************!*\
+  !*** ./js/errors/HttpError.js ***!
+  \********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   HttpError: () => (/* binding */ HttpError)
+/* harmony export */ });
+class HttpError extends Error {
+
+  /**
+   * @param {string} message
+   * @param {number} status
+   * @param {Error|null} [cause]
+   */
+  constructor(message, status, cause = null) {
+    super(message);
+    this.status = status;
+    this.cause = cause;
+  }
+}
+
 
 /***/ }),
 
@@ -8724,6 +8834,7 @@ class GrassManager {
     this.supervising = false;   // guards against overlapping supervise loops
     this.backoffMs = 1000;      // grows to backoffMax on repeated failures
     this.backoffMax = 30000;
+    this.lastForcedReconnectAt = 0;
   }
 
   /**
@@ -8795,6 +8906,64 @@ class GrassManager {
       this.running = false;
       this.supervising = false;
     });
+  }
+
+  /**
+   * Tear the current connection down. The supervised loop treats this like any
+   * other unexpected close: it backs off briefly, reconnects and re-subscribes,
+   * keeping every registered listener.
+   */
+  reconnect() {
+    if (!this.running) {
+      this.init();
+      return;
+    }
+
+    // Nothing to tear down means the loop is already between attempts. Leaving
+    // it alone matters during a real outage: resetting the backoff on every
+    // check would turn a steady retry into a burst of them.
+    if (!this.nc) {
+      return;
+    }
+
+    console.warn('[GrassManager] forcing reconnect:', this.subject);
+    this.lastForcedReconnectAt = Date.now();
+
+    // The connection we are dropping looked healthy, so the grown backoff
+    // belongs to an older failure and should not delay the replacement.
+    this.backoffMs = 1000;
+
+    // Ends the `for await` in the supervised loop.
+    this.nc.close().catch(() => {});
+  }
+
+  /**
+   * Reconnect, but only when the stream looks stalled. Safe to call on every
+   * resume trigger.
+   *
+   * Staleness is read from the block clock rather than this subscription's own
+   * traffic. Both connections share the page's socket lifecycle and so stall
+   * together, and `consensus` is the only subject chatty enough for silence to
+   * be meaningful — `structs.>` can be legitimately quiet for minutes.
+   *
+   * @param {number} staleMs
+   * @return {boolean} whether a reconnect was triggered
+   */
+  resumeCheck(staleMs = _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_1__.STALE_BLOCK_MS) {
+    if (this.gameState.msSinceLastBlock() < staleMs) {
+      return false;
+    }
+
+    // A new connection needs to receive its first block before the clock can
+    // clear, so give it that long. Resume triggers arrive in pairs (focus fires
+    // alongside visibilitychange) and would otherwise tear down the reconnect
+    // that the first one just started.
+    if (Date.now() - this.lastForcedReconnectAt < staleMs) {
+      return false;
+    }
+
+    this.reconnect();
+    return true;
   }
 
   /**
@@ -8878,55 +9047,113 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   JsonAjaxer: () => (/* binding */ JsonAjaxer)
 /* harmony export */ });
+/* harmony import */ var _errors_HttpError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../errors/HttpError */ "./js/errors/HttpError.js");
+/* harmony import */ var _errors_AuthenticationError__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../errors/AuthenticationError */ "./js/errors/AuthenticationError.js");
+
+
+
 /**
  * Encapsulate and abstract HTTP request methods.
  */
 class JsonAjaxer {
+
+  constructor() {
+    /**
+     * Invoked when a request comes back 401/403. Resolving true means the
+     * session was restored and the request is worth sending again.
+     *
+     * @type {?function(): Promise<boolean>}
+     */
+    this.onUnauthorized = null;
+  }
+
   async get (url) {
-    const response = await fetch(url, {
-      method: 'GET',
+    return this.request('GET', url);
+  }
+
+  async post (url, data) {
+    return this.request('POST', url, data);
+  }
+
+  async put (url, data) {
+    return this.request('PUT', url, data);
+  }
+
+  async delete (url, data) {
+    return this.request('DELETE', url, data);
+  }
+
+  /**
+   * @param {string} method
+   * @param {string} url
+   * @param {object} [data]
+   * @return {Promise<object>}
+   */
+  async request (method, url, data = undefined) {
+    let response = await this.send(method, url, data);
+
+    if (this.isAuthFailure(response) && this.onUnauthorized) {
+      if (await this.onUnauthorized()) {
+        response = await this.send(method, url, data);
+      }
+    }
+
+    if (this.isAuthFailure(response)) {
+      throw new _errors_AuthenticationError__WEBPACK_IMPORTED_MODULE_1__.AuthenticationError(
+        `${method} ${url} requires an authenticated session.`,
+        response.status
+      );
+    }
+
+    return this.parse(response, method, url);
+  }
+
+  /**
+   * @param {string} method
+   * @param {string} url
+   * @param {object} [data]
+   * @return {Promise<Response>}
+   */
+  async send (method, url, data = undefined) {
+    const options = {
+      method: method,
       headers: {
         'Content-Type': 'application/json'
       },
       redirect: 'follow'
-    });
-    return response.json();
+    };
+
+    if (data !== undefined) {
+      options.body = JSON.stringify(data);
+    }
+
+    return fetch(url, options);
   }
 
-  async post (url, data) {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    return response.json();
+  /**
+   * @param {Response} response
+   * @return {boolean}
+   */
+  isAuthFailure (response) {
+    return response.status === 401 || response.status === 403;
   }
 
-  async put (url, data) {
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    return response.json();
-  }
-
-  async delete (url, data) {
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    return response.json();
+  /**
+   * @param {Response} response
+   * @param {string} method
+   * @param {string} url
+   * @return {Promise<object>}
+   */
+  async parse (response, method, url) {
+    try {
+      return await response.json();
+    } catch (error) {
+      throw new _errors_HttpError__WEBPACK_IMPORTED_MODULE_0__.HttpError(
+        `${method} ${url} returned a non-JSON body with status ${response.status}.`,
+        response.status,
+        error
+      );
+    }
   }
 }
 
@@ -10307,7 +10534,7 @@ class PlanetRaidStatusListener extends _framework_AbstractGrassListener__WEBPACK
     this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER].getPlanetId()).then(raidInfo => {
       this.gameState.setPlanetPlanetRaidInfo(raidInfo, false);
 
-      this.raidManager.initPlanetRaider().then(() => {
+      return this.raidManager.initPlanetRaider().then(() => {
         console.log('PLANET RAID ENEMY INITIATED DONE');
 
         this.mapManager.configureAlphaBaseMap()
@@ -10317,6 +10544,8 @@ class PlanetRaidStatusListener extends _framework_AbstractGrassListener__WEBPACK
           this.mapManager.showHUDForMap(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_6__.MAP_CONTAINER_IDS.ALPHA_BASE);
         }
       });
+    }).catch(error => {
+      console.error('[PlanetRaidStatusListener] could not render the incoming raid:', error);
     });
   }
 
@@ -12013,6 +12242,7 @@ __webpack_require__.g.gameState = gameState;
 
 const guildAPI = new _api_GuildAPI__WEBPACK_IMPORTED_MODULE_3__.GuildAPI();
 __webpack_require__.g.guildAPI = guildAPI;
+gameState.guildAPI = guildAPI;
 
 const walletManager = new _managers_WalletManager__WEBPACK_IMPORTED_MODULE_4__.WalletManager();
 __webpack_require__.g.walletManager = walletManager;
@@ -12075,6 +12305,8 @@ const authManager = new _managers_AuthManager__WEBPACK_IMPORTED_MODULE_5__.AuthM
   destroyedStructManager,
   permissionManager
 );
+
+guildAPI.setReauthenticator(() => authManager.reauthenticate());
 
 const alphaManager = new _managers_AlphaManager__WEBPACK_IMPORTED_MODULE_16__.AlphaManager(gameState, signingClientManager);
 
@@ -12162,6 +12394,31 @@ grassManager.init();
 blockGrassManager.registerListener(blockListener);
 blockGrassManager.init();
 
+// A backgrounded or slept page can come back with WebSockets that report a
+// healthy readyState but carry no traffic, which no close event announces.
+// These are the moments where that becomes observable.
+const resumeCheck = () => {
+  grassManager.resumeCheck();
+  blockGrassManager.resumeCheck();
+};
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    resumeCheck();
+  }
+});
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    resumeCheck();
+  }
+});
+window.addEventListener('online', resumeCheck);
+window.addEventListener('focus', resumeCheck);
+
+// The events above only fire when the user comes back, but a socket can go
+// quiet while the tab is right in front of them, and no event announces that.
+setInterval(resumeCheck, _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_34__.RESUME_CHECK_INTERVAL_MS);
+
 const hudContainer = document.getElementById(_view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__.HUDViewModel.containerId);
 
 await gameState.load();
@@ -12180,7 +12437,7 @@ if (!gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_30__.P
   _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideLoadingScreen();
 } else {
   authManager.login(gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_30__.PLAYER_TYPES.PLAYER].id).then(() => {
-    playerAddressManager.addPlayerAddressMeta().then(() => {
+    return playerAddressManager.addPlayerAddressMeta().then(() => {
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.close();
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.restore('Fleet', 'index');
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideLoadingScreen();
@@ -12468,10 +12725,9 @@ class AuthManager {
   }
 
   /**
-   * @param {string} playerId
-   * @return {Promise<boolean>}
+   * @return {Promise<LoginRequestDTO>}
    */
-  async login(playerId) {
+  async buildLoginRequest() {
     const timestamp = await this.guildAPI.getTimestamp();
 
     const request = new _dtos_LoginRequestDTO__WEBPACK_IMPORTED_MODULE_1__.LoginRequestDTO();
@@ -12491,7 +12747,39 @@ class AuthManager {
       this.gameState.signingAccount.privkey
     );
 
-    const response = await this.guildAPI.login(request);
+    return request;
+  }
+
+  /**
+   * Restore an expired guild API session in place. The wallet that signs a
+   * fresh login is already in memory, so a session that idles out does not need
+   * a page reload to recover.
+   *
+   * Deliberately narrow: it renews the session and nothing else. Registering
+   * listeners and priming game state belongs to {@link login}.
+   *
+   * @return {Promise<boolean>}
+   */
+  async reauthenticate() {
+    if (!this.gameState.signingAccount || !this.gameState.thisGuild) {
+      return false;
+    }
+
+    const response = await this.guildAPI.login(await this.buildLoginRequest());
+
+    if (!response.success) {
+      console.warn('[AuthManager] session re-authentication was rejected.');
+    }
+
+    return response.success;
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<boolean>}
+   */
+  async login(playerId) {
+    const response = await this.guildAPI.login(await this.buildLoginRequest());
 
     console.log('Login response status:', response);
 
@@ -13224,12 +13512,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _grass_listeners_KeyPlayerLastActionListener__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../grass_listeners/KeyPlayerLastActionListener */ "./js/grass_listeners/KeyPlayerLastActionListener.js");
 /* harmony import */ var _grass_listeners_StructListener__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../grass_listeners/StructListener */ "./js/grass_listeners/StructListener.js");
 /* harmony import */ var _grass_listeners_KeyPlayerShieldChangeStatusListener__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../grass_listeners/KeyPlayerShieldChangeStatusListener */ "./js/grass_listeners/KeyPlayerShieldChangeStatusListener.js");
+/* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
 
 
 
 
 
 
+
+const RETRY_DELAY_MS = 2000;
 
 class RaidManager {
 
@@ -13255,11 +13546,40 @@ class RaidManager {
   }
 
   /**
-   * @return {Promise<void>}
+   * Raid data arrives as a fan-out of parallel GETs, so any one of them
+   * rejecting used to abort the whole chain and leave the enemy permanently
+   * undrawn even though the raid notification had fired. Retrying once degrades
+   * that to a delayed render.
+   *
+   * @param {function(): Promise<void>} load
+   * @param {string} description
+   * @return {Promise<boolean>} whether the data loaded
+   */
+  async loadWithRetry(load, description) {
+    try {
+      await load();
+      return true;
+    } catch (error) {
+      console.warn(`[RaidManager] ${description} failed, retrying:`, error);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+
+    try {
+      await load();
+      return true;
+    } catch (error) {
+      console.error(`[RaidManager] ${description} failed after retry:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * @return {Promise<boolean>}
    */
   async initRaidEnemy() {
     if (!this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.isRaidActive()) {
-      return;
+      return true;
     }
 
     this.grassManager.registerListener(new _grass_listeners_RaidStatusListener__WEBPACK_IMPORTED_MODULE_1__.RaidStatusListener(this.gameState, this, this.mapManager));
@@ -13275,6 +13595,13 @@ class RaidManager {
       _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY
     ));
 
+    return this.loadWithRetry(() => this.loadRaidEnemyData(), 'raid enemy load');
+  }
+
+  /**
+   * @return {Promise<void>}
+   */
+  async loadRaidEnemyData() {
     const [
       player,
       height,
@@ -13303,15 +13630,22 @@ class RaidManager {
   }
 
   /**
-   * @return {Promise<void>}
+   * @return {Promise<boolean>}
    */
   async initPlanetRaider() {
     if (!this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].planetRaidInfo.isRaidActive()) {
-      return;
+      return true;
     }
 
     this.grassManager.registerListener(new _grass_listeners_KeyPlayerLastActionListener__WEBPACK_IMPORTED_MODULE_3__.KeyPlayerLastActionListener(this.gameState, _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLANET_RAIDER));
 
+    return this.loadWithRetry(() => this.loadPlanetRaiderData(), 'planet raider load');
+  }
+
+  /**
+   * @return {Promise<void>}
+   */
+  async loadPlanetRaiderData() {
     const [
       player,
       height,
@@ -17186,21 +17520,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../events/ChargeLevelChangedEvent */ "./js/events/ChargeLevelChangedEvent.js");
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
 /* harmony import */ var _managers_WalletManager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../managers/WalletManager */ "./js/managers/WalletManager.js");
-/* harmony import */ var _api_GuildAPI__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../api/GuildAPI */ "./js/api/GuildAPI.js");
-/* harmony import */ var _PlanetRaid__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./PlanetRaid */ "./js/models/PlanetRaid.js");
-/* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../constants/MapConstants */ "./js/constants/MapConstants.js");
-/* harmony import */ var _StructTypeCollection__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./StructTypeCollection */ "./js/models/StructTypeCollection.js");
-/* harmony import */ var _Struct__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./Struct */ "./js/models/Struct.js");
-/* harmony import */ var _StructType__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./StructType */ "./js/models/StructType.js");
-/* harmony import */ var _KeyPlayer__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./KeyPlayer */ "./js/models/KeyPlayer.js");
-/* harmony import */ var _events_StructCountChangedEvent__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../events/StructCountChangedEvent */ "./js/events/StructCountChangedEvent.js");
-/* harmony import */ var _events_PlanetRaidStatusChangedEvent__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../events/PlanetRaidStatusChangedEvent */ "./js/events/PlanetRaidStatusChangedEvent.js");
-/* harmony import */ var _Guild__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./Guild */ "./js/models/Guild.js");
-/* harmony import */ var _ActionBarLock__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./ActionBarLock */ "./js/models/ActionBarLock.js");
-/* harmony import */ var _Settings__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ./Settings */ "./js/models/Settings.js");
-/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../constants/StructConstants */ "./js/constants/StructConstants.js");
+/* harmony import */ var _PlanetRaid__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./PlanetRaid */ "./js/models/PlanetRaid.js");
+/* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../constants/MapConstants */ "./js/constants/MapConstants.js");
+/* harmony import */ var _StructTypeCollection__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./StructTypeCollection */ "./js/models/StructTypeCollection.js");
+/* harmony import */ var _Struct__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./Struct */ "./js/models/Struct.js");
+/* harmony import */ var _StructType__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./StructType */ "./js/models/StructType.js");
+/* harmony import */ var _KeyPlayer__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./KeyPlayer */ "./js/models/KeyPlayer.js");
+/* harmony import */ var _events_StructCountChangedEvent__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../events/StructCountChangedEvent */ "./js/events/StructCountChangedEvent.js");
+/* harmony import */ var _events_PlanetRaidStatusChangedEvent__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../events/PlanetRaidStatusChangedEvent */ "./js/events/PlanetRaidStatusChangedEvent.js");
+/* harmony import */ var _Guild__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./Guild */ "./js/models/Guild.js");
+/* harmony import */ var _ActionBarLock__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./ActionBarLock */ "./js/models/ActionBarLock.js");
+/* harmony import */ var _Settings__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./Settings */ "./js/models/Settings.js");
+/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../constants/StructConstants */ "./js/constants/StructConstants.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
-
 
 
 
@@ -17225,7 +17557,9 @@ class GameState {
   constructor() {
     this.chargeCalculator = new _util_ChargeCalculator__WEBPACK_IMPORTED_MODULE_1__.ChargeCalculator();
     this.walletManager = new _managers_WalletManager__WEBPACK_IMPORTED_MODULE_5__.WalletManager();
-    this.guildAPI = new _api_GuildAPI__WEBPACK_IMPORTED_MODULE_6__.GuildAPI();
+
+    /** @type {GuildAPI} */
+    this.guildAPI = null;
 
     /* Multistep Request Data */
     this.signupRequest = new _dtos_SignupRequestDTO__WEBPACK_IMPORTED_MODULE_0__.SignupRequestDTO();
@@ -17235,7 +17569,7 @@ class GameState {
     this.mnemonic = null;
     this.pubkey = null;
     this.lastSaveBlockHeight = 0;
-    this.activeMapContainerId = _constants_MapConstants__WEBPACK_IMPORTED_MODULE_8__.MAP_CONTAINER_IDS.ALPHA_BASE;
+    this.activeMapContainerId = _constants_MapConstants__WEBPACK_IMPORTED_MODULE_7__.MAP_CONTAINER_IDS.ALPHA_BASE;
 
     /* Must Be Re-instantiated On Load */
     this.wallet = null;
@@ -17263,17 +17597,17 @@ class GameState {
      * @type {{player: KeyPlayer, raid_enemy: KeyPlayer, planet_raider: KeyPlayer}}
      */
     this.keyPlayers = {
-      [_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER]: new _KeyPlayer__WEBPACK_IMPORTED_MODULE_12__.KeyPlayer(
+      [_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER]: new _KeyPlayer__WEBPACK_IMPORTED_MODULE_11__.KeyPlayer(
         _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER,
         true,
-        _constants_MapConstants__WEBPACK_IMPORTED_MODULE_8__.MAP_TYPES.ALPHA_BASE
+        _constants_MapConstants__WEBPACK_IMPORTED_MODULE_7__.MAP_TYPES.ALPHA_BASE
       ),
-      [_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY]: new _KeyPlayer__WEBPACK_IMPORTED_MODULE_12__.KeyPlayer(
+      [_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY]: new _KeyPlayer__WEBPACK_IMPORTED_MODULE_11__.KeyPlayer(
         _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY,
         true,
-        _constants_MapConstants__WEBPACK_IMPORTED_MODULE_8__.MAP_TYPES.RAID
+        _constants_MapConstants__WEBPACK_IMPORTED_MODULE_7__.MAP_TYPES.RAID
       ),
-      [_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLANET_RAIDER]: new _KeyPlayer__WEBPACK_IMPORTED_MODULE_12__.KeyPlayer(
+      [_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLANET_RAIDER]: new _KeyPlayer__WEBPACK_IMPORTED_MODULE_11__.KeyPlayer(
         _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLANET_RAIDER,
         false,
         '',
@@ -17281,7 +17615,7 @@ class GameState {
       )
     };
 
-    this.structTypes = new _StructTypeCollection__WEBPACK_IMPORTED_MODULE_9__.StructTypeCollection();
+    this.structTypes = new _StructTypeCollection__WEBPACK_IMPORTED_MODULE_8__.StructTypeCollection();
 
     /** @type {Object<string, Struct>} */
     this.previewDefenderStructs = {};
@@ -17292,6 +17626,14 @@ class GameState {
     /* GRASS Only Data */
 
     this.currentBlockHeight = 0;
+
+    /**
+     * When the chain clock last advanced. Seeded at construction so a staleness
+     * check that runs before the first block does not read as stalled.
+     *
+     * @type {number}
+     */
+    this.lastBlockAt = Date.now();
 
     /* Temp Data */
 
@@ -17304,7 +17646,7 @@ class GameState {
     this.pendingBuilds = new Map();
 
     /** @type {ActionBarLock} The current struct action (see STRUCT_ACTIONS) that holds the lock. */
-    this.actionBarLock = new _ActionBarLock__WEBPACK_IMPORTED_MODULE_16__.ActionBarLock();
+    this.actionBarLock = new _ActionBarLock__WEBPACK_IMPORTED_MODULE_15__.ActionBarLock();
 
     /** @type {AnimationEventQueue} */
     this.animationEventQueue = null;
@@ -17369,6 +17711,7 @@ class GameState {
    */
   setCurrentBlockHeight(height) {
     this.currentBlockHeight = height;
+    this.lastBlockAt = Date.now();
 
     Object.values(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES).forEach(playerType => {
       if (this.keyPlayers[playerType].player) {
@@ -17387,6 +17730,17 @@ class GameState {
   }
 
   /**
+   * Blocks arrive over GRASS every few seconds, which makes this the app's
+   * liveness signal: if it goes quiet, the stream is stalled and everything
+   * driven by BLOCK_HEIGHT_CHANGED (the signing queue included) has stopped.
+   *
+   * @return {number}
+   */
+  msSinceLastBlock() {
+    return Date.now() - this.lastBlockAt;
+  }
+
+  /**
    * @param {PlanetRaid} info
    * @param dispatchEvent
    */
@@ -17396,7 +17750,7 @@ class GameState {
     this.save();
 
     if (dispatchEvent) {
-      window.dispatchEvent(new _events_PlanetRaidStatusChangedEvent__WEBPACK_IMPORTED_MODULE_14__.PlanetRaidStatusChangedEvent(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER));
+      window.dispatchEvent(new _events_PlanetRaidStatusChangedEvent__WEBPACK_IMPORTED_MODULE_13__.PlanetRaidStatusChangedEvent(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER));
     }
   }
 
@@ -17410,7 +17764,7 @@ class GameState {
     this.save();
 
     if (dispatchEvent) {
-      window.dispatchEvent(new _events_PlanetRaidStatusChangedEvent__WEBPACK_IMPORTED_MODULE_14__.PlanetRaidStatusChangedEvent(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY));
+      window.dispatchEvent(new _events_PlanetRaidStatusChangedEvent__WEBPACK_IMPORTED_MODULE_13__.PlanetRaidStatusChangedEvent(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY));
     }
   }
 
@@ -17457,7 +17811,7 @@ class GameState {
         const removedStruct = this.keyPlayers[playerType].structs[structId];
         delete this.keyPlayers[playerType].structs[structId];
 
-        window.dispatchEvent(new _events_StructCountChangedEvent__WEBPACK_IMPORTED_MODULE_13__.StructCountChangedEvent(playerType));
+        window.dispatchEvent(new _events_StructCountChangedEvent__WEBPACK_IMPORTED_MODULE_12__.StructCountChangedEvent(playerType));
 
         return removedStruct;
       }
@@ -17517,7 +17871,7 @@ class GameState {
   }
 
   clearPlanetRaidData() {
-    this.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER].planetRaidInfo = new _PlanetRaid__WEBPACK_IMPORTED_MODULE_7__.PlanetRaid();
+    this.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER].planetRaidInfo = new _PlanetRaid__WEBPACK_IMPORTED_MODULE_6__.PlanetRaid();
     this.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLANET_RAIDER].id = '';
     this.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLANET_RAIDER].player = null;
     this.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLANET_RAIDER].lastActionBlockHeight = 0;
@@ -17531,7 +17885,7 @@ class GameState {
     this.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY].player = null;
     this.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY].lastActionBlockHeight = 0;
     this.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY].planet = null;
-    this.setRaidPlanetRaidInfo(new _PlanetRaid__WEBPACK_IMPORTED_MODULE_7__.PlanetRaid());
+    this.setRaidPlanetRaidInfo(new _PlanetRaid__WEBPACK_IMPORTED_MODULE_6__.PlanetRaid());
 
     this.save();
   }
@@ -17617,7 +17971,7 @@ class GameState {
    */
   getPlanetaryDefenseStructByKeyPlayer(playerType) {
     const keyPlayer = playerType ? this.keyPlayers[playerType] : null;
-    const pdcStructType = this.structTypes.getStructType(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_18__.STRUCT_TYPES.PLANETARY_DEFENSE_CANNON);
+    const pdcStructType = this.structTypes.getStructType(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_17__.STRUCT_TYPES.PLANETARY_DEFENSE_CANNON);
     if (!keyPlayer || !pdcStructType) {
       return null;
     }

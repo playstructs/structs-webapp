@@ -32,7 +32,7 @@ import {PLAYER_TYPES} from "./constants/PlayerTypes";
 import {DestroyedStructManager} from "./managers/DestroyedStructManager";
 import {NotificationDialogue} from "./framework/NotificationDialogue";
 import {AnimationEventQueue} from "./data_structures/AnimationEventQueue";
-import {LOG_LEVEL} from "./constants/GrassConstants";
+import {LOG_LEVEL, RESUME_CHECK_INTERVAL_MS} from "./constants/GrassConstants";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -48,6 +48,7 @@ global.gameState = gameState;
 
 const guildAPI = new GuildAPI();
 global.guildAPI = guildAPI;
+gameState.guildAPI = guildAPI;
 
 const walletManager = new WalletManager();
 global.walletManager = walletManager;
@@ -110,6 +111,8 @@ const authManager = new AuthManager(
   destroyedStructManager,
   permissionManager
 );
+
+guildAPI.setReauthenticator(() => authManager.reauthenticate());
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);
 
@@ -197,6 +200,31 @@ grassManager.init();
 blockGrassManager.registerListener(blockListener);
 blockGrassManager.init();
 
+// A backgrounded or slept page can come back with WebSockets that report a
+// healthy readyState but carry no traffic, which no close event announces.
+// These are the moments where that becomes observable.
+const resumeCheck = () => {
+  grassManager.resumeCheck();
+  blockGrassManager.resumeCheck();
+};
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    resumeCheck();
+  }
+});
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    resumeCheck();
+  }
+});
+window.addEventListener('online', resumeCheck);
+window.addEventListener('focus', resumeCheck);
+
+// The events above only fire when the user comes back, but a socket can go
+// quiet while the tab is right in front of them, and no event announces that.
+setInterval(resumeCheck, RESUME_CHECK_INTERVAL_MS);
+
 const hudContainer = document.getElementById(HUDViewModel.containerId);
 
 await gameState.load();
@@ -215,7 +243,7 @@ if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
   MenuPage.hideLoadingScreen();
 } else {
   authManager.login(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then(() => {
-    playerAddressManager.addPlayerAddressMeta().then(() => {
+    return playerAddressManager.addPlayerAddressMeta().then(() => {
       MenuPage.close();
       MenuPage.router.restore('Fleet', 'index');
       MenuPage.hideLoadingScreen();
