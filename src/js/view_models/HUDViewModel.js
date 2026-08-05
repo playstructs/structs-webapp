@@ -12,6 +12,7 @@ import {ClearMoveTargetsEvent} from "../events/ClearMoveTargetsEvent";
 import {ClearAttackTargetsEvent} from "../events/ClearAttackTargetsEvent";
 import {ClearDefendTargetsEvent} from "../events/ClearDefendTargetsEvent";
 import {StructSelectionChangedEvent} from "../events/StructSelectionChangedEvent";
+import {TX_STATUS} from "../models/SigningTransaction";
 
 export class HUDViewModel extends AbstractViewModel {
 
@@ -219,6 +220,24 @@ export class HUDViewModel extends AbstractViewModel {
       });
 
       HUDViewModel.gameState.actionBarLock.clear(false);
+    });
+
+    // The lock is normally released by the GRASS frame confirming the action
+    // landed on chain. A transaction that never lands produces no such frame, so
+    // without this the executing progress bar runs until the player clicks away.
+    window.addEventListener(EVENTS.SIGNING_TRANSACTION_SETTLED, (event) => {
+      if (event.status === TX_STATUS.SUCCEEDED || !HUDViewModel.gameState.actionBarLock.isLocked()) {
+        return;
+      }
+
+      // The lock is global but the queue is not: a lock held for a transaction
+      // sitting behind this one is not ours to release.
+      if (HUDViewModel.signingClientManager.hasQueuedTransactions()) {
+        return;
+      }
+
+      console.warn(`[HUDViewModel] releasing the action bar lock, transaction ${event.id} settled as ${event.status}.`);
+      HUDViewModel.gameState.actionBarLock.clear();
     });
   }
 

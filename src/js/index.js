@@ -203,27 +203,37 @@ blockGrassManager.init();
 // A backgrounded or slept page can come back with WebSockets that report a
 // healthy readyState but carry no traffic, which no close event announces.
 // These are the moments where that becomes observable.
-const resumeCheck = () => {
+// The signing transport dies from the same page suspension, but unlike grass it
+// harms nothing until the player acts, so its probe is forced only here and left
+// throttled on the timer below.
+const onResume = (forceResumeCheck = true) => {
   grassManager.resumeCheck();
   blockGrassManager.resumeCheck();
+  signingClientManager.resumeCheck(forceResumeCheck).then();
 };
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    resumeCheck();
+    onResume();
   }
 });
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
-    resumeCheck();
+    onResume();
   }
 });
-window.addEventListener('online', resumeCheck);
-window.addEventListener('focus', resumeCheck);
+
+// Wrapped so the event object cannot land in the force parameter.
+window.addEventListener('online', () => onResume());
+window.addEventListener('focus', () => onResume());
 
 // The events above only fire when the user comes back, but a socket can go
 // quiet while the tab is right in front of them, and no event announces that.
-setInterval(resumeCheck, RESUME_CHECK_INTERVAL_MS);
+// The signing probe rides along throttled, which also covers the case where
+// grass was stale at resume and its own check had to be deferred.
+setInterval(() => {
+  onResume(false);
+}, RESUME_CHECK_INTERVAL_MS);
 
 const hudContainer = document.getElementById(HUDViewModel.containerId);
 
