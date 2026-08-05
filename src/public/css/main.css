@@ -630,6 +630,15 @@ a.sui-text-secondary:hover {
   width: 1152px;
 }
 
+/* While dragging the map. The descendant selector is needed to override the
+   pointer cursor the tiles set on themselves. */
+body.is-map-panning,
+body.is-map-panning * {
+  cursor: grabbing !important;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .map-pip {
   position: fixed;
   top: calc(50vh - 64px);

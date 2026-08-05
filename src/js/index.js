@@ -31,6 +31,7 @@ import {TASK} from "./constants/TaskConstants";
 import {PLAYER_TYPES} from "./constants/PlayerTypes";
 import {DestroyedStructManager} from "./managers/DestroyedStructManager";
 import {NotificationDialogue} from "./framework/NotificationDialogue";
+import {MapPanController} from "./framework/MapPanController";
 import {AnimationEventQueue} from "./data_structures/AnimationEventQueue";
 import {LOG_LEVEL, RESUME_CHECK_INTERVAL_MS} from "./constants/GrassConstants";
 
@@ -195,6 +196,8 @@ MenuPage.sui.cheatsheet.setContentBuilder(new CheatsheetContentBuilder(gameState
 global.menuPage = MenuPage;
 
 NotificationDialogue.initListeners();
+
+new MapPanController().init();
 
 grassManager.init();
 blockGrassManager.registerListener(blockListener);
