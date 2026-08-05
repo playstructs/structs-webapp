@@ -187,7 +187,7 @@ export class StructManager {
       return '';
     }
 
-    return !this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet.command_struct
+    return !this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].isCommandStructAlive()
       ? 'Requires command ship'
       : '';
   }

@@ -16729,7 +16729,7 @@ class StructManager {
       return '';
     }
 
-    return !this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].fleet.command_struct
+    return !this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].isCommandStructAlive()
       ? 'Requires command ship'
       : '';
   }
@@ -18850,6 +18850,7 @@ class KeyPlayer {
     return !!(
       this.fleet?.command_struct
       && this.structs[this.fleet.command_struct]
+      && this.structs[this.fleet.command_struct].isBuilt()
       && !this.structs[this.fleet.command_struct].isDestroyed()
     );
   }
