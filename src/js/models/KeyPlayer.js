@@ -363,6 +363,7 @@ export class KeyPlayer {
     return !!(
       this.fleet?.command_struct
       && this.structs[this.fleet.command_struct]
+      && this.structs[this.fleet.command_struct].isBuilt()
       && !this.structs[this.fleet.command_struct].isDestroyed()
     );
   }
