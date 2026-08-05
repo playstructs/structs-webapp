@@ -4052,6 +4052,10 @@ const SIGNING_QUEUE = {
   MAX_QUEUE_AGE_MS: 30 * 60 * 1000, // 30 minutes; older snapshots quarantined
   BLOCK_TIME_SAMPLE_SIZE: 20,       // rolling avg window
   TIMEOUT_POLL_BLOCKS: 5,           // getTx polls after a cosmjs TimeoutError
+  // Hard ceiling on a single signAndBroadcast. Must stay above cosmjs's own
+  // 60s inclusion timeout so the recoverable TimeoutError path still runs;
+  // this only catches a transport that never settles at all.
+  BROADCAST_TIMEOUT_MS: 90 * 1000,
 };
 
 
@@ -12397,27 +12401,37 @@ blockGrassManager.init();
 // A backgrounded or slept page can come back with WebSockets that report a
 // healthy readyState but carry no traffic, which no close event announces.
 // These are the moments where that becomes observable.
-const resumeCheck = () => {
+// The signing transport dies from the same page suspension, but unlike grass it
+// harms nothing until the player acts, so its probe is forced only here and left
+// throttled on the timer below.
+const onResume = (forceResumeCheck = true) => {
   grassManager.resumeCheck();
   blockGrassManager.resumeCheck();
+  signingClientManager.resumeCheck(forceResumeCheck).then();
 };
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    resumeCheck();
+    onResume();
   }
 });
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
-    resumeCheck();
+    onResume();
   }
 });
-window.addEventListener('online', resumeCheck);
-window.addEventListener('focus', resumeCheck);
+
+// Wrapped so the event object cannot land in the force parameter.
+window.addEventListener('online', () => onResume());
+window.addEventListener('focus', () => onResume());
 
 // The events above only fire when the user comes back, but a socket can go
 // quiet while the tab is right in front of them, and no event announces that.
-setInterval(resumeCheck, _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_34__.RESUME_CHECK_INTERVAL_MS);
+// The signing probe rides along throttled, which also covers the case where
+// grass was stale at resume and its own check had to be deferred.
+setInterval(() => {
+  onResume(false);
+}, _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_34__.RESUME_CHECK_INTERVAL_MS);
 
 const hudContainer = document.getElementById(_view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__.HUDViewModel.containerId);
 
@@ -12811,7 +12825,7 @@ class AuthManager {
       this.grassManager.registerListener(new _grass_listeners_StructMineStatusListener__WEBPACK_IMPORTED_MODULE_21__.StructMineStatusListener(this.gameState));
       this.grassManager.registerListener(new _grass_listeners_StructRefineStatusListener__WEBPACK_IMPORTED_MODULE_22__.StructRefineStatusListener(this.gameState));
 
-      await this.signingClientManager.initSigningClient(this.gameState.wallet);
+      await this.signingClientManager.initSigningClient();
       await this.playerAddressManager.addPlayerAddressMeta();
 
       this.destroyedStructManager.init();
@@ -12893,7 +12907,6 @@ class AuthManager {
     try {
       // Used to authorize the on-chain registration of the new device address
       await this.initWallet(mnemonic);
-      const primaryWallet = this.gameState.wallet;
       const primaryAddress = this.gameState.signingAccount.address;
 
       const playerId = await this.guildAPI.getPlayerIdByAddressAndGuild(
@@ -12926,9 +12939,11 @@ class AuthManager {
         newMnemonic
       ));
 
-      // Register the new address on-chain, signed by the primary wallet which
-      // already holds the permission to manage the player's devices.
-      await this.signingClientManager.initSigningClient(primaryWallet);
+      // Register the new address on-chain. The active wallet is still the
+      // primary one initialised above, which already holds the permission to
+      // manage the player's devices; the new device wallet does not take over
+      // until completeMnemonicLogin().
+      await this.signingClientManager.initSigningClient();
 
       const permissions = this.permissionManager.getDefaultPlayerPermissions()
           | this.permissionManager.getManageDevicesPermissions();
@@ -13693,7 +13708,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _constants_Ambits__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/Ambits */ "./js/constants/Ambits.js");
 /* harmony import */ var _constants_LocationTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/LocationTypes */ "./js/constants/LocationTypes.js");
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
-/* harmony import */ var _SigningQueueManager__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./SigningQueueManager */ "./js/managers/SigningQueueManager.js");
+/* harmony import */ var _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../constants/GrassConstants */ "./js/constants/GrassConstants.js");
+/* harmony import */ var _SigningQueueManager__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./SigningQueueManager */ "./js/managers/SigningQueueManager.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
 
 
@@ -13703,6 +13719,13 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+/** How long a liveness probe may take before the transport is presumed dead. */
+const PROBE_TIMEOUT_MS = 5000;
+
+/** Floor between unforced probes, so an idle player barely touches the node. */
+const PROBE_INTERVAL_MS = 5 * 60 * 1000;
 
 /**
  * Thin transport + cosmos message catalog. Owns the cosmjs Registry, the WS
@@ -13736,30 +13759,164 @@ class SigningClientManager {
 
     this.registry = new _cosmjs_proto_signing__WEBPACK_IMPORTED_MODULE_0__.Registry([..._cosmjs_stargate__WEBPACK_IMPORTED_MODULE_1__.defaultRegistryTypes, ..._ts_structs_structs_registry__WEBPACK_IMPORTED_MODULE_2__.msgTypes]);
 
-    this.queue = new _SigningQueueManager__WEBPACK_IMPORTED_MODULE_6__.SigningQueueManager(this.gameState, {
+    /** @type {number} When the transport was last proven alive. */
+    this.lastProbeAt = 0;
+
+    /** @type {?Promise<boolean>} The single in-flight connection check, if any. */
+    this.connectionCheck = null;
+
+    this.queue = new _SigningQueueManager__WEBPACK_IMPORTED_MODULE_7__.SigningQueueManager(this.gameState, {
       registry: this.registry,
       wsUrl: this.wsUrl,
     });
   }
 
   /**
-   * @param {DirectSecp256k1HdWallet} wallet
    * @return {Promise<void>}
    */
-  async initSigningClient(wallet) {
+  async initSigningClient() {
     console.debug("Initializing signing client...");
-    this.gameState.signingClient = await _cosmjs_stargate__WEBPACK_IMPORTED_MODULE_1__.SigningStargateClient.connectWithSigner(
-      this.wsUrl,
-      wallet,
-      {
-        registry: this.registry,
-      },
-    );
+    await this.connect();
     console.info("Signing client initialized.");
 
     // The signing account is now known — safe to rehydrate the per-account queue
     // (Review hardening #1: storage key needs the address).
     this.queue.loadPersistedState();
+  }
+
+  /**
+   * Establish a fresh client, closing any existing one first.
+   *
+   * @return {Promise<void>}
+   */
+  async connect() {
+    this.disconnect();
+
+    this.gameState.signingClient = await _cosmjs_stargate__WEBPACK_IMPORTED_MODULE_1__.SigningStargateClient.connectWithSigner(
+      this.wsUrl,
+      this.gameState.wallet,
+      {
+        registry: this.registry,
+      },
+    );
+    this.lastProbeAt = Date.now();
+  }
+
+  /**
+   * Close the current client. Every WS-backed client holds a socket for as long
+   * as it lives, so replacing one without closing it leaks that socket; enough
+   * of those exhaust the browser's pool and wedge all later signing.
+   */
+  disconnect() {
+    const client = this.gameState.signingClient;
+
+    if (!client) {
+      return;
+    }
+
+    this.gameState.signingClient = null;
+
+    try {
+      client.disconnect();
+    } catch (error) {
+      console.warn('[SigningClientManager] error closing previous client:', error);
+    }
+  }
+
+  /**
+   * A dead WebSocket goes on reporting readyState OPEN, so the only answer worth
+   * trusting comes from a round trip that has to complete.
+   *
+   * @return {Promise<boolean>}
+   */
+  async isAlive() {
+    const client = this.gameState.signingClient;
+
+    if (!client) {
+      return false;
+    }
+
+    // getHeight always reaches the node. getChainId would not: it memoises after
+    // the first call and answers from memory over a dead socket.
+    const height = client.getHeight();
+    height.catch(() => {});
+
+    let timer;
+    const deadline = new Promise((resolve, reject) => {
+      timer = setTimeout(() => reject(new Error('liveness probe timed out')), PROBE_TIMEOUT_MS);
+    });
+
+    try {
+      await Promise.race([height, deadline]);
+      this.lastProbeAt = Date.now();
+      return true;
+    } catch (error) {
+      console.warn('[SigningClientManager] liveness probe failed:', error);
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
+   * Probe the signing transport and rebuild it if it has died. Concurrent calls
+   * share one check.
+   *
+   * @param {boolean} force Probe even if one ran recently. Used by resume triggers.
+   * @return {Promise<boolean>} whether a usable client is in place
+   */
+  resumeCheck(force = false) {
+    if (!this.connectionCheck) {
+      this.connectionCheck = this.checkConnection(force)
+        .catch((error) => {
+          console.warn('[SigningClientManager] connection check failed:', error);
+          return false;
+        })
+        .finally(() => {
+          this.connectionCheck = null;
+        });
+    }
+
+    return this.connectionCheck;
+  }
+
+  /**
+   * @param {boolean} force
+   * @return {Promise<boolean>}
+   */
+  async checkConnection(force) {
+    if (!this.gameState.wallet) {
+      return false;
+    }
+
+    if (!force && Date.now() - this.lastProbeAt < PROBE_INTERVAL_MS) {
+      return true;
+    }
+
+    if (await this.isAlive()) {
+      return true;
+    }
+
+    // The probe cannot tell a dead socket from an unreachable node. Blocks reach
+    // us over a different service, so their arrival is what proves the network
+    // is fine and isolates the fault to this transport. Rebuilding during a
+    // wider outage would just churn sockets.
+    if (this.gameState.msSinceLastBlock() >= _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_6__.STALE_BLOCK_MS) {
+      return false;
+    }
+
+    console.warn('[SigningClientManager] transport is dead, rebuilding.');
+
+    try {
+      await this.connect();
+      console.info('[SigningClientManager] transport rebuilt.');
+      return true;
+    } catch (error) {
+      // Left disconnected on purpose: a later check retries, and broadcasting
+      // through a half-built client would be worse than skipping a block.
+      console.error('[SigningClientManager] rebuild failed:', error);
+      return false;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -13805,6 +13962,13 @@ class SigningClientManager {
    */
   getTransaction(id) {
     return this.queue.getTransaction(id);
+  }
+
+  /**
+   * @return {boolean}
+   */
+  hasQueuedTransactions() {
+    return this.queue.hasQueuedTransactions();
   }
 
   // ---------------------------------------------------------------------------
@@ -15627,11 +15791,7 @@ class SigningQueueManager {
     });
 
     try {
-      const response = await this.gameState.signingClient.signAndBroadcast(
-        this.gameState.signingAccount.address,
-        [msg],
-        _constants_Fee__WEBPACK_IMPORTED_MODULE_2__.FEE
-      );
+      const response = await this.#signAndBroadcastWithTimeout(msg);
       this.#handleBroadcastResponse(tx, response);
     } catch (err) {
       if (err instanceof _cosmjs_stargate__WEBPACK_IMPORTED_MODULE_0__.TimeoutError && err.txId) {
@@ -15653,6 +15813,42 @@ class SigningQueueManager {
       this.inFlight = null;
       this.#handleBroadcastFailure(tx, err);
     }
+  }
+
+  /**
+   * Sign and broadcast against a hard deadline.
+   *
+   * cosmjs bounds the wait for *inclusion* itself and raises a TimeoutError
+   * carrying a txId, which the caller recovers from by polling. That timer only
+   * arms once the transaction has been submitted, so it does nothing for a
+   * transport that dies mid-broadcast: the promise never settles, `inFlight`
+   * stays set, and every later block tick returns early, wedging both lanes
+   * until the page is reloaded. This bounds that case and nothing else.
+   *
+   * @param {object} msg
+   * @return {Promise<object>}
+   */
+  #signAndBroadcastWithTimeout(msg) {
+    const broadcast = this.gameState.signingClient.signAndBroadcast(
+      this.gameState.signingAccount.address,
+      [msg],
+      _constants_Fee__WEBPACK_IMPORTED_MODULE_2__.FEE
+    );
+
+    // Promise.race leaves the loser pending. Should the transport eventually
+    // fail after the deadline has already been reported, absorb it here rather
+    // than let it surface as an unhandled rejection.
+    broadcast.catch(() => {});
+
+    let timer;
+    const deadline = new Promise((resolve, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`Broadcast exceeded ${_constants_SigningQueueConstants__WEBPACK_IMPORTED_MODULE_4__.SIGNING_QUEUE.BROADCAST_TIMEOUT_MS}ms`)),
+        _constants_SigningQueueConstants__WEBPACK_IMPORTED_MODULE_4__.SIGNING_QUEUE.BROADCAST_TIMEOUT_MS
+      );
+    });
+
+    return Promise.race([broadcast, deadline]).finally(() => clearTimeout(timer));
   }
 
   /**
@@ -15929,6 +16125,17 @@ class SigningQueueManager {
       return false;
     }
     return this.reorderActionQueue(id, index + 1);
+  }
+
+  /**
+   * Whether either lane still holds work. Excludes `inFlight`, so a listener
+   * reacting to a settlement sees only the transactions behind the one that
+   * just finished.
+   *
+   * @return {boolean}
+   */
+  hasQueuedTransactions() {
+    return this.immediateQueue.length > 0 || this.actionQueue.length > 0;
   }
 
   /**
@@ -22599,7 +22806,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../events/ClearAttackTargetsEvent */ "./js/events/ClearAttackTargetsEvent.js");
 /* harmony import */ var _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../events/ClearDefendTargetsEvent */ "./js/events/ClearDefendTargetsEvent.js");
 /* harmony import */ var _events_StructSelectionChangedEvent__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../events/StructSelectionChangedEvent */ "./js/events/StructSelectionChangedEvent.js");
+/* harmony import */ var _models_SigningTransaction__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../models/SigningTransaction */ "./js/models/SigningTransaction.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 
@@ -22821,6 +23030,24 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
       });
 
       HUDViewModel.gameState.actionBarLock.clear(false);
+    });
+
+    // The lock is normally released by the GRASS frame confirming the action
+    // landed on chain. A transaction that never lands produces no such frame, so
+    // without this the executing progress bar runs until the player clicks away.
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_5__.EVENTS.SIGNING_TRANSACTION_SETTLED, (event) => {
+      if (event.status === _models_SigningTransaction__WEBPACK_IMPORTED_MODULE_14__.TX_STATUS.SUCCEEDED || !HUDViewModel.gameState.actionBarLock.isLocked()) {
+        return;
+      }
+
+      // The lock is global but the queue is not: a lock held for a transaction
+      // sitting behind this one is not ours to release.
+      if (HUDViewModel.signingClientManager.hasQueuedTransactions()) {
+        return;
+      }
+
+      console.warn(`[HUDViewModel] releasing the action bar lock, transaction ${event.id} settled as ${event.status}.`);
+      HUDViewModel.gameState.actionBarLock.clear();
     });
   }
 

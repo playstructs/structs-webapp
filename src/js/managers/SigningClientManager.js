@@ -5,7 +5,14 @@ import {msgTypes} from "../ts/structs.structs/registry";
 import {AMBIT_ENUM} from "../constants/Ambits";
 import {LOCATION_TYPE_INDEX} from "../constants/LocationTypes";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {STALE_BLOCK_MS} from "../constants/GrassConstants";
 import {SigningQueueManager} from "./SigningQueueManager";
+
+/** How long a liveness probe may take before the transport is presumed dead. */
+const PROBE_TIMEOUT_MS = 5000;
+
+/** Floor between unforced probes, so an idle player barely touches the node. */
+const PROBE_INTERVAL_MS = 5 * 60 * 1000;
 
 /**
  * Thin transport + cosmos message catalog. Owns the cosmjs Registry, the WS
@@ -39,6 +46,12 @@ export class SigningClientManager {
 
     this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
 
+    /** @type {number} When the transport was last proven alive. */
+    this.lastProbeAt = 0;
+
+    /** @type {?Promise<boolean>} The single in-flight connection check, if any. */
+    this.connectionCheck = null;
+
     this.queue = new SigningQueueManager(this.gameState, {
       registry: this.registry,
       wsUrl: this.wsUrl,
@@ -46,23 +59,151 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {DirectSecp256k1HdWallet} wallet
    * @return {Promise<void>}
    */
-  async initSigningClient(wallet) {
+  async initSigningClient() {
     console.debug("Initializing signing client...");
-    this.gameState.signingClient = await SigningStargateClient.connectWithSigner(
-      this.wsUrl,
-      wallet,
-      {
-        registry: this.registry,
-      },
-    );
+    await this.connect();
     console.info("Signing client initialized.");
 
     // The signing account is now known — safe to rehydrate the per-account queue
     // (Review hardening #1: storage key needs the address).
     this.queue.loadPersistedState();
+  }
+
+  /**
+   * Establish a fresh client, closing any existing one first.
+   *
+   * @return {Promise<void>}
+   */
+  async connect() {
+    this.disconnect();
+
+    this.gameState.signingClient = await SigningStargateClient.connectWithSigner(
+      this.wsUrl,
+      this.gameState.wallet,
+      {
+        registry: this.registry,
+      },
+    );
+    this.lastProbeAt = Date.now();
+  }
+
+  /**
+   * Close the current client. Every WS-backed client holds a socket for as long
+   * as it lives, so replacing one without closing it leaks that socket; enough
+   * of those exhaust the browser's pool and wedge all later signing.
+   */
+  disconnect() {
+    const client = this.gameState.signingClient;
+
+    if (!client) {
+      return;
+    }
+
+    this.gameState.signingClient = null;
+
+    try {
+      client.disconnect();
+    } catch (error) {
+      console.warn('[SigningClientManager] error closing previous client:', error);
+    }
+  }
+
+  /**
+   * A dead WebSocket goes on reporting readyState OPEN, so the only answer worth
+   * trusting comes from a round trip that has to complete.
+   *
+   * @return {Promise<boolean>}
+   */
+  async isAlive() {
+    const client = this.gameState.signingClient;
+
+    if (!client) {
+      return false;
+    }
+
+    // getHeight always reaches the node. getChainId would not: it memoises after
+    // the first call and answers from memory over a dead socket.
+    const height = client.getHeight();
+    height.catch(() => {});
+
+    let timer;
+    const deadline = new Promise((resolve, reject) => {
+      timer = setTimeout(() => reject(new Error('liveness probe timed out')), PROBE_TIMEOUT_MS);
+    });
+
+    try {
+      await Promise.race([height, deadline]);
+      this.lastProbeAt = Date.now();
+      return true;
+    } catch (error) {
+      console.warn('[SigningClientManager] liveness probe failed:', error);
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
+   * Probe the signing transport and rebuild it if it has died. Concurrent calls
+   * share one check.
+   *
+   * @param {boolean} force Probe even if one ran recently. Used by resume triggers.
+   * @return {Promise<boolean>} whether a usable client is in place
+   */
+  resumeCheck(force = false) {
+    if (!this.connectionCheck) {
+      this.connectionCheck = this.checkConnection(force)
+        .catch((error) => {
+          console.warn('[SigningClientManager] connection check failed:', error);
+          return false;
+        })
+        .finally(() => {
+          this.connectionCheck = null;
+        });
+    }
+
+    return this.connectionCheck;
+  }
+
+  /**
+   * @param {boolean} force
+   * @return {Promise<boolean>}
+   */
+  async checkConnection(force) {
+    if (!this.gameState.wallet) {
+      return false;
+    }
+
+    if (!force && Date.now() - this.lastProbeAt < PROBE_INTERVAL_MS) {
+      return true;
+    }
+
+    if (await this.isAlive()) {
+      return true;
+    }
+
+    // The probe cannot tell a dead socket from an unreachable node. Blocks reach
+    // us over a different service, so their arrival is what proves the network
+    // is fine and isolates the fault to this transport. Rebuilding during a
+    // wider outage would just churn sockets.
+    if (this.gameState.msSinceLastBlock() >= STALE_BLOCK_MS) {
+      return false;
+    }
+
+    console.warn('[SigningClientManager] transport is dead, rebuilding.');
+
+    try {
+      await this.connect();
+      console.info('[SigningClientManager] transport rebuilt.');
+      return true;
+    } catch (error) {
+      // Left disconnected on purpose: a later check retries, and broadcasting
+      // through a half-built client would be worse than skipping a block.
+      console.error('[SigningClientManager] rebuild failed:', error);
+      return false;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -108,6 +249,13 @@ export class SigningClientManager {
    */
   getTransaction(id) {
     return this.queue.getTransaction(id);
+  }
+
+  /**
+   * @return {boolean}
+   */
+  hasQueuedTransactions() {
+    return this.queue.hasQueuedTransactions();
   }
 
   // ---------------------------------------------------------------------------

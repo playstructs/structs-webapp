@@ -225,7 +225,7 @@ export class AuthManager {
       this.grassManager.registerListener(new StructMineStatusListener(this.gameState));
       this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 
-      await this.signingClientManager.initSigningClient(this.gameState.wallet);
+      await this.signingClientManager.initSigningClient();
       await this.playerAddressManager.addPlayerAddressMeta();
 
       this.destroyedStructManager.init();
@@ -307,7 +307,6 @@ export class AuthManager {
     try {
       // Used to authorize the on-chain registration of the new device address
       await this.initWallet(mnemonic);
-      const primaryWallet = this.gameState.wallet;
       const primaryAddress = this.gameState.signingAccount.address;
 
       const playerId = await this.guildAPI.getPlayerIdByAddressAndGuild(
@@ -340,9 +339,11 @@ export class AuthManager {
         newMnemonic
       ));
 
-      // Register the new address on-chain, signed by the primary wallet which
-      // already holds the permission to manage the player's devices.
-      await this.signingClientManager.initSigningClient(primaryWallet);
+      // Register the new address on-chain. The active wallet is still the
+      // primary one initialised above, which already holds the permission to
+      // manage the player's devices; the new device wallet does not take over
+      // until completeMnemonicLogin().
+      await this.signingClientManager.initSigningClient();
 
       const permissions = this.permissionManager.getDefaultPlayerPermissions()
           | this.permissionManager.getManageDevicesPermissions();

@@ -403,11 +403,7 @@ export class SigningQueueManager {
     });
 
     try {
-      const response = await this.gameState.signingClient.signAndBroadcast(
-        this.gameState.signingAccount.address,
-        [msg],
-        FEE
-      );
+      const response = await this.#signAndBroadcastWithTimeout(msg);
       this.#handleBroadcastResponse(tx, response);
     } catch (err) {
       if (err instanceof TimeoutError && err.txId) {
@@ -429,6 +425,42 @@ export class SigningQueueManager {
       this.inFlight = null;
       this.#handleBroadcastFailure(tx, err);
     }
+  }
+
+  /**
+   * Sign and broadcast against a hard deadline.
+   *
+   * cosmjs bounds the wait for *inclusion* itself and raises a TimeoutError
+   * carrying a txId, which the caller recovers from by polling. That timer only
+   * arms once the transaction has been submitted, so it does nothing for a
+   * transport that dies mid-broadcast: the promise never settles, `inFlight`
+   * stays set, and every later block tick returns early, wedging both lanes
+   * until the page is reloaded. This bounds that case and nothing else.
+   *
+   * @param {object} msg
+   * @return {Promise<object>}
+   */
+  #signAndBroadcastWithTimeout(msg) {
+    const broadcast = this.gameState.signingClient.signAndBroadcast(
+      this.gameState.signingAccount.address,
+      [msg],
+      FEE
+    );
+
+    // Promise.race leaves the loser pending. Should the transport eventually
+    // fail after the deadline has already been reported, absorb it here rather
+    // than let it surface as an unhandled rejection.
+    broadcast.catch(() => {});
+
+    let timer;
+    const deadline = new Promise((resolve, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`Broadcast exceeded ${SIGNING_QUEUE.BROADCAST_TIMEOUT_MS}ms`)),
+        SIGNING_QUEUE.BROADCAST_TIMEOUT_MS
+      );
+    });
+
+    return Promise.race([broadcast, deadline]).finally(() => clearTimeout(timer));
   }
 
   /**
@@ -705,6 +737,17 @@ export class SigningQueueManager {
       return false;
     }
     return this.reorderActionQueue(id, index + 1);
+  }
+
+  /**
+   * Whether either lane still holds work. Excludes `inFlight`, so a listener
+   * reacting to a settlement sees only the transactions behind the one that
+   * just finished.
+   *
+   * @return {boolean}
+   */
+  hasQueuedTransactions() {
+    return this.immediateQueue.length > 0 || this.actionQueue.length > 0;
   }
 
   /**
