@@ -4,7 +4,6 @@ import {EVENTS} from "../constants/Events";
 import {ChargeLevelChangedEvent} from "../events/ChargeLevelChangedEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {WalletManager} from "../managers/WalletManager";
-import {GuildAPI} from "../api/GuildAPI";
 import {PlanetRaid} from "./PlanetRaid";
 import {MAP_CONTAINER_IDS, MAP_TYPES} from "../constants/MapConstants";
 import {StructTypeCollection} from "./StructTypeCollection";
@@ -23,7 +22,9 @@ export class GameState {
   constructor() {
     this.chargeCalculator = new ChargeCalculator();
     this.walletManager = new WalletManager();
-    this.guildAPI = new GuildAPI();
+
+    /** @type {GuildAPI} */
+    this.guildAPI = null;
 
     /* Multistep Request Data */
     this.signupRequest = new SignupRequestDTO();
@@ -90,6 +91,14 @@ export class GameState {
     /* GRASS Only Data */
 
     this.currentBlockHeight = 0;
+
+    /**
+     * When the chain clock last advanced. Seeded at construction so a staleness
+     * check that runs before the first block does not read as stalled.
+     *
+     * @type {number}
+     */
+    this.lastBlockAt = Date.now();
 
     /* Temp Data */
 
@@ -167,6 +176,7 @@ export class GameState {
    */
   setCurrentBlockHeight(height) {
     this.currentBlockHeight = height;
+    this.lastBlockAt = Date.now();
 
     Object.values(PLAYER_TYPES).forEach(playerType => {
       if (this.keyPlayers[playerType].player) {
@@ -182,6 +192,17 @@ export class GameState {
     this.save();
 
     console.log(`New Block ${height}`);
+  }
+
+  /**
+   * Blocks arrive over GRASS every few seconds, which makes this the app's
+   * liveness signal: if it goes quiet, the stream is stalled and everything
+   * driven by BLOCK_HEIGHT_CHANGED (the signing queue included) has stopped.
+   *
+   * @return {number}
+   */
+  msSinceLastBlock() {
+    return Date.now() - this.lastBlockAt;
   }
 
   /**

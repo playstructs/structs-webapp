@@ -39,7 +39,7 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
     this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getPlanetId()).then(raidInfo => {
       this.gameState.setPlanetPlanetRaidInfo(raidInfo, false);
 
-      this.raidManager.initPlanetRaider().then(() => {
+      return this.raidManager.initPlanetRaider().then(() => {
         console.log('PLANET RAID ENEMY INITIATED DONE');
 
         this.mapManager.configureAlphaBaseMap()
@@ -49,6 +49,8 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
           this.mapManager.showHUDForMap(MAP_CONTAINER_IDS.ALPHA_BASE);
         }
       });
+    }).catch(error => {
+      console.error('[PlanetRaidStatusListener] could not render the incoming raid:', error);
     });
   }
 

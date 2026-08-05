@@ -139,10 +139,9 @@ export class AuthManager {
   }
 
   /**
-   * @param {string} playerId
-   * @return {Promise<boolean>}
+   * @return {Promise<LoginRequestDTO>}
    */
-  async login(playerId) {
+  async buildLoginRequest() {
     const timestamp = await this.guildAPI.getTimestamp();
 
     const request = new LoginRequestDTO();
@@ -162,7 +161,39 @@ export class AuthManager {
       this.gameState.signingAccount.privkey
     );
 
-    const response = await this.guildAPI.login(request);
+    return request;
+  }
+
+  /**
+   * Restore an expired guild API session in place. The wallet that signs a
+   * fresh login is already in memory, so a session that idles out does not need
+   * a page reload to recover.
+   *
+   * Deliberately narrow: it renews the session and nothing else. Registering
+   * listeners and priming game state belongs to {@link login}.
+   *
+   * @return {Promise<boolean>}
+   */
+  async reauthenticate() {
+    if (!this.gameState.signingAccount || !this.gameState.thisGuild) {
+      return false;
+    }
+
+    const response = await this.guildAPI.login(await this.buildLoginRequest());
+
+    if (!response.success) {
+      console.warn('[AuthManager] session re-authentication was rejected.');
+    }
+
+    return response.success;
+  }
+
+  /**
+   * @param {string} playerId
+   * @return {Promise<boolean>}
+   */
+  async login(playerId) {
+    const response = await this.guildAPI.login(await this.buildLoginRequest());
 
     console.log('Login response status:', response);
 
