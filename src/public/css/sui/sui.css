@@ -471,6 +471,20 @@ i.sui-icon-energy {
   background-image: url("/img/sui/icon/icon-energy.png");
 }
 
+i.sui-icon-energy-deactivated {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+
+  background-image: url("/img/sui/icon/icon-energy-deactivated.png");
+}
+
+i.sui-icon-energy-insufficient {
+  width: var(--icon-md);
+  height: var(--icon-md);
+
+  background-image: url("/img/sui/icon/icon-energy-insufficient.png");
+}
+
 i.sui-icon-inert-alpha {
   width: var(--icon-md);
   height: var(--icon-md);

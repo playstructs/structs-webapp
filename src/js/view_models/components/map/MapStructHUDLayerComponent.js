@@ -7,6 +7,7 @@ import {OBJECT_TYPES} from "../../../constants/ObjectTypes";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {STRUCT_TYPES} from "../../../constants/StructConstants";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
+import {Player} from "../../../models/Player";
 
 
 export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
@@ -231,6 +232,35 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
    */
   renderIndicatorIsOffline(struct) {
     return !struct.isDestroyed() && struct.isBuilt() && !struct.isOnline()
+      ? `<i class="sui-icon sui-icon-sm sui-icon-energy-deactivated"></i>`
+      : '';
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {Player|null} null when the owner is not on this map
+   */
+  getStructOwner(struct) {
+    for (const keyPlayer of Object.values(this.gameState.keyPlayers)) {
+      if (keyPlayer.player && keyPlayer.player.id === struct.owner) {
+        return keyPlayer.player;
+      }
+    }
+
+    if (this.attacker && struct.owner === this.attacker.id) {
+      return this.attacker;
+    }
+
+    return (this.defender && struct.owner === this.defender.id) ? this.defender : null;
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderIndicatorIsOverloaded(struct) {
+    const player = this.getStructOwner(struct);
+    return (player && !struct.isDestroyed() && struct.isBuilt() && struct.isOnline() && player.isOverloaded())
       ? `<i class="sui-icon sui-icon-sm sui-icon-no-power"></i>`
       : '';
   }
@@ -257,11 +287,11 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   /**
    * @param {Struct} struct
    * @param {Struct|null} selectedStruct
-   * @return {{isDestroyed: boolean, isOffline: boolean, isDefended: boolean, isDefending: boolean}}
+   * @return {{isDestroyed: boolean, isOffline: boolean, isOverloaded: boolean, isDefended: boolean, isDefending: boolean}}
    */
   getVisibleStatusIndicators(struct, selectedStruct) {
     if (!selectedStruct || struct.id === selectedStruct.id) {
-      return {isDestroyed: true, isOffline: true, isDefended: true, isDefending: true};
+      return {isDestroyed: true, isOffline: true, isOverloaded: true, isDefended: true, isDefending: true};
     }
 
     const defendingStructIds = selectedStruct.defending_struct_ids || [];
@@ -269,6 +299,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
     return {
       isDestroyed: false,
       isOffline: false,
+      isOverloaded: false,
       isDefended: struct.id === selectedStruct.protected_struct_id,
       isDefending: defendingStructIds.includes(struct.id)
     };
@@ -285,6 +316,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
     return `
       ${visible.isDestroyed ? this.renderIndicatorIsDestroyed(struct) : ''}
       ${visible.isOffline ? this.renderIndicatorIsOffline(struct) : ''}
+      ${visible.isOverloaded ? this.renderIndicatorIsOverloaded(struct) : ''}
       ${visible.isDefended ? this.renderIndicatorIsDefended(struct) : ''}
       ${visible.isDefending ? this.renderIndicatorIsDefending(struct) : ''}
     `;
@@ -478,6 +510,13 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
     });
 
     this.addWindowEventListener(EVENTS.STRUCT_SELECTION_CHANGED, () => {
+      this.refreshAllStatusIndicators();
+    });
+
+    // A change in energy supply can disable or re-enable every one of a
+    // player's structs at once, so refresh the whole map rather than waiting
+    // for each struct to be re-rendered individually.
+    this.addWindowEventListener(EVENTS.ENERGY_USAGE_CHANGED, () => {
       this.refreshAllStatusIndicators();
     });
 

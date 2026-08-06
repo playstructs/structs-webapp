@@ -1659,6 +1659,22 @@ class CheatsheetContentBuilder extends _sui_SUICheatsheetContentBuilder__WEBPACK
     let html = '';
 
     switch (dataset.suiCheatsheet) {
+      case 'energy-supply-insufficient':
+        html = this.renderer.renderContentHTML(
+          'Energy Supply',
+          null,
+          null,
+          `Insufficient Energy. Deactivate Structs to reduce Energy draw.`
+        );
+        break;
+      case 'energy-supply-sufficient':
+        html = this.renderer.renderContentHTML(
+          'Energy Supply',
+          null,
+          null,
+          `Energy Supply normal.`
+        );
+        break;
       case 'icon-beacon':
         html = this.renderer.renderContentForEmptyTileHTML(
           'Planetary Beacon',
@@ -1675,6 +1691,14 @@ class CheatsheetContentBuilder extends _sui_SUICheatsheetContentBuilder__WEBPACK
         html = this.renderer.renderContentForEmptyTileHTML(
           'Command Post',
           'Only the Command Ship can be deployed to this location.'
+        );
+        break;
+      case 'icon-disabled':
+        html = this.renderer.renderContentHTML(
+          'Disabled',
+          null,
+          null,
+          `This Struct is disabled due to insufficient Energy supplies. Deactivate Structs to reduce Energy draw.`
         );
         break;
       case 'icon-enemy-tile':
@@ -1715,10 +1739,10 @@ class CheatsheetContentBuilder extends _sui_SUICheatsheetContentBuilder__WEBPACK
         break;
       case 'icon-unpowered':
         html = this.renderer.renderContentHTML(
-          'Unpowered',
+          'Deactivated',
           null,
           null,
-          `This Struct is not receiving power. It's abilities are not active.`
+          `This unit is deactivated. It's abilities are not active.`
         );
         break;
       case 'icon-attention':
@@ -19144,6 +19168,21 @@ class Player {
   getUsername() {
     return (this.username && this.username.length > 0) ? `${this.username}` : 'Name Redacted';
   }
+
+  /**
+   * @return {boolean}
+   */
+  isOverloaded() {
+    const load = this.load ?? 0;
+    const structsLoad = this.structs_load ?? 0;
+    const capacity = this.capacity ?? 0;
+    const connectionCapacity = this.connection_capacity ?? 0;
+
+    let totalLoad = load + structsLoad;
+    let totalCapacity = capacity + connectionCapacity;
+
+    return totalLoad > totalCapacity;
+  }
 }
 
 /***/ }),
@@ -23164,6 +23203,15 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
       HUDViewModel.refreshActionBar();
     });
 
+    // A change in energy supply can disable or re-enable a struct's abilities,
+    // so the action bar has to be rebuilt. Skip while an action is in flight so
+    // an in-progress targeting mode is not torn down underneath the player.
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_5__.EVENTS.ENERGY_USAGE_CHANGED, () => {
+      if (!HUDViewModel.gameState.actionBarLock.getCurrentAction()) {
+        HUDViewModel.refreshActionBar();
+      }
+    });
+
     // Listen for REFRESH_ACTION_BAR events (when a struct arrives at a position)
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_5__.EVENTS.REFRESH_ACTION_BAR_IF_SELECTED, (event) => {
       HUDViewModel.refreshActionBarIfSelected(
@@ -26537,7 +26585,11 @@ class EnergyUsageComponent extends _framework_AbstractViewModelComponent__WEBPAC
   constructor(gameState, elementId) {
     super(gameState);
     this.elementId = elementId;
-    this.energyUsageClass = 'energy-usage';
+    this.textClassEnergyInsufficient = 'sui-text-warning';
+    this.cheatsheetEnergySufficient = 'energy-supply-sufficient';
+    this.cheatsheetEnergyInsufficient = 'energy-supply-insufficient';
+    this.iconEnergySufficient = 'sui-icon-energy';
+    this.iconEnergyInsufficient = 'sui-icon-energy-insufficient';
 
     this.energyUsageHandler = this.energyUsageHandler.bind(this);
   }
@@ -26556,6 +26608,33 @@ class EnergyUsageComponent extends _framework_AbstractViewModelComponent__WEBPAC
     return `${totalLoad}/${totalCapacity}`;
   }
 
+  /**
+   * @return {boolean}
+   */
+  isPlayerOverloaded() {
+    const player = this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].player;
+    return !!player && player.isOverloaded();
+  }
+
+  /**
+   * @param {HTMLElement} energyUsageLinkElm
+   */
+  renderEnergyUsage(energyUsageLinkElm) {
+    const energyUsageNumbersElm = energyUsageLinkElm.querySelector('span');
+    const energyUsageIconElm = energyUsageLinkElm.querySelector('i');
+    const isOverloaded = this.isPlayerOverloaded();
+
+    energyUsageLinkElm.dataset.suiCheatsheet = isOverloaded
+      ? this.cheatsheetEnergyInsufficient
+      : this.cheatsheetEnergySufficient;
+
+    energyUsageNumbersElm.classList.toggle(this.textClassEnergyInsufficient, isOverloaded);
+    energyUsageIconElm.classList.toggle(this.iconEnergyInsufficient, isOverloaded);
+    energyUsageIconElm.classList.toggle(this.iconEnergySufficient, !isOverloaded);
+
+    energyUsageNumbersElm.innerText = this.getEnergyUsage();
+  }
+
   energyUsageHandler(event) {
     if (event.playerType !== _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER) {
       return;
@@ -26568,29 +26647,35 @@ class EnergyUsageComponent extends _framework_AbstractViewModelComponent__WEBPAC
       return;
     }
 
-    const energyUsageNumbersContainer = energyUsageLinkElm.querySelector(`.${this.energyUsageClass}`);
-    energyUsageNumbersContainer.innerText = this.getEnergyUsage();
+    this.renderEnergyUsage(energyUsageLinkElm);
   }
 
   initPageCode() {
-    const energyUsageLinkElm = document.getElementById(this.elementId);
-    const energyUsageNumbersContainer = energyUsageLinkElm.querySelector(`.${this.energyUsageClass}`);
-    energyUsageNumbersContainer.innerText = this.getEnergyUsage();
+    this.renderEnergyUsage(document.getElementById(this.elementId));
 
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ENERGY_USAGE_CHANGED, this.energyUsageHandler);
   }
 
   renderHTML() {
+    let cheatsheet = this.cheatsheetEnergySufficient;
+    let icon = this.iconEnergySufficient;
+    let textClass = '';
+
+    if (this.isPlayerOverloaded()) {
+      cheatsheet = this.cheatsheetEnergyInsufficient;
+      icon = this.iconEnergyInsufficient;
+      textClass = this.textClassEnergyInsufficient;
+    }
+
     return `
       <a 
         id="${this.elementId}"
         class="sui-resource"
         href="javascript: void(0)" 
-        data-sui-tooltip="Energy Supply"
-        data-sui-mod-placement="bottom"
+        data-sui-cheatsheet="${cheatsheet}"
       >
-        <span class="${this.energyUsageClass}"></span>
-        <i class="sui-icon sui-icon-energy"></i>
+        <span class="${textClass}"></span>
+        <i class="sui-icon ${icon}"></i>
       </a>
     `;
   }
@@ -29065,12 +29150,22 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
   }
 
   /**
+   * @param {string} playerType See PLAYER_TYPES
+   * @return {boolean}
+   */
+  isKeyPlayerOverloaded(playerType) {
+    const player = this.gameState.keyPlayers[playerType].player;
+    return !!player && player.isOverloaded();
+  }
+
+  /**
    * @param {ChargeLevelChangedEvent} event
    */
   updateActionButtons(event) {
     if (
       this.playerType === _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER
       && event.playerId === this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER].id
+      && !this.isKeyPlayerOverloaded(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER)
       && this.selectedStruct
       && this.selectedStruct.isOnline()
     ) {
@@ -29612,7 +29707,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
    * @return {{image: string, state: string, canToggle: boolean}}
    */
   getPanelSwitchState(struct, structType) {
-    if (this.isActionAvailable(struct, 0, true)) {
+    if (this.isActionAvailable(struct, 0, true, false)) {
       return {
         image: '/img/sui/panel/panel-switch-on.png',
         state: 'on',
@@ -29620,7 +29715,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
       };
     }
 
-    if (this.isActionAvailable(struct, structType.activate_charge, false)) {
+    if (this.isActionAvailable(struct, structType.activate_charge, false, false)) {
       return {
         image: '/img/sui/panel/panel-switch-off.png',
         state: 'off',
@@ -29642,7 +29737,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
    * @param {StructType} structType
    */
   handlePanelSwitchClick(struct, structType) {
-    if (this.isActionAvailable(struct, 0, true)) {
+    if (this.isActionAvailable(struct, 0, true, false)) {
       // Turn off: deactivate the struct
       this.gameState.actionBarLock.setCurrentAction(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEACTIVATE);
       this.gameState.actionBarLock.lock();
@@ -29651,7 +29746,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
         this.showStructActionBar(struct);
         window.dispatchEvent(new _events_ShowStructStillEvent__WEBPACK_IMPORTED_MODULE_16__.ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
       });
-    } else if (this.isActionAvailable(struct, structType.activate_charge, false)){
+    } else if (this.isActionAvailable(struct, structType.activate_charge, false, false)){
       // Turn on: activate the struct
       this.gameState.actionBarLock.setCurrentAction(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ACTIVATE);
       this.gameState.actionBarLock.lock();
@@ -29682,7 +29777,13 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
 
     // Build list of property icons based on struct type capabilities and online state
     let propertyIcons;
-    if (isOnline) {
+    if (isOnline && this.isKeyPlayerOverloaded(this.playerType)) {
+      propertyIcons = `
+        <a href="javascript: void(0)" data-sui-cheatsheet="icon-disabled">
+          <i class="sui-icon-md icon-disabled"></i>
+        </a>
+      `;
+    } else if (isOnline) {
       propertyIcons = this.buildStructPropertyIcons(struct, structType);
     } else {
       // Show unpowered icon when offline
@@ -29893,12 +29994,14 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
    * @param {Struct} struct
    * @param {number} actionCharge
    * @param {boolean} isOnlineAction
+   * @param {boolean} requiresPower whether or not the action requires power
    * @return {boolean}
    */
-  isActionAvailable(struct, actionCharge = 0, isOnlineAction = true) {
+  isActionAvailable(struct, actionCharge = 0, isOnlineAction = true, requiresPower = true) {
     return (struct.isOnline() === isOnlineAction)
       && !this.gameState.actionBarLock.isLocked()
       && struct.owner === this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER].id
+      && (!requiresPower || !this.isKeyPlayerOverloaded(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER))
       && (!actionCharge || this.gameState.chargeCalculator.isChargeLevelSufficient(
         this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight),
         actionCharge
@@ -32422,6 +32525,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
 /* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../../../constants/StructConstants */ "./js/constants/StructConstants.js");
 /* harmony import */ var _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../../../constants/TaskTypes */ "./js/constants/TaskTypes.js");
+/* harmony import */ var _models_Player__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../../../models/Player */ "./js/models/Player.js");
+
 
 
 
@@ -32655,6 +32760,35 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
    */
   renderIndicatorIsOffline(struct) {
     return !struct.isDestroyed() && struct.isBuilt() && !struct.isOnline()
+      ? `<i class="sui-icon sui-icon-sm sui-icon-energy-deactivated"></i>`
+      : '';
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {Player|null} null when the owner is not on this map
+   */
+  getStructOwner(struct) {
+    for (const keyPlayer of Object.values(this.gameState.keyPlayers)) {
+      if (keyPlayer.player && keyPlayer.player.id === struct.owner) {
+        return keyPlayer.player;
+      }
+    }
+
+    if (this.attacker && struct.owner === this.attacker.id) {
+      return this.attacker;
+    }
+
+    return (this.defender && struct.owner === this.defender.id) ? this.defender : null;
+  }
+
+  /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderIndicatorIsOverloaded(struct) {
+    const player = this.getStructOwner(struct);
+    return (player && !struct.isDestroyed() && struct.isBuilt() && struct.isOnline() && player.isOverloaded())
       ? `<i class="sui-icon sui-icon-sm sui-icon-no-power"></i>`
       : '';
   }
@@ -32681,11 +32815,11 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
   /**
    * @param {Struct} struct
    * @param {Struct|null} selectedStruct
-   * @return {{isDestroyed: boolean, isOffline: boolean, isDefended: boolean, isDefending: boolean}}
+   * @return {{isDestroyed: boolean, isOffline: boolean, isOverloaded: boolean, isDefended: boolean, isDefending: boolean}}
    */
   getVisibleStatusIndicators(struct, selectedStruct) {
     if (!selectedStruct || struct.id === selectedStruct.id) {
-      return {isDestroyed: true, isOffline: true, isDefended: true, isDefending: true};
+      return {isDestroyed: true, isOffline: true, isOverloaded: true, isDefended: true, isDefending: true};
     }
 
     const defendingStructIds = selectedStruct.defending_struct_ids || [];
@@ -32693,6 +32827,7 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
     return {
       isDestroyed: false,
       isOffline: false,
+      isOverloaded: false,
       isDefended: struct.id === selectedStruct.protected_struct_id,
       isDefending: defendingStructIds.includes(struct.id)
     };
@@ -32709,6 +32844,7 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
     return `
       ${visible.isDestroyed ? this.renderIndicatorIsDestroyed(struct) : ''}
       ${visible.isOffline ? this.renderIndicatorIsOffline(struct) : ''}
+      ${visible.isOverloaded ? this.renderIndicatorIsOverloaded(struct) : ''}
       ${visible.isDefended ? this.renderIndicatorIsDefended(struct) : ''}
       ${visible.isDefending ? this.renderIndicatorIsDefending(struct) : ''}
     `;
@@ -32902,6 +33038,13 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
     });
 
     this.addWindowEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.STRUCT_SELECTION_CHANGED, () => {
+      this.refreshAllStatusIndicators();
+    });
+
+    // A change in energy supply can disable or re-enable every one of a
+    // player's structs at once, so refresh the whole map rather than waiting
+    // for each struct to be re-rendered individually.
+    this.addWindowEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.ENERGY_USAGE_CHANGED, () => {
       this.refreshAllStatusIndicators();
     });
 

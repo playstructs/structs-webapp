@@ -99,12 +99,22 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * @param {string} playerType See PLAYER_TYPES
+   * @return {boolean}
+   */
+  isKeyPlayerOverloaded(playerType) {
+    const player = this.gameState.keyPlayers[playerType].player;
+    return !!player && player.isOverloaded();
+  }
+
+  /**
    * @param {ChargeLevelChangedEvent} event
    */
   updateActionButtons(event) {
     if (
       this.playerType === PLAYER_TYPES.PLAYER
       && event.playerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+      && !this.isKeyPlayerOverloaded(PLAYER_TYPES.PLAYER)
       && this.selectedStruct
       && this.selectedStruct.isOnline()
     ) {
@@ -646,7 +656,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @return {{image: string, state: string, canToggle: boolean}}
    */
   getPanelSwitchState(struct, structType) {
-    if (this.isActionAvailable(struct, 0, true)) {
+    if (this.isActionAvailable(struct, 0, true, false)) {
       return {
         image: '/img/sui/panel/panel-switch-on.png',
         state: 'on',
@@ -654,7 +664,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       };
     }
 
-    if (this.isActionAvailable(struct, structType.activate_charge, false)) {
+    if (this.isActionAvailable(struct, structType.activate_charge, false, false)) {
       return {
         image: '/img/sui/panel/panel-switch-off.png',
         state: 'off',
@@ -676,7 +686,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {StructType} structType
    */
   handlePanelSwitchClick(struct, structType) {
-    if (this.isActionAvailable(struct, 0, true)) {
+    if (this.isActionAvailable(struct, 0, true, false)) {
       // Turn off: deactivate the struct
       this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEACTIVATE);
       this.gameState.actionBarLock.lock();
@@ -685,7 +695,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         this.showStructActionBar(struct);
         window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
       });
-    } else if (this.isActionAvailable(struct, structType.activate_charge, false)){
+    } else if (this.isActionAvailable(struct, structType.activate_charge, false, false)){
       // Turn on: activate the struct
       this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ACTIVATE);
       this.gameState.actionBarLock.lock();
@@ -716,7 +726,13 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
     // Build list of property icons based on struct type capabilities and online state
     let propertyIcons;
-    if (isOnline) {
+    if (isOnline && this.isKeyPlayerOverloaded(this.playerType)) {
+      propertyIcons = `
+        <a href="javascript: void(0)" data-sui-cheatsheet="icon-disabled">
+          <i class="sui-icon-md icon-disabled"></i>
+        </a>
+      `;
+    } else if (isOnline) {
       propertyIcons = this.buildStructPropertyIcons(struct, structType);
     } else {
       // Show unpowered icon when offline
@@ -927,12 +943,14 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {Struct} struct
    * @param {number} actionCharge
    * @param {boolean} isOnlineAction
+   * @param {boolean} requiresPower whether or not the action requires power
    * @return {boolean}
    */
-  isActionAvailable(struct, actionCharge = 0, isOnlineAction = true) {
+  isActionAvailable(struct, actionCharge = 0, isOnlineAction = true, requiresPower = true) {
     return (struct.isOnline() === isOnlineAction)
       && !this.gameState.actionBarLock.isLocked()
       && struct.owner === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+      && (!requiresPower || !this.isKeyPlayerOverloaded(PLAYER_TYPES.PLAYER))
       && (!actionCharge || this.gameState.chargeCalculator.isChargeLevelSufficient(
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getCharge(this.gameState.currentBlockHeight),
         actionCharge
