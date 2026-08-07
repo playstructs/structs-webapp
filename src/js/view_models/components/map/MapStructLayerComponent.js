@@ -4,7 +4,7 @@ import {Player} from "../../../models/Player";
 import {Struct} from "../../../models/Struct";
 import {GenericMapLayerComponent} from "./GenericMapLayerComponent";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
-import {AmbitUtil} from "../../../util/AmbitUtil";
+import {AttackTargetUtil} from "../../../util/AttackTargetUtil";
 import {MapStructViewerComponent} from "../MapStructViewerComponent";
 import {Planet} from "../../../models/Planet";
 
@@ -51,7 +51,7 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     );
 
     this.structStillBuilder = new StructStillBuilder(this.gameState);
-    this.ambitUtil = new AmbitUtil();
+    this.attackTargetUtil = new AttackTargetUtil(this.gameState, structManager);
 
     /** @type {Object<string, MapStructViewerComponent>} */
     this.mapStructViewers = {};
@@ -231,34 +231,61 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
-   * Mark enemy structs as invalid selections when entering attack mode
-   * if their operating ambit does not fall within the weapon's ambit array.
+   * Mark every struct the attacking weapon cannot hit as an invalid selection
+   * when entering attack mode.
    *
    * @param {string[]} weaponAmbitsArray - Valid target ambits for the weapon (e.g. ["space", "air"])
    */
   showAttackTargets(weaponAmbitsArray) {
-    const container = document.getElementById(this.containerId);
-    const attackingPlayerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
     const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+    if (!attackingStruct) {
+      return;
+    }
+
+    const container = document.getElementById(this.containerId);
     const tiles = container.querySelectorAll(`.map-struct-layer-tile[data-struct-id^="5"]`);
 
     tiles.forEach(tile => {
-      const ambit = tile.getAttribute('data-ambit');
-      const playerId = tile.getAttribute('data-player-id');
       const structId = tile.getAttribute('data-struct-id');
 
-      // Mark as invalid if the struct's operating ambit is not in the weapon's ambit array
-      // or the struct belongs to the player except if it's the attacking struct
-      if (
-        attackingStruct.id !== structId
-        && (
-          attackingPlayerId === playerId
-          || !this.ambitUtil.contains(weaponAmbitsArray, ambit, attackingStruct.operating_ambit)
-        )
-      ) {
+      // The attacking struct reads as the source of the action rather than a
+      // rejected target, so leave its own tile unmarked.
+      if (attackingStruct.id === structId) {
+        return;
+      }
+
+      if (!this.attackTargetUtil.isValidTargetById(structId, attackingStruct, weaponAmbitsArray)) {
         tile.classList.add('mod-invalid-selection');
       }
     });
+  }
+
+  /**
+   * Re-evaluate the invalid selection markers against current struct state.
+   *
+   * Target validity is not fixed for as long as the player is choosing one: a
+   * struct entering or leaving stealth mode changes which weapons can reach it,
+   * and the player is otherwise left looking at markers that no longer match
+   * what a click will do.
+   */
+  refreshAttackTargets() {
+    // Both planet maps stay mounted while only one is on screen, and markers
+    // are only ever drawn on the one the player is looking at. The other map
+    // has nothing to correct, and repainting it against the attacker's reach
+    // would strand invalid-selection marks it has no way to clear.
+    if (this.mapId !== this.gameState.getActiveMapId()) {
+      return;
+    }
+
+    const weaponAmbitsArray = this.attackTargetUtil.getActiveWeaponAmbitsArray();
+
+    if (!weaponAmbitsArray) {
+      return;
+    }
+
+    this.clearAttackTargets();
+    this.showAttackTargets(weaponAmbitsArray);
   }
 
   /**
@@ -363,6 +390,12 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
     this.addWindowEventListener(EVENTS.SHOW_ATTACK_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.showAttackTargets(event.weaponAmbitsArray);
+      }
+    });
+
+    this.addWindowEventListener(EVENTS.REFRESH_ATTACK_TARGETS, (event) => {
+      if (event.mapId === this.mapId) {
+        this.refreshAttackTargets();
       }
     });
 

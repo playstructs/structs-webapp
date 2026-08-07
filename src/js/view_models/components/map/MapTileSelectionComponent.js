@@ -16,7 +16,7 @@ import {ClearDefendTargetsEvent} from "../../../events/ClearDefendTargetsEvent";
 import {ClearAttackTargetsEvent} from "../../../events/ClearAttackTargetsEvent";
 import {ClearTileSelectionEvent} from "../../../events/ClearTileSelectionEvent";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
-import {AmbitUtil} from "../../../util/AmbitUtil";
+import {AttackTargetUtil} from "../../../util/AttackTargetUtil";
 
 
 export class MapTileSelectionComponent extends AbstractViewModelComponent {
@@ -48,9 +48,9 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     mapId = ""
   ) {
     super(gameState);
-    this.ambitUtil = new AmbitUtil();
     this.signingClientManager = signingClientManager;
     this.structManager = structManager;
+    this.attackTargetUtil = new AttackTargetUtil(gameState, structManager);
     this.mapColBreakdown = mapColBreakdown;
     this.dividerIndex = this.mapColBreakdown.lastIndexOf(MAP_COL_DIVIDER);
     this.containerId = containerId;
@@ -769,27 +769,12 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
           || currentAction === STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON
         ) {
           const targetStructId = e.currentTarget.getAttribute('data-struct-id');
-          const targetPlayerId = e.currentTarget.getAttribute('data-player-id');
           const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+          const weaponAmbitsArray = this.attackTargetUtil.getActiveWeaponAmbitsArray();
 
-          // Valid target: enemy struct whose ambit is within the weapon's ambit array
-          const isEnemy = targetPlayerId
-            && targetPlayerId !== this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
-
-          if (targetStructId && isEnemy) {
-            const targetStruct = this.structManager.getStructById(targetStructId);
-            const attackerStructType = this.gameState.structTypes.getStructTypeById(attackingStruct.type);
-            const weaponAmbitsArray = (currentAction === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON)
-              ? attackerStructType.primary_weapon_ambits_array
-              : attackerStructType.secondary_weapon_ambits_array;
-
-            if (
-              targetStruct
-              && this.ambitUtil.contains(weaponAmbitsArray, targetStruct.operating_ambit, attackingStruct.operating_ambit)
-            ) {
-              await this.handleAttackTargetClick(e.currentTarget, currentAction);
-              return;
-            }
+          if (this.attackTargetUtil.isValidTargetById(targetStructId, attackingStruct, weaponAmbitsArray)) {
+            await this.handleAttackTargetClick(e.currentTarget, currentAction);
+            return;
           }
 
           // Invalid target or empty tile - cancel attack mode
