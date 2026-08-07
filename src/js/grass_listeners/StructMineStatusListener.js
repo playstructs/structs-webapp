@@ -17,6 +17,7 @@ export class StructMineStatusListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'struct_block_ore_mine_start'
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player
       && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
     ) {
       if (messageData.detail.block === 0) {
