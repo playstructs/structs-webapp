@@ -165,6 +165,15 @@ export class HUDViewModel extends AbstractViewModel {
       HUDViewModel.refreshActionBar();
     });
 
+    // A change in energy supply can disable or re-enable a struct's abilities,
+    // so the action bar has to be rebuilt. Skip while an action is in flight so
+    // an in-progress targeting mode is not torn down underneath the player.
+    window.addEventListener(EVENTS.ENERGY_USAGE_CHANGED, () => {
+      if (!HUDViewModel.gameState.actionBarLock.getCurrentAction()) {
+        HUDViewModel.refreshActionBar();
+      }
+    });
+
     // Listen for REFRESH_ACTION_BAR events (when a struct arrives at a position)
     window.addEventListener(EVENTS.REFRESH_ACTION_BAR_IF_SELECTED, (event) => {
       HUDViewModel.refreshActionBarIfSelected(
