@@ -10,6 +10,10 @@ import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
 import {AnimationEventFactory} from "../factories/AnimationEventFactory";
 import {AnimationEvent} from "../events/AnimationEvent";
 import {ANIMATION} from "../constants/AnimationConstants";
+import {RefreshAttackTargetsEvent} from "../events/RefreshAttackTargetsEvent";
+import {ClearAttackTargetsEvent} from "../events/ClearAttackTargetsEvent";
+import {ClearMoveTargetsEvent} from "../events/ClearMoveTargetsEvent";
+import {ClearDefendTargetsEvent} from "../events/ClearDefendTargetsEvent";
 
 export class StructListener extends AbstractGrassListener {
 
@@ -118,6 +122,9 @@ export class StructListener extends AbstractGrassListener {
 
     let removePendingBuild = false;
     let renderStruct = true;
+    let structDestroyed = false;
+    /** @type {AnimationEvent|null} */
+    let stealthAnimationEvent = null;
     const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
     const mapId = this.gameState[mapType]?.mapId ?? null;
 
@@ -145,22 +152,22 @@ export class StructListener extends AbstractGrassListener {
       && (messageData.detail.status & STRUCT_STATUS_FLAGS.HIDDEN) > 0
     ) {
       renderStruct = false;
-      const animationEvent = this.animationEventFactory.makeStealthActivateAnimationEvent(
+      stealthAnimationEvent = this.animationEventFactory.makeStealthActivateAnimationEvent(
         messageData.detail.struct_id,
         mapId
       );
-      this.gameState.animationEventQueue.enqueue(animationEvent);
+      this.gameState.animationEventQueue.enqueue(stealthAnimationEvent);
 
     } else if (
       (messageData.detail.status_old & STRUCT_STATUS_FLAGS.HIDDEN) > 0
       && (messageData.detail.status & STRUCT_STATUS_FLAGS.HIDDEN) === 0
     ) {
       renderStruct = false;
-      const animationEvent = this.animationEventFactory.makeStealthDeactivateAnimationEvent(
+      stealthAnimationEvent = this.animationEventFactory.makeStealthDeactivateAnimationEvent(
         messageData.detail.struct_id,
         mapId
       );
-      this.gameState.animationEventQueue.enqueue(animationEvent);
+      this.gameState.animationEventQueue.enqueue(stealthAnimationEvent);
 
     } else if (
       (messageData.detail.status_old & STRUCT_STATUS_FLAGS.DESTROYED) === 0
@@ -173,6 +180,7 @@ export class StructListener extends AbstractGrassListener {
       // instance), stalling the animation queue so the destroy animation never
       // dequeues.
       renderStruct = false;
+      structDestroyed = true;
 
     } else {
       // Any other status transition (e.g. ONLINE/OFFLINE, LOCKED, STORED, or
@@ -186,14 +194,46 @@ export class StructListener extends AbstractGrassListener {
       renderStruct = false;
     }
 
-    this.structManager.refreshStruct(
+    const refreshStructPromise = this.structManager.refreshStruct(
       messageData.detail.struct_id,
       mapType,
       removePendingBuild,
       renderStruct
-    ).then((struct) => {
+    );
 
-      this.gameState.actionBarLock.clear();
+    if (stealthAnimationEvent && mapId) {
+      // Entering or leaving stealth changes which weapons can reach the struct,
+      // so any targeting mode still open needs its markers re-evaluated. Hold
+      // that until the cloak animation has played and the struct data
+      // confirming it has landed, otherwise the markers contradict what the
+      // player still sees on the map and are re-derived from a stale status.
+      stealthAnimationEvent.onAnimationEnd = () => {
+        refreshStructPromise.then(() => {
+          window.dispatchEvent(new RefreshAttackTargetsEvent(mapId));
+        });
+      };
+    }
+
+    refreshStructPromise.then((struct) => {
+
+      // Only settle the lock when one is actually held. Every player on the
+      // map feeds this handler, so clearing unconditionally lets an enemy's
+      // status change cancel a targeting mode the player is still in the
+      // middle of, which holds no lock until a target is picked.
+      if (this.gameState.actionBarLock.isLocked()) {
+        this.gameState.actionBarLock.clear();
+      } else if (structDestroyed && this.isActionSourceStruct(messageData.detail.struct_id)) {
+        // Nothing holds the lock during target selection, so a destroyed source
+        // struct would otherwise leave the player picking a target for a struct
+        // that no longer exists and sending an action the chain will reject.
+        this.gameState.actionBarLock.clear();
+
+        if (mapId) {
+          window.dispatchEvent(new ClearAttackTargetsEvent(mapId));
+          window.dispatchEvent(new ClearMoveTargetsEvent(mapId));
+          window.dispatchEvent(new ClearDefendTargetsEvent(mapId));
+        }
+      }
 
       // Only kill build tasks for the player's own structs
       if (
@@ -204,6 +244,17 @@ export class StructListener extends AbstractGrassListener {
         window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
       }
     });
+  }
+
+  /**
+   * @param {string} structId
+   * @return {boolean} whether the struct is the one driving the action the
+   * player currently has open on the action bar
+   */
+  isActionSourceStruct(structId) {
+    const actionSourceStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+    return !!actionSourceStruct && actionSourceStruct.id === structId;
   }
 
   /**

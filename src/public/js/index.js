@@ -3464,6 +3464,7 @@ const EVENTS = {
   PLANET_RAID_STATUS_CHANGED: 'PLANET_RAID_STATUS_CHANGED',
   REFRESH_ACTION_BAR: 'REFRESH_ACTION_BAR',
   REFRESH_ACTION_BAR_IF_SELECTED: 'REFRESH_ACTION_BAR_IF_SELECTED',
+  REFRESH_ATTACK_TARGETS: 'REFRESH_ATTACK_TARGETS',
   RENDER_ALL_STRUCTS: 'RENDER_ALL_STRUCTS',
   RENDER_DEPLOYMENT_INDICATOR: 'RENDER_DEPLOYMENT_INDICATOR',
   RENDER_PLAYER_PFP: 'RENDER_PLAYER_PFP',
@@ -6534,6 +6535,33 @@ class RefreshActionBarIfSelectedEvent extends CustomEvent {
 
 /***/ }),
 
+/***/ "./js/events/RefreshAttackTargetsEvent.js":
+/*!************************************************!*\
+  !*** ./js/events/RefreshAttackTargetsEvent.js ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RefreshAttackTargetsEvent: () => (/* binding */ RefreshAttackTargetsEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class RefreshAttackTargetsEvent extends CustomEvent {
+  /**
+   * @param {string} mapId
+   */
+  constructor(mapId) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.REFRESH_ATTACK_TARGETS);
+    this.mapId = mapId;
+  }
+}
+
+
+/***/ }),
+
 /***/ "./js/events/RenderDeploymentIndicatorEvent.js":
 /*!*****************************************************!*\
   !*** ./js/events/RenderDeploymentIndicatorEvent.js ***!
@@ -7460,7 +7488,10 @@ class AnimationEventFactory {
       (
         attackStructType === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_3__.STRUCT_TYPES.CRUISER
         && attackStructOperatingAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_4__.AMBITS.WATER
-        && targetStructOperatingAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_4__.AMBITS.LAND
+        && (
+          targetStructOperatingAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_4__.AMBITS.LAND
+          || targetStructOperatingAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_4__.AMBITS.WATER
+        )
         && weaponSystem === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_3__.STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
       )
       || (
@@ -11543,6 +11574,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _factories_AnimationEventFactory__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../factories/AnimationEventFactory */ "./js/factories/AnimationEventFactory.js");
 /* harmony import */ var _events_AnimationEvent__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../events/AnimationEvent */ "./js/events/AnimationEvent.js");
 /* harmony import */ var _constants_AnimationConstants__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../constants/AnimationConstants */ "./js/constants/AnimationConstants.js");
+/* harmony import */ var _events_RefreshAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../events/RefreshAttackTargetsEvent */ "./js/events/RefreshAttackTargetsEvent.js");
+/* harmony import */ var _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../events/ClearAttackTargetsEvent */ "./js/events/ClearAttackTargetsEvent.js");
+/* harmony import */ var _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../events/ClearMoveTargetsEvent */ "./js/events/ClearMoveTargetsEvent.js");
+/* harmony import */ var _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../events/ClearDefendTargetsEvent */ "./js/events/ClearDefendTargetsEvent.js");
+
+
+
+
 
 
 
@@ -11663,6 +11702,9 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
 
     let removePendingBuild = false;
     let renderStruct = true;
+    let structDestroyed = false;
+    /** @type {AnimationEvent|null} */
+    let stealthAnimationEvent = null;
     const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
     const mapId = this.gameState[mapType]?.mapId ?? null;
 
@@ -11690,22 +11732,22 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
       && (messageData.detail.status & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_5__.STRUCT_STATUS_FLAGS.HIDDEN) > 0
     ) {
       renderStruct = false;
-      const animationEvent = this.animationEventFactory.makeStealthActivateAnimationEvent(
+      stealthAnimationEvent = this.animationEventFactory.makeStealthActivateAnimationEvent(
         messageData.detail.struct_id,
         mapId
       );
-      this.gameState.animationEventQueue.enqueue(animationEvent);
+      this.gameState.animationEventQueue.enqueue(stealthAnimationEvent);
 
     } else if (
       (messageData.detail.status_old & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_5__.STRUCT_STATUS_FLAGS.HIDDEN) > 0
       && (messageData.detail.status & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_5__.STRUCT_STATUS_FLAGS.HIDDEN) === 0
     ) {
       renderStruct = false;
-      const animationEvent = this.animationEventFactory.makeStealthDeactivateAnimationEvent(
+      stealthAnimationEvent = this.animationEventFactory.makeStealthDeactivateAnimationEvent(
         messageData.detail.struct_id,
         mapId
       );
-      this.gameState.animationEventQueue.enqueue(animationEvent);
+      this.gameState.animationEventQueue.enqueue(stealthAnimationEvent);
 
     } else if (
       (messageData.detail.status_old & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_5__.STRUCT_STATUS_FLAGS.DESTROYED) === 0
@@ -11718,6 +11760,7 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
       // instance), stalling the animation queue so the destroy animation never
       // dequeues.
       renderStruct = false;
+      structDestroyed = true;
 
     } else {
       // Any other status transition (e.g. ONLINE/OFFLINE, LOCKED, STORED, or
@@ -11731,14 +11774,46 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
       renderStruct = false;
     }
 
-    this.structManager.refreshStruct(
+    const refreshStructPromise = this.structManager.refreshStruct(
       messageData.detail.struct_id,
       mapType,
       removePendingBuild,
       renderStruct
-    ).then((struct) => {
+    );
 
-      this.gameState.actionBarLock.clear();
+    if (stealthAnimationEvent && mapId) {
+      // Entering or leaving stealth changes which weapons can reach the struct,
+      // so any targeting mode still open needs its markers re-evaluated. Hold
+      // that until the cloak animation has played and the struct data
+      // confirming it has landed, otherwise the markers contradict what the
+      // player still sees on the map and are re-derived from a stale status.
+      stealthAnimationEvent.onAnimationEnd = () => {
+        refreshStructPromise.then(() => {
+          window.dispatchEvent(new _events_RefreshAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_12__.RefreshAttackTargetsEvent(mapId));
+        });
+      };
+    }
+
+    refreshStructPromise.then((struct) => {
+
+      // Only settle the lock when one is actually held. Every player on the
+      // map feeds this handler, so clearing unconditionally lets an enemy's
+      // status change cancel a targeting mode the player is still in the
+      // middle of, which holds no lock until a target is picked.
+      if (this.gameState.actionBarLock.isLocked()) {
+        this.gameState.actionBarLock.clear();
+      } else if (structDestroyed && this.isActionSourceStruct(messageData.detail.struct_id)) {
+        // Nothing holds the lock during target selection, so a destroyed source
+        // struct would otherwise leave the player picking a target for a struct
+        // that no longer exists and sending an action the chain will reject.
+        this.gameState.actionBarLock.clear();
+
+        if (mapId) {
+          window.dispatchEvent(new _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_13__.ClearAttackTargetsEvent(mapId));
+          window.dispatchEvent(new _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_14__.ClearMoveTargetsEvent(mapId));
+          window.dispatchEvent(new _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_15__.ClearDefendTargetsEvent(mapId));
+        }
+      }
 
       // Only kill build tasks for the player's own structs
       if (
@@ -11749,6 +11824,17 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
         window.dispatchEvent(new _events_TaskCmdKillEvent__WEBPACK_IMPORTED_MODULE_3__.TaskCmdKillEvent(messageData.detail.struct_id));
       }
     });
+  }
+
+  /**
+   * @param {string} structId
+   * @return {boolean} whether the struct is the one driving the action the
+   * player currently has open on the action bar
+   */
+  isActionSourceStruct(structId) {
+    const actionSourceStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+    return !!actionSourceStruct && actionSourceStruct.id === structId;
   }
 
   /**
@@ -21994,6 +22080,15 @@ class AmbitUtil {
     });
   }
 
+  /**
+   * @param {string|null} ambitA
+   * @param {string|null} ambitB
+   * @return {boolean}
+   */
+  isSame(ambitA, ambitB) {
+    return !!ambitA && !!ambitB && ambitA.toLowerCase() === ambitB.toLowerCase();
+  }
+
 }
 
 /***/ }),
@@ -22056,6 +22151,134 @@ class AttackSequenceAnimationUtil {
     return animationNames.some(
       (name) => AttackSequenceAnimationUtil.isAttackSequenceAnimation(name)
     );
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/util/AttackTargetUtil.js":
+/*!*************************************!*\
+  !*** ./js/util/AttackTargetUtil.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AttackTargetUtil: () => (/* binding */ AttackTargetUtil)
+/* harmony export */ });
+/* harmony import */ var _AmbitUtil__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AmbitUtil */ "./js/util/AmbitUtil.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/StructConstants */ "./js/constants/StructConstants.js");
+/* harmony import */ var _models_Struct__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../models/Struct */ "./js/models/Struct.js");
+
+
+
+
+
+/**
+ * Single source of truth for whether a struct can be attacked by the struct the
+ * player is currently acting with.
+ *
+ * The map draws invalid targets and the tile selection layer accepts clicks on
+ * valid ones, and the two run at different times off different inputs. Sharing
+ * the rule keeps a tile from being clickable while it looks invalid, or the
+ * reverse.
+ */
+class AttackTargetUtil {
+
+  /**
+   * @param {GameState} gameState
+   * @param {StructManager} structManager
+   */
+  constructor(gameState, structManager) {
+    this.gameState = gameState;
+    this.structManager = structManager;
+    this.ambitUtil = new _AmbitUtil__WEBPACK_IMPORTED_MODULE_0__.AmbitUtil();
+  }
+
+  /**
+   * A struct in stealth mode is only reachable from its own ambit, regardless of
+   * what the attacking weapon would otherwise be able to reach.
+   *
+   * @param {Struct} attackingStruct
+   * @param {Struct} targetStruct
+   * @return {boolean}
+   */
+  isConcealedFrom(attackingStruct, targetStruct) {
+    return targetStruct.isHidden()
+      && !this.ambitUtil.isSame(attackingStruct.operating_ambit, targetStruct.operating_ambit);
+  }
+
+  /**
+   * @param {Struct|null} attackingStruct
+   * @param {Struct|null} targetStruct
+   * @param {string[]} weaponAmbitsArray - Valid target ambits for the weapon (e.g. ["space", "air"])
+   * @return {boolean}
+   */
+  isValidTarget(attackingStruct, targetStruct, weaponAmbitsArray) {
+    if (!attackingStruct || !targetStruct || !weaponAmbitsArray) {
+      return false;
+    }
+
+    if (targetStruct.owner === this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_1__.PLAYER_TYPES.PLAYER].id) {
+      return false;
+    }
+
+    if (!this.ambitUtil.contains(
+      weaponAmbitsArray,
+      targetStruct.operating_ambit,
+      attackingStruct.operating_ambit
+    )) {
+      return false;
+    }
+
+    return !this.isConcealedFrom(attackingStruct, targetStruct);
+  }
+
+  /**
+   * @param {string|null} targetStructId
+   * @param {Struct|null} attackingStruct
+   * @param {string[]} weaponAmbitsArray
+   * @return {boolean}
+   */
+  isValidTargetById(targetStructId, attackingStruct, weaponAmbitsArray) {
+    return this.isValidTarget(
+      attackingStruct,
+      this.structManager.getStructById(targetStructId),
+      weaponAmbitsArray
+    );
+  }
+
+  /**
+   * The ambits the action bar's active weapon can currently target, derived from
+   * the action bar rather than from the event that opened targeting mode, so a
+   * re-evaluation mid-selection reads the same state the click handler will.
+   *
+   * @return {string[]|null} null when the action bar is not in attack mode
+   */
+  getActiveWeaponAmbitsArray() {
+    const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+    if (!attackingStruct) {
+      return null;
+    }
+
+    const structType = this.gameState.structTypes.getStructTypeById(attackingStruct.type);
+
+    if (!structType) {
+      return null;
+    }
+
+    switch (this.gameState.actionBarLock.getCurrentAction()) {
+      case _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON:
+        return structType.primary_weapon_ambits_array;
+      case _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON:
+        return structType.secondary_weapon_ambits_array;
+      default:
+        return null;
+    }
   }
 }
 
@@ -27459,11 +27682,19 @@ class MapStructViewerComponent {
       }
 
       animation.onCompleteCallback = () => {
-        let isHidden = false;
+        // Rebuilding the still discards a submersible's hidden art, so the
+        // struct's own status decides the state to restore. Only the stealth
+        // transitions know better than gameState: their animation is enqueued
+        // alongside the refresh that confirms them, so the new flag may not
+        // have landed yet by the time this fires.
+        const struct = this.structManager.getStructById(this.structId);
+        let isHidden = !!struct && struct.isHidden();
+
         if (animationName === _constants_AnimationConstants__WEBPACK_IMPORTED_MODULE_0__.ANIMATION.NAMES.STEALTH.ACTIVATE) {
           isHidden = true;
           this.setStealthActive(true);
         } else if (animationName === _constants_AnimationConstants__WEBPACK_IMPORTED_MODULE_0__.ANIMATION.NAMES.STEALTH.DEACTIVATE) {
+          isHidden = false;
           this.setStealthActive(false);
         }
 
@@ -33113,7 +33344,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _models_Struct__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../../models/Struct */ "./js/models/Struct.js");
 /* harmony import */ var _GenericMapLayerComponent__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./GenericMapLayerComponent */ "./js/view_models/components/map/GenericMapLayerComponent.js");
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
-/* harmony import */ var _util_AmbitUtil__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../../util/AmbitUtil */ "./js/util/AmbitUtil.js");
+/* harmony import */ var _util_AttackTargetUtil__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../../util/AttackTargetUtil */ "./js/util/AttackTargetUtil.js");
 /* harmony import */ var _MapStructViewerComponent__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../MapStructViewerComponent */ "./js/view_models/components/MapStructViewerComponent.js");
 /* harmony import */ var _models_Planet__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../../../models/Planet */ "./js/models/Planet.js");
 
@@ -33169,7 +33400,7 @@ class MapStructLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPORTE
     );
 
     this.structStillBuilder = new _builders_StructStillBuilder__WEBPACK_IMPORTED_MODULE_1__.StructStillBuilder(this.gameState);
-    this.ambitUtil = new _util_AmbitUtil__WEBPACK_IMPORTED_MODULE_6__.AmbitUtil();
+    this.attackTargetUtil = new _util_AttackTargetUtil__WEBPACK_IMPORTED_MODULE_6__.AttackTargetUtil(this.gameState, structManager);
 
     /** @type {Object<string, MapStructViewerComponent>} */
     this.mapStructViewers = {};
@@ -33349,34 +33580,61 @@ class MapStructLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPORTE
   }
 
   /**
-   * Mark enemy structs as invalid selections when entering attack mode
-   * if their operating ambit does not fall within the weapon's ambit array.
+   * Mark every struct the attacking weapon cannot hit as an invalid selection
+   * when entering attack mode.
    *
    * @param {string[]} weaponAmbitsArray - Valid target ambits for the weapon (e.g. ["space", "air"])
    */
   showAttackTargets(weaponAmbitsArray) {
-    const container = document.getElementById(this.containerId);
-    const attackingPlayerId = this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER].id;
     const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+    if (!attackingStruct) {
+      return;
+    }
+
+    const container = document.getElementById(this.containerId);
     const tiles = container.querySelectorAll(`.map-struct-layer-tile[data-struct-id^="5"]`);
 
     tiles.forEach(tile => {
-      const ambit = tile.getAttribute('data-ambit');
-      const playerId = tile.getAttribute('data-player-id');
       const structId = tile.getAttribute('data-struct-id');
 
-      // Mark as invalid if the struct's operating ambit is not in the weapon's ambit array
-      // or the struct belongs to the player except if it's the attacking struct
-      if (
-        attackingStruct.id !== structId
-        && (
-          attackingPlayerId === playerId
-          || !this.ambitUtil.contains(weaponAmbitsArray, ambit, attackingStruct.operating_ambit)
-        )
-      ) {
+      // The attacking struct reads as the source of the action rather than a
+      // rejected target, so leave its own tile unmarked.
+      if (attackingStruct.id === structId) {
+        return;
+      }
+
+      if (!this.attackTargetUtil.isValidTargetById(structId, attackingStruct, weaponAmbitsArray)) {
         tile.classList.add('mod-invalid-selection');
       }
     });
+  }
+
+  /**
+   * Re-evaluate the invalid selection markers against current struct state.
+   *
+   * Target validity is not fixed for as long as the player is choosing one: a
+   * struct entering or leaving stealth mode changes which weapons can reach it,
+   * and the player is otherwise left looking at markers that no longer match
+   * what a click will do.
+   */
+  refreshAttackTargets() {
+    // Both planet maps stay mounted while only one is on screen, and markers
+    // are only ever drawn on the one the player is looking at. The other map
+    // has nothing to correct, and repainting it against the attacker's reach
+    // would strand invalid-selection marks it has no way to clear.
+    if (this.mapId !== this.gameState.getActiveMapId()) {
+      return;
+    }
+
+    const weaponAmbitsArray = this.attackTargetUtil.getActiveWeaponAmbitsArray();
+
+    if (!weaponAmbitsArray) {
+      return;
+    }
+
+    this.clearAttackTargets();
+    this.showAttackTargets(weaponAmbitsArray);
   }
 
   /**
@@ -33481,6 +33739,12 @@ class MapStructLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPORTE
     this.addWindowEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.SHOW_ATTACK_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.showAttackTargets(event.weaponAmbitsArray);
+      }
+    });
+
+    this.addWindowEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.REFRESH_ATTACK_TARGETS, (event) => {
+      if (event.mapId === this.mapId) {
+        this.refreshAttackTargets();
       }
     });
 
@@ -34017,7 +34281,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../../../events/ClearAttackTargetsEvent */ "./js/events/ClearAttackTargetsEvent.js");
 /* harmony import */ var _events_ClearTileSelectionEvent__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../../../events/ClearTileSelectionEvent */ "./js/events/ClearTileSelectionEvent.js");
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../../../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
-/* harmony import */ var _util_AmbitUtil__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../../../util/AmbitUtil */ "./js/util/AmbitUtil.js");
+/* harmony import */ var _util_AttackTargetUtil__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../../../util/AttackTargetUtil */ "./js/util/AttackTargetUtil.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
 
 
@@ -34064,9 +34328,9 @@ class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__W
     mapId = ""
   ) {
     super(gameState);
-    this.ambitUtil = new _util_AmbitUtil__WEBPACK_IMPORTED_MODULE_13__.AmbitUtil();
     this.signingClientManager = signingClientManager;
     this.structManager = structManager;
+    this.attackTargetUtil = new _util_AttackTargetUtil__WEBPACK_IMPORTED_MODULE_13__.AttackTargetUtil(gameState, structManager);
     this.mapColBreakdown = mapColBreakdown;
     this.dividerIndex = this.mapColBreakdown.lastIndexOf(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DIVIDER);
     this.containerId = containerId;
@@ -34785,27 +35049,12 @@ class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__W
           || currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON
         ) {
           const targetStructId = e.currentTarget.getAttribute('data-struct-id');
-          const targetPlayerId = e.currentTarget.getAttribute('data-player-id');
           const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+          const weaponAmbitsArray = this.attackTargetUtil.getActiveWeaponAmbitsArray();
 
-          // Valid target: enemy struct whose ambit is within the weapon's ambit array
-          const isEnemy = targetPlayerId
-            && targetPlayerId !== this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_12__.PLAYER_TYPES.PLAYER].id;
-
-          if (targetStructId && isEnemy) {
-            const targetStruct = this.structManager.getStructById(targetStructId);
-            const attackerStructType = this.gameState.structTypes.getStructTypeById(attackingStruct.type);
-            const weaponAmbitsArray = (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON)
-              ? attackerStructType.primary_weapon_ambits_array
-              : attackerStructType.secondary_weapon_ambits_array;
-
-            if (
-              targetStruct
-              && this.ambitUtil.contains(weaponAmbitsArray, targetStruct.operating_ambit, attackingStruct.operating_ambit)
-            ) {
-              await this.handleAttackTargetClick(e.currentTarget, currentAction);
-              return;
-            }
+          if (this.attackTargetUtil.isValidTargetById(targetStructId, attackingStruct, weaponAmbitsArray)) {
+            await this.handleAttackTargetClick(e.currentTarget, currentAction);
+            return;
           }
 
           // Invalid target or empty tile - cancel attack mode
