@@ -25,20 +25,6 @@
     var icons;
     if (!supportsProperty('fontFeatureSettings')) {
         icons = {
-            'attention': '&#xe93e;',
-            'caret-down': '&#xe930;',
-            'caret-left': '&#xe931;',
-            'caret-right': '&#xe932;',
-            'caret-up': '&#xe933;',
-            'chevron-down': '&#xe934;',
-            'chevron-left': '&#xe935;',
-            'chevron-right': '&#xe936;',
-            'chevron-up': '&#xe937;',
-            'close': '&#xe938;',
-            'combat-log': '&#xe939;',
-            'copy': '&#xe93a;',
-            'edit': '&#xe93b;',
-            'refresh-8': '&#xe93c;',
             'beacon': '&#xe906;',
             'blocked': '&#xe907;',
             'enemy-tile': '&#xe90f;',
@@ -87,6 +73,20 @@
             'arrow': '&#xe904;',
             'add': '&#xe900;',
             'subtract': '&#xe92a;',
+            'attention': '&#xe93e;',
+            'caret-down': '&#xe930;',
+            'caret-left': '&#xe931;',
+            'caret-right': '&#xe932;',
+            'caret-up': '&#xe933;',
+            'chevron-down': '&#xe934;',
+            'chevron-left': '&#xe935;',
+            'chevron-right': '&#xe936;',
+            'chevron-up': '&#xe937;',
+            'close': '&#xe938;',
+            'combat-log': '&#xe939;',
+            'copy': '&#xe93a;',
+            'edit': '&#xe93b;',
+            'refresh-8': '&#xe93c;',
           '0': 0
         };
         delete icons['0'];

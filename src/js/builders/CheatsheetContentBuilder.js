@@ -752,6 +752,22 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     let html = '';
 
     switch (dataset.suiCheatsheet) {
+      case 'energy-supply-insufficient':
+        html = this.renderer.renderContentHTML(
+          'Energy Supply',
+          null,
+          null,
+          `Insufficient Energy. Deactivate Structs to reduce Energy draw.`
+        );
+        break;
+      case 'energy-supply-sufficient':
+        html = this.renderer.renderContentHTML(
+          'Energy Supply',
+          null,
+          null,
+          `Energy Supply normal.`
+        );
+        break;
       case 'icon-beacon':
         html = this.renderer.renderContentForEmptyTileHTML(
           'Planetary Beacon',
@@ -768,6 +784,14 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
         html = this.renderer.renderContentForEmptyTileHTML(
           'Command Post',
           'Only the Command Ship can be deployed to this location.'
+        );
+        break;
+      case 'icon-disabled':
+        html = this.renderer.renderContentHTML(
+          'Disabled',
+          null,
+          null,
+          `This Struct is disabled due to insufficient Energy supplies. Deactivate Structs to reduce Energy draw.`
         );
         break;
       case 'icon-enemy-tile':
@@ -808,10 +832,10 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
         break;
       case 'icon-unpowered':
         html = this.renderer.renderContentHTML(
-          'Unpowered',
+          'Deactivated',
           null,
           null,
-          `This Struct is not receiving power. It's abilities are not active.`
+          `This unit is deactivated. It's abilities are not active.`
         );
         break;
       case 'icon-attention':

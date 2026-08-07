@@ -32,4 +32,19 @@ export class Player {
   getUsername() {
     return (this.username && this.username.length > 0) ? `${this.username}` : 'Name Redacted';
   }
+
+  /**
+   * @return {boolean}
+   */
+  isOverloaded() {
+    const load = this.load ?? 0;
+    const structsLoad = this.structs_load ?? 0;
+    const capacity = this.capacity ?? 0;
+    const connectionCapacity = this.connection_capacity ?? 0;
+
+    let totalLoad = load + structsLoad;
+    let totalCapacity = capacity + connectionCapacity;
+
+    return totalLoad > totalCapacity;
+  }
 }
