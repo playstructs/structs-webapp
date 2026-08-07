@@ -18,6 +18,7 @@ export class AlphaChangeListener extends AbstractGrassListener {
 
     if (
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player
       && ['sent','received','refined'].includes(messageData.category)
       && (messageData.subject === subjectPrefix || messageData.subject.startsWith(`${subjectPrefix}.`))
     ) {

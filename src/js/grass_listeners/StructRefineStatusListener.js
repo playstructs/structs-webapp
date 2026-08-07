@@ -18,6 +18,7 @@ export class StructRefineStatusListener extends AbstractGrassListener {
   handler(messageData) {
     if (
       messageData.category === 'struct_block_ore_refine_start'
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player
       && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
     ) {
       if (messageData.detail.block === 0) {

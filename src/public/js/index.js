@@ -10172,6 +10172,7 @@ class AlphaChangeListener extends _framework_AbstractGrassListener__WEBPACK_IMPO
 
     if (
       this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_1__.PLAYER_TYPES.PLAYER].id
+      && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_1__.PLAYER_TYPES.PLAYER].player
       && ['sent','received','refined'].includes(messageData.category)
       && (messageData.subject === subjectPrefix || messageData.subject.startsWith(`${subjectPrefix}.`))
     ) {
@@ -10312,6 +10313,7 @@ class ConnectionCapacityListener extends _framework_AbstractGrassListener__WEBPA
   handler(messageData) {
     if (
       messageData.category === 'connectionCapacity'
+        && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_1__.PLAYER_TYPES.PLAYER].player
         && messageData.subject.startsWith(`structs.grid.substation.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_1__.PLAYER_TYPES.PLAYER].player.substation_id}.`)
     ) {
       this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_1__.PLAYER_TYPES.PLAYER].setConnectionCapacity(messageData.value);
@@ -12236,6 +12238,7 @@ class StructMineStatusListener extends _framework_AbstractGrassListener__WEBPACK
   handler(messageData) {
     if (
       messageData.category === 'struct_block_ore_mine_start'
+      && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER].player
       && messageData.subject === `structs.planet.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER].player.planet_id}.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER].id}`
     ) {
       if (messageData.detail.block === 0) {
@@ -12290,6 +12293,7 @@ class StructRefineStatusListener extends _framework_AbstractGrassListener__WEBPA
   handler(messageData) {
     if (
       messageData.category === 'struct_block_ore_refine_start'
+      && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER].player
       && messageData.subject === `structs.planet.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER].player.planet_id}.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER].id}`
     ) {
       if (messageData.detail.block === 0) {
