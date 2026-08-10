@@ -47,10 +47,28 @@ class StructManager
               s.*, 
               COALESCE(sa_health.val, 0) AS health,
               COALESCE(sa_status.val, 0) AS status,
-              sd_is_defender.protected_struct_id,
+              CASE
+                WHEN sd_is_defender.protected_struct_id IS NOT NULL
+                 AND (
+                      s.location_id = ps.location_id
+                   OR (s.location_type = \'fleet\' AND ps.location_type = \'planet\' AND s_fleet.location_id = ps.location_id)
+                   OR (s.location_type = \'planet\' AND ps.location_type = \'fleet\' AND ps_fleet.location_id = s.location_id)
+                 )
+                THEN sd_is_defender.protected_struct_id
+              END AS protected_struct_id,
               to_jsonb(COALESCE((SELECT array_agg(sd.defending_struct_id ORDER BY sd.defending_struct_id ASC)
                FROM struct_defender sd
-               WHERE sd.protected_struct_id = s.id), ARRAY[]::text[])) AS defending_struct_ids,
+               INNER JOIN struct d
+                 ON d.id = sd.defending_struct_id
+               LEFT JOIN fleet d_fleet
+                 ON d.location_type = \'fleet\'
+                 AND d_fleet.id = d.location_id
+               WHERE sd.protected_struct_id = s.id
+               AND (
+                    d.location_id = s.location_id
+                 OR (d.location_type = \'fleet\' AND s.location_type = \'planet\' AND d_fleet.location_id = s.location_id)
+                 OR (d.location_type = \'planet\' AND s.location_type = \'fleet\' AND s_fleet.location_id = d.location_id)
+               )), ARRAY[]::text[])) AS defending_struct_ids,
               CASE
                 WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN UNIT_LEGACY_FORMAT(COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0), \'ualpha\')
                 ELSE 0
@@ -66,6 +84,14 @@ class StructManager
               AND sa_status.attribute_type = \'status\'
             LEFT JOIN struct_defender sd_is_defender
               ON s.id = sd_is_defender.defending_struct_id
+            LEFT JOIN struct ps
+              ON ps.id = sd_is_defender.protected_struct_id
+            LEFT JOIN fleet s_fleet
+              ON s.location_type = \'fleet\'
+              AND s_fleet.id = s.location_id
+            LEFT JOIN fleet ps_fleet
+              ON ps.location_type = \'fleet\'
+              AND ps_fleet.id = ps.location_id
             WHERE s.owner = :player_id
             AND (
               s.is_destroyed = false 
@@ -107,10 +133,28 @@ class StructManager
               s.*, 
               COALESCE(sa_health.val, 0) AS health,
               COALESCE(sa_status.val, 0) AS status,
-              sd_is_defender.protected_struct_id,
+              CASE
+                WHEN sd_is_defender.protected_struct_id IS NOT NULL
+                 AND (
+                      s.location_id = ps.location_id
+                   OR (s.location_type = \'fleet\' AND ps.location_type = \'planet\' AND s_fleet.location_id = ps.location_id)
+                   OR (s.location_type = \'planet\' AND ps.location_type = \'fleet\' AND ps_fleet.location_id = s.location_id)
+                 )
+                THEN sd_is_defender.protected_struct_id
+              END AS protected_struct_id,
               to_jsonb(COALESCE((SELECT array_agg(sd.defending_struct_id ORDER BY sd.defending_struct_id ASC)
                FROM struct_defender sd
-               WHERE sd.protected_struct_id = s.id), ARRAY[]::text[])) AS defending_struct_ids,
+               INNER JOIN struct d
+                 ON d.id = sd.defending_struct_id
+               LEFT JOIN fleet d_fleet
+                 ON d.location_type = \'fleet\'
+                 AND d_fleet.id = d.location_id
+               WHERE sd.protected_struct_id = s.id
+               AND (
+                    d.location_id = s.location_id
+                 OR (d.location_type = \'fleet\' AND s.location_type = \'planet\' AND d_fleet.location_id = s.location_id)
+                 OR (d.location_type = \'planet\' AND s.location_type = \'fleet\' AND s_fleet.location_id = d.location_id)
+               )), ARRAY[]::text[])) AS defending_struct_ids,
               CASE
                 WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN UNIT_LEGACY_FORMAT(COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0), \'ualpha\')
                 ELSE 0
@@ -126,6 +170,14 @@ class StructManager
               AND sa_status.attribute_type = \'status\'
             LEFT JOIN struct_defender sd_is_defender
               ON s.id = sd_is_defender.defending_struct_id
+            LEFT JOIN struct ps
+              ON ps.id = sd_is_defender.protected_struct_id
+            LEFT JOIN fleet s_fleet
+              ON s.location_type = \'fleet\'
+              AND s_fleet.id = s.location_id
+            LEFT JOIN fleet ps_fleet
+              ON ps.location_type = \'fleet\'
+              AND ps_fleet.id = ps.location_id
             WHERE s.id = :struct_id
             AND (
               s.is_destroyed = false 
