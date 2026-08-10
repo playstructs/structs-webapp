@@ -235,7 +235,10 @@ export class AnimationEventFactory {
       (
         attackStructType === STRUCT_TYPES.CRUISER
         && attackStructOperatingAmbit === AMBITS.WATER
-        && targetStructOperatingAmbit === AMBITS.LAND
+        && (
+          targetStructOperatingAmbit === AMBITS.LAND
+          || targetStructOperatingAmbit === AMBITS.WATER
+        )
         && weaponSystem === STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
       )
       || (
