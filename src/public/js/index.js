@@ -11612,6 +11612,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../events/ClearAttackTargetsEvent */ "./js/events/ClearAttackTargetsEvent.js");
 /* harmony import */ var _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../events/ClearMoveTargetsEvent */ "./js/events/ClearMoveTargetsEvent.js");
 /* harmony import */ var _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../events/ClearDefendTargetsEvent */ "./js/events/ClearDefendTargetsEvent.js");
+/* harmony import */ var _models_Struct__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../models/Struct */ "./js/models/Struct.js");
+
 
 
 
@@ -11857,7 +11859,30 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
       ) {
         window.dispatchEvent(new _events_TaskCmdKillEvent__WEBPACK_IMPORTED_MODULE_3__.TaskCmdKillEvent(messageData.detail.struct_id));
       }
+
+      // The player's fleet holds a reference to the command struct that needs to be updated
+      this.syncFleetCommandStruct(struct);
     });
+  }
+
+  /**
+   * Update the player's fleet to point at a command struct that has just been built.
+   *
+   * @param {Struct|null} struct
+   */
+  syncFleetCommandStruct(struct) {
+    const player = this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER];
+
+    // The fleet id also stands in for a fleet that hasn't been loaded yet.
+    if (!struct || struct.owner !== player.id || struct.location_id !== player.fleet?.id) {
+      return;
+    }
+
+    if (!this.structManager.isCommandStruct(struct) || !struct.isBuilt() || struct.isDestroyed()) {
+      return;
+    }
+
+    player.fleet.command_struct = struct.id;
   }
 
   /**
@@ -16729,7 +16754,7 @@ class StructManager {
    */
   isCommandStruct(struct) {
     const structType = this.gameState.structTypes.getStructTypeById(struct.type);
-    return !!structType.is_command;
+    return !!structType?.is_command;
   }
 
   /**

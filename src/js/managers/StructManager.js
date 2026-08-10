@@ -39,7 +39,7 @@ export class StructManager {
    */
   isCommandStruct(struct) {
     const structType = this.gameState.structTypes.getStructTypeById(struct.type);
-    return !!structType.is_command;
+    return !!structType?.is_command;
   }
 
   /**

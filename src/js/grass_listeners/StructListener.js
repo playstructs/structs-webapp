@@ -14,6 +14,7 @@ import {RefreshAttackTargetsEvent} from "../events/RefreshAttackTargetsEvent";
 import {ClearAttackTargetsEvent} from "../events/ClearAttackTargetsEvent";
 import {ClearMoveTargetsEvent} from "../events/ClearMoveTargetsEvent";
 import {ClearDefendTargetsEvent} from "../events/ClearDefendTargetsEvent";
+import {Struct} from "../models/Struct";
 
 export class StructListener extends AbstractGrassListener {
 
@@ -243,7 +244,30 @@ export class StructListener extends AbstractGrassListener {
       ) {
         window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
       }
+
+      // The player's fleet holds a reference to the command struct that needs to be updated
+      this.syncFleetCommandStruct(struct);
     });
+  }
+
+  /**
+   * Update the player's fleet to point at a command struct that has just been built.
+   *
+   * @param {Struct|null} struct
+   */
+  syncFleetCommandStruct(struct) {
+    const player = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER];
+
+    // The fleet id also stands in for a fleet that hasn't been loaded yet.
+    if (!struct || struct.owner !== player.id || struct.location_id !== player.fleet?.id) {
+      return;
+    }
+
+    if (!this.structManager.isCommandStruct(struct) || !struct.isBuilt() || struct.isDestroyed()) {
+      return;
+    }
+
+    player.fleet.command_struct = struct.id;
   }
 
   /**
