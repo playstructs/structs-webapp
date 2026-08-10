@@ -267,11 +267,19 @@ export class MapStructViewerComponent {
       }
 
       animation.onCompleteCallback = () => {
-        let isHidden = false;
+        // Rebuilding the still discards a submersible's hidden art, so the
+        // struct's own status decides the state to restore. Only the stealth
+        // transitions know better than gameState: their animation is enqueued
+        // alongside the refresh that confirms them, so the new flag may not
+        // have landed yet by the time this fires.
+        const struct = this.structManager.getStructById(this.structId);
+        let isHidden = !!struct && struct.isHidden();
+
         if (animationName === ANIMATION.NAMES.STEALTH.ACTIVATE) {
           isHidden = true;
           this.setStealthActive(true);
         } else if (animationName === ANIMATION.NAMES.STEALTH.DEACTIVATE) {
+          isHidden = false;
           this.setStealthActive(false);
         }
 

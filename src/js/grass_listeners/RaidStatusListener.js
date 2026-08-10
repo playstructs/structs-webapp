@@ -6,6 +6,7 @@ import {PLANET_CARD_TYPES} from "../constants/PlanetCardTypes";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
 import {TaskCmdSpawnEvent} from "../events/TaskCmdSpawnEvent";
+import {TaskCmdReconcileEvent} from "../events/TaskCmdReconcileEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {NotificationDialogueSequenceFactory} from "../factories/NotificationDialogueSequenceFactory";
 import {NOTIFICATION_DIALOGUE_SEQUENCES} from "../constants/NotificationDialogueSequences";
@@ -97,6 +98,9 @@ export class RaidStatusListener extends AbstractGrassListener {
 
       // Clear the planet raid info
       this.gameState.clearRaidData();
+
+      // Ore changed hands, so pick up any refining the seized ore allows.
+      window.dispatchEvent(new TaskCmdReconcileEvent());
 
       this.mapManager.configureRaidMap();
       this.gameState.raidMap.render();

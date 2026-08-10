@@ -17,4 +17,13 @@ export class AmbitUtil {
     });
   }
 
+  /**
+   * @param {string|null} ambitA
+   * @param {string|null} ambitB
+   * @return {boolean}
+   */
+  isSame(ambitA, ambitB) {
+    return !!ambitA && !!ambitB && ambitA.toLowerCase() === ambitB.toLowerCase();
+  }
+
 }
