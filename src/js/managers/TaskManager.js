@@ -39,6 +39,9 @@ export class TaskManager {
         this.waiting_queue = [];
         this.running_queue = [];
 
+        /** @type {Promise<void>|null} In-flight work lookup, shared by concurrent callers. */
+        this.outstanding_work_lookup = null;
+
         /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
@@ -108,6 +111,13 @@ export class TaskManager {
             this.spawn(event.state);
         }.bind(this));
 
+
+        // TASK_CMD_RECONCILE
+        // Can be dispatched anywhere the chain may have handed the player work
+        // that no local task is covering yet.
+        window.addEventListener(EVENTS.TASK_CMD_RECONCILE, function (event) {
+            this.spawnOutstandingWork();
+        }.bind(this));
 
         // TASK_CMD_SWEEP
         // Can be dispatched anywhere to remove a job from the processes object
@@ -590,14 +600,53 @@ export class TaskManager {
             return;
         }
 
+        return this.spawnOutstandingWork();
+    }
+
+    /**
+     * Picks up outstanding work the player isn't running yet, such as refining
+     * that only became possible once ore changed hands during a raid.
+     *
+     * Work stopping is already covered by the struct status listeners, which
+     * kill the task when the chain reports the job's start block as zero, so
+     * this only ever needs to start things.
+     *
+     * @return {Promise<void>}
+     */
+    async spawnOutstandingWork() {
+        if (!this.outstanding_work_lookup) {
+            this.outstanding_work_lookup = this.fetchAndSpawnOutstandingWork()
+                .catch((error) => {
+                    console.warn('[TaskManager] could not pick up outstanding work:', error);
+                })
+                .finally(() => {
+                    this.outstanding_work_lookup = null;
+                });
+        }
+
+        return this.outstanding_work_lookup;
+    }
+
+    /**
+     * @return {Promise<void>}
+     */
+    async fetchAndSpawnOutstandingWork() {
         const work = await this.guildAPI.getWorkByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
+
         work.forEach((workTask) => {
             const task = this.taskStateFactory.initTaskFromWork(workTask);
 
+            // Only fill in the gaps. A struct that already has a process is
+            // being worked on, and respawning it would restart the worker and
+            // throw away the progress it has made.
+            if (this.processes[task.getPID()]) {
+                return;
+            }
+
             // A raid task may only run while the targeted planet's shield is
             // vulnerable. The backend work record can persist outside that
-            // window, so don't restore (and make sure we tear down) a raid task
-            // whose planet is no longer SHIELDS_VULNERABLE.
+            // window, so don't restore a raid task whose planet is no longer
+            // SHIELDS_VULNERABLE.
             if (
                 task.task_type === TASK_TYPES.RAID
                 && !this.isRaidTaskShieldVulnerable(task)

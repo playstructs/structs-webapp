@@ -3484,6 +3484,7 @@ const EVENTS = {
   TASK_CMD_MANAGER_PAUSE: 'TASK_CMD_MANAGER_PAUSE',
   TASK_CMD_MANAGER_RESUME: 'TASK_CMD_MANAGER_RESUME',
   TASK_CMD_PAUSE: 'TASK_CMD_PAUSE',
+  TASK_CMD_RECONCILE: 'TASK_CMD_RECONCILE',
   TASK_CMD_RESUME: 'TASK_CMD_RESUME',
   TASK_CMD_SPAWN: 'TASK_CMD_SPAWN',
   TASK_CMD_FORCE_RUN: 'TASK_CMD_FORCE_RUN',
@@ -6972,6 +6973,29 @@ class TaskCmdKillEvent extends CustomEvent {
   constructor(pid) {
     super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_CMD_KILL);
     this.pid = pid;
+  }
+}
+
+
+/***/ }),
+
+/***/ "./js/events/TaskCmdReconcileEvent.js":
+/*!********************************************!*\
+  !*** ./js/events/TaskCmdReconcileEvent.js ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TaskCmdReconcileEvent: () => (/* binding */ TaskCmdReconcileEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class TaskCmdReconcileEvent extends CustomEvent {
+  constructor() {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_CMD_RECONCILE);
   }
 }
 
@@ -10737,7 +10761,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _factories_NotificationDialogueSequenceFactory__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../factories/NotificationDialogueSequenceFactory */ "./js/factories/NotificationDialogueSequenceFactory.js");
 /* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../constants/MapConstants */ "./js/constants/MapConstants.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _events_TaskCmdReconcileEvent__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../events/TaskCmdReconcileEvent */ "./js/events/TaskCmdReconcileEvent.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 
@@ -10816,6 +10842,9 @@ class PlanetRaidStatusListener extends _framework_AbstractGrassListener__WEBPACK
 
   raidEndActions() {
     this.gameState.clearPlanetRaidData();
+
+    // Ore changed hands, so pick up whatever work the player is left with.
+    window.dispatchEvent(new _events_TaskCmdReconcileEvent__WEBPACK_IMPORTED_MODULE_8__.TaskCmdReconcileEvent());
 
     this.mapManager.configureAlphaBaseMap()
     this.gameState.alphaBaseMap.render();
@@ -11300,11 +11329,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../factories/TaskStateFactory */ "./js/factories/TaskStateFactory.js");
 /* harmony import */ var _events_TaskCmdKillEvent__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../events/TaskCmdKillEvent */ "./js/events/TaskCmdKillEvent.js");
 /* harmony import */ var _events_TaskCmdSpawnEvent__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../events/TaskCmdSpawnEvent */ "./js/events/TaskCmdSpawnEvent.js");
-/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
-/* harmony import */ var _factories_NotificationDialogueSequenceFactory__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../factories/NotificationDialogueSequenceFactory */ "./js/factories/NotificationDialogueSequenceFactory.js");
-/* harmony import */ var _constants_NotificationDialogueSequences__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../constants/NotificationDialogueSequences */ "./js/constants/NotificationDialogueSequences.js");
-/* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../constants/MapConstants */ "./js/constants/MapConstants.js");
+/* harmony import */ var _events_TaskCmdReconcileEvent__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../events/TaskCmdReconcileEvent */ "./js/events/TaskCmdReconcileEvent.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _factories_NotificationDialogueSequenceFactory__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../factories/NotificationDialogueSequenceFactory */ "./js/factories/NotificationDialogueSequenceFactory.js");
+/* harmony import */ var _constants_NotificationDialogueSequences__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../constants/NotificationDialogueSequences */ "./js/constants/NotificationDialogueSequences.js");
+/* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../constants/MapConstants */ "./js/constants/MapConstants.js");
 /* provided dependency */ var console = __webpack_require__(/*! ./node_modules/console-browserify/index.js */ "./node_modules/console-browserify/index.js");
+
 
 
 
@@ -11334,7 +11365,7 @@ class RaidStatusListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
     this.raidManager = raidManager;
     this.mapManager = mapManager;
     this.raidStatusUtil = new _util_RaidStatusUtil__WEBPACK_IMPORTED_MODULE_2__.RaidStatusUtil();
-    this.notificationDialogueSequenceFactory = new _factories_NotificationDialogueSequenceFactory__WEBPACK_IMPORTED_MODULE_9__.NotificationDialogueSequenceFactory();
+    this.notificationDialogueSequenceFactory = new _factories_NotificationDialogueSequenceFactory__WEBPACK_IMPORTED_MODULE_10__.NotificationDialogueSequenceFactory();
   }
 
   raidInitiated(messageData) {
@@ -11345,7 +11376,7 @@ class RaidStatusListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
     console.log('RAID INITIATED HANDLER');
 
     // Don't dispatch as we need to wait for the raid enemy info
-    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].setPlanetRaidStatus(messageData.detail.status, false);
+    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].setPlanetRaidStatus(messageData.detail.status, false);
 
     this.raidManager.initRaidEnemy().then(() => {
       console.log('RAID ENEMY INITIATED DONE');
@@ -11368,7 +11399,7 @@ class RaidStatusListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
 
     console.log('RAID ONGOING HANDLER');
 
-    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].setPlanetRaidStatus(messageData.detail.status);
+    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].setPlanetRaidStatus(messageData.detail.status);
 
     window.dispatchEvent(new _events_TaskCmdKillEvent__WEBPACK_IMPORTED_MODULE_6__.TaskCmdKillEvent(messageData.detail.fleet_id));
   }
@@ -11380,15 +11411,15 @@ class RaidStatusListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
 
     console.log('RAID SHIELD VULNERABLE HANDLER');
 
-    this.gameState.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id).then(shieldInfo => {
-      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
-      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].setPlanetRaidStatus(messageData.detail.status);
+    this.gameState.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id).then(shieldInfo => {
+      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
+      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].setPlanetRaidStatus(messageData.detail.status);
 
       window.dispatchEvent(new _events_TaskCmdSpawnEvent__WEBPACK_IMPORTED_MODULE_7__.TaskCmdSpawnEvent(new _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_5__.TaskStateFactory().initRaidTask(
         messageData.detail.fleet_id,
         messageData.detail.planet_id,
-        this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid,
-        this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield
+        this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.block_start_raid,
+        this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].planetShieldInfo.planetary_shield
       )));
     })
   }
@@ -11396,14 +11427,17 @@ class RaidStatusListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
 
   raidEndActions(messageData) {
     // Player's fleet needs updating as it's been moved back home.
-    this.gameState.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].id).then(playerFleet => {
+    this.gameState.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.PLAYER].id).then(playerFleet => {
 
-      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].fleet = playerFleet;
+      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.PLAYER].fleet = playerFleet;
 
       window.dispatchEvent(new _events_TaskCmdKillEvent__WEBPACK_IMPORTED_MODULE_6__.TaskCmdKillEvent(messageData.detail.fleet_id));
 
       // Clear the planet raid info
       this.gameState.clearRaidData();
+
+      // Ore changed hands, so pick up any refining the seized ore allows.
+      window.dispatchEvent(new _events_TaskCmdReconcileEvent__WEBPACK_IMPORTED_MODULE_8__.TaskCmdReconcileEvent());
 
       this.mapManager.configureRaidMap();
       this.gameState.raidMap.render();
@@ -11411,8 +11445,8 @@ class RaidStatusListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
       this.mapManager.configureAlphaBaseMap();
       this.gameState.alphaBaseMap.render();
 
-      this.gameState.setActiveMapContainerId(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_11__.MAP_CONTAINER_IDS.ALPHA_BASE);
-      this.mapManager.showMap(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_11__.MAP_CONTAINER_IDS.ALPHA_BASE);
+      this.gameState.setActiveMapContainerId(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_12__.MAP_CONTAINER_IDS.ALPHA_BASE);
+      this.mapManager.showMap(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_12__.MAP_CONTAINER_IDS.ALPHA_BASE);
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_3__.MenuPage.router.goto('Fleet', 'index');
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_3__.MenuPage.open();
 
@@ -11435,11 +11469,11 @@ class RaidStatusListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
     let dialogue = null;
     if (this.raidStatusUtil.isRaidSuccessful(messageData.detail.status)) {
       dialogue = this.notificationDialogueSequenceFactory.make(
-        _constants_NotificationDialogueSequences__WEBPACK_IMPORTED_MODULE_10__.NOTIFICATION_DIALOGUE_SEQUENCES.ATTACKER_VICTORY,
+        _constants_NotificationDialogueSequences__WEBPACK_IMPORTED_MODULE_11__.NOTIFICATION_DIALOGUE_SEQUENCES.ATTACKER_VICTORY,
         {alphaOreRecovered: seizedOre}
       );
     } else if (this.raidStatusUtil.isAttackerDefeated(messageData.detail.status)) {
-      dialogue = this.notificationDialogueSequenceFactory.make(_constants_NotificationDialogueSequences__WEBPACK_IMPORTED_MODULE_10__.NOTIFICATION_DIALOGUE_SEQUENCES.DEFEATED_BY_DEFENDER);
+      dialogue = this.notificationDialogueSequenceFactory.make(_constants_NotificationDialogueSequences__WEBPACK_IMPORTED_MODULE_11__.NOTIFICATION_DIALOGUE_SEQUENCES.DEFEATED_BY_DEFENDER);
     }
 
     if (dialogue) {
@@ -11455,7 +11489,7 @@ class RaidStatusListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
   handler(messageData) {
     if (
       messageData.category === 'raid_status'
-      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id}.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].id}`
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id}.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].id}`
     ) {
       console.log('RAID STATUS LISTENER', messageData);
 
@@ -11471,8 +11505,8 @@ class RaidStatusListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
      */
     if (
       (messageData.category === 'fleet_depart' || messageData.category === 'fleet_arrive')
-      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].getPlanetId()}.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].id}`
-      && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.RAID_ENEMY].isFleetOwner(messageData.detail?.fleet_id)
+      && messageData.subject === `structs.planet.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].getPlanetId()}.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].id}`
+      && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.RAID_ENEMY].isFleetOwner(messageData.detail?.fleet_id)
     ) {
       this.raidManager.refreshRaidFleet().then(() => {
         this.gameState.raidMap.render();
@@ -17210,6 +17244,9 @@ class TaskManager {
         this.waiting_queue = [];
         this.running_queue = [];
 
+        /** @type {Promise<void>|null} In-flight work lookup, shared by concurrent callers. */
+        this.outstanding_work_lookup = null;
+
         /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
@@ -17279,6 +17316,13 @@ class TaskManager {
             this.spawn(event.state);
         }.bind(this));
 
+
+        // TASK_CMD_RECONCILE
+        // Can be dispatched anywhere the chain may have handed the player work
+        // that no local task is covering yet.
+        window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_CMD_RECONCILE, function (event) {
+            this.spawnOutstandingWork();
+        }.bind(this));
 
         // TASK_CMD_SWEEP
         // Can be dispatched anywhere to remove a job from the processes object
@@ -17761,14 +17805,53 @@ class TaskManager {
             return;
         }
 
+        return this.spawnOutstandingWork();
+    }
+
+    /**
+     * Picks up outstanding work the player isn't running yet, such as refining
+     * that only became possible once ore changed hands during a raid.
+     *
+     * Work stopping is already covered by the struct status listeners, which
+     * kill the task when the chain reports the job's start block as zero, so
+     * this only ever needs to start things.
+     *
+     * @return {Promise<void>}
+     */
+    async spawnOutstandingWork() {
+        if (!this.outstanding_work_lookup) {
+            this.outstanding_work_lookup = this.fetchAndSpawnOutstandingWork()
+                .catch((error) => {
+                    console.warn('[TaskManager] could not pick up outstanding work:', error);
+                })
+                .finally(() => {
+                    this.outstanding_work_lookup = null;
+                });
+        }
+
+        return this.outstanding_work_lookup;
+    }
+
+    /**
+     * @return {Promise<void>}
+     */
+    async fetchAndSpawnOutstandingWork() {
         const work = await this.guildAPI.getWorkByPlayerId(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.PLAYER].id);
+
         work.forEach((workTask) => {
             const task = this.taskStateFactory.initTaskFromWork(workTask);
 
+            // Only fill in the gaps. A struct that already has a process is
+            // being worked on, and respawning it would restart the worker and
+            // throw away the progress it has made.
+            if (this.processes[task.getPID()]) {
+                return;
+            }
+
             // A raid task may only run while the targeted planet's shield is
             // vulnerable. The backend work record can persist outside that
-            // window, so don't restore (and make sure we tear down) a raid task
-            // whose planet is no longer SHIELDS_VULNERABLE.
+            // window, so don't restore a raid task whose planet is no longer
+            // SHIELDS_VULNERABLE.
             if (
                 task.task_type === _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_2__.TASK_TYPES.RAID
                 && !this.isRaidTaskShieldVulnerable(task)
