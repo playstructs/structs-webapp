@@ -6,6 +6,7 @@ import {NOTIFICATION_DIALOGUE_SEQUENCES} from "../constants/NotificationDialogue
 import {NotificationDialogueSequenceFactory} from "../factories/NotificationDialogueSequenceFactory";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {MenuPage} from "../framework/MenuPage";
+import {TaskCmdReconcileEvent} from "../events/TaskCmdReconcileEvent";
 
 export class PlanetRaidStatusListener extends AbstractGrassListener {
   /**
@@ -76,6 +77,9 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
 
   raidEndActions() {
     this.gameState.clearPlanetRaidData();
+
+    // Ore changed hands, so pick up whatever work the player is left with.
+    window.dispatchEvent(new TaskCmdReconcileEvent());
 
     this.mapManager.configureAlphaBaseMap()
     this.gameState.alphaBaseMap.render();
