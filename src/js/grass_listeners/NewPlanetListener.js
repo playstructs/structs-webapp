@@ -23,6 +23,7 @@ export class NewPlanetListener extends AbstractGrassListener {
     this.redirectControllerName = 'Fleet';
     this.redirectPageName = 'index';
     this.redirectOptions = {planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_ARRIVED};
+    this.redirectCallback = () => {};
   }
 
   handler(messageData) {
@@ -60,6 +61,8 @@ export class NewPlanetListener extends AbstractGrassListener {
         window.dispatchEvent(new ClearTileSelectionEvent());
 
         MenuPage.router.goto(this.redirectControllerName, this.redirectPageName, this.redirectOptions);
+
+        this.redirectCallback();
       });
     }
   }

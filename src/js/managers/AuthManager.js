@@ -293,6 +293,21 @@ export class AuthManager {
         await this.taskManager.restoreTasksFromDB();
 
         window.dispatchEvent(new LoginCompleteEvent());
+
+      // If the signup flow failed just before getting a planet, get a new planet for the user on login.
+      } else if (!this.gameState.signupRequest.signature) {
+        const newPlanetListener = new NewPlanetListener(
+          this.gameState,
+          this.guildAPI,
+          this.mapManager
+        );
+        newPlanetListener.redirectCallback = () => {
+          window.dispatchEvent(new LoginCompleteEvent());
+        };
+
+        this.grassManager.registerListener(newPlanetListener);
+
+        await this.planetManager.findNewPlanet();
       }
     }
 
