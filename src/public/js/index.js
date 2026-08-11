@@ -10698,6 +10698,7 @@ class NewPlanetListener extends _framework_AbstractGrassListener__WEBPACK_IMPORT
     this.redirectControllerName = 'Fleet';
     this.redirectPageName = 'index';
     this.redirectOptions = {planetCardType: _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_2__.PLANET_CARD_TYPES.ALPHA_BASE_ARRIVED};
+    this.redirectCallback = () => {};
   }
 
   handler(messageData) {
@@ -10735,6 +10736,8 @@ class NewPlanetListener extends _framework_AbstractGrassListener__WEBPACK_IMPORT
         window.dispatchEvent(new _events_ClearTileSelectionEvent__WEBPACK_IMPORTED_MODULE_4__.ClearTileSelectionEvent());
 
         _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto(this.redirectControllerName, this.redirectPageName, this.redirectOptions);
+
+        this.redirectCallback();
       });
     }
   }
@@ -13266,6 +13269,21 @@ class AuthManager {
         await this.taskManager.restoreTasksFromDB();
 
         window.dispatchEvent(new _events_LoginCompleteEvent__WEBPACK_IMPORTED_MODULE_26__.LoginCompleteEvent());
+
+      // If the signup flow failed just before getting a planet, get a new planet for the user on login.
+      } else if (!this.gameState.signupRequest.signature) {
+        const newPlanetListener = new _grass_listeners_NewPlanetListener__WEBPACK_IMPORTED_MODULE_10__.NewPlanetListener(
+          this.gameState,
+          this.guildAPI,
+          this.mapManager
+        );
+        newPlanetListener.redirectCallback = () => {
+          window.dispatchEvent(new _events_LoginCompleteEvent__WEBPACK_IMPORTED_MODULE_26__.LoginCompleteEvent());
+        };
+
+        this.grassManager.registerListener(newPlanetListener);
+
+        await this.planetManager.findNewPlanet();
       }
     }
 
