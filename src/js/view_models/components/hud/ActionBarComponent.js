@@ -686,6 +686,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @param {StructType} structType
    */
   handlePanelSwitchClick(struct, structType) {
+    this.releaseConflictingAction([STRUCT_ACTIONS.ACTIVATE, STRUCT_ACTIONS.DEACTIVATE]);
+
     if (this.isActionAvailable(struct, 0, true, false)) {
       // Turn off: deactivate the struct
       this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEACTIVATE);
@@ -958,6 +960,82 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * The action buttons that stay pressed while the player picks a target on
+   * the map, keyed by the action each one holds on the action bar lock.
+   *
+   * @return {Object<string, {btnId: string, activeClass: string, buildClearTargetsEvent: function(string): CustomEvent}>}
+   */
+  getTargetSelectionButtons() {
+    const prefix = this.getActionBtnIdPrefix();
+
+    return {
+      [STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON]: {
+        btnId: `${prefix}-primary-weapon-btn`,
+        activeClass: 'sui-mod-active-offense',
+        buildClearTargetsEvent: (mapId) => new ClearAttackTargetsEvent(mapId)
+      },
+      [STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON]: {
+        btnId: `${prefix}-secondary-weapon-btn`,
+        activeClass: 'sui-mod-active-offense',
+        buildClearTargetsEvent: (mapId) => new ClearAttackTargetsEvent(mapId)
+      },
+      [STRUCT_ACTIONS.MOVE]: {
+        btnId: `${prefix}-move-btn`,
+        activeClass: 'sui-mod-active-defense',
+        buildClearTargetsEvent: (mapId) => new ClearMoveTargetsEvent(mapId)
+      },
+      [STRUCT_ACTIONS.DEFENSE_SET]: {
+        btnId: `${prefix}-defend-btn`,
+        activeClass: 'sui-mod-active-defense',
+        buildClearTargetsEvent: (mapId) => new ClearDefendTargetsEvent(mapId)
+      }
+    };
+  }
+
+  /**
+   * Releases the button holding an unrelated action on the action bar lock, so
+   * that pressing one action button never leaves another pressed with its
+   * targets still marked on the map.
+   *
+   * A locked action is already on its way to the chain and is nobody's to
+   * abandon: it is settled by the listener that confirms it. Only an action
+   * still waiting on a map click is released here.
+   *
+   * @param {string[]} ownActions the actions the clicked button sets, which
+   * the button handles itself rather than releasing
+   */
+  releaseConflictingAction(ownActions = []) {
+    const currentAction = this.gameState.actionBarLock.getCurrentAction();
+
+    if (
+      this.gameState.actionBarLock.isLocked()
+      || !currentAction
+      || ownActions.includes(currentAction)
+    ) {
+      return;
+    }
+
+    const pressedButton = this.getTargetSelectionButtons()[currentAction];
+
+    if (!pressedButton) {
+      return;
+    }
+
+    this.gameState.actionBarLock.clear(false);
+
+    const btn = document.getElementById(pressedButton.btnId);
+    if (btn) {
+      if (btn.hasAttribute('data-active-defense')) {
+        btn.setAttribute('data-active-defense', '0');
+      }
+      btn.classList.remove(pressedButton.activeClass);
+      btn.classList.add('sui-mod-default');
+    }
+
+    window.dispatchEvent(pressedButton.buildClearTargetsEvent(this.gameState.getActiveMapId()));
+  }
+
+  /**
    * @param {array} buttons
    * @param {Struct} struct
    * @param {StructType} structType
@@ -1008,15 +1086,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             btn.classList.add('sui-mod-default');
             window.dispatchEvent(new ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
           } else {
-            // If secondary weapon mode was active, reset its button
-            if (currentAction === STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON) {
-              const secBtn = document.getElementById(`${this.getActionBtnIdPrefix()}-secondary-weapon-btn`);
-              if (secBtn) {
-                secBtn.classList.remove('sui-mod-active-offense');
-                secBtn.classList.add('sui-mod-default');
-              }
-              window.dispatchEvent(new ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
-            }
+            this.releaseConflictingAction([STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON]);
 
             // Activate primary weapon mode
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON);
@@ -1084,15 +1154,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             btn.classList.add('sui-mod-default');
             window.dispatchEvent(new ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
           } else {
-            // If primary weapon mode was active, reset its button
-            if (currentAction === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON) {
-              const priBtn = document.getElementById(`${this.getActionBtnIdPrefix()}-primary-weapon-btn`);
-              if (priBtn) {
-                priBtn.classList.remove('sui-mod-active-offense');
-                priBtn.classList.add('sui-mod-default');
-              }
-              window.dispatchEvent(new ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
-            }
+            this.releaseConflictingAction([STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON]);
 
             // Activate secondary weapon mode
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON);
@@ -1153,6 +1215,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           if (!this.isActionAvailable(struct, structType.stealth_activate_charge)) {
             return;
           }
+
+          this.releaseConflictingAction([STRUCT_ACTIONS.STEALTH_ACTIVATE, STRUCT_ACTIONS.STEALTH_DEACTIVATE]);
+
           if (struct.isHidden()) {
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_DEACTIVATE);
             this.gameState.actionBarLock.lock();
@@ -1232,6 +1297,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             // Clear move target indicators
             window.dispatchEvent(new ClearMoveTargetsEvent(this.gameState.getActiveMapId()));
           } else {
+            this.releaseConflictingAction([STRUCT_ACTIONS.MOVE]);
+
             // Activate move mode
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.MOVE);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
@@ -1293,6 +1360,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           }
 
           const currentAction = this.gameState.actionBarLock.getCurrentAction();
+
+          this.releaseConflictingAction([STRUCT_ACTIONS.DEFENSE_SET, STRUCT_ACTIONS.DEFENSE_CLEAR]);
 
           if (struct.isDefending()) {
             // Struct is currently defending another struct - clicking clears the defense
@@ -1375,6 +1444,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
       btn.addEventListener('click', () => {
         if (!this.isActionAvailable(struct)) return;
+
+        this.releaseConflictingAction();
+
         const offcanvas = new ConsumeAlphaOffcanvas(
           this.gameState,
           this.alphaManager,
