@@ -183,6 +183,18 @@ export class StructListener extends AbstractGrassListener {
       renderStruct = false;
       structDestroyed = true;
 
+    } else if (
+      (messageData.detail.status_old & STRUCT_STATUS_FLAGS.MATERIALIZED) === 0
+      && (messageData.detail.status & STRUCT_STATUS_FLAGS.MATERIALIZED) > 0
+    ) {
+      // A deploy materializes the struct before it is built, and nothing else
+      // draws the deployment indicator for a struct the player doesn't own:
+      // DeployOffcanvas covers only the player's own deploys and the struct
+      // layer is otherwise only synced when the map mounts. Rendering an
+      // unbuilt struct paints the indicator alone, so there is no struct
+      // viewer or in-flight animation here to tear down.
+      renderStruct = true;
+
     } else {
       // Any other status transition (e.g. ONLINE/OFFLINE, LOCKED, STORED, or
       // a follow-up status change emitted alongside a transition we already
