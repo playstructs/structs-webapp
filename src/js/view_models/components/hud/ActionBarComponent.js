@@ -963,7 +963,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * The action buttons that stay pressed while the player picks a target on
    * the map, keyed by the action each one holds on the action bar lock.
    *
-   * @return {Object<string, {btnId: string, activeClass: string, buildClearTargetsEvent: function(string): CustomEvent}>}
+   * @return {Object<string, {btnId: string, activeClass: string, prompt: string, buildClearTargetsEvent: function(string): CustomEvent}>}
    */
   getTargetSelectionButtons() {
     const prefix = this.getActionBtnIdPrefix();
@@ -972,24 +972,67 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       [STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON]: {
         btnId: `${prefix}-primary-weapon-btn`,
         activeClass: 'sui-mod-active-offense',
+        prompt: 'Select Target',
         buildClearTargetsEvent: (mapId) => new ClearAttackTargetsEvent(mapId)
       },
       [STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON]: {
         btnId: `${prefix}-secondary-weapon-btn`,
         activeClass: 'sui-mod-active-offense',
+        prompt: 'Select Target',
         buildClearTargetsEvent: (mapId) => new ClearAttackTargetsEvent(mapId)
       },
       [STRUCT_ACTIONS.MOVE]: {
         btnId: `${prefix}-move-btn`,
         activeClass: 'sui-mod-active-defense',
+        prompt: 'Select Tile',
         buildClearTargetsEvent: (mapId) => new ClearMoveTargetsEvent(mapId)
       },
       [STRUCT_ACTIONS.DEFENSE_SET]: {
         btnId: `${prefix}-defend-btn`,
         activeClass: 'sui-mod-active-defense',
+        prompt: 'Select Struct',
         buildClearTargetsEvent: (mapId) => new ClearDefendTargetsEvent(mapId)
       }
     };
+  }
+
+  /**
+   * Turns the header over to the prompt for an action that waits on a map
+   * click, so the header names what the player is being asked to pick.
+   *
+   * @param {string} action see STRUCT_ACTIONS
+   */
+  showTargetSelectionPrompt(action) {
+    const headerScreen = document.getElementById(this.headerScreenId);
+    const selectionButton = this.getTargetSelectionButtons()[action];
+
+    if (!headerScreen || !selectionButton) {
+      return;
+    }
+
+    headerScreen.innerHTML = selectionButton.prompt;
+    headerScreen.classList.add('sui-mod-inverted');
+  }
+
+  /**
+   * Returns the header to the selected struct's abbreviation.
+   *
+   * Committing an action re-renders the bar into its executing state and
+   * clicking away re-renders it for the newly selected tile, but abandoning a
+   * selection leaves the bar standing, so the prompt has to be taken down by
+   * hand.
+   */
+  clearTargetSelectionPrompt() {
+    const headerScreen = document.getElementById(this.headerScreenId);
+
+    if (!headerScreen || !this.selectedStruct) {
+      return;
+    }
+
+    headerScreen.innerHTML = this.gameState.structTypes
+      .getStructTypeById(this.selectedStruct.type)
+      .class_abbreviation;
+    headerScreen.classList.remove('sui-mod-inverted');
   }
 
   /**
@@ -1022,6 +1065,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     }
 
     this.gameState.actionBarLock.clear(false);
+    this.clearTargetSelectionPrompt();
 
     const btn = document.getElementById(pressedButton.btnId);
     if (btn) {
@@ -1082,6 +1126,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           if (currentAction === STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON) {
             // Already in primary weapon mode - cancel
             this.gameState.actionBarLock.clear(false);
+            this.clearTargetSelectionPrompt();
             btn.classList.remove('sui-mod-active-offense');
             btn.classList.add('sui-mod-default');
             window.dispatchEvent(new ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
@@ -1091,6 +1136,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             // Activate primary weapon mode
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
+            this.showTargetSelectionPrompt(STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON);
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-offense');
             window.dispatchEvent(new ShowAttackTargetsEvent(
@@ -1150,6 +1196,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           if (currentAction === STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON) {
             // Already in secondary weapon mode - cancel
             this.gameState.actionBarLock.clear(false);
+            this.clearTargetSelectionPrompt();
             btn.classList.remove('sui-mod-active-offense');
             btn.classList.add('sui-mod-default');
             window.dispatchEvent(new ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
@@ -1159,6 +1206,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             // Activate secondary weapon mode
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
+            this.showTargetSelectionPrompt(STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON);
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-offense');
             window.dispatchEvent(new ShowAttackTargetsEvent(
@@ -1291,6 +1339,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           if (btn.classList.contains('sui-mod-active-defense')) {
             // Deactivate move mode
             this.gameState.actionBarLock.clear(false);
+            this.clearTargetSelectionPrompt();
             btn.classList.remove('sui-mod-active-defense');
             btn.classList.add('sui-mod-default');
 
@@ -1302,6 +1351,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             // Activate move mode
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.MOVE);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
+            this.showTargetSelectionPrompt(STRUCT_ACTIONS.MOVE);
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-defense');
 
@@ -1380,6 +1430,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           } else if (currentAction === STRUCT_ACTIONS.DEFENSE_SET) {
             // Already in defense selection mode - cancel it
             this.gameState.actionBarLock.clear(false);
+            this.clearTargetSelectionPrompt();
 
             // Update button to default state
             btn.setAttribute('data-active-defense', '0');
@@ -1393,6 +1444,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             // Activate defense selection mode
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEFENSE_SET);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
+            this.showTargetSelectionPrompt(STRUCT_ACTIONS.DEFENSE_SET);
 
             // Update button to active state
             btn.setAttribute('data-active-defense', '1');
