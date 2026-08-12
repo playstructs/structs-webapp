@@ -30387,7 +30387,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
    * The action buttons that stay pressed while the player picks a target on
    * the map, keyed by the action each one holds on the action bar lock.
    *
-   * @return {Object<string, {btnId: string, activeClass: string, buildClearTargetsEvent: function(string): CustomEvent}>}
+   * @return {Object<string, {btnId: string, activeClass: string, prompt: string, buildClearTargetsEvent: function(string): CustomEvent}>}
    */
   getTargetSelectionButtons() {
     const prefix = this.getActionBtnIdPrefix();
@@ -30396,24 +30396,67 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
       [_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON]: {
         btnId: `${prefix}-primary-weapon-btn`,
         activeClass: 'sui-mod-active-offense',
+        prompt: 'Select Target',
         buildClearTargetsEvent: (mapId) => new _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_13__.ClearAttackTargetsEvent(mapId)
       },
       [_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON]: {
         btnId: `${prefix}-secondary-weapon-btn`,
         activeClass: 'sui-mod-active-offense',
+        prompt: 'Select Target',
         buildClearTargetsEvent: (mapId) => new _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_13__.ClearAttackTargetsEvent(mapId)
       },
       [_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE]: {
         btnId: `${prefix}-move-btn`,
         activeClass: 'sui-mod-active-defense',
+        prompt: 'Select Tile',
         buildClearTargetsEvent: (mapId) => new _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_9__.ClearMoveTargetsEvent(mapId)
       },
       [_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET]: {
         btnId: `${prefix}-defend-btn`,
         activeClass: 'sui-mod-active-defense',
+        prompt: 'Select Struct',
         buildClearTargetsEvent: (mapId) => new _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_11__.ClearDefendTargetsEvent(mapId)
       }
     };
+  }
+
+  /**
+   * Turns the header over to the prompt for an action that waits on a map
+   * click, so the header names what the player is being asked to pick.
+   *
+   * @param {string} action see STRUCT_ACTIONS
+   */
+  showTargetSelectionPrompt(action) {
+    const headerScreen = document.getElementById(this.headerScreenId);
+    const selectionButton = this.getTargetSelectionButtons()[action];
+
+    if (!headerScreen || !selectionButton) {
+      return;
+    }
+
+    headerScreen.innerHTML = selectionButton.prompt;
+    headerScreen.classList.add('sui-mod-inverted');
+  }
+
+  /**
+   * Returns the header to the selected struct's abbreviation.
+   *
+   * Committing an action re-renders the bar into its executing state and
+   * clicking away re-renders it for the newly selected tile, but abandoning a
+   * selection leaves the bar standing, so the prompt has to be taken down by
+   * hand.
+   */
+  clearTargetSelectionPrompt() {
+    const headerScreen = document.getElementById(this.headerScreenId);
+
+    if (!headerScreen || !this.selectedStruct) {
+      return;
+    }
+
+    headerScreen.innerHTML = this.gameState.structTypes
+      .getStructTypeById(this.selectedStruct.type)
+      .class_abbreviation;
+    headerScreen.classList.remove('sui-mod-inverted');
   }
 
   /**
@@ -30446,6 +30489,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
     }
 
     this.gameState.actionBarLock.clear(false);
+    this.clearTargetSelectionPrompt();
 
     const btn = document.getElementById(pressedButton.btnId);
     if (btn) {
@@ -30506,6 +30550,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
           if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON) {
             // Already in primary weapon mode - cancel
             this.gameState.actionBarLock.clear(false);
+            this.clearTargetSelectionPrompt();
             btn.classList.remove('sui-mod-active-offense');
             btn.classList.add('sui-mod-default');
             window.dispatchEvent(new _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_13__.ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
@@ -30515,6 +30560,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
             // Activate primary weapon mode
             this.gameState.actionBarLock.setCurrentAction(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
+            this.showTargetSelectionPrompt(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON);
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-offense');
             window.dispatchEvent(new _events_ShowAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_12__.ShowAttackTargetsEvent(
@@ -30574,6 +30620,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
           if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON) {
             // Already in secondary weapon mode - cancel
             this.gameState.actionBarLock.clear(false);
+            this.clearTargetSelectionPrompt();
             btn.classList.remove('sui-mod-active-offense');
             btn.classList.add('sui-mod-default');
             window.dispatchEvent(new _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_13__.ClearAttackTargetsEvent(this.gameState.getActiveMapId()));
@@ -30583,6 +30630,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
             // Activate secondary weapon mode
             this.gameState.actionBarLock.setCurrentAction(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
+            this.showTargetSelectionPrompt(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON);
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-offense');
             window.dispatchEvent(new _events_ShowAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_12__.ShowAttackTargetsEvent(
@@ -30715,6 +30763,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
           if (btn.classList.contains('sui-mod-active-defense')) {
             // Deactivate move mode
             this.gameState.actionBarLock.clear(false);
+            this.clearTargetSelectionPrompt();
             btn.classList.remove('sui-mod-active-defense');
             btn.classList.add('sui-mod-default');
 
@@ -30726,6 +30775,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
             // Activate move mode
             this.gameState.actionBarLock.setCurrentAction(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
+            this.showTargetSelectionPrompt(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE);
             btn.classList.remove('sui-mod-default');
             btn.classList.add('sui-mod-active-defense');
 
@@ -30804,6 +30854,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
           } else if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET) {
             // Already in defense selection mode - cancel it
             this.gameState.actionBarLock.clear(false);
+            this.clearTargetSelectionPrompt();
 
             // Update button to default state
             btn.setAttribute('data-active-defense', '0');
@@ -30817,6 +30868,7 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
             // Activate defense selection mode
             this.gameState.actionBarLock.setCurrentAction(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
+            this.showTargetSelectionPrompt(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET);
 
             // Update button to active state
             btn.setAttribute('data-active-defense', '1');
