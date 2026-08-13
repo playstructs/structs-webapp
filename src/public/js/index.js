@@ -2310,6 +2310,19 @@ class PlanetCardBuilder {
    * @param {string} type
    * @param {PlanetCardComponent} raidCard
    */
+  buildRaidNoCommandStruct(raidCard, type) {
+    if (type !== _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT) {
+      return;
+    }
+
+    raidCard.hasAlert = true;
+    raidCard.alertMessage = 'No CMD Ship.';
+  }
+
+  /**
+   * @param {string} type
+   * @param {PlanetCardComponent} raidCard
+   */
   buildRaidStarted(raidCard, type) {
     if (type !== _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_STARTED) {
       return;
@@ -2459,6 +2472,7 @@ class PlanetCardBuilder {
   determineRaidCardType(selectedType = null) {
     const selectRaidTypes = [
       _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_LOADING,
+      _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT,
       _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_NONE,
       _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_ACTIVE,
       _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_RETREAT
@@ -2488,6 +2502,12 @@ class PlanetCardBuilder {
     ) {
 
       type = _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_ACTIVE;
+
+    } else if (!this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER].isCommandStructAlive()) {
+
+      // Last, so that a raid already under way is still shown: the branches
+      // above have ruled one out by the time a missing command ship matters.
+      type = _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT;
 
     }
 
@@ -2524,6 +2544,7 @@ class PlanetCardBuilder {
 
     this.buildRaidLoading(planetCard, type);
     this.buildRaidNone(planetCard, type);
+    this.buildRaidNoCommandStruct(planetCard, type);
     this.buildRaidStarted(planetCard, type);
     this.buildRaidActive(planetCard, type);
     this.buildRaidRetreat(planetCard, type);
@@ -3917,6 +3938,7 @@ const PLANET_CARD_TYPES = {
   ALPHA_BASE_ARRIVED: 'ALPHA_BASE_ARRIVED',
   RAID_LOADING: 'RAID_LOADING',
   RAID_NONE: 'RAID_NONE',
+  RAID_NO_COMMAND_STRUCT: 'RAID_NO_COMMAND_STRUCT',
   RAID_STARTED: 'RAID_STARTED',
   RAID_ACTIVE: 'RAID_ACTIVE',
   RAID_RETREAT: 'RAID_RETREAT'
@@ -36433,6 +36455,13 @@ class PreviewViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
     }
 
     launchFleetBtnElm.addEventListener('click', () => {
+
+      // Safeguard in case the player doesn't have a command ship by the time they attempt to launch.
+      if (!this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].isCommandStructAlive()) {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Fleet', 'index');
+        return;
+      }
+
       const planetRaid = this.planetRaidFactory.make({
         fleet_id: this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].player.fleet_id,
         planet_id: this.planet_id,
@@ -36534,7 +36563,10 @@ class PreviewViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
           _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.back();
         });
 
-        const launchFleetBtn = (this.attacker_id === null)
+        const launchFleetBtn = (
+            this.attacker_id === null
+            && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].isCommandStructAlive()
+        )
           ? `
             <div class="preview-map-btn-container">
               <a 
