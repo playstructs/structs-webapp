@@ -11615,7 +11615,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../events/ClearAttackTargetsEvent */ "./js/events/ClearAttackTargetsEvent.js");
 /* harmony import */ var _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../events/ClearMoveTargetsEvent */ "./js/events/ClearMoveTargetsEvent.js");
 /* harmony import */ var _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../events/ClearDefendTargetsEvent */ "./js/events/ClearDefendTargetsEvent.js");
-/* harmony import */ var _models_Struct__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../models/Struct */ "./js/models/Struct.js");
+/* harmony import */ var _events_StructCountChangedEvent__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../events/StructCountChangedEvent */ "./js/events/StructCountChangedEvent.js");
+/* harmony import */ var _models_Struct__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../models/Struct */ "./js/models/Struct.js");
+
 
 
 
@@ -11875,21 +11877,27 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
         window.dispatchEvent(new _events_TaskCmdKillEvent__WEBPACK_IMPORTED_MODULE_3__.TaskCmdKillEvent(messageData.detail.struct_id));
       }
 
-      // The player's fleet holds a reference to the command struct that needs to be updated
+      // The owner's fleet holds a reference to the command struct that needs to be updated
       this.syncFleetCommandStruct(struct);
     });
   }
 
   /**
-   * Update the player's fleet to point at a command struct that has just been built.
+   * Update the owning key player's fleet to point at a command struct that has
+   * just been built.
    *
    * @param {Struct|null} struct
    */
   syncFleetCommandStruct(struct) {
-    const player = this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER];
+    if (!struct) {
+      return;
+    }
+
+    const playerType = this.getOwnerPlayerType(struct.owner);
+    const fleet = playerType ? this.gameState.keyPlayers[playerType].fleet : null;
 
     // The fleet id also stands in for a fleet that hasn't been loaded yet.
-    if (!struct || struct.owner !== player.id || struct.location_id !== player.fleet?.id) {
+    if (!fleet || struct.location_id !== fleet.id || fleet.command_struct === struct.id) {
       return;
     }
 
@@ -11897,7 +11905,12 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
       return;
     }
 
-    player.fleet.command_struct = struct.id;
+    fleet.command_struct = struct.id;
+
+    // Whether the command struct is alive decides whether a planet's defenses
+    // hold, and the shield status has already been rendered against the old
+    // pointer by the struct refresh that led here.
+    window.dispatchEvent(new _events_StructCountChangedEvent__WEBPACK_IMPORTED_MODULE_16__.StructCountChangedEvent(playerType));
   }
 
   /**
