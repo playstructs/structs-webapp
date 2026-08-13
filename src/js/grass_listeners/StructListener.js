@@ -14,6 +14,7 @@ import {RefreshAttackTargetsEvent} from "../events/RefreshAttackTargetsEvent";
 import {ClearAttackTargetsEvent} from "../events/ClearAttackTargetsEvent";
 import {ClearMoveTargetsEvent} from "../events/ClearMoveTargetsEvent";
 import {ClearDefendTargetsEvent} from "../events/ClearDefendTargetsEvent";
+import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
 import {Struct} from "../models/Struct";
 
 export class StructListener extends AbstractGrassListener {
@@ -257,21 +258,27 @@ export class StructListener extends AbstractGrassListener {
         window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
       }
 
-      // The player's fleet holds a reference to the command struct that needs to be updated
+      // The owner's fleet holds a reference to the command struct that needs to be updated
       this.syncFleetCommandStruct(struct);
     });
   }
 
   /**
-   * Update the player's fleet to point at a command struct that has just been built.
+   * Update the owning key player's fleet to point at a command struct that has
+   * just been built.
    *
    * @param {Struct|null} struct
    */
   syncFleetCommandStruct(struct) {
-    const player = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER];
+    if (!struct) {
+      return;
+    }
+
+    const playerType = this.getOwnerPlayerType(struct.owner);
+    const fleet = playerType ? this.gameState.keyPlayers[playerType].fleet : null;
 
     // The fleet id also stands in for a fleet that hasn't been loaded yet.
-    if (!struct || struct.owner !== player.id || struct.location_id !== player.fleet?.id) {
+    if (!fleet || struct.location_id !== fleet.id || fleet.command_struct === struct.id) {
       return;
     }
 
@@ -279,7 +286,12 @@ export class StructListener extends AbstractGrassListener {
       return;
     }
 
-    player.fleet.command_struct = struct.id;
+    fleet.command_struct = struct.id;
+
+    // Whether the command struct is alive decides whether a planet's defenses
+    // hold, and the shield status has already been rendered against the old
+    // pointer by the struct refresh that led here.
+    window.dispatchEvent(new StructCountChangedEvent(playerType));
   }
 
   /**
