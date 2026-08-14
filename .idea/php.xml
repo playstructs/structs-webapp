@@ -39,7 +39,6 @@
       <path value="$PROJECT_DIR$/src/vendor/doctrine/event-manager" />
       <path value="$PROJECT_DIR$/src/vendor/doctrine/instantiator" />
       <path value="$PROJECT_DIR$/src/vendor/doctrine/dbal" />
-      <path value="$PROJECT_DIR$/src/vendor/doctrine/cache" />
       <path value="$PROJECT_DIR$/src/vendor/nikic/php-parser" />
       <path value="$PROJECT_DIR$/src/vendor/doctrine/orm" />
       <path value="$PROJECT_DIR$/src/vendor/doctrine/collections" />
@@ -149,6 +148,9 @@
       <path value="$PROJECT_DIR$/src/vendor/symfony/apache-pack" />
       <path value="$PROJECT_DIR$/src/vendor/symfony/ux-turbo" />
       <path value="$PROJECT_DIR$/src/vendor/symfony/stimulus-bundle" />
+      <path value="$PROJECT_DIR$/src/vendor/symfony/polyfill-php85" />
+      <path value="$PROJECT_DIR$/src/vendor/symfony/polyfill-php84" />
+      <path value="$PROJECT_DIR$/src/vendor/doctrine/cache" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.3">
