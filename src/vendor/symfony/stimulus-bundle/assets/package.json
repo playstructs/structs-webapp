@@ -1,15 +1,24 @@
 {
     "name": "@symfony/stimulus-bundle",
     "description": "Integration of @hotwired/stimulus into Symfony",
-    "version": "1.0.0",
+    "private": true,
     "license": "MIT",
+    "version": "2.35.0",
+    "keywords": [
+        "symfony-ux"
+    ],
+    "homepage": "https://ux.symfony.com/stimulus",
+    "repository": "https://github.com/symfony/ux",
+    "type": "module",
+    "files": [
+        "dist"
+    ],
     "main": "dist/loader.js",
     "scripts": {
-        "build": "node ../../../bin/build_package.js .",
-        "watch": "node ../../../bin/build_package.js . --watch",
-        "test": "../../../bin/test_package.sh .",
-        "check": "biome check",
-        "ci": "biome ci"
+        "build": "node ../../../bin/build_package.ts .",
+        "watch": "node ../../../bin/build_package.ts . --watch",
+        "test": "pnpm run test:unit && pnpm run test:browser",
+        "test:unit": "../../../bin/unit_test_package.sh ."
     },
     "symfony": {
         "needsPackageAsADependency": false,
@@ -20,6 +29,15 @@
     },
     "peerDependencies": {
         "@hotwired/stimulus": "^3.0.0",
-        "@symfony/stimulus-bridge": "^3.2.0"
+        "@symfony/stimulus-bridge": "^3.2.0 || ^4.0.0"
+    },
+    "devDependencies": {
+        "@testing-library/dom": "^10.4.0",
+        "@testing-library/jest-dom": "^6.6.3",
+        "@testing-library/user-event": "^14.6.1",
+        "jsdom": "^26.1.0",
+        "tslib": "^2.8.1",
+        "typescript": "^5.8.3",
+        "vitest": "^4.1.0"
     }
 }

@@ -66,7 +66,7 @@ final class MakeListener extends AbstractMaker
         $command
             ->addArgument('name', InputArgument::OPTIONAL, 'Choose a class name for your event listener or subscriber (e.g. <fg=yellow>ExceptionListener</> or <fg=yellow>ExceptionSubscriber</>)')
             ->addArgument('event', InputArgument::OPTIONAL, 'What event do you want to listen to?')
-            ->setHelp(file_get_contents(__DIR__.'/../Resources/help/MakeListener.txt'))
+            ->setHelp($this->getHelpFileContents('MakeListener.txt'))
         ;
 
         $inputConfig->setArgumentAsNonInteractive('event');
@@ -107,7 +107,7 @@ final class MakeListener extends AbstractMaker
         $event = $input->getArgument('event');
         if (null === $this->getEventConstant($event) && null === $this->eventRegistry->getEventClassName($event)) {
             $eventList = $this->eventRegistry->getAllActiveEvents();
-            $eventFQCNList = array_filter(array_map($this->eventRegistry->getEventClassName(...), $eventList), fn ($eventFQCN) => \is_string($eventFQCN));
+            $eventFQCNList = array_filter(array_map($this->eventRegistry->getEventClassName(...), $eventList), static fn ($eventFQCN) => \is_string($eventFQCN));
             $eventIdAndFQCNList = array_unique(array_merge($eventList, $eventFQCNList));
             $suggestionList = [];
 
@@ -153,12 +153,11 @@ final class MakeListener extends AbstractMaker
         $eventFullClassName = $this->eventRegistry->getEventClassName($event);
         $eventClassName = $eventFullClassName ? Str::getShortClassName($eventFullClassName) : null;
 
-        if (null !== ($eventConstant = $this->getEventConstant($event))) {
-            $useStatements->addUseStatement(KernelEvents::class);
-            $eventName = $eventConstant;
-        } else {
-            $eventName = class_exists($event) ? \sprintf('%s::class', $eventClassName) : \sprintf('\'%s\'', $event);
+        if ($this->getEventConstant($event)) {
+            $event = $eventFullClassName;
         }
+
+        $eventName = class_exists($event) ? \sprintf('%s::class', $eventClassName) : \sprintf('\'%s\'', $event);
 
         if (null !== $eventFullClassName) {
             $useStatements->addUseStatement($eventFullClassName);
@@ -230,6 +229,7 @@ final class MakeListener extends AbstractMaker
             [
                 'use_statements' => $useStatements,
                 'event' => $eventName,
+                'class_event' => str_ends_with($eventName, '::class'),
                 'event_arg' => $eventClassName ? \sprintf('%s $event', $eventClassName) : '$event',
                 'method_name' => class_exists($event) ? Str::asEventMethod($eventClassName) : Str::asEventMethod($event),
             ]

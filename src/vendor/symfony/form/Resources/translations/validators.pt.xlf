@@ -24,7 +24,7 @@
             </trans-unit>
             <trans-unit id="101">
                 <source>The selected choice is invalid.</source>
-                <target>A escolha seleccionada é inválida.</target>
+                <target>A escolha selecionada é inválida.</target>
             </trans-unit>
             <trans-unit id="102">
                 <source>The collection is invalid.</source>
@@ -133,6 +133,10 @@
             <trans-unit id="128">
                 <source>Please enter a valid week.</source>
                 <target>Por favor, selecione uma semana válida.</target>
+            </trans-unit>
+            <trans-unit id="129">
+                <source>Please enter a valid UUID.</source>
+                <target state="needs-review-translation">Por favor, introduza um UUID válido.</target>
             </trans-unit>
         </body>
     </file>

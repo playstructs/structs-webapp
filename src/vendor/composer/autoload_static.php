@@ -9,7 +9,7 @@ class ComposerStaticInit74ab73114a599f4a2997b6a284f9e273
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
-        '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
+        '606a39d89246991a373564698c2d8383' => __DIR__ . '/..' . '/symfony/polyfill-php85/bootstrap.php',
         '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '8825ede83f2f289127722d4e842cf7e8' => __DIR__ . '/..' . '/symfony/polyfill-intl-grapheme/bootstrap.php',
@@ -18,8 +18,10 @@ class ComposerStaticInit74ab73114a599f4a2997b6a284f9e273
         'ffecb95d45175fd40f75be8a23b34f90' => __DIR__ . '/..' . '/twig/twig/src/Resources/debug.php',
         'c7baa00073ee9c61edf148c51917cfb4' => __DIR__ . '/..' . '/twig/twig/src/Resources/escaper.php',
         'f844ccf1d25df8663951193c3fc307c8' => __DIR__ . '/..' . '/twig/twig/src/Resources/string_loader.php',
+        '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
         '2203a247e6fda86070a5e4e07aed533a' => __DIR__ . '/..' . '/symfony/clock/Resources/now.php',
+        '9d2b9fc6db0f153a0a149fefb182415e' => __DIR__ . '/..' . '/symfony/polyfill-php84/bootstrap.php',
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         '6a47392539ca2329373e0d33e1dba053' => __DIR__ . '/..' . '/symfony/polyfill-intl-icu/bootstrap.php',
         'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
@@ -46,6 +48,8 @@ class ComposerStaticInit74ab73114a599f4a2997b6a284f9e273
             'Symfony\\UX\\Turbo\\' => 17,
             'Symfony\\UX\\StimulusBundle\\' => 26,
             'Symfony\\Runtime\\Symfony\\Component\\' => 34,
+            'Symfony\\Polyfill\\Php85\\' => 23,
+            'Symfony\\Polyfill\\Php84\\' => 23,
             'Symfony\\Polyfill\\Php83\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
@@ -195,6 +199,14 @@ class ComposerStaticInit74ab73114a599f4a2997b6a284f9e273
         'Symfony\\Runtime\\Symfony\\Component\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/runtime/Internal',
+        ),
+        'Symfony\\Polyfill\\Php85\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php85',
+        ),
+        'Symfony\\Polyfill\\Php84\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php84',
         ),
         'Symfony\\Polyfill\\Php83\\' => 
         array (
@@ -442,7 +454,7 @@ class ComposerStaticInit74ab73114a599f4a2997b6a284f9e273
         ),
         'Symfony\\Bundle\\MonologBundle\\' => 
         array (
-            0 => __DIR__ . '/..' . '/symfony/monolog-bundle',
+            0 => __DIR__ . '/..' . '/symfony/monolog-bundle/src',
         ),
         'Symfony\\Bundle\\MakerBundle\\' => 
         array (
@@ -602,8 +614,14 @@ class ComposerStaticInit74ab73114a599f4a2997b6a284f9e273
         'DateMalformedStringException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateMalformedStringException.php',
         'DateObjectError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateObjectError.php',
         'DateRangeError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateRangeError.php',
+        'DelayedTargetValidation' => __DIR__ . '/..' . '/symfony/polyfill-php85/Resources/stubs/DelayedTargetValidation.php',
+        'Deprecated' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Deprecated.php',
+        'Filter\\FilterException' => __DIR__ . '/..' . '/symfony/polyfill-php85/Resources/stubs/Filter/FilterException.php',
+        'Filter\\FilterFailedException' => __DIR__ . '/..' . '/symfony/polyfill-php85/Resources/stubs/Filter/FilterFailedException.php',
         'IntlDateFormatter' => __DIR__ . '/..' . '/symfony/polyfill-intl-icu/Resources/stubs/IntlDateFormatter.php',
+        'IntlListFormatter' => __DIR__ . '/..' . '/symfony/polyfill-intl-icu/Resources/stubs/IntlListFormatter.php',
         'Locale' => __DIR__ . '/..' . '/symfony/polyfill-intl-icu/Resources/stubs/Locale.php',
+        'NoDiscard' => __DIR__ . '/..' . '/symfony/polyfill-php85/Resources/stubs/NoDiscard.php',
         'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
         'NumberFormatter' => __DIR__ . '/..' . '/symfony/polyfill-intl-icu/Resources/stubs/NumberFormatter.php',
         'Override' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/Override.php',
@@ -956,6 +974,12 @@ class ComposerStaticInit74ab73114a599f4a2997b6a284f9e273
         'PHPUnit\\Util\\Xml\\SuccessfulSchemaDetectionResult' => __DIR__ . '/..' . '/phpunit/phpunit/src/Util/Xml/SuccessfulSchemaDetectionResult.php',
         'PHPUnit\\Util\\Xml\\ValidationResult' => __DIR__ . '/..' . '/phpunit/phpunit/src/Util/Xml/ValidationResult.php',
         'PHPUnit\\Util\\Xml\\Validator' => __DIR__ . '/..' . '/phpunit/phpunit/src/Util/Xml/Validator.php',
+        'Pdo\\Dblib' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Pdo/Dblib.php',
+        'Pdo\\Firebird' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Pdo/Firebird.php',
+        'Pdo\\Mysql' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Pdo/Mysql.php',
+        'Pdo\\Odbc' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Pdo/Odbc.php',
+        'Pdo\\Pgsql' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Pdo/Pgsql.php',
+        'Pdo\\Sqlite' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/Pdo/Sqlite.php',
         'PharIo\\Manifest\\Application' => __DIR__ . '/..' . '/phar-io/manifest/src/values/Application.php',
         'PharIo\\Manifest\\ApplicationName' => __DIR__ . '/..' . '/phar-io/manifest/src/values/ApplicationName.php',
         'PharIo\\Manifest\\Author' => __DIR__ . '/..' . '/phar-io/manifest/src/values/Author.php',
@@ -1028,6 +1052,8 @@ class ComposerStaticInit74ab73114a599f4a2997b6a284f9e273
         'PharIo\\Version\\VersionConstraintParser' => __DIR__ . '/..' . '/phar-io/version/src/VersionConstraintParser.php',
         'PharIo\\Version\\VersionConstraintValue' => __DIR__ . '/..' . '/phar-io/version/src/VersionConstraintValue.php',
         'PharIo\\Version\\VersionNumber' => __DIR__ . '/..' . '/phar-io/version/src/VersionNumber.php',
+        'ReflectionConstant' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/ReflectionConstant.php',
+        'RoundingMode' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/RoundingMode.php',
         'SQLite3Exception' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/SQLite3Exception.php',
         'SebastianBergmann\\CliParser\\AmbiguousOptionException' => __DIR__ . '/..' . '/sebastian/cli-parser/src/exceptions/AmbiguousOptionException.php',
         'SebastianBergmann\\CliParser\\Exception' => __DIR__ . '/..' . '/sebastian/cli-parser/src/exceptions/Exception.php',

@@ -100,8 +100,7 @@ class ChoiceType extends AbstractType
         if ($options['expanded'] || $options['multiple']) {
             // Make sure that scalar, submitted values are converted to arrays
             // which can be submitted to the checkboxes/radio buttons
-            $builder->addEventListener(FormEvents::PRE_SUBMIT, static function (FormEvent $event) use ($choiceList, $options, &$unknownValues) {
-                /** @var PreSubmitEvent $event */
+            $builder->addEventListener(FormEvents::PRE_SUBMIT, static function (PreSubmitEvent $event) use ($choiceList, $options, &$unknownValues) {
                 $form = $event->getForm();
                 $data = $event->getData();
 
@@ -275,6 +274,8 @@ class ChoiceType extends AbstractType
 
     public function finishView(FormView $view, FormInterface $form, array $options): void
     {
+        $view->vars['duplicate_preferred_choices'] = $options['duplicate_preferred_choices'];
+
         if ($options['expanded']) {
             // Radio buttons should have the same name as the parent
             $childName = $view->vars['full_name'];

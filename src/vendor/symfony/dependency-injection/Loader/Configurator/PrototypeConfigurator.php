@@ -50,13 +50,11 @@ class PrototypeConfigurator extends AbstractServiceConfigurator
         private ?string $path = null,
     ) {
         $definition = new Definition();
-        if (!$defaults->isPublic() || !$defaults->isPrivate()) {
-            $definition->setPublic($defaults->isPublic());
-        }
+        $definition->setPublic($defaults->isPublic());
         $definition->setAutowired($defaults->isAutowired());
         $definition->setAutoconfigured($defaults->isAutoconfigured());
         // deep clone, to avoid multiple process of the same instance in the passes
-        $definition->setBindings(unserialize(serialize($defaults->getBindings())));
+        $definition->setBindings(unserialize(serialize($defaults->getBindings()), ['allowed_classes' => true]));
         $definition->setChanges([]);
 
         parent::__construct($parent, $definition, $namespace, $defaults->getTags());

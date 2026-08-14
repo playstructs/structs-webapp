@@ -11,12 +11,13 @@
 
 namespace Symfony\Component\Translation;
 
+use Symfony\Component\Translation\Exception\LogicException;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * This translator should only be used in a development environment.
  */
-final class PseudoLocalizationTranslator implements TranslatorInterface
+final class PseudoLocalizationTranslator implements TranslatorInterface, TranslatorBagInterface
 {
     private const EXPANSION_CHARACTER = '~';
 
@@ -54,7 +55,7 @@ final class PseudoLocalizationTranslator implements TranslatorInterface
      *  * parse_html:
      *      type: boolean
      *      default: false
-     *      description: parse the translated string as HTML - looking for HTML tags has a performance impact but allows to preserve them from alterations - it also allows to compute the visible translated string length which is useful to correctly expand ot when it contains HTML
+     *      description: parse the translated string as HTML - looking for HTML tags has a performance impact but allows to preserve them from alterations - it also allows to compute the visible translated string length which is useful to correctly expand or when it contains HTML
      *      warning: unclosed tags are unsupported, they will be fixed (closed) by the parser - eg, "foo <div>bar" => "foo <div>bar</div>"
      *
      *  * localizable_html_attributes:
@@ -115,6 +116,24 @@ final class PseudoLocalizationTranslator implements TranslatorInterface
         return $this->translator->getLocale();
     }
 
+    public function getCatalogue(?string $locale = null): MessageCatalogueInterface
+    {
+        if (!$this->translator instanceof TranslatorBagInterface) {
+            throw new LogicException(\sprintf('The "%s()" method cannot be called as the wrapped translator class "%s" does not implement the "%s".', __METHOD__, $this->translator::class, TranslatorBagInterface::class));
+        }
+
+        return $this->translator->getCatalogue($locale);
+    }
+
+    public function getCatalogues(): array
+    {
+        if (!$this->translator instanceof TranslatorBagInterface) {
+            throw new LogicException(\sprintf('The "%s()" method cannot be called as the wrapped translator class "%s" does not implement the "%s".', __METHOD__, $this->translator::class, TranslatorBagInterface::class));
+        }
+
+        return $this->translator->getCatalogues();
+    }
+
     private function getParts(string $originalTrans): array
     {
         if (!$this->parseHTML) {
@@ -147,7 +166,6 @@ final class PseudoLocalizationTranslator implements TranslatorInterface
 
             $parts[] = [false, false, '<'.$childNode->tagName];
 
-            /** @var \DOMAttr $attribute */
             foreach ($childNode->attributes as $attribute) {
                 $parts[] = [false, false, ' '.$attribute->nodeName.'="'];
 
@@ -165,7 +183,7 @@ final class PseudoLocalizationTranslator implements TranslatorInterface
 
             $parts[] = [false, false, '>'];
 
-            $parts = array_merge($parts, $this->parseNode($childNode, $parts));
+            $parts = array_merge($parts, $this->parseNode($childNode));
 
             $parts[] = [false, false, '</'.$childNode->tagName.'>'];
         }
@@ -364,3 +382,5 @@ final class PseudoLocalizationTranslator implements TranslatorInterface
         return false === ($encoding = mb_detect_encoding($s, null, true)) ? \strlen($s) : mb_strlen($s, $encoding);
     }
 }
+
+// @php-cs-fixer-ignore random_api_migration As logic is coupled with mt_srand() in tests

@@ -138,6 +138,8 @@
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/stimulus-bundle" />
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/ux-turbo" />
       <excludeFolder url="file://$MODULE_DIR$/src/var" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/polyfill-php84" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/polyfill-php85" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

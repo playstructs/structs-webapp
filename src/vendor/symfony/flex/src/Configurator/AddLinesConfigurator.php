@@ -38,7 +38,7 @@ class AddLinesConfigurator extends AbstractConfigurator
         $this->executeConfigure($recipe, $config);
 
         foreach ($this->fileContents as $file => $contents) {
-            $this->write(sprintf('[add-lines] Patching file "%s"', $this->relativize($file)));
+            $this->write(\sprintf('[add-lines] Patching file "%s"', $this->relativize($file)));
             file_put_contents($file, $contents);
         }
     }
@@ -49,7 +49,7 @@ class AddLinesConfigurator extends AbstractConfigurator
         $this->executeUnconfigure($recipe, $config);
 
         foreach ($this->fileContents as $file => $change) {
-            $this->write(sprintf('[add-lines] Reverting file "%s"', $this->relativize($file)));
+            $this->write(\sprintf('[add-lines] Reverting file "%s"', $this->relativize($file)));
             file_put_contents($file, $change);
         }
     }
@@ -81,7 +81,7 @@ class AddLinesConfigurator extends AbstractConfigurator
     {
         foreach ($config as $patch) {
             if (!isset($patch['file'])) {
-                $this->write(sprintf('The "file" key is required for the "add-lines" configurator for recipe "%s". Skipping', $recipe->getName()));
+                $this->write(\sprintf('The "file" key is required for the "add-lines" configurator for recipe "%s". Skipping', $recipe->getName()));
 
                 continue;
             }
@@ -91,7 +91,7 @@ class AddLinesConfigurator extends AbstractConfigurator
             }
 
             if (!isset($patch['content'])) {
-                $this->write(sprintf('The "content" key is required for the "add-lines" configurator for recipe "%s". Skipping', $recipe->getName()));
+                $this->write(\sprintf('The "content" key is required for the "add-lines" configurator for recipe "%s". Skipping', $recipe->getName()));
 
                 continue;
             }
@@ -101,7 +101,7 @@ class AddLinesConfigurator extends AbstractConfigurator
             $warnIfMissing = isset($patch['warn_if_missing']) && $patch['warn_if_missing'];
             if (!is_file($file)) {
                 $this->write([
-                    sprintf('Could not add lines to file <info>%s</info> as it does not exist. Missing lines:', $patch['file']),
+                    \sprintf('Could not add lines to file <info>%s</info> as it does not exist. Missing lines:', $patch['file']),
                     '<comment>"""</comment>',
                     $content,
                     '<comment>"""</comment>',
@@ -112,19 +112,19 @@ class AddLinesConfigurator extends AbstractConfigurator
             }
 
             if (!isset($patch['position'])) {
-                $this->write(sprintf('The "position" key is required for the "add-lines" configurator for recipe "%s". Skipping', $recipe->getName()));
+                $this->write(\sprintf('The "position" key is required for the "add-lines" configurator for recipe "%s". Skipping', $recipe->getName()));
 
                 continue;
             }
             $position = $patch['position'];
             if (!\in_array($position, self::VALID_POSITIONS, true)) {
-                $this->write(sprintf('The "position" key must be one of "%s" for the "add-lines" configurator for recipe "%s". Skipping', implode('", "', self::VALID_POSITIONS), $recipe->getName()));
+                $this->write(\sprintf('The "position" key must be one of "%s" for the "add-lines" configurator for recipe "%s". Skipping', implode('", "', self::VALID_POSITIONS), $recipe->getName()));
 
                 continue;
             }
 
             if (self::POSITION_AFTER_TARGET === $position && !isset($patch['target'])) {
-                $this->write(sprintf('The "target" key is required when "position" is "%s" for the "add-lines" configurator for recipe "%s". Skipping', self::POSITION_AFTER_TARGET, $recipe->getName()));
+                $this->write(\sprintf('The "target" key is required when "position" is "%s" for the "add-lines" configurator for recipe "%s". Skipping', self::POSITION_AFTER_TARGET, $recipe->getName()));
 
                 continue;
             }
@@ -139,7 +139,7 @@ class AddLinesConfigurator extends AbstractConfigurator
     {
         foreach ($config as $patch) {
             if (!isset($patch['file'])) {
-                $this->write(sprintf('The "file" key is required for the "add-lines" configurator for recipe "%s". Skipping', $recipe->getName()));
+                $this->write(\sprintf('The "file" key is required for the "add-lines" configurator for recipe "%s". Skipping', $recipe->getName()));
 
                 continue;
             }
@@ -153,7 +153,7 @@ class AddLinesConfigurator extends AbstractConfigurator
             }
 
             if (!isset($patch['content'])) {
-                $this->write(sprintf('The "content" key is required for the "add-lines" configurator for recipe "%s". Skipping', $recipe->getName()));
+                $this->write(\sprintf('The "content" key is required for the "add-lines" configurator for recipe "%s". Skipping', $recipe->getName()));
 
                 continue;
             }
@@ -168,7 +168,7 @@ class AddLinesConfigurator extends AbstractConfigurator
     {
         $fileContents = $this->readFile($file);
 
-        if (false !== strpos($fileContents, $value)) {
+        if (str_contains($fileContents, $value)) {
             return $fileContents; // already includes value, skip
         }
 
@@ -185,7 +185,7 @@ class AddLinesConfigurator extends AbstractConfigurator
                 $lines = explode("\n", $fileContents);
                 $targetFound = false;
                 foreach ($lines as $key => $line) {
-                    if (false !== strpos($line, $target)) {
+                    if (str_contains($line, $target)) {
                         array_splice($lines, $key + 1, 0, $value);
                         $targetFound = true;
 
@@ -196,7 +196,7 @@ class AddLinesConfigurator extends AbstractConfigurator
 
                 if (!$targetFound) {
                     $this->write([
-                        sprintf('Could not add lines after "%s" as no such string was found in "%s". Missing lines:', $target, $file),
+                        \sprintf('Could not add lines after "%s" as no such string was found in "%s". Missing lines:', $target, $file),
                         '<comment>"""</comment>',
                         $value,
                         '<comment>"""</comment>',
@@ -214,14 +214,14 @@ class AddLinesConfigurator extends AbstractConfigurator
     {
         $fileContents = $this->readFile($file);
 
-        if (false === strpos($fileContents, $value)) {
+        if (!str_contains($fileContents, $value)) {
             return $fileContents; // value already gone!
         }
 
-        if (false !== strpos($fileContents, "\n".$value)) {
+        if (str_contains($fileContents, "\n".$value)) {
             $value = "\n".$value;
-        } elseif (false !== strpos($fileContents, $value."\n")) {
-            $value = $value."\n";
+        } elseif (str_contains($fileContents, $value."\n")) {
+            $value .= "\n";
         }
 
         $position = strpos($fileContents, $value);
@@ -237,8 +237,12 @@ class AddLinesConfigurator extends AbstractConfigurator
 
         $installedRepo = $this->composer->getRepositoryManager()->getLocalRepository();
 
-        foreach ($packages as $packageName) {
-            if (null === $installedRepo->findPackage($packageName, '*')) {
+        foreach ($packages as $package) {
+            $package = explode(':', $package, 2);
+            $packageName = $package[0];
+            $constraint = $package[1] ?? '*';
+
+            if (null === $installedRepo->findPackage($packageName, $constraint)) {
                 return false;
             }
         }
@@ -249,7 +253,7 @@ class AddLinesConfigurator extends AbstractConfigurator
     private function relativize(string $path): string
     {
         $rootDir = $this->options->get('root-dir');
-        if (0 === strpos($path, $rootDir)) {
+        if (str_starts_with($path, $rootDir)) {
             $path = substr($path, \strlen($rootDir) + 1);
         }
 

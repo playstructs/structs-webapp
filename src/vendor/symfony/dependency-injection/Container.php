@@ -35,7 +35,7 @@ class_exists(ArgumentServiceLocator::class);
  *
  * It gives access to object instances (services).
  * Services and parameters are simple key/pair stores.
- * The container can have four possible behaviors when a service
+ * The container can have five possible behaviors when a service
  * does not exist (or is not initialized for the last case):
  *
  *  * EXCEPTION_ON_INVALID_REFERENCE: Throws an exception at compilation time (the default)
@@ -222,8 +222,8 @@ class Container implements ContainerInterface, ResetInterface
             } elseif (isset($container->methodMap[$id])) {
                 return /* self::IGNORE_ON_UNINITIALIZED_REFERENCE */ 4 === $invalidBehavior ? null : $container->{$container->methodMap[$id]}($container);
             }
-        } catch (\Exception $e) {
-            unset($container->services[$id]);
+        } catch (\Throwable $e) {
+            unset($container->services[$id], $container->privates[$id]);
 
             throw $e;
         } finally {
@@ -289,6 +289,14 @@ class Container implements ContainerInterface, ResetInterface
         }
 
         $this->envCache = $this->services = $this->factories = $this->privates = [];
+    }
+
+    /**
+     * @internal
+     */
+    public function resetEnvCache(): void
+    {
+        $this->envCache = [];
     }
 
     /**

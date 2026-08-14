@@ -108,7 +108,7 @@ final class MakeRegistrationForm extends AbstractMaker
     public function configureCommand(Command $command, InputConfiguration $inputConfig): void
     {
         $command
-            ->setHelp(file_get_contents(__DIR__.'/../Resources/help/MakeRegistrationForm.txt'))
+            ->setHelp($this->getHelpFileContents('MakeRegistrationForm.txt'))
         ;
 
         $this->configureCommandWithTestsOption($command);
@@ -559,9 +559,9 @@ final class MakeRegistrationForm extends AbstractMaker
                 'options_code' => <<<EOF
                                     'mapped' => false,
                                     'constraints' => [
-                                        new IsTrue([
-                                            'message' => 'You should agree to our terms.',
-                                        ]),
+                                        new IsTrue(
+                                            message: 'You should agree to our terms.',
+                                        ),
                                     ],
                     EOF
             ],
@@ -573,15 +573,15 @@ final class MakeRegistrationForm extends AbstractMaker
                                     'mapped' => false,
                                     'attr' => ['autocomplete' => 'new-password'],
                                     'constraints' => [
-                                        new NotBlank([
-                                            'message' => 'Please enter a password',
-                                        ]),
-                                        new Length([
-                                            'min' => 6,
-                                            'minMessage' => 'Your password should be at least {{ limit }} characters',
+                                        new NotBlank(
+                                            message: 'Please enter a password',
+                                        ),
+                                        new Length(
+                                            min: 6,
+                                            minMessage: 'Your password should be at least {{ limit }} characters',
                                             // max length allowed by Symfony for security reasons
-                                            'max' => 4096,
-                                        ]),
+                                            max: 4096,
+                                        ),
                                     ],
                     EOF
             ],

@@ -21,14 +21,14 @@ class ImportMapVersionChecker
 {
     private const PACKAGE_METADATA_PATTERN = 'https://registry.npmjs.org/%package%/%version%';
 
-    private HttpClientInterface $httpClient;
+    private readonly HttpClientInterface $httpClient;
 
     public function __construct(
         private ImportMapConfigReader $importMapConfigReader,
         private RemotePackageDownloader $packageDownloader,
         ?HttpClientInterface $httpClient = null,
     ) {
-        $this->httpClient = $httpClient ?? HttpClient::create();
+        $this->httpClient = new BatchHttpClient($httpClient ?? HttpClient::create());
     }
 
     /**
@@ -86,7 +86,14 @@ class ImportMapVersionChecker
                     continue;
                 }
 
-                $dependencyPackageName = $entries->get($dependencyName)->getPackageName();
+                $dependencyEntry = $entries->get($dependencyName);
+
+                // local entries have no version to check and no package name to resolve
+                if (!$dependencyEntry->isRemotePackage()) {
+                    continue;
+                }
+
+                $dependencyPackageName = $dependencyEntry->getPackageName();
 
                 if (!isset($packageDependencies[$dependencyPackageName])) {
                     continue;
@@ -94,8 +101,8 @@ class ImportMapVersionChecker
 
                 $dependencyVersionConstraint = $packageDependencies[$dependencyPackageName];
 
-                if (!$this->isVersionSatisfied($dependencyVersionConstraint, $entries->get($dependencyName)->version)) {
-                    $problems[] = new PackageVersionProblem($packageName, $dependencyPackageName, $dependencyVersionConstraint, $entries->get($dependencyName)->version);
+                if (!$this->isVersionSatisfied($dependencyVersionConstraint, $dependencyEntry->version)) {
+                    $problems[] = new PackageVersionProblem($packageName, $dependencyPackageName, $dependencyVersionConstraint, $dependencyEntry->version);
                 }
             }
         }
@@ -120,7 +127,7 @@ class ImportMapVersionChecker
     public static function convertNpmConstraint(string $versionConstraint): ?string
     {
         // special npm constraint that don't translate to composer
-        if (\in_array($versionConstraint, ['latest', 'next'])
+        if (\in_array($versionConstraint, ['latest', 'next'], true)
             || preg_match('/^(git|http|file):/', $versionConstraint)
             || str_contains($versionConstraint, '/')
         ) {

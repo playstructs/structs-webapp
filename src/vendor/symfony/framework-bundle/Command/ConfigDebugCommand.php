@@ -11,6 +11,7 @@
 
 namespace Symfony\Bundle\FrameworkBundle\Command;
 
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -39,6 +40,12 @@ use Symfony\Component\Yaml\Yaml;
 #[AsCommand(name: 'debug:config', description: 'Dump the current configuration for an extension')]
 class ConfigDebugCommand extends AbstractConfigCommand
 {
+    public function __construct(
+        private ?ContainerInterface $envVarProcessors = null,
+    ) {
+        parent::__construct();
+    }
+
     protected function configure(): void
     {
         $this
@@ -49,23 +56,23 @@ class ConfigDebugCommand extends AbstractConfigCommand
                 new InputOption('format', null, InputOption::VALUE_REQUIRED, \sprintf('The output format ("%s")', implode('", "', $this->getAvailableFormatOptions())), class_exists(Yaml::class) ? 'txt' : 'json'),
             ])
             ->setHelp(<<<EOF
-The <info>%command.name%</info> command dumps the current configuration for an
-extension/bundle.
+                The <info>%command.name%</info> command dumps the current configuration for an
+                extension/bundle.
 
-Either the extension alias or bundle name can be used:
+                Either the extension alias or bundle name can be used:
 
-  <info>php %command.full_name% framework</info>
-  <info>php %command.full_name% FrameworkBundle</info>
+                  <info>php %command.full_name% framework</info>
+                  <info>php %command.full_name% FrameworkBundle</info>
 
-The <info>--format</info> option specifies the format of the command output:
+                The <info>--format</info> option specifies the format of the command output:
 
-  <info>php %command.full_name% framework --format=json</info>
+                  <info>php %command.full_name% framework --format=json</info>
 
-For dumping a specific option, add its path as second argument:
+                For dumping a specific option, add its path as second argument:
 
-  <info>php %command.full_name% framework serializer.enabled</info>
+                  <info>php %command.full_name% framework serializer.enabled</info>
 
-EOF
+                EOF
             )
         ;
     }
@@ -104,6 +111,10 @@ EOF
                 $io->title(
                     \sprintf('Current configuration for %s', $name === $extensionAlias ? \sprintf('extension with alias "%s"', $extensionAlias) : \sprintf('"%s"', $name))
                 );
+
+                if ($docUrl = $this->getDocUrl($extension, $container)) {
+                    $io->comment(\sprintf('Documentation at %s', $docUrl));
+                }
             }
 
             $io->writeln($this->convertToFormat([$extensionAlias => $config], $format));
@@ -142,6 +153,9 @@ EOF
 
         $method = new \ReflectionMethod($kernel, 'buildContainer');
         $container = $method->invoke($kernel);
+        if ($this->envVarProcessors) {
+            $container->set('container.env_var_processors_locator', $this->envVarProcessors);
+        }
         $container->getCompiler()->compile($container);
 
         return $container;
@@ -157,7 +171,7 @@ EOF
         $steps = explode('.', $path);
 
         foreach ($steps as $step) {
-            if (!\array_key_exists($step, $config)) {
+            if (!\is_array($config) || !\array_key_exists($step, $config)) {
                 throw new LogicException(\sprintf('Unable to find configuration for "%s.%s".', $alias, $path));
             }
 
@@ -268,5 +282,16 @@ EOF
     private function getAvailableFormatOptions(): array
     {
         return ['txt', 'yaml', 'json'];
+    }
+
+    private function getDocUrl(ExtensionInterface $extension, ContainerBuilder $container): ?string
+    {
+        $configuration = $extension instanceof ConfigurationInterface ? $extension : $extension->getConfiguration($container->getExtensionConfig($extension->getAlias()), $container);
+
+        return $configuration
+            ->getConfigTreeBuilder()
+            ->getRootNode()
+            ->getNode(true)
+            ->getAttribute('docUrl');
     }
 }

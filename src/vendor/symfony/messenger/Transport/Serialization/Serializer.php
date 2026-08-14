@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Messenger\Transport\Serialization;
 
+use Symfony\Component\Lock\Serializer\LockKeyNormalizer;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\LogicException;
 use Symfony\Component\Messenger\Exception\MessageDecodingFailedException;
@@ -18,6 +19,7 @@ use Symfony\Component\Messenger\Stamp\NonSendableStampInterface;
 use Symfony\Component\Messenger\Stamp\SerializedMessageStamp;
 use Symfony\Component\Messenger\Stamp\SerializerStamp;
 use Symfony\Component\Messenger\Stamp\StampInterface;
+use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
@@ -30,7 +32,7 @@ use Symfony\Component\Serializer\SerializerInterface as SymfonySerializerInterfa
 /**
  * @author Samuel Roze <samuel.roze@gmail.com>
  */
-class Serializer implements SerializerInterface
+class Serializer implements SerializerInterface, MessageTypeAwareSerializerInterface
 {
     public const MESSENGER_SERIALIZATION_CONTEXT = 'messenger_serialization';
     private const STAMP_HEADER_PREFIX = 'X-Message-Stamp-';
@@ -53,7 +55,15 @@ class Serializer implements SerializerInterface
         }
 
         $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $normalizers = [new DateTimeNormalizer(), new ArrayDenormalizer(), new ObjectNormalizer()];
+        $normalizers = [
+            new DateTimeNormalizer(),
+            new ArrayDenormalizer(),
+            new ObjectNormalizer(propertyTypeExtractor: new ReflectionExtractor()),
+        ];
+        if (class_exists(LockKeyNormalizer::class)) {
+            array_unshift($normalizers, new LockKeyNormalizer());
+        }
+
         $serializer = new SymfonySerializer($normalizers, $encoders);
 
         return new self($serializer);
@@ -86,6 +96,11 @@ class Serializer implements SerializerInterface
         }
 
         return new Envelope($message, $stamps);
+    }
+
+    public function getMessageType(array $encodedEnvelope): ?string
+    {
+        return $encodedEnvelope['headers']['type'] ?? null;
     }
 
     public function encode(Envelope $envelope): array

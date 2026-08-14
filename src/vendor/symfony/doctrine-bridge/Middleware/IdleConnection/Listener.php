@@ -14,6 +14,7 @@ namespace Symfony\Bridge\Doctrine\Middleware\IdleConnection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 final class Listener implements EventSubscriberInterface
@@ -29,9 +30,13 @@ final class Listener implements EventSubscriberInterface
 
     public function onKernelRequest(RequestEvent $event): void
     {
+        if (HttpKernelInterface::MAIN_REQUEST !== $event->getRequestType()) {
+            return;
+        }
         $timestamp = time();
 
-        foreach ($this->connectionExpiries as $name => $expiry) {
+        // iterate over a copy: removing the current key would make the iterator skip the next one
+        foreach ($this->connectionExpiries->getArrayCopy() as $name => $expiry) {
             if ($timestamp >= $expiry) {
                 // unset before so that we won't retry in case of any failure
                 $this->connectionExpiries->offsetUnset($name);

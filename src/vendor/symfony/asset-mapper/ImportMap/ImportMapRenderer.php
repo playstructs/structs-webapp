@@ -31,6 +31,9 @@ class ImportMapRenderer
     private const DEFAULT_ES_MODULE_SHIMS_POLYFILL_URL = 'https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js';
     private const DEFAULT_ES_MODULE_SHIMS_POLYFILL_INTEGRITY = 'sha384-ie1x72Xck445i0j4SlNJ5W5iGeL3Dpa0zD48MZopgWsjNB/lt60SuG1iduZGNnJn';
 
+    private const LOADER_JSON = "export default (async()=>await(await fetch('%s')).json())()";
+    private const LOADER_CSS = "document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:'%s'}))";
+
     public function __construct(
         private readonly ImportMapGenerator $importMapGenerator,
         private readonly ?Packages $assetPackages = null,
@@ -48,7 +51,7 @@ class ImportMapRenderer
         $importMapData = $this->importMapGenerator->getImportMapData($entryPoint);
         $importMap = [];
         $modulePreloads = [];
-        $cssLinks = [];
+        $webLinks = [];
         $polyfillPath = null;
         foreach ($importMapData as $importName => $data) {
             $path = $data['path'];
@@ -70,33 +73,38 @@ class ImportMapRenderer
             }
 
             $preload = $data['preload'] ?? false;
-            if ('css' !== $data['type']) {
+            if ('json' === $data['type']) {
+                $importMap[$importName] = 'data:application/javascript,'.str_replace('%', '%25', \sprintf(self::LOADER_JSON, addslashes($path)));
+                if ($preload) {
+                    $webLinks[$path] = 'fetch';
+                }
+            } elseif ('css' !== $data['type']) {
                 $importMap[$importName] = $path;
                 if ($preload) {
-                    $modulePreloads[] = $path;
+                    $modulePreloads[$path] = $path;
                 }
             } elseif ($preload) {
-                $cssLinks[] = $path;
+                $webLinks[$path] = 'style';
                 // importmap entry is a noop
                 $importMap[$importName] = 'data:application/javascript,';
             } else {
-                $importMap[$importName] = 'data:application/javascript,'.rawurlencode(\sprintf('document.head.appendChild(Object.assign(document.createElement("link"),{rel:"stylesheet",href:"%s"}))', addslashes($path)));
+                $importMap[$importName] = 'data:application/javascript,'.str_replace('%', '%25', \sprintf(self::LOADER_CSS, addslashes($path)));
             }
         }
 
         $output = '';
-        foreach ($cssLinks as $url) {
-            $url = $this->escapeAttributeValue($url);
-
-            $output .= "\n<link rel=\"stylesheet\" href=\"$url\">";
+        foreach ($webLinks as $url => $as) {
+            if ('style' === $as) {
+                $output .= "\n<link rel=\"stylesheet\" href=\"{$this->escapeAttributeValue($url)}\">";
+            }
         }
 
         if (class_exists(AddLinkHeaderListener::class) && $request = $this->requestStack?->getCurrentRequest()) {
-            $this->addWebLinkPreloads($request, $cssLinks);
+            $this->addWebLinkPreloads($request, $webLinks);
         }
 
         $scriptAttributes = $attributes || $this->scriptAttributes ? ' '.$this->createAttributesString($attributes) : '';
-        $importMapJson = json_encode(['imports' => $importMap], \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_HEX_TAG);
+        $importMapJson = json_encode(['imports' => $importMap ?: new \stdClass()], \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_HEX_TAG);
         $output .= <<<HTML
 
             <script type="importmap"$scriptAttributes>
@@ -124,12 +132,18 @@ class ImportMapRenderer
                 ] + $polyfillAttributes;
             }
 
+            // The CSP nonce changes per request and must not be baked into the inlined script
+            // body — otherwise the rendered <head> changes on every render, which breaks Turbo's
+            // <head> signature check and any cache that keys on the response body. Propagate it
+            // at runtime from the parent <script> element instead.
+            unset($polyfillAttributes['nonce']);
+
             $output .= <<<HTML
-                <script async$scriptAttributes>
+                <script$scriptAttributes>
                 if (!HTMLScriptElement.supports || !HTMLScriptElement.supports('importmap')) (function () {
                     const script = document.createElement('script');
                     script.src = '{$this->escapeAttributeValue($polyfillPath, \ENT_NOQUOTES)}';
-                    script.setAttribute('async', 'async');
+                    if (document.currentScript?.nonce) script.nonce = document.currentScript.nonce;
                     {$this->createAttributesString($polyfillAttributes, "script.setAttribute('%s', '%s');", "\n    ", \ENT_NOQUOTES)}
                     document.head.appendChild(script);
                 })();
@@ -187,12 +201,17 @@ class ImportMapRenderer
         return $attributeString;
     }
 
-    private function addWebLinkPreloads(Request $request, array $cssLinks): void
+    private function addWebLinkPreloads(Request $request, array $links): void
     {
-        $cssPreloadLinks = array_map(fn ($url) => (new Link('preload', $url))->withAttribute('as', 'style'), $cssLinks);
+        foreach ($links as $url => $as) {
+            $links[$url] = (new Link('preload', $url))->withAttribute('as', $as);
+            if ('fetch' === $as) {
+                $links[$url] = $links[$url]->withAttribute('crossorigin', 'anonymous');
+            }
+        }
 
         if (null === $linkProvider = $request->attributes->get('_links')) {
-            $request->attributes->set('_links', new GenericLinkProvider($cssPreloadLinks));
+            $request->attributes->set('_links', new GenericLinkProvider($links));
 
             return;
         }
@@ -201,7 +220,7 @@ class ImportMapRenderer
             return;
         }
 
-        foreach ($cssPreloadLinks as $link) {
+        foreach ($links as $link) {
             $linkProvider = $linkProvider->withLink($link);
         }
 

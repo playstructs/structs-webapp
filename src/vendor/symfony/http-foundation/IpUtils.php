@@ -22,15 +22,27 @@ class IpUtils
         '127.0.0.0/8',    // RFC1700 (Loopback)
         '10.0.0.0/8',     // RFC1918
         '192.168.0.0/16', // RFC1918
+        '192.0.2.0/24',   // Documentation Ranges TEST-NET-1 (RFC 5737)
+        '198.51.100.0/24',// Documentation Ranges TEST-NET-2 (RFC 5737)
+        '203.0.113.0/24', // Documentation Ranges TEST-NET-3 (RFC 5737)
         '172.16.0.0/12',  // RFC1918
         '169.254.0.0/16', // RFC3927
+        '198.18.0.0/15',  // IPv4 Benchmarking (RFC 2544)
         '0.0.0.0/8',      // RFC5735
         '240.0.0.0/4',    // RFC1112
+        '100.64.0.0/10',  // RFC6598
         '::1/128',        // Loopback
         'fc00::/7',       // Unique Local Address
         'fe80::/10',      // Link Local Address
-        '::ffff:0:0/96',  // IPv4 translations
+        '::ffff:0:0/96',  // IPv4-mapped IPv6 addresses (RFC 4291 section 2.5.5.2)
         '::/128',         // Unspecified address
+        '::/96',          // IPv4-compatible IPv6 addresses (RFC 4291 section 2.5.5.1)
+        '2002::/16',      // 6to4 (RFC 3056)
+        '2001::/32',      // Teredo tunneling (RFC 4380)
+        '2001:db8::/32',  // Documentation Ranges (RFC 3849)
+        '2001:0002::/48', // IPv6 Benchmarking (RFC 5180 and corrections)
+        '64:ff9b::/96',   // NAT64 well-known prefix (RFC 6052)
+        '64:ff9b:1::/48', // NAT64 local-use prefix (RFC 8215)
     ];
 
     private static array $checkedIps = [];
@@ -196,13 +208,23 @@ class IpUtils
             throw new \InvalidArgumentException('Cannot anonymize more than 4 bytes for IPv4 and 16 bytes for IPv6.');
         }
 
+        /*
+         * If the IP contains a % symbol, then it is a local-link address with scoping according to RFC 4007
+         * In that case, we only care about the part before the % symbol, as the following functions, can only work with
+         * the IP address itself. As the scope can leak information (containing interface name), we do not want to
+         * include it in our anonymized IP data.
+         */
+        if (str_contains($ip, '%')) {
+            $ip = substr($ip, 0, strpos($ip, '%'));
+        }
+
         $wrappedIPv6 = false;
         if (str_starts_with($ip, '[') && str_ends_with($ip, ']')) {
             $wrappedIPv6 = true;
             $ip = substr($ip, 1, -1);
         }
 
-        $mappedIpV4MaskGenerator = function (string $mask, int $bytesToAnonymize) {
+        $mappedIpV4MaskGenerator = static function (string $mask, int $bytesToAnonymize) {
             $mask .= str_repeat('ff', 4 - $bytesToAnonymize);
             $mask .= str_repeat('00', $bytesToAnonymize);
 
@@ -231,9 +253,15 @@ class IpUtils
 
     /**
      * Checks if an IPv4 or IPv6 address is contained in the list of private IP subnets.
+     *
+     * @throws \ValueError When $requestIp is not a valid IP address
      */
     public static function isPrivateIp(string $requestIp): bool
     {
+        if (!filter_var($requestIp, \FILTER_VALIDATE_IP)) {
+            throw new \ValueError(\sprintf('"%s" is not a valid IP address.', $requestIp));
+        }
+
         return self::checkIp($requestIp, self::PRIVATE_SUBNETS);
     }
 

@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Validator\Constraints;
 
+use Symfony\Component\Validator\Attribute\HasNamedArguments;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Exception\InvalidArgumentException;
 use Symfony\Component\Validator\Exception\MissingOptionsException;
@@ -58,15 +59,15 @@ class Length extends Constraint
     public string $countUnit = self::COUNT_CODEPOINTS;
 
     /**
-     * @param positive-int|array<string,mixed>|null $exactly    The exact expected length
-     * @param int<0, max>|null                      $min        The minimum expected length
-     * @param positive-int|null                     $max        The maximum expected length
-     * @param string|null                           $charset    The charset to be used when computing value's length (defaults to UTF-8)
-     * @param callable|null                         $normalizer A callable to normalize value before it is validated
-     * @param self::COUNT_*|null                    $countUnit  The character count unit for the length check (defaults to {@see Length::COUNT_CODEPOINTS})
-     * @param string[]|null                         $groups
-     * @param array<string,mixed>                   $options
+     * @param positive-int|null  $exactly    The exact expected length
+     * @param int<0, max>|null   $min        The minimum expected length
+     * @param positive-int|null  $max        The maximum expected length
+     * @param string|null        $charset    The charset to be used when computing value's length (defaults to UTF-8)
+     * @param callable|null      $normalizer A callable to normalize value before it is validated
+     * @param self::COUNT_*|null $countUnit  The character count unit for the length check (defaults to {@see Length::COUNT_CODEPOINTS})
+     * @param string[]|null      $groups
      */
+    #[HasNamedArguments]
     public function __construct(
         int|array|null $exactly = null,
         ?int $min = null,
@@ -80,11 +81,15 @@ class Length extends Constraint
         ?string $charsetMessage = null,
         ?array $groups = null,
         mixed $payload = null,
-        array $options = [],
+        ?array $options = null,
     ) {
         if (\is_array($exactly)) {
-            $options = array_merge($exactly, $options);
+            trigger_deprecation('symfony/validator', '7.3', 'Passing an array of options to configure the "%s" constraint is deprecated, use named arguments instead.', static::class);
+
+            $options = array_merge($exactly, $options ?? []);
             $exactly = $options['value'] ?? null;
+        } elseif (\is_array($options)) {
+            trigger_deprecation('symfony/validator', '7.3', 'Passing an array of options to configure the "%s" constraint is deprecated, use named arguments instead.', static::class);
         }
 
         $min ??= $options['min'] ?? null;

@@ -63,7 +63,7 @@ class Generator
         $targetPath = $this->fileManager->getRelativePathForFutureClass($className);
 
         if (null === $targetPath) {
-            throw new \LogicException(\sprintf('Could not determine where to locate the new class "%s", maybe try with a full namespace like "\\My\\Full\\Namespace\\%s"', $className, Str::getShortClassName($className)));
+            throw new \LogicException(\sprintf('Could not determine where to locate the new class "%s", maybe try with a full namespace like "My\\Full\\Namespace\\%s"', $className, Str::getShortClassName($className)));
         }
 
         $variables = array_merge($variables, [
@@ -72,6 +72,41 @@ class Generator
         ]);
 
         $this->addOperation($targetPath, $templateName, $variables);
+
+        return $targetPath;
+    }
+
+    /**
+     * Future replacement for generateClass().
+     *
+     * @internal
+     *
+     * @param string $templateName Template name in the templates/ dir to use
+     * @param array  $variables    Array of variables to pass to the template
+     * @param bool   $isController Set to true if generating a Controller that needs
+     *                             access to the TemplateComponentGenerator ("generator") in
+     *                             the Twig template. e.g. to create route attributes for a route method
+     *
+     * @return string The path where the file will be created
+     *
+     * @throws \Exception
+     */
+    final public function generateClassFromClassData(ClassData $classData, string $templateName, array $variables = [], bool $isController = false): string
+    {
+        $classData = $this->templateComponentGenerator->configureClass($classData);
+        $targetPath = $this->fileManager->getRelativePathForFutureClass($classData->getFullClassName());
+
+        if (null === $targetPath) {
+            throw new \LogicException(\sprintf('Could not determine where to locate the new class "%s", maybe try with a full namespace like "My\\Full\\Namespace\\%s"', $classData->getFullClassName(), $classData->getClassName()));
+        }
+
+        $globalTemplateVars = ['class_data' => $classData];
+
+        if ($isController) {
+            $globalTemplateVars['generator'] = $this->templateComponentGenerator;
+        }
+
+        $this->addOperation($targetPath, $templateName, array_merge($variables, $globalTemplateVars));
 
         return $targetPath;
     }
@@ -264,10 +299,14 @@ class Generator
 
         $templatePath = $templateName;
         if (!file_exists($templatePath)) {
-            $templatePath = __DIR__.'/Resources/skeleton/'.$templateName;
+            $templatePath = \sprintf('%s/templates/%s', \dirname(__DIR__), $templateName);
 
             if (!file_exists($templatePath)) {
-                throw new \Exception(\sprintf('Cannot find template "%s"', $templateName));
+                $templatePath = $this->getTemplateFromLegacySkeletonPath($templateName);
+            }
+
+            if (!file_exists($templatePath)) {
+                throw new \Exception(\sprintf('Cannot find template "%s" in the templates/ dir.', $templateName));
             }
         }
 
@@ -275,5 +314,28 @@ class Generator
             'template' => $templatePath,
             'variables' => $variables,
         ];
+    }
+
+    /**
+     * @legacy - Remove when public generate methods become "internal" to MakerBundle in v2
+     */
+    private function getTemplateFromLegacySkeletonPath(string $templateName): string
+    {
+        $templatePath = $templateName;
+        if (!file_exists($templatePath)) {
+            $templatePath = __DIR__.'/Resources/skeleton/'.$templateName;
+
+            if (!file_exists($templatePath)) {
+                throw new \Exception(\sprintf('Cannot find template "%s"', $templateName));
+            }
+        }
+
+        @trigger_deprecation(
+            'symfony/maker-bundle',
+            '1.62.0',
+            'Storing templates in src/Resources/skeleton is deprecated. Store MakerBundle templates in the "~/templates/" dir instead.',
+        );
+
+        return $templatePath;
     }
 }
