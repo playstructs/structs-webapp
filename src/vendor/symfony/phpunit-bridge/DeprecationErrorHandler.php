@@ -96,8 +96,8 @@ class DeprecationErrorHandler
     public static function collectDeprecations($outputFile)
     {
         $deprecations = [];
-        $previousErrorHandler = set_error_handler(function ($type, $msg, $file, $line, $context = []) use (&$deprecations, &$previousErrorHandler) {
-            if (\E_USER_DEPRECATED !== $type && \E_DEPRECATED !== $type && (\E_WARNING !== $type || false === strpos($msg, '" targeting switch is equivalent to "break'))) {
+        $previousErrorHandler = set_error_handler(static function ($type, $msg, $file, $line, $context = []) use (&$deprecations, &$previousErrorHandler) {
+            if (\E_USER_DEPRECATED !== $type && \E_DEPRECATED !== $type && (\E_WARNING !== $type || !str_contains($msg, '" targeting switch is equivalent to "break'))) {
                 if ($previousErrorHandler) {
                     return $previousErrorHandler($type, $msg, $file, $line, $context);
                 }
@@ -119,7 +119,7 @@ class DeprecationErrorHandler
             return null;
         });
 
-        register_shutdown_function(function () use ($outputFile, &$deprecations) {
+        register_shutdown_function(static function () use ($outputFile, &$deprecations) {
             file_put_contents($outputFile, serialize($deprecations));
         });
     }
@@ -129,7 +129,7 @@ class DeprecationErrorHandler
      */
     public function handleError($type, $msg, $file, $line, $context = [])
     {
-        if ((\E_USER_DEPRECATED !== $type && \E_DEPRECATED !== $type && (\E_WARNING !== $type || false === strpos($msg, '" targeting switch is equivalent to "break'))) || !$this->getConfiguration()->isEnabled()) {
+        if ((\E_USER_DEPRECATED !== $type && \E_DEPRECATED !== $type && (\E_WARNING !== $type || !str_contains($msg, '" targeting switch is equivalent to "break'))) || !$this->getConfiguration()->isEnabled()) {
             return \call_user_func(self::getPhpUnitErrorHandler(), $type, $msg, $file, $line, $context);
         }
 
@@ -169,6 +169,13 @@ class DeprecationErrorHandler
             echo "\n".ucfirst($group).' '.$deprecation->toString();
 
             exit(1);
+        }
+
+        if (\PHP_VERSION_ID >= 80500 && \in_array($msg, [
+            'The __sleep() serialization magic method has been deprecated. Implement __serialize() instead (or in addition, if support for old PHP versions is necessary)',
+            'The __wakeup() serialization magic method has been deprecated. Implement __unserialize() instead (or in addition, if support for old PHP versions is necessary)',
+        ], true)) {
+            return null;
         }
 
         if ('legacy' === $group) {
@@ -295,9 +302,7 @@ class DeprecationErrorHandler
      */
     private function displayDeprecations(array $groups, Configuration $configuration): void
     {
-        $cmp = function ($a, $b) {
-            return $b->count() - $a->count();
-        };
+        $cmp = static fn ($a, $b) => $b->count() - $a->count();
 
         if ($configuration->shouldWriteToLogFile()) {
             if (false === $handle = @fopen($file = $configuration->getLogFile(), 'a')) {
@@ -361,8 +366,12 @@ class DeprecationErrorHandler
                 $eh = self::$errorHandler = UtilErrorHandler::class;
             } elseif (method_exists(ErrorHandler::class, '__invoke')) {
                 $eh = self::$errorHandler = ErrorHandler::class;
-            } else {
+            } elseif (method_exists(UtilErrorHandler::class, 'handleError')) {
                 return self::$errorHandler = 'PHPUnit\Util\ErrorHandler::handleError';
+            } else {
+                // PHPUnit is not loadable in this process, so there is no handler to
+                // delegate to; leave the error to PHP
+                return static function () { return false; };
             }
         }
 
@@ -383,7 +392,7 @@ class DeprecationErrorHandler
                     $frame['object']->getConvertWarningsToExceptions()
                 );
             } elseif (ErrorHandler::class === $eh && $frame['object'] instanceof TestCase) {
-                return function (int $errorNumber, string $errorString, string $errorFile, int $errorLine) {
+                return static function (int $errorNumber, string $errorString, string $errorFile, int $errorLine) {
                     ErrorHandler::instance()($errorNumber, $errorString, $errorFile, $errorLine);
 
                     return true;
@@ -391,7 +400,7 @@ class DeprecationErrorHandler
             }
         }
 
-        return function () { return false; };
+        return static fn () => false;
     }
 
     /**

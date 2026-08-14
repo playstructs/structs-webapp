@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Security\Http\Firewall\AbstractListener;
 use Symfony\Component\Security\Http\Firewall\ExceptionListener;
 use Symfony\Component\Security\Http\Firewall\FirewallListenerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -122,7 +123,13 @@ class Firewall implements EventSubscriberInterface
     protected function callListeners(RequestEvent $event, iterable $listeners)
     {
         foreach ($listeners as $listener) {
-            $listener($event);
+            if (!$listener instanceof FirewallListenerInterface) {
+                trigger_deprecation('symfony/security-http', '7.4', 'Using a callable as firewall listener is deprecated, extend "%s" or implement "%s" instead.', AbstractListener::class, FirewallListenerInterface::class);
+
+                $listener($event);
+            } elseif (false !== $listener->supports($event->getRequest())) {
+                $listener->authenticate($event);
+            }
 
             if ($event->hasResponse()) {
                 break;
@@ -130,8 +137,8 @@ class Firewall implements EventSubscriberInterface
         }
     }
 
-    private function getListenerPriority(object $logoutListener): int
+    private function getListenerPriority(object $listener): int
     {
-        return $logoutListener instanceof FirewallListenerInterface ? $logoutListener->getPriority() : 0;
+        return $listener instanceof FirewallListenerInterface ? $listener->getPriority() : 0;
     }
 }

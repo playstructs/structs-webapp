@@ -30,7 +30,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  *
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
  *
- * @final since Symfony 7.1
+ * @deprecated since Symfony 7.4
  */
 class ConfigBuilderCacheWarmer implements CacheWarmerInterface
 {
@@ -50,7 +50,7 @@ class ConfigBuilderCacheWarmer implements CacheWarmerInterface
 
         if ($this->kernel instanceof Kernel) {
             /** @var ContainerBuilder $container */
-            $container = \Closure::bind(function (Kernel $kernel) {
+            $container = \Closure::bind(static function (Kernel $kernel) {
                 $containerBuilder = $kernel->getContainerBuilder();
                 $kernel->prepareContainer($containerBuilder);
 

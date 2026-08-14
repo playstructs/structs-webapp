@@ -107,6 +107,9 @@ class SendmailTransport extends AbstractTransport
             $chunks = AbstractStream::replace("\n.", "\n..", $chunks);
         }
 
+        if ($recipients) {
+            $command .= ' --';
+        }
         foreach ($recipients as $recipient) {
             $command .= ' '.escapeshellarg($recipient->getEncodedAddress());
         }
@@ -114,7 +117,7 @@ class SendmailTransport extends AbstractTransport
         $this->stream->setCommand($command);
         $this->stream->initialize();
         foreach ($chunks as $chunk) {
-            $this->stream->write($chunk);
+            $this->stream->write($chunk, false);
         }
         $this->stream->flush();
         $this->stream->terminate();

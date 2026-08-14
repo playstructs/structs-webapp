@@ -25,7 +25,7 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $controller = null;
 
-    #[Assert\Choice(['0', '1'])]
+    #[Assert\Choice(choices: ['0', '1'])]
     public ?string $count_only = null;
 
     #[Assert\Regex(RegexPattern::ID)]
@@ -49,7 +49,7 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $entry_substation_id = null;
 
-    #[Assert\Choice(['0', '1'])]
+    #[Assert\Choice(choices: ['0', '1'])]
     public ?string $fleet_away_only = null;
 
     #[Assert\Regex(RegexPattern::ID)]
@@ -79,7 +79,7 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $min_ore = null;
 
-    #[Assert\Choice(['0', '1'])]
+    #[Assert\Choice(choices: ['0', '1'])]
     public ?string $not_under_attack = null;
 
     #[Assert\Regex(RegexPattern::ID)]

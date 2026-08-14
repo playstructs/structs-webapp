@@ -31,7 +31,9 @@ use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface
 use Symfony\Component\Security\Core\Authorization\AuthorizationChecker;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Authorization\ExpressionLanguage;
+use Symfony\Component\Security\Core\Authorization\UserAuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\AuthenticatedVoter;
+use Symfony\Component\Security\Core\Authorization\Voter\ClosureVoter;
 use Symfony\Component\Security\Core\Authorization\Voter\ExpressionVoter;
 use Symfony\Component\Security\Core\Authorization\Voter\RoleHierarchyVoter;
 use Symfony\Component\Security\Core\Authorization\Voter\RoleVoter;
@@ -66,6 +68,7 @@ return static function (ContainerConfigurator $container) {
                 service('security.access.decision_manager'),
             ])
         ->alias(AuthorizationCheckerInterface::class, 'security.authorization_checker')
+        ->alias(UserAuthorizationCheckerInterface::class, 'security.authorization_checker')
 
         ->set('security.token_storage', UsageTrackingTokenStorage::class)
             ->args([
@@ -85,12 +88,14 @@ return static function (ContainerConfigurator $container) {
                 service_locator([
                     'security.token_storage' => service('security.token_storage'),
                     'security.authorization_checker' => service('security.authorization_checker'),
+                    'security.user_authorization_checker' => service('security.authorization_checker'),
                     'security.authenticator.managers_locator' => service('security.authenticator.managers_locator')->ignoreOnInvalid(),
                     'request_stack' => service('request_stack'),
                     'security.firewall.map' => service('security.firewall.map'),
                     'security.user_checker_locator' => service('security.user_checker_locator'),
                     'security.firewall.event_dispatcher_locator' => service('security.firewall.event_dispatcher_locator'),
                     'security.csrf.token_manager' => service('security.csrf.token_manager')->ignoreOnInvalid(),
+                    'security.firewall_config_locator' => service('security.firewall_config_locator')->ignoreOnInvalid(),
                 ]),
                 abstract_arg('authenticators'),
             ])
@@ -162,6 +167,12 @@ return static function (ContainerConfigurator $container) {
             ])
             ->tag('security.voter', ['priority' => 245])
 
+        ->set('security.access.closure_voter', ClosureVoter::class)
+            ->args([
+                service('security.authorization_checker'),
+            ])
+            ->tag('security.voter', ['priority' => 245])
+
         ->set('security.impersonate_url_generator', ImpersonateUrlGenerator::class)
         ->args([
             service('request_stack'),
@@ -229,6 +240,7 @@ return static function (ContainerConfigurator $container) {
                 service('router')->nullOnInvalid(),
                 service('security.token_storage')->nullOnInvalid(),
             ])
+            ->tag('kernel.reset', ['method' => 'reset', 'on_invalid' => 'ignore'])
 
         ->set('security.route_loader.logout', LogoutRouteLoader::class)
             ->args([

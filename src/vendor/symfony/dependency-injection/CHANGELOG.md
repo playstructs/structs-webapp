@@ -1,6 +1,34 @@
 CHANGELOG
 =========
 
+7.4
+---
+
+ * [BC BREAK] Throw when using `$this` or its internal scope from PHP config files; use the `$loader` variable instead
+ * Allow adding resource tags using any config format
+ * Allow `#[AsAlias]` to be extended
+ * Parse attributes found on abstract classes for resource definitions
+ * Add argument `$target` to `ContainerBuilder::registerAliasForArgument()`
+ * Deprecate registering a service without a class when its id is a non-existing FQCN
+ * Allow multiple `#[AsDecorator]` attributes
+ * Handle declaring services using PHP arrays that follow the same shape as corresponding yaml files
+ * Add `AppReference` to help writing PHP configs using yaml-like array-shapes
+ * Deprecate XML configuration format, use YAML or PHP instead
+ * Deprecate `ExtensionInterface::getXsdValidationBasePath()` and `getNamespace()`
+ * Deprecate the fluent PHP format for semantic configuration, use `$container->extension()` or return an array instead
+
+7.3
+---
+
+ * Make `#[AsTaggedItem]` repeatable
+ * Support `@>` as a shorthand for `!service_closure` in yaml files
+ * Don't skip classes with private constructor when autodiscovering
+ * Add `Definition::addResourceTag()` and `ContainerBuilder::findTaggedResourceIds()`
+   for auto-configuration of classes excluded from the service container
+ * Accept multiple auto-configuration callbacks for the same attribute class
+ * Leverage native lazy objects when possible for lazy services
+ * Add `when` argument to `#[AsAlias]`
+
 7.2
 ---
 

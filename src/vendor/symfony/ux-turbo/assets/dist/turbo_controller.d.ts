@@ -1,4 +1,3 @@
-import { Controller } from '@hotwired/stimulus';
-import '@hotwired/turbo';
-export default class extends Controller {
-}
+import { Controller } from "@hotwired/stimulus";
+declare class export_default extends Controller {}
+export { export_default as default };

@@ -12,6 +12,7 @@
 namespace Symfony\Bridge\Monolog\Processor;
 
 use Monolog\LogRecord;
+use Monolog\ResettableInterface;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -22,7 +23,7 @@ use Symfony\Contracts\Service\ResetInterface;
  *
  * @author Piotr Stankowski <git@trakos.pl>
  */
-final class ConsoleCommandProcessor implements EventSubscriberInterface, ResetInterface
+final class ConsoleCommandProcessor implements EventSubscriberInterface, ResetInterface, ResettableInterface
 {
     private array $commandData;
 
@@ -43,7 +44,8 @@ final class ConsoleCommandProcessor implements EventSubscriberInterface, ResetIn
 
     public function reset(): void
     {
-        unset($this->commandData);
+        // the command data is set once, on ConsoleEvents::COMMAND, and must outlive any reset
+        // happening while the command is still running
     }
 
     public function addCommandData(ConsoleEvent $event): void

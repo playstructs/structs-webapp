@@ -82,7 +82,7 @@ class ResolveInstanceofConditionalsPass implements CompilerPassInterface
                 /** @var ChildDefinition $instanceofDef */
                 $instanceofDef = clone $instanceofDef;
                 $instanceofDef->setAbstract(true)->setParent($parent ?: '.abstract.instanceof.'.$id);
-                $parent = '.instanceof.'.$interface.'.'.$key.'.'.$id;
+                $parent = '.instanceof.'.strtr($interface, "\0\r\n", '---').'.'.$key.'.'.$id;
                 $container->setDefinition($parent, $instanceofDef);
                 $instanceofTags[] = [$interface, $instanceofDef->getTags()];
                 $instanceofBindings = $instanceofDef->getBindings() + $instanceofBindings;
@@ -113,7 +113,7 @@ class ResolveInstanceofConditionalsPass implements CompilerPassInterface
                 $definition = substr_replace($definition, 'Child', 44, 0);
             }
             /** @var ChildDefinition $definition */
-            $definition = unserialize($definition);
+            $definition = unserialize($definition, ['allowed_classes' => true]);
             $definition->setParent($parent);
 
             if (null !== $shared && !isset($definition->getChanges()['shared'])) {
@@ -149,13 +149,18 @@ class ResolveInstanceofConditionalsPass implements CompilerPassInterface
                 ->setAbstract(true);
         }
 
+        if ($definition->isSynthetic()) {
+            // Ignore container.excluded tag on synthetic services
+            $definition->clearTag('container.excluded');
+        }
+
         return $definition;
     }
 
     private function mergeConditionals(array $autoconfiguredInstanceof, array $instanceofConditionals, ContainerBuilder $container): array
     {
         // make each value an array of ChildDefinition
-        $conditionals = array_map(fn ($childDef) => [$childDef], $autoconfiguredInstanceof);
+        $conditionals = array_map(static fn ($childDef) => [$childDef], $autoconfiguredInstanceof);
 
         foreach ($instanceofConditionals as $interface => $instanceofDef) {
             // make sure the interface/class exists (but don't validate automaticInstanceofConditionals)

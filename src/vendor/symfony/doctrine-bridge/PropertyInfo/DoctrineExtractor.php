@@ -50,7 +50,7 @@ class DoctrineExtractor implements PropertyListExtractorInterface, PropertyTypeE
         $properties = array_merge($metadata->getFieldNames(), $metadata->getAssociationNames());
 
         if ($metadata instanceof ClassMetadata && $metadata->embeddedClasses) {
-            $properties = array_filter($properties, fn ($property) => !str_contains($property, '.'));
+            $properties = array_filter($properties, static fn ($property) => !str_contains($property, '.'));
 
             $properties = array_merge($properties, array_keys($metadata->embeddedClasses));
         }
@@ -161,8 +161,13 @@ class DoctrineExtractor implements PropertyListExtractorInterface, PropertyTypeE
         };
     }
 
+    /**
+     * @deprecated since Symfony 7.3, use "getType" instead
+     */
     public function getTypes(string $class, string $property, array $context = []): ?array
     {
+        trigger_deprecation('symfony/property-info', '7.3', 'The "%s()" method is deprecated, use "%s::getType()" instead.', __METHOD__, self::class);
+
         if (null === $metadata = $this->getMetadata($class)) {
             return null;
         }

@@ -11,6 +11,7 @@
 
 namespace Symfony\Bundle\FrameworkBundle\Console;
 
+use Composer\InstalledVersions;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\ListCommand;
@@ -36,7 +37,7 @@ class Application extends BaseApplication
     public function __construct(
         private KernelInterface $kernel,
     ) {
-        parent::__construct('Symfony', Kernel::VERSION);
+        parent::__construct('Symfony', class_exists(InstalledVersions::class) ? InstalledVersions::getPrettyVersion('symfony/http-kernel') ?? InstalledVersions::getPrettyVersion('symfony/symfony') : Kernel::MAJOR_VERSION.'.'.Kernel::MINOR_VERSION);
 
         $inputDefinition = $this->getDefinition();
         $inputDefinition->addOption(new InputOption('--env', '-e', InputOption::VALUE_REQUIRED, 'The Environment name.', $kernel->getEnvironment()));
@@ -159,11 +160,29 @@ class Application extends BaseApplication
         return parent::getLongVersion().\sprintf(' (env: <comment>%s</>, debug: <comment>%s</>)', $this->kernel->getEnvironment(), $this->kernel->isDebug() ? 'true' : 'false');
     }
 
+    /**
+     * @deprecated since Symfony 7.4, use Application::addCommand() instead
+     */
     public function add(Command $command): ?Command
+    {
+        trigger_deprecation('symfony/framework-bundle', '7.4', 'The "%s()" method is deprecated and will be removed in Symfony 8.0, use "%s::addCommand()" instead.', __METHOD__, self::class);
+
+        return $this->addCommand($command);
+    }
+
+    public function addCommand(callable|Command $command): ?Command
     {
         $this->registerCommands();
 
-        return parent::add($command);
+        if (!method_exists(BaseApplication::class, 'addCommand')) {
+            if (!$command instanceof Command) {
+                throw new \LogicException('Using callables as commands requires symfony/console 7.4 or higher.');
+            }
+
+            return parent::add($command);
+        }
+
+        return parent::addCommand($command);
     }
 
     protected function registerCommands(): void
@@ -197,7 +216,7 @@ class Application extends BaseApplication
             foreach ($container->getParameter('console.command.ids') as $id) {
                 if (!isset($lazyCommandIds[$id])) {
                     try {
-                        $this->add($container->get($id));
+                        $this->addCommand($container->get($id));
                     } catch (\Throwable $e) {
                         $this->registrationErrors[] = $e;
                     }

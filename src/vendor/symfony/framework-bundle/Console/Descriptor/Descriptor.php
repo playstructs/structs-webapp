@@ -49,7 +49,7 @@ abstract class Descriptor implements DescriptorInterface
         }
 
         match (true) {
-            $object instanceof RouteCollection => $this->describeRouteCollection($object, $options),
+            $object instanceof RouteCollection => $this->describeRouteCollection($this->filterRoutesByHttpMethod($object, $options['method'] ?? ''), $options),
             $object instanceof Route => $this->describeRoute($object, $options),
             $object instanceof ParameterBag => $this->describeContainerParameters($object, $options),
             $object instanceof ContainerBuilder && !empty($options['env-vars']) => $this->describeContainerEnvVars($this->getContainerEnvVars($object), $options),
@@ -243,7 +243,7 @@ abstract class Descriptor implements DescriptorInterface
                 }
             }
         }
-        uasort($maxPriority, fn ($a, $b) => $b <=> $a);
+        uasort($maxPriority, static fn ($a, $b) => $b <=> $a);
 
         return array_keys($maxPriority);
     }
@@ -260,7 +260,7 @@ abstract class Descriptor implements DescriptorInterface
 
     protected function sortByPriority(array $tag): array
     {
-        usort($tag, fn ($a, $b) => ($b['priority'] ?? 0) <=> ($a['priority'] ?? 0));
+        usort($tag, static fn ($a, $b) => ($b['priority'] ?? 0) <=> ($a['priority'] ?? 0));
 
         return $tag;
     }
@@ -353,11 +353,27 @@ abstract class Descriptor implements DescriptorInterface
     {
         try {
             return array_values(array_unique(array_map(
-                fn (ServiceReferenceGraphEdge $edge) => $edge->getSourceNode()->getId(),
+                static fn (ServiceReferenceGraphEdge $edge) => $edge->getSourceNode()->getId(),
                 $container->getCompiler()->getServiceReferenceGraph()->getNode($serviceId)->getInEdges()
             )));
         } catch (InvalidArgumentException $exception) {
             return [];
         }
+    }
+
+    private function filterRoutesByHttpMethod(RouteCollection $routes, string $method): RouteCollection
+    {
+        if (!$method) {
+            return $routes;
+        }
+        $filteredRoutes = clone $routes;
+
+        foreach ($filteredRoutes as $routeName => $route) {
+            if ($route->getMethods() && !\in_array($method, $route->getMethods(), true)) {
+                $filteredRoutes->remove($routeName);
+            }
+        }
+
+        return $filteredRoutes;
     }
 }

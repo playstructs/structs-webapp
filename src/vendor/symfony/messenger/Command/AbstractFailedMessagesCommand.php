@@ -66,8 +66,10 @@ abstract class AbstractFailedMessagesCommand extends Command
         return $stamp?->getId();
     }
 
-    protected function displaySingleMessage(Envelope $envelope, SymfonyStyle $io): void
+    protected function displaySingleMessage(Envelope $envelope, SymfonyStyle $io, ?SymfonyStyle $errorIo = null): void
     {
+        $errorIo ??= $io->getErrorStyle();
+
         $io->title('Failed Message Details');
 
         /** @var SentToFailureTransportStamp|null $sentToFailureTransportStamp */
@@ -88,7 +90,7 @@ abstract class AbstractFailedMessagesCommand extends Command
         }
 
         if (null === $sentToFailureTransportStamp) {
-            $io->warning('Message does not appear to have been sent to this transport after failing');
+            $errorIo->warning('Message does not appear to have been sent to this transport after failing');
         } else {
             $failedAt = '';
             $errorMessage = '';
@@ -127,7 +129,7 @@ abstract class AbstractFailedMessagesCommand extends Command
         if ($io->isVeryVerbose()) {
             $io->title('Message:');
             if (null !== $lastMessageDecodingFailedStamp) {
-                $io->error('The message could not be decoded. See below an APPROXIMATIVE representation of the class.');
+                $errorIo->error('The message could not be decoded. See below an APPROXIMATIVE representation of the class.');
             }
             $dump = new Dumper($io, null, $this->createCloner());
             $io->writeln($dump($envelope->getMessage()));
@@ -136,7 +138,7 @@ abstract class AbstractFailedMessagesCommand extends Command
             $io->writeln(null === $flattenException ? '(no data)' : $dump($flattenException));
         } else {
             if (null !== $lastMessageDecodingFailedStamp) {
-                $io->error('The message could not be decoded.');
+                $errorIo->error('The message could not be decoded.');
             }
             $io->writeln(' Re-run command with <info>-vv</info> to see more message & error details.');
         }
@@ -146,9 +148,9 @@ abstract class AbstractFailedMessagesCommand extends Command
     {
         if ($receiver instanceof MessageCountAwareInterface) {
             if (1 === $receiver->getMessageCount()) {
-                $io->writeln('There is <comment>1</comment> message pending in the failure transport.');
+                $io->writeln('There is <info>1</info> message pending in the failure transport.');
             } else {
-                $io->writeln(\sprintf('There are <comment>%d</comment> messages pending in the failure transport.', $receiver->getMessageCount()));
+                $io->writeln(\sprintf('There are <info>%d</info> messages pending in the failure transport.', $receiver->getMessageCount()));
             }
         }
     }
@@ -173,7 +175,7 @@ abstract class AbstractFailedMessagesCommand extends Command
         }
 
         $cloner = new VarCloner();
-        $cloner->addCasters([FlattenException::class => function (FlattenException $flattenException, array $a, Stub $stub): array {
+        $cloner->addCasters([FlattenException::class => static function (FlattenException $flattenException, array $a, Stub $stub): array {
             $stub->class = $flattenException->getClass();
 
             return [
@@ -195,9 +197,9 @@ abstract class AbstractFailedMessagesCommand extends Command
         $failureTransportsCount = \count($failureTransports);
         if ($failureTransportsCount > 1) {
             $io->writeln([
-                \sprintf('> Loading messages from the <comment>global</comment> failure transport <comment>%s</comment>.', $failureTransportName),
-                '> To use a different failure transport, pass <comment>--transport=</comment>.',
-                \sprintf('> Available failure transports are: <comment>%s</comment>', implode(', ', $failureTransports)),
+                \sprintf('> Loading messages from the <info>global</info> failure transport <info>%s</info>.', $failureTransportName),
+                '> To use a different failure transport, pass <info>--transport=</info>.',
+                \sprintf('> Available failure transports are: <info>%s</info>', implode(', ', $failureTransports)),
                 "\n",
             ]);
         }
