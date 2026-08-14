@@ -20,6 +20,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -43,7 +44,7 @@ final class MakeVoter extends AbstractMaker
     {
         $command
             ->addArgument('name', InputArgument::OPTIONAL, 'The name of the security voter class (e.g. <fg=yellow>BlogPostVoter</>)')
-            ->setHelp(file_get_contents(__DIR__.'/../Resources/help/MakeVoter.txt'))
+            ->setHelp($this->getHelpFileContents('MakeVoter.txt'))
         ;
     }
 
@@ -57,13 +58,13 @@ final class MakeVoter extends AbstractMaker
                 TokenInterface::class,
                 Voter::class,
                 UserInterface::class,
+                Vote::class,
             ]
         );
 
-        $generator->generateClass(
-            $voterClassData->getFullClassName(),
+        $generator->generateClassFromClassData(
+            $voterClassData,
             'security/Voter.tpl.php',
-            ['class_data' => $voterClassData]
         );
 
         $generator->writeChanges();

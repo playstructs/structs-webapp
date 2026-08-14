@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+7.4
+---
+
+ * Add support for mocking the `strtotime()` function
+
+7.3
+---
+
+ * Enable configuring clock and DNS mock namespaces with attributes
+ * Add support for CAA record type in DnsMock for improved DNS mocking capabilities
+
 7.2
 ---
 

@@ -33,7 +33,7 @@ class ChoiceFormField extends FormField
     public function hasValue(): bool
     {
         // don't send a value for unchecked checkboxes
-        if (\in_array($this->type, ['checkbox', 'radio']) && null === $this->value) {
+        if (\in_array($this->type, ['checkbox', 'radio'], true) && null === $this->value) {
             return false;
         }
 
@@ -45,6 +45,10 @@ class ChoiceFormField extends FormField
      */
     public function isDisabled(): bool
     {
+        if ('checkbox' === $this->type) {
+            return parent::isDisabled();
+        }
+
         if (parent::isDisabled() && 'select' === $this->type) {
             return true;
         }
@@ -151,7 +155,11 @@ class ChoiceFormField extends FormField
         $this->options[] = $option;
 
         if ($node->hasAttribute('checked')) {
-            $this->value = $option['value'];
+            if ($this->multiple) {
+                $this->value[] = $option['value'];
+            } else {
+                $this->value = $option['value'];
+            }
         }
     }
 

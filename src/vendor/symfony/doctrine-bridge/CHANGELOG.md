@@ -1,6 +1,23 @@
 CHANGELOG
 =========
 
+7.4
+---
+
+ * Deprecate `UniqueEntity::getRequiredOptions()` and `UniqueEntity::getDefaultOption()`
+ * Use a single table named `schema_subscriber_check_` in schema listeners to detect same database connections
+ * Add support for `Symfony\Component\Clock\DatePoint` as `DayPointType` and `TimePointType` Doctrine type
+ * Deprecate the `AbstractDoctrineExtension` class; its code is incorporated into the extension classes of Doctrine bundles
+
+7.3
+---
+
+ * Reset the manager registry using native lazy objects when applicable
+ * Deprecate the `DoctrineExtractor::getTypes()` method, use `DoctrineExtractor::getType()` instead
+ * Add support for `Symfony\Component\Clock\DatePoint` as `DatePointType` Doctrine type
+ * Improve exception message when `EntityValueResolver` gets no mapping information
+ * Add type aliases support to `EntityValueResolver`
+
 7.2
 ---
 

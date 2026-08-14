@@ -156,10 +156,11 @@ class XliffFileDumper extends FileDumper
         }
 
         if ($catalogueMetadata = $messages->getCatalogueMetadata('', $domain) ?? []) {
-            $xliff->setAttribute('xmlns:m', 'urn:oasis:names:tc:xliff:metadata:2.0');
-            $xliffMetadata = $xliffFile->appendChild($dom->createElement('m:metadata'));
+            $xliff->setAttribute('xmlns:mda', 'urn:oasis:names:tc:xliff:metadata:2.0');
+            $xliffMetadata = $xliffFile->appendChild($dom->createElement('mda:metadata'));
+            $xliffMetaGroup = $xliffMetadata->appendChild($dom->createElement('mda:metaGroup'));
             foreach ($catalogueMetadata as $key => $value) {
-                $xliffMeta = $xliffMetadata->appendChild($dom->createElement('prop'));
+                $xliffMeta = $xliffMetaGroup->appendChild($dom->createElement('mda:meta'));
                 $xliffMeta->setAttribute('type', $key);
                 $xliffMeta->appendChild($dom->createTextNode($value));
             }
@@ -176,7 +177,7 @@ class XliffFileDumper extends FileDumper
             $metadata = $messages->getMetadata($source, $domain);
 
             // Add notes section
-            if ($this->hasMetadataArrayInfo('notes', $metadata)) {
+            if ($this->hasMetadataArrayInfo('notes', $metadata) && $metadata['notes']) {
                 $notesElement = $dom->createElement('notes');
                 foreach ($metadata['notes'] as $note) {
                     $n = $dom->createElement('note');

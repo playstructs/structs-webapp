@@ -11,18 +11,19 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "php": ">=8.0",
+        "php": ">=8.1",
         "composer-plugin-api": "^2.1"
     },
     "require-dev": {
         "composer/composer": "^2.1",
-        "symfony/dotenv": "^5.4|^6.0",
-        "symfony/filesystem": "^5.4|^6.0",
-        "symfony/phpunit-bridge": "^5.4|^6.0",
-        "symfony/process": "^5.4|^6.0"
+        "phpunit/phpunit": "^12.4",
+        "symfony/dotenv": "^6.4.41|^7.4.13|^8.0.13",
+        "symfony/filesystem": "^6.4|^7.4|^8.0",
+        "symfony/process": "^6.4|^7.4|^8.0"
     },
     "conflict": {
-        "composer/semver": "<1.7.2"
+        "composer/semver": "<1.7.2",
+        "symfony/dotenv": "<5.4"
     },
     "autoload": {
         "psr-4": {

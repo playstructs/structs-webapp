@@ -30,20 +30,20 @@ final class BroadcastListener implements ResetInterface
     /**
      * @var array<class-string, array<mixed>>
      */
-    private $broadcastedClasses;
+    private array $broadcastedClasses = [];
 
     /**
      * @var \SplObjectStorage<object, array<mixed>>
      */
-    private $createdEntities;
+    private \SplObjectStorage $createdEntities;
     /**
      * @var \SplObjectStorage<object, array<mixed>>
      */
-    private $updatedEntities;
+    private \SplObjectStorage $updatedEntities;
     /**
      * @var \SplObjectStorage<object, array<mixed>>
      */
-    private $removedEntities;
+    private \SplObjectStorage $removedEntities;
 
     public function __construct(
         private BroadcasterInterface $broadcaster,
@@ -61,18 +61,19 @@ final class BroadcastListener implements ResetInterface
             return;
         }
 
+        // @phpstan-ignore function.alreadyNarrowedType, method.notFound (`getEntityManager()` has been removed in Doctrine 3.0)
         $em = method_exists($eventArgs, 'getObjectManager') ? $eventArgs->getObjectManager() : $eventArgs->getEntityManager();
         $uow = $em->getUnitOfWork();
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
-            $this->storeEntitiesToPublish($em, $entity, 'createdEntities');
+            $this->storeEntitiesToPublish($em, $entity, $this->createdEntities);
         }
 
         foreach ($uow->getScheduledEntityUpdates() as $entity) {
-            $this->storeEntitiesToPublish($em, $entity, 'updatedEntities');
+            $this->storeEntitiesToPublish($em, $entity, $this->updatedEntities);
         }
 
         foreach ($uow->getScheduledEntityDeletions() as $entity) {
-            $this->storeEntitiesToPublish($em, $entity, 'removedEntities');
+            $this->storeEntitiesToPublish($em, $entity, $this->removedEntities);
         }
     }
 
@@ -85,6 +86,7 @@ final class BroadcastListener implements ResetInterface
             return;
         }
 
+        // @phpstan-ignore function.alreadyNarrowedType, method.notFound (`getEntityManager()` has been removed in Doctrine 3.0)
         $em = method_exists($eventArgs, 'getObjectManager') ? $eventArgs->getObjectManager() : $eventArgs->getEntityManager();
 
         try {
@@ -120,7 +122,10 @@ final class BroadcastListener implements ResetInterface
         $this->removedEntities = new \SplObjectStorage();
     }
 
-    private function storeEntitiesToPublish(EntityManagerInterface $em, object $entity, string $property): void
+    /**
+     * @param \SplObjectStorage<object, array<mixed>> $objectStorage
+     */
+    private function storeEntitiesToPublish(EntityManagerInterface $em, object $entity, \SplObjectStorage $objectStorage): void
     {
         $class = ClassUtil::getEntityClass($entity);
 
@@ -142,14 +147,14 @@ final class BroadcastListener implements ResetInterface
         }
 
         if ($options = $this->broadcastedClasses[$class]) {
-            if ('createdEntities' !== $property) {
+            if ($this->createdEntities !== $objectStorage) {
                 $id = $em->getClassMetadata($class)->getIdentifierValues($entity);
                 foreach ($options as $k => $option) {
                     $options[$k]['id'] = $id;
                 }
             }
 
-            $this->{$property}->attach($entity, $options);
+            $objectStorage[$entity] = $options;
         }
     }
 }

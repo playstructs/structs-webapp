@@ -11,6 +11,7 @@
 
 namespace Symfony\Bundle\FrameworkBundle\Command;
 
+use Composer\InstalledVersions;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Helper;
@@ -36,11 +37,11 @@ class AboutCommand extends Command
     {
         $this
             ->setHelp(<<<'EOT'
-The <info>%command.name%</info> command displays information about the current Symfony project.
+                The <info>%command.name%</info> command displays information about the current Symfony project.
 
-The <info>PHP</info> section displays important configuration that could affect your application. The values might
-be different between web and CLI.
-EOT
+                The <info>PHP</info> section displays important configuration that could affect your application. The values might
+                be different between web and CLI.
+                EOT
             )
         ;
     }
@@ -58,12 +59,18 @@ EOT
             $buildDir = $kernel->getCacheDir();
         }
 
+        if (method_exists($kernel, 'getShareDir')) {
+            $shareDir = $kernel->getShareDir();
+        } else {
+            $shareDir = $kernel->getCacheDir();
+        }
+
         $xdebugMode = getenv('XDEBUG_MODE') ?: \ini_get('xdebug.mode');
 
         $rows = [
             ['<info>Symfony</>'],
             new TableSeparator(),
-            ['Version', Kernel::VERSION],
+            ['Version', class_exists(InstalledVersions::class) ? InstalledVersions::getPrettyVersion('symfony/http-kernel') ?? InstalledVersions::getPrettyVersion('symfony/symfony') : Kernel::MAJOR_VERSION.'.'.Kernel::MINOR_VERSION],
             ['Long-Term Support', 4 === Kernel::MINOR_VERSION ? 'Yes' : 'No'],
             ['End of maintenance', Kernel::END_OF_MAINTENANCE.(self::isExpired(Kernel::END_OF_MAINTENANCE) ? ' <error>Expired</>' : ' (<comment>'.self::daysBeforeExpiration(Kernel::END_OF_MAINTENANCE).'</>)')],
             ['End of life', Kernel::END_OF_LIFE.(self::isExpired(Kernel::END_OF_LIFE) ? ' <error>Expired</>' : ' (<comment>'.self::daysBeforeExpiration(Kernel::END_OF_LIFE).'</>)')],
@@ -76,6 +83,7 @@ EOT
             ['Charset', $kernel->getCharset()],
             ['Cache directory', self::formatPath($kernel->getCacheDir(), $kernel->getProjectDir()).' (<comment>'.self::formatFileSize($kernel->getCacheDir()).'</>)'],
             ['Build directory', self::formatPath($buildDir, $kernel->getProjectDir()).' (<comment>'.self::formatFileSize($buildDir).'</>)'],
+            ['Share directory', null === $shareDir ? 'none' : self::formatPath($shareDir, $kernel->getProjectDir()).' (<comment>'.self::formatFileSize($shareDir).'</>)'],
             ['Log directory', self::formatPath($kernel->getLogDir(), $kernel->getProjectDir()).' (<comment>'.self::formatFileSize($kernel->getLogDir()).'</>)'],
             new TableSeparator(),
             ['<info>PHP</>'],
@@ -84,9 +92,9 @@ EOT
             ['Architecture', (\PHP_INT_SIZE * 8).' bits'],
             ['Intl locale', class_exists(\Locale::class, false) && \Locale::getDefault() ? \Locale::getDefault() : 'n/a'],
             ['Timezone', date_default_timezone_get().' (<comment>'.(new \DateTimeImmutable())->format(\DateTimeInterface::W3C).'</>)'],
-            ['OPcache', \extension_loaded('Zend OPcache') ? (filter_var(\ini_get('opcache.enable'), FILTER_VALIDATE_BOOLEAN) ? 'Enabled' : 'Not enabled') : 'Not installed'],
-            ['APCu', \extension_loaded('apcu') ? (filter_var(\ini_get('apc.enabled'), FILTER_VALIDATE_BOOLEAN) ? 'Enabled' : 'Not enabled') : 'Not installed'],
-            ['Xdebug', \extension_loaded('xdebug') ? ($xdebugMode && 'off' !== $xdebugMode ? 'Enabled (' . $xdebugMode . ')' : 'Not enabled') : 'Not installed'],
+            ['OPcache', \extension_loaded('Zend OPcache') ? (filter_var(\ini_get('opcache.enable'), \FILTER_VALIDATE_BOOLEAN) ? 'Enabled' : 'Not enabled') : 'Not installed'],
+            ['APCu', \extension_loaded('apcu') ? (filter_var(\ini_get('apc.enabled'), \FILTER_VALIDATE_BOOLEAN) ? 'Enabled' : 'Not enabled') : 'Not installed'],
+            ['Xdebug', \extension_loaded('xdebug') ? ($xdebugMode && 'off' !== $xdebugMode ? 'Enabled ('.$xdebugMode.')' : 'Not enabled') : 'Not installed'],
         ];
 
         $io->table([], $rows);

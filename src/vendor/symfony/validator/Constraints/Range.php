@@ -12,6 +12,7 @@
 namespace Symfony\Component\Validator\Constraints;
 
 use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\Validator\Attribute\HasNamedArguments;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
 use Symfony\Component\Validator\Exception\LogicException;
@@ -41,14 +42,13 @@ class Range extends Constraint
     public string $minMessage = 'This value should be {{ limit }} or more.';
     public string $maxMessage = 'This value should be {{ limit }} or less.';
     public string $invalidMessage = 'This value should be a valid number.';
-    public string $invalidDateTimeMessage = 'This value should be a valid datetime.';
+    public string $invalidDateTimeMessage = 'This value is not a valid datetime.';
     public mixed $min = null;
     public ?string $minPropertyPath = null;
     public mixed $max = null;
     public ?string $maxPropertyPath = null;
 
     /**
-     * @param array<string,mixed>|null        $options
      * @param string|null                     $invalidMessage         The message if min and max values are numeric but the given value is not
      * @param string|null                     $invalidDateTimeMessage The message if min and max values are PHP datetimes but the given value is not
      * @param int|float|non-empty-string|null $min                    The minimum value, either numeric or a datetime string representation
@@ -57,6 +57,7 @@ class Range extends Constraint
      * @param non-empty-string|null           $maxPropertyPath        Property path to the max value
      * @param string[]|null                   $groups
      */
+    #[HasNamedArguments]
     public function __construct(
         ?array $options = null,
         ?string $notInRangeMessage = null,
@@ -71,6 +72,10 @@ class Range extends Constraint
         ?array $groups = null,
         mixed $payload = null,
     ) {
+        if (\is_array($options)) {
+            trigger_deprecation('symfony/validator', '7.3', 'Passing an array of options to configure the "%s" constraint is deprecated, use named arguments instead.', static::class);
+        }
+
         parent::__construct($options, $groups, $payload);
 
         $this->notInRangeMessage = $notInRangeMessage ?? $this->notInRangeMessage;

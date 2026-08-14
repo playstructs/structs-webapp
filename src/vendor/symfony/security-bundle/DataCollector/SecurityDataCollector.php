@@ -101,10 +101,12 @@ class SecurityDataCollector extends DataCollector implements LateDataCollectorIn
             }
 
             $logoutUrl = null;
-            try {
-                $logoutUrl = $this->logoutUrlGenerator?->getLogoutPath();
-            } catch (\Exception) {
-                // fail silently when the logout URL cannot be generated
+            if ($this->logoutUrlGenerator && method_exists($token, 'getFirewallName')) {
+                try {
+                    $logoutUrl = $this->logoutUrlGenerator->getLogoutPath($token->getFirewallName());
+                } catch (\Exception) {
+                    // fail silently when the logout URL cannot be generated
+                }
             }
 
             $this->data = [
@@ -138,6 +140,7 @@ class SecurityDataCollector extends DataCollector implements LateDataCollectorIn
 
             // collect voter details
             $decisionLog = $this->accessDecisionManager->getDecisionLog();
+
             foreach ($decisionLog as $key => $log) {
                 $decisionLog[$key]['voter_details'] = [];
                 foreach ($log['voterDetails'] as $voterDetail) {
@@ -147,6 +150,7 @@ class SecurityDataCollector extends DataCollector implements LateDataCollectorIn
                         'class' => $classData,
                         'attributes' => $voterDetail['attributes'], // Only displayed for unanimous strategy
                         'vote' => $voterDetail['vote'],
+                        'reasons' => $voterDetail['reasons'] ?? [],
                     ];
                 }
                 unset($decisionLog[$key]['voterDetails']);

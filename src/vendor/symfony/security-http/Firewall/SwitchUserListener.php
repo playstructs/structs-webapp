@@ -19,6 +19,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\SwitchUserToken;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\AccessDecision;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\Exception\AuthenticationCredentialsNotFoundException;
@@ -64,7 +65,7 @@ class SwitchUserListener extends AbstractListener
     public function supports(Request $request): ?bool
     {
         // usernames can be falsy
-        $username = $request->get($this->usernameParameter);
+        $username = $request->query->get($this->usernameParameter) ?? (!\in_array($request->getMethod(), ['GET', 'HEAD'], true) ? $request->request->get($this->usernameParameter) : null);
 
         if (null === $username || '' === $username) {
             $username = $request->headers->get($this->usernameParameter);
@@ -110,7 +111,7 @@ class SwitchUserListener extends AbstractListener
         if (!$this->stateless) {
             $request->query->remove($this->usernameParameter);
             $request->server->set('QUERY_STRING', http_build_query($request->query->all(), '', '&'));
-            $response = new RedirectResponse($this->urlGenerator && $this->targetRoute ? $this->urlGenerator->generate($this->targetRoute) : $request->getUri(), 302);
+            $response = new RedirectResponse($this->urlGenerator && $this->targetRoute && self::EXIT_VALUE !== $username ? $this->urlGenerator->generate($this->targetRoute) : $request->getUri(), 302);
 
             $event->setResponse($response);
         }
@@ -153,12 +154,14 @@ class SwitchUserListener extends AbstractListener
 
             throw $e;
         }
+        $accessDecision = new AccessDecision();
 
-        if (false === $this->accessDecisionManager->decide($token, [$this->role], $user)) {
-            $exception = new AccessDeniedException();
-            $exception->setAttributes($this->role);
+        if (!$accessDecision->isGranted = $this->accessDecisionManager->decide($token, [$this->role], $user, $accessDecision)) {
+            $e = new AccessDeniedException($accessDecision->getMessage());
+            $e->setAttributes($this->role);
+            $e->setAccessDecision($accessDecision);
 
-            throw $exception;
+            throw $e;
         }
 
         $this->logger?->info('Attempting to switch to user.', ['username' => $username]);

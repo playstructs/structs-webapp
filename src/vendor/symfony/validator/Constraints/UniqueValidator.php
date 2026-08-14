@@ -42,20 +42,28 @@ class UniqueValidator extends ConstraintValidator
         foreach ($value as $index => $element) {
             $element = $normalizer($element);
 
-            if ($fields && !$element = $this->reduceElementKeys($fields, $element)) {
+            if ($fields && !(\is_array($element) && $element = $this->reduceElementKeys($fields, $element))) {
                 continue;
             }
 
-            if (\in_array($element, $collectionElements, true)) {
-                $this->context->buildViolation($constraint->message)
-                    ->atPath("[$index]".(null !== $constraint->errorPath ? ".{$constraint->errorPath}" : ''))
-                    ->setParameter('{{ value }}', $this->formatValue($element))
-                    ->setCode(Unique::IS_NOT_UNIQUE)
-                    ->addViolation();
+            if (!\in_array($element, $collectionElements, true)) {
+                $collectionElements[] = $element;
+                continue;
+            }
 
+            $violationBuilder = $this->context->buildViolation($constraint->message)
+                ->setParameter('{{ value }}', $this->formatValue($element))
+                ->setCode(Unique::IS_NOT_UNIQUE);
+
+            if (!$constraint->stopOnFirstError || null !== $constraint->errorPath) {
+                $violationBuilder->atPath("[$index]".(null !== $constraint->errorPath ? ".{$constraint->errorPath}" : ''));
+            }
+
+            $violationBuilder->addViolation();
+
+            if ($constraint->stopOnFirstError) {
                 return;
             }
-            $collectionElements[] = $element;
         }
     }
 

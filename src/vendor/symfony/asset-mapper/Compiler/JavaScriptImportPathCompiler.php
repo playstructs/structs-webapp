@@ -13,6 +13,7 @@ namespace Symfony\Component\AssetMapper\Compiler;
 
 use Psr\Log\LoggerInterface;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
+use Symfony\Component\AssetMapper\Compiler\Parser\JavascriptSequenceParser;
 use Symfony\Component\AssetMapper\Exception\CircularAssetsException;
 use Symfony\Component\AssetMapper\Exception\RuntimeException;
 use Symfony\Component\AssetMapper\ImportMap\ImportMapConfigReader;
@@ -27,9 +28,6 @@ use Symfony\Component\Filesystem\Path;
  */
 final class JavaScriptImportPathCompiler implements AssetCompilerInterface
 {
-    /**
-     * @see https://regex101.com/r/1iBAIb/2
-     */
     private const IMPORT_PATTERN = '/
             ^(?:\/\/.*)                     # Lines that start with comments
         |
@@ -46,6 +44,10 @@ final class JavaScriptImportPathCompiler implements AssetCompilerInterface
                         \s*from\s*
                     )?
             |
+                export\s*
+                    (?:\*(?:\s*as\s+\w+)?|\{[^}]*+\})
+                    \s*from\s*
+            |
                 \bimport\(
             )
             \s*[\'"`](\.\/[^\'"`\n]++|(\.\.\/)*+[^\'"`\n]++)[\'"`]\s*[;\)]
@@ -61,15 +63,13 @@ final class JavaScriptImportPathCompiler implements AssetCompilerInterface
 
     public function compile(string $content, MappedAsset $asset, AssetMapperInterface $assetMapper): string
     {
-        return preg_replace_callback(self::IMPORT_PATTERN, function ($matches) use ($asset, $assetMapper, $content) {
+        $jsParser = new JavascriptSequenceParser($content);
+
+        return preg_replace_callback(self::IMPORT_PATTERN, function ($matches) use ($asset, $assetMapper, $jsParser) {
             $fullImportString = $matches[0][0];
 
-            // Ignore matches that did not capture import statements
-            if (!isset($matches[1][0])) {
-                return $fullImportString;
-            }
-
-            if ($this->isCommentedOut($matches[0][1], $content)) {
+            $jsParser->parseUntil($matches[0][1]);
+            if (!$jsParser->isExecutable()) {
                 return $fullImportString;
             }
 
@@ -83,12 +83,17 @@ final class JavaScriptImportPathCompiler implements AssetCompilerInterface
             $isRelativeImport = str_starts_with($importedModule, '.');
             if (!$isRelativeImport) {
                 // URL or /absolute imports will also go here, but will be ignored
-                $dependentAsset = $this->findAssetForBareImport($importedModule, $assetMapper);
+                $dependentAsset = $this->findAssetForBareImport($importedModule, $asset, $assetMapper);
             } else {
                 $dependentAsset = $this->findAssetForRelativeImport($importedModule, $asset, $assetMapper);
             }
 
             if (!$dependentAsset) {
+                return $fullImportString;
+            }
+
+            // Ignore self-referencing import
+            if ($dependentAsset->logicalPath === $asset->logicalPath) {
                 return $fullImportString;
             }
 
@@ -141,44 +146,26 @@ final class JavaScriptImportPathCompiler implements AssetCompilerInterface
         };
     }
 
-    /**
-     * Simple check for the most common types of comments.
-     *
-     * This is not a full parser, but should be good enough for most cases.
-     */
-    private function isCommentedOut(mixed $offsetStart, string $fullContent): bool
-    {
-        $lineStart = strrpos($fullContent, "\n", $offsetStart - \strlen($fullContent));
-        $lineContentBeforeImport = substr($fullContent, $lineStart, $offsetStart - $lineStart);
-        $firstTwoChars = substr(ltrim($lineContentBeforeImport), 0, 2);
-        if ('//' === $firstTwoChars) {
-            return true;
-        }
-
-        if ('/*' === $firstTwoChars) {
-            $commentEnd = strpos($fullContent, '*/', $lineStart);
-            // if we can't find the end comment, be cautious: assume this is not a comment
-            if (false === $commentEnd) {
-                return false;
-            }
-
-            return $offsetStart < $commentEnd;
-        }
-
-        return false;
-    }
-
-    private function findAssetForBareImport(string $importedModule, AssetMapperInterface $assetMapper): ?MappedAsset
+    private function findAssetForBareImport(string $importedModule, MappedAsset $asset, AssetMapperInterface $assetMapper): ?MappedAsset
     {
         if (!$importMapEntry = $this->importMapConfigReader->findRootImportMapEntry($importedModule)) {
-            // don't warn on missing non-relative (bare) imports: these could be valid URLs
+            // Bare names may resolve to a valid URL at runtime, so we don't warn about them in general.
+            // But the browser can only load a CSS or JSON module by bare name through an importmap entry
+            // (the experimental import-attributes `with { type: '...' }` syntax aside), so a missing bare
+            // `.css`/`.json` import silently does nothing - warn the user at compile time.
+            if (!$asset->isVendor
+                && !str_contains($importedModule, '://')
+                && (str_ends_with($lowerModule = strtolower($importedModule), '.css') || str_ends_with($lowerModule, '.json'))
+            ) {
+                $this->handleMissingImport(\sprintf('Unable to find asset "%s" imported from "%s". Add it to "importmap.php", e.g. via the "importmap:require" command.', $importedModule, $asset->sourcePath));
+            }
 
             return null;
         }
 
         try {
-            if ($asset = $assetMapper->getAsset($importMapEntry->path)) {
-                return $asset;
+            if ($dependentAsset = $assetMapper->getAsset($importMapEntry->path)) {
+                return $dependentAsset;
             }
 
             return $assetMapper->getAssetFromSourcePath($this->importMapConfigReader->convertPathToFilesystemPath($importMapEntry->path));

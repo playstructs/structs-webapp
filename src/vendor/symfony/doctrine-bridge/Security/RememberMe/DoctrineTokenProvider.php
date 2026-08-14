@@ -13,7 +13,12 @@ namespace Symfony\Bridge\Doctrine\Security\RememberMe;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Schema\Name\Identifier;
+use Doctrine\DBAL\Schema\Name\UnqualifiedName;
+use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Types;
 use Symfony\Component\Security\Core\Authentication\RememberMe\PersistentToken;
 use Symfony\Component\Security\Core\Authentication\RememberMe\PersistentTokenInterface;
@@ -35,9 +40,11 @@ use Symfony\Component\Security\Core\Exception\TokenNotFoundException;
  *         `series`   char(88)     UNIQUE PRIMARY KEY NOT NULL,
  *         `value`    char(88)     NOT NULL,
  *         `lastUsed` datetime     NOT NULL,
- *         `class`    varchar(100) NOT NULL,
+ *         `class`    varchar(100) DEFAULT '' NOT NULL,
  *         `username` varchar(200) NOT NULL
  *     );
+ *
+ * (the `class` column is for BC with tables created with before Symfony 8)
  */
 final class DoctrineTokenProvider implements TokenProviderInterface, TokenVerifierInterface
 {
@@ -57,7 +64,12 @@ final class DoctrineTokenProvider implements TokenProviderInterface, TokenVerifi
         $row = $stmt->fetchNumeric() ?: throw new TokenNotFoundException('No token found.');
 
         [$class, $username, $value, $last_used] = $row;
-        return new PersistentToken($class, $username, $series, $value, new \DateTimeImmutable($last_used));
+
+        if (method_exists(PersistentToken::class, 'getClass')) {
+            return new PersistentToken($class, $username, $series, $value, new \DateTimeImmutable($last_used), false);
+        }
+
+        return new PersistentToken($username, $series, $value, new \DateTimeImmutable($last_used));
     }
 
     public function deleteTokenBySeries(string $series): void
@@ -91,7 +103,7 @@ final class DoctrineTokenProvider implements TokenProviderInterface, TokenVerifi
     {
         $sql = 'INSERT INTO rememberme_token (class, username, series, value, lastUsed) VALUES (:class, :username, :series, :value, :lastUsed)';
         $paramValues = [
-            'class' => $token->getClass(),
+            'class' => method_exists($token, 'getClass') ? $token->getClass(false) : '',
             'username' => $token->getUserIdentifier(),
             'series' => $token->getSeries(),
             'value' => $token->getTokenValue(),
@@ -160,7 +172,14 @@ final class DoctrineTokenProvider implements TokenProviderInterface, TokenVerifi
         try {
             $this->deleteTokenBySeries($tmpSeries);
             $lastUsed = \DateTime::createFromInterface($lastUsed);
-            $this->createNewToken(new PersistentToken($token->getClass(), $token->getUserIdentifier(), $tmpSeries, $token->getTokenValue(), $lastUsed));
+
+            if (method_exists(PersistentToken::class, 'getClass')) {
+                $persistentToken = new PersistentToken($token->getClass(false), $token->getUserIdentifier(), $tmpSeries, $token->getTokenValue(), $lastUsed, false);
+            } else {
+                $persistentToken = new PersistentToken($token->getUserIdentifier(), $tmpSeries, $token->getTokenValue(), $lastUsed);
+            }
+
+            $this->createNewToken($persistentToken);
 
             $this->conn->commit();
         } catch (\Exception $e) {
@@ -171,28 +190,61 @@ final class DoctrineTokenProvider implements TokenProviderInterface, TokenVerifi
 
     /**
      * Adds the Table to the Schema if "remember me" uses this Connection.
+     *
+     * @return Schema The (possibly new) schema with the table added
      */
-    public function configureSchema(Schema $schema, Connection $forConnection, \Closure $isSameDatabase): void
+    public function configureSchema(Schema $schema, Connection $forConnection, \Closure $isSameDatabase)
     {
         if ($schema->hasTable('rememberme_token')) {
-            return;
+            return $schema;
         }
 
         if ($forConnection !== $this->conn && !$isSameDatabase($this->conn->executeStatement(...))) {
-            return;
+            return $schema;
         }
 
-        $this->addTableToSchema($schema);
+        return $this->addTableToSchema($schema);
     }
 
-    private function addTableToSchema(Schema $schema): void
+    private function addTableToSchema(Schema $schema): Schema
     {
-        $table = $schema->createTable('rememberme_token');
+        if (method_exists($schema, 'edit')) {
+            return $schema->edit()->addTable($this->buildSchemaTable())->create();
+        }
+
+        $this->configureSchemaTable($schema->createTable('rememberme_token'));
+
+        return $schema;
+    }
+
+    private function buildSchemaTable(): Table
+    {
+        return Table::editor()
+            ->setUnquotedName('rememberme_token')
+            ->addColumn(Column::editor()->setUnquotedName('series')->setTypeName(Types::STRING)->setLength(88)->create())
+            ->addColumn(Column::editor()->setUnquotedName('value')->setTypeName(Types::STRING)->setLength(88)->create())
+            ->addColumn(Column::editor()->setUnquotedName('lastUsed')->setTypeName(Types::DATETIME_IMMUTABLE)->create())
+            ->addColumn(Column::editor()->setUnquotedName('class')->setTypeName(Types::STRING)->setLength(100)->setDefaultValue('')->create())
+            ->addColumn(Column::editor()->setUnquotedName('username')->setTypeName(Types::STRING)->setLength(200)->create())
+            ->addPrimaryKeyConstraint(new PrimaryKeyConstraint(null, [new UnqualifiedName(Identifier::unquoted('series'))], true))
+            ->create();
+    }
+
+    /**
+     * To be removed when doctrine/dbal minimum is bumped to ^4.5.
+     */
+    private function configureSchemaTable(Table $table): void
+    {
         $table->addColumn('series', Types::STRING, ['length' => 88]);
         $table->addColumn('value', Types::STRING, ['length' => 88]);
         $table->addColumn('lastUsed', Types::DATETIME_IMMUTABLE);
-        $table->addColumn('class', Types::STRING, ['length' => 100]);
+        $table->addColumn('class', Types::STRING, ['length' => 100, 'default' => '']);
         $table->addColumn('username', Types::STRING, ['length' => 200]);
-        $table->setPrimaryKey(['series']);
+
+        if (class_exists(PrimaryKeyConstraint::class)) {
+            $table->addPrimaryKeyConstraint(new PrimaryKeyConstraint(null, [new UnqualifiedName(Identifier::unquoted('series'))], true));
+        } else {
+            $table->setPrimaryKey(['series']);
+        }
     }
 }

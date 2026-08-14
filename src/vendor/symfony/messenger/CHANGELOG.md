@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+7.4
+---
+
+ * Add `--exclude-receivers` option to the `messenger:consume command`
+ * Allow any `ServiceResetterInterface` implementation in `ResetServicesListener`
+ * Add `Symfony\Component\Messenger\Middleware\AddDefaultStampsMiddleware` and `Symfony\Component\Messenger\Message\DefaultStampsProviderInterface`
+ * Add the possibility to configure exchange to exchange bindings in AMQP transport
+ * Add `MessageSentToTransportsEvent` that is dispatched only after the message was sent to at least one transport
+ * Support signing messages per handler
+
+7.3
+---
+
+ * Add `CloseableTransportInterface` to allow closing the transport
+ * Add `SentForRetryStamp` that identifies whether a failed message was sent for retry
+ * Add `Symfony\Component\Messenger\Middleware\DeduplicateMiddleware` and `Symfony\Component\Messenger\Stamp\DeduplicateStamp`
+ * Add `--class-filter` option to the `messenger:failed:remove` command
+ * Add `$stamps` parameter to `HandleTrait::handle`
+ * Add `Symfony\Component\Messenger\EventListener\ResetMemoryUsageListener` to reset PHP's peak memory usage for each processed message
+
 7.2
 ---
 

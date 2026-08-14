@@ -31,6 +31,7 @@ use Symfony\Bundle\MakerBundle\Util\ClassDetails;
 use Symfony\Bundle\MakerBundle\Util\ClassSource\Model\ClassProperty;
 use Symfony\Bundle\MakerBundle\Util\ClassSourceManipulator;
 use Symfony\Bundle\MakerBundle\Util\CliOutputHelper;
+use Symfony\Bundle\MakerBundle\Util\EnumHelper;
 use Symfony\Bundle\MakerBundle\Validator;
 use Symfony\Bundle\MercureBundle\DependencyInjection\MercureExtension;
 use Symfony\Component\Console\Command\Command;
@@ -97,7 +98,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
             ->addOption('broadcast', 'b', InputOption::VALUE_NONE, 'Add the ability to broadcast entity updates using Symfony UX Turbo?')
             ->addOption('regenerate', null, InputOption::VALUE_NONE, 'Instead of adding new fields, simply generate the methods (e.g. getter/setter) for existing fields')
             ->addOption('overwrite', null, InputOption::VALUE_NONE, 'Overwrite any existing getter/setter methods')
-            ->setHelp(file_get_contents(__DIR__.'/../Resources/help/MakeEntity.txt'))
+            ->setHelp($this->getHelpFileContents('MakeEntity.txt'))
         ;
 
         $this->addWithUuidOption($command);
@@ -292,7 +293,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
 
                         break;
                     default:
-                        throw new \Exception('Invalid relation type');
+                        throw new \Exception('Invalid relation type.');
                 }
 
                 // save the inverse side if it's being mapped
@@ -301,7 +302,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
                 }
                 $currentFields[] = $newFieldName;
             } else {
-                throw new \Exception('Invalid value');
+                throw new \Exception('Invalid value.');
             }
 
             foreach ($fileManagerOperations as $path => $manipulatorOrMessage) {
@@ -431,7 +432,7 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
             $classProperty->scale = $io->ask('Scale (number of decimals to store: 100.00 would be 2)', '0', Validator::validateScale(...));
         } elseif ('enum' === $type) {
             // ask for valid backed enum class
-            $classProperty->enumType = $io->ask('Enum class', null, Validator::classIsBackedEnum(...));
+            $classProperty->enumType = $this->askEnumDetails($io);
 
             // set type according to user decision
             $classProperty->type = $io->confirm('Can this field store multiple enum values', false) ? 'simple_array' : 'string';
@@ -454,24 +455,33 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
                 'text' => [],
                 'boolean' => [],
                 'integer' => ['smallint', 'bigint'],
-                'float' => [],
+                'float' => ['smallfloat'],
+                'decimal' => [],
+                'number' => [],
             ],
             'array_object' => [
                 'array' => ['simple_array'],
-                'json' => [],
+                'json' => ['json_object'],
                 'object' => [],
                 'binary' => [],
                 'blob' => [],
+                'json_b' => ['jsonb_object'],
             ],
             'date_time' => [
                 'datetime' => ['datetime_immutable'],
                 'datetimetz' => ['datetimetz_immutable'],
                 'date' => ['date_immutable'],
-                'time' => ['time_immutable'],
+                'date_point' => [],
                 'dateinterval' => [],
+                'day_point' => [],
+                'time' => ['time_immutable'],
+                'time_point' => [],
             ],
             'other' => [
                 'enum' => [],
+                'uuid' => [],
+                'guid' => [],
+                'ulid' => [],
             ],
         ];
 
@@ -552,6 +562,35 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
         $question = new Question($questionText);
         $question->setValidator(Validator::notBlank(...));
         $question->setAutocompleterValues($this->doctrineHelper->getEntitiesForAutocomplete());
+
+        return $question;
+    }
+
+    private function askEnumDetails(ConsoleStyle $io): string
+    {
+        $targetEnumClass = null;
+        while (null === $targetEnumClass) {
+            $question = $this->createEnumQuestion('Enum class (e.g. <fg=yellow>App\Enum\Foo</>)');
+
+            $answeredEnumClass = $io->askQuestion($question);
+
+            if (enum_exists($answeredEnumClass)) {
+                $targetEnumClass = $answeredEnumClass;
+            } else {
+                $io->error(\sprintf('Unknown enum "%s"', $answeredEnumClass));
+            }
+        }
+
+        return $targetEnumClass;
+    }
+
+    private function createEnumQuestion(string $questionText): Question
+    {
+        $question = new Question($questionText);
+        $question->setValidator(Validator::classIsBackedEnum(...));
+
+        $enumHelper = new EnumHelper($this->fileManager->getRootDirectory().'/src', 'App');
+        $question->setAutocompleterValues($enumHelper->getAllEnums());
 
         return $question;
     }
@@ -825,9 +864,9 @@ final class MakeEntity extends AbstractMaker implements InputAwareMakerInterface
             implode(', ', EntityRelation::getValidRelationTypes())
         ));
         $question->setAutocompleterValues(EntityRelation::getValidRelationTypes());
-        $question->setValidator(function ($type) {
+        $question->setValidator(static function ($type) {
             if (!\in_array($type, EntityRelation::getValidRelationTypes())) {
-                throw new \InvalidArgumentException(\sprintf('Invalid type: use one of: %s', implode(', ', EntityRelation::getValidRelationTypes())));
+                throw new \InvalidArgumentException(\sprintf('Invalid type, use one of: "%s"', implode('", "', EntityRelation::getValidRelationTypes())));
             }
 
             return $type;

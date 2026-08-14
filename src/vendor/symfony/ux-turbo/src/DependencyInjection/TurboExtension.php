@@ -19,9 +19,9 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
-use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\UX\Turbo\Broadcaster\BroadcasterInterface;
 use Symfony\UX\Turbo\Twig\TurboStreamListenRendererInterface;
 
@@ -37,7 +37,7 @@ final class TurboExtension extends Extension implements PrependExtensionInterfac
 
         $loader = (new PhpFileLoader($container, new FileLocator(\dirname(__DIR__).'/../config')));
         $loader->load('services.php');
-        $container->getDefinition('turbo.twig.extension')->replaceArgument(1, $config['default_transport']);
+        $container->getDefinition('turbo.twig.runtime')->replaceArgument(1, $config['default_transport']);
 
         $this->registerTwig($config, $container);
         $this->registerBroadcast($config, $container, $loader);

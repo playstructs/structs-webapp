@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+7.4
+---
+
+ * Add support for loading JSON using import statements
+
+7.3
+---
+
+ * Add support for pre-compressing assets with Brotli, Zstandard, Zopfli, and gzip
+ * Add option `--dry-run` to `importmap:require` command
+ * `ImportMapRequireCommand` now takes `projectDir` as a required third constructor argument
+
 7.2
 ---
 

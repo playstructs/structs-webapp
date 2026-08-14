@@ -12,7 +12,7 @@
             </trans-unit>
             <trans-unit id="30">
                 <source>The CSRF token is invalid. Please try to resubmit the form.</source>
-                <target state="needs-review-translation">CSRF-tokenen er ugyldig. Vennligst prøv å sende inn skjemaet på nytt.</target>
+                <target>CSRF-tokenen er ugyldig. Vennligst prøv å sende inn skjemaet på nytt.</target>
             </trans-unit>
             <trans-unit id="99">
                 <source>This value is not a valid HTML5 color.</source>
@@ -133,6 +133,10 @@
             <trans-unit id="128">
                 <source>Please enter a valid week.</source>
                 <target>Vennligst skriv inn en gyldig uke.</target>
+            </trans-unit>
+            <trans-unit id="129">
+                <source>Please enter a valid UUID.</source>
+                <target state="needs-review-translation">Vennligst skriv inn en gyldig UUID.</target>
             </trans-unit>
         </body>
     </file>

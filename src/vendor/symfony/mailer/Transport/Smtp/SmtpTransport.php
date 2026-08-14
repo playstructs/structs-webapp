@@ -108,6 +108,10 @@ class SmtpTransport extends AbstractTransport
      */
     public function setLocalDomain(string $domain): static
     {
+        if (preg_match('/[\x00-\x1F\x7F]/', $domain)) {
+            throw new InvalidArgumentException('The local domain name must not contain control characters.');
+        }
+
         if ('' !== $domain && '[' !== $domain[0]) {
             if (filter_var($domain, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4)) {
                 $domain = '['.$domain.']';
@@ -155,18 +159,7 @@ class SmtpTransport extends AbstractTransport
 
     protected function parseMessageId(string $mtaResult): string
     {
-        $regexps = [
-            '/250 Ok (?P<id>[0-9a-f-]+)\r?$/mis',
-            '/250 Ok:? queued as (?P<id>[A-Z0-9]+)\r?$/mis',
-        ];
-        $matches = [];
-        foreach ($regexps as $regexp) {
-            if (preg_match($regexp, $mtaResult, $matches)) {
-                return $matches['id'];
-            }
-        }
-
-        return '';
+        return preg_match('/^250 (?:\S+ )?Ok:?+ (?:queued as |id=)?+(?P<id>[A-Z0-9._-]++)/im', $mtaResult, $matches) ? $matches['id'] : '';
     }
 
     public function __toString(): string
@@ -206,11 +199,11 @@ class SmtpTransport extends AbstractTransport
             $this->ping();
         }
 
-        if (!$this->started) {
-            $this->start();
-        }
-
         try {
+            if (!$this->started) {
+                $this->start();
+            }
+
             $envelope = $message->getEnvelope();
             $this->doMailFromCommand($envelope->getSender()->getEncodedAddress(), $envelope->anyAddressHasUnicodeLocalpart());
             foreach ($envelope->getRecipients() as $recipient) {
@@ -376,12 +369,12 @@ class SmtpTransport extends AbstractTransport
         $this->restartCounter = 0;
     }
 
-    public function __sleep(): array
+    public function __serialize(): array
     {
         throw new \BadMethodCallException('Cannot serialize '.__CLASS__);
     }
 
-    public function __wakeup(): void
+    public function __unserialize(array $data): void
     {
         throw new \BadMethodCallException('Cannot unserialize '.__CLASS__);
     }

@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Validator\Constraints;
 
+use Symfony\Component\Validator\Attribute\HasNamedArguments;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
 
@@ -46,10 +47,10 @@ class Ulid extends Constraint
     public string $format = self::FORMAT_BASE_32;
 
     /**
-     * @param array<string,mixed>|null $options
-     * @param string[]|null            $groups
-     * @param self::FORMAT_*|null      $format
+     * @param string[]|null       $groups
+     * @param self::FORMAT_*|null $format
      */
+    #[HasNamedArguments]
     public function __construct(
         ?array $options = null,
         ?string $message = null,
@@ -57,6 +58,10 @@ class Ulid extends Constraint
         mixed $payload = null,
         ?string $format = null,
     ) {
+        if (\is_array($options)) {
+            trigger_deprecation('symfony/validator', '7.3', 'Passing an array of options to configure the "%s" constraint is deprecated, use named arguments instead.', static::class);
+        }
+
         parent::__construct($options, $groups, $payload);
 
         $this->message = $message ?? $this->message;
