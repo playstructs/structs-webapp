@@ -276,6 +276,19 @@ export class PlanetCardBuilder {
    * @param {string} type
    * @param {PlanetCardComponent} raidCard
    */
+  buildRaidNoCommandStruct(raidCard, type) {
+    if (type !== PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT) {
+      return;
+    }
+
+    raidCard.hasAlert = true;
+    raidCard.alertMessage = 'No CMD Ship.';
+  }
+
+  /**
+   * @param {string} type
+   * @param {PlanetCardComponent} raidCard
+   */
   buildRaidStarted(raidCard, type) {
     if (type !== PLANET_CARD_TYPES.RAID_STARTED) {
       return;
@@ -425,6 +438,7 @@ export class PlanetCardBuilder {
   determineRaidCardType(selectedType = null) {
     const selectRaidTypes = [
       PLANET_CARD_TYPES.RAID_LOADING,
+      PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT,
       PLANET_CARD_TYPES.RAID_NONE,
       PLANET_CARD_TYPES.RAID_ACTIVE,
       PLANET_CARD_TYPES.RAID_RETREAT
@@ -454,6 +468,12 @@ export class PlanetCardBuilder {
     ) {
 
       type = PLANET_CARD_TYPES.RAID_ACTIVE;
+
+    } else if (!this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].isCommandStructAlive()) {
+
+      // Last, so that a raid already under way is still shown: the branches
+      // above have ruled one out by the time a missing command ship matters.
+      type = PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT;
 
     }
 
@@ -490,6 +510,7 @@ export class PlanetCardBuilder {
 
     this.buildRaidLoading(planetCard, type);
     this.buildRaidNone(planetCard, type);
+    this.buildRaidNoCommandStruct(planetCard, type);
     this.buildRaidStarted(planetCard, type);
     this.buildRaidActive(planetCard, type);
     this.buildRaidRetreat(planetCard, type);

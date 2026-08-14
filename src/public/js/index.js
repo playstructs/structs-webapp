@@ -2310,6 +2310,19 @@ class PlanetCardBuilder {
    * @param {string} type
    * @param {PlanetCardComponent} raidCard
    */
+  buildRaidNoCommandStruct(raidCard, type) {
+    if (type !== _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT) {
+      return;
+    }
+
+    raidCard.hasAlert = true;
+    raidCard.alertMessage = 'No CMD Ship.';
+  }
+
+  /**
+   * @param {string} type
+   * @param {PlanetCardComponent} raidCard
+   */
   buildRaidStarted(raidCard, type) {
     if (type !== _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_STARTED) {
       return;
@@ -2459,6 +2472,7 @@ class PlanetCardBuilder {
   determineRaidCardType(selectedType = null) {
     const selectRaidTypes = [
       _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_LOADING,
+      _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT,
       _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_NONE,
       _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_ACTIVE,
       _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_RETREAT
@@ -2488,6 +2502,12 @@ class PlanetCardBuilder {
     ) {
 
       type = _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_ACTIVE;
+
+    } else if (!this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER].isCommandStructAlive()) {
+
+      // Last, so that a raid already under way is still shown: the branches
+      // above have ruled one out by the time a missing command ship matters.
+      type = _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT;
 
     }
 
@@ -2524,6 +2544,7 @@ class PlanetCardBuilder {
 
     this.buildRaidLoading(planetCard, type);
     this.buildRaidNone(planetCard, type);
+    this.buildRaidNoCommandStruct(planetCard, type);
     this.buildRaidStarted(planetCard, type);
     this.buildRaidActive(planetCard, type);
     this.buildRaidRetreat(planetCard, type);
@@ -3917,6 +3938,7 @@ const PLANET_CARD_TYPES = {
   ALPHA_BASE_ARRIVED: 'ALPHA_BASE_ARRIVED',
   RAID_LOADING: 'RAID_LOADING',
   RAID_NONE: 'RAID_NONE',
+  RAID_NO_COMMAND_STRUCT: 'RAID_NO_COMMAND_STRUCT',
   RAID_STARTED: 'RAID_STARTED',
   RAID_ACTIVE: 'RAID_ACTIVE',
   RAID_RETREAT: 'RAID_RETREAT'
@@ -36433,6 +36455,13 @@ class PreviewViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
     }
 
     launchFleetBtnElm.addEventListener('click', () => {
+
+      // Safeguard in case the player doesn't have a command ship by the time they attempt to launch.
+      if (!this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].isCommandStructAlive()) {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Fleet', 'index');
+        return;
+      }
+
       const planetRaid = this.planetRaidFactory.make({
         fleet_id: this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].player.fleet_id,
         planet_id: this.planet_id,
@@ -36534,7 +36563,10 @@ class PreviewViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MO
           _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.back();
         });
 
-        const launchFleetBtn = (this.attacker_id === null)
+        const launchFleetBtn = (
+            this.attacker_id === null
+            && this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].isCommandStructAlive()
+        )
           ? `
             <div class="preview-map-btn-container">
               <a 
@@ -77375,6 +77407,12 @@ PEMEncoder.prototype.encode = function encode(data, options) {
     // Handle the residue
     if (bitsLeft > 0) {
       this.words[i] = ~this.words[i] & (0x3ffffff >> (26 - bitsLeft));
+      i++;
+    }
+
+    // Clear words above the requested width so the result stays below 2 ** width
+    for (; i < this.length; i++) {
+      this.words[i] = 0;
     }
 
     // And remove leading zeroes
@@ -78468,6 +78506,10 @@ PEMEncoder.prototype.encode = function encode(data, options) {
       this.words[i] = carry;
       this.length++;
     }
+    if (num === 0) {
+      this.length = 1;
+      this._normSign();
+    }
 
     return this;
   };
@@ -78673,6 +78715,11 @@ PEMEncoder.prototype.encode = function encode(data, options) {
     if (r !== 0) {
       var mask = 0x3ffffff ^ ((0x3ffffff >>> r) << r);
       this.words[this.length - 1] &= mask;
+    }
+
+    if (this.length === 0) {
+      this.words[0] = 0;
+      this.length = 1;
     }
 
     return this.strip();
@@ -79001,17 +79048,19 @@ PEMEncoder.prototype.encode = function encode(data, options) {
     // Fast case - exact division
     if (dm.mod.isZero()) return dm.div;
 
-    var mod = dm.div.negative !== 0 ? dm.mod.isub(num) : dm.mod;
+    var mod = dm.mod.abs();
 
-    var half = num.ushrn(1);
-    var r2 = num.andln(1);
+    var half = num.abs().iushrn(1);
+    var r2 = num.words[0] & 1;
     var cmp = mod.cmp(half);
 
     // Round down
     if (cmp < 0 || r2 === 1 && cmp === 0) return dm.div;
 
-    // Round up
-    return dm.div.negative !== 0 ? dm.div.isubn(1) : dm.div.iaddn(1);
+    // Round up, away from zero
+    var up = new BN(1);
+    up.negative = this.negative ^ num.negative;
+    return dm.div.iadd(up);
   };
 
   BN.prototype.modn = function modn (num) {
@@ -83092,6 +83141,12 @@ module.exports = {
     // Handle the residue
     if (bitsLeft > 0) {
       this.words[i] = ~this.words[i] & (0x3ffffff >> (26 - bitsLeft));
+      i++;
+    }
+
+    // Clear words above the requested width so the result stays below 2 ** width
+    for (; i < this.length; i++) {
+      this.words[i] = 0;
     }
 
     // And remove leading zeroes
@@ -84190,6 +84245,10 @@ module.exports = {
       this.words[i] = carry;
       this.length++;
     }
+    if (num === 0) {
+      this.length = 1;
+      this._normSign();
+    }
 
     return isNegNum ? this.ineg() : this;
   };
@@ -84395,6 +84454,11 @@ module.exports = {
     if (r !== 0) {
       var mask = 0x3ffffff ^ ((0x3ffffff >>> r) << r);
       this.words[this.length - 1] &= mask;
+    }
+
+    if (this.length === 0) {
+      this.words[0] = 0;
+      this.length = 1;
     }
 
     return this._strip();
@@ -84723,17 +84787,19 @@ module.exports = {
     // Fast case - exact division
     if (dm.mod.isZero()) return dm.div;
 
-    var mod = dm.div.negative !== 0 ? dm.mod.isub(num) : dm.mod;
+    var mod = dm.mod.abs();
 
-    var half = num.ushrn(1);
-    var r2 = num.andln(1);
+    var half = num.abs().iushrn(1);
+    var r2 = num.words[0] & 1;
     var cmp = mod.cmp(half);
 
     // Round down
     if (cmp < 0 || (r2 === 1 && cmp === 0)) return dm.div;
 
-    // Round up
-    return dm.div.negative !== 0 ? dm.div.isubn(1) : dm.div.iaddn(1);
+    // Round up, away from zero
+    var up = new BN(1);
+    up.negative = this.negative ^ num.negative;
+    return dm.div.iadd(up);
   };
 
   BN.prototype.modrn = function modrn (num) {
@@ -140686,6 +140752,12 @@ function formatReturnValue (bn, enc, len) {
     // Handle the residue
     if (bitsLeft > 0) {
       this.words[i] = ~this.words[i] & (0x3ffffff >> (26 - bitsLeft));
+      i++;
+    }
+
+    // Clear words above the requested width so the result stays below 2 ** width
+    for (; i < this.length; i++) {
+      this.words[i] = 0;
     }
 
     // And remove leading zeroes
@@ -141779,6 +141851,10 @@ function formatReturnValue (bn, enc, len) {
       this.words[i] = carry;
       this.length++;
     }
+    if (num === 0) {
+      this.length = 1;
+      this._normSign();
+    }
 
     return this;
   };
@@ -141984,6 +142060,11 @@ function formatReturnValue (bn, enc, len) {
     if (r !== 0) {
       var mask = 0x3ffffff ^ ((0x3ffffff >>> r) << r);
       this.words[this.length - 1] &= mask;
+    }
+
+    if (this.length === 0) {
+      this.words[0] = 0;
+      this.length = 1;
     }
 
     return this.strip();
@@ -142312,17 +142393,19 @@ function formatReturnValue (bn, enc, len) {
     // Fast case - exact division
     if (dm.mod.isZero()) return dm.div;
 
-    var mod = dm.div.negative !== 0 ? dm.mod.isub(num) : dm.mod;
+    var mod = dm.mod.abs();
 
-    var half = num.ushrn(1);
-    var r2 = num.andln(1);
+    var half = num.abs().iushrn(1);
+    var r2 = num.words[0] & 1;
     var cmp = mod.cmp(half);
 
     // Round down
     if (cmp < 0 || r2 === 1 && cmp === 0) return dm.div;
 
-    // Round up
-    return dm.div.negative !== 0 ? dm.div.isubn(1) : dm.div.iaddn(1);
+    // Round up, away from zero
+    var up = new BN(1);
+    up.negative = this.negative ^ num.negative;
+    return dm.div.iadd(up);
   };
 
   BN.prototype.modn = function modn (num) {
@@ -146346,6 +146429,12 @@ function findPrime(bits, gen) {
     // Handle the residue
     if (bitsLeft > 0) {
       this.words[i] = ~this.words[i] & (0x3ffffff >> (26 - bitsLeft));
+      i++;
+    }
+
+    // Clear words above the requested width so the result stays below 2 ** width
+    for (; i < this.length; i++) {
+      this.words[i] = 0;
     }
 
     // And remove leading zeroes
@@ -147439,6 +147528,10 @@ function findPrime(bits, gen) {
       this.words[i] = carry;
       this.length++;
     }
+    if (num === 0) {
+      this.length = 1;
+      this._normSign();
+    }
 
     return this;
   };
@@ -147644,6 +147737,11 @@ function findPrime(bits, gen) {
     if (r !== 0) {
       var mask = 0x3ffffff ^ ((0x3ffffff >>> r) << r);
       this.words[this.length - 1] &= mask;
+    }
+
+    if (this.length === 0) {
+      this.words[0] = 0;
+      this.length = 1;
     }
 
     return this.strip();
@@ -147972,17 +148070,19 @@ function findPrime(bits, gen) {
     // Fast case - exact division
     if (dm.mod.isZero()) return dm.div;
 
-    var mod = dm.div.negative !== 0 ? dm.mod.isub(num) : dm.mod;
+    var mod = dm.mod.abs();
 
-    var half = num.ushrn(1);
-    var r2 = num.andln(1);
+    var half = num.abs().iushrn(1);
+    var r2 = num.words[0] & 1;
     var cmp = mod.cmp(half);
 
     // Round down
     if (cmp < 0 || r2 === 1 && cmp === 0) return dm.div;
 
-    // Round up
-    return dm.div.negative !== 0 ? dm.div.isubn(1) : dm.div.iaddn(1);
+    // Round up, away from zero
+    var up = new BN(1);
+    up.negative = this.negative ^ num.negative;
+    return dm.div.iadd(up);
   };
 
   BN.prototype.modn = function modn (num) {
@@ -153926,6 +154026,12 @@ utils.intFromLE = intFromLE;
     // Handle the residue
     if (bitsLeft > 0) {
       this.words[i] = ~this.words[i] & (0x3ffffff >> (26 - bitsLeft));
+      i++;
+    }
+
+    // Clear words above the requested width so the result stays below 2 ** width
+    for (; i < this.length; i++) {
+      this.words[i] = 0;
     }
 
     // And remove leading zeroes
@@ -155019,6 +155125,10 @@ utils.intFromLE = intFromLE;
       this.words[i] = carry;
       this.length++;
     }
+    if (num === 0) {
+      this.length = 1;
+      this._normSign();
+    }
 
     return this;
   };
@@ -155224,6 +155334,11 @@ utils.intFromLE = intFromLE;
     if (r !== 0) {
       var mask = 0x3ffffff ^ ((0x3ffffff >>> r) << r);
       this.words[this.length - 1] &= mask;
+    }
+
+    if (this.length === 0) {
+      this.words[0] = 0;
+      this.length = 1;
     }
 
     return this.strip();
@@ -155552,17 +155667,19 @@ utils.intFromLE = intFromLE;
     // Fast case - exact division
     if (dm.mod.isZero()) return dm.div;
 
-    var mod = dm.div.negative !== 0 ? dm.mod.isub(num) : dm.mod;
+    var mod = dm.mod.abs();
 
-    var half = num.ushrn(1);
-    var r2 = num.andln(1);
+    var half = num.abs().iushrn(1);
+    var r2 = num.words[0] & 1;
     var cmp = mod.cmp(half);
 
     // Round down
     if (cmp < 0 || r2 === 1 && cmp === 0) return dm.div;
 
-    // Round up
-    return dm.div.negative !== 0 ? dm.div.isubn(1) : dm.div.iaddn(1);
+    // Round up, away from zero
+    var up = new BN(1);
+    up.negative = this.negative ^ num.negative;
+    return dm.div.iadd(up);
   };
 
   BN.prototype.modn = function modn (num) {
@@ -162235,6 +162352,12 @@ MillerRabin.prototype.getDivisor = function getDivisor(n, k) {
     // Handle the residue
     if (bitsLeft > 0) {
       this.words[i] = ~this.words[i] & (0x3ffffff >> (26 - bitsLeft));
+      i++;
+    }
+
+    // Clear words above the requested width so the result stays below 2 ** width
+    for (; i < this.length; i++) {
+      this.words[i] = 0;
     }
 
     // And remove leading zeroes
@@ -163328,6 +163451,10 @@ MillerRabin.prototype.getDivisor = function getDivisor(n, k) {
       this.words[i] = carry;
       this.length++;
     }
+    if (num === 0) {
+      this.length = 1;
+      this._normSign();
+    }
 
     return this;
   };
@@ -163533,6 +163660,11 @@ MillerRabin.prototype.getDivisor = function getDivisor(n, k) {
     if (r !== 0) {
       var mask = 0x3ffffff ^ ((0x3ffffff >>> r) << r);
       this.words[this.length - 1] &= mask;
+    }
+
+    if (this.length === 0) {
+      this.words[0] = 0;
+      this.length = 1;
     }
 
     return this.strip();
@@ -163861,17 +163993,19 @@ MillerRabin.prototype.getDivisor = function getDivisor(n, k) {
     // Fast case - exact division
     if (dm.mod.isZero()) return dm.div;
 
-    var mod = dm.div.negative !== 0 ? dm.mod.isub(num) : dm.mod;
+    var mod = dm.mod.abs();
 
-    var half = num.ushrn(1);
-    var r2 = num.andln(1);
+    var half = num.abs().iushrn(1);
+    var r2 = num.words[0] & 1;
     var cmp = mod.cmp(half);
 
     // Round down
     if (cmp < 0 || r2 === 1 && cmp === 0) return dm.div;
 
-    // Round up
-    return dm.div.negative !== 0 ? dm.div.isubn(1) : dm.div.iaddn(1);
+    // Round up, away from zero
+    var up = new BN(1);
+    up.negative = this.negative ^ num.negative;
+    return dm.div.iadd(up);
   };
 
   BN.prototype.modn = function modn (num) {
@@ -167319,6 +167453,12 @@ function i2ops (c) {
     // Handle the residue
     if (bitsLeft > 0) {
       this.words[i] = ~this.words[i] & (0x3ffffff >> (26 - bitsLeft));
+      i++;
+    }
+
+    // Clear words above the requested width so the result stays below 2 ** width
+    for (; i < this.length; i++) {
+      this.words[i] = 0;
     }
 
     // And remove leading zeroes
@@ -168412,6 +168552,10 @@ function i2ops (c) {
       this.words[i] = carry;
       this.length++;
     }
+    if (num === 0) {
+      this.length = 1;
+      this._normSign();
+    }
 
     return this;
   };
@@ -168617,6 +168761,11 @@ function i2ops (c) {
     if (r !== 0) {
       var mask = 0x3ffffff ^ ((0x3ffffff >>> r) << r);
       this.words[this.length - 1] &= mask;
+    }
+
+    if (this.length === 0) {
+      this.words[0] = 0;
+      this.length = 1;
     }
 
     return this.strip();
@@ -168945,17 +169094,19 @@ function i2ops (c) {
     // Fast case - exact division
     if (dm.mod.isZero()) return dm.div;
 
-    var mod = dm.div.negative !== 0 ? dm.mod.isub(num) : dm.mod;
+    var mod = dm.mod.abs();
 
-    var half = num.ushrn(1);
-    var r2 = num.andln(1);
+    var half = num.abs().iushrn(1);
+    var r2 = num.words[0] & 1;
     var cmp = mod.cmp(half);
 
     // Round down
     if (cmp < 0 || r2 === 1 && cmp === 0) return dm.div;
 
-    // Round up
-    return dm.div.negative !== 0 ? dm.div.isubn(1) : dm.div.iaddn(1);
+    // Round up, away from zero
+    var up = new BN(1);
+    up.negative = this.negative ^ num.negative;
+    return dm.div.iadd(up);
   };
 
   BN.prototype.modn = function modn (num) {

@@ -67,6 +67,13 @@ export class PreviewViewModel extends AbstractViewModel {
     }
 
     launchFleetBtnElm.addEventListener('click', () => {
+
+      // Safeguard in case the player doesn't have a command ship by the time they attempt to launch.
+      if (!this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].isCommandStructAlive()) {
+        MenuPage.router.goto('Fleet', 'index');
+        return;
+      }
+
       const planetRaid = this.planetRaidFactory.make({
         fleet_id: this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id,
         planet_id: this.planet_id,
@@ -168,7 +175,10 @@ export class PreviewViewModel extends AbstractViewModel {
           MenuPage.router.back();
         });
 
-        const launchFleetBtn = (this.attacker_id === null)
+        const launchFleetBtn = (
+            this.attacker_id === null
+            && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].isCommandStructAlive()
+        )
           ? `
             <div class="preview-map-btn-container">
               <a 
