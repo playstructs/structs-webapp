@@ -1,4 +1,4 @@
-const NodePolyfillPlugin = require("node-polyfill-webpack-plugin")
+const webpack = require('webpack');
 const path = require('path');
 
 module.exports = {
@@ -24,6 +24,14 @@ module.exports = {
       ".js": [".js", ".ts"],
       ".cjs": [".cjs", ".cts"],
       ".mjs": [".mjs", ".mts"]
+    },
+    // Webpack 5 ships no Node core polyfills. @cosmjs/crypto is the only thing
+    // that reaches for one, and only to probe for Node's crypto in branches a
+    // browser never takes, falling back to WebCrypto or noble. An empty module
+    // satisfies the probe; a real shim would drag in crypto-browserify, and
+    // with it elliptic.
+    fallback: {
+      crypto: false
     }
   },
   module: {
@@ -33,6 +41,11 @@ module.exports = {
     ]
   },
   plugins: [
-    new NodePolyfillPlugin()
+    // @cosmjs/utils and cosmjs-types use Buffer as a global. Nothing else in the
+    // graph needs a Node global: the handful of `typeof process` reads are Node
+    // detection, which must stay false here.
+    new webpack.ProvidePlugin({
+      Buffer: [require.resolve('buffer/'), 'Buffer']
+    })
   ]
 };
