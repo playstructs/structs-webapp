@@ -8890,6 +8890,107 @@ class BannerLayer {
 
 /***/ },
 
+/***/ "./js/framework/DialogueKeyboardControls.js"
+/*!**************************************************!*\
+  !*** ./js/framework/DialogueKeyboardControls.js ***!
+  \**************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   DialogueKeyboardControls: () => (/* binding */ DialogueKeyboardControls)
+/* harmony export */ });
+/* harmony import */ var _MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _NotificationDialogue__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./NotificationDialogue */ "./js/framework/NotificationDialogue.js");
+
+
+
+/**
+ * Enter confirms a dialogue and Escape goes back.
+ *
+ * The dialogue buttons cannot read these keys themselves. They are anchors, so
+ * they are only sent key events while focused, and nothing in the app moves
+ * focus to them. The keys are read from the document and routed here instead.
+ */
+class DialogueKeyboardControls {
+
+  /**
+   * Hiding a button does not clear the handler the screen installed, and the
+   * menu page as a whole is hidden while a map is up, so ancestors count.
+   *
+   * @param {string} btnId
+   * @return {boolean}
+   */
+  static isBtnActionable(btnId) {
+    const btn = document.getElementById(btnId);
+
+    return Boolean(btn) && btn.closest('.hidden') === null;
+  }
+
+  /**
+   * An anchor or button turns Enter into a click of its own while focused, so
+   * routing the same press to a handler would run it twice.
+   *
+   * @return {boolean}
+   */
+  static isEnterHandledByFocusedElement() {
+    return Boolean(document.activeElement?.closest('a, button'));
+  }
+
+  static handleEnter() {
+    if (DialogueKeyboardControls.isEnterHandledByFocusedElement()) {
+      return;
+    }
+
+    // The notification panel sits over the menu page when both are open.
+    if (DialogueKeyboardControls.isBtnActionable(_NotificationDialogue__WEBPACK_IMPORTED_MODULE_1__.NotificationDialogue.dialogueBtnAId)) {
+      _NotificationDialogue__WEBPACK_IMPORTED_MODULE_1__.NotificationDialogue.dialogueBtnAHandler();
+      return;
+    }
+
+    if (DialogueKeyboardControls.isBtnActionable(_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAId)) {
+      _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnAHandler();
+    }
+  }
+
+  static handleEscape() {
+    // A notification has nothing to go back to, and it covers the button that
+    // would answer for the menu page underneath it.
+    if (
+      DialogueKeyboardControls.isBtnActionable(_NotificationDialogue__WEBPACK_IMPORTED_MODULE_1__.NotificationDialogue.dialogueBtnAId)
+      || !DialogueKeyboardControls.isBtnActionable(_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnBId)
+    ) {
+      return;
+    }
+
+    _MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.dialogueBtnBHandler();
+  }
+
+  /**
+   * @param {KeyboardEvent} event
+   */
+  static handleKeydown(event) {
+    // Holding a key down would otherwise race through a dialogue sequence.
+    if (event.repeat) {
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      DialogueKeyboardControls.handleEnter();
+    } else if (event.key === 'Escape') {
+      DialogueKeyboardControls.handleEscape();
+    }
+  }
+
+  static initListeners() {
+    document.addEventListener('keydown', DialogueKeyboardControls.handleKeydown);
+  }
+}
+
+
+/***/ },
+
 /***/ "./js/framework/GrassManager.js"
 /*!**************************************!*\
   !*** ./js/framework/GrassManager.js ***!
@@ -12592,9 +12693,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_30__ = __webpack_require__(/*! ./constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
 /* harmony import */ var _managers_DestroyedStructManager__WEBPACK_IMPORTED_MODULE_31__ = __webpack_require__(/*! ./managers/DestroyedStructManager */ "./js/managers/DestroyedStructManager.js");
 /* harmony import */ var _framework_NotificationDialogue__WEBPACK_IMPORTED_MODULE_32__ = __webpack_require__(/*! ./framework/NotificationDialogue */ "./js/framework/NotificationDialogue.js");
-/* harmony import */ var _framework_MapPanController__WEBPACK_IMPORTED_MODULE_33__ = __webpack_require__(/*! ./framework/MapPanController */ "./js/framework/MapPanController.js");
-/* harmony import */ var _data_structures_AnimationEventQueue__WEBPACK_IMPORTED_MODULE_34__ = __webpack_require__(/*! ./data_structures/AnimationEventQueue */ "./js/data_structures/AnimationEventQueue.js");
-/* harmony import */ var _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_35__ = __webpack_require__(/*! ./constants/GrassConstants */ "./js/constants/GrassConstants.js");
+/* harmony import */ var _framework_DialogueKeyboardControls__WEBPACK_IMPORTED_MODULE_33__ = __webpack_require__(/*! ./framework/DialogueKeyboardControls */ "./js/framework/DialogueKeyboardControls.js");
+/* harmony import */ var _framework_MapPanController__WEBPACK_IMPORTED_MODULE_34__ = __webpack_require__(/*! ./framework/MapPanController */ "./js/framework/MapPanController.js");
+/* harmony import */ var _data_structures_AnimationEventQueue__WEBPACK_IMPORTED_MODULE_35__ = __webpack_require__(/*! ./data_structures/AnimationEventQueue */ "./js/data_structures/AnimationEventQueue.js");
+/* harmony import */ var _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_36__ = __webpack_require__(/*! ./constants/GrassConstants */ "./js/constants/GrassConstants.js");
+
 
 
 
@@ -12655,7 +12758,7 @@ const grassManager = new _framework_GrassManager__WEBPACK_IMPORTED_MODULE_6__.Gr
   `ws://${window.location.hostname}:1443`,
   "structs.>",
   gameState,
-  _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_35__.LOG_LEVEL.KEY_PLAYER
+  _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_36__.LOG_LEVEL.KEY_PLAYER
 );
 
 const blockGrassManager = new _framework_GrassManager__WEBPACK_IMPORTED_MODULE_6__.GrassManager(
@@ -12689,7 +12792,7 @@ __webpack_require__.g.taskManager = taskManager;
 const destroyedStructManager = new _managers_DestroyedStructManager__WEBPACK_IMPORTED_MODULE_31__.DestroyedStructManager(gameState, structManager);
 __webpack_require__.g.destroyedStructManager = destroyedStructManager;
 
-const animationEventQueue = new _data_structures_AnimationEventQueue__WEBPACK_IMPORTED_MODULE_34__.AnimationEventQueue();
+const animationEventQueue = new _data_structures_AnimationEventQueue__WEBPACK_IMPORTED_MODULE_35__.AnimationEventQueue();
 animationEventQueue.initListeners();
 gameState.animationEventQueue = animationEventQueue;
 
@@ -12794,7 +12897,9 @@ __webpack_require__.g.menuPage = _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0_
 
 _framework_NotificationDialogue__WEBPACK_IMPORTED_MODULE_32__.NotificationDialogue.initListeners();
 
-new _framework_MapPanController__WEBPACK_IMPORTED_MODULE_33__.MapPanController().init();
+_framework_DialogueKeyboardControls__WEBPACK_IMPORTED_MODULE_33__.DialogueKeyboardControls.initListeners();
+
+new _framework_MapPanController__WEBPACK_IMPORTED_MODULE_34__.MapPanController().init();
 
 grassManager.init();
 blockGrassManager.registerListener(blockListener);
@@ -12833,7 +12938,7 @@ window.addEventListener('focus', () => onResume());
 // grass was stale at resume and its own check had to be deferred.
 setInterval(() => {
   onResume(false);
-}, _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_35__.RESUME_CHECK_INTERVAL_MS);
+}, _constants_GrassConstants__WEBPACK_IMPORTED_MODULE_36__.RESUME_CHECK_INTERVAL_MS);
 
 const hudContainer = document.getElementById(_view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__.HUDViewModel.containerId);
 
