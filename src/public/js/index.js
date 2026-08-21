@@ -13867,6 +13867,16 @@ class MapManager {
       mapContainer.classList.add('hidden');
     });
     document.getElementById(mapContainerId).classList.remove('hidden');
+
+    [
+      this.gameState.alphaBaseMap,
+      this.gameState.raidMap,
+      this.gameState.previewMap
+    ].forEach(map => {
+      if (map) {
+        map.setShown(map.containerId === mapContainerId);
+      }
+    });
   }
 
   showActiveMap() {
@@ -32218,6 +32228,42 @@ class MapComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORT
     }
   }
 
+  /**
+   * The PIP is anchored to the viewport from `<body>`, so it does not inherit
+   * the hidden state of the map container and would otherwise keep mirroring
+   * this map's combat over whichever map is on screen. Clearing it on the way
+   * out also stops a stale bubble from reappearing when this map returns.
+   *
+   * @param {boolean} isShown whether this map is the one now on screen
+   */
+  setShown(isShown) {
+    const pictureInPicture = document.getElementById(this.pictureInPictureId);
+
+    if (!pictureInPicture) {
+      return;
+    }
+
+    if (isShown) {
+      pictureInPicture.classList.remove('hidden');
+      return;
+    }
+
+    pictureInPicture.classList.add('hidden');
+
+    if (this.mapPictureInPicture) {
+      this.mapPictureInPicture.clearPipContents();
+    }
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isContainerShown() {
+    const container = document.getElementById(this.containerId);
+
+    return !!container && !container.classList.contains('hidden');
+  }
+
   render() {
     this.destroyMapStructLayer();
     this.destroyMapStructHUDLayer();
@@ -32254,6 +32300,10 @@ class MapComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORT
     // can be `position: fixed` against the browser viewport. Append it as a
     // direct child of <body>; destroyMapPictureInPicture() cleans it up.
     document.body.insertAdjacentHTML('beforeend', this.mapPictureInPicture.renderHTML());
+
+    // A re-render can happen while this map is off screen (a raid starting
+    // re-renders both planet maps), and the fresh element starts out visible.
+    this.setShown(this.isContainerShown());
 
     this.mapStructLayer.initPageCode();
     this.mapStructHUDLayer.initPageCode();
@@ -32649,6 +32699,20 @@ class MapPictureInPictureComponent extends _framework_AbstractViewModelComponent
   }
 
   /**
+   * Whether the owning map is the one on screen. `MapComponent.setShown`
+   * hides this element alongside its map, and a tile inside a hidden map
+   * measures as fully off-screen, which would otherwise read as "the bubble
+   * is needed" for every animation this map receives while off screen.
+   *
+   * @return {boolean}
+   */
+  isShown() {
+    const container = this.getContainer();
+
+    return !!container && !container.classList.contains('hidden');
+  }
+
+  /**
    * Locate the on-map tile element for the given struct id, scoped to this
    * PIP's owning map.
    *
@@ -33025,6 +33089,7 @@ class MapPictureInPictureComponent extends _framework_AbstractViewModelComponent
     if (
       !event
       || !event.structId
+      || !this.isShown()
       || (event.mapId && event.mapId !== this.mapId)
     ) {
       return;

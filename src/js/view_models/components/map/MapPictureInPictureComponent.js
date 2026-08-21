@@ -157,6 +157,20 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * Whether the owning map is the one on screen. `MapComponent.setShown`
+   * hides this element alongside its map, and a tile inside a hidden map
+   * measures as fully off-screen, which would otherwise read as "the bubble
+   * is needed" for every animation this map receives while off screen.
+   *
+   * @return {boolean}
+   */
+  isShown() {
+    const container = this.getContainer();
+
+    return !!container && !container.classList.contains('hidden');
+  }
+
+  /**
    * Locate the on-map tile element for the given struct id, scoped to this
    * PIP's owning map.
    *
@@ -533,6 +547,7 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
     if (
       !event
       || !event.structId
+      || !this.isShown()
       || (event.mapId && event.mapId !== this.mapId)
     ) {
       return;
