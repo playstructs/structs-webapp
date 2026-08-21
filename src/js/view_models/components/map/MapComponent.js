@@ -331,6 +331,42 @@ export class MapComponent extends AbstractViewModelComponent {
     }
   }
 
+  /**
+   * The PIP is anchored to the viewport from `<body>`, so it does not inherit
+   * the hidden state of the map container and would otherwise keep mirroring
+   * this map's combat over whichever map is on screen. Clearing it on the way
+   * out also stops a stale bubble from reappearing when this map returns.
+   *
+   * @param {boolean} isShown whether this map is the one now on screen
+   */
+  setShown(isShown) {
+    const pictureInPicture = document.getElementById(this.pictureInPictureId);
+
+    if (!pictureInPicture) {
+      return;
+    }
+
+    if (isShown) {
+      pictureInPicture.classList.remove('hidden');
+      return;
+    }
+
+    pictureInPicture.classList.add('hidden');
+
+    if (this.mapPictureInPicture) {
+      this.mapPictureInPicture.clearPipContents();
+    }
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isContainerShown() {
+    const container = document.getElementById(this.containerId);
+
+    return !!container && !container.classList.contains('hidden');
+  }
+
   render() {
     this.destroyMapStructLayer();
     this.destroyMapStructHUDLayer();
@@ -367,6 +403,10 @@ export class MapComponent extends AbstractViewModelComponent {
     // can be `position: fixed` against the browser viewport. Append it as a
     // direct child of <body>; destroyMapPictureInPicture() cleans it up.
     document.body.insertAdjacentHTML('beforeend', this.mapPictureInPicture.renderHTML());
+
+    // A re-render can happen while this map is off screen (a raid starting
+    // re-renders both planet maps), and the fresh element starts out visible.
+    this.setShown(this.isContainerShown());
 
     this.mapStructLayer.initPageCode();
     this.mapStructHUDLayer.initPageCode();
