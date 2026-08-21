@@ -84,6 +84,16 @@ export class MapManager {
       mapContainer.classList.add('hidden');
     });
     document.getElementById(mapContainerId).classList.remove('hidden');
+
+    [
+      this.gameState.alphaBaseMap,
+      this.gameState.raidMap,
+      this.gameState.previewMap
+    ].forEach(map => {
+      if (map) {
+        map.setShown(map.containerId === mapContainerId);
+      }
+    });
   }
 
   showActiveMap() {
