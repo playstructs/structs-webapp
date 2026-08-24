@@ -28,6 +28,14 @@ export interface Planet {
   locationListStart: string;
   /** End of the line */
   locationListLast: string;
+  name: string;
+  /**
+   * Visitors allowed beyond the first. Capacity = 1 + locationListExtra.
+   * Zero (protobuf default) means queue length 1.
+   */
+  locationListExtra: number;
+  /** Current number of visiting fleets linked in the raid queue. */
+  locationListCount: number;
 }
 
 export interface PlanetAttributeRecord {
@@ -47,6 +55,11 @@ export interface PlanetAttributes {
   orbitalJammingStationQuantity: number;
   advancedOrbitalJammingStationQuantity: number;
   blockStartRaid: number;
+  blockRaiderArrived: number;
+  blockStartOreMine: number;
+  blockStartOreRefine: number;
+  oreMiningActiveQuantity: number;
+  oreRefiningActiveQuantity: number;
 }
 
 function createBasePlanet(): Planet {
@@ -66,6 +79,9 @@ function createBasePlanet(): Planet {
     status: 0,
     locationListStart: "",
     locationListLast: "",
+    name: "",
+    locationListExtra: 0,
+    locationListCount: 0,
   };
 }
 
@@ -115,6 +131,15 @@ export const Planet: MessageFns<Planet> = {
     }
     if (message.locationListLast !== "") {
       writer.uint32(122).string(message.locationListLast);
+    }
+    if (message.name !== "") {
+      writer.uint32(130).string(message.name);
+    }
+    if (message.locationListExtra !== 0) {
+      writer.uint32(136).uint64(message.locationListExtra);
+    }
+    if (message.locationListCount !== 0) {
+      writer.uint32(144).uint64(message.locationListCount);
     }
     return writer;
   },
@@ -246,6 +271,30 @@ export const Planet: MessageFns<Planet> = {
           message.locationListLast = reader.string();
           continue;
         }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 17: {
+          if (tag !== 136) {
+            break;
+          }
+
+          message.locationListExtra = longToNumber(reader.uint64());
+          continue;
+        }
+        case 18: {
+          if (tag !== 144) {
+            break;
+          }
+
+          message.locationListCount = longToNumber(reader.uint64());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -272,6 +321,9 @@ export const Planet: MessageFns<Planet> = {
       status: isSet(object.status) ? planetStatusFromJSON(object.status) : 0,
       locationListStart: isSet(object.locationListStart) ? globalThis.String(object.locationListStart) : "",
       locationListLast: isSet(object.locationListLast) ? globalThis.String(object.locationListLast) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      locationListExtra: isSet(object.locationListExtra) ? globalThis.Number(object.locationListExtra) : 0,
+      locationListCount: isSet(object.locationListCount) ? globalThis.Number(object.locationListCount) : 0,
     };
   },
 
@@ -322,6 +374,15 @@ export const Planet: MessageFns<Planet> = {
     if (message.locationListLast !== "") {
       obj.locationListLast = message.locationListLast;
     }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.locationListExtra !== 0) {
+      obj.locationListExtra = Math.round(message.locationListExtra);
+    }
+    if (message.locationListCount !== 0) {
+      obj.locationListCount = Math.round(message.locationListCount);
+    }
     return obj;
   },
 
@@ -345,6 +406,9 @@ export const Planet: MessageFns<Planet> = {
     message.status = object.status ?? 0;
     message.locationListStart = object.locationListStart ?? "";
     message.locationListLast = object.locationListLast ?? "";
+    message.name = object.name ?? "";
+    message.locationListExtra = object.locationListExtra ?? 0;
+    message.locationListCount = object.locationListCount ?? 0;
     return message;
   },
 };
@@ -438,6 +502,11 @@ function createBasePlanetAttributes(): PlanetAttributes {
     orbitalJammingStationQuantity: 0,
     advancedOrbitalJammingStationQuantity: 0,
     blockStartRaid: 0,
+    blockRaiderArrived: 0,
+    blockStartOreMine: 0,
+    blockStartOreRefine: 0,
+    oreMiningActiveQuantity: 0,
+    oreRefiningActiveQuantity: 0,
   };
 }
 
@@ -475,6 +544,21 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
     }
     if (message.blockStartRaid !== 0) {
       writer.uint32(88).uint64(message.blockStartRaid);
+    }
+    if (message.blockRaiderArrived !== 0) {
+      writer.uint32(96).uint64(message.blockRaiderArrived);
+    }
+    if (message.blockStartOreMine !== 0) {
+      writer.uint32(104).uint64(message.blockStartOreMine);
+    }
+    if (message.blockStartOreRefine !== 0) {
+      writer.uint32(112).uint64(message.blockStartOreRefine);
+    }
+    if (message.oreMiningActiveQuantity !== 0) {
+      writer.uint32(120).uint64(message.oreMiningActiveQuantity);
+    }
+    if (message.oreRefiningActiveQuantity !== 0) {
+      writer.uint32(128).uint64(message.oreRefiningActiveQuantity);
     }
     return writer;
   },
@@ -574,6 +658,46 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
           message.blockStartRaid = longToNumber(reader.uint64());
           continue;
         }
+        case 12: {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.blockRaiderArrived = longToNumber(reader.uint64());
+          continue;
+        }
+        case 13: {
+          if (tag !== 104) {
+            break;
+          }
+
+          message.blockStartOreMine = longToNumber(reader.uint64());
+          continue;
+        }
+        case 14: {
+          if (tag !== 112) {
+            break;
+          }
+
+          message.blockStartOreRefine = longToNumber(reader.uint64());
+          continue;
+        }
+        case 15: {
+          if (tag !== 120) {
+            break;
+          }
+
+          message.oreMiningActiveQuantity = longToNumber(reader.uint64());
+          continue;
+        }
+        case 16: {
+          if (tag !== 128) {
+            break;
+          }
+
+          message.oreRefiningActiveQuantity = longToNumber(reader.uint64());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -615,6 +739,15 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
         ? globalThis.Number(object.advancedOrbitalJammingStationQuantity)
         : 0,
       blockStartRaid: isSet(object.blockStartRaid) ? globalThis.Number(object.blockStartRaid) : 0,
+      blockRaiderArrived: isSet(object.blockRaiderArrived) ? globalThis.Number(object.blockRaiderArrived) : 0,
+      blockStartOreMine: isSet(object.blockStartOreMine) ? globalThis.Number(object.blockStartOreMine) : 0,
+      blockStartOreRefine: isSet(object.blockStartOreRefine) ? globalThis.Number(object.blockStartOreRefine) : 0,
+      oreMiningActiveQuantity: isSet(object.oreMiningActiveQuantity)
+        ? globalThis.Number(object.oreMiningActiveQuantity)
+        : 0,
+      oreRefiningActiveQuantity: isSet(object.oreRefiningActiveQuantity)
+        ? globalThis.Number(object.oreRefiningActiveQuantity)
+        : 0,
     };
   },
 
@@ -661,6 +794,21 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
     if (message.blockStartRaid !== 0) {
       obj.blockStartRaid = Math.round(message.blockStartRaid);
     }
+    if (message.blockRaiderArrived !== 0) {
+      obj.blockRaiderArrived = Math.round(message.blockRaiderArrived);
+    }
+    if (message.blockStartOreMine !== 0) {
+      obj.blockStartOreMine = Math.round(message.blockStartOreMine);
+    }
+    if (message.blockStartOreRefine !== 0) {
+      obj.blockStartOreRefine = Math.round(message.blockStartOreRefine);
+    }
+    if (message.oreMiningActiveQuantity !== 0) {
+      obj.oreMiningActiveQuantity = Math.round(message.oreMiningActiveQuantity);
+    }
+    if (message.oreRefiningActiveQuantity !== 0) {
+      obj.oreRefiningActiveQuantity = Math.round(message.oreRefiningActiveQuantity);
+    }
     return obj;
   },
 
@@ -683,6 +831,11 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
     message.orbitalJammingStationQuantity = object.orbitalJammingStationQuantity ?? 0;
     message.advancedOrbitalJammingStationQuantity = object.advancedOrbitalJammingStationQuantity ?? 0;
     message.blockStartRaid = object.blockStartRaid ?? 0;
+    message.blockRaiderArrived = object.blockRaiderArrived ?? 0;
+    message.blockStartOreMine = object.blockStartOreMine ?? 0;
+    message.blockStartOreRefine = object.blockStartOreRefine ?? 0;
+    message.oreMiningActiveQuantity = object.oreMiningActiveQuantity ?? 0;
+    message.oreRefiningActiveQuantity = object.oreRefiningActiveQuantity ?? 0;
     return message;
   },
 };

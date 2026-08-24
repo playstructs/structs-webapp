@@ -14,6 +14,13 @@ export interface PermissionRecord {
   value: number;
 }
 
+export interface GuildRankPermissionRecord {
+  objectId: string;
+  guildId: string;
+  permissions: number;
+  rank: number;
+}
+
 function createBasePermissionRecord(): PermissionRecord {
   return { permissionId: "", value: 0 };
 }
@@ -86,6 +93,114 @@ export const PermissionRecord: MessageFns<PermissionRecord> = {
     const message = createBasePermissionRecord();
     message.permissionId = object.permissionId ?? "";
     message.value = object.value ?? 0;
+    return message;
+  },
+};
+
+function createBaseGuildRankPermissionRecord(): GuildRankPermissionRecord {
+  return { objectId: "", guildId: "", permissions: 0, rank: 0 };
+}
+
+export const GuildRankPermissionRecord: MessageFns<GuildRankPermissionRecord> = {
+  encode(message: GuildRankPermissionRecord, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.objectId !== "") {
+      writer.uint32(10).string(message.objectId);
+    }
+    if (message.guildId !== "") {
+      writer.uint32(18).string(message.guildId);
+    }
+    if (message.permissions !== 0) {
+      writer.uint32(24).uint64(message.permissions);
+    }
+    if (message.rank !== 0) {
+      writer.uint32(32).uint64(message.rank);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GuildRankPermissionRecord {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGuildRankPermissionRecord();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.objectId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.permissions = longToNumber(reader.uint64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.rank = longToNumber(reader.uint64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GuildRankPermissionRecord {
+    return {
+      objectId: isSet(object.objectId) ? globalThis.String(object.objectId) : "",
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
+      rank: isSet(object.rank) ? globalThis.Number(object.rank) : 0,
+    };
+  },
+
+  toJSON(message: GuildRankPermissionRecord): unknown {
+    const obj: any = {};
+    if (message.objectId !== "") {
+      obj.objectId = message.objectId;
+    }
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.permissions !== 0) {
+      obj.permissions = Math.round(message.permissions);
+    }
+    if (message.rank !== 0) {
+      obj.rank = Math.round(message.rank);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GuildRankPermissionRecord>, I>>(base?: I): GuildRankPermissionRecord {
+    return GuildRankPermissionRecord.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GuildRankPermissionRecord>, I>>(object: I): GuildRankPermissionRecord {
+    const message = createBaseGuildRankPermissionRecord();
+    message.objectId = object.objectId ?? "";
+    message.guildId = object.guildId ?? "";
+    message.permissions = object.permissions ?? 0;
+    message.rank = object.rank ?? 0;
     return message;
   },
 };

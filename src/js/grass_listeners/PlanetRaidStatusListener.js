@@ -7,6 +7,8 @@ import {NotificationDialogueSequenceFactory} from "../factories/NotificationDial
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {MenuPage} from "../framework/MenuPage";
 import {TaskCmdReconcileEvent} from "../events/TaskCmdReconcileEvent";
+import {TaskCmdRefreshOreEvent} from "../events/TaskCmdRefreshOreEvent";
+import {ORE_TASK_TYPES} from "../constants/TaskTypes";
 
 export class PlanetRaidStatusListener extends AbstractGrassListener {
   /**
@@ -30,12 +32,26 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
     this.notificationDialogueSequenceFactory = new NotificationDialogueSequenceFactory();
   }
 
+  /**
+   * The chain refuses mining and refining for as long as a raider is on the
+   * planet, so anything hashed in that window is unredeemable. The ore clocks
+   * are shifted forward by the length of the raid once it ends, and the fresh
+   * clocks are what start the work up again.
+   */
+  stopOreWork() {
+    for (const taskType of ORE_TASK_TYPES) {
+      window.dispatchEvent(new TaskCmdRefreshOreEvent(taskType, 0));
+    }
+  }
+
   raidInitiated(messageData) {
     if (messageData.detail.status !== RAID_STATUS.INITIATED) {
       return;
     }
 
     console.log('PLANET RAID INITIATED HANDLER');
+
+    this.stopOreWork();
 
     this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].getPlanetId()).then(raidInfo => {
       this.gameState.setPlanetPlanetRaidInfo(raidInfo, false);
@@ -62,6 +78,8 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
 
     console.log('PLANET RAID ONGOING HANDLER');
 
+    this.stopOreWork();
+
     this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetRaidStatus(messageData.detail.status);
   }
 
@@ -71,6 +89,8 @@ export class PlanetRaidStatusListener extends AbstractGrassListener {
     }
 
     console.log('PLANET RAID SHIELD VULNERABLE HANDLER');
+
+    this.stopOreWork();
 
     this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetRaidStatus(messageData.detail.status);
   }

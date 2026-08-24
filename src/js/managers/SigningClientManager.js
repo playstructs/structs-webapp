@@ -471,12 +471,13 @@ export class SigningClientManager {
   /**
    * @param {number} amountAlpha
    * @param {number} amountToken
+   * @param {string} [guildId] Defaults to the signer's own guild.
    * @param {object} [options]
    */
-  async queueMsgGuildBankMint(amountAlpha, amountToken, options = {}) {
+  async queueMsgGuildBankMint(amountAlpha, amountToken, guildId = '', options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgGuildBankMint',
-      {amountAlpha, amountToken},
+      {amountAlpha, amountToken, guildId},
       options,
     );
     return this.queue.whenSettled(id);
@@ -484,12 +485,15 @@ export class SigningClientManager {
 
   /**
    * @param {{denom: string, amount: string}} amountToken
+   * @param {number} minAmountAlpha Required and nonzero; the transaction fails
+   *   rather than burning tokens when fees or the collateral ratio would return
+   *   less alpha.
    * @param {object} [options]
    */
-  async queueMsgGuildBankRedeem(amountToken, options = {}) {
+  async queueMsgGuildBankRedeem(amountToken, minAmountAlpha, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgGuildBankRedeem',
-      {amountToken},
+      {amountToken, minAmountAlpha},
       options,
     );
     return this.queue.whenSettled(id);
@@ -498,27 +502,100 @@ export class SigningClientManager {
   /**
    * @param {string} address
    * @param {number} amountToken
+   * @param {string} [guildId] Defaults to the signer's own guild.
    * @param {object} [options]
    */
-  async queueMsgGuildBankConfiscateAndBurn(address, amountToken, options = {}) {
+  async queueMsgGuildBankConfiscateAndBurn(address, amountToken, guildId = '', options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgGuildBankConfiscateAndBurn',
-      {address, amountToken},
+      {address, amountToken, guildId},
       options,
     );
     return this.queue.whenSettled(id);
   }
 
   /**
+   * Converts ualpha into a guild's alpha-backed token at the current collateral
+   * ratio. The guild's bankConvertInFee is retained in the collateral pool.
+   *
+   * @param {string} guildId
+   * @param {number} amountAlpha
+   * @param {number} minAmountToken Required and nonzero; guards against ratio or
+   *   fee movement earlier in the block.
+   * @param {object} [options]
+   */
+  async queueMsgGuildBankConvert(guildId, amountAlpha, minAmountToken, options = {}) {
+    const id = this.queue.enqueueImmediate(
+      '/structs.structs.MsgGuildBankConvert',
+      {guildId, amountAlpha, minAmountToken},
+      options,
+    );
+    return this.queue.whenSettled(id);
+  }
+
+  /**
+   * Converts one guild token into another in a single atomic transaction. The
+   * source guild is identified by the amountToken denom (uguild.{guildId});
+   * guildId names the target.
+   *
+   * @param {{denom: string, amount: string}} amountToken
+   * @param {string} guildId The target guild.
+   * @param {number} minAmountToken Required and nonzero; guards the final
+   *   target-token output.
+   * @param {object} [options]
+   */
+  async queueMsgGuildBankConvertToken(amountToken, guildId, minAmountToken, options = {}) {
+    const id = this.queue.enqueueImmediate(
+      '/structs.structs.MsgGuildBankConvertToken',
+      {amountToken, guildId, minAmountToken},
+      options,
+    );
+    return this.queue.whenSettled(id);
+  }
+
+  /**
+   * Founds a guild, either by solving the chain-global charter proof-of-work
+   * (proof + nonce) or by spending a reactor's one-time entitlement (both
+   * empty). The signer is the solver; founderPlayerId is who ends up owning the
+   * guild, and defaults to the signer when empty. The consent fields are only
+   * needed when founding on behalf of another player.
+   *
    * @param {string} reactorId
    * @param {string} endpoint
    * @param {string} entrySubstationId
+   * @param {string} [proof]
+   * @param {string} [nonce]
+   * @param {string} [founderPlayerId]
+   * @param {string} [address]
+   * @param {string} [proofPubKey]
+   * @param {string} [proofSignature]
    * @param {object} [options]
    */
-  async queueMsgGuildCreate(reactorId, endpoint, entrySubstationId, options = {}) {
+  async queueMsgGuildCreate(
+    reactorId,
+    endpoint,
+    entrySubstationId,
+    proof = '',
+    nonce = '',
+    founderPlayerId = '',
+    address = '',
+    proofPubKey = '',
+    proofSignature = '',
+    options = {}
+  ) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgGuildCreate',
-      {reactorId, endpoint, entrySubstationId},
+      {
+        reactorId,
+        endpoint,
+        entrySubstationId,
+        proof,
+        nonce,
+        founderPlayerId,
+        address,
+        proofPubKey,
+        proofSignature,
+      },
       options,
     );
     return this.queue.whenSettled(id);
@@ -575,6 +652,40 @@ export class SigningClientManager {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgGuildUpdatePrimaryReactor',
       {guildId, reactorId},
+      options,
+    );
+    return this.queue.whenSettled(id);
+  }
+
+  /**
+   * Sets the fee retained in collateral when converting ualpha into this
+   * guild's token.
+   *
+   * @param {string} guildId
+   * @param {string} bankConvertInFee Decimal string, 0.0 inclusive to 1.0 exclusive.
+   * @param {object} [options]
+   */
+  async queueMsgGuildUpdateBankConvertInFee(guildId, bankConvertInFee, options = {}) {
+    const id = this.queue.enqueueImmediate(
+      '/structs.structs.MsgGuildUpdateBankConvertInFee',
+      {guildId, bankConvertInFee},
+      options,
+    );
+    return this.queue.whenSettled(id);
+  }
+
+  /**
+   * Sets the fee retained in collateral when redeeming this guild's token for
+   * ualpha.
+   *
+   * @param {string} guildId
+   * @param {string} bankConvertOutFee Decimal string, 0.0 inclusive to 1.0 exclusive.
+   * @param {object} [options]
+   */
+  async queueMsgGuildUpdateBankConvertOutFee(guildId, bankConvertOutFee, options = {}) {
+    const id = this.queue.enqueueImmediate(
+      '/structs.structs.MsgGuildUpdateBankConvertOutFee',
+      {guildId, bankConvertOutFee},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1468,6 +1579,23 @@ export class SigningClientManager {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgReactorCancelDefusion',
       {delegatorAddress, validatorAddress, amount, creationHeight},
+      options,
+    );
+    return this.queue.whenSettled(id);
+  }
+
+  /**
+   * Restores energy production for a reactor whose validator was jailed and
+   * then unjailed below the active-set cutoff, where staking never rebonds it.
+   * Permissionless: it only writes state derived from the staking module.
+   *
+   * @param {string} validatorAddress
+   * @param {object} [options]
+   */
+  async queueMsgReactorRestart(validatorAddress, options = {}) {
+    const id = this.queue.enqueueImmediate(
+      '/structs.structs.MsgReactorRestart',
+      {validatorAddress},
       options,
     );
     return this.queue.whenSettled(id);

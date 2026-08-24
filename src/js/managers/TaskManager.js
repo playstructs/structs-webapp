@@ -1,6 +1,6 @@
 import {EVENTS} from "../constants/Events";
 import {TASK} from "../constants/TaskConstants";
-import {TASK_TYPES} from "../constants/TaskTypes";
+import {ORE_TASK_TYPES, TASK_TYPES} from "../constants/TaskTypes";
 import {TASK_MANAGER_STATUS} from "../constants/TaskManagerStatus";
 import {TaskProcess} from "../models/TaskProcess";
 import {TaskCompletedEvent} from "../events/TaskCompletedEvent";
@@ -41,6 +41,9 @@ export class TaskManager {
 
         /** @type {Promise<void>|null} In-flight work lookup, shared by concurrent callers. */
         this.outstanding_work_lookup = null;
+
+        /** @type {Promise<Work[]>|null} In-flight work request, shared by concurrent callers. */
+        this.work_request = null;
 
         /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
@@ -117,6 +120,13 @@ export class TaskManager {
         // that no local task is covering yet.
         window.addEventListener(EVENTS.TASK_CMD_RECONCILE, function (event) {
             this.spawnOutstandingWork();
+        }.bind(this));
+
+        // TASK_CMD_REFRESH_ORE
+        // Dispatched when a planet's shared mine or refine clock changes, which
+        // starts, restarts or stops the work of every eligible struct on it.
+        window.addEventListener(EVENTS.TASK_CMD_REFRESH_ORE, function (event) {
+            this.refreshOreTasks(event.taskType, event.blockStart);
         }.bind(this));
 
         // TASK_CMD_SWEEP
@@ -604,12 +614,141 @@ export class TaskManager {
     }
 
     /**
+     * Collects the process IDs of every task of a given type.
+     *
+     * @param {string} taskType see TASK_TYPES
+     * @return {string[]}
+     */
+    getProcessIdsByType(taskType) {
+        return Object.keys(this.processes).filter(
+            (pid) => this.processes[pid].state.task_type === taskType
+        );
+    }
+
+    /**
+     * @param {string} taskType see TASK_TYPES
+     */
+    terminateAllByType(taskType) {
+        for (const pid of this.getProcessIdsByType(taskType)) {
+            this.terminate(pid);
+        }
+    }
+
+    /**
+     * Mining and refining are refused by the chain for as long as a raider sits
+     * on the planet, so no hash found during that window can be redeemed.
+     *
+     * @return {boolean}
+     */
+    isPlayerPlanetRaided() {
+        return this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo.isRaidActive();
+    }
+
+    /**
+     * Brings the running mine or refine tasks in line with a shared planet
+     * clock, after fetching the structs that clock currently covers.
+     *
+     * @param {string} taskType see ORE_TASK_TYPES
+     * @param {number} block_start Zero when the clock has been cleared.
+     * @return {Promise<void>}
+     */
+    async refreshOreTasks(taskType, block_start) {
+        // A cleared clock, or a raid, stops the work outright. Neither needs the
+        // struct list, and a raid should stop the hashing immediately rather
+        // than a round trip later.
+        if (!block_start || this.isPlayerPlanetRaided()) {
+            this.terminateAllByType(taskType);
+            return;
+        }
+
+        try {
+            const work = await this.fetchWork();
+            this.syncOreTasks(taskType, work, block_start);
+        } catch (error) {
+            console.warn('[TaskManager] could not refresh ore work:', error);
+        }
+    }
+
+    /**
+     * Starts, replaces and stops the tasks of one ore type so they match the
+     * work the chain currently recognises.
+     *
+     * Every eligible struct on a planet shares that planet's clock, and the
+     * chain no longer reports a per-struct stop: a rig going offline leaves the
+     * clock untouched, so the work list is the only signal that it should no
+     * longer be hashing.
+     *
+     * @param {string} taskType see ORE_TASK_TYPES
+     * @param {Work[]} work
+     * @param {number|null} block_start The clock as reported by GRASS, which
+     *   leads the indexed work record. Falls back to the work record's own.
+     */
+    syncOreTasks(taskType, work, block_start = null) {
+        const eligible = this.isPlayerPlanetRaided()
+            ? []
+            : work.filter((workTask) => workTask.category === taskType);
+        const eligible_ids = eligible.map((workTask) => workTask.object_id);
+
+        for (const pid of this.getProcessIdsByType(taskType)) {
+            if (!eligible_ids.includes(pid)) {
+                this.terminate(pid);
+            }
+        }
+
+        for (const workTask of eligible) {
+            const task_block_start = block_start ?? workTask.block_start;
+
+            // Without a clock there is nothing to hash against.
+            if (!task_block_start) {
+                continue;
+            }
+
+            // Replacing a task restarts its worker and throws away every nonce
+            // it has searched, so only do it once the clock has actually moved.
+            const process = this.processes[workTask.object_id];
+            if (
+                process
+                && process.state.task_type === taskType
+                && process.state.block_start === task_block_start
+            ) {
+                continue;
+            }
+
+            this.spawn(this.taskStateFactory.initStructTask(
+                workTask.object_id,
+                taskType,
+                task_block_start,
+                workTask.difficulty_target
+            ));
+        }
+    }
+
+    /**
+     * Requests the player's outstanding work, sharing one request between
+     * concurrent callers so a block that changes both ore clocks, or a reconcile
+     * landing alongside one, only asks once.
+     *
+     * @return {Promise<Work[]>}
+     */
+    fetchWork() {
+        if (!this.work_request) {
+            this.work_request = this.guildAPI
+                .getWorkByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id)
+                .finally(() => {
+                    this.work_request = null;
+                });
+        }
+
+        return this.work_request;
+    }
+
+    /**
      * Picks up outstanding work the player isn't running yet, such as refining
      * that only became possible once ore changed hands during a raid.
      *
-     * Work stopping is already covered by the struct status listeners, which
-     * kill the task when the chain reports the job's start block as zero, so
-     * this only ever needs to start things.
+     * Build and raid work is only ever started here, since the chain reports
+     * those stopping with a start block of zero. Ore work has no such per-struct
+     * signal, so it is reconciled in both directions.
      *
      * @return {Promise<void>}
      */
@@ -631,9 +770,15 @@ export class TaskManager {
      * @return {Promise<void>}
      */
     async fetchAndSpawnOutstandingWork() {
-        const work = await this.guildAPI.getWorkByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
+        const work = await this.fetchWork();
 
         work.forEach((workTask) => {
+            // Ore work runs off the planet's shared clock and is reconciled
+            // below, where the stops this pass cannot see are handled too.
+            if (ORE_TASK_TYPES.includes(workTask.category)) {
+                return;
+            }
+
             const task = this.taskStateFactory.initTaskFromWork(workTask);
 
             // Only fill in the gaps. A struct that already has a process is
@@ -656,6 +801,10 @@ export class TaskManager {
 
             this.spawn(task);
         });
+
+        for (const taskType of ORE_TASK_TYPES) {
+            this.syncOreTasks(taskType, work);
+        }
     }
 
     /**

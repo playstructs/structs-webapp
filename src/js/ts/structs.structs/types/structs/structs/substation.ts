@@ -13,10 +13,12 @@ export interface Substation {
   id: string;
   owner: string;
   creator: string;
+  name: string;
+  pfp: string;
 }
 
 function createBaseSubstation(): Substation {
-  return { id: "", owner: "", creator: "" };
+  return { id: "", owner: "", creator: "", name: "", pfp: "" };
 }
 
 export const Substation: MessageFns<Substation> = {
@@ -29,6 +31,12 @@ export const Substation: MessageFns<Substation> = {
     }
     if (message.creator !== "") {
       writer.uint32(26).string(message.creator);
+    }
+    if (message.name !== "") {
+      writer.uint32(34).string(message.name);
+    }
+    if (message.pfp !== "") {
+      writer.uint32(42).string(message.pfp);
     }
     return writer;
   },
@@ -64,6 +72,22 @@ export const Substation: MessageFns<Substation> = {
           message.creator = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.pfp = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -78,6 +102,8 @@ export const Substation: MessageFns<Substation> = {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
       owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      pfp: isSet(object.pfp) ? globalThis.String(object.pfp) : "",
     };
   },
 
@@ -92,6 +118,12 @@ export const Substation: MessageFns<Substation> = {
     if (message.creator !== "") {
       obj.creator = message.creator;
     }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.pfp !== "") {
+      obj.pfp = message.pfp;
+    }
     return obj;
   },
 
@@ -103,6 +135,8 @@ export const Substation: MessageFns<Substation> = {
     message.id = object.id ?? "";
     message.owner = object.owner ?? "";
     message.creator = object.creator ?? "";
+    message.name = object.name ?? "";
+    message.pfp = object.pfp ?? "";
     return message;
   },
 };

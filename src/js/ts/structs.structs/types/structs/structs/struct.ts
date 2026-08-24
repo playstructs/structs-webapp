@@ -156,6 +156,12 @@ export interface StructType {
    * but I really don't feel like renumbering this entire thing again.
    */
   triggerRaidDefeatByDestruction: boolean;
+  primaryWeaponGuaranteedShots: number;
+  secondaryWeaponGuaranteedShots: number;
+  primaryWeaponArmourPiercing: boolean;
+  secondaryWeaponArmourPiercing: boolean;
+  /** Can this struct register as a defender? (fleet: true, planetary: false) */
+  canDefend: boolean;
 }
 
 export interface StructDefender {
@@ -176,6 +182,10 @@ export interface StructAttributes {
   health: number;
   status: number;
   blockStartBuild: number;
+  /**
+   * Deprecated: ore mine/refine clocks live on PlanetAttributes as of v0.21.0.
+   * These fields remain for wire compatibility and always read 0 after migration.
+   */
   blockStartOreMine: number;
   blockStartOreRefine: number;
   protectedStructIndex: number;
@@ -186,6 +196,11 @@ export interface StructAttributes {
   isHidden: boolean;
   isDestroyed: boolean;
   isLocked: boolean;
+}
+
+export interface StructDestructionQueueRecord {
+  sweepHeight: number;
+  structId: string;
 }
 
 function createBaseStruct(): Struct {
@@ -454,6 +469,11 @@ function createBaseStructType(): StructType {
     guidedDefensiveSuccessRateNumerator: 0,
     guidedDefensiveSuccessRateDenominator: 0,
     triggerRaidDefeatByDestruction: false,
+    primaryWeaponGuaranteedShots: 0,
+    secondaryWeaponGuaranteedShots: 0,
+    primaryWeaponArmourPiercing: false,
+    secondaryWeaponArmourPiercing: false,
+    canDefend: false,
   };
 }
 
@@ -656,6 +676,21 @@ export const StructType: MessageFns<StructType> = {
     }
     if (message.triggerRaidDefeatByDestruction !== false) {
       writer.uint32(496).bool(message.triggerRaidDefeatByDestruction);
+    }
+    if (message.primaryWeaponGuaranteedShots !== 0) {
+      writer.uint32(536).uint64(message.primaryWeaponGuaranteedShots);
+    }
+    if (message.secondaryWeaponGuaranteedShots !== 0) {
+      writer.uint32(544).uint64(message.secondaryWeaponGuaranteedShots);
+    }
+    if (message.primaryWeaponArmourPiercing !== false) {
+      writer.uint32(552).bool(message.primaryWeaponArmourPiercing);
+    }
+    if (message.secondaryWeaponArmourPiercing !== false) {
+      writer.uint32(560).bool(message.secondaryWeaponArmourPiercing);
+    }
+    if (message.canDefend !== false) {
+      writer.uint32(568).bool(message.canDefend);
     }
     return writer;
   },
@@ -1195,6 +1230,46 @@ export const StructType: MessageFns<StructType> = {
           message.triggerRaidDefeatByDestruction = reader.bool();
           continue;
         }
+        case 67: {
+          if (tag !== 536) {
+            break;
+          }
+
+          message.primaryWeaponGuaranteedShots = longToNumber(reader.uint64());
+          continue;
+        }
+        case 68: {
+          if (tag !== 544) {
+            break;
+          }
+
+          message.secondaryWeaponGuaranteedShots = longToNumber(reader.uint64());
+          continue;
+        }
+        case 69: {
+          if (tag !== 552) {
+            break;
+          }
+
+          message.primaryWeaponArmourPiercing = reader.bool();
+          continue;
+        }
+        case 70: {
+          if (tag !== 560) {
+            break;
+          }
+
+          message.secondaryWeaponArmourPiercing = reader.bool();
+          continue;
+        }
+        case 71: {
+          if (tag !== 568) {
+            break;
+          }
+
+          message.canDefend = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1318,6 +1393,19 @@ export const StructType: MessageFns<StructType> = {
       triggerRaidDefeatByDestruction: isSet(object.triggerRaidDefeatByDestruction)
         ? globalThis.Boolean(object.triggerRaidDefeatByDestruction)
         : false,
+      primaryWeaponGuaranteedShots: isSet(object.primaryWeaponGuaranteedShots)
+        ? globalThis.Number(object.primaryWeaponGuaranteedShots)
+        : 0,
+      secondaryWeaponGuaranteedShots: isSet(object.secondaryWeaponGuaranteedShots)
+        ? globalThis.Number(object.secondaryWeaponGuaranteedShots)
+        : 0,
+      primaryWeaponArmourPiercing: isSet(object.primaryWeaponArmourPiercing)
+        ? globalThis.Boolean(object.primaryWeaponArmourPiercing)
+        : false,
+      secondaryWeaponArmourPiercing: isSet(object.secondaryWeaponArmourPiercing)
+        ? globalThis.Boolean(object.secondaryWeaponArmourPiercing)
+        : false,
+      canDefend: isSet(object.canDefend) ? globalThis.Boolean(object.canDefend) : false,
     };
   },
 
@@ -1521,6 +1609,21 @@ export const StructType: MessageFns<StructType> = {
     if (message.triggerRaidDefeatByDestruction !== false) {
       obj.triggerRaidDefeatByDestruction = message.triggerRaidDefeatByDestruction;
     }
+    if (message.primaryWeaponGuaranteedShots !== 0) {
+      obj.primaryWeaponGuaranteedShots = Math.round(message.primaryWeaponGuaranteedShots);
+    }
+    if (message.secondaryWeaponGuaranteedShots !== 0) {
+      obj.secondaryWeaponGuaranteedShots = Math.round(message.secondaryWeaponGuaranteedShots);
+    }
+    if (message.primaryWeaponArmourPiercing !== false) {
+      obj.primaryWeaponArmourPiercing = message.primaryWeaponArmourPiercing;
+    }
+    if (message.secondaryWeaponArmourPiercing !== false) {
+      obj.secondaryWeaponArmourPiercing = message.secondaryWeaponArmourPiercing;
+    }
+    if (message.canDefend !== false) {
+      obj.canDefend = message.canDefend;
+    }
     return obj;
   },
 
@@ -1595,6 +1698,11 @@ export const StructType: MessageFns<StructType> = {
     message.guidedDefensiveSuccessRateNumerator = object.guidedDefensiveSuccessRateNumerator ?? 0;
     message.guidedDefensiveSuccessRateDenominator = object.guidedDefensiveSuccessRateDenominator ?? 0;
     message.triggerRaidDefeatByDestruction = object.triggerRaidDefeatByDestruction ?? false;
+    message.primaryWeaponGuaranteedShots = object.primaryWeaponGuaranteedShots ?? 0;
+    message.secondaryWeaponGuaranteedShots = object.secondaryWeaponGuaranteedShots ?? 0;
+    message.primaryWeaponArmourPiercing = object.primaryWeaponArmourPiercing ?? false;
+    message.secondaryWeaponArmourPiercing = object.secondaryWeaponArmourPiercing ?? false;
+    message.canDefend = object.canDefend ?? false;
     return message;
   },
 };
@@ -2075,6 +2183,82 @@ export const StructAttributes: MessageFns<StructAttributes> = {
     message.isHidden = object.isHidden ?? false;
     message.isDestroyed = object.isDestroyed ?? false;
     message.isLocked = object.isLocked ?? false;
+    return message;
+  },
+};
+
+function createBaseStructDestructionQueueRecord(): StructDestructionQueueRecord {
+  return { sweepHeight: 0, structId: "" };
+}
+
+export const StructDestructionQueueRecord: MessageFns<StructDestructionQueueRecord> = {
+  encode(message: StructDestructionQueueRecord, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.sweepHeight !== 0) {
+      writer.uint32(8).int64(message.sweepHeight);
+    }
+    if (message.structId !== "") {
+      writer.uint32(18).string(message.structId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): StructDestructionQueueRecord {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStructDestructionQueueRecord();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.sweepHeight = longToNumber(reader.int64());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.structId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StructDestructionQueueRecord {
+    return {
+      sweepHeight: isSet(object.sweepHeight) ? globalThis.Number(object.sweepHeight) : 0,
+      structId: isSet(object.structId) ? globalThis.String(object.structId) : "",
+    };
+  },
+
+  toJSON(message: StructDestructionQueueRecord): unknown {
+    const obj: any = {};
+    if (message.sweepHeight !== 0) {
+      obj.sweepHeight = Math.round(message.sweepHeight);
+    }
+    if (message.structId !== "") {
+      obj.structId = message.structId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StructDestructionQueueRecord>, I>>(base?: I): StructDestructionQueueRecord {
+    return StructDestructionQueueRecord.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StructDestructionQueueRecord>, I>>(object: I): StructDestructionQueueRecord {
+    const message = createBaseStructDestructionQueueRecord();
+    message.sweepHeight = object.sweepHeight ?? 0;
+    message.structId = object.structId ?? "";
     return message;
   },
 };
