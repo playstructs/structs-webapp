@@ -819,13 +819,23 @@ export class TaskManager {
         });
 
         for (const taskType of ORE_TASK_TYPES) {
-            // A clock held back during a raid is the one the chain announced and
-            // won't repeat, so it leads anything the indexer has written.
-            const held_block_start = this.held_ore_clocks[taskType] ?? null;
-            delete this.held_ore_clocks[taskType];
-
-            this.syncOreTasks(taskType, work, held_block_start);
+            this.syncOreTasks(taskType, work, this.consumeHeldOreClock(taskType));
         }
+    }
+
+    /**
+     * Takes back the ore clock that was held while the planet was raided. The
+     * chain announces a given clock once, so this is the only copy of it and it
+     * leads whatever the indexer has written.
+     *
+     * @param {string} taskType see ORE_TASK_TYPES
+     * @return {number|null}
+     */
+    consumeHeldOreClock(taskType) {
+        const block_start = this.held_ore_clocks[taskType] ?? null;
+        delete this.held_ore_clocks[taskType];
+
+        return block_start;
     }
 
     /**
