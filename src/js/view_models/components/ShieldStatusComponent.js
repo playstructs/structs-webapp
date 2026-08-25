@@ -40,8 +40,9 @@ export class ShieldStatusComponent extends AbstractViewModelComponent {
       this.renderShieldStatusIcon();
     };
 
-    // The shield status also depends on whether the command struct is alive and
-    // whether a raid is active, so refresh the icon when those inputs change.
+    // The shield status also depends on whether the command struct is alive,
+    // whether the fleet is holding station over the planet, and whether a raid
+    // is active, so refresh the icon when any of those inputs change.
     this.defensesChangedHandler = (event) => {
       if (event.playerType !== this.planetOwnerPlayerType) {
         return;
@@ -53,12 +54,14 @@ export class ShieldStatusComponent extends AbstractViewModelComponent {
     window.addEventListener(EVENTS.SHIELD_HEALTH_CHANGED, this.shieldHealthChangedHandler);
     window.addEventListener(EVENTS.STRUCT_COUNT_CHANGED, this.defensesChangedHandler);
     window.addEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, this.defensesChangedHandler);
+    window.addEventListener(EVENTS.FLEET_CHANGED, this.defensesChangedHandler);
 
     ShieldStatusComponent.registeredListeners[this.elementId] = {
       [EVENTS.LOGIN_COMPLETE]: this.loginCompleteHandler,
       [EVENTS.SHIELD_HEALTH_CHANGED]: this.shieldHealthChangedHandler,
       [EVENTS.STRUCT_COUNT_CHANGED]: this.defensesChangedHandler,
       [EVENTS.PLANET_RAID_STATUS_CHANGED]: this.defensesChangedHandler,
+      [EVENTS.FLEET_CHANGED]: this.defensesChangedHandler,
     };
 
     this.renderShieldStatusIcon();

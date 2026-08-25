@@ -6,8 +6,17 @@ global.window = {
   addEventListener: (type, handler) => {
     (listeners[type] = listeners[type] || []).push(handler);
   },
+  removeEventListener: (type, handler) => {
+    const registered = listeners[type] || [];
+    const index = registered.indexOf(handler);
+    if (index !== -1) {
+      registered.splice(index, 1);
+    }
+  },
   dispatchEvent: (event) => {
-    (listeners[event.type] || []).forEach((handler) => handler(event));
+    // Copied so a handler that unregisters itself does not shift the list
+    // out from under the walk.
+    (listeners[event.type] || []).slice().forEach((handler) => handler(event));
     return true;
   },
   // js-sha256 otherwise takes its Node path and reaches for a Buffer the
@@ -25,7 +34,9 @@ let failures = 0;
 const log = console.log;
 console.log = (...args) => {
   const line = args.join(' ');
-  if (/DTestAssertError|is not equal to/.test(line)) {
+  // A test that throws rather than asserting is still a failing test, and
+  // DTest reports it the same way, so any error reaching the log counts.
+  if (/DTestAssertError|is not equal to|Error:/.test(line)) {
     failures++;
   }
   log(...args);

@@ -18,6 +18,7 @@ import {TrackDestroyedStructsEvent} from "../events/TrackDestroyedStructsEvent";
 import {TrackDestroyedStructEvent} from "../events/TrackDestroyedStructEvent";
 import {DateFormatter} from "../util/DateFormatter";
 import {RenderPlayerPfpEvent} from "../events/RenderPlayerPfpEvent";
+import {FleetChangedEvent} from "../events/FleetChangedEvent";
 
 export class KeyPlayer {
 
@@ -107,6 +108,15 @@ export class KeyPlayer {
       window.dispatchEvent(new SaveGameStateEvent());
       window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
     }
+  }
+
+  /**
+   * @param {Fleet} fleet
+   */
+  setFleet(fleet) {
+    this.fleet = fleet;
+
+    window.dispatchEvent(new FleetChangedEvent(this.playerType));
   }
 
   /**
