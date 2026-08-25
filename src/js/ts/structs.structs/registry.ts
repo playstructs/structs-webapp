@@ -264,7 +264,6 @@ import { MsgStructStealthDeactivate } from "./types/structs/structs/tx";
 import { StructAttributes } from "./types/structs/structs/struct";
 import { EventStruct } from "./types/structs/structs/events";
 import { MsgGuildUpdateResponse } from "./types/structs/structs/tx";
-import { MsgProviderGuildRevoke } from "./types/structs/structs/tx";
 import { MsgProviderDelete } from "./types/structs/structs/tx";
 import { Agreement } from "./types/structs/structs/agreement";
 import { EventGuildBankConfiscateAndBurnDetail } from "./types/structs/structs/events";
@@ -308,7 +307,6 @@ import { MsgAgreementClose } from "./types/structs/structs/tx";
 import { QueryGetAgreementResponse } from "./types/structs/structs/query";
 import { EventOreMigrate } from "./types/structs/structs/events";
 import { MsgGuildCreateResponse } from "./types/structs/structs/tx";
-import { MsgProviderGuildGrant } from "./types/structs/structs/tx";
 import { QueryAddressResponse } from "./types/structs/structs/query";
 import { MsgGuildMembershipRequestDeny } from "./types/structs/structs/tx";
 import { MsgStructDeactivate } from "./types/structs/structs/tx";
@@ -330,6 +328,14 @@ import { MsgPlanetUpdateResponse } from "./types/structs/structs/tx";
 import { MsgSubstationUpdateName } from "./types/structs/structs/tx";
 import { MsgSubstationUpdatePfp } from "./types/structs/structs/tx";
 import { MsgSubstationUpdateResponse } from "./types/structs/structs/tx";
+import { MsgGuildBankConvert } from "./types/structs/structs/tx";
+import { MsgGuildBankConvertResponse } from "./types/structs/structs/tx";
+import { MsgGuildBankConvertToken } from "./types/structs/structs/tx";
+import { MsgGuildBankConvertTokenResponse } from "./types/structs/structs/tx";
+import { MsgGuildUpdateBankConvertInFee } from "./types/structs/structs/tx";
+import { MsgGuildUpdateBankConvertOutFee } from "./types/structs/structs/tx";
+import { MsgReactorRestart } from "./types/structs/structs/tx";
+import { MsgReactorRestartResponse } from "./types/structs/structs/tx";
 
 const msgTypes: Array<[string, GeneratedType]>  = [
     ["/structs.structs.MsgFleetMoveResponse", MsgFleetMoveResponse],
@@ -592,7 +598,6 @@ const msgTypes: Array<[string, GeneratedType]>  = [
     ["/structs.structs.StructAttributes", StructAttributes],
     ["/structs.structs.EventStruct", EventStruct],
     ["/structs.structs.MsgGuildUpdateResponse", MsgGuildUpdateResponse],
-    ["/structs.structs.MsgProviderGuildRevoke", MsgProviderGuildRevoke],
     ["/structs.structs.MsgProviderDelete", MsgProviderDelete],
     ["/structs.structs.Agreement", Agreement],
     ["/structs.structs.EventGuildBankConfiscateAndBurnDetail", EventGuildBankConfiscateAndBurnDetail],
@@ -636,7 +641,6 @@ const msgTypes: Array<[string, GeneratedType]>  = [
     ["/structs.structs.QueryGetAgreementResponse", QueryGetAgreementResponse],
     ["/structs.structs.EventOreMigrate", EventOreMigrate],
     ["/structs.structs.MsgGuildCreateResponse", MsgGuildCreateResponse],
-    ["/structs.structs.MsgProviderGuildGrant", MsgProviderGuildGrant],
     ["/structs.structs.QueryAddressResponse", QueryAddressResponse],
     ["/structs.structs.MsgGuildMembershipRequestDeny", MsgGuildMembershipRequestDeny],
     ["/structs.structs.MsgStructDeactivate", MsgStructDeactivate],
@@ -663,6 +667,14 @@ const msgTypes: Array<[string, GeneratedType]>  = [
     ["/structs.structs.MsgSubstationUpdateName", MsgSubstationUpdateName],
     ["/structs.structs.MsgSubstationUpdatePfp", MsgSubstationUpdatePfp],
     ["/structs.structs.MsgSubstationUpdateResponse", MsgSubstationUpdateResponse],
+    ["/structs.structs.MsgGuildBankConvert", MsgGuildBankConvert],
+    ["/structs.structs.MsgGuildBankConvertResponse", MsgGuildBankConvertResponse],
+    ["/structs.structs.MsgGuildBankConvertToken", MsgGuildBankConvertToken],
+    ["/structs.structs.MsgGuildBankConvertTokenResponse", MsgGuildBankConvertTokenResponse],
+    ["/structs.structs.MsgGuildUpdateBankConvertInFee", MsgGuildUpdateBankConvertInFee],
+    ["/structs.structs.MsgGuildUpdateBankConvertOutFee", MsgGuildUpdateBankConvertOutFee],
+    ["/structs.structs.MsgReactorRestart", MsgReactorRestart],
+    ["/structs.structs.MsgReactorRestartResponse", MsgReactorRestartResponse],
     
 ];
 

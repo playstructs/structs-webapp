@@ -453,6 +453,7 @@ export enum raidStatus {
   attackerRetreated = 5,
   raidSuccessful = 3,
   demilitarized = 4,
+  shieldsVulnerable = 6,
   UNRECOGNIZED = -1,
 }
 
@@ -476,6 +477,9 @@ export function raidStatusFromJSON(object: any): raidStatus {
     case 4:
     case "demilitarized":
       return raidStatus.demilitarized;
+    case 6:
+    case "shieldsVulnerable":
+      return raidStatus.shieldsVulnerable;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -497,6 +501,8 @@ export function raidStatusToJSON(object: raidStatus): string {
       return "raidSuccessful";
     case raidStatus.demilitarized:
       return "demilitarized";
+    case raidStatus.shieldsVulnerable:
+      return "shieldsVulnerable";
     case raidStatus.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -644,6 +650,17 @@ export enum planetAttributeType {
   orbitalJammingStationQuantity = 8,
   advancedOrbitalJammingStationQuantity = 9,
   blockStartRaid = 10,
+  /**
+   * blockRaiderArrived - planetBlockStartOreMine/Refine are uniquely named because protobuf
+   * enums share a package-level namespace with structAttributeType's
+   * blockStartOreMine/Refine. PlanetAttributes message fields and the
+   * PlanetAttributeType_enum string keys still use blockStartOreMine.
+   */
+  blockRaiderArrived = 11,
+  planetBlockStartOreMine = 12,
+  planetBlockStartOreRefine = 13,
+  oreMiningActiveQuantity = 14,
+  oreRefiningActiveQuantity = 15,
   UNRECOGNIZED = -1,
 }
 
@@ -682,6 +699,21 @@ export function planetAttributeTypeFromJSON(object: any): planetAttributeType {
     case 10:
     case "blockStartRaid":
       return planetAttributeType.blockStartRaid;
+    case 11:
+    case "blockRaiderArrived":
+      return planetAttributeType.blockRaiderArrived;
+    case 12:
+    case "planetBlockStartOreMine":
+      return planetAttributeType.planetBlockStartOreMine;
+    case 13:
+    case "planetBlockStartOreRefine":
+      return planetAttributeType.planetBlockStartOreRefine;
+    case 14:
+    case "oreMiningActiveQuantity":
+      return planetAttributeType.oreMiningActiveQuantity;
+    case 15:
+    case "oreRefiningActiveQuantity":
+      return planetAttributeType.oreRefiningActiveQuantity;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -713,6 +745,16 @@ export function planetAttributeTypeToJSON(object: planetAttributeType): string {
       return "advancedOrbitalJammingStationQuantity";
     case planetAttributeType.blockStartRaid:
       return "blockStartRaid";
+    case planetAttributeType.blockRaiderArrived:
+      return "blockRaiderArrived";
+    case planetAttributeType.planetBlockStartOreMine:
+      return "planetBlockStartOreMine";
+    case planetAttributeType.planetBlockStartOreRefine:
+      return "planetBlockStartOreRefine";
+    case planetAttributeType.oreMiningActiveQuantity:
+      return "oreMiningActiveQuantity";
+    case planetAttributeType.oreRefiningActiveQuantity:
+      return "oreRefiningActiveQuantity";
     case planetAttributeType.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "webpack --watch --mode=development",
     "build": "webpack --mode=production",
-    "proto:sync": "echo 'From structsd v0.17.0: cd proto && buf generate --template buf.gen.ts.yaml, then copy types into src/js/ts/structs.structs/'"
+    "test": "webpack --mode=production && node run-tests.cjs",
+    "proto:sync": "echo 'From structsd v0.21.0: cd proto && buf generate --template buf.gen.ts.yaml, then copy types into src/js/ts/structs.structs/ and reconcile registry.ts against the Msg types in types/structs/structs/tx.ts'"
   },
   "repository": {
     "type": "git",

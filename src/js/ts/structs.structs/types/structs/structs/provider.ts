@@ -27,6 +27,11 @@ export interface Provider {
   owner: string;
 }
 
+export interface ProviderGuildAccessRecord {
+  providerId: string;
+  guildId: string;
+}
+
 function createBaseProvider(): Provider {
   return {
     id: "",
@@ -293,6 +298,82 @@ export const Provider: MessageFns<Provider> = {
     message.consumerCancellationPenalty = object.consumerCancellationPenalty ?? "";
     message.creator = object.creator ?? "";
     message.owner = object.owner ?? "";
+    return message;
+  },
+};
+
+function createBaseProviderGuildAccessRecord(): ProviderGuildAccessRecord {
+  return { providerId: "", guildId: "" };
+}
+
+export const ProviderGuildAccessRecord: MessageFns<ProviderGuildAccessRecord> = {
+  encode(message: ProviderGuildAccessRecord, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.providerId !== "") {
+      writer.uint32(10).string(message.providerId);
+    }
+    if (message.guildId !== "") {
+      writer.uint32(18).string(message.guildId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ProviderGuildAccessRecord {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProviderGuildAccessRecord();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.providerId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ProviderGuildAccessRecord {
+    return {
+      providerId: isSet(object.providerId) ? globalThis.String(object.providerId) : "",
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+    };
+  },
+
+  toJSON(message: ProviderGuildAccessRecord): unknown {
+    const obj: any = {};
+    if (message.providerId !== "") {
+      obj.providerId = message.providerId;
+    }
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ProviderGuildAccessRecord>, I>>(base?: I): ProviderGuildAccessRecord {
+    return ProviderGuildAccessRecord.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ProviderGuildAccessRecord>, I>>(object: I): ProviderGuildAccessRecord {
+    const message = createBaseProviderGuildAccessRecord();
+    message.providerId = object.providerId ?? "";
+    message.guildId = object.guildId ?? "";
     return message;
   },
 };

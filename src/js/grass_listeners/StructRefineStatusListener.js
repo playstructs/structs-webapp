@@ -1,8 +1,6 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
-import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TASK_TYPES} from "../constants/TaskTypes";
-import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
-import {TaskCmdSpawnEvent} from "../events/TaskCmdSpawnEvent";
+import {TaskCmdRefreshOreEvent} from "../events/TaskCmdRefreshOreEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 
@@ -21,15 +19,15 @@ export class StructRefineStatusListener extends AbstractGrassListener {
       && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player
       && messageData.subject === `structs.planet.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
     ) {
-      if (messageData.detail.block === 0) {
-        window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
-      } else {
-        const structId = messageData.detail.struct_id;
-        const structTypeId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].structs[structId].type;
-        const oreRefineDifficulty = this.gameState.structTypes.getStructTypeById(structTypeId).ore_refining_difficulty;
-
-        window.dispatchEvent(new TaskCmdSpawnEvent(new TaskStateFactory().initStructTask(messageData.detail.struct_id, TASK_TYPES.REFINE, messageData.detail.block, oreRefineDifficulty)));
+      // The refine clock belongs to the planet and is shared by every refinery
+      // on it, so the event names no struct and one write covers them all. An
+      // event carrying a struct instead is a replay of the retired per-struct
+      // attribute, which no longer drives any work.
+      if (!messageData.detail.planet_id) {
+        return;
       }
+
+      window.dispatchEvent(new TaskCmdRefreshOreEvent(TASK_TYPES.REFINE, messageData.detail.block));
     }
   }
 }

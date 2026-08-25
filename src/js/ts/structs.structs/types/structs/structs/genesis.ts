@@ -9,16 +9,17 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { AddressRecord } from "./address";
 import { Agreement } from "./agreement";
 import { Allocation } from "./allocation";
+import { Fleet } from "./fleet";
 import { GridRecord } from "./grid";
-import { Guild } from "./guild";
+import { Guild, GuildMembershipApplication } from "./guild";
 import { Infusion } from "./infusion";
 import { Params } from "./params";
-import { PermissionRecord } from "./permission";
-import { Planet } from "./planet";
+import { GuildRankPermissionRecord, PermissionRecord } from "./permission";
+import { Planet, PlanetAttributeRecord } from "./planet";
 import { Player } from "./player";
-import { Provider } from "./provider";
+import { Provider, ProviderGuildAccessRecord } from "./provider";
 import { Reactor } from "./reactor";
-import { Struct } from "./struct";
+import { Struct, StructAttributeRecord, StructDefender, StructDestructionQueueRecord } from "./struct";
 import { Substation } from "./substation";
 
 export const protobufPackage = "structs.structs";
@@ -29,26 +30,45 @@ export interface GenesisState {
   params: Params | undefined;
   portId: string;
   allocationList: Allocation[];
+  allocationCount: number;
   agreementList: Agreement[];
   infusionList: Infusion[];
+  infusionDestructionQueue: string[];
+  infusionMaturitySweepQueue: string[];
   guildList: Guild[];
   guildCount: number;
+  guildMembershipApplicationList: GuildMembershipApplication[];
+  /**
+   * guildCharterAnchor is the height of the last proof-founded guild, and the
+   * age the charter difficulty curve is measured from. It cannot be rebuilt
+   * from anything else, so it has to round-trip through genesis; zero is read
+   * as "unset" and falls back to the current height on import, because zero
+   * would otherwise mean maximally easy.
+   */
+  guildCharterAnchor: number;
   planetList: Planet[];
   planetCount: number;
+  planetAttributeList: PlanetAttributeRecord[];
   playerList: Player[];
-  playerHalted: string[];
   playerCount: number;
   providerList: Provider[];
   providerCount: number;
+  providerGuildAccessList: ProviderGuildAccessRecord[];
   reactorList: Reactor[];
   reactorCount: number;
   structList: Struct[];
   structCount: number;
+  structAttributeList: StructAttributeRecord[];
+  structDefenderList: StructDefender[];
+  structDestructionQueue: StructDestructionQueueRecord[];
   substationList: Substation[];
   substationCount: number;
   permissionList: PermissionRecord[];
+  guildRankPermissionList: GuildRankPermissionRecord[];
   gridList: GridRecord[];
+  gridCascadeQueue: string[];
   addressList: AddressRecord[];
+  fleetList: Fleet[];
 }
 
 function createBaseGenesisState(): GenesisState {
@@ -56,26 +76,38 @@ function createBaseGenesisState(): GenesisState {
     params: undefined,
     portId: "",
     allocationList: [],
+    allocationCount: 0,
     agreementList: [],
     infusionList: [],
+    infusionDestructionQueue: [],
+    infusionMaturitySweepQueue: [],
     guildList: [],
     guildCount: 0,
+    guildMembershipApplicationList: [],
+    guildCharterAnchor: 0,
     planetList: [],
     planetCount: 0,
+    planetAttributeList: [],
     playerList: [],
-    playerHalted: [],
     playerCount: 0,
     providerList: [],
     providerCount: 0,
+    providerGuildAccessList: [],
     reactorList: [],
     reactorCount: 0,
     structList: [],
     structCount: 0,
+    structAttributeList: [],
+    structDefenderList: [],
+    structDestructionQueue: [],
     substationList: [],
     substationCount: 0,
     permissionList: [],
+    guildRankPermissionList: [],
     gridList: [],
+    gridCascadeQueue: [],
     addressList: [],
+    fleetList: [],
   };
 }
 
@@ -90,11 +122,20 @@ export const GenesisState: MessageFns<GenesisState> = {
     for (const v of message.allocationList) {
       Allocation.encode(v!, writer.uint32(26).fork()).join();
     }
+    if (message.allocationCount !== 0) {
+      writer.uint32(224).uint64(message.allocationCount);
+    }
     for (const v of message.agreementList) {
       Agreement.encode(v!, writer.uint32(34).fork()).join();
     }
     for (const v of message.infusionList) {
       Infusion.encode(v!, writer.uint32(42).fork()).join();
+    }
+    for (const v of message.infusionDestructionQueue) {
+      writer.uint32(234).string(v!);
+    }
+    for (const v of message.infusionMaturitySweepQueue) {
+      writer.uint32(282).string(v!);
     }
     for (const v of message.guildList) {
       Guild.encode(v!, writer.uint32(50).fork()).join();
@@ -102,53 +143,80 @@ export const GenesisState: MessageFns<GenesisState> = {
     if (message.guildCount !== 0) {
       writer.uint32(56).uint64(message.guildCount);
     }
+    for (const v of message.guildMembershipApplicationList) {
+      GuildMembershipApplication.encode(v!, writer.uint32(266).fork()).join();
+    }
+    if (message.guildCharterAnchor !== 0) {
+      writer.uint32(288).uint64(message.guildCharterAnchor);
+    }
     for (const v of message.planetList) {
       Planet.encode(v!, writer.uint32(66).fork()).join();
     }
     if (message.planetCount !== 0) {
       writer.uint32(72).uint64(message.planetCount);
     }
+    for (const v of message.planetAttributeList) {
+      PlanetAttributeRecord.encode(v!, writer.uint32(194).fork()).join();
+    }
     for (const v of message.playerList) {
       Player.encode(v!, writer.uint32(82).fork()).join();
     }
-    for (const v of message.playerHalted) {
-      writer.uint32(90).string(v!);
-    }
     if (message.playerCount !== 0) {
-      writer.uint32(96).uint64(message.playerCount);
+      writer.uint32(88).uint64(message.playerCount);
     }
     for (const v of message.providerList) {
-      Provider.encode(v!, writer.uint32(106).fork()).join();
+      Provider.encode(v!, writer.uint32(98).fork()).join();
     }
     if (message.providerCount !== 0) {
-      writer.uint32(112).uint64(message.providerCount);
+      writer.uint32(104).uint64(message.providerCount);
+    }
+    for (const v of message.providerGuildAccessList) {
+      ProviderGuildAccessRecord.encode(v!, writer.uint32(218).fork()).join();
     }
     for (const v of message.reactorList) {
-      Reactor.encode(v!, writer.uint32(122).fork()).join();
+      Reactor.encode(v!, writer.uint32(114).fork()).join();
     }
     if (message.reactorCount !== 0) {
-      writer.uint32(128).uint64(message.reactorCount);
+      writer.uint32(120).uint64(message.reactorCount);
     }
     for (const v of message.structList) {
-      Struct.encode(v!, writer.uint32(138).fork()).join();
+      Struct.encode(v!, writer.uint32(130).fork()).join();
     }
     if (message.structCount !== 0) {
-      writer.uint32(144).uint64(message.structCount);
+      writer.uint32(136).uint64(message.structCount);
+    }
+    for (const v of message.structAttributeList) {
+      StructAttributeRecord.encode(v!, writer.uint32(202).fork()).join();
+    }
+    for (const v of message.structDefenderList) {
+      StructDefender.encode(v!, writer.uint32(210).fork()).join();
+    }
+    for (const v of message.structDestructionQueue) {
+      StructDestructionQueueRecord.encode(v!, writer.uint32(250).fork()).join();
     }
     for (const v of message.substationList) {
-      Substation.encode(v!, writer.uint32(154).fork()).join();
+      Substation.encode(v!, writer.uint32(146).fork()).join();
     }
     if (message.substationCount !== 0) {
-      writer.uint32(160).uint64(message.substationCount);
+      writer.uint32(152).uint64(message.substationCount);
     }
     for (const v of message.permissionList) {
-      PermissionRecord.encode(v!, writer.uint32(170).fork()).join();
+      PermissionRecord.encode(v!, writer.uint32(162).fork()).join();
+    }
+    for (const v of message.guildRankPermissionList) {
+      GuildRankPermissionRecord.encode(v!, writer.uint32(274).fork()).join();
     }
     for (const v of message.gridList) {
-      GridRecord.encode(v!, writer.uint32(178).fork()).join();
+      GridRecord.encode(v!, writer.uint32(170).fork()).join();
+    }
+    for (const v of message.gridCascadeQueue) {
+      writer.uint32(242).string(v!);
     }
     for (const v of message.addressList) {
-      AddressRecord.encode(v!, writer.uint32(186).fork()).join();
+      AddressRecord.encode(v!, writer.uint32(178).fork()).join();
+    }
+    for (const v of message.fleetList) {
+      Fleet.encode(v!, writer.uint32(186).fork()).join();
     }
     return writer;
   },
@@ -184,6 +252,14 @@ export const GenesisState: MessageFns<GenesisState> = {
           message.allocationList.push(Allocation.decode(reader, reader.uint32()));
           continue;
         }
+        case 28: {
+          if (tag !== 224) {
+            break;
+          }
+
+          message.allocationCount = longToNumber(reader.uint64());
+          continue;
+        }
         case 4: {
           if (tag !== 34) {
             break;
@@ -198,6 +274,22 @@ export const GenesisState: MessageFns<GenesisState> = {
           }
 
           message.infusionList.push(Infusion.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 29: {
+          if (tag !== 234) {
+            break;
+          }
+
+          message.infusionDestructionQueue.push(reader.string());
+          continue;
+        }
+        case 35: {
+          if (tag !== 282) {
+            break;
+          }
+
+          message.infusionMaturitySweepQueue.push(reader.string());
           continue;
         }
         case 6: {
@@ -216,6 +308,22 @@ export const GenesisState: MessageFns<GenesisState> = {
           message.guildCount = longToNumber(reader.uint64());
           continue;
         }
+        case 33: {
+          if (tag !== 266) {
+            break;
+          }
+
+          message.guildMembershipApplicationList.push(GuildMembershipApplication.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 36: {
+          if (tag !== 288) {
+            break;
+          }
+
+          message.guildCharterAnchor = longToNumber(reader.uint64());
+          continue;
+        }
         case 8: {
           if (tag !== 66) {
             break;
@@ -232,6 +340,14 @@ export const GenesisState: MessageFns<GenesisState> = {
           message.planetCount = longToNumber(reader.uint64());
           continue;
         }
+        case 24: {
+          if (tag !== 194) {
+            break;
+          }
+
+          message.planetAttributeList.push(PlanetAttributeRecord.decode(reader, reader.uint32()));
+          continue;
+        }
         case 10: {
           if (tag !== 82) {
             break;
@@ -241,83 +357,123 @@ export const GenesisState: MessageFns<GenesisState> = {
           continue;
         }
         case 11: {
-          if (tag !== 90) {
-            break;
-          }
-
-          message.playerHalted.push(reader.string());
-          continue;
-        }
-        case 12: {
-          if (tag !== 96) {
+          if (tag !== 88) {
             break;
           }
 
           message.playerCount = longToNumber(reader.uint64());
           continue;
         }
-        case 13: {
-          if (tag !== 106) {
+        case 12: {
+          if (tag !== 98) {
             break;
           }
 
           message.providerList.push(Provider.decode(reader, reader.uint32()));
           continue;
         }
-        case 14: {
-          if (tag !== 112) {
+        case 13: {
+          if (tag !== 104) {
             break;
           }
 
           message.providerCount = longToNumber(reader.uint64());
           continue;
         }
-        case 15: {
-          if (tag !== 122) {
+        case 27: {
+          if (tag !== 218) {
+            break;
+          }
+
+          message.providerGuildAccessList.push(ProviderGuildAccessRecord.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
             break;
           }
 
           message.reactorList.push(Reactor.decode(reader, reader.uint32()));
           continue;
         }
-        case 16: {
-          if (tag !== 128) {
+        case 15: {
+          if (tag !== 120) {
             break;
           }
 
           message.reactorCount = longToNumber(reader.uint64());
           continue;
         }
-        case 17: {
-          if (tag !== 138) {
+        case 16: {
+          if (tag !== 130) {
             break;
           }
 
           message.structList.push(Struct.decode(reader, reader.uint32()));
           continue;
         }
-        case 18: {
-          if (tag !== 144) {
+        case 17: {
+          if (tag !== 136) {
             break;
           }
 
           message.structCount = longToNumber(reader.uint64());
           continue;
         }
-        case 19: {
-          if (tag !== 154) {
+        case 25: {
+          if (tag !== 202) {
+            break;
+          }
+
+          message.structAttributeList.push(StructAttributeRecord.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 26: {
+          if (tag !== 210) {
+            break;
+          }
+
+          message.structDefenderList.push(StructDefender.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 31: {
+          if (tag !== 250) {
+            break;
+          }
+
+          message.structDestructionQueue.push(StructDestructionQueueRecord.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 18: {
+          if (tag !== 146) {
             break;
           }
 
           message.substationList.push(Substation.decode(reader, reader.uint32()));
           continue;
         }
-        case 20: {
-          if (tag !== 160) {
+        case 19: {
+          if (tag !== 152) {
             break;
           }
 
           message.substationCount = longToNumber(reader.uint64());
+          continue;
+        }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.permissionList.push(PermissionRecord.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 34: {
+          if (tag !== 274) {
+            break;
+          }
+
+          message.guildRankPermissionList.push(GuildRankPermissionRecord.decode(reader, reader.uint32()));
           continue;
         }
         case 21: {
@@ -325,7 +481,15 @@ export const GenesisState: MessageFns<GenesisState> = {
             break;
           }
 
-          message.permissionList.push(PermissionRecord.decode(reader, reader.uint32()));
+          message.gridList.push(GridRecord.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 30: {
+          if (tag !== 242) {
+            break;
+          }
+
+          message.gridCascadeQueue.push(reader.string());
           continue;
         }
         case 22: {
@@ -333,7 +497,7 @@ export const GenesisState: MessageFns<GenesisState> = {
             break;
           }
 
-          message.gridList.push(GridRecord.decode(reader, reader.uint32()));
+          message.addressList.push(AddressRecord.decode(reader, reader.uint32()));
           continue;
         }
         case 23: {
@@ -341,7 +505,7 @@ export const GenesisState: MessageFns<GenesisState> = {
             break;
           }
 
-          message.addressList.push(AddressRecord.decode(reader, reader.uint32()));
+          message.fleetList.push(Fleet.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -360,29 +524,43 @@ export const GenesisState: MessageFns<GenesisState> = {
       allocationList: globalThis.Array.isArray(object?.allocationList)
         ? object.allocationList.map((e: any) => Allocation.fromJSON(e))
         : [],
+      allocationCount: isSet(object.allocationCount) ? globalThis.Number(object.allocationCount) : 0,
       agreementList: globalThis.Array.isArray(object?.agreementList)
         ? object.agreementList.map((e: any) => Agreement.fromJSON(e))
         : [],
       infusionList: globalThis.Array.isArray(object?.infusionList)
         ? object.infusionList.map((e: any) => Infusion.fromJSON(e))
         : [],
+      infusionDestructionQueue: globalThis.Array.isArray(object?.infusionDestructionQueue)
+        ? object.infusionDestructionQueue.map((e: any) => globalThis.String(e))
+        : [],
+      infusionMaturitySweepQueue: globalThis.Array.isArray(object?.infusionMaturitySweepQueue)
+        ? object.infusionMaturitySweepQueue.map((e: any) => globalThis.String(e))
+        : [],
       guildList: globalThis.Array.isArray(object?.guildList) ? object.guildList.map((e: any) => Guild.fromJSON(e)) : [],
       guildCount: isSet(object.guildCount) ? globalThis.Number(object.guildCount) : 0,
+      guildMembershipApplicationList: globalThis.Array.isArray(object?.guildMembershipApplicationList)
+        ? object.guildMembershipApplicationList.map((e: any) => GuildMembershipApplication.fromJSON(e))
+        : [],
+      guildCharterAnchor: isSet(object.guildCharterAnchor) ? globalThis.Number(object.guildCharterAnchor) : 0,
       planetList: globalThis.Array.isArray(object?.planetList)
         ? object.planetList.map((e: any) => Planet.fromJSON(e))
         : [],
       planetCount: isSet(object.planetCount) ? globalThis.Number(object.planetCount) : 0,
+      planetAttributeList: globalThis.Array.isArray(object?.planetAttributeList)
+        ? object.planetAttributeList.map((e: any) => PlanetAttributeRecord.fromJSON(e))
+        : [],
       playerList: globalThis.Array.isArray(object?.playerList)
         ? object.playerList.map((e: any) => Player.fromJSON(e))
-        : [],
-      playerHalted: globalThis.Array.isArray(object?.playerHalted)
-        ? object.playerHalted.map((e: any) => globalThis.String(e))
         : [],
       playerCount: isSet(object.playerCount) ? globalThis.Number(object.playerCount) : 0,
       providerList: globalThis.Array.isArray(object?.providerList)
         ? object.providerList.map((e: any) => Provider.fromJSON(e))
         : [],
       providerCount: isSet(object.providerCount) ? globalThis.Number(object.providerCount) : 0,
+      providerGuildAccessList: globalThis.Array.isArray(object?.providerGuildAccessList)
+        ? object.providerGuildAccessList.map((e: any) => ProviderGuildAccessRecord.fromJSON(e))
+        : [],
       reactorList: globalThis.Array.isArray(object?.reactorList)
         ? object.reactorList.map((e: any) => Reactor.fromJSON(e))
         : [],
@@ -391,6 +569,15 @@ export const GenesisState: MessageFns<GenesisState> = {
         ? object.structList.map((e: any) => Struct.fromJSON(e))
         : [],
       structCount: isSet(object.structCount) ? globalThis.Number(object.structCount) : 0,
+      structAttributeList: globalThis.Array.isArray(object?.structAttributeList)
+        ? object.structAttributeList.map((e: any) => StructAttributeRecord.fromJSON(e))
+        : [],
+      structDefenderList: globalThis.Array.isArray(object?.structDefenderList)
+        ? object.structDefenderList.map((e: any) => StructDefender.fromJSON(e))
+        : [],
+      structDestructionQueue: globalThis.Array.isArray(object?.structDestructionQueue)
+        ? object.structDestructionQueue.map((e: any) => StructDestructionQueueRecord.fromJSON(e))
+        : [],
       substationList: globalThis.Array.isArray(object?.substationList)
         ? object.substationList.map((e: any) => Substation.fromJSON(e))
         : [],
@@ -398,12 +585,19 @@ export const GenesisState: MessageFns<GenesisState> = {
       permissionList: globalThis.Array.isArray(object?.permissionList)
         ? object.permissionList.map((e: any) => PermissionRecord.fromJSON(e))
         : [],
+      guildRankPermissionList: globalThis.Array.isArray(object?.guildRankPermissionList)
+        ? object.guildRankPermissionList.map((e: any) => GuildRankPermissionRecord.fromJSON(e))
+        : [],
       gridList: globalThis.Array.isArray(object?.gridList)
         ? object.gridList.map((e: any) => GridRecord.fromJSON(e))
+        : [],
+      gridCascadeQueue: globalThis.Array.isArray(object?.gridCascadeQueue)
+        ? object.gridCascadeQueue.map((e: any) => globalThis.String(e))
         : [],
       addressList: globalThis.Array.isArray(object?.addressList)
         ? object.addressList.map((e: any) => AddressRecord.fromJSON(e))
         : [],
+      fleetList: globalThis.Array.isArray(object?.fleetList) ? object.fleetList.map((e: any) => Fleet.fromJSON(e)) : [],
     };
   },
 
@@ -418,11 +612,20 @@ export const GenesisState: MessageFns<GenesisState> = {
     if (message.allocationList?.length) {
       obj.allocationList = message.allocationList.map((e) => Allocation.toJSON(e));
     }
+    if (message.allocationCount !== 0) {
+      obj.allocationCount = Math.round(message.allocationCount);
+    }
     if (message.agreementList?.length) {
       obj.agreementList = message.agreementList.map((e) => Agreement.toJSON(e));
     }
     if (message.infusionList?.length) {
       obj.infusionList = message.infusionList.map((e) => Infusion.toJSON(e));
+    }
+    if (message.infusionDestructionQueue?.length) {
+      obj.infusionDestructionQueue = message.infusionDestructionQueue;
+    }
+    if (message.infusionMaturitySweepQueue?.length) {
+      obj.infusionMaturitySweepQueue = message.infusionMaturitySweepQueue;
     }
     if (message.guildList?.length) {
       obj.guildList = message.guildList.map((e) => Guild.toJSON(e));
@@ -430,17 +633,25 @@ export const GenesisState: MessageFns<GenesisState> = {
     if (message.guildCount !== 0) {
       obj.guildCount = Math.round(message.guildCount);
     }
+    if (message.guildMembershipApplicationList?.length) {
+      obj.guildMembershipApplicationList = message.guildMembershipApplicationList.map((e) =>
+        GuildMembershipApplication.toJSON(e)
+      );
+    }
+    if (message.guildCharterAnchor !== 0) {
+      obj.guildCharterAnchor = Math.round(message.guildCharterAnchor);
+    }
     if (message.planetList?.length) {
       obj.planetList = message.planetList.map((e) => Planet.toJSON(e));
     }
     if (message.planetCount !== 0) {
       obj.planetCount = Math.round(message.planetCount);
     }
+    if (message.planetAttributeList?.length) {
+      obj.planetAttributeList = message.planetAttributeList.map((e) => PlanetAttributeRecord.toJSON(e));
+    }
     if (message.playerList?.length) {
       obj.playerList = message.playerList.map((e) => Player.toJSON(e));
-    }
-    if (message.playerHalted?.length) {
-      obj.playerHalted = message.playerHalted;
     }
     if (message.playerCount !== 0) {
       obj.playerCount = Math.round(message.playerCount);
@@ -450,6 +661,9 @@ export const GenesisState: MessageFns<GenesisState> = {
     }
     if (message.providerCount !== 0) {
       obj.providerCount = Math.round(message.providerCount);
+    }
+    if (message.providerGuildAccessList?.length) {
+      obj.providerGuildAccessList = message.providerGuildAccessList.map((e) => ProviderGuildAccessRecord.toJSON(e));
     }
     if (message.reactorList?.length) {
       obj.reactorList = message.reactorList.map((e) => Reactor.toJSON(e));
@@ -463,6 +677,15 @@ export const GenesisState: MessageFns<GenesisState> = {
     if (message.structCount !== 0) {
       obj.structCount = Math.round(message.structCount);
     }
+    if (message.structAttributeList?.length) {
+      obj.structAttributeList = message.structAttributeList.map((e) => StructAttributeRecord.toJSON(e));
+    }
+    if (message.structDefenderList?.length) {
+      obj.structDefenderList = message.structDefenderList.map((e) => StructDefender.toJSON(e));
+    }
+    if (message.structDestructionQueue?.length) {
+      obj.structDestructionQueue = message.structDestructionQueue.map((e) => StructDestructionQueueRecord.toJSON(e));
+    }
     if (message.substationList?.length) {
       obj.substationList = message.substationList.map((e) => Substation.toJSON(e));
     }
@@ -472,11 +695,20 @@ export const GenesisState: MessageFns<GenesisState> = {
     if (message.permissionList?.length) {
       obj.permissionList = message.permissionList.map((e) => PermissionRecord.toJSON(e));
     }
+    if (message.guildRankPermissionList?.length) {
+      obj.guildRankPermissionList = message.guildRankPermissionList.map((e) => GuildRankPermissionRecord.toJSON(e));
+    }
     if (message.gridList?.length) {
       obj.gridList = message.gridList.map((e) => GridRecord.toJSON(e));
     }
+    if (message.gridCascadeQueue?.length) {
+      obj.gridCascadeQueue = message.gridCascadeQueue;
+    }
     if (message.addressList?.length) {
       obj.addressList = message.addressList.map((e) => AddressRecord.toJSON(e));
+    }
+    if (message.fleetList?.length) {
+      obj.fleetList = message.fleetList.map((e) => Fleet.toJSON(e));
     }
     return obj;
   },
@@ -491,26 +723,42 @@ export const GenesisState: MessageFns<GenesisState> = {
       : undefined;
     message.portId = object.portId ?? "";
     message.allocationList = object.allocationList?.map((e) => Allocation.fromPartial(e)) || [];
+    message.allocationCount = object.allocationCount ?? 0;
     message.agreementList = object.agreementList?.map((e) => Agreement.fromPartial(e)) || [];
     message.infusionList = object.infusionList?.map((e) => Infusion.fromPartial(e)) || [];
+    message.infusionDestructionQueue = object.infusionDestructionQueue?.map((e) => e) || [];
+    message.infusionMaturitySweepQueue = object.infusionMaturitySweepQueue?.map((e) => e) || [];
     message.guildList = object.guildList?.map((e) => Guild.fromPartial(e)) || [];
     message.guildCount = object.guildCount ?? 0;
+    message.guildMembershipApplicationList =
+      object.guildMembershipApplicationList?.map((e) => GuildMembershipApplication.fromPartial(e)) || [];
+    message.guildCharterAnchor = object.guildCharterAnchor ?? 0;
     message.planetList = object.planetList?.map((e) => Planet.fromPartial(e)) || [];
     message.planetCount = object.planetCount ?? 0;
+    message.planetAttributeList = object.planetAttributeList?.map((e) => PlanetAttributeRecord.fromPartial(e)) || [];
     message.playerList = object.playerList?.map((e) => Player.fromPartial(e)) || [];
-    message.playerHalted = object.playerHalted?.map((e) => e) || [];
     message.playerCount = object.playerCount ?? 0;
     message.providerList = object.providerList?.map((e) => Provider.fromPartial(e)) || [];
     message.providerCount = object.providerCount ?? 0;
+    message.providerGuildAccessList =
+      object.providerGuildAccessList?.map((e) => ProviderGuildAccessRecord.fromPartial(e)) || [];
     message.reactorList = object.reactorList?.map((e) => Reactor.fromPartial(e)) || [];
     message.reactorCount = object.reactorCount ?? 0;
     message.structList = object.structList?.map((e) => Struct.fromPartial(e)) || [];
     message.structCount = object.structCount ?? 0;
+    message.structAttributeList = object.structAttributeList?.map((e) => StructAttributeRecord.fromPartial(e)) || [];
+    message.structDefenderList = object.structDefenderList?.map((e) => StructDefender.fromPartial(e)) || [];
+    message.structDestructionQueue =
+      object.structDestructionQueue?.map((e) => StructDestructionQueueRecord.fromPartial(e)) || [];
     message.substationList = object.substationList?.map((e) => Substation.fromPartial(e)) || [];
     message.substationCount = object.substationCount ?? 0;
     message.permissionList = object.permissionList?.map((e) => PermissionRecord.fromPartial(e)) || [];
+    message.guildRankPermissionList =
+      object.guildRankPermissionList?.map((e) => GuildRankPermissionRecord.fromPartial(e)) || [];
     message.gridList = object.gridList?.map((e) => GridRecord.fromPartial(e)) || [];
+    message.gridCascadeQueue = object.gridCascadeQueue?.map((e) => e) || [];
     message.addressList = object.addressList?.map((e) => AddressRecord.fromPartial(e)) || [];
+    message.fleetList = object.fleetList?.map((e) => Fleet.fromPartial(e)) || [];
     return message;
   },
 };

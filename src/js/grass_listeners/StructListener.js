@@ -15,6 +15,7 @@ import {ClearAttackTargetsEvent} from "../events/ClearAttackTargetsEvent";
 import {ClearMoveTargetsEvent} from "../events/ClearMoveTargetsEvent";
 import {ClearDefendTargetsEvent} from "../events/ClearDefendTargetsEvent";
 import {StructCountChangedEvent} from "../events/StructCountChangedEvent";
+import {TaskCmdReconcileEvent} from "../events/TaskCmdReconcileEvent";
 import {Struct} from "../models/Struct";
 
 export class StructListener extends AbstractGrassListener {
@@ -129,6 +130,14 @@ export class StructListener extends AbstractGrassListener {
     let stealthAnimationEvent = null;
     const mapType = this.gameState.keyPlayers[this.targetPlayerType].planetMapType;
     const mapId = this.gameState[mapType]?.mapId ?? null;
+
+    // Read the struct before the refresh, since a destroyed one may not survive
+    // it and its owner and type are what decide whether ore work is affected.
+    const structBeforeStatusChange = this.structManager.getStructById(messageData.detail.struct_id);
+    const structOnlineChanged = (
+      (messageData.detail.status_old & STRUCT_STATUS_FLAGS.ONLINE)
+      !== (messageData.detail.status & STRUCT_STATUS_FLAGS.ONLINE)
+    );
 
     // A cancelled build confirms as a transition to DESTROYED on a struct that
     // was never built (status 33 = MATERIALIZED + DESTROYED).
@@ -258,9 +267,39 @@ export class StructListener extends AbstractGrassListener {
         window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.struct_id));
       }
 
+      // An extractor or refinery going on or offline, or being destroyed,
+      // leaves the planet's shared ore clock where it was, so no clock event
+      // follows to say this struct's work has started or stopped. Only the work
+      // list knows, so go and re-read it.
+      if (
+        (structOnlineChanged || structDestroyed)
+        && this.isOreStruct(structBeforeStatusChange)
+        && structBeforeStatusChange.owner === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+      ) {
+        window.dispatchEvent(new TaskCmdReconcileEvent());
+      }
+
       // The owner's fleet holds a reference to the command struct that needs to be updated
       this.syncFleetCommandStruct(struct);
     });
+  }
+
+  /**
+   * @param {Struct|null} struct
+   * @return {boolean} whether the struct's work runs off one of the planet's
+   * shared ore clocks
+   */
+  isOreStruct(struct) {
+    if (!struct) {
+      return false;
+    }
+
+    const structType = this.gameState.structTypes.getStructTypeById(struct.type);
+
+    return !!structType && (
+      structType.type === STRUCT_TYPES.ORE_EXTRACTOR
+      || structType.type === STRUCT_TYPES.ORE_REFINERY
+    );
   }
 
   /**
