@@ -12,7 +12,7 @@ export class PermissionManagerTest extends DTestSuite {
     const permissionManager = new PermissionManager();
     this.assertEquals(
       permissionManager.addPermissions(
-        permissionManager.getDefaultPlayerPermissions(),
+        params.initialPermissions,
         params.permissionsToAdd
       ),
       params.expected
@@ -20,36 +20,50 @@ export class PermissionManagerTest extends DTestSuite {
   }, function() {
     return [
       {
+        initialPermissions: PERMISSIONS.PLAY | PERMISSIONS.SOURCE_ALLOCATION,
         permissionsToAdd: [],
-        expected: 32509697
+        expected: PERMISSIONS.PLAY | PERMISSIONS.SOURCE_ALLOCATION
       },
       {
+        initialPermissions: PERMISSIONS.PLAY | PERMISSIONS.SOURCE_ALLOCATION,
         permissionsToAdd: [PERMISSIONS.PLAY],
-        expected: 32509697
+        expected: PERMISSIONS.PLAY | PERMISSIONS.SOURCE_ALLOCATION
       },
       {
-        permissionsToAdd: [PERMISSIONS.ASSETS_ALL],
-        expected: 32509937
-      },
-      {
+        initialPermissions: PERMISSIONS.PLAY,
         permissionsToAdd: [PERMISSIONS.ADMIN],
-        expected: 32509699
+        expected: PERMISSIONS.PLAY | PERMISSIONS.ADMIN
       },
       {
-        permissionsToAdd: [
-          PERMISSIONS.ASSETS_ALL,
-          PERMISSIONS.ADMIN
-        ],
-        expected: 32509939
+        initialPermissions: PERMISSIONS.PLAY,
+        permissionsToAdd: [PERMISSIONS.ASSETS_ALL],
+        expected: PERMISSIONS.PLAY | PERMISSIONS.ASSETS_ALL
       },
       {
+        initialPermissions: PERMISSIONS.PLAY | PERMISSIONS.GUILD_MEMBERSHIP,
         permissionsToAdd: [
-          PERMISSIONS.ASSETS_ALL,
           PERMISSIONS.ADMIN,
           PERMISSIONS.UPDATE,
           PERMISSIONS.DELETE
         ],
-        expected: 32509951
+        expected: PERMISSIONS.PLAY
+          | PERMISSIONS.GUILD_MEMBERSHIP
+          | PERMISSIONS.ADMIN
+          | PERMISSIONS.UPDATE
+          | PERMISSIONS.DELETE
+      },
+      {
+        // TOKEN_TRANSFER is one of the bits ASSETS_ALL already covers, so it
+        // contributes nothing beyond the composite.
+        initialPermissions: PERMISSIONS.PLAY,
+        permissionsToAdd: [
+          PERMISSIONS.ASSETS_ALL,
+          PERMISSIONS.TOKEN_TRANSFER,
+          PERMISSIONS.HASH_ALL
+        ],
+        expected: PERMISSIONS.PLAY
+          | PERMISSIONS.ASSETS_ALL
+          | PERMISSIONS.HASH_ALL
       },
     ];
   });
