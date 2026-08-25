@@ -25,6 +25,7 @@ const EVENTS = {
   CLEAR_STRUCT_TILE: 'CLEAR_STRUCT_TILE',
   CLEAR_TILE_SELECTION: 'CLEAR_TILE_SELECTION',
   ENERGY_USAGE_CHANGED: 'ENERGY_USAGE_CHANGED',
+  FLEET_CHANGED: 'FLEET_CHANGED',
   LOGIN_COMPLETE: 'LOGIN_COMPLETE',
   LOTTIE_CUSTOMIZED: 'LOTTIE_CUSTOMIZED',
   ORE_COUNT_CHANGED: 'ORE_COUNT_CHANGED',
@@ -67,6 +68,126 @@ const EVENTS = {
   TRACK_DESTROYED_STRUCTS: 'TRACK_DESTROYED_STRUCTS',
   UNDISCOVERED_ORE_COUNT_CHANGED: 'UNDISCOVERED_ORE_COUNT_CHANGED',
 };
+
+/***/ },
+
+/***/ "./js/constants/MapConstants.js"
+/*!**************************************!*\
+  !*** ./js/constants/MapConstants.js ***!
+  \**************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   MAP_COL_ATTACKER_COMMAND: () => (/* binding */ MAP_COL_ATTACKER_COMMAND),
+/* harmony export */   MAP_COL_ATTACKER_FLEET: () => (/* binding */ MAP_COL_ATTACKER_FLEET),
+/* harmony export */   MAP_COL_COUNT_PROPS: () => (/* binding */ MAP_COL_COUNT_PROPS),
+/* harmony export */   MAP_COL_DEFENDER_COMMAND: () => (/* binding */ MAP_COL_DEFENDER_COMMAND),
+/* harmony export */   MAP_COL_DEFENDER_FLEET: () => (/* binding */ MAP_COL_DEFENDER_FLEET),
+/* harmony export */   MAP_COL_DEFENDER_PLANETARY: () => (/* binding */ MAP_COL_DEFENDER_PLANETARY),
+/* harmony export */   MAP_COL_DIVIDER: () => (/* binding */ MAP_COL_DIVIDER),
+/* harmony export */   MAP_COL_ORDER: () => (/* binding */ MAP_COL_ORDER),
+/* harmony export */   MAP_CONTAINER_IDS: () => (/* binding */ MAP_CONTAINER_IDS),
+/* harmony export */   MAP_DEFAULT_COMMAND_COL_COUNT: () => (/* binding */ MAP_DEFAULT_COMMAND_COL_COUNT),
+/* harmony export */   MAP_DEFAULT_DIVIDER_COL_COUNT: () => (/* binding */ MAP_DEFAULT_DIVIDER_COL_COUNT),
+/* harmony export */   MAP_DEFAULT_FLEET_COL_COUNT: () => (/* binding */ MAP_DEFAULT_FLEET_COL_COUNT),
+/* harmony export */   MAP_DEFAULT_PLANETARY_COL_COUNT: () => (/* binding */ MAP_DEFAULT_PLANETARY_COL_COUNT),
+/* harmony export */   MAP_NAMED_TRANSITIONS: () => (/* binding */ MAP_NAMED_TRANSITIONS),
+/* harmony export */   MAP_ORNAMENTS: () => (/* binding */ MAP_ORNAMENTS),
+/* harmony export */   MAP_TILE_ROWS_PER_AMBIT: () => (/* binding */ MAP_TILE_ROWS_PER_AMBIT),
+/* harmony export */   MAP_TILE_SIZE: () => (/* binding */ MAP_TILE_SIZE),
+/* harmony export */   MAP_TILE_TYPES: () => (/* binding */ MAP_TILE_TYPES),
+/* harmony export */   MAP_TILE_TYPE_ICONS: () => (/* binding */ MAP_TILE_TYPE_ICONS),
+/* harmony export */   MAP_TRANSITION_HEIGHT: () => (/* binding */ MAP_TRANSITION_HEIGHT),
+/* harmony export */   MAP_TRANSITION_TILE_LABELS: () => (/* binding */ MAP_TRANSITION_TILE_LABELS),
+/* harmony export */   MAP_TYPES: () => (/* binding */ MAP_TYPES)
+/* harmony export */ });
+const
+  MAP_COL_DEFENDER_COMMAND = 'DEFENDER_COMMAND',
+  MAP_COL_DEFENDER_PLANETARY = 'DEFENDER_PLANETARY',
+  MAP_COL_DEFENDER_FLEET = 'DEFENDER_FLEET',
+  MAP_COL_DIVIDER = 'DIVIDER',
+  MAP_COL_ATTACKER_FLEET = 'ATTACKER_FLEET',
+  MAP_COL_ATTACKER_COMMAND = 'ATTACKER_COMMAND',
+
+  MAP_DEFAULT_COMMAND_COL_COUNT = 1,
+  MAP_DEFAULT_PLANETARY_COL_COUNT = 2,
+  MAP_DEFAULT_FLEET_COL_COUNT = 2,
+  MAP_DEFAULT_DIVIDER_COL_COUNT = 1,
+
+  MAP_TILE_ROWS_PER_AMBIT = 2,
+
+  MAP_COL_ORDER = [
+    MAP_COL_DEFENDER_COMMAND,
+    MAP_COL_DEFENDER_PLANETARY,
+    MAP_COL_DEFENDER_FLEET,
+    MAP_COL_DIVIDER,
+    MAP_COL_ATTACKER_FLEET,
+    MAP_COL_ATTACKER_COMMAND
+  ],
+
+  MAP_COL_COUNT_PROPS = {
+    DEFENDER_COMMAND: 'defenderCommandColCount',
+    DEFENDER_PLANETARY: 'defenderPlanetaryColCount',
+    DEFENDER_FLEET: 'defenderFleetColCount',
+    DIVIDER: 'dividerColCount',
+    ATTACKER_FLEET: 'attackerFleetColCount',
+    ATTACKER_COMMAND: 'attackerCommandColCount'
+  },
+
+  MAP_TILE_SIZE = 128,
+
+  MAP_TRANSITION_HEIGHT = 128,
+
+  MAP_NAMED_TRANSITIONS = {
+    HORIZON: 'HORIZON'
+  },
+
+  MAP_TRANSITION_TILE_LABELS = {
+    ATMOSPHERE: 'ATMOSPHERE',
+    HORIZON: 'HORIZON',
+    SHORE: 'SHORE'
+  },
+
+  MAP_TILE_TYPES = {
+    FOG_OF_WAR: 'FOG_OF_WAR',
+    TRANSITION: 'TRANSITION',
+    COMMAND: 'COMMAND',
+    COMMAND_BLOCKED: 'COMMAND_BLOCKED',
+    PLANETARY_SLOT: 'PLANETARY_SLOT',
+    PLANETARY_BLOCKED: 'PLANETARY_BLOCKED',
+    FLEET: 'FLEET',
+    DIVIDER: 'DIVIDER',
+  },
+
+  MAP_TILE_TYPE_ICONS = {
+    FOG_OF_WAR: 'icon-unknown-territory',
+    TRANSITION: 'icon-blocked',
+    COMMAND: 'icon-cmd-post',
+    COMMAND_BLOCKED: 'icon-blocked',
+    PLANETARY_SLOT: 'icon-beacon',
+    PLANETARY_BLOCKED: 'icon-blocked',
+    FLEET: 'icon-fleet-tile',
+    DIVIDER: 'icon-blocked',
+    ENEMY_TERRITORY: 'icon-enemy-tile',
+  },
+
+  MAP_ORNAMENTS = {
+    SPACE_MONSTER: 'SPACE_MONSTER'
+  },
+
+  MAP_CONTAINER_IDS = {
+    ALPHA_BASE: 'alpha-base-map-container',
+    RAID: 'raid-map-container',
+    PREVIEW: 'preview-map-container'
+  },
+
+  MAP_TYPES = {
+    ALPHA_BASE: 'alphaBaseMap',
+    RAID: 'raidMap'
+  }
+;
 
 /***/ },
 
@@ -191,6 +312,215 @@ const RAID_STATUS = {
 
 /***/ },
 
+/***/ "./js/constants/StructConstants.js"
+/*!*****************************************!*\
+  !*** ./js/constants/StructConstants.js ***!
+  \*****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   STRUCT_ACTIONS: () => (/* binding */ STRUCT_ACTIONS),
+/* harmony export */   STRUCT_CATEGORIES: () => (/* binding */ STRUCT_CATEGORIES),
+/* harmony export */   STRUCT_DESCRIPTIONS: () => (/* binding */ STRUCT_DESCRIPTIONS),
+/* harmony export */   STRUCT_EQUIPMENT: () => (/* binding */ STRUCT_EQUIPMENT),
+/* harmony export */   STRUCT_EQUIPMENT_ICON_MAP: () => (/* binding */ STRUCT_EQUIPMENT_ICON_MAP),
+/* harmony export */   STRUCT_ORE_RESERVE_DEFENSES: () => (/* binding */ STRUCT_ORE_RESERVE_DEFENSES),
+/* harmony export */   STRUCT_PASSIVE_WEAPONRY: () => (/* binding */ STRUCT_PASSIVE_WEAPONRY),
+/* harmony export */   STRUCT_PLANETARY_DEFENSES: () => (/* binding */ STRUCT_PLANETARY_DEFENSES),
+/* harmony export */   STRUCT_PLANETARY_MINING: () => (/* binding */ STRUCT_PLANETARY_MINING),
+/* harmony export */   STRUCT_PLANETARY_REFINERY: () => (/* binding */ STRUCT_PLANETARY_REFINERY),
+/* harmony export */   STRUCT_POWER_GENERATION: () => (/* binding */ STRUCT_POWER_GENERATION),
+/* harmony export */   STRUCT_PRIMARY_WEAPON: () => (/* binding */ STRUCT_PRIMARY_WEAPON),
+/* harmony export */   STRUCT_SECONDARY_WEAPON: () => (/* binding */ STRUCT_SECONDARY_WEAPON),
+/* harmony export */   STRUCT_STATUS_FLAGS: () => (/* binding */ STRUCT_STATUS_FLAGS),
+/* harmony export */   STRUCT_STILL_LAYERS: () => (/* binding */ STRUCT_STILL_LAYERS),
+/* harmony export */   STRUCT_TYPES: () => (/* binding */ STRUCT_TYPES),
+/* harmony export */   STRUCT_UNIT_DEFENSES: () => (/* binding */ STRUCT_UNIT_DEFENSES),
+/* harmony export */   STRUCT_WATER_RIPPLE: () => (/* binding */ STRUCT_WATER_RIPPLE),
+/* harmony export */   STRUCT_WEAPON_CONTROL: () => (/* binding */ STRUCT_WEAPON_CONTROL),
+/* harmony export */   STRUCT_WEAPON_CONTROL_LABELS: () => (/* binding */ STRUCT_WEAPON_CONTROL_LABELS),
+/* harmony export */   STRUCT_WEAPON_SYSTEM: () => (/* binding */ STRUCT_WEAPON_SYSTEM)
+/* harmony export */ });
+const
+  STRUCT_TYPES = {
+    BATTLESHIP: 'Battleship',
+    COMMAND_SHIP: 'Command Ship',
+    CONTINENTAL_POWER_PLANT: 'Continental Power Plant',
+    CRUISER: 'Cruiser',
+    DESTROYER: 'Destroyer',
+    FIELD_GENERATOR: 'Field Generator',
+    FRIGATE: 'Frigate',
+    HIGH_ALTITUDE_INTERCEPTOR: 'High Altitude Interceptor',
+    JAMMING_SATELLITE: 'Jamming Satellite',
+    MOBILE_ARTILLERY: 'Mobile Artillery',
+    ORBITAL_SHIELD_GENERATOR: 'Orbital Shield Generator',
+    ORE_BUNKER: 'Ore Bunker',
+    ORE_EXTRACTOR: 'Ore Extractor',
+    ORE_REFINERY: 'Ore Refinery',
+    PLANETARY_DEFENSE_CANNON: 'Planetary Defense Cannon',
+    PURSUIT_FIGHTER: 'Pursuit Fighter',
+    SAM_LAUNCHER: 'SAM Launcher',
+    STARFIGHTER: 'Starfighter',
+    STEALTH_BOMBER: 'Stealth Bomber',
+    SUBMERSIBLE: 'Submersible',
+    TANK: 'Tank',
+    WORLD_ENGINE: 'World Engine',
+  },
+  STRUCT_CATEGORIES = {
+    FLEET: 'fleet',
+    PLANET: 'planet'
+  },
+  STRUCT_PRIMARY_WEAPON = {
+    UNGUIDED_WEAPONRY: 'unguidedWeaponry',
+    GUIDED_WEAPONRY: 'guidedWeaponry',
+    NO_ACTIVE_WEAPONRY: 'noActiveWeaponry'
+  },
+  STRUCT_SECONDARY_WEAPON = {
+    UNGUIDED_WEAPONRY: 'unguidedWeaponry',
+    ATTACK_RUN: 'attackRun',
+    NO_ACTIVE_WEAPONRY: 'noActiveWeaponry'
+  },
+  STRUCT_PASSIVE_WEAPONRY = {
+    COUNTER_ATTACK: 'counterAttack',
+    STRONG_COUNTER_ATTACK: 'strongCounterAttack',
+    ADVANCED_COUNTER_ATTACK: 'advancedCounterAttack',
+    NO_PASSIVE_WEAPONRY: 'noPassiveWeaponry'
+  },
+  STRUCT_UNIT_DEFENSES = {
+    ARMOUR: 'armour',
+    DEFENSIVE_MANEUVER: 'defensiveManeuver',
+    INDIRECT_COMBAT_MODULE: 'indirectCombatModule',
+    SIGNAL_JAMMING: 'signalJamming',
+    STEALTH_MODE: 'stealthMode',
+    NO_UNIT_DEFENSES: 'noUnitDefenses'
+  },
+  STRUCT_ORE_RESERVE_DEFENSES = {
+    COORDINATED_RESERVE_RESPONSE_TRACKER: 'coordinatedReserveResponseTracker',
+    MONITORING_STATION: 'monitoringStation',
+    ORE_BUNKER: 'oreBunker',
+    NO_ORE_RESERVE_DEFENSES: 'noOreReserveDefenses'
+  },
+  STRUCT_PLANETARY_DEFENSES = {
+    DEFENSIVE_CANNON: 'defensiveCannon',
+    LOW_ORBIT_BALLISTIC_INTERCEPTOR_NETWORK: 'lowOrbitBallisticInterceptorNetwork',
+    NO_PLANETARY_DEFENSE: 'noPlanetaryDefense'
+  },
+  STRUCT_PLANETARY_MINING = {
+    ORE_MINING_RIG: 'oreMiningRig',
+    NO_PLANETARY_MINING: 'noPlanetaryMining'
+  },
+  STRUCT_PLANETARY_REFINERY = {
+    ORE_REFINERY: 'oreRefinery',
+    NO_PLANETARY_REFINERY: 'noPlanetaryRefinery'
+  },
+  STRUCT_POWER_GENERATION = {
+    SMALL_GENERATOR: 'smallGenerator',
+    MEDIUM_GENERATOR: 'mediumGenerator',
+    LARGE_GENERATOR: 'largeGenerator',
+    NO_POWER_GENERATION: 'noPowerGeneration'
+  },
+  STRUCT_EQUIPMENT_ICON_MAP = {
+    [STRUCT_SECONDARY_WEAPON.ATTACK_RUN]: 'icon-ballistic-weapon',
+    [STRUCT_PRIMARY_WEAPON.GUIDED_WEAPONRY]: 'icon-smart-weapon',
+    [STRUCT_PRIMARY_WEAPON.UNGUIDED_WEAPONRY]: 'icon-ballistic-weapon',
+
+    [STRUCT_PASSIVE_WEAPONRY.ADVANCED_COUNTER_ATTACK]: 'icon-adv-counter',
+    [STRUCT_PASSIVE_WEAPONRY.COUNTER_ATTACK]: 'icon-counter',
+    [STRUCT_PASSIVE_WEAPONRY.STRONG_COUNTER_ATTACK]: 'icon-adv-counter',
+
+    [STRUCT_UNIT_DEFENSES.ARMOUR]: 'icon-armour',
+    [STRUCT_UNIT_DEFENSES.DEFENSIVE_MANEUVER]: 'icon-kinetic-barrier',
+    [STRUCT_UNIT_DEFENSES.INDIRECT_COMBAT_MODULE]: 'icon-indirect',
+    [STRUCT_UNIT_DEFENSES.SIGNAL_JAMMING]: 'icon-signal-jam',
+    [STRUCT_UNIT_DEFENSES.STEALTH_MODE]: 'icon-stealth',
+
+    [STRUCT_ORE_RESERVE_DEFENSES.COORDINATED_RESERVE_RESPONSE_TRACKER]: 'icon-planetary-shield',
+    [STRUCT_PLANETARY_DEFENSES.DEFENSIVE_CANNON]: 'icon-counter',
+    [STRUCT_PLANETARY_DEFENSES.LOW_ORBIT_BALLISTIC_INTERCEPTOR_NETWORK]: 'icon-signal-jam',
+    [STRUCT_ORE_RESERVE_DEFENSES.MONITORING_STATION]: 'icon-planetary-shield',
+    [STRUCT_ORE_RESERVE_DEFENSES.ORE_BUNKER]: 'icon-planetary-shield',
+    [STRUCT_POWER_GENERATION.SMALL_GENERATOR]: 'icon-refine'
+  },
+  STRUCT_DESCRIPTIONS = {
+    [STRUCT_TYPES.BATTLESHIP]: "",
+    [STRUCT_TYPES.COMMAND_SHIP]: "",
+    [STRUCT_TYPES.CONTINENTAL_POWER_PLANT]: "Consumes Alpha Matter to generate Energy.",
+    [STRUCT_TYPES.CRUISER]: "",
+    [STRUCT_TYPES.DESTROYER]: "",
+    [STRUCT_TYPES.FIELD_GENERATOR]: "Consumes Alpha Matter to generate Energy.",
+    [STRUCT_TYPES.FRIGATE]: "",
+    [STRUCT_TYPES.HIGH_ALTITUDE_INTERCEPTOR]: "",
+    [STRUCT_TYPES.JAMMING_SATELLITE]: "Applies Signal Jamming to all enemy Smart Attacks.",
+    [STRUCT_TYPES.MOBILE_ARTILLERY]: "",
+    [STRUCT_TYPES.ORBITAL_SHIELD_GENERATOR]: "Improves Planetary Defense.",
+    [STRUCT_TYPES.ORE_BUNKER]: "Massively improves Planetary Defense by storing Ore underground.",
+    [STRUCT_TYPES.ORE_EXTRACTOR]: "Extracts Alpha Ore from the planet.",
+    [STRUCT_TYPES.ORE_REFINERY]: "Refines Ore into usable Alpha Matter.",
+    [STRUCT_TYPES.PLANETARY_DEFENSE_CANNON]: "Launches Counter-Attacks against attacking Structs.",
+    [STRUCT_TYPES.PURSUIT_FIGHTER]: "",
+    [STRUCT_TYPES.SAM_LAUNCHER]: "",
+    [STRUCT_TYPES.STARFIGHTER]: "",
+    [STRUCT_TYPES.STEALTH_BOMBER]: "",
+    [STRUCT_TYPES.SUBMERSIBLE]: "",
+    [STRUCT_TYPES.TANK]: "",
+    [STRUCT_TYPES.WORLD_ENGINE]: "Consumes Alpha Matter to generate Energy."
+  },
+  STRUCT_WEAPON_SYSTEM = {
+    PRIMARY_WEAPON: 'primaryWeapon',
+    SECONDARY_WEAPON: 'secondaryWeapon'
+  },
+  STRUCT_WEAPON_CONTROL = {
+    GUIDED: 'guided',
+    UNGUIDED: 'unguided'
+  },
+  STRUCT_WEAPON_CONTROL_LABELS = {
+    [STRUCT_WEAPON_CONTROL.GUIDED]: 'Smart Weapon',
+    [STRUCT_WEAPON_CONTROL.UNGUIDED]: 'Ballistic Weapon'
+  },
+  STRUCT_STATUS_FLAGS = {
+    MATERIALIZED: 1,
+    BUILT: 2,
+    ONLINE: 4,
+    STORED: 8,
+    HIDDEN: 16,
+    DESTROYED: 32,
+    LOCKED: 64
+  },
+  STRUCT_ACTIONS = {
+    ACTIVATE: 'ACTIVATE',
+    DEACTIVATE: 'DEACTIVATE',
+    ATTACK_PRIMARY_WEAPON: 'ATTACK_PRIMARY_WEAPON',
+    ATTACK_SECONDARY_WEAPON: 'ATTACK_SECONDARY_WEAPON',
+    DEFENSE_SET: 'DEFENSE_SET',
+    DEFENSE_CLEAR: 'DEFENSE_CLEAR',
+    MOVE: 'MOVE',
+    STEALTH_ACTIVATE: 'STEALTH_ACTIVATE',
+    STEALTH_DEACTIVATE: 'STEALTH_DEACTIVATE',
+    CONSUME_ALPHA: 'CONSUME_ALPHA',
+    BUILD_CANCEL: 'BUILD_CANCEL',
+  },
+  STRUCT_WATER_RIPPLE = 'waterRipple',
+  STRUCT_EQUIPMENT = {
+    PASSIVE_WEAPONRY: 'passiveWeaponry',
+    UNIT_DEFENSES: 'unitDefenses',
+    ORE_RESERVE_DEFENSES: 'oreReserveDefenses',
+    PLANETARY_DEFENSES: 'planetaryDefenses',
+    PLANETARY_MINING: 'planetaryMining',
+    PLANETARY_REFINERY: 'planetaryRefinery',
+    POWER_GENERATION: 'powerGeneration',
+  },
+  STRUCT_STILL_LAYERS = {
+    STRUCT_VARIANT_BASE: 'structVariantBase',
+    STRUCT_VARIANT_DMG: 'structVariantDmg',
+    STRUCT_VARIANT_HIDDEN: 'structVariantHidden',
+  }
+;
+
+
+/***/ },
+
 /***/ "./js/constants/TaskConstants.js"
 /*!***************************************!*\
   !*** ./js/constants/TaskConstants.js ***!
@@ -290,6 +620,299 @@ const TASK_TYPES = {
  * eligible struct standing on it, rather than one held by the struct itself.
  */
 const ORE_TASK_TYPES = [TASK_TYPES.MINE, TASK_TYPES.REFINE];
+
+
+/***/ },
+
+/***/ "./js/dtos/PlanetaryShieldInfoDTO.js"
+/*!*******************************************!*\
+  !*** ./js/dtos/PlanetaryShieldInfoDTO.js ***!
+  \*******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlanetaryShieldInfoDTO: () => (/* binding */ PlanetaryShieldInfoDTO)
+/* harmony export */ });
+class PlanetaryShieldInfoDTO {
+  constructor() {
+    this.planet_id = null;
+    this.planetary_shield = null;
+    this.block_start_raid = null;
+  }
+}
+
+/***/ },
+
+/***/ "./js/events/AlphaCountChangedEvent.js"
+/*!*********************************************!*\
+  !*** ./js/events/AlphaCountChangedEvent.js ***!
+  \*********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AlphaCountChangedEvent: () => (/* binding */ AlphaCountChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class AlphaCountChangedEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.ALPHA_COUNT_CHANGED);
+    this.playerType = playerType;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/ChargeLevelChangedEvent.js"
+/*!**********************************************!*\
+  !*** ./js/events/ChargeLevelChangedEvent.js ***!
+  \**********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ChargeLevelChangedEvent: () => (/* binding */ ChargeLevelChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class ChargeLevelChangedEvent extends CustomEvent {
+  constructor(playerId, chargeLevel) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.CHARGE_LEVEL_CHANGED);
+    this.playerId = playerId;
+    this.chargeLevel = chargeLevel;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/EnergyUsageChangedEvent.js"
+/*!**********************************************!*\
+  !*** ./js/events/EnergyUsageChangedEvent.js ***!
+  \**********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   EnergyUsageChangedEvent: () => (/* binding */ EnergyUsageChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class EnergyUsageChangedEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.ENERGY_USAGE_CHANGED);
+    this.playerType = playerType;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/FleetChangedEvent.js"
+/*!****************************************!*\
+  !*** ./js/events/FleetChangedEvent.js ***!
+  \****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FleetChangedEvent: () => (/* binding */ FleetChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class FleetChangedEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.FLEET_CHANGED);
+    this.playerType = playerType;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/OreCountChangedEvent.js"
+/*!*******************************************!*\
+  !*** ./js/events/OreCountChangedEvent.js ***!
+  \*******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   OreCountChangedEvent: () => (/* binding */ OreCountChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class OreCountChangedEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.ORE_COUNT_CHANGED);
+    this.playerType = playerType;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/PlanetRaidStatusChangedEvent.js"
+/*!***************************************************!*\
+  !*** ./js/events/PlanetRaidStatusChangedEvent.js ***!
+  \***************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PlanetRaidStatusChangedEvent: () => (/* binding */ PlanetRaidStatusChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class PlanetRaidStatusChangedEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.PLANET_RAID_STATUS_CHANGED);
+    this.playerType = playerType;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/RenderPlayerPfpEvent.js"
+/*!*******************************************!*\
+  !*** ./js/events/RenderPlayerPfpEvent.js ***!
+  \*******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RenderPlayerPfpEvent: () => (/* binding */ RenderPlayerPfpEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class RenderPlayerPfpEvent extends CustomEvent {
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.RENDER_PLAYER_PFP);
+    this.playerType = playerType;
+  }
+}
+
+
+
+/***/ },
+
+/***/ "./js/events/SaveGameStateEvent.js"
+/*!*****************************************!*\
+  !*** ./js/events/SaveGameStateEvent.js ***!
+  \*****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SaveGameStateEvent: () => (/* binding */ SaveGameStateEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class SaveGameStateEvent extends CustomEvent {
+  constructor() {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.SAVE_GAME_STATE);
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/ShieldHealthChangedEvent.js"
+/*!***********************************************!*\
+  !*** ./js/events/ShieldHealthChangedEvent.js ***!
+  \***********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ShieldHealthChangedEvent: () => (/* binding */ ShieldHealthChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class ShieldHealthChangedEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.SHIELD_HEALTH_CHANGED);
+    this.playerType = playerType;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/StructCountChangedEvent.js"
+/*!**********************************************!*\
+  !*** ./js/events/StructCountChangedEvent.js ***!
+  \**********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   StructCountChangedEvent: () => (/* binding */ StructCountChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class StructCountChangedEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.STRUCT_COUNT_CHANGED);
+    this.playerType = playerType;
+  }
+}
 
 
 /***/ },
@@ -396,6 +1019,94 @@ class TaskWorkerChangedEvent extends CustomEvent {
   constructor(state) {
     super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_WORKER_CHANGED);
     this.state = state;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/TrackDestroyedStructEvent.js"
+/*!************************************************!*\
+  !*** ./js/events/TrackDestroyedStructEvent.js ***!
+  \************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TrackDestroyedStructEvent: () => (/* binding */ TrackDestroyedStructEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class TrackDestroyedStructEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   * @param {string} structId
+   */
+  constructor(playerType, structId) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TRACK_DESTROYED_STRUCT);
+    this.playerType = playerType;
+    this.structId = structId;
+  }
+}
+
+
+
+/***/ },
+
+/***/ "./js/events/TrackDestroyedStructsEvent.js"
+/*!*************************************************!*\
+  !*** ./js/events/TrackDestroyedStructsEvent.js ***!
+  \*************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TrackDestroyedStructsEvent: () => (/* binding */ TrackDestroyedStructsEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class TrackDestroyedStructsEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TRACK_DESTROYED_STRUCTS);
+    this.playerType = playerType;
+  }
+}
+
+
+
+/***/ },
+
+/***/ "./js/events/UndiscoveredOreCountChangedEvent.js"
+/*!*******************************************************!*\
+  !*** ./js/events/UndiscoveredOreCountChangedEvent.js ***!
+  \*******************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   UndiscoveredOreCountChangedEvent: () => (/* binding */ UndiscoveredOreCountChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class UndiscoveredOreCountChangedEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED);
+    this.playerType = playerType;
   }
 }
 
@@ -533,6 +1244,44 @@ class AbstractFactory {
     return list.map(this.make);
   }
 }
+
+/***/ },
+
+/***/ "./js/framework/AbstractViewModelComponent.js"
+/*!****************************************************!*\
+  !*** ./js/framework/AbstractViewModelComponent.js ***!
+  \****************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AbstractViewModelComponent: () => (/* binding */ AbstractViewModelComponent)
+/* harmony export */ });
+/* harmony import */ var _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./NotImplementedError */ "./js/framework/NotImplementedError.js");
+/* harmony import */ var _util_NumberFormatter__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../util/NumberFormatter */ "./js/util/NumberFormatter.js");
+
+
+
+class AbstractViewModelComponent {
+
+  /**
+   * @param {GameState} gameState
+   */
+  constructor(gameState) {
+    this.gameState = gameState;
+    this.numberFormatter = new _util_NumberFormatter__WEBPACK_IMPORTED_MODULE_1__.NumberFormatter();
+  }
+
+  initPageCode() {
+    throw new _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
+  }
+
+  renderHTML() {
+    throw new _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
+  }
+}
+
 
 /***/ },
 
@@ -1645,6 +2394,503 @@ class TaskManager {
 
 /***/ },
 
+/***/ "./js/models/Fleet.js"
+/*!****************************!*\
+  !*** ./js/models/Fleet.js ***!
+  \****************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Fleet: () => (/* binding */ Fleet)
+/* harmony export */ });
+class Fleet {
+   constructor() {
+     this.id = null;
+     this.owner = null;
+     this.map = null;
+     this.space_slots = null;
+     this.air_slots = null;
+     this.land_slots = null;
+     this.water_slots = null;
+     this.location_type = null;
+     this.location_id = null;
+     this.status = null;
+     this.location_list_forward = null;
+     this.location_list_backward = null;
+     this.command_struct = null;
+     this.created_at = null;
+     this.updated_at = null;
+   }
+
+  /**
+   * @return {boolean}
+   */
+  isOnStation() {
+    return this.status === 'onStation';
+  }
+}
+
+
+
+/***/ },
+
+/***/ "./js/models/KeyPlayer.js"
+/*!********************************!*\
+  !*** ./js/models/KeyPlayer.js ***!
+  \********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   KeyPlayer: () => (/* binding */ KeyPlayer)
+/* harmony export */ });
+/* harmony import */ var _dtos_PlanetaryShieldInfoDTO__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../dtos/PlanetaryShieldInfoDTO */ "./js/dtos/PlanetaryShieldInfoDTO.js");
+/* harmony import */ var _PlanetRaid__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./PlanetRaid */ "./js/models/PlanetRaid.js");
+/* harmony import */ var _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../events/ChargeLevelChangedEvent */ "./js/events/ChargeLevelChangedEvent.js");
+/* harmony import */ var _util_ChargeCalculator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../util/ChargeCalculator */ "./js/util/ChargeCalculator.js");
+/* harmony import */ var _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../events/SaveGameStateEvent */ "./js/events/SaveGameStateEvent.js");
+/* harmony import */ var _events_StructCountChangedEvent__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../events/StructCountChangedEvent */ "./js/events/StructCountChangedEvent.js");
+/* harmony import */ var _Player__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./Player */ "./js/models/Player.js");
+/* harmony import */ var _events_AlphaCountChangedEvent__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../events/AlphaCountChangedEvent */ "./js/events/AlphaCountChangedEvent.js");
+/* harmony import */ var _events_EnergyUsageChangedEvent__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../events/EnergyUsageChangedEvent */ "./js/events/EnergyUsageChangedEvent.js");
+/* harmony import */ var _events_OreCountChangedEvent__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../events/OreCountChangedEvent */ "./js/events/OreCountChangedEvent.js");
+/* harmony import */ var _util_DifficultyEstimator__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../util/DifficultyEstimator */ "./js/util/DifficultyEstimator.js");
+/* harmony import */ var _events_ShieldHealthChangedEvent__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../events/ShieldHealthChangedEvent */ "./js/events/ShieldHealthChangedEvent.js");
+/* harmony import */ var _events_UndiscoveredOreCountChangedEvent__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../events/UndiscoveredOreCountChangedEvent */ "./js/events/UndiscoveredOreCountChangedEvent.js");
+/* harmony import */ var _events_PlanetRaidStatusChangedEvent__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../events/PlanetRaidStatusChangedEvent */ "./js/events/PlanetRaidStatusChangedEvent.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _Fleet__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./Fleet */ "./js/models/Fleet.js");
+/* harmony import */ var _events_TrackDestroyedStructsEvent__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../events/TrackDestroyedStructsEvent */ "./js/events/TrackDestroyedStructsEvent.js");
+/* harmony import */ var _events_TrackDestroyedStructEvent__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../events/TrackDestroyedStructEvent */ "./js/events/TrackDestroyedStructEvent.js");
+/* harmony import */ var _util_DateFormatter__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../util/DateFormatter */ "./js/util/DateFormatter.js");
+/* harmony import */ var _events_RenderPlayerPfpEvent__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ../events/RenderPlayerPfpEvent */ "./js/events/RenderPlayerPfpEvent.js");
+/* harmony import */ var _events_FleetChangedEvent__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ../events/FleetChangedEvent */ "./js/events/FleetChangedEvent.js");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class KeyPlayer {
+
+  /**
+   * @param {string} playerType See PLAYER_TYPES
+   * @param {boolean} planetUsedForMap Whether or not this key player's planet is used for a map
+   * @param {string} planetMapType The map type of this planet if it's used for a map.
+   * @param {string} foreignRaidInfoKeyPlayer The key player that contains the raid info
+   */
+  constructor(
+    playerType,
+    planetUsedForMap,
+    planetMapType = '',
+    foreignRaidInfoKeyPlayer = ''
+  ) {
+
+    this.chargeCalculator = new _util_ChargeCalculator__WEBPACK_IMPORTED_MODULE_3__.ChargeCalculator();
+    this.difficultyEstimator = new _util_DifficultyEstimator__WEBPACK_IMPORTED_MODULE_10__.DifficultyEstimator();
+    this.dateFormatter = new _util_DateFormatter__WEBPACK_IMPORTED_MODULE_18__.DateFormatter();
+
+    /** @type {string} See PLAYER_TYPES */
+    this.playerType = playerType;
+
+    /** @type {string} */
+    this.id = '';
+
+    /** @type {Player} */
+    this.player = null;
+
+    /** @type {number} UI/display value; may be optimistically drained on enqueue. */
+    this.lastActionBlockHeight = 0;
+
+    /** @type {number} GRASS/chain/API confirmed value; read by the signing queue scheduler. */
+    this.confirmedLastActionBlockHeight = 0;
+
+    /** @type {boolean} True once the confirmed value has been loaded (API/GRASS); gates charge scheduling. */
+    this.confirmedLastActionLoaded = false;
+
+    /** @type {number} */
+    this.chargeLevel = 0;
+
+    /** @type {Planet} */
+    this.planet = null;
+
+    /** @type {string} */
+    this.planetShieldHealth = '';
+
+    /** @type {PlanetaryShieldInfoDTO} */
+    this.planetShieldInfo = new _dtos_PlanetaryShieldInfoDTO__WEBPACK_IMPORTED_MODULE_0__.PlanetaryShieldInfoDTO();
+
+    /** @type {PlanetRaid} */
+    this.planetRaidInfo = new _PlanetRaid__WEBPACK_IMPORTED_MODULE_1__.PlanetRaid();
+
+    /** @type {boolean} Whether or not this key player's planet is used for a map */
+    this.planetUsedForMap = planetUsedForMap;
+
+    /** @type {string} The map type of this planet if it's used for a map. */
+    this.planetMapType = planetUsedForMap ? planetMapType : '';
+
+    /** @type {Fleet} */
+    this.fleet = null;
+
+    /** @type {Object<string, Struct>} */
+    this.structs = {};
+
+    /** @type {string} foreignRaidInfoKeyPlayer */
+    this.foreignRaidInfoKeyPlayer = foreignRaidInfoKeyPlayer;
+
+  }
+
+  setAlpha(alpha) {
+    if (this.player && this.player.hasOwnProperty('alpha')) {
+      this.player.alpha = parseInt(alpha);
+
+      window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
+      window.dispatchEvent(new _events_AlphaCountChangedEvent__WEBPACK_IMPORTED_MODULE_7__.AlphaCountChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {number} connectionCapacity
+   */
+  setConnectionCapacity(connectionCapacity) {
+    if (this.player && this.player.hasOwnProperty('connection_capacity')) {
+      this.player.connection_capacity = connectionCapacity;
+
+      window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
+      window.dispatchEvent(new _events_EnergyUsageChangedEvent__WEBPACK_IMPORTED_MODULE_8__.EnergyUsageChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {Fleet} fleet
+   */
+  setFleet(fleet) {
+    this.fleet = fleet;
+
+    window.dispatchEvent(new _events_FleetChangedEvent__WEBPACK_IMPORTED_MODULE_20__.FleetChangedEvent(this.playerType));
+  }
+
+  /**
+   * @param {string} id
+   */
+  setId(id) {
+    this.id = id;
+
+    window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
+  }
+
+  /**
+   * @param {number} currentBlockHeight
+   * @param {number} height
+   */
+  setLastActionBlockHeight(currentBlockHeight, height) {
+    this.lastActionBlockHeight = height;
+    this.confirmedLastActionBlockHeight = height;
+    this.confirmedLastActionLoaded = true;
+    this.chargeLevel = this.chargeCalculator.calc(currentBlockHeight, this.lastActionBlockHeight);
+
+    window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
+    window.dispatchEvent(new _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_2__.ChargeLevelChangedEvent(this.id, this.chargeLevel));
+  }
+
+  /**
+   * Optimistically drain the displayed charge bar as if an action landed this
+   * block. UI-only: does NOT touch confirmedLastActionBlockHeight, so the signing
+   * queue scheduler keeps using the GRASS/chain-confirmed base.
+   *
+   * @param {number} currentBlockHeight
+   */
+  setOptimisticLastActionBlockHeight(currentBlockHeight) {
+    this.lastActionBlockHeight = currentBlockHeight + 1;
+    this.chargeLevel = this.chargeCalculator.calc(currentBlockHeight, this.lastActionBlockHeight);
+
+    window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
+    window.dispatchEvent(new _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_2__.ChargeLevelChangedEvent(this.id, this.chargeLevel));
+  }
+
+  /**
+   * @param {number} load
+   */
+  setLoad(load) {
+    if (this.player && this.player.hasOwnProperty('load')) {
+      this.player.load = load;
+
+      window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
+      window.dispatchEvent(new _events_EnergyUsageChangedEvent__WEBPACK_IMPORTED_MODULE_8__.EnergyUsageChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {number|string} ore
+   */
+  setOre(ore) {
+    if (this.player && this.player.hasOwnProperty('ore')) {
+      this.player.ore = parseInt(ore);
+
+      window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
+      window.dispatchEvent(new _events_OreCountChangedEvent__WEBPACK_IMPORTED_MODULE_9__.OreCountChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {Planet} planet
+   */
+  setPlanet(planet) {
+    this.planet = planet;
+
+    window.dispatchEvent(new _events_UndiscoveredOreCountChangedEvent__WEBPACK_IMPORTED_MODULE_12__.UndiscoveredOreCountChangedEvent(this.playerType));
+  }
+
+  /**
+   * @param {string} status
+   * @param dispatchEvent
+   */
+  setPlanetRaidStatus(status, dispatchEvent = true) {
+    this.planetRaidInfo.status = status;
+    window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
+
+    if (dispatchEvent) {
+      window.dispatchEvent(new _events_PlanetRaidStatusChangedEvent__WEBPACK_IMPORTED_MODULE_13__.PlanetRaidStatusChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {number} currentBlockHeight
+   */
+  setPlanetShieldHealth(currentBlockHeight) {
+    if (
+      this.planetRaidInfo.isRaidActive()
+      && currentBlockHeight
+      && this.planetShieldInfo.block_start_raid
+    ) {
+      let health = this.difficultyEstimator.getTimeRemainingEstimate(
+        this.planetShieldInfo.planetary_shield,
+        this.planetShieldInfo.block_start_raid,
+        currentBlockHeight
+      );
+      this.planetShieldHealth = this.dateFormatter.formatDuration(health);
+    } else {
+      this.planetShieldHealth = '';
+    }
+
+    window.dispatchEvent(new _events_ShieldHealthChangedEvent__WEBPACK_IMPORTED_MODULE_11__.ShieldHealthChangedEvent(this.playerType));
+  }
+
+  /**
+   * @param {PlanetaryShieldInfoDTO} info
+   * @param {number} currentBlockHeight
+   */
+  setPlanetShieldInfo(info, currentBlockHeight) {
+    this.planetShieldInfo = info;
+
+    this.setPlanetShieldHealth(currentBlockHeight);
+  }
+
+  /**
+   * @param {Player} player
+   */
+  setPlayer(player) {
+    this.player = player;
+
+    window.dispatchEvent(new _events_AlphaCountChangedEvent__WEBPACK_IMPORTED_MODULE_7__.AlphaCountChangedEvent(this.playerType));
+    window.dispatchEvent(new _events_EnergyUsageChangedEvent__WEBPACK_IMPORTED_MODULE_8__.EnergyUsageChangedEvent(this.playerType));
+    window.dispatchEvent(new _events_OreCountChangedEvent__WEBPACK_IMPORTED_MODULE_9__.OreCountChangedEvent(this.playerType));
+    window.dispatchEvent(new _events_RenderPlayerPfpEvent__WEBPACK_IMPORTED_MODULE_19__.RenderPlayerPfpEvent(this.playerType));
+  }
+
+  /**
+   * @param {number} capacity
+   */
+  setPlayerCapacity(capacity) {
+    if (this.player && this.player.hasOwnProperty('capacity')) {
+      this.player.capacity = capacity;
+
+      window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
+      window.dispatchEvent(new _events_EnergyUsageChangedEvent__WEBPACK_IMPORTED_MODULE_8__.EnergyUsageChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {Struct[]} structs
+   */
+  setStructs(structs) {
+    this.structs = {};
+    structs.forEach(struct => {
+      this.structs[struct.id] = struct;
+    });
+
+    window.dispatchEvent(new _events_StructCountChangedEvent__WEBPACK_IMPORTED_MODULE_5__.StructCountChangedEvent(this.playerType));
+    window.dispatchEvent(new _events_TrackDestroyedStructsEvent__WEBPACK_IMPORTED_MODULE_16__.TrackDestroyedStructsEvent(this.playerType));
+  }
+
+  /**
+   * @param {number} structsLoad
+   */
+  setStructsLoad(structsLoad) {
+    if (this.player && this.player.hasOwnProperty('structs_load')) {
+      this.player.structs_load = structsLoad;
+
+      window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
+      window.dispatchEvent(new _events_EnergyUsageChangedEvent__WEBPACK_IMPORTED_MODULE_8__.EnergyUsageChangedEvent(this.playerType));
+    }
+  }
+
+  /**
+   * @param {Struct} struct
+   */
+  setStruct(struct) {
+    this.structs[struct.id] = struct;
+
+    window.dispatchEvent(new _events_StructCountChangedEvent__WEBPACK_IMPORTED_MODULE_5__.StructCountChangedEvent(this.playerType));
+    window.dispatchEvent(new _events_TrackDestroyedStructEvent__WEBPACK_IMPORTED_MODULE_17__.TrackDestroyedStructEvent(this.playerType, struct.id));
+  }
+
+  /**
+   * @param {number} currentBlockHeight
+   * @return {number}
+   */
+  getCharge(currentBlockHeight) {
+    return this.chargeCalculator.calcCharge(currentBlockHeight, this.lastActionBlockHeight);
+  }
+
+  getForeignRaidInfoSource() {
+    return this.foreignRaidInfoKeyPlayer;
+  }
+
+  getPlanetId() {
+    if (!this.planetUsedForMap) {
+      return null;
+    }
+
+    if (this.planet) {
+      return this.planet.id;
+    } else if (this.isRaidDependent()) {
+      return this.planetRaidInfo.planet_id;
+    }
+
+    return null;
+  }
+
+  /**
+   * @return {string}
+   */
+  getPlanetShieldHealth() {
+    return this.planetShieldHealth;
+  }
+
+  /**
+   * @return {string}
+   */
+  getTag() {
+    return this.player && this.player.tag && this.player.tag.length > 0
+      ? `[${this.player.tag}]`
+      : '';
+  }
+
+  /**
+   * @return {string}
+   */
+  getUsername() {
+    return this.player && this.player.username && this.player.username.length > 0
+      ? `${this.player.username}`
+      : `PID# ${this.id}`;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isRaidDependent() {
+    return this.playerType !== _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_14__.PLAYER_TYPES.PLAYER;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  hasForeignRaidInfo() {
+    return !!this.foreignRaidInfoKeyPlayer;
+  }
+
+  /**
+   * @param {string} fleetId
+   */
+  isFleetOwner(fleetId) {
+    return fleetId && this.fleet?.id === fleetId;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isCommandStructAlive() {
+    return !!(
+      this.fleet?.command_struct
+      && this.structs[this.fleet.command_struct]
+      && this.structs[this.fleet.command_struct].isBuilt()
+      && !this.structs[this.fleet.command_struct].isDestroyed()
+    );
+  }
+
+  /**
+   * @return {boolean}
+   */
+  arePlanetaryDefensesSecure() {
+    return !!(
+      this.fleet?.isOnStation()
+      && this.isCommandStructAlive()
+    );
+  }
+
+  /**
+   * @return {boolean}
+   */
+  arePlanetaryDefensesVulnerable() {
+    return !this.arePlanetaryDefensesSecure();
+  }
+
+  /**
+   * @return {boolean}
+   */
+  arePlanetaryDefensesBreached() {
+    return !!(
+      this.arePlanetaryDefensesVulnerable()
+      && this.planetRaidInfo.isRaidActive()
+    );
+  }
+
+  /**
+   * @return {string}
+   */
+  getProjectedShieldBreachTime() {
+    let health = this.difficultyEstimator.getTimeRemainingEstimate(
+      this.planetShieldInfo.planetary_shield,
+      1,
+      1
+    );
+    return this.dateFormatter.formatDuration(health);
+  }
+}
+
+
+/***/ },
+
 /***/ "./js/models/PlanetRaid.js"
 /*!*********************************!*\
   !*** ./js/models/PlanetRaid.js ***!
@@ -1677,6 +2923,214 @@ class PlanetRaid {
     );
   }
 }
+
+/***/ },
+
+/***/ "./js/models/Player.js"
+/*!*****************************!*\
+  !*** ./js/models/Player.js ***!
+  \*****************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Player: () => (/* binding */ Player)
+/* harmony export */ });
+class Player {
+  constructor() {
+    this.id = null;
+    this.primary_address = null;
+    this.guild_id = null;
+    this.substation_id = null;
+    this.planet_id = null;
+    this.fleet_id = null;
+    this.username = null;
+    this.pfp = null;
+    this.pfp_client_render_attributes = null;
+    this.guild_name = null;
+    this.tag = null;
+    this.alpha = null;
+    this.ore = null;
+    this.load = null;
+    this.structs_load = null;
+    this.capacity = null;
+    this.connection_capacity = null;
+  }
+
+  /**
+   * @return {string}
+   */
+  getTag() {
+    return (this.tag && this.tag.length > 0) ? `[${this.tag}]` : '';
+  }
+
+  /**
+   * @return {string}
+   */
+  getUsername() {
+    return (this.username && this.username.length > 0) ? `${this.username}` : 'Name Redacted';
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isOverloaded() {
+    const load = this.load ?? 0;
+    const structsLoad = this.structs_load ?? 0;
+    const capacity = this.capacity ?? 0;
+    const connectionCapacity = this.connection_capacity ?? 0;
+
+    let totalLoad = load + structsLoad;
+    let totalCapacity = capacity + connectionCapacity;
+
+    return totalLoad > totalCapacity;
+  }
+}
+
+/***/ },
+
+/***/ "./js/models/Struct.js"
+/*!*****************************!*\
+  !*** ./js/models/Struct.js ***!
+  \*****************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Struct: () => (/* binding */ Struct)
+/* harmony export */ });
+/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/StructConstants */ "./js/constants/StructConstants.js");
+
+
+class Struct {
+  constructor() {
+    /** @type {string|null} */
+    this.id = null;
+
+    /** @type {number|null} */
+    this.index = null;
+
+    /** @type {number|null} - FK to struct_type.id */
+    this.type = null;
+
+    /** @type {string|null} */
+    this.creator = null;
+
+    /** @type {string|null} - Player ID who owns this struct */
+    this.owner = null;
+
+    /** @type {string|null} - "fleet" or "planet" */
+    this.location_type = null;
+
+    /** @type {string|null} - Fleet ID or Planet ID */
+    this.location_id = null;
+
+    /** @type {string|null} - "space", "air", "land", "water" */
+    this.operating_ambit = null;
+
+    /** @type {number|null} */
+    this.slot = null;
+
+    /** @type {number|null} */
+    this.health = null;
+
+    /** @type {number|null} */
+    this.status = null;
+
+    /** @type {string|null} the ID of the struct that this struct is protecting => */
+    this.protected_struct_id = null;
+
+    /** @type {string[]} the IDs of the structs that are defending this struct <=> */
+    this.defending_struct_ids = [];
+
+    /** @type {number|null} */
+    this.destroyed_block = null;
+
+    /** @type {number|null} amount of alpha infused in the struct */
+    this.fuel = null;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isMaterialized() {
+    return (this.status & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_0__.STRUCT_STATUS_FLAGS.MATERIALIZED) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isBuilt() {
+    return (this.status & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_0__.STRUCT_STATUS_FLAGS.BUILT) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isOnline() {
+    return (this.status & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_0__.STRUCT_STATUS_FLAGS.ONLINE) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isStored() {
+    return (this.status & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_0__.STRUCT_STATUS_FLAGS.STORED) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isDefending() {
+    return !!this.protected_struct_id;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isDefended() {
+    return this.defending_struct_ids.length > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isHidden() {
+    return (this.status & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_0__.STRUCT_STATUS_FLAGS.HIDDEN) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isDestroyed() {
+    return (this.status & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_0__.STRUCT_STATUS_FLAGS.DESTROYED) > 0;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isLocked() {
+    return (this.status & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_0__.STRUCT_STATUS_FLAGS.LOCKED) > 0;
+  }
+
+  /**
+   * @param {number} flag see STRUCT_STATUS_FLAGS
+   */
+  addStatusFlag(flag) {
+    this.status |= flag;
+  }
+
+  /**
+   * @param {number} flag see STRUCT_STATUS_FLAGS
+   */
+  removeStatusFlag(flag) {
+    this.status &= ~flag;
+  }
+}
+
+
 
 /***/ },
 
@@ -2394,6 +3848,287 @@ class PermissionManagerTest extends _framework_DTestFramework__WEBPACK_IMPORTED_
 
 /***/ },
 
+/***/ "./js/tests/ShieldStatusTest.js"
+/*!**************************************!*\
+  !*** ./js/tests/ShieldStatusTest.js ***!
+  \**************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ShieldStatusTest: () => (/* binding */ ShieldStatusTest)
+/* harmony export */ });
+/* harmony import */ var _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/DTestFramework */ "./js/framework/DTestFramework.js");
+/* harmony import */ var _view_models_components_ShieldStatusComponent__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../view_models/components/ShieldStatusComponent */ "./js/view_models/components/ShieldStatusComponent.js");
+/* harmony import */ var _models_KeyPlayer__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../models/KeyPlayer */ "./js/models/KeyPlayer.js");
+/* harmony import */ var _models_Fleet__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../models/Fleet */ "./js/models/Fleet.js");
+/* harmony import */ var _models_Struct__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../models/Struct */ "./js/models/Struct.js");
+/* harmony import */ var _models_PlanetRaid__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../models/PlanetRaid */ "./js/models/PlanetRaid.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../constants/RaidStatus */ "./js/constants/RaidStatus.js");
+/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../constants/StructConstants */ "./js/constants/StructConstants.js");
+/* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../constants/MapConstants */ "./js/constants/MapConstants.js");
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Covers the shield status shown on the map HUD, which reads secure while the
+ * command ship holds station over the planet, vulnerable once it leaves or is
+ * destroyed, and breached when that happens with a raid underway.
+ *
+ * The status is derived from state the player never edits directly (the fleet,
+ * the command struct and the raid), so each of those has to announce itself for
+ * the HUD to keep up. The regression these tests exist for is the fleet: it was
+ * assigned straight onto the key player, so leaving for a raid and coming home
+ * both left the icon showing whatever it showed before.
+ */
+class ShieldStatusTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTestSuite {
+
+  constructor() {
+    super('ShieldStatusTest');
+  }
+
+  /**
+   * The suites run under Node with only the sliver of the DOM they touch, so
+   * the three elements the component writes to are stood up by hand.
+   *
+   * @param {string} elementId
+   * @return {Object<string, object>}
+   */
+  static givenDocument(elementId) {
+    const elements = {
+      [elementId]: {dataset: {}},
+      [`${elementId}-icon-wrapper`]: {innerHTML: ''},
+      [`${elementId}-value`]: {
+        innerText: '',
+        classList: {add: () => {}, remove: () => {}}
+      }
+    };
+
+    __webpack_require__.g.document = {
+      getElementById: (id) => elements[id] ?? null
+    };
+
+    return elements;
+  }
+
+  /**
+   * @param {string} playerType
+   * @param {boolean} commandShipOnStation
+   * @param {boolean} commandShipAlive
+   * @param {string|null} raidStatus
+   * @return {KeyPlayer}
+   */
+  static makePlanetOwner(
+    playerType,
+    commandShipOnStation,
+    commandShipAlive,
+    raidStatus = null
+  ) {
+    const keyPlayer = new _models_KeyPlayer__WEBPACK_IMPORTED_MODULE_2__.KeyPlayer(
+      playerType,
+      true,
+      playerType === _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER ? _constants_MapConstants__WEBPACK_IMPORTED_MODULE_9__.MAP_TYPES.ALPHA_BASE : _constants_MapConstants__WEBPACK_IMPORTED_MODULE_9__.MAP_TYPES.RAID
+    );
+
+    keyPlayer.id = '1-1';
+    keyPlayer.planetRaidInfo = new _models_PlanetRaid__WEBPACK_IMPORTED_MODULE_5__.PlanetRaid();
+    keyPlayer.planetRaidInfo.status = raidStatus;
+
+    const commandStruct = new _models_Struct__WEBPACK_IMPORTED_MODULE_4__.Struct();
+    commandStruct.id = '5-1';
+    commandStruct.status = commandShipAlive
+      ? _constants_StructConstants__WEBPACK_IMPORTED_MODULE_8__.STRUCT_STATUS_FLAGS.BUILT
+      : _constants_StructConstants__WEBPACK_IMPORTED_MODULE_8__.STRUCT_STATUS_FLAGS.BUILT | _constants_StructConstants__WEBPACK_IMPORTED_MODULE_8__.STRUCT_STATUS_FLAGS.DESTROYED;
+    keyPlayer.structs = {'5-1': commandStruct};
+
+    keyPlayer.fleet = ShieldStatusTest.makeFleet(commandShipOnStation);
+
+    return keyPlayer;
+  }
+
+  /**
+   * @param {boolean} onStation
+   * @return {Fleet}
+   */
+  static makeFleet(onStation) {
+    const fleet = new _models_Fleet__WEBPACK_IMPORTED_MODULE_3__.Fleet();
+    fleet.id = '4-1';
+    fleet.command_struct = '5-1';
+    fleet.status = onStation ? 'onStation' : 'away';
+    return fleet;
+  }
+
+  /**
+   * Builds a component wired to a single planet owner and renders it once, the
+   * way the HUD does when the page first loads.
+   *
+   * @param {KeyPlayer} planetOwner
+   * @return {{elements: Object<string, object>, component: ShieldStatusComponent}}
+   */
+  static givenRenderedComponent(planetOwner) {
+    const elementId = `${planetOwner.playerType}-hud-shield-status`;
+    const elements = ShieldStatusTest.givenDocument(elementId);
+
+    const gameState = {keyPlayers: {[planetOwner.playerType]: planetOwner}};
+    const component = new _view_models_components_ShieldStatusComponent__WEBPACK_IMPORTED_MODULE_1__.ShieldStatusComponent(gameState, planetOwner.playerType, elementId);
+    component.initPageCode();
+
+    return {elements: elements, component: component};
+  }
+
+  /**
+   * @param {Object<string, object>} elements
+   * @param {string} elementId
+   * @return {string}
+   */
+  static shownStatus(elements, elementId) {
+    return elements[elementId].dataset.suiCheatsheet;
+  }
+
+  // The six states the status is specified to show, read straight off a
+  // rendered component.
+  shownStatusFollowsTheCommandShipAndRaidTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('shownStatusFollowsTheCommandShipAndRaidTest', function(params) {
+    const planetOwner = ShieldStatusTest.makePlanetOwner(
+      params.playerType,
+      params.commandShipOnStation,
+      params.commandShipAlive,
+      params.raidStatus
+    );
+    const {elements} = ShieldStatusTest.givenRenderedComponent(planetOwner);
+
+    this.assertEquals(
+      ShieldStatusTest.shownStatus(elements, `${params.playerType}-hud-shield-status`),
+      `shield-${params.expected}`
+    );
+  }, function() {
+    return [
+      // Alpha base: the command ship is home, so the shield holds either way.
+      {
+        playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER,
+        commandShipOnStation: true,
+        commandShipAlive: true,
+        raidStatus: null,
+        expected: 'secure'
+      },
+      {
+        playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER,
+        commandShipOnStation: true,
+        commandShipAlive: true,
+        raidStatus: _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_7__.RAID_STATUS.ONGOING,
+        expected: 'secure'
+      },
+      // Alpha base: the command ship is away or dead, and nobody is raiding.
+      {
+        playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER,
+        commandShipOnStation: false,
+        commandShipAlive: true,
+        raidStatus: null,
+        expected: 'vulnerable'
+      },
+      {
+        playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER,
+        commandShipOnStation: true,
+        commandShipAlive: false,
+        raidStatus: null,
+        expected: 'vulnerable'
+      },
+      // Alpha base: the command ship is away or dead with a raid underway.
+      {
+        playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER,
+        commandShipOnStation: false,
+        commandShipAlive: true,
+        raidStatus: _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_7__.RAID_STATUS.SHIELDS_VULNERABLE,
+        expected: 'breached'
+      },
+      {
+        playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER,
+        commandShipOnStation: true,
+        commandShipAlive: false,
+        raidStatus: _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_7__.RAID_STATUS.SHIELDS_VULNERABLE,
+        expected: 'breached'
+      },
+      // Raid map: the defender's command ship decides it, and the raid the
+      // player is running is by definition underway.
+      {
+        playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.RAID_ENEMY,
+        commandShipOnStation: true,
+        commandShipAlive: true,
+        raidStatus: _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_7__.RAID_STATUS.ONGOING,
+        expected: 'secure'
+      },
+      {
+        playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.RAID_ENEMY,
+        commandShipOnStation: false,
+        commandShipAlive: true,
+        raidStatus: _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_7__.RAID_STATUS.ONGOING,
+        expected: 'breached'
+      },
+      {
+        playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.RAID_ENEMY,
+        commandShipOnStation: true,
+        commandShipAlive: false,
+        raidStatus: _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_7__.RAID_STATUS.ONGOING,
+        expected: 'breached'
+      }
+    ];
+  });
+
+  // The regression. The fleet is refreshed from the API when the raid starts,
+  // and nothing about that told the HUD, so the alpha base kept reading secure
+  // until the player reloaded the page.
+  departingForARaidTurnsTheAlphaBaseVulnerableTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('departingForARaidTurnsTheAlphaBaseVulnerableTest', function() {
+    const elementId = `${_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER}-hud-shield-status`;
+    const player = ShieldStatusTest.makePlanetOwner(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER, true, true);
+    const {elements} = ShieldStatusTest.givenRenderedComponent(player);
+
+    this.assertEquals(ShieldStatusTest.shownStatus(elements, elementId), 'shield-secure');
+
+    player.setFleet(ShieldStatusTest.makeFleet(false));
+
+    this.assertEquals(ShieldStatusTest.shownStatus(elements, elementId), 'shield-vulnerable');
+  });
+
+  // The other half of the same regression: the fleet comes home when the raid
+  // ends, and the icon has to come back with it.
+  returningFromARaidTurnsTheAlphaBaseSecureTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('returningFromARaidTurnsTheAlphaBaseSecureTest', function() {
+    const elementId = `${_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER}-hud-shield-status`;
+    const player = ShieldStatusTest.makePlanetOwner(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER, false, true);
+    const {elements} = ShieldStatusTest.givenRenderedComponent(player);
+
+    this.assertEquals(ShieldStatusTest.shownStatus(elements, elementId), 'shield-vulnerable');
+
+    player.setFleet(ShieldStatusTest.makeFleet(true));
+
+    this.assertEquals(ShieldStatusTest.shownStatus(elements, elementId), 'shield-secure');
+  });
+
+  // The raid map's defender is a different key player, so a fleet change on one
+  // planet must not redraw the other.
+  aFleetChangeOnlyRedrawsItsOwnPlanetTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('aFleetChangeOnlyRedrawsItsOwnPlanetTest', function() {
+    const elementId = `${_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER}-hud-shield-status`;
+    const player = ShieldStatusTest.makePlanetOwner(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER, true, true);
+    const raidEnemy = ShieldStatusTest.makePlanetOwner(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.RAID_ENEMY, true, true, _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_7__.RAID_STATUS.ONGOING);
+    const {elements} = ShieldStatusTest.givenRenderedComponent(player);
+
+    raidEnemy.setFleet(ShieldStatusTest.makeFleet(false));
+
+    this.assertEquals(ShieldStatusTest.shownStatus(elements, elementId), 'shield-secure');
+  });
+}
+
+
+/***/ },
+
 /***/ "./js/tests/TaskManagerOreTest.js"
 /*!****************************************!*\
   !*** ./js/tests/TaskManagerOreTest.js ***!
@@ -2679,6 +4414,281 @@ class TaskManagerOreTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MOD
 
 /***/ },
 
+/***/ "./js/util/ChargeCalculator.js"
+/*!*************************************!*\
+  !*** ./js/util/ChargeCalculator.js ***!
+  \*************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ChargeCalculator: () => (/* binding */ ChargeCalculator)
+/* harmony export */ });
+class ChargeCalculator {
+  constructor() {
+    this.chargeLevelThresholds = [
+      0,
+      1,
+      2,
+      3,
+      5,
+      8
+    ];
+  }
+
+  /**
+   * @param {number} charge
+   * @return {number}
+   */
+  calcChargeLevelByCharge(charge) {
+    for (let i = 0; i < this.chargeLevelThresholds.length; i++) {
+      if (charge <= this.chargeLevelThresholds[i]) {
+        return i;
+      }
+    }
+
+    return this.chargeLevelThresholds.length - 1;
+  }
+
+  /**
+   * @param {number} currentBlockHeight
+   * @param {number} lastActionBlockHeight
+   * @return {number}
+   */
+  calcCharge(currentBlockHeight, lastActionBlockHeight) {
+    return currentBlockHeight - (lastActionBlockHeight + 1);
+  }
+
+  /**
+   * @param {number} availableCharge - raw charge available
+   * @param {number} requiredCharge - raw charge cost
+   * @return {boolean}
+   */
+  isChargeLevelSufficient(availableCharge, requiredCharge) {
+    return this.calcChargeLevelByCharge(availableCharge) >= this.calcChargeLevelByCharge(requiredCharge);
+  }
+
+  /**
+   * @param {number} currentBlockHeight
+   * @param {number} lastActionBlockHeight
+   * @return {number}
+   */
+  calc(currentBlockHeight, lastActionBlockHeight) {
+    const charge = this.calcCharge(currentBlockHeight, lastActionBlockHeight);
+    return this.calcChargeLevelByCharge(charge);
+  }
+}
+
+/***/ },
+
+/***/ "./js/util/DateFormatter.js"
+/*!**********************************!*\
+  !*** ./js/util/DateFormatter.js ***!
+  \**********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   DateFormatter: () => (/* binding */ DateFormatter)
+/* harmony export */ });
+class DateFormatter {
+
+  /**
+   * @param datetimeString
+   * @return {string}
+   */
+  formatDate(datetimeString) {
+    return new Date(datetimeString).toLocaleDateString(
+      'default',
+      {
+        month:"long",
+        day:"numeric",
+        year:"numeric"
+      }
+    );
+  }
+
+  formatTime(datetimeString) {
+    return new Date(datetimeString).toLocaleTimeString(
+      'default',
+      {
+        hour : "2-digit",
+        minute : "2-digit",
+        second : "2-digit"
+      }
+    );
+  }
+
+  formatDatetime(datetimeString) {
+    return `${this.formatTime(datetimeString)} ${this.formatDate(datetimeString)}` ;
+  }
+
+  /**
+   * @param {number} millisecondsRemaining
+   */
+  formatDuration(millisecondsRemaining) {
+    const seconds = Math.floor(millisecondsRemaining / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+
+    if (hours > 0) {
+        return `${hours}h`;
+    }
+    if (minutes > 0) {
+        return `${minutes}m`;
+    }
+    return `${seconds}s`;
+  }
+}
+
+/***/ },
+
+/***/ "./js/util/DifficultyEstimator.js"
+/*!****************************************!*\
+  !*** ./js/util/DifficultyEstimator.js ***!
+  \****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   DifficultyEstimator: () => (/* binding */ DifficultyEstimator)
+/* harmony export */ });
+/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
+
+
+class DifficultyEstimator {
+
+  /**
+   * Calculate difficulty from age
+   *
+   * @param {number} age - Current age in blocks
+   * @param {number} baseDifficultyRange - Base difficulty range
+   * @returns {number} Difficulty (number of leading zeros required in hash)
+   */
+  getCalculatedDifficulty(age, baseDifficultyRange) {
+    if (age <= 1) {
+      return 64;
+    }
+
+    const difficulty = 64 - Math.floor(
+        Math.log10(age) / Math.log10(baseDifficultyRange) * 63
+    );
+
+    return Math.max(1, difficulty);
+  }
+
+  /**
+   * Calculate total blocks needed at hash rate 1 (worst case) to break the shield
+   *
+   * @param {number} blockStartRaid - Block when raid started
+   * @param {number} difficultyTarget - Difficulty target (base difficulty range)
+   * @return {number} Total blocks needed
+   */
+  getTotalBlocksNeededAtHashRate1(blockStartRaid, difficultyTarget) {
+    const baseDifficultyRange = Math.max(difficultyTarget, 1);
+    const maxBlocksToCheck = _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.MAX_BLOCKS_WHEN_ESTIMATING;
+    const blockTimeSeconds = _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.ESTIMATED_BLOCK_TIME;
+    const hashrate = 1; // Worst case
+
+    let cumulativeExpectedSuccesses = 0;
+    let blocksAhead = 0;
+
+    // Start from age 0 (blockStartRaid) and calculate forward
+    while (cumulativeExpectedSuccesses < 1 && blocksAhead < maxBlocksToCheck) {
+      const ageAtBlock = blocksAhead; // Age starts at 0
+      const difficulty = this.getCalculatedDifficulty(ageAtBlock, baseDifficultyRange);
+      const successProbability = 1 / Math.pow(16, difficulty);
+
+      // Expected number of successful hashes in this block
+      const expectedSuccessesInBlock = hashrate * blockTimeSeconds * successProbability;
+      cumulativeExpectedSuccesses += expectedSuccessesInBlock;
+      blocksAhead++;
+    }
+
+    return Math.min(blocksAhead, maxBlocksToCheck);
+  }
+
+  /**
+   * @param {number} difficultyTarget
+   * @param {number} blockStartRaid
+   * @param {number} currentBlock
+   * @return {number}
+   */
+  getRemainingPercent(
+    difficultyTarget,
+    blockStartRaid,
+    currentBlock
+  ) {
+    // Age represents blocks processed since raid started
+    const age = currentBlock - blockStartRaid;
+
+    // If no blocks have passed, shield is at 100%
+    if (age <= 0) {
+      return 100;
+    }
+
+    // Calculate total blocks needed at hash rate 1 (worst case) to break shield
+    const totalBlocksNeeded = this.getTotalBlocksNeededAtHashRate1(blockStartRaid, difficultyTarget);
+
+    // Calculate percent complete
+    const percentComplete = totalBlocksNeeded > 0 ? age / totalBlocksNeeded : 1.0;
+
+    const remainingPercent = (1 - percentComplete) * 100;
+
+    return Math.ceil(Math.max(remainingPercent, 0));
+  }
+
+  /**
+   * Estimate the number of blocks remaining before the shield breaks.
+   *
+   * Mirrors TaskState.getBlockRemainingEstimate: total blocks needed minus the
+   * blocks already elapsed since the raid started.
+   *
+   * @param {number} difficultyTarget
+   * @param {number} blockStartRaid
+   * @param {number} currentBlock
+   * @return {number} Blocks remaining (0 once the shield is broken)
+   */
+  getBlockRemainingEstimate(
+    difficultyTarget,
+    blockStartRaid,
+    currentBlock
+  ) {
+    // Age represents blocks processed since the raid started
+    const age = Math.max(currentBlock - blockStartRaid, 0);
+
+    const totalBlocksNeeded = this.getTotalBlocksNeededAtHashRate1(blockStartRaid, difficultyTarget);
+
+    return Math.max(totalBlocksNeeded - age, 0);
+  }
+
+  /**
+   * Estimate the time remaining before the shield breaks.
+   *
+   * Mirrors TaskState.getTimeRemainingEstimate by converting the blocks
+   * remaining into milliseconds using the estimated block time.
+   *
+   * @param {number} difficultyTarget
+   * @param {number} blockStartRaid
+   * @param {number} currentBlock
+   * @return {number} Time remaining in milliseconds (0 once the shield is broken)
+   */
+  getTimeRemainingEstimate(
+    difficultyTarget,
+    blockStartRaid,
+    currentBlock
+  ) {
+    const blocksRemaining = this.getBlockRemainingEstimate(difficultyTarget, blockStartRaid, currentBlock);
+    return blocksRemaining * _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.ESTIMATED_BLOCK_TIME;
+  }
+}
+
+
+/***/ },
+
 /***/ "./js/util/NumberFormatter.js"
 /*!************************************!*\
   !*** ./js/util/NumberFormatter.js ***!
@@ -2749,6 +4759,186 @@ class NumberFormatter {
   }
 }
 
+
+/***/ },
+
+/***/ "./js/view_models/components/ShieldStatusComponent.js"
+/*!************************************************************!*\
+  !*** ./js/view_models/components/ShieldStatusComponent.js ***!
+  \************************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ShieldStatusComponent: () => (/* binding */ ShieldStatusComponent)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../constants/Events */ "./js/constants/Events.js");
+
+
+
+class ShieldStatusComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
+
+  /**
+   * Tracks the window listeners registered per element id so that rebuilding a
+   * component bound to the same element doesn't accumulate duplicate listeners.
+   *
+   * @type {Object<string, Object<string, function>>}
+   */
+  static registeredListeners = {};
+
+  constructor(
+    gameState,
+    planetOwnerPlayerType,
+    elementId,
+    showTextStatus = false
+  ) {
+    super(gameState);
+    this.planetOwnerPlayerType = planetOwnerPlayerType;
+    this.elementId = elementId;
+    this.elementIconWrapperId = `${this.elementId}-icon-wrapper`;
+    this.elementValueContainerId = `${this.elementId}-value`;
+    this.showTextStatus = showTextStatus;
+  }
+
+  initPageCode() {
+    this.removeStaleListeners();
+
+    this.loginCompleteHandler = () => {
+      this.renderShieldStatusIcon();
+    };
+
+    this.shieldHealthChangedHandler = (event) => {
+      if (event.playerType !== this.planetOwnerPlayerType) {
+        return;
+      }
+      this.renderShieldStatusValue(this.gameState.keyPlayers[event.playerType].planetShieldHealth);
+      this.renderShieldStatusIcon();
+    };
+
+    // The shield status also depends on whether the command struct is alive,
+    // whether the fleet is holding station over the planet, and whether a raid
+    // is active, so refresh the icon when any of those inputs change.
+    this.defensesChangedHandler = (event) => {
+      if (event.playerType !== this.planetOwnerPlayerType) {
+        return;
+      }
+      this.renderShieldStatusIcon();
+    };
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.LOGIN_COMPLETE, this.loginCompleteHandler);
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.SHIELD_HEALTH_CHANGED, this.shieldHealthChangedHandler);
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.STRUCT_COUNT_CHANGED, this.defensesChangedHandler);
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.PLANET_RAID_STATUS_CHANGED, this.defensesChangedHandler);
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.FLEET_CHANGED, this.defensesChangedHandler);
+
+    ShieldStatusComponent.registeredListeners[this.elementId] = {
+      [_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.LOGIN_COMPLETE]: this.loginCompleteHandler,
+      [_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.SHIELD_HEALTH_CHANGED]: this.shieldHealthChangedHandler,
+      [_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.STRUCT_COUNT_CHANGED]: this.defensesChangedHandler,
+      [_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.PLANET_RAID_STATUS_CHANGED]: this.defensesChangedHandler,
+      [_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.FLEET_CHANGED]: this.defensesChangedHandler,
+    };
+
+    this.renderShieldStatusIcon();
+  }
+
+  /**
+   * Removes window listeners registered by a previous component instance bound
+   * to the same element id, preventing listener accumulation as cards rebuild.
+   */
+  removeStaleListeners() {
+    const existing = ShieldStatusComponent.registeredListeners[this.elementId];
+    if (!existing) {
+      return;
+    }
+
+    Object.entries(existing).forEach(([eventName, handler]) => {
+      window.removeEventListener(eventName, handler);
+    });
+
+    delete ShieldStatusComponent.registeredListeners[this.elementId];
+  }
+
+  renderHTML() {
+    return `
+      <a 
+        id="${this.elementId}"
+        class="sui-resource"
+        href="javascript: void(0)" 
+        data-sui-mod-placement="bottom"
+      >
+        <div id="${this.elementIconWrapperId}" class="planetary-shield-symbol-wrapper"></div>
+        <span id="${this.elementValueContainerId}" class="sui-text-warning"></span>
+      </a>
+    `;
+  }
+
+  renderShieldStatusIcon() {
+    const elm = document.getElementById(this.elementId);
+    const iconElm = document.getElementById(this.elementIconWrapperId);
+
+    if (!elm || !iconElm) {
+      return;
+    }
+
+    const planetOwner = this.gameState.keyPlayers[this.planetOwnerPlayerType];
+
+    let status = 'secure';
+
+    if (planetOwner?.arePlanetaryDefensesBreached()) {
+      status = 'breached';
+    } else if (planetOwner?.arePlanetaryDefensesVulnerable()) {
+      status = 'vulnerable';
+    }
+
+    let cheatsheet = `shield-${status}`;
+
+    // Only swap the icon if the status changed
+    if (elm.dataset.suiCheatsheet !== cheatsheet) {
+      iconElm.innerHTML = `<img src="/img/non_standard_icons/shield_${status}_${this.planetOwnerPlayerType}.png" alt="${status}" />`;
+      elm.dataset.suiCheatsheet = cheatsheet;
+    }
+
+    // Always refresh the breach time as it depends on the planetary shield
+    // info, which can load/change independently of the status.
+    elm.dataset.projectedBreachTime = planetOwner?.getProjectedShieldBreachTime() ?? 'N/A';
+
+    this.renderShieldStatusValue();
+  }
+
+  /**
+   * @param {string|null} health
+   */
+  renderShieldStatusValue(health = null) {
+    const valueElm = document.getElementById(this.elementValueContainerId);
+
+    if (!valueElm) {
+      return;
+    }
+
+    const planetOwner = this.gameState.keyPlayers[this.planetOwnerPlayerType];
+
+    if (health === null) {
+      health = valueElm.innerText;
+    }
+
+    if (planetOwner && ['', 'Vulnerable', 'Secure'].includes(health) && this.showTextStatus) {
+      if (planetOwner.arePlanetaryDefensesVulnerable()) {
+        health = 'Vulnerable';
+      } else {
+        health = 'Secure';
+      }
+
+      valueElm.classList.remove('sui-text-warning');
+      valueElm.innerText = health;
+    } else {
+      valueElm.classList.add('sui-text-warning');
+      valueElm.innerText = health;
+    }
+  }
+}
 
 /***/ },
 
@@ -3426,6 +5616,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _NumberFormatterTest__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./NumberFormatterTest */ "./js/tests/NumberFormatterTest.js");
 /* harmony import */ var _PermissionManagerTest__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./PermissionManagerTest */ "./js/tests/PermissionManagerTest.js");
 /* harmony import */ var _TaskManagerOreTest__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./TaskManagerOreTest */ "./js/tests/TaskManagerOreTest.js");
+/* harmony import */ var _ShieldStatusTest__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./ShieldStatusTest */ "./js/tests/ShieldStatusTest.js");
+
 
 
 
@@ -3433,6 +5625,7 @@ __webpack_require__.r(__webpack_exports__);
 (new _NumberFormatterTest__WEBPACK_IMPORTED_MODULE_0__.NumberFormatterTest()).run();
 (new _PermissionManagerTest__WEBPACK_IMPORTED_MODULE_1__.PermissionManagerTest()).run();
 (new _TaskManagerOreTest__WEBPACK_IMPORTED_MODULE_2__.TaskManagerOreTest()).run();
+(new _ShieldStatusTest__WEBPACK_IMPORTED_MODULE_3__.ShieldStatusTest()).run();
 
 })();
 

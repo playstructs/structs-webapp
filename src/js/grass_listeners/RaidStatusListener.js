@@ -92,7 +92,7 @@ export class RaidStatusListener extends AbstractGrassListener {
     // Player's fleet needs updating as it's been moved back home.
     this.gameState.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then(playerFleet => {
 
-      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = playerFleet;
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setFleet(playerFleet);
 
       window.dispatchEvent(new TaskCmdKillEvent(messageData.detail.fleet_id));
 

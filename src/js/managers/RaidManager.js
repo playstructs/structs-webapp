@@ -109,8 +109,8 @@ export class RaidManager {
     this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
     this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanet(planet);
     this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
-    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].fleet = raidEnemyFleet;
-    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = playerFleet;
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setFleet(raidEnemyFleet);
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setFleet(playerFleet);
     this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setStructs(structs);
   }
 
@@ -147,13 +147,15 @@ export class RaidManager {
 
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setPlayer(player);
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
-    this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].fleet = fleet;
+    this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setFleet(fleet);
     this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].setStructs(structs);
     this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
   }
 
   async refreshRaidFleet() {
-    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].fleet = await this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id);
-    this.gameState.raidMap.setDefenderFleet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].fleet);
+    const raidEnemyFleet = await this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id);
+
+    this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].setFleet(raidEnemyFleet);
+    this.gameState.raidMap.setDefenderFleet(raidEnemyFleet);
   }
 }

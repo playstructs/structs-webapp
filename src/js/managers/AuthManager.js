@@ -247,7 +247,7 @@ export class AuthManager {
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlayer(player);
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
       this.gameState.setStructTypes(structTypes);
-      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = fleet;
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setFleet(fleet);
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructs(structs);
 
       this.grassManager.registerListener(new PlanetRaidStatusListener(

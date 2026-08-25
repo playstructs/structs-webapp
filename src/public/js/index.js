@@ -3476,6 +3476,7 @@ const EVENTS = {
   CLEAR_STRUCT_TILE: 'CLEAR_STRUCT_TILE',
   CLEAR_TILE_SELECTION: 'CLEAR_TILE_SELECTION',
   ENERGY_USAGE_CHANGED: 'ENERGY_USAGE_CHANGED',
+  FLEET_CHANGED: 'FLEET_CHANGED',
   LOGIN_COMPLETE: 'LOGIN_COMPLETE',
   LOTTIE_CUSTOMIZED: 'LOTTIE_CUSTOMIZED',
   ORE_COUNT_CHANGED: 'ORE_COUNT_CHANGED',
@@ -6378,6 +6379,34 @@ class EnergyUsageChangedEvent extends CustomEvent {
    */
   constructor(playerType) {
     super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.ENERGY_USAGE_CHANGED);
+    this.playerType = playerType;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/FleetChangedEvent.js"
+/*!****************************************!*\
+  !*** ./js/events/FleetChangedEvent.js ***!
+  \****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FleetChangedEvent: () => (/* binding */ FleetChangedEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class FleetChangedEvent extends CustomEvent {
+
+  /**
+   * @param {string} playerType
+   */
+  constructor(playerType) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.FLEET_CHANGED);
     this.playerType = playerType;
   }
 }
@@ -10882,7 +10911,7 @@ class NewPlanetListener extends _framework_AbstractGrassListener__WEBPACK_IMPORT
 
         this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER].setPlanet(planet);
         this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER].setPlanetShieldHealth(this.gameState.currentBlockHeight);
-        this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER].fleet = fleet;
+        this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER].setFleet(fleet);
         this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER].player.fleet_id = fleet.id;
         this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER].setStructs(fleetStructs);
 
@@ -11608,7 +11637,7 @@ class RaidStatusListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
     // Player's fleet needs updating as it's been moved back home.
     this.gameState.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.PLAYER].id).then(playerFleet => {
 
-      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.PLAYER].fleet = playerFleet;
+      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_9__.PLAYER_TYPES.PLAYER].setFleet(playerFleet);
 
       window.dispatchEvent(new _events_TaskCmdKillEvent__WEBPACK_IMPORTED_MODULE_6__.TaskCmdKillEvent(messageData.detail.fleet_id));
 
@@ -13447,7 +13476,7 @@ class AuthManager {
       this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_23__.PLAYER_TYPES.PLAYER].setPlayer(player);
       this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_23__.PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
       this.gameState.setStructTypes(structTypes);
-      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_23__.PLAYER_TYPES.PLAYER].fleet = fleet;
+      this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_23__.PLAYER_TYPES.PLAYER].setFleet(fleet);
       this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_23__.PLAYER_TYPES.PLAYER].setStructs(structs);
 
       this.grassManager.registerListener(new _grass_listeners_PlanetRaidStatusListener__WEBPACK_IMPORTED_MODULE_19__.PlanetRaidStatusListener(
@@ -14262,8 +14291,8 @@ class RaidManager {
     this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
     this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].setPlanet(planet);
     this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
-    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].fleet = raidEnemyFleet;
-    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].fleet = playerFleet;
+    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].setFleet(raidEnemyFleet);
+    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].setFleet(playerFleet);
     this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].setStructs(structs);
   }
 
@@ -14300,14 +14329,16 @@ class RaidManager {
 
     this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLANET_RAIDER].setPlayer(player);
     this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLANET_RAIDER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
-    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLANET_RAIDER].fleet = fleet;
+    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLANET_RAIDER].setFleet(fleet);
     this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLANET_RAIDER].setStructs(structs);
     this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
   }
 
   async refreshRaidFleet() {
-    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].fleet = await this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].id);
-    this.gameState.raidMap.setDefenderFleet(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].fleet);
+    const raidEnemyFleet = await this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].id);
+
+    this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.RAID_ENEMY].setFleet(raidEnemyFleet);
+    this.gameState.raidMap.setDefenderFleet(raidEnemyFleet);
   }
 }
 
@@ -19272,6 +19303,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _events_TrackDestroyedStructEvent__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../events/TrackDestroyedStructEvent */ "./js/events/TrackDestroyedStructEvent.js");
 /* harmony import */ var _util_DateFormatter__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../util/DateFormatter */ "./js/util/DateFormatter.js");
 /* harmony import */ var _events_RenderPlayerPfpEvent__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ../events/RenderPlayerPfpEvent */ "./js/events/RenderPlayerPfpEvent.js");
+/* harmony import */ var _events_FleetChangedEvent__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ../events/FleetChangedEvent */ "./js/events/FleetChangedEvent.js");
+
 
 
 
@@ -19381,6 +19414,15 @@ class KeyPlayer {
       window.dispatchEvent(new _events_SaveGameStateEvent__WEBPACK_IMPORTED_MODULE_4__.SaveGameStateEvent());
       window.dispatchEvent(new _events_EnergyUsageChangedEvent__WEBPACK_IMPORTED_MODULE_8__.EnergyUsageChangedEvent(this.playerType));
     }
+  }
+
+  /**
+   * @param {Fleet} fleet
+   */
+  setFleet(fleet) {
+    this.fleet = fleet;
+
+    window.dispatchEvent(new _events_FleetChangedEvent__WEBPACK_IMPORTED_MODULE_20__.FleetChangedEvent(this.playerType));
   }
 
   /**
@@ -29669,8 +29711,9 @@ class ShieldStatusComponent extends _framework_AbstractViewModelComponent__WEBPA
       this.renderShieldStatusIcon();
     };
 
-    // The shield status also depends on whether the command struct is alive and
-    // whether a raid is active, so refresh the icon when those inputs change.
+    // The shield status also depends on whether the command struct is alive,
+    // whether the fleet is holding station over the planet, and whether a raid
+    // is active, so refresh the icon when any of those inputs change.
     this.defensesChangedHandler = (event) => {
       if (event.playerType !== this.planetOwnerPlayerType) {
         return;
@@ -29682,12 +29725,14 @@ class ShieldStatusComponent extends _framework_AbstractViewModelComponent__WEBPA
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.SHIELD_HEALTH_CHANGED, this.shieldHealthChangedHandler);
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.STRUCT_COUNT_CHANGED, this.defensesChangedHandler);
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.PLANET_RAID_STATUS_CHANGED, this.defensesChangedHandler);
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.FLEET_CHANGED, this.defensesChangedHandler);
 
     ShieldStatusComponent.registeredListeners[this.elementId] = {
       [_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.LOGIN_COMPLETE]: this.loginCompleteHandler,
       [_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.SHIELD_HEALTH_CHANGED]: this.shieldHealthChangedHandler,
       [_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.STRUCT_COUNT_CHANGED]: this.defensesChangedHandler,
       [_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.PLANET_RAID_STATUS_CHANGED]: this.defensesChangedHandler,
+      [_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.FLEET_CHANGED]: this.defensesChangedHandler,
     };
 
     this.renderShieldStatusIcon();

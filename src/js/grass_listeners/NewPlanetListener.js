@@ -50,7 +50,7 @@ export class NewPlanetListener extends AbstractGrassListener {
 
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanet(planet);
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetShieldHealth(this.gameState.currentBlockHeight);
-        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].fleet = fleet;
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setFleet(fleet);
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id = fleet.id;
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructs(fleetStructs);
 
