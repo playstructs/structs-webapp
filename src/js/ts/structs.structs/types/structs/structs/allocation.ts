@@ -20,21 +20,10 @@ export interface Allocation {
   /** Who does this currently belong to */
   creator: string;
   controller: string;
-  /** Locking will be needed for IBC */
-  locked: boolean;
 }
 
 function createBaseAllocation(): Allocation {
-  return {
-    id: "",
-    type: 0,
-    sourceObjectId: "",
-    index: 0,
-    destinationId: "",
-    creator: "",
-    controller: "",
-    locked: false,
-  };
+  return { id: "", type: 0, sourceObjectId: "", index: 0, destinationId: "", creator: "", controller: "" };
 }
 
 export const Allocation: MessageFns<Allocation> = {
@@ -59,9 +48,6 @@ export const Allocation: MessageFns<Allocation> = {
     }
     if (message.controller !== "") {
       writer.uint32(58).string(message.controller);
-    }
-    if (message.locked !== false) {
-      writer.uint32(64).bool(message.locked);
     }
     return writer;
   },
@@ -129,14 +115,6 @@ export const Allocation: MessageFns<Allocation> = {
           message.controller = reader.string();
           continue;
         }
-        case 8: {
-          if (tag !== 64) {
-            break;
-          }
-
-          message.locked = reader.bool();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -155,7 +133,6 @@ export const Allocation: MessageFns<Allocation> = {
       destinationId: isSet(object.destinationId) ? globalThis.String(object.destinationId) : "",
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       controller: isSet(object.controller) ? globalThis.String(object.controller) : "",
-      locked: isSet(object.locked) ? globalThis.Boolean(object.locked) : false,
     };
   },
 
@@ -182,9 +159,6 @@ export const Allocation: MessageFns<Allocation> = {
     if (message.controller !== "") {
       obj.controller = message.controller;
     }
-    if (message.locked !== false) {
-      obj.locked = message.locked;
-    }
     return obj;
   },
 
@@ -200,7 +174,6 @@ export const Allocation: MessageFns<Allocation> = {
     message.destinationId = object.destinationId ?? "";
     message.creator = object.creator ?? "";
     message.controller = object.controller ?? "";
-    message.locked = object.locked ?? false;
     return message;
   },
 };

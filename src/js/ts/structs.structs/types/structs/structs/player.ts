@@ -19,6 +19,10 @@ export interface Player {
   primaryAddress: string;
   planetId: string;
   fleetId: string;
+  guildRank: number;
+  name: string;
+  pfp: string;
+  pfpClientRenderAttributes: string;
 }
 
 export interface PlayerInventory {
@@ -35,6 +39,10 @@ function createBasePlayer(): Player {
     primaryAddress: "",
     planetId: "",
     fleetId: "",
+    guildRank: 0,
+    name: "",
+    pfp: "",
+    pfpClientRenderAttributes: "",
   };
 }
 
@@ -63,6 +71,18 @@ export const Player: MessageFns<Player> = {
     }
     if (message.fleetId !== "") {
       writer.uint32(66).string(message.fleetId);
+    }
+    if (message.guildRank !== 0) {
+      writer.uint32(72).uint64(message.guildRank);
+    }
+    if (message.name !== "") {
+      writer.uint32(82).string(message.name);
+    }
+    if (message.pfp !== "") {
+      writer.uint32(90).string(message.pfp);
+    }
+    if (message.pfpClientRenderAttributes !== "") {
+      writer.uint32(98).string(message.pfpClientRenderAttributes);
     }
     return writer;
   },
@@ -138,6 +158,38 @@ export const Player: MessageFns<Player> = {
           message.fleetId = reader.string();
           continue;
         }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.guildRank = longToNumber(reader.uint64());
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.pfp = reader.string();
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.pfpClientRenderAttributes = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -157,6 +209,12 @@ export const Player: MessageFns<Player> = {
       primaryAddress: isSet(object.primaryAddress) ? globalThis.String(object.primaryAddress) : "",
       planetId: isSet(object.planetId) ? globalThis.String(object.planetId) : "",
       fleetId: isSet(object.fleetId) ? globalThis.String(object.fleetId) : "",
+      guildRank: isSet(object.guildRank) ? globalThis.Number(object.guildRank) : 0,
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      pfp: isSet(object.pfp) ? globalThis.String(object.pfp) : "",
+      pfpClientRenderAttributes: isSet(object.pfpClientRenderAttributes)
+        ? globalThis.String(object.pfpClientRenderAttributes)
+        : "",
     };
   },
 
@@ -186,6 +244,18 @@ export const Player: MessageFns<Player> = {
     if (message.fleetId !== "") {
       obj.fleetId = message.fleetId;
     }
+    if (message.guildRank !== 0) {
+      obj.guildRank = Math.round(message.guildRank);
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.pfp !== "") {
+      obj.pfp = message.pfp;
+    }
+    if (message.pfpClientRenderAttributes !== "") {
+      obj.pfpClientRenderAttributes = message.pfpClientRenderAttributes;
+    }
     return obj;
   },
 
@@ -202,6 +272,10 @@ export const Player: MessageFns<Player> = {
     message.primaryAddress = object.primaryAddress ?? "";
     message.planetId = object.planetId ?? "";
     message.fleetId = object.fleetId ?? "";
+    message.guildRank = object.guildRank ?? 0;
+    message.name = object.name ?? "";
+    message.pfp = object.pfp ?? "";
+    message.pfpClientRenderAttributes = object.pfpClientRenderAttributes ?? "";
     return message;
   },
 };

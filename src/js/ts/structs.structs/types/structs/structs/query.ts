@@ -15,7 +15,7 @@ import { GridAttributes, GridRecord } from "./grid";
 import { Guild, GuildMembershipApplication } from "./guild";
 import { Infusion } from "./infusion";
 import { Params } from "./params";
-import { PermissionRecord } from "./permission";
+import { GuildRankPermissionRecord, PermissionRecord } from "./permission";
 import { Planet, PlanetAttributeRecord, PlanetAttributes } from "./planet";
 import { Player, PlayerInventory } from "./player";
 import { Provider } from "./provider";
@@ -40,6 +40,23 @@ export interface QueryBlockHeight {
 
 export interface QueryBlockHeightResponse {
   blockHeight: number;
+}
+
+export interface QueryGuildCharter {
+}
+
+export interface QueryGuildCharterResponse {
+  /**
+   * Block height the current puzzle started from. Moves on every guild founded
+   * with a proof, which invalidates any proof or consent bound to the old value.
+   */
+  anchor: number;
+  /** Blocks elapsed since the anchor. */
+  age: number;
+  /** Leading zero bits a proof must currently have. */
+  difficulty: number;
+  /** The decay parameter the difficulty is computed from. */
+  difficultyRange: number;
 }
 
 export interface QueryGetAddressRequest {
@@ -260,6 +277,27 @@ export interface QueryAllPermissionResponse {
   pagination: PageResponse | undefined;
 }
 
+export interface QueryGuildRankPermissionByObjectRequest {
+  objectId: string;
+  pagination: PageRequest | undefined;
+}
+
+export interface QueryGuildRankPermissionByObjectResponse {
+  guildRankPermissionRecords: GuildRankPermissionRecord[];
+  pagination: PageResponse | undefined;
+}
+
+export interface QueryGuildRankPermissionByObjectAndGuildRequest {
+  objectId: string;
+  guildId: string;
+  pagination: PageRequest | undefined;
+}
+
+export interface QueryGuildRankPermissionByObjectAndGuildResponse {
+  guildRankPermissionRecords: GuildRankPermissionRecord[];
+  pagination: PageResponse | undefined;
+}
+
 export interface QueryGetPlanetRequest {
   id: string;
 }
@@ -310,7 +348,6 @@ export interface QueryGetPlayerResponse {
   Player: Player | undefined;
   gridAttributes: GridAttributes | undefined;
   playerInventory: PlayerInventory | undefined;
-  halted: boolean;
 }
 
 export interface QueryAllPlayerRequest {
@@ -320,13 +357,6 @@ export interface QueryAllPlayerRequest {
 export interface QueryAllPlayerResponse {
   Player: Player[];
   pagination: PageResponse | undefined;
-}
-
-export interface QueryAllPlayerHaltedRequest {
-}
-
-export interface QueryAllPlayerHaltedResponse {
-  PlayerId: string[];
 }
 
 export interface QueryGetProviderRequest {
@@ -687,6 +717,157 @@ export const QueryBlockHeightResponse: MessageFns<QueryBlockHeightResponse> = {
   fromPartial<I extends Exact<DeepPartial<QueryBlockHeightResponse>, I>>(object: I): QueryBlockHeightResponse {
     const message = createBaseQueryBlockHeightResponse();
     message.blockHeight = object.blockHeight ?? 0;
+    return message;
+  },
+};
+
+function createBaseQueryGuildCharter(): QueryGuildCharter {
+  return {};
+}
+
+export const QueryGuildCharter: MessageFns<QueryGuildCharter> = {
+  encode(_: QueryGuildCharter, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryGuildCharter {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryGuildCharter();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): QueryGuildCharter {
+    return {};
+  },
+
+  toJSON(_: QueryGuildCharter): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryGuildCharter>, I>>(base?: I): QueryGuildCharter {
+    return QueryGuildCharter.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryGuildCharter>, I>>(_: I): QueryGuildCharter {
+    const message = createBaseQueryGuildCharter();
+    return message;
+  },
+};
+
+function createBaseQueryGuildCharterResponse(): QueryGuildCharterResponse {
+  return { anchor: 0, age: 0, difficulty: 0, difficultyRange: 0 };
+}
+
+export const QueryGuildCharterResponse: MessageFns<QueryGuildCharterResponse> = {
+  encode(message: QueryGuildCharterResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.anchor !== 0) {
+      writer.uint32(8).uint64(message.anchor);
+    }
+    if (message.age !== 0) {
+      writer.uint32(16).uint64(message.age);
+    }
+    if (message.difficulty !== 0) {
+      writer.uint32(24).uint32(message.difficulty);
+    }
+    if (message.difficultyRange !== 0) {
+      writer.uint32(32).uint64(message.difficultyRange);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryGuildCharterResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryGuildCharterResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.anchor = longToNumber(reader.uint64());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.age = longToNumber(reader.uint64());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.difficulty = reader.uint32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.difficultyRange = longToNumber(reader.uint64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryGuildCharterResponse {
+    return {
+      anchor: isSet(object.anchor) ? globalThis.Number(object.anchor) : 0,
+      age: isSet(object.age) ? globalThis.Number(object.age) : 0,
+      difficulty: isSet(object.difficulty) ? globalThis.Number(object.difficulty) : 0,
+      difficultyRange: isSet(object.difficultyRange) ? globalThis.Number(object.difficultyRange) : 0,
+    };
+  },
+
+  toJSON(message: QueryGuildCharterResponse): unknown {
+    const obj: any = {};
+    if (message.anchor !== 0) {
+      obj.anchor = Math.round(message.anchor);
+    }
+    if (message.age !== 0) {
+      obj.age = Math.round(message.age);
+    }
+    if (message.difficulty !== 0) {
+      obj.difficulty = Math.round(message.difficulty);
+    }
+    if (message.difficultyRange !== 0) {
+      obj.difficultyRange = Math.round(message.difficultyRange);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryGuildCharterResponse>, I>>(base?: I): QueryGuildCharterResponse {
+    return QueryGuildCharterResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryGuildCharterResponse>, I>>(object: I): QueryGuildCharterResponse {
+    const message = createBaseQueryGuildCharterResponse();
+    message.anchor = object.anchor ?? 0;
+    message.age = object.age ?? 0;
+    message.difficulty = object.difficulty ?? 0;
+    message.difficultyRange = object.difficultyRange ?? 0;
     return message;
   },
 };
@@ -4081,6 +4262,370 @@ export const QueryAllPermissionResponse: MessageFns<QueryAllPermissionResponse> 
   },
 };
 
+function createBaseQueryGuildRankPermissionByObjectRequest(): QueryGuildRankPermissionByObjectRequest {
+  return { objectId: "", pagination: undefined };
+}
+
+export const QueryGuildRankPermissionByObjectRequest: MessageFns<QueryGuildRankPermissionByObjectRequest> = {
+  encode(message: QueryGuildRankPermissionByObjectRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.objectId !== "") {
+      writer.uint32(10).string(message.objectId);
+    }
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryGuildRankPermissionByObjectRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryGuildRankPermissionByObjectRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.objectId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pagination = PageRequest.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryGuildRankPermissionByObjectRequest {
+    return {
+      objectId: isSet(object.objectId) ? globalThis.String(object.objectId) : "",
+      pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined,
+    };
+  },
+
+  toJSON(message: QueryGuildRankPermissionByObjectRequest): unknown {
+    const obj: any = {};
+    if (message.objectId !== "") {
+      obj.objectId = message.objectId;
+    }
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryGuildRankPermissionByObjectRequest>, I>>(
+    base?: I,
+  ): QueryGuildRankPermissionByObjectRequest {
+    return QueryGuildRankPermissionByObjectRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryGuildRankPermissionByObjectRequest>, I>>(
+    object: I,
+  ): QueryGuildRankPermissionByObjectRequest {
+    const message = createBaseQueryGuildRankPermissionByObjectRequest();
+    message.objectId = object.objectId ?? "";
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseQueryGuildRankPermissionByObjectResponse(): QueryGuildRankPermissionByObjectResponse {
+  return { guildRankPermissionRecords: [], pagination: undefined };
+}
+
+export const QueryGuildRankPermissionByObjectResponse: MessageFns<QueryGuildRankPermissionByObjectResponse> = {
+  encode(message: QueryGuildRankPermissionByObjectResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.guildRankPermissionRecords) {
+      GuildRankPermissionRecord.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryGuildRankPermissionByObjectResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryGuildRankPermissionByObjectResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.guildRankPermissionRecords.push(GuildRankPermissionRecord.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pagination = PageResponse.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryGuildRankPermissionByObjectResponse {
+    return {
+      guildRankPermissionRecords: globalThis.Array.isArray(object?.guildRankPermissionRecords)
+        ? object.guildRankPermissionRecords.map((e: any) => GuildRankPermissionRecord.fromJSON(e))
+        : [],
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
+    };
+  },
+
+  toJSON(message: QueryGuildRankPermissionByObjectResponse): unknown {
+    const obj: any = {};
+    if (message.guildRankPermissionRecords?.length) {
+      obj.guildRankPermissionRecords = message.guildRankPermissionRecords.map((e) =>
+        GuildRankPermissionRecord.toJSON(e)
+      );
+    }
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryGuildRankPermissionByObjectResponse>, I>>(
+    base?: I,
+  ): QueryGuildRankPermissionByObjectResponse {
+    return QueryGuildRankPermissionByObjectResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryGuildRankPermissionByObjectResponse>, I>>(
+    object: I,
+  ): QueryGuildRankPermissionByObjectResponse {
+    const message = createBaseQueryGuildRankPermissionByObjectResponse();
+    message.guildRankPermissionRecords =
+      object.guildRankPermissionRecords?.map((e) => GuildRankPermissionRecord.fromPartial(e)) || [];
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseQueryGuildRankPermissionByObjectAndGuildRequest(): QueryGuildRankPermissionByObjectAndGuildRequest {
+  return { objectId: "", guildId: "", pagination: undefined };
+}
+
+export const QueryGuildRankPermissionByObjectAndGuildRequest: MessageFns<
+  QueryGuildRankPermissionByObjectAndGuildRequest
+> = {
+  encode(
+    message: QueryGuildRankPermissionByObjectAndGuildRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.objectId !== "") {
+      writer.uint32(10).string(message.objectId);
+    }
+    if (message.guildId !== "") {
+      writer.uint32(18).string(message.guildId);
+    }
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryGuildRankPermissionByObjectAndGuildRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryGuildRankPermissionByObjectAndGuildRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.objectId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.pagination = PageRequest.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryGuildRankPermissionByObjectAndGuildRequest {
+    return {
+      objectId: isSet(object.objectId) ? globalThis.String(object.objectId) : "",
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined,
+    };
+  },
+
+  toJSON(message: QueryGuildRankPermissionByObjectAndGuildRequest): unknown {
+    const obj: any = {};
+    if (message.objectId !== "") {
+      obj.objectId = message.objectId;
+    }
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.pagination !== undefined) {
+      obj.pagination = PageRequest.toJSON(message.pagination);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryGuildRankPermissionByObjectAndGuildRequest>, I>>(
+    base?: I,
+  ): QueryGuildRankPermissionByObjectAndGuildRequest {
+    return QueryGuildRankPermissionByObjectAndGuildRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryGuildRankPermissionByObjectAndGuildRequest>, I>>(
+    object: I,
+  ): QueryGuildRankPermissionByObjectAndGuildRequest {
+    const message = createBaseQueryGuildRankPermissionByObjectAndGuildRequest();
+    message.objectId = object.objectId ?? "";
+    message.guildId = object.guildId ?? "";
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageRequest.fromPartial(object.pagination)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseQueryGuildRankPermissionByObjectAndGuildResponse(): QueryGuildRankPermissionByObjectAndGuildResponse {
+  return { guildRankPermissionRecords: [], pagination: undefined };
+}
+
+export const QueryGuildRankPermissionByObjectAndGuildResponse: MessageFns<
+  QueryGuildRankPermissionByObjectAndGuildResponse
+> = {
+  encode(
+    message: QueryGuildRankPermissionByObjectAndGuildResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    for (const v of message.guildRankPermissionRecords) {
+      GuildRankPermissionRecord.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryGuildRankPermissionByObjectAndGuildResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryGuildRankPermissionByObjectAndGuildResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.guildRankPermissionRecords.push(GuildRankPermissionRecord.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pagination = PageResponse.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryGuildRankPermissionByObjectAndGuildResponse {
+    return {
+      guildRankPermissionRecords: globalThis.Array.isArray(object?.guildRankPermissionRecords)
+        ? object.guildRankPermissionRecords.map((e: any) => GuildRankPermissionRecord.fromJSON(e))
+        : [],
+      pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
+    };
+  },
+
+  toJSON(message: QueryGuildRankPermissionByObjectAndGuildResponse): unknown {
+    const obj: any = {};
+    if (message.guildRankPermissionRecords?.length) {
+      obj.guildRankPermissionRecords = message.guildRankPermissionRecords.map((e) =>
+        GuildRankPermissionRecord.toJSON(e)
+      );
+    }
+    if (message.pagination !== undefined) {
+      obj.pagination = PageResponse.toJSON(message.pagination);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryGuildRankPermissionByObjectAndGuildResponse>, I>>(
+    base?: I,
+  ): QueryGuildRankPermissionByObjectAndGuildResponse {
+    return QueryGuildRankPermissionByObjectAndGuildResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryGuildRankPermissionByObjectAndGuildResponse>, I>>(
+    object: I,
+  ): QueryGuildRankPermissionByObjectAndGuildResponse {
+    const message = createBaseQueryGuildRankPermissionByObjectAndGuildResponse();
+    message.guildRankPermissionRecords =
+      object.guildRankPermissionRecords?.map((e) => GuildRankPermissionRecord.fromPartial(e)) || [];
+    message.pagination = (object.pagination !== undefined && object.pagination !== null)
+      ? PageResponse.fromPartial(object.pagination)
+      : undefined;
+    return message;
+  },
+};
+
 function createBaseQueryGetPlanetRequest(): QueryGetPlanetRequest {
   return { id: "" };
 }
@@ -4797,7 +5342,7 @@ export const QueryGetPlayerRequest: MessageFns<QueryGetPlayerRequest> = {
 };
 
 function createBaseQueryGetPlayerResponse(): QueryGetPlayerResponse {
-  return { Player: undefined, gridAttributes: undefined, playerInventory: undefined, halted: false };
+  return { Player: undefined, gridAttributes: undefined, playerInventory: undefined };
 }
 
 export const QueryGetPlayerResponse: MessageFns<QueryGetPlayerResponse> = {
@@ -4810,9 +5355,6 @@ export const QueryGetPlayerResponse: MessageFns<QueryGetPlayerResponse> = {
     }
     if (message.playerInventory !== undefined) {
       PlayerInventory.encode(message.playerInventory, writer.uint32(26).fork()).join();
-    }
-    if (message.halted !== false) {
-      writer.uint32(32).bool(message.halted);
     }
     return writer;
   },
@@ -4848,14 +5390,6 @@ export const QueryGetPlayerResponse: MessageFns<QueryGetPlayerResponse> = {
           message.playerInventory = PlayerInventory.decode(reader, reader.uint32());
           continue;
         }
-        case 4: {
-          if (tag !== 32) {
-            break;
-          }
-
-          message.halted = reader.bool();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4870,7 +5404,6 @@ export const QueryGetPlayerResponse: MessageFns<QueryGetPlayerResponse> = {
       Player: isSet(object.Player) ? Player.fromJSON(object.Player) : undefined,
       gridAttributes: isSet(object.gridAttributes) ? GridAttributes.fromJSON(object.gridAttributes) : undefined,
       playerInventory: isSet(object.playerInventory) ? PlayerInventory.fromJSON(object.playerInventory) : undefined,
-      halted: isSet(object.halted) ? globalThis.Boolean(object.halted) : false,
     };
   },
 
@@ -4884,9 +5417,6 @@ export const QueryGetPlayerResponse: MessageFns<QueryGetPlayerResponse> = {
     }
     if (message.playerInventory !== undefined) {
       obj.playerInventory = PlayerInventory.toJSON(message.playerInventory);
-    }
-    if (message.halted !== false) {
-      obj.halted = message.halted;
     }
     return obj;
   },
@@ -4905,7 +5435,6 @@ export const QueryGetPlayerResponse: MessageFns<QueryGetPlayerResponse> = {
     message.playerInventory = (object.playerInventory !== undefined && object.playerInventory !== null)
       ? PlayerInventory.fromPartial(object.playerInventory)
       : undefined;
-    message.halted = object.halted ?? false;
     return message;
   },
 };
@@ -5044,109 +5573,6 @@ export const QueryAllPlayerResponse: MessageFns<QueryAllPlayerResponse> = {
     message.pagination = (object.pagination !== undefined && object.pagination !== null)
       ? PageResponse.fromPartial(object.pagination)
       : undefined;
-    return message;
-  },
-};
-
-function createBaseQueryAllPlayerHaltedRequest(): QueryAllPlayerHaltedRequest {
-  return {};
-}
-
-export const QueryAllPlayerHaltedRequest: MessageFns<QueryAllPlayerHaltedRequest> = {
-  encode(_: QueryAllPlayerHaltedRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): QueryAllPlayerHaltedRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryAllPlayerHaltedRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): QueryAllPlayerHaltedRequest {
-    return {};
-  },
-
-  toJSON(_: QueryAllPlayerHaltedRequest): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<QueryAllPlayerHaltedRequest>, I>>(base?: I): QueryAllPlayerHaltedRequest {
-    return QueryAllPlayerHaltedRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<QueryAllPlayerHaltedRequest>, I>>(_: I): QueryAllPlayerHaltedRequest {
-    const message = createBaseQueryAllPlayerHaltedRequest();
-    return message;
-  },
-};
-
-function createBaseQueryAllPlayerHaltedResponse(): QueryAllPlayerHaltedResponse {
-  return { PlayerId: [] };
-}
-
-export const QueryAllPlayerHaltedResponse: MessageFns<QueryAllPlayerHaltedResponse> = {
-  encode(message: QueryAllPlayerHaltedResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.PlayerId) {
-      writer.uint32(10).string(v!);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): QueryAllPlayerHaltedResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryAllPlayerHaltedResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.PlayerId.push(reader.string());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): QueryAllPlayerHaltedResponse {
-    return {
-      PlayerId: globalThis.Array.isArray(object?.PlayerId) ? object.PlayerId.map((e: any) => globalThis.String(e)) : [],
-    };
-  },
-
-  toJSON(message: QueryAllPlayerHaltedResponse): unknown {
-    const obj: any = {};
-    if (message.PlayerId?.length) {
-      obj.PlayerId = message.PlayerId;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<QueryAllPlayerHaltedResponse>, I>>(base?: I): QueryAllPlayerHaltedResponse {
-    return QueryAllPlayerHaltedResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<QueryAllPlayerHaltedResponse>, I>>(object: I): QueryAllPlayerHaltedResponse {
-    const message = createBaseQueryAllPlayerHaltedResponse();
-    message.PlayerId = object.PlayerId?.map((e) => e) || [];
     return message;
   },
 };
@@ -7633,6 +8059,8 @@ export const QueryValidateSignatureResponse: MessageFns<QueryValidateSignatureRe
 /** Query defines the gRPC querier service. */
 export interface Query {
   GetBlockHeight(request: QueryBlockHeight): Promise<QueryBlockHeightResponse>;
+  /** State of the global guild charter puzzle. */
+  GuildCharter(request: QueryGuildCharter): Promise<QueryGuildCharterResponse>;
   /** Parameters queries the parameters of the module. */
   Params(request: QueryParamsRequest): Promise<QueryParamsResponse>;
   /** Queries for Addresses. */
@@ -7683,10 +8111,17 @@ export interface Query {
   PermissionByPlayer(request: QueryAllPermissionByPlayerRequest): Promise<QueryAllPermissionResponse>;
   /** Queries a list of all Permissions */
   PermissionAll(request: QueryAllPermissionRequest): Promise<QueryAllPermissionResponse>;
+  /** Queries guild rank permissions by object */
+  GuildRankPermissionByObject(
+    request: QueryGuildRankPermissionByObjectRequest,
+  ): Promise<QueryGuildRankPermissionByObjectResponse>;
+  /** Queries guild rank permissions by object and guild */
+  GuildRankPermissionByObjectAndGuild(
+    request: QueryGuildRankPermissionByObjectAndGuildRequest,
+  ): Promise<QueryGuildRankPermissionByObjectAndGuildResponse>;
   /** Queries a list of Player items. */
   Player(request: QueryGetPlayerRequest): Promise<QueryGetPlayerResponse>;
   PlayerAll(request: QueryAllPlayerRequest): Promise<QueryAllPlayerResponse>;
-  PlayerHaltedAll(request: QueryAllPlayerHaltedRequest): Promise<QueryAllPlayerHaltedResponse>;
   /** Queries a list of Planet items. */
   Planet(request: QueryGetPlanetRequest): Promise<QueryGetPlanetResponse>;
   PlanetAll(request: QueryAllPlanetRequest): Promise<QueryAllPlanetResponse>;
@@ -7741,6 +8176,7 @@ export class QueryClientImpl implements Query {
     this.service = opts?.service || QueryServiceName;
     this.rpc = rpc;
     this.GetBlockHeight = this.GetBlockHeight.bind(this);
+    this.GuildCharter = this.GuildCharter.bind(this);
     this.Params = this.Params.bind(this);
     this.Address = this.Address.bind(this);
     this.AddressAll = this.AddressAll.bind(this);
@@ -7770,9 +8206,10 @@ export class QueryClientImpl implements Query {
     this.PermissionByObject = this.PermissionByObject.bind(this);
     this.PermissionByPlayer = this.PermissionByPlayer.bind(this);
     this.PermissionAll = this.PermissionAll.bind(this);
+    this.GuildRankPermissionByObject = this.GuildRankPermissionByObject.bind(this);
+    this.GuildRankPermissionByObjectAndGuild = this.GuildRankPermissionByObjectAndGuild.bind(this);
     this.Player = this.Player.bind(this);
     this.PlayerAll = this.PlayerAll.bind(this);
-    this.PlayerHaltedAll = this.PlayerHaltedAll.bind(this);
     this.Planet = this.Planet.bind(this);
     this.PlanetAll = this.PlanetAll.bind(this);
     this.PlanetAllByPlayer = this.PlanetAllByPlayer.bind(this);
@@ -7800,6 +8237,12 @@ export class QueryClientImpl implements Query {
     const data = QueryBlockHeight.encode(request).finish();
     const promise = this.rpc.request(this.service, "GetBlockHeight", data);
     return promise.then((data) => QueryBlockHeightResponse.decode(new BinaryReader(data)));
+  }
+
+  GuildCharter(request: QueryGuildCharter): Promise<QueryGuildCharterResponse> {
+    const data = QueryGuildCharter.encode(request).finish();
+    const promise = this.rpc.request(this.service, "GuildCharter", data);
+    return promise.then((data) => QueryGuildCharterResponse.decode(new BinaryReader(data)));
   }
 
   Params(request: QueryParamsRequest): Promise<QueryParamsResponse> {
@@ -7984,6 +8427,22 @@ export class QueryClientImpl implements Query {
     return promise.then((data) => QueryAllPermissionResponse.decode(new BinaryReader(data)));
   }
 
+  GuildRankPermissionByObject(
+    request: QueryGuildRankPermissionByObjectRequest,
+  ): Promise<QueryGuildRankPermissionByObjectResponse> {
+    const data = QueryGuildRankPermissionByObjectRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "GuildRankPermissionByObject", data);
+    return promise.then((data) => QueryGuildRankPermissionByObjectResponse.decode(new BinaryReader(data)));
+  }
+
+  GuildRankPermissionByObjectAndGuild(
+    request: QueryGuildRankPermissionByObjectAndGuildRequest,
+  ): Promise<QueryGuildRankPermissionByObjectAndGuildResponse> {
+    const data = QueryGuildRankPermissionByObjectAndGuildRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "GuildRankPermissionByObjectAndGuild", data);
+    return promise.then((data) => QueryGuildRankPermissionByObjectAndGuildResponse.decode(new BinaryReader(data)));
+  }
+
   Player(request: QueryGetPlayerRequest): Promise<QueryGetPlayerResponse> {
     const data = QueryGetPlayerRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "Player", data);
@@ -7994,12 +8453,6 @@ export class QueryClientImpl implements Query {
     const data = QueryAllPlayerRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "PlayerAll", data);
     return promise.then((data) => QueryAllPlayerResponse.decode(new BinaryReader(data)));
-  }
-
-  PlayerHaltedAll(request: QueryAllPlayerHaltedRequest): Promise<QueryAllPlayerHaltedResponse> {
-    const data = QueryAllPlayerHaltedRequest.encode(request).finish();
-    const promise = this.rpc.request(this.service, "PlayerHaltedAll", data);
-    return promise.then((data) => QueryAllPlayerHaltedResponse.decode(new BinaryReader(data)));
   }
 
   Planet(request: QueryGetPlanetRequest): Promise<QueryGetPlanetResponse> {

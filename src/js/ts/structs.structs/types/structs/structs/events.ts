@@ -43,7 +43,7 @@ import {
   techWeaponSystemFromJSON,
   techWeaponSystemToJSON,
 } from "./keys";
-import { PermissionRecord } from "./permission";
+import { GuildRankPermissionRecord, PermissionRecord } from "./permission";
 import { Planet, PlanetAttributeRecord } from "./planet";
 import { Player } from "./player";
 import { Provider } from "./provider";
@@ -126,6 +126,10 @@ export interface EventPermission {
   permissionRecord: PermissionRecord | undefined;
 }
 
+export interface EventGuildRankPermission {
+  guildRankPermissionRecord: GuildRankPermissionRecord | undefined;
+}
+
 export interface EventGrid {
   gridRecord: GridRecord | undefined;
 }
@@ -156,6 +160,27 @@ export interface EventProviderRevokeGuild {
 export interface EventProviderRevokeGuildDetail {
   providerId: string;
   guildId: string;
+}
+
+/**
+ * Emitted when a provider's collateral pool could not cover revenue owed to
+ * that provider. Consumer collateral has first claim on the pool, so provider
+ * revenue is clamped to what remains rather than overdrawing it. A nonzero
+ * shortfall means the pool is accounting for less than it should be and is
+ * worth investigating; the amount stays in the provider's own pool.
+ * agreementId is empty when the sweep was not tied to one agreement.
+ */
+export interface EventProviderRevenueShortfall {
+  eventProviderRevenueShortfallDetail: EventProviderRevenueShortfallDetail | undefined;
+}
+
+export interface EventProviderRevenueShortfallDetail {
+  providerId: string;
+  agreementId: string;
+  denom: string;
+  requested: string;
+  paid: string;
+  shortfall: string;
 }
 
 export interface EventPlayerHalted {
@@ -199,6 +224,11 @@ export interface EventGuildBankMintDetail {
   playerId: string;
 }
 
+/**
+ * amountAlpha is the net alpha paid out to the player (after fee); fee is the
+ * portion retained in the collateral pool. When fee > 0 the amountAlpha
+ * semantics differ from pre-v0.21.0 (which had no fee).
+ */
 export interface EventGuildBankRedeem {
   eventGuildBankRedeemDetail: EventGuildBankRedeemDetail | undefined;
 }
@@ -208,6 +238,7 @@ export interface EventGuildBankRedeemDetail {
   amountAlpha: number;
   amountToken: number;
   playerId: string;
+  fee: number;
 }
 
 export interface EventGuildBankConfiscateAndBurn {
@@ -219,6 +250,41 @@ export interface EventGuildBankConfiscateAndBurnDetail {
   amountAlpha: number;
   amountToken: number;
   address: string;
+}
+
+/**
+ * amountAlpha is the gross ualpha moved into collateral; fee is the portion of
+ * that alpha retained as the convert-in fee; amountToken is the token minted
+ * to the player.
+ */
+export interface EventGuildBankConvert {
+  eventGuildBankConvertDetail: EventGuildBankConvertDetail | undefined;
+}
+
+export interface EventGuildBankConvertDetail {
+  guildId: string;
+  amountAlpha: number;
+  fee: number;
+  amountToken: number;
+  playerId: string;
+}
+
+/**
+ * Composite cross-guild convert. sourceGuildId token -> ualpha (bridgeAlpha,
+ * after source out-fee) -> targetGuildId token (amountTokenOut). The two
+ * underlying legs also emit EventGuildBankRedeem and EventGuildBankConvert.
+ */
+export interface EventGuildBankConvertToken {
+  eventGuildBankConvertTokenDetail: EventGuildBankConvertTokenDetail | undefined;
+}
+
+export interface EventGuildBankConvertTokenDetail {
+  sourceGuildId: string;
+  targetGuildId: string;
+  amountTokenIn: number;
+  bridgeAlpha: number;
+  amountTokenOut: number;
+  playerId: string;
 }
 
 export interface EventGuildMembershipApplication {
@@ -287,13 +353,22 @@ export interface EventOreMigrateDetail {
   amount: number;
 }
 
+export interface EventStructDefenderClear {
+  structDefenderClearDetail: EventStructDefenderClearDetail | undefined;
+}
+
+export interface EventStructDefenderClearDetail {
+  defendingStructId: string;
+}
+
 export interface EventAttack {
   eventAttackDetail: EventAttackDetail | undefined;
 }
 
 export interface EventAttackDetail {
   attackerStructId: string;
-  attackerStructType: number;
+  attackerStructTypeId: number;
+  attackerStructType: string;
   attackerStructLocationType: objectType;
   attackerStructLocationId: string;
   attackerStructOperatingAmbit: ambit;
@@ -309,12 +384,16 @@ export interface EventAttackDetail {
   planetaryDefenseCannonDamage: number;
   planetaryDefenseCannonDamageDestroyedAttacker: boolean;
   attackerPlayerId: string;
-  targetPlayerId: string;
+  attackerHealthBefore: number;
+  attackerHealthAfter: number;
+  attackerHealthMax: number;
 }
 
 export interface EventAttackShotDetail {
   targetStructId: string;
-  targetStructType: number;
+  targetPlayerId: string;
+  targetStructTypeId: number;
+  targetStructType: string;
   targetStructLocationType: objectType;
   targetStructLocationId: string;
   targetStructOperatingAmbit: ambit;
@@ -325,7 +404,8 @@ export interface EventAttackShotDetail {
   evadedByPlanetaryDefensesCause: techPlanetaryDefenses;
   blocked: boolean;
   blockedByStructId: string;
-  blockedByStructType: number;
+  blockedByStructType: string;
+  blockedByStructTypeId: number;
   blockedByStructLocationType: objectType;
   blockedByStructLocationId: string;
   blockedByStructOperatingAmbit: ambit;
@@ -339,21 +419,35 @@ export interface EventAttackShotDetail {
   targetCountered: boolean;
   targetCounteredDamage: number;
   targetCounterDestroyedAttacker: boolean;
-  targetCounterCause: techPassiveWeaponry;
+  targetCounterPassiveWeaponry: techPassiveWeaponry;
+  targetCounterWeaponSystem: techWeaponSystem;
+  targetCounterWeaponControl: techWeaponControl;
+  targetCounterActiveWeaponry: techActiveWeaponry;
   targetDestroyed: boolean;
   postDestructionDamageToAttacker: boolean;
   postDestructionDamage: number;
   postDestructionDamageDestroyedAttacker: boolean;
-  postDestructionDamageCause: techPassiveWeaponry;
+  postDestructionDamagePassiveWeaponry: techPassiveWeaponry;
+  targetHealthBefore: number;
+  targetHealthAfter: number;
+  targetHealthMax: number;
+  blockerHealthBefore: number;
+  blockerHealthAfter: number;
+  blockerHealthMax: number;
+  armourPiercing: boolean;
 }
 
 export interface EventAttackDefenderCounterDetail {
   counterByStructId: string;
-  counterByStructType: number;
+  counterByStructTypeId: number;
+  counterByStructType: string;
   counterByStructLocationType: objectType;
   counterByStructLocationId: string;
   counterByStructOperatingAmbit: ambit;
   counterByStructSlot: number;
+  counterByStructWeaponSystem: techWeaponSystem;
+  counterByStructWeaponControl: techWeaponControl;
+  counterByStructActiveWeaponry: techActiveWeaponry;
   counterDamage: number;
   counterDestroyedAttacker: boolean;
 }
@@ -366,6 +460,19 @@ export interface EventRaidDetail {
   fleetId: string;
   planetId: string;
   status: raidStatus;
+  seizedOre: number;
+}
+
+export interface EventHashSuccess {
+  eventHashSuccessDetail: EventHashSuccessDetail | undefined;
+}
+
+export interface EventHashSuccessDetail {
+  callerAddress: string;
+  category: string;
+  difficulty: number;
+  objectId: string;
+  planetId: string;
 }
 
 function createBaseEventAllocation(): EventAllocation {
@@ -1476,6 +1583,71 @@ export const EventPermission: MessageFns<EventPermission> = {
   },
 };
 
+function createBaseEventGuildRankPermission(): EventGuildRankPermission {
+  return { guildRankPermissionRecord: undefined };
+}
+
+export const EventGuildRankPermission: MessageFns<EventGuildRankPermission> = {
+  encode(message: EventGuildRankPermission, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.guildRankPermissionRecord !== undefined) {
+      GuildRankPermissionRecord.encode(message.guildRankPermissionRecord, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventGuildRankPermission {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventGuildRankPermission();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.guildRankPermissionRecord = GuildRankPermissionRecord.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventGuildRankPermission {
+    return {
+      guildRankPermissionRecord: isSet(object.guildRankPermissionRecord)
+        ? GuildRankPermissionRecord.fromJSON(object.guildRankPermissionRecord)
+        : undefined,
+    };
+  },
+
+  toJSON(message: EventGuildRankPermission): unknown {
+    const obj: any = {};
+    if (message.guildRankPermissionRecord !== undefined) {
+      obj.guildRankPermissionRecord = GuildRankPermissionRecord.toJSON(message.guildRankPermissionRecord);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventGuildRankPermission>, I>>(base?: I): EventGuildRankPermission {
+    return EventGuildRankPermission.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventGuildRankPermission>, I>>(object: I): EventGuildRankPermission {
+    const message = createBaseEventGuildRankPermission();
+    message.guildRankPermissionRecord =
+      (object.guildRankPermissionRecord !== undefined && object.guildRankPermissionRecord !== null)
+        ? GuildRankPermissionRecord.fromPartial(object.guildRankPermissionRecord)
+        : undefined;
+    return message;
+  },
+};
+
 function createBaseEventGrid(): EventGrid {
   return { gridRecord: undefined };
 }
@@ -1977,6 +2149,223 @@ export const EventProviderRevokeGuildDetail: MessageFns<EventProviderRevokeGuild
     const message = createBaseEventProviderRevokeGuildDetail();
     message.providerId = object.providerId ?? "";
     message.guildId = object.guildId ?? "";
+    return message;
+  },
+};
+
+function createBaseEventProviderRevenueShortfall(): EventProviderRevenueShortfall {
+  return { eventProviderRevenueShortfallDetail: undefined };
+}
+
+export const EventProviderRevenueShortfall: MessageFns<EventProviderRevenueShortfall> = {
+  encode(message: EventProviderRevenueShortfall, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.eventProviderRevenueShortfallDetail !== undefined) {
+      EventProviderRevenueShortfallDetail.encode(message.eventProviderRevenueShortfallDetail, writer.uint32(10).fork())
+        .join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventProviderRevenueShortfall {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventProviderRevenueShortfall();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.eventProviderRevenueShortfallDetail = EventProviderRevenueShortfallDetail.decode(
+            reader,
+            reader.uint32(),
+          );
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventProviderRevenueShortfall {
+    return {
+      eventProviderRevenueShortfallDetail: isSet(object.eventProviderRevenueShortfallDetail)
+        ? EventProviderRevenueShortfallDetail.fromJSON(object.eventProviderRevenueShortfallDetail)
+        : undefined,
+    };
+  },
+
+  toJSON(message: EventProviderRevenueShortfall): unknown {
+    const obj: any = {};
+    if (message.eventProviderRevenueShortfallDetail !== undefined) {
+      obj.eventProviderRevenueShortfallDetail = EventProviderRevenueShortfallDetail.toJSON(
+        message.eventProviderRevenueShortfallDetail,
+      );
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventProviderRevenueShortfall>, I>>(base?: I): EventProviderRevenueShortfall {
+    return EventProviderRevenueShortfall.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventProviderRevenueShortfall>, I>>(
+    object: I,
+  ): EventProviderRevenueShortfall {
+    const message = createBaseEventProviderRevenueShortfall();
+    message.eventProviderRevenueShortfallDetail =
+      (object.eventProviderRevenueShortfallDetail !== undefined && object.eventProviderRevenueShortfallDetail !== null)
+        ? EventProviderRevenueShortfallDetail.fromPartial(object.eventProviderRevenueShortfallDetail)
+        : undefined;
+    return message;
+  },
+};
+
+function createBaseEventProviderRevenueShortfallDetail(): EventProviderRevenueShortfallDetail {
+  return { providerId: "", agreementId: "", denom: "", requested: "", paid: "", shortfall: "" };
+}
+
+export const EventProviderRevenueShortfallDetail: MessageFns<EventProviderRevenueShortfallDetail> = {
+  encode(message: EventProviderRevenueShortfallDetail, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.providerId !== "") {
+      writer.uint32(10).string(message.providerId);
+    }
+    if (message.agreementId !== "") {
+      writer.uint32(18).string(message.agreementId);
+    }
+    if (message.denom !== "") {
+      writer.uint32(26).string(message.denom);
+    }
+    if (message.requested !== "") {
+      writer.uint32(34).string(message.requested);
+    }
+    if (message.paid !== "") {
+      writer.uint32(42).string(message.paid);
+    }
+    if (message.shortfall !== "") {
+      writer.uint32(50).string(message.shortfall);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventProviderRevenueShortfallDetail {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventProviderRevenueShortfallDetail();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.providerId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.agreementId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.denom = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.requested = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.paid = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.shortfall = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventProviderRevenueShortfallDetail {
+    return {
+      providerId: isSet(object.providerId) ? globalThis.String(object.providerId) : "",
+      agreementId: isSet(object.agreementId) ? globalThis.String(object.agreementId) : "",
+      denom: isSet(object.denom) ? globalThis.String(object.denom) : "",
+      requested: isSet(object.requested) ? globalThis.String(object.requested) : "",
+      paid: isSet(object.paid) ? globalThis.String(object.paid) : "",
+      shortfall: isSet(object.shortfall) ? globalThis.String(object.shortfall) : "",
+    };
+  },
+
+  toJSON(message: EventProviderRevenueShortfallDetail): unknown {
+    const obj: any = {};
+    if (message.providerId !== "") {
+      obj.providerId = message.providerId;
+    }
+    if (message.agreementId !== "") {
+      obj.agreementId = message.agreementId;
+    }
+    if (message.denom !== "") {
+      obj.denom = message.denom;
+    }
+    if (message.requested !== "") {
+      obj.requested = message.requested;
+    }
+    if (message.paid !== "") {
+      obj.paid = message.paid;
+    }
+    if (message.shortfall !== "") {
+      obj.shortfall = message.shortfall;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventProviderRevenueShortfallDetail>, I>>(
+    base?: I,
+  ): EventProviderRevenueShortfallDetail {
+    return EventProviderRevenueShortfallDetail.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventProviderRevenueShortfallDetail>, I>>(
+    object: I,
+  ): EventProviderRevenueShortfallDetail {
+    const message = createBaseEventProviderRevenueShortfallDetail();
+    message.providerId = object.providerId ?? "";
+    message.agreementId = object.agreementId ?? "";
+    message.denom = object.denom ?? "";
+    message.requested = object.requested ?? "";
+    message.paid = object.paid ?? "";
+    message.shortfall = object.shortfall ?? "";
     return message;
   },
 };
@@ -2677,7 +3066,7 @@ export const EventGuildBankRedeem: MessageFns<EventGuildBankRedeem> = {
 };
 
 function createBaseEventGuildBankRedeemDetail(): EventGuildBankRedeemDetail {
-  return { guildId: "", amountAlpha: 0, amountToken: 0, playerId: "" };
+  return { guildId: "", amountAlpha: 0, amountToken: 0, playerId: "", fee: 0 };
 }
 
 export const EventGuildBankRedeemDetail: MessageFns<EventGuildBankRedeemDetail> = {
@@ -2693,6 +3082,9 @@ export const EventGuildBankRedeemDetail: MessageFns<EventGuildBankRedeemDetail> 
     }
     if (message.playerId !== "") {
       writer.uint32(34).string(message.playerId);
+    }
+    if (message.fee !== 0) {
+      writer.uint32(40).uint64(message.fee);
     }
     return writer;
   },
@@ -2736,6 +3128,14 @@ export const EventGuildBankRedeemDetail: MessageFns<EventGuildBankRedeemDetail> 
           message.playerId = reader.string();
           continue;
         }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.fee = longToNumber(reader.uint64());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2751,6 +3151,7 @@ export const EventGuildBankRedeemDetail: MessageFns<EventGuildBankRedeemDetail> 
       amountAlpha: isSet(object.amountAlpha) ? globalThis.Number(object.amountAlpha) : 0,
       amountToken: isSet(object.amountToken) ? globalThis.Number(object.amountToken) : 0,
       playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      fee: isSet(object.fee) ? globalThis.Number(object.fee) : 0,
     };
   },
 
@@ -2768,6 +3169,9 @@ export const EventGuildBankRedeemDetail: MessageFns<EventGuildBankRedeemDetail> 
     if (message.playerId !== "") {
       obj.playerId = message.playerId;
     }
+    if (message.fee !== 0) {
+      obj.fee = Math.round(message.fee);
+    }
     return obj;
   },
 
@@ -2780,6 +3184,7 @@ export const EventGuildBankRedeemDetail: MessageFns<EventGuildBankRedeemDetail> 
     message.amountAlpha = object.amountAlpha ?? 0;
     message.amountToken = object.amountToken ?? 0;
     message.playerId = object.playerId ?? "";
+    message.fee = object.fee ?? 0;
     return message;
   },
 };
@@ -2968,6 +3373,407 @@ export const EventGuildBankConfiscateAndBurnDetail: MessageFns<EventGuildBankCon
     message.amountAlpha = object.amountAlpha ?? 0;
     message.amountToken = object.amountToken ?? 0;
     message.address = object.address ?? "";
+    return message;
+  },
+};
+
+function createBaseEventGuildBankConvert(): EventGuildBankConvert {
+  return { eventGuildBankConvertDetail: undefined };
+}
+
+export const EventGuildBankConvert: MessageFns<EventGuildBankConvert> = {
+  encode(message: EventGuildBankConvert, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.eventGuildBankConvertDetail !== undefined) {
+      EventGuildBankConvertDetail.encode(message.eventGuildBankConvertDetail, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventGuildBankConvert {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventGuildBankConvert();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.eventGuildBankConvertDetail = EventGuildBankConvertDetail.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventGuildBankConvert {
+    return {
+      eventGuildBankConvertDetail: isSet(object.eventGuildBankConvertDetail)
+        ? EventGuildBankConvertDetail.fromJSON(object.eventGuildBankConvertDetail)
+        : undefined,
+    };
+  },
+
+  toJSON(message: EventGuildBankConvert): unknown {
+    const obj: any = {};
+    if (message.eventGuildBankConvertDetail !== undefined) {
+      obj.eventGuildBankConvertDetail = EventGuildBankConvertDetail.toJSON(message.eventGuildBankConvertDetail);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventGuildBankConvert>, I>>(base?: I): EventGuildBankConvert {
+    return EventGuildBankConvert.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventGuildBankConvert>, I>>(object: I): EventGuildBankConvert {
+    const message = createBaseEventGuildBankConvert();
+    message.eventGuildBankConvertDetail =
+      (object.eventGuildBankConvertDetail !== undefined && object.eventGuildBankConvertDetail !== null)
+        ? EventGuildBankConvertDetail.fromPartial(object.eventGuildBankConvertDetail)
+        : undefined;
+    return message;
+  },
+};
+
+function createBaseEventGuildBankConvertDetail(): EventGuildBankConvertDetail {
+  return { guildId: "", amountAlpha: 0, fee: 0, amountToken: 0, playerId: "" };
+}
+
+export const EventGuildBankConvertDetail: MessageFns<EventGuildBankConvertDetail> = {
+  encode(message: EventGuildBankConvertDetail, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.guildId !== "") {
+      writer.uint32(10).string(message.guildId);
+    }
+    if (message.amountAlpha !== 0) {
+      writer.uint32(16).uint64(message.amountAlpha);
+    }
+    if (message.fee !== 0) {
+      writer.uint32(24).uint64(message.fee);
+    }
+    if (message.amountToken !== 0) {
+      writer.uint32(32).uint64(message.amountToken);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(42).string(message.playerId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventGuildBankConvertDetail {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventGuildBankConvertDetail();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.amountAlpha = longToNumber(reader.uint64());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.fee = longToNumber(reader.uint64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.amountToken = longToNumber(reader.uint64());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventGuildBankConvertDetail {
+    return {
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      amountAlpha: isSet(object.amountAlpha) ? globalThis.Number(object.amountAlpha) : 0,
+      fee: isSet(object.fee) ? globalThis.Number(object.fee) : 0,
+      amountToken: isSet(object.amountToken) ? globalThis.Number(object.amountToken) : 0,
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+    };
+  },
+
+  toJSON(message: EventGuildBankConvertDetail): unknown {
+    const obj: any = {};
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.amountAlpha !== 0) {
+      obj.amountAlpha = Math.round(message.amountAlpha);
+    }
+    if (message.fee !== 0) {
+      obj.fee = Math.round(message.fee);
+    }
+    if (message.amountToken !== 0) {
+      obj.amountToken = Math.round(message.amountToken);
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventGuildBankConvertDetail>, I>>(base?: I): EventGuildBankConvertDetail {
+    return EventGuildBankConvertDetail.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventGuildBankConvertDetail>, I>>(object: I): EventGuildBankConvertDetail {
+    const message = createBaseEventGuildBankConvertDetail();
+    message.guildId = object.guildId ?? "";
+    message.amountAlpha = object.amountAlpha ?? 0;
+    message.fee = object.fee ?? 0;
+    message.amountToken = object.amountToken ?? 0;
+    message.playerId = object.playerId ?? "";
+    return message;
+  },
+};
+
+function createBaseEventGuildBankConvertToken(): EventGuildBankConvertToken {
+  return { eventGuildBankConvertTokenDetail: undefined };
+}
+
+export const EventGuildBankConvertToken: MessageFns<EventGuildBankConvertToken> = {
+  encode(message: EventGuildBankConvertToken, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.eventGuildBankConvertTokenDetail !== undefined) {
+      EventGuildBankConvertTokenDetail.encode(message.eventGuildBankConvertTokenDetail, writer.uint32(10).fork())
+        .join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventGuildBankConvertToken {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventGuildBankConvertToken();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.eventGuildBankConvertTokenDetail = EventGuildBankConvertTokenDetail.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventGuildBankConvertToken {
+    return {
+      eventGuildBankConvertTokenDetail: isSet(object.eventGuildBankConvertTokenDetail)
+        ? EventGuildBankConvertTokenDetail.fromJSON(object.eventGuildBankConvertTokenDetail)
+        : undefined,
+    };
+  },
+
+  toJSON(message: EventGuildBankConvertToken): unknown {
+    const obj: any = {};
+    if (message.eventGuildBankConvertTokenDetail !== undefined) {
+      obj.eventGuildBankConvertTokenDetail = EventGuildBankConvertTokenDetail.toJSON(
+        message.eventGuildBankConvertTokenDetail,
+      );
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventGuildBankConvertToken>, I>>(base?: I): EventGuildBankConvertToken {
+    return EventGuildBankConvertToken.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventGuildBankConvertToken>, I>>(object: I): EventGuildBankConvertToken {
+    const message = createBaseEventGuildBankConvertToken();
+    message.eventGuildBankConvertTokenDetail =
+      (object.eventGuildBankConvertTokenDetail !== undefined && object.eventGuildBankConvertTokenDetail !== null)
+        ? EventGuildBankConvertTokenDetail.fromPartial(object.eventGuildBankConvertTokenDetail)
+        : undefined;
+    return message;
+  },
+};
+
+function createBaseEventGuildBankConvertTokenDetail(): EventGuildBankConvertTokenDetail {
+  return { sourceGuildId: "", targetGuildId: "", amountTokenIn: 0, bridgeAlpha: 0, amountTokenOut: 0, playerId: "" };
+}
+
+export const EventGuildBankConvertTokenDetail: MessageFns<EventGuildBankConvertTokenDetail> = {
+  encode(message: EventGuildBankConvertTokenDetail, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.sourceGuildId !== "") {
+      writer.uint32(10).string(message.sourceGuildId);
+    }
+    if (message.targetGuildId !== "") {
+      writer.uint32(18).string(message.targetGuildId);
+    }
+    if (message.amountTokenIn !== 0) {
+      writer.uint32(24).uint64(message.amountTokenIn);
+    }
+    if (message.bridgeAlpha !== 0) {
+      writer.uint32(32).uint64(message.bridgeAlpha);
+    }
+    if (message.amountTokenOut !== 0) {
+      writer.uint32(40).uint64(message.amountTokenOut);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(50).string(message.playerId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventGuildBankConvertTokenDetail {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventGuildBankConvertTokenDetail();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.sourceGuildId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.targetGuildId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.amountTokenIn = longToNumber(reader.uint64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.bridgeAlpha = longToNumber(reader.uint64());
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.amountTokenOut = longToNumber(reader.uint64());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventGuildBankConvertTokenDetail {
+    return {
+      sourceGuildId: isSet(object.sourceGuildId) ? globalThis.String(object.sourceGuildId) : "",
+      targetGuildId: isSet(object.targetGuildId) ? globalThis.String(object.targetGuildId) : "",
+      amountTokenIn: isSet(object.amountTokenIn) ? globalThis.Number(object.amountTokenIn) : 0,
+      bridgeAlpha: isSet(object.bridgeAlpha) ? globalThis.Number(object.bridgeAlpha) : 0,
+      amountTokenOut: isSet(object.amountTokenOut) ? globalThis.Number(object.amountTokenOut) : 0,
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+    };
+  },
+
+  toJSON(message: EventGuildBankConvertTokenDetail): unknown {
+    const obj: any = {};
+    if (message.sourceGuildId !== "") {
+      obj.sourceGuildId = message.sourceGuildId;
+    }
+    if (message.targetGuildId !== "") {
+      obj.targetGuildId = message.targetGuildId;
+    }
+    if (message.amountTokenIn !== 0) {
+      obj.amountTokenIn = Math.round(message.amountTokenIn);
+    }
+    if (message.bridgeAlpha !== 0) {
+      obj.bridgeAlpha = Math.round(message.bridgeAlpha);
+    }
+    if (message.amountTokenOut !== 0) {
+      obj.amountTokenOut = Math.round(message.amountTokenOut);
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventGuildBankConvertTokenDetail>, I>>(
+    base?: I,
+  ): EventGuildBankConvertTokenDetail {
+    return EventGuildBankConvertTokenDetail.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventGuildBankConvertTokenDetail>, I>>(
+    object: I,
+  ): EventGuildBankConvertTokenDetail {
+    const message = createBaseEventGuildBankConvertTokenDetail();
+    message.sourceGuildId = object.sourceGuildId ?? "";
+    message.targetGuildId = object.targetGuildId ?? "";
+    message.amountTokenIn = object.amountTokenIn ?? 0;
+    message.bridgeAlpha = object.bridgeAlpha ?? 0;
+    message.amountTokenOut = object.amountTokenOut ?? 0;
+    message.playerId = object.playerId ?? "";
     return message;
   },
 };
@@ -4011,6 +4817,131 @@ export const EventOreMigrateDetail: MessageFns<EventOreMigrateDetail> = {
   },
 };
 
+function createBaseEventStructDefenderClear(): EventStructDefenderClear {
+  return { structDefenderClearDetail: undefined };
+}
+
+export const EventStructDefenderClear: MessageFns<EventStructDefenderClear> = {
+  encode(message: EventStructDefenderClear, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.structDefenderClearDetail !== undefined) {
+      EventStructDefenderClearDetail.encode(message.structDefenderClearDetail, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventStructDefenderClear {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventStructDefenderClear();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.structDefenderClearDetail = EventStructDefenderClearDetail.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventStructDefenderClear {
+    return {
+      structDefenderClearDetail: isSet(object.structDefenderClearDetail)
+        ? EventStructDefenderClearDetail.fromJSON(object.structDefenderClearDetail)
+        : undefined,
+    };
+  },
+
+  toJSON(message: EventStructDefenderClear): unknown {
+    const obj: any = {};
+    if (message.structDefenderClearDetail !== undefined) {
+      obj.structDefenderClearDetail = EventStructDefenderClearDetail.toJSON(message.structDefenderClearDetail);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventStructDefenderClear>, I>>(base?: I): EventStructDefenderClear {
+    return EventStructDefenderClear.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventStructDefenderClear>, I>>(object: I): EventStructDefenderClear {
+    const message = createBaseEventStructDefenderClear();
+    message.structDefenderClearDetail =
+      (object.structDefenderClearDetail !== undefined && object.structDefenderClearDetail !== null)
+        ? EventStructDefenderClearDetail.fromPartial(object.structDefenderClearDetail)
+        : undefined;
+    return message;
+  },
+};
+
+function createBaseEventStructDefenderClearDetail(): EventStructDefenderClearDetail {
+  return { defendingStructId: "" };
+}
+
+export const EventStructDefenderClearDetail: MessageFns<EventStructDefenderClearDetail> = {
+  encode(message: EventStructDefenderClearDetail, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.defendingStructId !== "") {
+      writer.uint32(10).string(message.defendingStructId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventStructDefenderClearDetail {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventStructDefenderClearDetail();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.defendingStructId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventStructDefenderClearDetail {
+    return { defendingStructId: isSet(object.defendingStructId) ? globalThis.String(object.defendingStructId) : "" };
+  },
+
+  toJSON(message: EventStructDefenderClearDetail): unknown {
+    const obj: any = {};
+    if (message.defendingStructId !== "") {
+      obj.defendingStructId = message.defendingStructId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventStructDefenderClearDetail>, I>>(base?: I): EventStructDefenderClearDetail {
+    return EventStructDefenderClearDetail.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventStructDefenderClearDetail>, I>>(
+    object: I,
+  ): EventStructDefenderClearDetail {
+    const message = createBaseEventStructDefenderClearDetail();
+    message.defendingStructId = object.defendingStructId ?? "";
+    return message;
+  },
+};
+
 function createBaseEventAttack(): EventAttack {
   return { eventAttackDetail: undefined };
 }
@@ -4078,7 +5009,8 @@ export const EventAttack: MessageFns<EventAttack> = {
 function createBaseEventAttackDetail(): EventAttackDetail {
   return {
     attackerStructId: "",
-    attackerStructType: 0,
+    attackerStructTypeId: 0,
+    attackerStructType: "",
     attackerStructLocationType: 0,
     attackerStructLocationId: "",
     attackerStructOperatingAmbit: 0,
@@ -4094,7 +5026,9 @@ function createBaseEventAttackDetail(): EventAttackDetail {
     planetaryDefenseCannonDamage: 0,
     planetaryDefenseCannonDamageDestroyedAttacker: false,
     attackerPlayerId: "",
-    targetPlayerId: "",
+    attackerHealthBefore: 0,
+    attackerHealthAfter: 0,
+    attackerHealthMax: 0,
   };
 }
 
@@ -4103,56 +5037,65 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
     if (message.attackerStructId !== "") {
       writer.uint32(10).string(message.attackerStructId);
     }
-    if (message.attackerStructType !== 0) {
-      writer.uint32(16).uint64(message.attackerStructType);
+    if (message.attackerStructTypeId !== 0) {
+      writer.uint32(16).uint64(message.attackerStructTypeId);
+    }
+    if (message.attackerStructType !== "") {
+      writer.uint32(26).string(message.attackerStructType);
     }
     if (message.attackerStructLocationType !== 0) {
-      writer.uint32(24).int32(message.attackerStructLocationType);
+      writer.uint32(32).int32(message.attackerStructLocationType);
     }
     if (message.attackerStructLocationId !== "") {
-      writer.uint32(34).string(message.attackerStructLocationId);
+      writer.uint32(42).string(message.attackerStructLocationId);
     }
     if (message.attackerStructOperatingAmbit !== 0) {
-      writer.uint32(40).int32(message.attackerStructOperatingAmbit);
+      writer.uint32(48).int32(message.attackerStructOperatingAmbit);
     }
     if (message.attackerStructSlot !== 0) {
-      writer.uint32(48).uint64(message.attackerStructSlot);
+      writer.uint32(56).uint64(message.attackerStructSlot);
     }
     if (message.weaponSystem !== 0) {
-      writer.uint32(56).int32(message.weaponSystem);
+      writer.uint32(64).int32(message.weaponSystem);
     }
     if (message.weaponControl !== 0) {
-      writer.uint32(64).int32(message.weaponControl);
+      writer.uint32(72).int32(message.weaponControl);
     }
     if (message.activeWeaponry !== 0) {
-      writer.uint32(72).int32(message.activeWeaponry);
+      writer.uint32(80).int32(message.activeWeaponry);
     }
     for (const v of message.eventAttackShotDetail) {
-      EventAttackShotDetail.encode(v!, writer.uint32(82).fork()).join();
+      EventAttackShotDetail.encode(v!, writer.uint32(90).fork()).join();
     }
     if (message.recoilDamageToAttacker !== false) {
-      writer.uint32(88).bool(message.recoilDamageToAttacker);
+      writer.uint32(96).bool(message.recoilDamageToAttacker);
     }
     if (message.recoilDamage !== 0) {
-      writer.uint32(96).uint64(message.recoilDamage);
+      writer.uint32(104).uint64(message.recoilDamage);
     }
     if (message.recoilDamageDestroyedAttacker !== false) {
-      writer.uint32(104).bool(message.recoilDamageDestroyedAttacker);
+      writer.uint32(112).bool(message.recoilDamageDestroyedAttacker);
     }
     if (message.planetaryDefenseCannonDamageToAttacker !== false) {
-      writer.uint32(112).bool(message.planetaryDefenseCannonDamageToAttacker);
+      writer.uint32(120).bool(message.planetaryDefenseCannonDamageToAttacker);
     }
     if (message.planetaryDefenseCannonDamage !== 0) {
-      writer.uint32(120).uint64(message.planetaryDefenseCannonDamage);
+      writer.uint32(128).uint64(message.planetaryDefenseCannonDamage);
     }
     if (message.planetaryDefenseCannonDamageDestroyedAttacker !== false) {
-      writer.uint32(128).bool(message.planetaryDefenseCannonDamageDestroyedAttacker);
+      writer.uint32(136).bool(message.planetaryDefenseCannonDamageDestroyedAttacker);
     }
     if (message.attackerPlayerId !== "") {
-      writer.uint32(138).string(message.attackerPlayerId);
+      writer.uint32(146).string(message.attackerPlayerId);
     }
-    if (message.targetPlayerId !== "") {
-      writer.uint32(146).string(message.targetPlayerId);
+    if (message.attackerHealthBefore !== 0) {
+      writer.uint32(160).uint64(message.attackerHealthBefore);
+    }
+    if (message.attackerHealthAfter !== 0) {
+      writer.uint32(168).uint64(message.attackerHealthAfter);
+    }
+    if (message.attackerHealthMax !== 0) {
+      writer.uint32(176).uint64(message.attackerHealthMax);
     }
     return writer;
   },
@@ -4177,31 +5120,31 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.attackerStructType = longToNumber(reader.uint64());
+          message.attackerStructTypeId = longToNumber(reader.uint64());
           continue;
         }
         case 3: {
-          if (tag !== 24) {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.attackerStructType = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
             break;
           }
 
           message.attackerStructLocationType = reader.int32() as any;
           continue;
         }
-        case 4: {
-          if (tag !== 34) {
+        case 5: {
+          if (tag !== 42) {
             break;
           }
 
           message.attackerStructLocationId = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 40) {
-            break;
-          }
-
-          message.attackerStructOperatingAmbit = reader.int32() as any;
           continue;
         }
         case 6: {
@@ -4209,7 +5152,7 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.attackerStructSlot = longToNumber(reader.uint64());
+          message.attackerStructOperatingAmbit = reader.int32() as any;
           continue;
         }
         case 7: {
@@ -4217,7 +5160,7 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.weaponSystem = reader.int32() as any;
+          message.attackerStructSlot = longToNumber(reader.uint64());
           continue;
         }
         case 8: {
@@ -4225,7 +5168,7 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.weaponControl = reader.int32() as any;
+          message.weaponSystem = reader.int32() as any;
           continue;
         }
         case 9: {
@@ -4233,23 +5176,23 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.activeWeaponry = reader.int32() as any;
+          message.weaponControl = reader.int32() as any;
           continue;
         }
         case 10: {
-          if (tag !== 82) {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.activeWeaponry = reader.int32() as any;
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
             break;
           }
 
           message.eventAttackShotDetail.push(EventAttackShotDetail.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 11: {
-          if (tag !== 88) {
-            break;
-          }
-
-          message.recoilDamageToAttacker = reader.bool();
           continue;
         }
         case 12: {
@@ -4257,7 +5200,7 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.recoilDamage = longToNumber(reader.uint64());
+          message.recoilDamageToAttacker = reader.bool();
           continue;
         }
         case 13: {
@@ -4265,7 +5208,7 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.recoilDamageDestroyedAttacker = reader.bool();
+          message.recoilDamage = longToNumber(reader.uint64());
           continue;
         }
         case 14: {
@@ -4273,7 +5216,7 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.planetaryDefenseCannonDamageToAttacker = reader.bool();
+          message.recoilDamageDestroyedAttacker = reader.bool();
           continue;
         }
         case 15: {
@@ -4281,7 +5224,7 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.planetaryDefenseCannonDamage = longToNumber(reader.uint64());
+          message.planetaryDefenseCannonDamageToAttacker = reader.bool();
           continue;
         }
         case 16: {
@@ -4289,15 +5232,15 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.planetaryDefenseCannonDamageDestroyedAttacker = reader.bool();
+          message.planetaryDefenseCannonDamage = longToNumber(reader.uint64());
           continue;
         }
         case 17: {
-          if (tag !== 138) {
+          if (tag !== 136) {
             break;
           }
 
-          message.attackerPlayerId = reader.string();
+          message.planetaryDefenseCannonDamageDestroyedAttacker = reader.bool();
           continue;
         }
         case 18: {
@@ -4305,7 +5248,31 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
             break;
           }
 
-          message.targetPlayerId = reader.string();
+          message.attackerPlayerId = reader.string();
+          continue;
+        }
+        case 20: {
+          if (tag !== 160) {
+            break;
+          }
+
+          message.attackerHealthBefore = longToNumber(reader.uint64());
+          continue;
+        }
+        case 21: {
+          if (tag !== 168) {
+            break;
+          }
+
+          message.attackerHealthAfter = longToNumber(reader.uint64());
+          continue;
+        }
+        case 22: {
+          if (tag !== 176) {
+            break;
+          }
+
+          message.attackerHealthMax = longToNumber(reader.uint64());
           continue;
         }
       }
@@ -4320,7 +5287,8 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
   fromJSON(object: any): EventAttackDetail {
     return {
       attackerStructId: isSet(object.attackerStructId) ? globalThis.String(object.attackerStructId) : "",
-      attackerStructType: isSet(object.attackerStructType) ? globalThis.Number(object.attackerStructType) : 0,
+      attackerStructTypeId: isSet(object.attackerStructTypeId) ? globalThis.Number(object.attackerStructTypeId) : 0,
+      attackerStructType: isSet(object.attackerStructType) ? globalThis.String(object.attackerStructType) : "",
       attackerStructLocationType: isSet(object.attackerStructLocationType)
         ? objectTypeFromJSON(object.attackerStructLocationType)
         : 0,
@@ -4354,7 +5322,9 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
         ? globalThis.Boolean(object.planetaryDefenseCannonDamageDestroyedAttacker)
         : false,
       attackerPlayerId: isSet(object.attackerPlayerId) ? globalThis.String(object.attackerPlayerId) : "",
-      targetPlayerId: isSet(object.targetPlayerId) ? globalThis.String(object.targetPlayerId) : "",
+      attackerHealthBefore: isSet(object.attackerHealthBefore) ? globalThis.Number(object.attackerHealthBefore) : 0,
+      attackerHealthAfter: isSet(object.attackerHealthAfter) ? globalThis.Number(object.attackerHealthAfter) : 0,
+      attackerHealthMax: isSet(object.attackerHealthMax) ? globalThis.Number(object.attackerHealthMax) : 0,
     };
   },
 
@@ -4363,8 +5333,11 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
     if (message.attackerStructId !== "") {
       obj.attackerStructId = message.attackerStructId;
     }
-    if (message.attackerStructType !== 0) {
-      obj.attackerStructType = Math.round(message.attackerStructType);
+    if (message.attackerStructTypeId !== 0) {
+      obj.attackerStructTypeId = Math.round(message.attackerStructTypeId);
+    }
+    if (message.attackerStructType !== "") {
+      obj.attackerStructType = message.attackerStructType;
     }
     if (message.attackerStructLocationType !== 0) {
       obj.attackerStructLocationType = objectTypeToJSON(message.attackerStructLocationType);
@@ -4411,8 +5384,14 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
     if (message.attackerPlayerId !== "") {
       obj.attackerPlayerId = message.attackerPlayerId;
     }
-    if (message.targetPlayerId !== "") {
-      obj.targetPlayerId = message.targetPlayerId;
+    if (message.attackerHealthBefore !== 0) {
+      obj.attackerHealthBefore = Math.round(message.attackerHealthBefore);
+    }
+    if (message.attackerHealthAfter !== 0) {
+      obj.attackerHealthAfter = Math.round(message.attackerHealthAfter);
+    }
+    if (message.attackerHealthMax !== 0) {
+      obj.attackerHealthMax = Math.round(message.attackerHealthMax);
     }
     return obj;
   },
@@ -4423,7 +5402,8 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
   fromPartial<I extends Exact<DeepPartial<EventAttackDetail>, I>>(object: I): EventAttackDetail {
     const message = createBaseEventAttackDetail();
     message.attackerStructId = object.attackerStructId ?? "";
-    message.attackerStructType = object.attackerStructType ?? 0;
+    message.attackerStructTypeId = object.attackerStructTypeId ?? 0;
+    message.attackerStructType = object.attackerStructType ?? "";
     message.attackerStructLocationType = object.attackerStructLocationType ?? 0;
     message.attackerStructLocationId = object.attackerStructLocationId ?? "";
     message.attackerStructOperatingAmbit = object.attackerStructOperatingAmbit ?? 0;
@@ -4441,7 +5421,9 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
     message.planetaryDefenseCannonDamageDestroyedAttacker = object.planetaryDefenseCannonDamageDestroyedAttacker ??
       false;
     message.attackerPlayerId = object.attackerPlayerId ?? "";
-    message.targetPlayerId = object.targetPlayerId ?? "";
+    message.attackerHealthBefore = object.attackerHealthBefore ?? 0;
+    message.attackerHealthAfter = object.attackerHealthAfter ?? 0;
+    message.attackerHealthMax = object.attackerHealthMax ?? 0;
     return message;
   },
 };
@@ -4449,7 +5431,9 @@ export const EventAttackDetail: MessageFns<EventAttackDetail> = {
 function createBaseEventAttackShotDetail(): EventAttackShotDetail {
   return {
     targetStructId: "",
-    targetStructType: 0,
+    targetPlayerId: "",
+    targetStructTypeId: 0,
+    targetStructType: "",
     targetStructLocationType: 0,
     targetStructLocationId: "",
     targetStructOperatingAmbit: 0,
@@ -4460,7 +5444,8 @@ function createBaseEventAttackShotDetail(): EventAttackShotDetail {
     evadedByPlanetaryDefensesCause: 0,
     blocked: false,
     blockedByStructId: "",
-    blockedByStructType: 0,
+    blockedByStructType: "",
+    blockedByStructTypeId: 0,
     blockedByStructLocationType: 0,
     blockedByStructLocationId: "",
     blockedByStructOperatingAmbit: 0,
@@ -4474,12 +5459,22 @@ function createBaseEventAttackShotDetail(): EventAttackShotDetail {
     targetCountered: false,
     targetCounteredDamage: 0,
     targetCounterDestroyedAttacker: false,
-    targetCounterCause: 0,
+    targetCounterPassiveWeaponry: 0,
+    targetCounterWeaponSystem: 0,
+    targetCounterWeaponControl: 0,
+    targetCounterActiveWeaponry: 0,
     targetDestroyed: false,
     postDestructionDamageToAttacker: false,
     postDestructionDamage: 0,
     postDestructionDamageDestroyedAttacker: false,
-    postDestructionDamageCause: 0,
+    postDestructionDamagePassiveWeaponry: 0,
+    targetHealthBefore: 0,
+    targetHealthAfter: 0,
+    targetHealthMax: 0,
+    blockerHealthBefore: 0,
+    blockerHealthAfter: 0,
+    blockerHealthMax: 0,
+    armourPiercing: false,
   };
 }
 
@@ -4488,98 +5483,137 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
     if (message.targetStructId !== "") {
       writer.uint32(10).string(message.targetStructId);
     }
-    if (message.targetStructType !== 0) {
-      writer.uint32(16).uint64(message.targetStructType);
+    if (message.targetPlayerId !== "") {
+      writer.uint32(354).string(message.targetPlayerId);
+    }
+    if (message.targetStructTypeId !== 0) {
+      writer.uint32(16).uint64(message.targetStructTypeId);
+    }
+    if (message.targetStructType !== "") {
+      writer.uint32(26).string(message.targetStructType);
     }
     if (message.targetStructLocationType !== 0) {
-      writer.uint32(24).int32(message.targetStructLocationType);
+      writer.uint32(32).int32(message.targetStructLocationType);
     }
     if (message.targetStructLocationId !== "") {
-      writer.uint32(34).string(message.targetStructLocationId);
+      writer.uint32(42).string(message.targetStructLocationId);
     }
     if (message.targetStructOperatingAmbit !== 0) {
-      writer.uint32(40).int32(message.targetStructOperatingAmbit);
+      writer.uint32(48).int32(message.targetStructOperatingAmbit);
     }
     if (message.targetStructSlot !== 0) {
-      writer.uint32(48).uint64(message.targetStructSlot);
+      writer.uint32(56).uint64(message.targetStructSlot);
     }
     if (message.evaded !== false) {
-      writer.uint32(56).bool(message.evaded);
+      writer.uint32(64).bool(message.evaded);
     }
     if (message.evadedCause !== 0) {
-      writer.uint32(64).int32(message.evadedCause);
+      writer.uint32(72).int32(message.evadedCause);
     }
     if (message.evadedByPlanetaryDefenses !== false) {
-      writer.uint32(72).bool(message.evadedByPlanetaryDefenses);
+      writer.uint32(80).bool(message.evadedByPlanetaryDefenses);
     }
     if (message.evadedByPlanetaryDefensesCause !== 0) {
-      writer.uint32(80).int32(message.evadedByPlanetaryDefensesCause);
+      writer.uint32(88).int32(message.evadedByPlanetaryDefensesCause);
     }
     if (message.blocked !== false) {
-      writer.uint32(88).bool(message.blocked);
+      writer.uint32(96).bool(message.blocked);
     }
     if (message.blockedByStructId !== "") {
-      writer.uint32(98).string(message.blockedByStructId);
+      writer.uint32(106).string(message.blockedByStructId);
     }
-    if (message.blockedByStructType !== 0) {
-      writer.uint32(104).uint64(message.blockedByStructType);
+    if (message.blockedByStructType !== "") {
+      writer.uint32(114).string(message.blockedByStructType);
+    }
+    if (message.blockedByStructTypeId !== 0) {
+      writer.uint32(120).uint64(message.blockedByStructTypeId);
     }
     if (message.blockedByStructLocationType !== 0) {
-      writer.uint32(112).int32(message.blockedByStructLocationType);
+      writer.uint32(128).int32(message.blockedByStructLocationType);
     }
     if (message.blockedByStructLocationId !== "") {
-      writer.uint32(122).string(message.blockedByStructLocationId);
+      writer.uint32(138).string(message.blockedByStructLocationId);
     }
     if (message.blockedByStructOperatingAmbit !== 0) {
-      writer.uint32(128).int32(message.blockedByStructOperatingAmbit);
+      writer.uint32(144).int32(message.blockedByStructOperatingAmbit);
     }
     if (message.blockedByStructSlot !== 0) {
-      writer.uint32(136).uint64(message.blockedByStructSlot);
+      writer.uint32(152).uint64(message.blockedByStructSlot);
     }
     if (message.blockerDestroyed !== false) {
-      writer.uint32(144).bool(message.blockerDestroyed);
+      writer.uint32(160).bool(message.blockerDestroyed);
     }
     for (const v of message.eventAttackDefenderCounterDetail) {
-      EventAttackDefenderCounterDetail.encode(v!, writer.uint32(154).fork()).join();
+      EventAttackDefenderCounterDetail.encode(v!, writer.uint32(170).fork()).join();
     }
     if (message.damageDealt !== 0) {
-      writer.uint32(160).uint64(message.damageDealt);
+      writer.uint32(176).uint64(message.damageDealt);
     }
     if (message.damageReduction !== 0) {
-      writer.uint32(168).uint64(message.damageReduction);
+      writer.uint32(184).uint64(message.damageReduction);
     }
     if (message.damageReductionCause !== 0) {
-      writer.uint32(176).int32(message.damageReductionCause);
+      writer.uint32(192).int32(message.damageReductionCause);
     }
     if (message.damage !== 0) {
-      writer.uint32(184).uint64(message.damage);
+      writer.uint32(200).uint64(message.damage);
     }
     if (message.targetCountered !== false) {
-      writer.uint32(192).bool(message.targetCountered);
+      writer.uint32(208).bool(message.targetCountered);
     }
     if (message.targetCounteredDamage !== 0) {
-      writer.uint32(200).uint64(message.targetCounteredDamage);
+      writer.uint32(216).uint64(message.targetCounteredDamage);
     }
     if (message.targetCounterDestroyedAttacker !== false) {
-      writer.uint32(208).bool(message.targetCounterDestroyedAttacker);
+      writer.uint32(224).bool(message.targetCounterDestroyedAttacker);
     }
-    if (message.targetCounterCause !== 0) {
-      writer.uint32(216).int32(message.targetCounterCause);
+    if (message.targetCounterPassiveWeaponry !== 0) {
+      writer.uint32(232).int32(message.targetCounterPassiveWeaponry);
+    }
+    if (message.targetCounterWeaponSystem !== 0) {
+      writer.uint32(240).int32(message.targetCounterWeaponSystem);
+    }
+    if (message.targetCounterWeaponControl !== 0) {
+      writer.uint32(248).int32(message.targetCounterWeaponControl);
+    }
+    if (message.targetCounterActiveWeaponry !== 0) {
+      writer.uint32(256).int32(message.targetCounterActiveWeaponry);
     }
     if (message.targetDestroyed !== false) {
-      writer.uint32(224).bool(message.targetDestroyed);
+      writer.uint32(264).bool(message.targetDestroyed);
     }
     if (message.postDestructionDamageToAttacker !== false) {
-      writer.uint32(232).bool(message.postDestructionDamageToAttacker);
+      writer.uint32(272).bool(message.postDestructionDamageToAttacker);
     }
     if (message.postDestructionDamage !== 0) {
-      writer.uint32(240).uint64(message.postDestructionDamage);
+      writer.uint32(280).uint64(message.postDestructionDamage);
     }
     if (message.postDestructionDamageDestroyedAttacker !== false) {
-      writer.uint32(248).bool(message.postDestructionDamageDestroyedAttacker);
+      writer.uint32(288).bool(message.postDestructionDamageDestroyedAttacker);
     }
-    if (message.postDestructionDamageCause !== 0) {
-      writer.uint32(256).int32(message.postDestructionDamageCause);
+    if (message.postDestructionDamagePassiveWeaponry !== 0) {
+      writer.uint32(296).int32(message.postDestructionDamagePassiveWeaponry);
+    }
+    if (message.targetHealthBefore !== 0) {
+      writer.uint32(304).uint64(message.targetHealthBefore);
+    }
+    if (message.targetHealthAfter !== 0) {
+      writer.uint32(312).uint64(message.targetHealthAfter);
+    }
+    if (message.targetHealthMax !== 0) {
+      writer.uint32(320).uint64(message.targetHealthMax);
+    }
+    if (message.blockerHealthBefore !== 0) {
+      writer.uint32(328).uint64(message.blockerHealthBefore);
+    }
+    if (message.blockerHealthAfter !== 0) {
+      writer.uint32(336).uint64(message.blockerHealthAfter);
+    }
+    if (message.blockerHealthMax !== 0) {
+      writer.uint32(344).uint64(message.blockerHealthMax);
+    }
+    if (message.armourPiercing !== false) {
+      writer.uint32(360).bool(message.armourPiercing);
     }
     return writer;
   },
@@ -4599,36 +5633,44 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
           message.targetStructId = reader.string();
           continue;
         }
+        case 44: {
+          if (tag !== 354) {
+            break;
+          }
+
+          message.targetPlayerId = reader.string();
+          continue;
+        }
         case 2: {
           if (tag !== 16) {
             break;
           }
 
-          message.targetStructType = longToNumber(reader.uint64());
+          message.targetStructTypeId = longToNumber(reader.uint64());
           continue;
         }
         case 3: {
-          if (tag !== 24) {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.targetStructType = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
             break;
           }
 
           message.targetStructLocationType = reader.int32() as any;
           continue;
         }
-        case 4: {
-          if (tag !== 34) {
+        case 5: {
+          if (tag !== 42) {
             break;
           }
 
           message.targetStructLocationId = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 40) {
-            break;
-          }
-
-          message.targetStructOperatingAmbit = reader.int32() as any;
           continue;
         }
         case 6: {
@@ -4636,7 +5678,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.targetStructSlot = longToNumber(reader.uint64());
+          message.targetStructOperatingAmbit = reader.int32() as any;
           continue;
         }
         case 7: {
@@ -4644,7 +5686,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.evaded = reader.bool();
+          message.targetStructSlot = longToNumber(reader.uint64());
           continue;
         }
         case 8: {
@@ -4652,7 +5694,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.evadedCause = reader.int32() as any;
+          message.evaded = reader.bool();
           continue;
         }
         case 9: {
@@ -4660,7 +5702,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.evadedByPlanetaryDefenses = reader.bool();
+          message.evadedCause = reader.int32() as any;
           continue;
         }
         case 10: {
@@ -4668,7 +5710,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.evadedByPlanetaryDefensesCause = reader.int32() as any;
+          message.evadedByPlanetaryDefenses = reader.bool();
           continue;
         }
         case 11: {
@@ -4676,39 +5718,39 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.blocked = reader.bool();
+          message.evadedByPlanetaryDefensesCause = reader.int32() as any;
           continue;
         }
         case 12: {
-          if (tag !== 98) {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.blocked = reader.bool();
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
             break;
           }
 
           message.blockedByStructId = reader.string();
           continue;
         }
-        case 13: {
-          if (tag !== 104) {
-            break;
-          }
-
-          message.blockedByStructType = longToNumber(reader.uint64());
-          continue;
-        }
         case 14: {
-          if (tag !== 112) {
+          if (tag !== 114) {
             break;
           }
 
-          message.blockedByStructLocationType = reader.int32() as any;
+          message.blockedByStructType = reader.string();
           continue;
         }
         case 15: {
-          if (tag !== 122) {
+          if (tag !== 120) {
             break;
           }
 
-          message.blockedByStructLocationId = reader.string();
+          message.blockedByStructTypeId = longToNumber(reader.uint64());
           continue;
         }
         case 16: {
@@ -4716,15 +5758,15 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.blockedByStructOperatingAmbit = reader.int32() as any;
+          message.blockedByStructLocationType = reader.int32() as any;
           continue;
         }
         case 17: {
-          if (tag !== 136) {
+          if (tag !== 138) {
             break;
           }
 
-          message.blockedByStructSlot = longToNumber(reader.uint64());
+          message.blockedByStructLocationId = reader.string();
           continue;
         }
         case 18: {
@@ -4732,11 +5774,27 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.blockerDestroyed = reader.bool();
+          message.blockedByStructOperatingAmbit = reader.int32() as any;
           continue;
         }
         case 19: {
-          if (tag !== 154) {
+          if (tag !== 152) {
+            break;
+          }
+
+          message.blockedByStructSlot = longToNumber(reader.uint64());
+          continue;
+        }
+        case 20: {
+          if (tag !== 160) {
+            break;
+          }
+
+          message.blockerDestroyed = reader.bool();
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
             break;
           }
 
@@ -4745,28 +5803,12 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
           );
           continue;
         }
-        case 20: {
-          if (tag !== 160) {
-            break;
-          }
-
-          message.damageDealt = longToNumber(reader.uint64());
-          continue;
-        }
-        case 21: {
-          if (tag !== 168) {
-            break;
-          }
-
-          message.damageReduction = longToNumber(reader.uint64());
-          continue;
-        }
         case 22: {
           if (tag !== 176) {
             break;
           }
 
-          message.damageReductionCause = reader.int32() as any;
+          message.damageDealt = longToNumber(reader.uint64());
           continue;
         }
         case 23: {
@@ -4774,7 +5816,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.damage = longToNumber(reader.uint64());
+          message.damageReduction = longToNumber(reader.uint64());
           continue;
         }
         case 24: {
@@ -4782,7 +5824,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.targetCountered = reader.bool();
+          message.damageReductionCause = reader.int32() as any;
           continue;
         }
         case 25: {
@@ -4790,7 +5832,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.targetCounteredDamage = longToNumber(reader.uint64());
+          message.damage = longToNumber(reader.uint64());
           continue;
         }
         case 26: {
@@ -4798,7 +5840,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.targetCounterDestroyedAttacker = reader.bool();
+          message.targetCountered = reader.bool();
           continue;
         }
         case 27: {
@@ -4806,7 +5848,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.targetCounterCause = reader.int32() as any;
+          message.targetCounteredDamage = longToNumber(reader.uint64());
           continue;
         }
         case 28: {
@@ -4814,7 +5856,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.targetDestroyed = reader.bool();
+          message.targetCounterDestroyedAttacker = reader.bool();
           continue;
         }
         case 29: {
@@ -4822,7 +5864,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.postDestructionDamageToAttacker = reader.bool();
+          message.targetCounterPassiveWeaponry = reader.int32() as any;
           continue;
         }
         case 30: {
@@ -4830,7 +5872,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.postDestructionDamage = longToNumber(reader.uint64());
+          message.targetCounterWeaponSystem = reader.int32() as any;
           continue;
         }
         case 31: {
@@ -4838,7 +5880,7 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.postDestructionDamageDestroyedAttacker = reader.bool();
+          message.targetCounterWeaponControl = reader.int32() as any;
           continue;
         }
         case 32: {
@@ -4846,7 +5888,103 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
             break;
           }
 
-          message.postDestructionDamageCause = reader.int32() as any;
+          message.targetCounterActiveWeaponry = reader.int32() as any;
+          continue;
+        }
+        case 33: {
+          if (tag !== 264) {
+            break;
+          }
+
+          message.targetDestroyed = reader.bool();
+          continue;
+        }
+        case 34: {
+          if (tag !== 272) {
+            break;
+          }
+
+          message.postDestructionDamageToAttacker = reader.bool();
+          continue;
+        }
+        case 35: {
+          if (tag !== 280) {
+            break;
+          }
+
+          message.postDestructionDamage = longToNumber(reader.uint64());
+          continue;
+        }
+        case 36: {
+          if (tag !== 288) {
+            break;
+          }
+
+          message.postDestructionDamageDestroyedAttacker = reader.bool();
+          continue;
+        }
+        case 37: {
+          if (tag !== 296) {
+            break;
+          }
+
+          message.postDestructionDamagePassiveWeaponry = reader.int32() as any;
+          continue;
+        }
+        case 38: {
+          if (tag !== 304) {
+            break;
+          }
+
+          message.targetHealthBefore = longToNumber(reader.uint64());
+          continue;
+        }
+        case 39: {
+          if (tag !== 312) {
+            break;
+          }
+
+          message.targetHealthAfter = longToNumber(reader.uint64());
+          continue;
+        }
+        case 40: {
+          if (tag !== 320) {
+            break;
+          }
+
+          message.targetHealthMax = longToNumber(reader.uint64());
+          continue;
+        }
+        case 41: {
+          if (tag !== 328) {
+            break;
+          }
+
+          message.blockerHealthBefore = longToNumber(reader.uint64());
+          continue;
+        }
+        case 42: {
+          if (tag !== 336) {
+            break;
+          }
+
+          message.blockerHealthAfter = longToNumber(reader.uint64());
+          continue;
+        }
+        case 43: {
+          if (tag !== 344) {
+            break;
+          }
+
+          message.blockerHealthMax = longToNumber(reader.uint64());
+          continue;
+        }
+        case 45: {
+          if (tag !== 360) {
+            break;
+          }
+
+          message.armourPiercing = reader.bool();
           continue;
         }
       }
@@ -4861,7 +5999,9 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
   fromJSON(object: any): EventAttackShotDetail {
     return {
       targetStructId: isSet(object.targetStructId) ? globalThis.String(object.targetStructId) : "",
-      targetStructType: isSet(object.targetStructType) ? globalThis.Number(object.targetStructType) : 0,
+      targetPlayerId: isSet(object.targetPlayerId) ? globalThis.String(object.targetPlayerId) : "",
+      targetStructTypeId: isSet(object.targetStructTypeId) ? globalThis.Number(object.targetStructTypeId) : 0,
+      targetStructType: isSet(object.targetStructType) ? globalThis.String(object.targetStructType) : "",
       targetStructLocationType: isSet(object.targetStructLocationType)
         ? objectTypeFromJSON(object.targetStructLocationType)
         : 0,
@@ -4882,7 +6022,8 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
         : 0,
       blocked: isSet(object.blocked) ? globalThis.Boolean(object.blocked) : false,
       blockedByStructId: isSet(object.blockedByStructId) ? globalThis.String(object.blockedByStructId) : "",
-      blockedByStructType: isSet(object.blockedByStructType) ? globalThis.Number(object.blockedByStructType) : 0,
+      blockedByStructType: isSet(object.blockedByStructType) ? globalThis.String(object.blockedByStructType) : "",
+      blockedByStructTypeId: isSet(object.blockedByStructTypeId) ? globalThis.Number(object.blockedByStructTypeId) : 0,
       blockedByStructLocationType: isSet(object.blockedByStructLocationType)
         ? objectTypeFromJSON(object.blockedByStructLocationType)
         : 0,
@@ -4908,7 +6049,18 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
       targetCounterDestroyedAttacker: isSet(object.targetCounterDestroyedAttacker)
         ? globalThis.Boolean(object.targetCounterDestroyedAttacker)
         : false,
-      targetCounterCause: isSet(object.targetCounterCause) ? techPassiveWeaponryFromJSON(object.targetCounterCause) : 0,
+      targetCounterPassiveWeaponry: isSet(object.targetCounterPassiveWeaponry)
+        ? techPassiveWeaponryFromJSON(object.targetCounterPassiveWeaponry)
+        : 0,
+      targetCounterWeaponSystem: isSet(object.targetCounterWeaponSystem)
+        ? techWeaponSystemFromJSON(object.targetCounterWeaponSystem)
+        : 0,
+      targetCounterWeaponControl: isSet(object.targetCounterWeaponControl)
+        ? techWeaponControlFromJSON(object.targetCounterWeaponControl)
+        : 0,
+      targetCounterActiveWeaponry: isSet(object.targetCounterActiveWeaponry)
+        ? techActiveWeaponryFromJSON(object.targetCounterActiveWeaponry)
+        : 0,
       targetDestroyed: isSet(object.targetDestroyed) ? globalThis.Boolean(object.targetDestroyed) : false,
       postDestructionDamageToAttacker: isSet(object.postDestructionDamageToAttacker)
         ? globalThis.Boolean(object.postDestructionDamageToAttacker)
@@ -4917,9 +6069,16 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
       postDestructionDamageDestroyedAttacker: isSet(object.postDestructionDamageDestroyedAttacker)
         ? globalThis.Boolean(object.postDestructionDamageDestroyedAttacker)
         : false,
-      postDestructionDamageCause: isSet(object.postDestructionDamageCause)
-        ? techPassiveWeaponryFromJSON(object.postDestructionDamageCause)
+      postDestructionDamagePassiveWeaponry: isSet(object.postDestructionDamagePassiveWeaponry)
+        ? techPassiveWeaponryFromJSON(object.postDestructionDamagePassiveWeaponry)
         : 0,
+      targetHealthBefore: isSet(object.targetHealthBefore) ? globalThis.Number(object.targetHealthBefore) : 0,
+      targetHealthAfter: isSet(object.targetHealthAfter) ? globalThis.Number(object.targetHealthAfter) : 0,
+      targetHealthMax: isSet(object.targetHealthMax) ? globalThis.Number(object.targetHealthMax) : 0,
+      blockerHealthBefore: isSet(object.blockerHealthBefore) ? globalThis.Number(object.blockerHealthBefore) : 0,
+      blockerHealthAfter: isSet(object.blockerHealthAfter) ? globalThis.Number(object.blockerHealthAfter) : 0,
+      blockerHealthMax: isSet(object.blockerHealthMax) ? globalThis.Number(object.blockerHealthMax) : 0,
+      armourPiercing: isSet(object.armourPiercing) ? globalThis.Boolean(object.armourPiercing) : false,
     };
   },
 
@@ -4928,8 +6087,14 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
     if (message.targetStructId !== "") {
       obj.targetStructId = message.targetStructId;
     }
-    if (message.targetStructType !== 0) {
-      obj.targetStructType = Math.round(message.targetStructType);
+    if (message.targetPlayerId !== "") {
+      obj.targetPlayerId = message.targetPlayerId;
+    }
+    if (message.targetStructTypeId !== 0) {
+      obj.targetStructTypeId = Math.round(message.targetStructTypeId);
+    }
+    if (message.targetStructType !== "") {
+      obj.targetStructType = message.targetStructType;
     }
     if (message.targetStructLocationType !== 0) {
       obj.targetStructLocationType = objectTypeToJSON(message.targetStructLocationType);
@@ -4961,8 +6126,11 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
     if (message.blockedByStructId !== "") {
       obj.blockedByStructId = message.blockedByStructId;
     }
-    if (message.blockedByStructType !== 0) {
-      obj.blockedByStructType = Math.round(message.blockedByStructType);
+    if (message.blockedByStructType !== "") {
+      obj.blockedByStructType = message.blockedByStructType;
+    }
+    if (message.blockedByStructTypeId !== 0) {
+      obj.blockedByStructTypeId = Math.round(message.blockedByStructTypeId);
     }
     if (message.blockedByStructLocationType !== 0) {
       obj.blockedByStructLocationType = objectTypeToJSON(message.blockedByStructLocationType);
@@ -5005,8 +6173,17 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
     if (message.targetCounterDestroyedAttacker !== false) {
       obj.targetCounterDestroyedAttacker = message.targetCounterDestroyedAttacker;
     }
-    if (message.targetCounterCause !== 0) {
-      obj.targetCounterCause = techPassiveWeaponryToJSON(message.targetCounterCause);
+    if (message.targetCounterPassiveWeaponry !== 0) {
+      obj.targetCounterPassiveWeaponry = techPassiveWeaponryToJSON(message.targetCounterPassiveWeaponry);
+    }
+    if (message.targetCounterWeaponSystem !== 0) {
+      obj.targetCounterWeaponSystem = techWeaponSystemToJSON(message.targetCounterWeaponSystem);
+    }
+    if (message.targetCounterWeaponControl !== 0) {
+      obj.targetCounterWeaponControl = techWeaponControlToJSON(message.targetCounterWeaponControl);
+    }
+    if (message.targetCounterActiveWeaponry !== 0) {
+      obj.targetCounterActiveWeaponry = techActiveWeaponryToJSON(message.targetCounterActiveWeaponry);
     }
     if (message.targetDestroyed !== false) {
       obj.targetDestroyed = message.targetDestroyed;
@@ -5020,8 +6197,31 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
     if (message.postDestructionDamageDestroyedAttacker !== false) {
       obj.postDestructionDamageDestroyedAttacker = message.postDestructionDamageDestroyedAttacker;
     }
-    if (message.postDestructionDamageCause !== 0) {
-      obj.postDestructionDamageCause = techPassiveWeaponryToJSON(message.postDestructionDamageCause);
+    if (message.postDestructionDamagePassiveWeaponry !== 0) {
+      obj.postDestructionDamagePassiveWeaponry = techPassiveWeaponryToJSON(
+        message.postDestructionDamagePassiveWeaponry,
+      );
+    }
+    if (message.targetHealthBefore !== 0) {
+      obj.targetHealthBefore = Math.round(message.targetHealthBefore);
+    }
+    if (message.targetHealthAfter !== 0) {
+      obj.targetHealthAfter = Math.round(message.targetHealthAfter);
+    }
+    if (message.targetHealthMax !== 0) {
+      obj.targetHealthMax = Math.round(message.targetHealthMax);
+    }
+    if (message.blockerHealthBefore !== 0) {
+      obj.blockerHealthBefore = Math.round(message.blockerHealthBefore);
+    }
+    if (message.blockerHealthAfter !== 0) {
+      obj.blockerHealthAfter = Math.round(message.blockerHealthAfter);
+    }
+    if (message.blockerHealthMax !== 0) {
+      obj.blockerHealthMax = Math.round(message.blockerHealthMax);
+    }
+    if (message.armourPiercing !== false) {
+      obj.armourPiercing = message.armourPiercing;
     }
     return obj;
   },
@@ -5032,7 +6232,9 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
   fromPartial<I extends Exact<DeepPartial<EventAttackShotDetail>, I>>(object: I): EventAttackShotDetail {
     const message = createBaseEventAttackShotDetail();
     message.targetStructId = object.targetStructId ?? "";
-    message.targetStructType = object.targetStructType ?? 0;
+    message.targetPlayerId = object.targetPlayerId ?? "";
+    message.targetStructTypeId = object.targetStructTypeId ?? 0;
+    message.targetStructType = object.targetStructType ?? "";
     message.targetStructLocationType = object.targetStructLocationType ?? 0;
     message.targetStructLocationId = object.targetStructLocationId ?? "";
     message.targetStructOperatingAmbit = object.targetStructOperatingAmbit ?? 0;
@@ -5043,7 +6245,8 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
     message.evadedByPlanetaryDefensesCause = object.evadedByPlanetaryDefensesCause ?? 0;
     message.blocked = object.blocked ?? false;
     message.blockedByStructId = object.blockedByStructId ?? "";
-    message.blockedByStructType = object.blockedByStructType ?? 0;
+    message.blockedByStructType = object.blockedByStructType ?? "";
+    message.blockedByStructTypeId = object.blockedByStructTypeId ?? 0;
     message.blockedByStructLocationType = object.blockedByStructLocationType ?? 0;
     message.blockedByStructLocationId = object.blockedByStructLocationId ?? "";
     message.blockedByStructOperatingAmbit = object.blockedByStructOperatingAmbit ?? 0;
@@ -5058,12 +6261,22 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
     message.targetCountered = object.targetCountered ?? false;
     message.targetCounteredDamage = object.targetCounteredDamage ?? 0;
     message.targetCounterDestroyedAttacker = object.targetCounterDestroyedAttacker ?? false;
-    message.targetCounterCause = object.targetCounterCause ?? 0;
+    message.targetCounterPassiveWeaponry = object.targetCounterPassiveWeaponry ?? 0;
+    message.targetCounterWeaponSystem = object.targetCounterWeaponSystem ?? 0;
+    message.targetCounterWeaponControl = object.targetCounterWeaponControl ?? 0;
+    message.targetCounterActiveWeaponry = object.targetCounterActiveWeaponry ?? 0;
     message.targetDestroyed = object.targetDestroyed ?? false;
     message.postDestructionDamageToAttacker = object.postDestructionDamageToAttacker ?? false;
     message.postDestructionDamage = object.postDestructionDamage ?? 0;
     message.postDestructionDamageDestroyedAttacker = object.postDestructionDamageDestroyedAttacker ?? false;
-    message.postDestructionDamageCause = object.postDestructionDamageCause ?? 0;
+    message.postDestructionDamagePassiveWeaponry = object.postDestructionDamagePassiveWeaponry ?? 0;
+    message.targetHealthBefore = object.targetHealthBefore ?? 0;
+    message.targetHealthAfter = object.targetHealthAfter ?? 0;
+    message.targetHealthMax = object.targetHealthMax ?? 0;
+    message.blockerHealthBefore = object.blockerHealthBefore ?? 0;
+    message.blockerHealthAfter = object.blockerHealthAfter ?? 0;
+    message.blockerHealthMax = object.blockerHealthMax ?? 0;
+    message.armourPiercing = object.armourPiercing ?? false;
     return message;
   },
 };
@@ -5071,11 +6284,15 @@ export const EventAttackShotDetail: MessageFns<EventAttackShotDetail> = {
 function createBaseEventAttackDefenderCounterDetail(): EventAttackDefenderCounterDetail {
   return {
     counterByStructId: "",
-    counterByStructType: 0,
+    counterByStructTypeId: 0,
+    counterByStructType: "",
     counterByStructLocationType: 0,
     counterByStructLocationId: "",
     counterByStructOperatingAmbit: 0,
     counterByStructSlot: 0,
+    counterByStructWeaponSystem: 0,
+    counterByStructWeaponControl: 0,
+    counterByStructActiveWeaponry: 0,
     counterDamage: 0,
     counterDestroyedAttacker: false,
   };
@@ -5086,26 +6303,38 @@ export const EventAttackDefenderCounterDetail: MessageFns<EventAttackDefenderCou
     if (message.counterByStructId !== "") {
       writer.uint32(10).string(message.counterByStructId);
     }
-    if (message.counterByStructType !== 0) {
-      writer.uint32(16).uint64(message.counterByStructType);
+    if (message.counterByStructTypeId !== 0) {
+      writer.uint32(16).uint64(message.counterByStructTypeId);
+    }
+    if (message.counterByStructType !== "") {
+      writer.uint32(26).string(message.counterByStructType);
     }
     if (message.counterByStructLocationType !== 0) {
-      writer.uint32(24).int32(message.counterByStructLocationType);
+      writer.uint32(32).int32(message.counterByStructLocationType);
     }
     if (message.counterByStructLocationId !== "") {
-      writer.uint32(34).string(message.counterByStructLocationId);
+      writer.uint32(42).string(message.counterByStructLocationId);
     }
     if (message.counterByStructOperatingAmbit !== 0) {
-      writer.uint32(40).int32(message.counterByStructOperatingAmbit);
+      writer.uint32(48).int32(message.counterByStructOperatingAmbit);
     }
     if (message.counterByStructSlot !== 0) {
-      writer.uint32(48).uint64(message.counterByStructSlot);
+      writer.uint32(56).uint64(message.counterByStructSlot);
+    }
+    if (message.counterByStructWeaponSystem !== 0) {
+      writer.uint32(64).int32(message.counterByStructWeaponSystem);
+    }
+    if (message.counterByStructWeaponControl !== 0) {
+      writer.uint32(72).int32(message.counterByStructWeaponControl);
+    }
+    if (message.counterByStructActiveWeaponry !== 0) {
+      writer.uint32(80).int32(message.counterByStructActiveWeaponry);
     }
     if (message.counterDamage !== 0) {
-      writer.uint32(56).uint64(message.counterDamage);
+      writer.uint32(88).uint64(message.counterDamage);
     }
     if (message.counterDestroyedAttacker !== false) {
-      writer.uint32(64).bool(message.counterDestroyedAttacker);
+      writer.uint32(96).bool(message.counterDestroyedAttacker);
     }
     return writer;
   },
@@ -5130,31 +6359,31 @@ export const EventAttackDefenderCounterDetail: MessageFns<EventAttackDefenderCou
             break;
           }
 
-          message.counterByStructType = longToNumber(reader.uint64());
+          message.counterByStructTypeId = longToNumber(reader.uint64());
           continue;
         }
         case 3: {
-          if (tag !== 24) {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.counterByStructType = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
             break;
           }
 
           message.counterByStructLocationType = reader.int32() as any;
           continue;
         }
-        case 4: {
-          if (tag !== 34) {
+        case 5: {
+          if (tag !== 42) {
             break;
           }
 
           message.counterByStructLocationId = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 40) {
-            break;
-          }
-
-          message.counterByStructOperatingAmbit = reader.int32() as any;
           continue;
         }
         case 6: {
@@ -5162,7 +6391,7 @@ export const EventAttackDefenderCounterDetail: MessageFns<EventAttackDefenderCou
             break;
           }
 
-          message.counterByStructSlot = longToNumber(reader.uint64());
+          message.counterByStructOperatingAmbit = reader.int32() as any;
           continue;
         }
         case 7: {
@@ -5170,11 +6399,43 @@ export const EventAttackDefenderCounterDetail: MessageFns<EventAttackDefenderCou
             break;
           }
 
-          message.counterDamage = longToNumber(reader.uint64());
+          message.counterByStructSlot = longToNumber(reader.uint64());
           continue;
         }
         case 8: {
           if (tag !== 64) {
+            break;
+          }
+
+          message.counterByStructWeaponSystem = reader.int32() as any;
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.counterByStructWeaponControl = reader.int32() as any;
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.counterByStructActiveWeaponry = reader.int32() as any;
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.counterDamage = longToNumber(reader.uint64());
+          continue;
+        }
+        case 12: {
+          if (tag !== 96) {
             break;
           }
 
@@ -5193,7 +6454,8 @@ export const EventAttackDefenderCounterDetail: MessageFns<EventAttackDefenderCou
   fromJSON(object: any): EventAttackDefenderCounterDetail {
     return {
       counterByStructId: isSet(object.counterByStructId) ? globalThis.String(object.counterByStructId) : "",
-      counterByStructType: isSet(object.counterByStructType) ? globalThis.Number(object.counterByStructType) : 0,
+      counterByStructTypeId: isSet(object.counterByStructTypeId) ? globalThis.Number(object.counterByStructTypeId) : 0,
+      counterByStructType: isSet(object.counterByStructType) ? globalThis.String(object.counterByStructType) : "",
       counterByStructLocationType: isSet(object.counterByStructLocationType)
         ? objectTypeFromJSON(object.counterByStructLocationType)
         : 0,
@@ -5204,6 +6466,15 @@ export const EventAttackDefenderCounterDetail: MessageFns<EventAttackDefenderCou
         ? ambitFromJSON(object.counterByStructOperatingAmbit)
         : 0,
       counterByStructSlot: isSet(object.counterByStructSlot) ? globalThis.Number(object.counterByStructSlot) : 0,
+      counterByStructWeaponSystem: isSet(object.counterByStructWeaponSystem)
+        ? techWeaponSystemFromJSON(object.counterByStructWeaponSystem)
+        : 0,
+      counterByStructWeaponControl: isSet(object.counterByStructWeaponControl)
+        ? techWeaponControlFromJSON(object.counterByStructWeaponControl)
+        : 0,
+      counterByStructActiveWeaponry: isSet(object.counterByStructActiveWeaponry)
+        ? techActiveWeaponryFromJSON(object.counterByStructActiveWeaponry)
+        : 0,
       counterDamage: isSet(object.counterDamage) ? globalThis.Number(object.counterDamage) : 0,
       counterDestroyedAttacker: isSet(object.counterDestroyedAttacker)
         ? globalThis.Boolean(object.counterDestroyedAttacker)
@@ -5216,8 +6487,11 @@ export const EventAttackDefenderCounterDetail: MessageFns<EventAttackDefenderCou
     if (message.counterByStructId !== "") {
       obj.counterByStructId = message.counterByStructId;
     }
-    if (message.counterByStructType !== 0) {
-      obj.counterByStructType = Math.round(message.counterByStructType);
+    if (message.counterByStructTypeId !== 0) {
+      obj.counterByStructTypeId = Math.round(message.counterByStructTypeId);
+    }
+    if (message.counterByStructType !== "") {
+      obj.counterByStructType = message.counterByStructType;
     }
     if (message.counterByStructLocationType !== 0) {
       obj.counterByStructLocationType = objectTypeToJSON(message.counterByStructLocationType);
@@ -5230,6 +6504,15 @@ export const EventAttackDefenderCounterDetail: MessageFns<EventAttackDefenderCou
     }
     if (message.counterByStructSlot !== 0) {
       obj.counterByStructSlot = Math.round(message.counterByStructSlot);
+    }
+    if (message.counterByStructWeaponSystem !== 0) {
+      obj.counterByStructWeaponSystem = techWeaponSystemToJSON(message.counterByStructWeaponSystem);
+    }
+    if (message.counterByStructWeaponControl !== 0) {
+      obj.counterByStructWeaponControl = techWeaponControlToJSON(message.counterByStructWeaponControl);
+    }
+    if (message.counterByStructActiveWeaponry !== 0) {
+      obj.counterByStructActiveWeaponry = techActiveWeaponryToJSON(message.counterByStructActiveWeaponry);
     }
     if (message.counterDamage !== 0) {
       obj.counterDamage = Math.round(message.counterDamage);
@@ -5250,11 +6533,15 @@ export const EventAttackDefenderCounterDetail: MessageFns<EventAttackDefenderCou
   ): EventAttackDefenderCounterDetail {
     const message = createBaseEventAttackDefenderCounterDetail();
     message.counterByStructId = object.counterByStructId ?? "";
-    message.counterByStructType = object.counterByStructType ?? 0;
+    message.counterByStructTypeId = object.counterByStructTypeId ?? 0;
+    message.counterByStructType = object.counterByStructType ?? "";
     message.counterByStructLocationType = object.counterByStructLocationType ?? 0;
     message.counterByStructLocationId = object.counterByStructLocationId ?? "";
     message.counterByStructOperatingAmbit = object.counterByStructOperatingAmbit ?? 0;
     message.counterByStructSlot = object.counterByStructSlot ?? 0;
+    message.counterByStructWeaponSystem = object.counterByStructWeaponSystem ?? 0;
+    message.counterByStructWeaponControl = object.counterByStructWeaponControl ?? 0;
+    message.counterByStructActiveWeaponry = object.counterByStructActiveWeaponry ?? 0;
     message.counterDamage = object.counterDamage ?? 0;
     message.counterDestroyedAttacker = object.counterDestroyedAttacker ?? false;
     return message;
@@ -5324,7 +6611,7 @@ export const EventRaid: MessageFns<EventRaid> = {
 };
 
 function createBaseEventRaidDetail(): EventRaidDetail {
-  return { fleetId: "", planetId: "", status: 0 };
+  return { fleetId: "", planetId: "", status: 0, seizedOre: 0 };
 }
 
 export const EventRaidDetail: MessageFns<EventRaidDetail> = {
@@ -5337,6 +6624,9 @@ export const EventRaidDetail: MessageFns<EventRaidDetail> = {
     }
     if (message.status !== 0) {
       writer.uint32(24).int32(message.status);
+    }
+    if (message.seizedOre !== 0) {
+      writer.uint32(32).uint64(message.seizedOre);
     }
     return writer;
   },
@@ -5372,6 +6662,14 @@ export const EventRaidDetail: MessageFns<EventRaidDetail> = {
           message.status = reader.int32() as any;
           continue;
         }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.seizedOre = longToNumber(reader.uint64());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5386,6 +6684,7 @@ export const EventRaidDetail: MessageFns<EventRaidDetail> = {
       fleetId: isSet(object.fleetId) ? globalThis.String(object.fleetId) : "",
       planetId: isSet(object.planetId) ? globalThis.String(object.planetId) : "",
       status: isSet(object.status) ? raidStatusFromJSON(object.status) : 0,
+      seizedOre: isSet(object.seizedOre) ? globalThis.Number(object.seizedOre) : 0,
     };
   },
 
@@ -5400,6 +6699,9 @@ export const EventRaidDetail: MessageFns<EventRaidDetail> = {
     if (message.status !== 0) {
       obj.status = raidStatusToJSON(message.status);
     }
+    if (message.seizedOre !== 0) {
+      obj.seizedOre = Math.round(message.seizedOre);
+    }
     return obj;
   },
 
@@ -5411,6 +6713,196 @@ export const EventRaidDetail: MessageFns<EventRaidDetail> = {
     message.fleetId = object.fleetId ?? "";
     message.planetId = object.planetId ?? "";
     message.status = object.status ?? 0;
+    message.seizedOre = object.seizedOre ?? 0;
+    return message;
+  },
+};
+
+function createBaseEventHashSuccess(): EventHashSuccess {
+  return { eventHashSuccessDetail: undefined };
+}
+
+export const EventHashSuccess: MessageFns<EventHashSuccess> = {
+  encode(message: EventHashSuccess, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.eventHashSuccessDetail !== undefined) {
+      EventHashSuccessDetail.encode(message.eventHashSuccessDetail, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventHashSuccess {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventHashSuccess();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.eventHashSuccessDetail = EventHashSuccessDetail.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventHashSuccess {
+    return {
+      eventHashSuccessDetail: isSet(object.eventHashSuccessDetail)
+        ? EventHashSuccessDetail.fromJSON(object.eventHashSuccessDetail)
+        : undefined,
+    };
+  },
+
+  toJSON(message: EventHashSuccess): unknown {
+    const obj: any = {};
+    if (message.eventHashSuccessDetail !== undefined) {
+      obj.eventHashSuccessDetail = EventHashSuccessDetail.toJSON(message.eventHashSuccessDetail);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventHashSuccess>, I>>(base?: I): EventHashSuccess {
+    return EventHashSuccess.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventHashSuccess>, I>>(object: I): EventHashSuccess {
+    const message = createBaseEventHashSuccess();
+    message.eventHashSuccessDetail =
+      (object.eventHashSuccessDetail !== undefined && object.eventHashSuccessDetail !== null)
+        ? EventHashSuccessDetail.fromPartial(object.eventHashSuccessDetail)
+        : undefined;
+    return message;
+  },
+};
+
+function createBaseEventHashSuccessDetail(): EventHashSuccessDetail {
+  return { callerAddress: "", category: "", difficulty: 0, objectId: "", planetId: "" };
+}
+
+export const EventHashSuccessDetail: MessageFns<EventHashSuccessDetail> = {
+  encode(message: EventHashSuccessDetail, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.callerAddress !== "") {
+      writer.uint32(10).string(message.callerAddress);
+    }
+    if (message.category !== "") {
+      writer.uint32(18).string(message.category);
+    }
+    if (message.difficulty !== 0) {
+      writer.uint32(24).uint64(message.difficulty);
+    }
+    if (message.objectId !== "") {
+      writer.uint32(34).string(message.objectId);
+    }
+    if (message.planetId !== "") {
+      writer.uint32(42).string(message.planetId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EventHashSuccessDetail {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEventHashSuccessDetail();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.callerAddress = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.category = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.difficulty = longToNumber(reader.uint64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.objectId = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.planetId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EventHashSuccessDetail {
+    return {
+      callerAddress: isSet(object.callerAddress) ? globalThis.String(object.callerAddress) : "",
+      category: isSet(object.category) ? globalThis.String(object.category) : "",
+      difficulty: isSet(object.difficulty) ? globalThis.Number(object.difficulty) : 0,
+      objectId: isSet(object.objectId) ? globalThis.String(object.objectId) : "",
+      planetId: isSet(object.planetId) ? globalThis.String(object.planetId) : "",
+    };
+  },
+
+  toJSON(message: EventHashSuccessDetail): unknown {
+    const obj: any = {};
+    if (message.callerAddress !== "") {
+      obj.callerAddress = message.callerAddress;
+    }
+    if (message.category !== "") {
+      obj.category = message.category;
+    }
+    if (message.difficulty !== 0) {
+      obj.difficulty = Math.round(message.difficulty);
+    }
+    if (message.objectId !== "") {
+      obj.objectId = message.objectId;
+    }
+    if (message.planetId !== "") {
+      obj.planetId = message.planetId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EventHashSuccessDetail>, I>>(base?: I): EventHashSuccessDetail {
+    return EventHashSuccessDetail.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EventHashSuccessDetail>, I>>(object: I): EventHashSuccessDetail {
+    const message = createBaseEventHashSuccessDetail();
+    message.callerAddress = object.callerAddress ?? "";
+    message.category = object.category ?? "";
+    message.difficulty = object.difficulty ?? 0;
+    message.objectId = object.objectId ?? "";
+    message.planetId = object.planetId ?? "";
     return message;
   },
 };

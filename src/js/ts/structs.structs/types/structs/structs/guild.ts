@@ -31,6 +31,18 @@ export interface Guild {
   joinInfusionMinimumBypassByInvite: guildJoinBypassLevel;
   primaryReactorId: string;
   entrySubstationId: string;
+  entryRank: number;
+  name: string;
+  pfp: string;
+  bankConvertInFee: string;
+  bankConvertOutFee: string;
+  /**
+   * charterSolverId is the player who solved the proof-of-work that founded
+   * this guild, which need not be the owner. Written once at creation and never
+   * mutated, so the credit survives a transfer. Empty on a guild founded
+   * through the reactor entitlement, where nobody solved anything.
+   */
+  charterSolverId: string;
 }
 
 export interface GuildMembershipApplication {
@@ -55,6 +67,12 @@ function createBaseGuild(): Guild {
     joinInfusionMinimumBypassByInvite: 0,
     primaryReactorId: "",
     entrySubstationId: "",
+    entryRank: 0,
+    name: "",
+    pfp: "",
+    bankConvertInFee: "",
+    bankConvertOutFee: "",
+    charterSolverId: "",
   };
 }
 
@@ -89,6 +107,24 @@ export const Guild: MessageFns<Guild> = {
     }
     if (message.entrySubstationId !== "") {
       writer.uint32(82).string(message.entrySubstationId);
+    }
+    if (message.entryRank !== 0) {
+      writer.uint32(88).uint64(message.entryRank);
+    }
+    if (message.name !== "") {
+      writer.uint32(98).string(message.name);
+    }
+    if (message.pfp !== "") {
+      writer.uint32(106).string(message.pfp);
+    }
+    if (message.bankConvertInFee !== "") {
+      writer.uint32(114).string(message.bankConvertInFee);
+    }
+    if (message.bankConvertOutFee !== "") {
+      writer.uint32(122).string(message.bankConvertOutFee);
+    }
+    if (message.charterSolverId !== "") {
+      writer.uint32(130).string(message.charterSolverId);
     }
     return writer;
   },
@@ -180,6 +216,54 @@ export const Guild: MessageFns<Guild> = {
           message.entrySubstationId = reader.string();
           continue;
         }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.entryRank = longToNumber(reader.uint64());
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.pfp = reader.string();
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.bankConvertInFee = reader.string();
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.bankConvertOutFee = reader.string();
+          continue;
+        }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.charterSolverId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -205,6 +289,12 @@ export const Guild: MessageFns<Guild> = {
         : 0,
       primaryReactorId: isSet(object.primaryReactorId) ? globalThis.String(object.primaryReactorId) : "",
       entrySubstationId: isSet(object.entrySubstationId) ? globalThis.String(object.entrySubstationId) : "",
+      entryRank: isSet(object.entryRank) ? globalThis.Number(object.entryRank) : 0,
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      pfp: isSet(object.pfp) ? globalThis.String(object.pfp) : "",
+      bankConvertInFee: isSet(object.bankConvertInFee) ? globalThis.String(object.bankConvertInFee) : "",
+      bankConvertOutFee: isSet(object.bankConvertOutFee) ? globalThis.String(object.bankConvertOutFee) : "",
+      charterSolverId: isSet(object.charterSolverId) ? globalThis.String(object.charterSolverId) : "",
     };
   },
 
@@ -240,6 +330,24 @@ export const Guild: MessageFns<Guild> = {
     if (message.entrySubstationId !== "") {
       obj.entrySubstationId = message.entrySubstationId;
     }
+    if (message.entryRank !== 0) {
+      obj.entryRank = Math.round(message.entryRank);
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.pfp !== "") {
+      obj.pfp = message.pfp;
+    }
+    if (message.bankConvertInFee !== "") {
+      obj.bankConvertInFee = message.bankConvertInFee;
+    }
+    if (message.bankConvertOutFee !== "") {
+      obj.bankConvertOutFee = message.bankConvertOutFee;
+    }
+    if (message.charterSolverId !== "") {
+      obj.charterSolverId = message.charterSolverId;
+    }
     return obj;
   },
 
@@ -258,6 +366,12 @@ export const Guild: MessageFns<Guild> = {
     message.joinInfusionMinimumBypassByInvite = object.joinInfusionMinimumBypassByInvite ?? 0;
     message.primaryReactorId = object.primaryReactorId ?? "";
     message.entrySubstationId = object.entrySubstationId ?? "";
+    message.entryRank = object.entryRank ?? 0;
+    message.name = object.name ?? "";
+    message.pfp = object.pfp ?? "";
+    message.bankConvertInFee = object.bankConvertInFee ?? "";
+    message.bankConvertOutFee = object.bankConvertOutFee ?? "";
+    message.charterSolverId = object.charterSolverId ?? "";
     return message;
   },
 };
