@@ -45,6 +45,9 @@ export class TaskManager {
         /** @type {Promise<Work[]>|null} In-flight work request, shared by concurrent callers. */
         this.work_request = null;
 
+        /** @type {Object<string, number>} Ore clocks that arrived while the planet was still raided. */
+        this.held_ore_clocks = {};
+
         /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
@@ -653,13 +656,26 @@ export class TaskManager {
      * @return {Promise<void>}
      */
     async refreshOreTasks(taskType, block_start) {
-        // A cleared clock, or a raid, stops the work outright. Neither needs the
-        // struct list, and a raid should stop the hashing immediately rather
-        // than a round trip later.
-        if (!block_start || this.isPlayerPlanetRaided()) {
+        // A cleared clock stops the work outright, and cancels anything held
+        // over from a raid since there is no longer a clock to go back to.
+        if (!block_start) {
+            delete this.held_ore_clocks[taskType];
             this.terminateAllByType(taskType);
             return;
         }
+
+        // The chain shifts the ore clocks forward the moment a raid ends, in the
+        // same block as the raid result and ahead of it, so this can arrive
+        // while the raid is still being played out on screen. Hold it rather
+        // than drop it: the chain announces a given clock once, and the next
+        // reconcile is what puts it back to work.
+        if (this.isPlayerPlanetRaided()) {
+            this.held_ore_clocks[taskType] = block_start;
+            this.terminateAllByType(taskType);
+            return;
+        }
+
+        delete this.held_ore_clocks[taskType];
 
         try {
             const work = await this.fetchWork();
@@ -803,7 +819,12 @@ export class TaskManager {
         });
 
         for (const taskType of ORE_TASK_TYPES) {
-            this.syncOreTasks(taskType, work);
+            // A clock held back during a raid is the one the chain announced and
+            // won't repeat, so it leads anything the indexer has written.
+            const held_block_start = this.held_ore_clocks[taskType] ?? null;
+            delete this.held_ore_clocks[taskType];
+
+            this.syncOreTasks(taskType, work, held_block_start);
         }
     }
 
