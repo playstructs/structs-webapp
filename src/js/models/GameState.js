@@ -434,7 +434,7 @@ export class GameState {
    * @param {string|null} playerType
    * @return {Struct|null}
    */
-  getPlanetaryDefenseStructByKeyPlayer(playerType) {
+  getPlanetaryDefenseCannonByKeyPlayer(playerType) {
     const keyPlayer = playerType ? this.keyPlayers[playerType] : null;
     const pdcStructType = this.structTypes.getStructType(STRUCT_TYPES.PLANETARY_DEFENSE_CANNON);
     if (!keyPlayer || !pdcStructType) {
@@ -442,6 +442,22 @@ export class GameState {
     }
     return Object.values(keyPlayer.structs).find(struct =>
       struct.type === pdcStructType.id
+      && struct.location_type === 'planet'
+    ) || null;
+  }
+
+  /**
+   * @param {string|null} playerType
+   * @return {Struct|null}
+   */
+  getJammingSatelliteByKeyPlayer(playerType) {
+    const keyPlayer = playerType ? this.keyPlayers[playerType] : null;
+    const jammingSatelliteStructType = this.structTypes.getStructType(STRUCT_TYPES.JAMMING_SATELLITE);
+    if (!keyPlayer || !jammingSatelliteStructType) {
+      return null;
+    }
+    return Object.values(keyPlayer.structs).find(struct =>
+      struct.type === jammingSatelliteStructType.id
       && struct.location_type === 'planet'
     ) || null;
   }

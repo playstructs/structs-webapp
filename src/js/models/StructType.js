@@ -221,6 +221,15 @@ export class StructType {
   }
 
   /**
+   * Checks if the struct type has low orbit ballistic interceptor network capability.
+   * @return {boolean}
+   */
+  hasLowOrbitBallisticInterceptorNetwork() {
+    return this.planetary_defenses
+      && this.planetary_defenses === STRUCT_PLANETARY_DEFENSES.LOW_ORBIT_BALLISTIC_INTERCEPTOR_NETWORK;
+  }
+
+  /**
    * Checks if the struct type has an associated active loop animation that runs while it is online.
    * @return {boolean}
    */

@@ -3,7 +3,13 @@ import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TASK_TYPES} from "../constants/TaskTypes";
 import {TaskCmdKillEvent} from "../events/TaskCmdKillEvent";
 import {TaskCmdSpawnEvent} from "../events/TaskCmdSpawnEvent";
-import {STRUCT_ACTIONS, STRUCT_STATUS_FLAGS, STRUCT_TYPES, STRUCT_WEAPON_SYSTEM} from "../constants/StructConstants";
+import {
+  STRUCT_ACTIONS,
+  STRUCT_PLANETARY_DEFENSES,
+  STRUCT_STATUS_FLAGS,
+  STRUCT_TYPES,
+  STRUCT_WEAPON_SYSTEM
+} from "../constants/StructConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {ClearStructTileEvent} from "../events/ClearStructTileEvent";
 import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
@@ -566,8 +572,8 @@ export class StructListener extends AbstractGrassListener {
         );
       }
 
+      // c. If evaded, play evade animation
       if (eventAttackShotDetail.evaded) {
-        // c. If evaded, play targetStruct evade animation
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeReceiveDamageAnimationEvent(
             eventAttackShotDetail.targetStructId,
@@ -584,6 +590,37 @@ export class StructListener extends AbstractGrassListener {
             mapId
           )
         );
+      } else if (
+        eventAttackShotDetail.evadedByPlanetaryDefenses
+        && eventAttackShotDetail.evadedByPlanetaryDefensesCause === STRUCT_PLANETARY_DEFENSES.LOW_ORBIT_BALLISTIC_INTERCEPTOR_NETWORK
+      ) {
+
+        // The message doesn't carry the Jamming Satellite struct id, but the listener is scoped
+        // to a single planet (this.targetPlayerType's planet) and there is at most
+        // one jamming satellite per planet, so we can locate it by struct
+        // type among the structs owned by this listener's target player.
+        const jammingSatelliteStruct = this.gameState.getJammingSatelliteByKeyPlayer(this.targetPlayerType);
+
+        if (jammingSatelliteStruct) {
+          this.gameState.animationEventQueue.enqueue(
+            this.animationEventFactory.makeReceiveDamageAnimationEvent(
+              jammingSatelliteStruct.id,
+              messageData.detail.attackerStructType,
+              messageData.detail.attackerStructOperatingAmbit,
+              messageData.detail.weaponSystem,
+              STRUCT_TYPES.JAMMING_SATELLITE,
+              jammingSatelliteStruct.operating_ambit,
+              jammingSatelliteStruct.location_type,
+              jammingSatelliteStruct.health,
+              jammingSatelliteStruct.health,
+              true,
+              STRUCT_PLANETARY_DEFENSES.LOW_ORBIT_BALLISTIC_INTERCEPTOR_NETWORK,
+              mapId
+            )
+          );
+
+          structIdsToRefresh.add(jammingSatelliteStruct.id);
+        }
       }
 
       if (eventAttackShotDetail.blocked) {
@@ -707,7 +744,7 @@ export class StructListener extends AbstractGrassListener {
       // to a single planet (this.targetPlayerType's planet) and there is at most
       // one planetary defense cannon per planet, so we can locate it by struct
       // type among the structs owned by this listener's target player.
-      const planetaryDefenseCannonStruct = this.gameState.getPlanetaryDefenseStructByKeyPlayer(this.targetPlayerType);
+      const planetaryDefenseCannonStruct = this.gameState.getPlanetaryDefenseCannonByKeyPlayer(this.targetPlayerType);
 
       const planetaryDefenseCannonDamage = parseInt(messageData.detail.planetaryDefenseCannonDamage);
       const attackerHealthBeforePDCCounter = runningAttackerHealth;
