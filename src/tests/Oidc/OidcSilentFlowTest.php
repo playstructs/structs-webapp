@@ -86,6 +86,31 @@ class OidcSilentFlowTest extends OidcProviderTestCase
         self::assertSame('test-key-1', $this->decodeJwtHeader($body['id_token'])['kid']);
     }
 
+    /**
+     * MAS (openidconnect-rs) refuses a NumericDate that carries a fractional
+     * part, failing the upstream callback with `invalid claim "exp"`. The JWT
+     * library serialises microseconds by default, so this guards the formatter
+     * that stops it.
+     */
+    public function testIdTokenDatesAreWholeSecondNumericDates(): void
+    {
+        $idToken = $this->jsonBody(
+            $this->controller->token($this->tokenRequest($this->issueCode()))->getContent()
+        )['id_token'];
+
+        $claims = $this->decodeJwtClaims($idToken);
+
+        self::assertIsInt($claims['iat']);
+        self::assertIsInt($claims['exp']);
+
+        // MAS parses the bytes rather than PHP's decoding of them, so assert on
+        // the serialised form too: 1787928562, never 1787928562.571061.
+        $payload = (string) base64_decode(strtr(explode('.', $idToken)[1], '-_', '+/'), true);
+
+        self::assertMatchesRegularExpression('/"iat":\d+[,}]/', $payload);
+        self::assertMatchesRegularExpression('/"exp":\d+[,}]/', $payload);
+    }
+
     public function testIdTokenVerifiesAgainstThePublishedJwks(): void
     {
         $authorizeResponse = $this->controller->authorize(

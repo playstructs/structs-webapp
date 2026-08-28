@@ -7,6 +7,7 @@ use App\Oidc\Entity\ClientEntity;
 use App\Oidc\Repository\AuthCodeRepository;
 use DateTimeImmutable;
 use Lcobucci\JWT\Configuration;
+use Lcobucci\JWT\Encoding\ChainedFormatter;
 use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
@@ -78,8 +79,15 @@ class IdTokenResponse extends BearerTokenResponse
     ): string {
         $issuedAt = new DateTimeImmutable();
         $claims = $this->claimsManager->buildClaims($player, $scopes);
+        $configuration = $this->jwtConfiguration();
 
-        $builder = $this->jwtConfiguration()->builder()
+        // MAS (openidconnect-rs) rejects any NumericDate claim that is not a
+        // whole number, failing the upstream callback with `invalid claim "exp"`.
+        // The library's default formatter serialises DateTimeImmutable with
+        // microseconds, so dates are converted by whole seconds instead. This is
+        // set on the builder rather than trimmed off each date so that adding a
+        // further date claim later cannot quietly reintroduce the fault.
+        $builder = $configuration->builder(ChainedFormatter::withUnixTimestampDates())
             ->issuedBy($this->config->getIssuer())
             ->permittedFor($accessToken->getClient()->getIdentifier())
             ->relatedTo($claims['sub'])
@@ -99,8 +107,6 @@ class IdTokenResponse extends BearerTokenResponse
         foreach ($claims as $name => $value) {
             $builder = $builder->withClaim($name, $value);
         }
-
-        $configuration = $this->jwtConfiguration();
 
         return $builder
             ->getToken($configuration->signer(), $configuration->signingKey())
