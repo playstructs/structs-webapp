@@ -35,6 +35,7 @@ import {DialogueKeyboardControls} from "./framework/DialogueKeyboardControls";
 import {MapPanController} from "./framework/MapPanController";
 import {AnimationEventQueue} from "./data_structures/AnimationEventQueue";
 import {LOG_LEVEL, RESUME_CHECK_INTERVAL_MS} from "./constants/GrassConstants";
+import {OidcContinueManager} from "./managers/OidcContinueManager";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -44,6 +45,12 @@ if (!actionBarMigrate) {
   localStorage.setItem("actionBarMigrate-20260107", "true");
   localStorage.removeItem('getStructTypes');
 }
+
+// Read before anything else touches the URL, so a Matrix login that landed here
+// mid-flow is captured even if boot fails later on.
+const oidcContinueManager = new OidcContinueManager();
+oidcContinueManager.init();
+global.oidcContinueManager = oidcContinueManager;
 
 const gameState = new GameState();
 global.gameState = gameState;
@@ -258,7 +265,15 @@ if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
 
   MenuPage.hideLoadingScreen();
 } else {
-  authManager.login(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then(() => {
+  authManager.login(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then((success) => {
+    // A Matrix login that arrived without a session lands here: the wallet is
+    // already in local storage, so the login above quietly restored the session
+    // and the player never sees a prompt. Leave before booting the game, since
+    // the browser is on its way back to the identity provider.
+    if (success && oidcContinueManager.resume()) {
+      return;
+    }
+
     return playerAddressManager.addPlayerAddressMeta().then(() => {
       MenuPage.close();
       MenuPage.router.restore('Fleet', 'index');

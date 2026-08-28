@@ -140,6 +140,19 @@
       <excludeFolder url="file://$MODULE_DIR$/src/var" />
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/polyfill-php84" />
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/polyfill-php85" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/paragonie/random_compat" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/lcobucci/jwt" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/defuse/php-encryption" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/nyholm/psr7" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/league/oauth2-server" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/league/uri-interfaces" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/league/uri" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/league/event" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/psr/http-message" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/psr/http-factory" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/psr/http-server-middleware" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/psr/http-server-handler" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/psr-http-message-bridge" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

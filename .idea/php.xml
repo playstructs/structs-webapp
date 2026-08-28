@@ -151,9 +151,22 @@
       <path value="$PROJECT_DIR$/src/vendor/symfony/polyfill-php85" />
       <path value="$PROJECT_DIR$/src/vendor/symfony/polyfill-php84" />
       <path value="$PROJECT_DIR$/src/vendor/doctrine/cache" />
+      <path value="$PROJECT_DIR$/src/vendor/paragonie/random_compat" />
+      <path value="$PROJECT_DIR$/src/vendor/lcobucci/jwt" />
+      <path value="$PROJECT_DIR$/src/vendor/defuse/php-encryption" />
+      <path value="$PROJECT_DIR$/src/vendor/nyholm/psr7" />
+      <path value="$PROJECT_DIR$/src/vendor/league/oauth2-server" />
+      <path value="$PROJECT_DIR$/src/vendor/league/uri-interfaces" />
+      <path value="$PROJECT_DIR$/src/vendor/league/uri" />
+      <path value="$PROJECT_DIR$/src/vendor/league/event" />
+      <path value="$PROJECT_DIR$/src/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/src/vendor/psr/http-factory" />
+      <path value="$PROJECT_DIR$/src/vendor/psr/http-server-middleware" />
+      <path value="$PROJECT_DIR$/src/vendor/psr/http-server-handler" />
+      <path value="$PROJECT_DIR$/src/vendor/symfony/psr-http-message-bridge" />
     </include_path>
   </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.3">
+  <component name="PhpProjectSharedConfiguration">
     <option name="suggestChangeDefaultLanguageLevel" value="false" />
   </component>
   <component name="PhpStan">

@@ -13,6 +13,16 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+        # The OIDC provider serves browser redirects arriving from Matrix
+        # Authentication Service. It reads session.player_id directly rather
+        # than going through PlayerAuthenticator, which answers with JSON 401
+        # and would strand a browser mid-redirect.
+        oidc_well_known:
+            pattern: ^/\.well-known/openid-configuration
+            security: false
+        oidc:
+            pattern: ^/oauth/
+            security: false
         api_auth:
             pattern: ^/api/auth/
             security: false

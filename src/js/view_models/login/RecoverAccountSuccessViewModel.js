@@ -10,6 +10,12 @@ export class RecoverAccountSuccessViewModel extends AbstractViewModel {
 
   initPageCode() {
     document.getElementById(this.playStructsBtnId).addEventListener('click', () => {
+      // A pending Matrix login takes the browser back to the identity provider
+      // instead of into the game.
+      if (global.oidcContinueManager && global.oidcContinueManager.resume()) {
+        return;
+      }
+
       MenuPage.close();
     });
   }
