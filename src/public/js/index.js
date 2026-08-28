@@ -12390,8 +12390,8 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
         );
       }
 
+      // c. If evaded, play evade animation
       if (eventAttackShotDetail.evaded) {
-        // c. If evaded, play targetStruct evade animation
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeReceiveDamageAnimationEvent(
             eventAttackShotDetail.targetStructId,
@@ -12408,6 +12408,37 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
             mapId
           )
         );
+      } else if (
+        eventAttackShotDetail.evadedByPlanetaryDefenses
+        && eventAttackShotDetail.evadedByPlanetaryDefensesCause === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_5__.STRUCT_PLANETARY_DEFENSES.LOW_ORBIT_BALLISTIC_INTERCEPTOR_NETWORK
+      ) {
+
+        // The message doesn't carry the Jamming Satellite struct id, but the listener is scoped
+        // to a single planet (this.targetPlayerType's planet) and there is at most
+        // one jamming satellite per planet, so we can locate it by struct
+        // type among the structs owned by this listener's target player.
+        const jammingSatelliteStruct = this.gameState.getJammingSatelliteByKeyPlayer(this.targetPlayerType);
+
+        if (jammingSatelliteStruct) {
+          this.gameState.animationEventQueue.enqueue(
+            this.animationEventFactory.makeReceiveDamageAnimationEvent(
+              jammingSatelliteStruct.id,
+              messageData.detail.attackerStructType,
+              messageData.detail.attackerStructOperatingAmbit,
+              messageData.detail.weaponSystem,
+              _constants_StructConstants__WEBPACK_IMPORTED_MODULE_5__.STRUCT_TYPES.JAMMING_SATELLITE,
+              jammingSatelliteStruct.operating_ambit,
+              jammingSatelliteStruct.location_type,
+              jammingSatelliteStruct.health,
+              jammingSatelliteStruct.health,
+              true,
+              _constants_StructConstants__WEBPACK_IMPORTED_MODULE_5__.STRUCT_PLANETARY_DEFENSES.LOW_ORBIT_BALLISTIC_INTERCEPTOR_NETWORK,
+              mapId
+            )
+          );
+
+          structIdsToRefresh.add(jammingSatelliteStruct.id);
+        }
       }
 
       if (eventAttackShotDetail.blocked) {
@@ -12531,7 +12562,7 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
       // to a single planet (this.targetPlayerType's planet) and there is at most
       // one planetary defense cannon per planet, so we can locate it by struct
       // type among the structs owned by this listener's target player.
-      const planetaryDefenseCannonStruct = this.gameState.getPlanetaryDefenseStructByKeyPlayer(this.targetPlayerType);
+      const planetaryDefenseCannonStruct = this.gameState.getPlanetaryDefenseCannonByKeyPlayer(this.targetPlayerType);
 
       const planetaryDefenseCannonDamage = parseInt(messageData.detail.planetaryDefenseCannonDamage);
       const attackerHealthBeforePDCCounter = runningAttackerHealth;
@@ -19182,7 +19213,7 @@ class GameState {
    * @param {string|null} playerType
    * @return {Struct|null}
    */
-  getPlanetaryDefenseStructByKeyPlayer(playerType) {
+  getPlanetaryDefenseCannonByKeyPlayer(playerType) {
     const keyPlayer = playerType ? this.keyPlayers[playerType] : null;
     const pdcStructType = this.structTypes.getStructType(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_17__.STRUCT_TYPES.PLANETARY_DEFENSE_CANNON);
     if (!keyPlayer || !pdcStructType) {
@@ -19190,6 +19221,22 @@ class GameState {
     }
     return Object.values(keyPlayer.structs).find(struct =>
       struct.type === pdcStructType.id
+      && struct.location_type === 'planet'
+    ) || null;
+  }
+
+  /**
+   * @param {string|null} playerType
+   * @return {Struct|null}
+   */
+  getJammingSatelliteByKeyPlayer(playerType) {
+    const keyPlayer = playerType ? this.keyPlayers[playerType] : null;
+    const jammingSatelliteStructType = this.structTypes.getStructType(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_17__.STRUCT_TYPES.JAMMING_SATELLITE);
+    if (!keyPlayer || !jammingSatelliteStructType) {
+      return null;
+    }
+    return Object.values(keyPlayer.structs).find(struct =>
+      struct.type === jammingSatelliteStructType.id
       && struct.location_type === 'planet'
     ) || null;
   }
@@ -20731,6 +20778,15 @@ class StructType {
   hasSignalJamming() {
     return this.unit_defenses
       && this.unit_defenses === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_0__.STRUCT_UNIT_DEFENSES.SIGNAL_JAMMING;
+  }
+
+  /**
+   * Checks if the struct type has low orbit ballistic interceptor network capability.
+   * @return {boolean}
+   */
+  hasLowOrbitBallisticInterceptorNetwork() {
+    return this.planetary_defenses
+      && this.planetary_defenses === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_0__.STRUCT_PLANETARY_DEFENSES.LOW_ORBIT_BALLISTIC_INTERCEPTOR_NETWORK;
   }
 
   /**
@@ -28507,7 +28563,11 @@ class MapStructViewerComponent {
   }
 
   renderEvadeHTML() {
-    if (!this.structType.hasDefensiveManeuver() && !this.structType.hasSignalJamming()) {
+    if (
+      !this.structType.hasDefensiveManeuver()
+      && !this.structType.hasSignalJamming()
+      && !this.structType.hasLowOrbitBallisticInterceptorNetwork()
+    ) {
       return '';
     }
 
@@ -29170,6 +29230,24 @@ class MapStructViewerComponent {
           loop: false,
           autoplay: false,
           path: `/lottie/signal_jamming/data.json`
+        }
+      ));
+
+    } else if (this.structType.hasLowOrbitBallisticInterceptorNetwork()) {
+
+      this.lottieCustomPlayer.registerAnimation(new _MapStructLottieAnimationSVG__WEBPACK_IMPORTED_MODULE_2__.MapStructLottieAnimationSVG(
+        this.gameState,
+        this.structManager,
+        _constants_AnimationConstants__WEBPACK_IMPORTED_MODULE_0__.ANIMATION.NAMES.EVADE,
+        this.structId,
+        this.structType,
+        this.evadeAnimationContainerId,
+        {
+          container: document.getElementById(this.evadeAnimationContainerId),
+          renderer: 'svg',
+          loop: false,
+          autoplay: false,
+          path: `/lottie/low_orbit_ballistic_interceptor_network/data.json`
         }
       ));
 

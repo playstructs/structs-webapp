@@ -380,7 +380,11 @@ export class MapStructViewerComponent {
   }
 
   renderEvadeHTML() {
-    if (!this.structType.hasDefensiveManeuver() && !this.structType.hasSignalJamming()) {
+    if (
+      !this.structType.hasDefensiveManeuver()
+      && !this.structType.hasSignalJamming()
+      && !this.structType.hasLowOrbitBallisticInterceptorNetwork()
+    ) {
       return '';
     }
 
@@ -1043,6 +1047,24 @@ export class MapStructViewerComponent {
           loop: false,
           autoplay: false,
           path: `/lottie/signal_jamming/data.json`
+        }
+      ));
+
+    } else if (this.structType.hasLowOrbitBallisticInterceptorNetwork()) {
+
+      this.lottieCustomPlayer.registerAnimation(new MapStructLottieAnimationSVG(
+        this.gameState,
+        this.structManager,
+        ANIMATION.NAMES.EVADE,
+        this.structId,
+        this.structType,
+        this.evadeAnimationContainerId,
+        {
+          container: document.getElementById(this.evadeAnimationContainerId),
+          renderer: 'svg',
+          loop: false,
+          autoplay: false,
+          path: `/lottie/low_orbit_ballistic_interceptor_network/data.json`
         }
       ));
 
