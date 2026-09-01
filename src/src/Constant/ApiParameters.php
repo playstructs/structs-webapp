@@ -6,9 +6,13 @@ class ApiParameters
 {
     const string ADDRESS = 'address';
 
+    const string AFTER_ID = 'after_id';
+
     const string ALLOCATION_ID = 'allocation_id';
 
     const string ATTRIBUTE_TYPE = 'attribute_type';
+
+    const string BUCKET = 'bucket';
 
     const string CATEGORY = 'category';
 
@@ -38,9 +42,21 @@ class ApiParameters
 
     const string GUILD_ID = 'guild_id';
 
+    const string IDS = 'ids';
+
+    const string INCLUDE_META = 'include_meta';
+
+    const string INCLUDE_TOTAL = 'include_total';
+
     const string IP = 'ip';
 
+    const string IS_DESTROYED = 'is_destroyed';
+
+    const string KIND = 'kind';
+
     const string LABEL = 'label';
+
+    const string LIMIT = 'limit';
 
     const string LOCATION_ID = 'location_id';
 
@@ -56,9 +72,15 @@ class ApiParameters
 
     const string OBJECT_KEY = 'object_key';
 
+    const string OBJECT_TYPE = 'object_type';
+
     const string OFFSET = 'offset';
 
+    const string ORDER = 'order';
+
     const string OWNER = 'owner';
+
+    const string OWNER_TYPE = 'owner_type';
 
     const string PAGE = 'page';
 
@@ -82,13 +104,19 @@ class ApiParameters
 
     const string PUBKEY = 'pubkey';
 
+    const string Q = 'q';
+
     const string SEARCH_STRING = 'search_string';
 
     const string SIGNATURE = 'signature';
 
+    const string SINCE_SEQ = 'since_seq';
+
     const string SOURCE_ID = 'source_id';
 
     const string START_TIME = 'start_time';
+
+    const string STATUS = 'status';
 
     const string STRUCT_ID = 'struct_id';
 
@@ -98,9 +126,13 @@ class ApiParameters
 
     const string UNIX_TIMESTAMP = 'unix_timestamp';
 
+    const string UPDATED_SINCE = 'updated_since';
+
     const string USER_AGENT = 'user_agent';
 
     const string USERNAME = 'username';
 
     const string VALIDATOR_ADDRESS = 'validator_address';
+
+    const string WINDOW_BLOCKS = 'window_blocks';
 }

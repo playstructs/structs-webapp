@@ -2,11 +2,15 @@
 
 namespace App\Dto;
 
+use App\Constant\ObjectTypes;
 use App\Constant\RegexPattern;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class ApiRequestParamsDto
 {
+    #[Assert\Regex(RegexPattern::ID)]
+    public ?string $after_id = null;
+
     #[Assert\Regex(RegexPattern::ADDRESS)]
     public ?string $address = null;
 
@@ -15,6 +19,9 @@ class ApiRequestParamsDto
 
     #[Assert\Regex(RegexPattern::SLUG)]
     public ?string $attribute_type = null;
+
+    #[Assert\Choice(choices: ['1h', '1d'])]
+    public ?string $bucket = null;
 
     #[Assert\Regex(RegexPattern::SLUG)]
     public ?string $category = null;
@@ -58,11 +65,29 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $guild_id = null;
 
+    #[Assert\Regex(RegexPattern::IDS)]
+    public ?string $ids = null;
+
+    #[Assert\Choice(choices: ['0', '1'])]
+    public ?string $include_meta = null;
+
+    #[Assert\Choice(choices: ['0', '1'])]
+    public ?string $include_total = null;
+
     #[Assert\Regex(RegexPattern::INET)]
     public ?string $ip = null;
 
+    #[Assert\Choice(choices: ['0', '1'])]
+    public ?string $is_destroyed = null;
+
+    #[Assert\Choice(choices: ['player', 'guild', 'reactor', 'substation', 'provider'])]
+    public ?string $kind = null;
+
     #[Assert\Regex(RegexPattern::SLUG)]
     public ?string $label = null;
+
+    #[Assert\Regex(RegexPattern::INT)]
+    public ?string $limit = null;
 
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $location_id = null;
@@ -88,11 +113,20 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::OBJECT_KEY)]
     public ?string $object_key = null;
 
+    #[Assert\Choice(choices: ObjectTypes::ALL)]
+    public ?string $object_type = null;
+
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $offset = null;
 
+    #[Assert\Regex(RegexPattern::ORDER)]
+    public ?string $order = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $owner = null;
+
+    #[Assert\Choice(choices: ObjectTypes::ALL)]
+    public ?string $owner_type = null;
 
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $page = null;
@@ -127,17 +161,26 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::PUBKEY)]
     public ?string $pubkey = null;
 
+    #[Assert\Length(min: 1, max: 128)]
+    public ?string $q = null;
+
     #[Assert\Regex(RegexPattern::SEARCH_STRING)]
     public ?string $search_string = null;
 
     #[Assert\Regex(RegexPattern::SIGNATURE)]
     public ?string $signature = null;
 
+    #[Assert\Regex(RegexPattern::INT)]
+    public ?string $since_seq = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $source_id = null;
 
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $start_time = null;
+
+    #[Assert\Regex(RegexPattern::SLUG)]
+    public ?string $status = null;
 
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $struct_id = null;
@@ -151,6 +194,9 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $unix_timestamp = null;
 
+    #[Assert\Regex(RegexPattern::INT)]
+    public ?string $updated_since = null;
+
     #[Assert\Length(min: 0, max: 255)]
     public ?string $user_agent = null;
 
@@ -159,4 +205,7 @@ class ApiRequestParamsDto
 
     #[Assert\Regex(RegexPattern::ADDRESS)]
     public ?string $validator_address = null;
+
+    #[Assert\Regex(RegexPattern::INT)]
+    public ?string $window_blocks = null;
 }

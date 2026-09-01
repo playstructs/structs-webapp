@@ -6,12 +6,64 @@ use App\Manager\PlanetManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class PlanetController extends AbstractController
 {
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/planet/count', name: 'api_count_planets', methods: ['GET'])]
+    public function countPlanets(
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $planetManager = new PlanetManager($entityManager, $validator);
+        return $planetManager->countPlanets();
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route(
+        '/api/planet-raid/all/page/{page}',
+        name: 'api_planet_raid_all',
+        requirements: ['page' => '\d+'],
+        methods: ['GET']
+    )]
+    public function planetRaidAll(
+        int $page,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $planetManager = new PlanetManager($entityManager, $validator);
+        return $planetManager->planetRaidAll($page, $request->query->get('limit'));
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route(
+        '/api/planet-raid/status/{status}/page/{page}',
+        name: 'api_planet_raid_by_status',
+        requirements: ['page' => '\d+'],
+        methods: ['GET']
+    )]
+    public function planetRaidByStatus(
+        string $status,
+        int $page,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $planetManager = new PlanetManager($entityManager, $validator);
+        return $planetManager->planetRaidByStatus($status, $page, $request->query->get('limit'));
+    }
+
     /**
      * @param string $planet_id
      * @param EntityManagerInterface $entityManager

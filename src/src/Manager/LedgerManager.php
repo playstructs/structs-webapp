@@ -4,10 +4,13 @@ namespace App\Manager;
 
 use App\Constant\ApiParameters;
 use App\Constant\PaginationLimits;
+use App\Dto\ApiResponseContentDto;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
+use App\Util\ResponseMetaUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -159,5 +162,45 @@ class LedgerManager
             $requestParams,
             $requiredFields
         );
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getLedgerStats(?string $bucket, ?string $denom): Response
+    {
+        $responseContent = new ApiResponseContentDto();
+        $params = [ApiParameters::BUCKET => $bucket, ApiParameters::DENOM => $denom];
+        $parsedRequest = $this->apiRequestParsingManager->parse($params, [], [ApiParameters::BUCKET, ApiParameters::DENOM]);
+        $responseContent->errors = $parsedRequest->errors;
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $trunc = ($bucket === '1h') ? 'hour' : 'day';
+        $denomSql = '';
+        $queryParams = [];
+        if ($denom !== null && $denom !== '') {
+            $denomSql = 'AND denom = :denom';
+            $queryParams['denom'] = $denom;
+        }
+
+        $sql = "SELECT date_trunc('{$trunc}', time) AS bucket,
+                action::text AS action,
+                denom,
+                SUM(amount_p)::text AS volume,
+                count(*) AS count
+            FROM structs.ledger
+            WHERE time >= NOW() - INTERVAL '30 days'
+            {$denomSql}
+            GROUP BY bucket, action, denom
+            ORDER BY bucket, action";
+
+        $db = $this->entityManager->getConnection();
+        $responseContent->data = $db->fetchAllAssociative($sql, $queryParams);
+        $responseContent->success = true;
+        ResponseMetaUtil::stampHeight($responseContent, $this->entityManager);
+
+        return new JsonResponse($responseContent, Response::HTTP_OK);
     }
 }

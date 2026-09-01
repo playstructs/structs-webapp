@@ -122,4 +122,18 @@ class WorkManager
             $requiredFields
         );
     }
+
+    /**
+     * @throws Exception
+     */
+    public function countWork(): Response
+    {
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            'SELECT count(*) AS count FROM view.work',
+            [],
+            []
+        );
+    }
 }
