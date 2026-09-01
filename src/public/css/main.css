@@ -69,6 +69,13 @@ body {
   height: 100%;
 }
 
+img {
+  /* Game art is never meant to be saved or dragged out, and iOS offers both
+     from its long-press menu, which lands on top of the game UI. */
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
 /* Tag Styling End */
 
 /* SUI Modifiers Start */

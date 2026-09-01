@@ -181,6 +181,24 @@ input:focus {
   outline: none;
 }
 
+/* Long press is how tooltips and cheatsheets are opened on touch devices, but
+   iOS Safari never fires a contextmenu event that SUITooltip/SUICheatsheet
+   could cancel, so its own long-press UI (link preview sheet, selection
+   magnifier, image menu) has to be suppressed in CSS instead. The descendant
+   selectors are required because the icon, label or image inside a trigger is
+   the element actually being pressed. */
+[data-sui-tooltip],
+[data-sui-tooltip] *,
+[data-sui-cheatsheet],
+[data-sui-cheatsheet] * {
+  -webkit-touch-callout: none;
+
+  -webkit-user-select: none;
+  user-select: none;
+
+  -webkit-user-drag: none;
+}
+
 /* ---- General Styling End ---- */
 
 
