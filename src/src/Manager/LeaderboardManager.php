@@ -31,11 +31,7 @@ class LeaderboardManager
             'model' => 'leaderboard_player',
             'select' => 'player_id, username, guild_id,
                 alpha_balance::text AS alpha_balance_p,
-                alpha_value::text AS alpha_value_p,
-                (SELECT pd.discord_username
-                   FROM structs.player_discord pd
-                   WHERE pd.player_id = lb.player_id
-                   LIMIT 1) AS discord_username',
+                alpha_value::text AS alpha_value_p',
             'default_order' => 'alpha_value DESC NULLS LAST, player_id',
             'orders' => [
                 'alpha_value.desc' => 'alpha_value DESC NULLS LAST, player_id',

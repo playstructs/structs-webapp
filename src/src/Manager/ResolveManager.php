@@ -21,19 +21,74 @@ class ResolveManager
     use ApiSqlQueryTrait;
     use ObjectKeyTrait;
 
-    /** @var array<string, string> */
+    /**
+     * Resolvable object types, with the columns each exposes. The projections are
+     * explicit rather than SELECT * so a column added to one of these tables is not
+     * published to every authenticated player on the next deploy.
+     *
+     * Two object types are deliberately absent and resolve to null: `address` (8-N)
+     * has no backing table, and `infusion` (7-N) is keyed on
+     * (destination_id, player_id) rather than a single id, so it is not addressable
+     * by object key at all.
+     *
+     * @var array<string, array{table: string, columns: string}>
+     */
     private const TYPE_TABLES = [
-        'guild' => 'structs.guild',
-        'player' => 'structs.player',
-        'planet' => 'structs.planet',
-        'reactor' => 'structs.reactor',
-        'substation' => 'structs.substation',
-        'struct' => 'structs.struct',
-        'allocation' => 'structs.allocation',
-        'infusion' => 'structs.infusion',
-        'fleet' => 'structs.fleet',
-        'provider' => 'structs.provider',
-        'agreement' => 'structs.agreement',
+        'guild' => [
+            'table' => 'structs.guild',
+            'columns' => 'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p,
+                join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite,
+                primary_reactor_id, entry_substation_id, entry_rank, name, pfp,
+                creator, owner, created_at, updated_at',
+        ],
+        'player' => [
+            'table' => 'structs.player',
+            'columns' => 'id, index, creator, primary_address, guild_id, guild_rank, substation_id,
+                planet_id, fleet_id, username, pfp, pfp_client_render_attributes,
+                created_at, updated_at',
+        ],
+        'planet' => [
+            'table' => 'structs.planet',
+            'columns' => 'id, max_ore, creator, owner, map, space_slots, air_slots, land_slots,
+                water_slots, status, location_list_start, location_list_end, name,
+                created_at, updated_at',
+        ],
+        'reactor' => [
+            'table' => 'structs.reactor',
+            'columns' => 'id, validator, guild_id, default_commission, owner, created_at, updated_at',
+        ],
+        'substation' => [
+            'table' => 'structs.substation',
+            'columns' => 'id, owner, creator, name, pfp, created_at, updated_at',
+        ],
+        'struct' => [
+            'table' => 'structs.struct',
+            'columns' => 'id, index, type, creator, owner, location_type, location_id,
+                operating_ambit, slot, is_destroyed, destroyed_block, created_at, updated_at',
+        ],
+        'allocation' => [
+            'table' => 'structs.allocation',
+            'columns' => 'id, allocation_type, source_id, index, destination_id, controller,
+                creator, created_at, updated_at',
+        ],
+        'fleet' => [
+            'table' => 'structs.fleet',
+            'columns' => 'id, owner, map, space_slots, air_slots, land_slots, water_slots,
+                location_type, location_id, status, location_list_forward,
+                location_list_backward, command_struct, created_at, updated_at',
+        ],
+        'provider' => [
+            'table' => 'structs.provider',
+            'columns' => 'id, index, substation_id, rate_amount, rate_denom, access_policy,
+                capacity_minimum, capacity_maximum, duration_minimum, duration_maximum,
+                provider_cancellation_penalty, consumer_cancellation_penalty,
+                creator, owner, created_at, updated_at',
+        ],
+        'agreement' => [
+            'table' => 'structs.agreement',
+            'columns' => 'id, provider_id, allocation_id, capacity, start_block, end_block,
+                creator, owner, created_at, updated_at',
+        ],
     ];
 
     public EntityManagerInterface $entityManager;
@@ -285,13 +340,12 @@ class ResolveManager
      */
     private function fetchTypedObject(string $type, string $id): ?array
     {
-        // 'address' keys (8-N) have no backing table, so they resolve to null here.
-        $table = self::TYPE_TABLES[$type] ?? null;
-        if ($table === null) {
+        $resolvable = self::TYPE_TABLES[$type] ?? null;
+        if ($resolvable === null) {
             return null;
         }
         $row = $this->entityManager->getConnection()->fetchAssociative(
-            "SELECT * FROM {$table} WHERE id = :id LIMIT 1",
+            "SELECT {$resolvable['columns']} FROM {$resolvable['table']} WHERE id = :id LIMIT 1",
             ['id' => $id]
         );
 
