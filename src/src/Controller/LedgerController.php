@@ -6,6 +6,7 @@ use App\Manager\LedgerManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -47,6 +48,22 @@ class LedgerController extends AbstractController
     {
         $ledgerManager = new LedgerManager($entityManager, $validator);
         return $ledgerManager->countTransactions($player_id);
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/ledger/stats', name: 'api_ledger_stats', methods: ['GET'])]
+    public function getLedgerStats(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $ledgerManager = new LedgerManager($entityManager, $validator);
+        return $ledgerManager->getLedgerStats(
+            $request->query->get('bucket'),
+            $request->query->get('denom')
+        );
     }
 
     /**

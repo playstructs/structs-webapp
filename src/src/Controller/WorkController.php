@@ -15,6 +15,19 @@ class WorkController extends AbstractController
     /**
      * @throws Exception
      */
+    #[Route('/api/work/count', name: 'api_count_work', methods: ['GET'])]
+    public function countWork(
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $workManager = new WorkManager($entityManager, $validator);
+
+        return $workManager->countWork();
+    }
+
+    /**
+     * @throws Exception
+     */
     #[Route('/api/work/all/page/{page}', name: 'api_work_list_all', requirements: ['page' => '\d+'], methods: ['GET'])]
     public function workListAll(
         int $page,

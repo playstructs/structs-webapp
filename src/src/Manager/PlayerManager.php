@@ -8,6 +8,7 @@ use App\Constant\RegexPattern;
 use App\Dto\ApiResponseContentDto;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
+use App\Util\ResponseMetaUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,6 +19,9 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class PlayerManager
 {
     use ApiSqlQueryTrait;
+
+    /** Lookback, in blocks, for the active-player count when window_blocks is omitted. */
+    private const int DEFAULT_ACTIVE_WINDOW_BLOCKS = 16363;
 
     public EntityManagerInterface $entityManager;
 
@@ -557,5 +561,119 @@ class PlayerManager
             $requestParams,
             $requiredFields
         );
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function countPlayers(): Response
+    {
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            'SELECT count(*) AS count FROM player',
+            [],
+            []
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function countActivePlayers(?string $windowBlocks): Response
+    {
+        $responseContent = new ApiResponseContentDto();
+        $params = [ApiParameters::WINDOW_BLOCKS => $windowBlocks];
+        $optional = [ApiParameters::WINDOW_BLOCKS];
+        $parsedRequest = $this->apiRequestParsingManager->parse($params, [], $optional);
+        $responseContent->errors = $parsedRequest->errors;
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $window = ($windowBlocks === null || $windowBlocks === '')
+            ? self::DEFAULT_ACTIVE_WINDOW_BLOCKS
+            : (int) $windowBlocks;
+        $sql = "SELECT count(*) AS count
+            FROM grid g
+            CROSS JOIN current_block cb
+            WHERE g.attribute_type = 'lastAction'
+            AND g.object_type = 'player'
+            AND g.val >= cb.height - :window_blocks";
+        $db = $this->entityManager->getConnection();
+        $row = $db->fetchAssociative($sql, ['window_blocks' => $window]);
+        $responseContent->data = $row === false ? ['count' => 0] : $row;
+        $responseContent->success = true;
+        ResponseMetaUtil::stampHeight($responseContent, $this->entityManager);
+
+        return new JsonResponse($responseContent, Response::HTTP_OK);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getPlayerPower(string $player_id): Response
+    {
+        $sql = "
+            SELECT
+              vp.player_id,
+              vp.capacity,
+              vp.capacity_p,
+              vp.connection_capacity,
+              vp.connection_capacity_p,
+              vp.load,
+              vp.load_p,
+              vp.structs_load,
+              vp.structs_load_p,
+              vp.total_load,
+              vp.total_load_p,
+              vp.total_capacity,
+              vp.total_capacity_p,
+              (vp.total_capacity - vp.total_load) AS margin,
+              (vp.total_capacity_p - vp.total_load_p) AS margin_p,
+              TRUE AS connection_capacity_is_player_share
+            FROM view.player vp
+            WHERE vp.player_id = :player_id
+            LIMIT 1
+        ";
+        return $this->queryOneStamped(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $sql,
+            [ApiParameters::PLAYER_ID => $player_id],
+            [ApiParameters::PLAYER_ID]
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getPlayersAtRisk(?string $limit): Response
+    {
+        $pageLimit = PaginationLimits::clamp($limit, 25);
+        $sql = "
+            SELECT
+              vp.player_id,
+              vp.username,
+              vp.capacity,
+              vp.capacity_p,
+              vp.connection_capacity,
+              vp.connection_capacity_p,
+              vp.load,
+              vp.load_p,
+              vp.structs_load,
+              vp.structs_load_p,
+              vp.total_load,
+              vp.total_load_p,
+              vp.total_capacity,
+              vp.total_capacity_p,
+              (vp.total_capacity - vp.total_load) AS margin,
+              (vp.total_capacity_p - vp.total_load_p) AS margin_p,
+              TRUE AS connection_capacity_is_player_share
+            FROM view.player vp
+            ORDER BY margin ASC, vp.player_id
+            LIMIT {$pageLimit}
+        ";
+        return $this->queryAllStamped($this->entityManager, $this->apiRequestParsingManager, $sql, [], []);
     }
 }

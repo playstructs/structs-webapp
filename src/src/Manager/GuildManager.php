@@ -204,7 +204,11 @@ class GuildManager
             sum(COALESCE(i.fuel, 0)) as total_fuel,
             sum(COALESCE(vp.total_load, 0)) as total_load,
             sum(COALESCE(vp.total_capacity, 0)) as total_capacity,
-            floor(avg(COALESCE(vp.connection_capacity, 0))) as avg_connection_capacity
+            floor(avg(COALESCE(vp.connection_capacity, 0))) as avg_connection_capacity,
+            sum(COALESCE(i.fuel_p, 0)) as total_fuel_p,
+            sum(COALESCE(vp.total_load_p, 0)) as total_load_p,
+            sum(COALESCE(vp.total_capacity_p, 0)) as total_capacity_p,
+            avg(COALESCE(vp.connection_capacity_p, 0)) as avg_connection_capacity_p
           FROM player p
           LEFT JOIN view.player vp
             ON vp.player_id = p.id
@@ -262,6 +266,11 @@ class GuildManager
     }
 
     /**
+     * Roster alpha is a display figure shown beside each member, not a spendable
+     * balance, so it combines liquid, infused and defusing holdings. `alpha` stays
+     * in legacy display units for the existing roster screen; `alpha_p` carries the
+     * same holdings in ualpha for clients that format their own.
+     *
      * @param string $guild_id
      * @return Response
      * @throws Exception
@@ -277,23 +286,29 @@ class GuildManager
               p.pfp_client_render_attributes,
               COALESCE(NULLIF(gu.name, \'\'), gm.name) AS guild_name,
               gm.tag,
-              SUM(COALESCE(vpi.balance, 0)) as alpha
+              COALESCE(vpi.alpha, 0) as alpha,
+              COALESCE(api.alpha_p, 0) as alpha_p
             FROM player p
             LEFT JOIN guild gu
               ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
               ON gu.id = gm.id
-            LEFT JOIN view.player_inventory vpi
-              ON p.id = vpi.player_id
+            LEFT JOIN (
+              SELECT player_id, SUM(balance) AS alpha
+              FROM view.player_inventory
+              WHERE denom IN (\'alpha\', \'alpha.infused\', \'alpha.defusing\')
+              GROUP BY player_id
+            ) vpi
+              ON vpi.player_id = p.id
+            LEFT JOIN (
+              SELECT owner_id, SUM(balance) AS alpha_p
+              FROM structs.api_inventory
+              WHERE owner_type = \'player\'
+              AND denom IN (\'ualpha\', \'ualpha.infused\', \'ualpha.defusing\')
+              GROUP BY owner_id
+            ) api
+              ON api.owner_id = p.id
             WHERE p.guild_id = :guild_id
-            GROUP BY
-              p.id,
-              p.guild_id,
-              p.username,
-              p.pfp,
-              p.pfp_client_render_attributes,
-              guild_name,
-              gm.tag
             ORDER BY username;
         ';
 

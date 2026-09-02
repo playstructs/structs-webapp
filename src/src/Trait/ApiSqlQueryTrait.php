@@ -5,6 +5,7 @@ namespace App\Trait;
 use App\Dto\ApiParsedRequestDto;
 use App\Dto\ApiResponseContentDto;
 use App\Manager\ApiRequestParsingManager;
+use App\Util\ResponseMetaUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -41,28 +42,16 @@ trait ApiSqlQueryTrait
         array $apiRequestParams,
         array $apiRequiredParams
     ):Response {
-        $responseContent = new ApiResponseContentDto();
-
-        $parsedRequest = $apiRequestParsingManager->parse(
+        [$responseContent, $status] = $this->runQuery(
+            $entityManager,
+            $apiRequestParsingManager,
+            $sqlQuery,
             $apiRequestParams,
-            $apiRequiredParams
+            $apiRequiredParams,
+            false
         );
 
-        $responseContent->errors = $parsedRequest->errors;
-
-        if (count($responseContent->errors) > 0) {
-            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
-        }
-
-        $queryParams = $this->getQueryParams($apiRequiredParams, $parsedRequest);
-
-        $db = $entityManager->getConnection();
-        $result = $db->fetchAssociative($sqlQuery, $queryParams);
-
-        $responseContent->data = $result === false ? null : $result;
-        $responseContent->success = true;
-
-        return new JsonResponse($responseContent, Response::HTTP_OK);
+        return new JsonResponse($responseContent, $status);
     }
 
     /**
@@ -81,6 +70,108 @@ trait ApiSqlQueryTrait
         array $apiRequestParams,
         array $apiRequiredParams
     ):Response {
+        [$responseContent, $status] = $this->runQuery(
+            $entityManager,
+            $apiRequestParsingManager,
+            $sqlQuery,
+            $apiRequestParams,
+            $apiRequiredParams,
+            true
+        );
+
+        return new JsonResponse($responseContent, $status);
+    }
+
+    /**
+     * As queryOne, with the source height stamped onto meta. Building the DTO once
+     * avoids the decode/re-encode round trip a caller would otherwise need to reach
+     * inside the finished response.
+     *
+     * @throws Exception
+     */
+    public function queryOneStamped(
+        EntityManagerInterface $entityManager,
+        ApiRequestParsingManager $apiRequestParsingManager,
+        string $sqlQuery,
+        array $apiRequestParams,
+        array $apiRequiredParams,
+        ?string $apiModel = null
+    ): Response {
+        return $this->stampedQuery(
+            $entityManager,
+            $apiRequestParsingManager,
+            $sqlQuery,
+            $apiRequestParams,
+            $apiRequiredParams,
+            false,
+            $apiModel
+        );
+    }
+
+    /**
+     * As queryAll, with the source height stamped onto meta.
+     *
+     * @throws Exception
+     */
+    public function queryAllStamped(
+        EntityManagerInterface $entityManager,
+        ApiRequestParsingManager $apiRequestParsingManager,
+        string $sqlQuery,
+        array $apiRequestParams,
+        array $apiRequiredParams,
+        ?string $apiModel = null
+    ): Response {
+        return $this->stampedQuery(
+            $entityManager,
+            $apiRequestParsingManager,
+            $sqlQuery,
+            $apiRequestParams,
+            $apiRequiredParams,
+            true,
+            $apiModel
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function stampedQuery(
+        EntityManagerInterface $entityManager,
+        ApiRequestParsingManager $apiRequestParsingManager,
+        string $sqlQuery,
+        array $apiRequestParams,
+        array $apiRequiredParams,
+        bool $fetchAll,
+        ?string $apiModel
+    ): Response {
+        [$responseContent, $status] = $this->runQuery(
+            $entityManager,
+            $apiRequestParsingManager,
+            $sqlQuery,
+            $apiRequestParams,
+            $apiRequiredParams,
+            $fetchAll
+        );
+
+        if ($responseContent->success) {
+            ResponseMetaUtil::stampHeight($responseContent, $entityManager, $apiModel);
+        }
+
+        return new JsonResponse($responseContent, $status);
+    }
+
+    /**
+     * @return array{0: ApiResponseContentDto, 1: int}
+     * @throws Exception
+     */
+    private function runQuery(
+        EntityManagerInterface $entityManager,
+        ApiRequestParsingManager $apiRequestParsingManager,
+        string $sqlQuery,
+        array $apiRequestParams,
+        array $apiRequiredParams,
+        bool $fetchAll
+    ): array {
         $responseContent = new ApiResponseContentDto();
 
         $parsedRequest = $apiRequestParsingManager->parse(
@@ -91,17 +182,22 @@ trait ApiSqlQueryTrait
         $responseContent->errors = $parsedRequest->errors;
 
         if (count($responseContent->errors) > 0) {
-            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+            return [$responseContent, Response::HTTP_BAD_REQUEST];
         }
 
         $queryParams = $this->getQueryParams($apiRequiredParams, $parsedRequest);
 
         $db = $entityManager->getConnection();
-        $result = $db->fetchAllAssociative($sqlQuery, $queryParams);
 
-        $responseContent->data = $result;
+        if ($fetchAll) {
+            $responseContent->data = $db->fetchAllAssociative($sqlQuery, $queryParams);
+        } else {
+            $result = $db->fetchAssociative($sqlQuery, $queryParams);
+            $responseContent->data = $result === false ? null : $result;
+        }
+
         $responseContent->success = true;
 
-        return new JsonResponse($responseContent, Response::HTTP_OK);
+        return [$responseContent, Response::HTTP_OK];
     }
 }

@@ -227,4 +227,55 @@ class StructManager
             []
         );
     }
+
+    /**
+     * @throws Exception
+     */
+    public function getStructStatusCounts(): Response
+    {
+        $query = '
+            SELECT
+              count(*) FILTER (WHERE materialized) AS materialized,
+              count(*) FILTER (WHERE built) AS built,
+              count(*) FILTER (WHERE online) AS online,
+              count(*) FILTER (WHERE stored) AS stored,
+              count(*) FILTER (WHERE hidden) AS hidden,
+              count(*) FILTER (WHERE destroyed) AS destroyed,
+              count(*) FILTER (WHERE locked) AS locked,
+              count(*) AS total
+            FROM view.struct_status
+        ';
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            [],
+            []
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function countStructs(?string $isDestroyed): Response
+    {
+        if ($isDestroyed === '0' || $isDestroyed === '1') {
+            return $this->queryOne(
+                $this->entityManager,
+                $this->apiRequestParsingManager,
+                'SELECT count(*) AS count FROM struct WHERE is_destroyed = (:is_destroyed = \'1\')',
+                [ApiParameters::IS_DESTROYED => $isDestroyed],
+                [ApiParameters::IS_DESTROYED]
+            );
+        }
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            'SELECT count(*) AS count FROM struct',
+            [],
+            []
+        );
+    }
 }

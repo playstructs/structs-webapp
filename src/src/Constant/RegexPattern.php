@@ -17,6 +17,14 @@ class RegexPattern
     /** Composite game object id: type prefix + hyphen + numeric index (e.g. 5-123, 10-1) */
     public const string OBJECT_KEY = '/^\d+-\d+$/';
 
+    /** Comma-separated object keys (batch reads), capped at BATCH_IDS_MAX entries. */
+    public const string IDS = '/^(\d+-\d+)(,(\d+-\d+)){0,'
+        . (PaginationLimits::BATCH_IDS_MAX - 1)
+        . '}$/';
+
+    /** Allowlisted column.direction order specs. */
+    public const string ORDER = '/^[a-z_]+(\.(asc|desc))?$/';
+
     public const string PERMISSIONS = '/^[0-9]{1,8}$/';
 
     public const string PUBKEY = '/^[a-zA-Z0-9]+$/';

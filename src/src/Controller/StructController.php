@@ -6,12 +6,38 @@ use App\Manager\StructManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class StructController extends AbstractController
 {
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/struct/status/counts', name: 'api_struct_status_counts', methods: ['GET'])]
+    public function getStructStatusCounts(
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $structManager = new StructManager($entityManager, $validator);
+        return $structManager->getStructStatusCounts();
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/struct/count', name: 'api_count_structs', methods: ['GET'])]
+    public function countStructs(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $structManager = new StructManager($entityManager, $validator);
+        return $structManager->countStructs($request->query->get('is_destroyed'));
+    }
+
     /**
      * @param string $player_id
      * @param EntityManagerInterface $entityManager
