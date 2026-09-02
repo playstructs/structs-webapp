@@ -3,6 +3,7 @@
 namespace App\Manager;
 
 use App\Constant\ApiParameters;
+use App\Constant\PaginationLimits;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
 use Doctrine\DBAL\Exception;
@@ -247,6 +248,74 @@ class PlanetManager
             $query,
             $requestParams,
             $requiredFields
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function planetRaidAll(int $page, ?string $limit): Response
+    {
+        return $this->planetRaidPage($page, $limit, null);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function planetRaidByStatus(string $status, int $page, ?string $limit): Response
+    {
+        return $this->planetRaidPage($page, $limit, $status);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function countPlanets(): Response
+    {
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            'SELECT count(*) AS count FROM planet',
+            [],
+            []
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function planetRaidPage(int $page, ?string $limit, ?string $status): Response
+    {
+        $pageLimit = PaginationLimits::clamp($limit);
+        $page = max(1, $page);
+        $offset = ($page - 1) * $pageLimit;
+
+        $statusFilter = '';
+        $params = [ApiParameters::PAGE => (string) $page];
+        $required = [ApiParameters::PAGE];
+        if ($status !== null) {
+            $statusFilter = 'WHERE pr.status = :status';
+            $params[ApiParameters::STATUS] = $status;
+            $required[] = ApiParameters::STATUS;
+        }
+
+        $sql = "SELECT
+              pr.planet_id,
+              pr.fleet_id,
+              pr.status,
+              pr.updated_at,
+              COALESCE(pr.seized_ore, 0) AS seized_ore
+            FROM planet_raid pr
+            {$statusFilter}
+            ORDER BY pr.updated_at DESC NULLS LAST, pr.planet_id
+            LIMIT {$pageLimit} OFFSET {$offset}";
+
+        return $this->queryAllStamped(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $sql,
+            $params,
+            $required
         );
     }
 }

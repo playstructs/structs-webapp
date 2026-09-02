@@ -43,6 +43,49 @@ class StatReadController extends AbstractController
 
         $manager = new StatReadManager($entityManager, $validator);
 
-        return $manager->getStatRange($metric, $object_key, $page, (string) $start, (string) $end);
+        return $manager->getStatRange(
+            $metric,
+            $object_key,
+            $page,
+            (string) $start,
+            (string) $end,
+            $request->query->get('bucket'),
+            $request->query->get('limit')
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route(
+        '/api/stat/{metric}/aggregate/range',
+        name: 'api_stat_aggregate_range',
+        methods: ['GET']
+    )]
+    public function statAggregateRange(
+        Request $request,
+        string $metric,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $start = $request->query->get('start_time');
+        $end = $request->query->get('end_time');
+        $objectType = $request->query->get('object_type');
+        if ($start === null || $end === null || $objectType === null) {
+            $body = new ApiResponseContentDto();
+            $body->errors = ['object_type_start_time_end_time_required' => 'object_type, start_time and end_time query params are required'];
+
+            return new JsonResponse($body, Response::HTTP_BAD_REQUEST);
+        }
+
+        $manager = new StatReadManager($entityManager, $validator);
+
+        return $manager->getStatAggregate(
+            $metric,
+            (string) $objectType,
+            (string) $start,
+            (string) $end,
+            $request->query->get('bucket')
+        );
     }
 }

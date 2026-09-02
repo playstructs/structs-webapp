@@ -14,6 +14,57 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class PlayerController extends AbstractController
 {
     /**
+     * @throws Exception
+     */
+    #[Route('/api/player/count', name: 'api_count_players', methods: ['GET'])]
+    public function countPlayers(
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return (new PlayerManager($entityManager, $validator))->countPlayers();
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/player/active/count', name: 'api_count_active_players', methods: ['GET'])]
+    public function countActivePlayers(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return (new PlayerManager($entityManager, $validator))->countActivePlayers(
+            $request->query->get('window_blocks')
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/player/power/at-risk', name: 'api_player_power_at_risk', methods: ['GET'])]
+    public function getPlayersAtRisk(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return (new PlayerManager($entityManager, $validator))->getPlayersAtRisk(
+            $request->query->get('limit')
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/player/{player_id}/power', name: 'api_get_player_power', methods: ['GET'])]
+    public function getPlayerPower(
+        string $player_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return (new PlayerManager($entityManager, $validator))->getPlayerPower($player_id);
+    }
+
+    /**
      * @param string $player_id
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator
