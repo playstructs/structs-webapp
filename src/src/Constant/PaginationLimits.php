@@ -6,11 +6,11 @@ class PaginationLimits
 {
     const int DEFAULT = 100;
 
-    const int MAX = 1000;
+    const int MAX = 10000;
 
     const int LEADERBOARD_DEFAULT = 50;
 
-    const int BATCH_IDS_MAX = 25;
+    const int BATCH_IDS_MAX = 200;
 
     const int AGGREGATE_MAX_SECONDS = 2592000;
 
