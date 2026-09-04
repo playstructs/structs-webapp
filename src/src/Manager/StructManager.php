@@ -46,7 +46,7 @@ class StructManager
             SELECT 
               s.*, 
               COALESCE(sa_health.val, 0) AS health,
-              COALESCE(sa_status.val, 0) AS status,
+              COALESCE(sa_status.val, CASE WHEN s.is_destroyed THEN 32 ELSE 0 END) AS status,
               CASE
                 WHEN sd_is_defender.protected_struct_id IS NOT NULL
                  AND (
@@ -132,7 +132,7 @@ class StructManager
             SELECT 
               s.*, 
               COALESCE(sa_health.val, 0) AS health,
-              COALESCE(sa_status.val, 0) AS status,
+              COALESCE(sa_status.val, CASE WHEN s.is_destroyed THEN 32 ELSE 0 END) AS status,
               CASE
                 WHEN sd_is_defender.protected_struct_id IS NOT NULL
                  AND (
