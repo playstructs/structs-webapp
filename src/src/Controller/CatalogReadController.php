@@ -581,6 +581,21 @@ class CatalogReadController extends AbstractController
         return $this->manager($entityManager, $validator, $request)->planetActivityByCategory($category, $page);
     }
 
+    #[Route('/api/planet-activity/player/{player_id}/page/{page}', name: 'api_planet_activity_by_player', requirements: ['page' => self::PAGE_REQUIREMENT], methods: ['GET'])]
+    public function planetActivityByPlayer(
+        string $player_id,
+        int $page,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return $this->manager($entityManager, $validator, $request)->planetActivityByPlayer(
+            $player_id,
+            $page,
+            $request->query->get('category')
+        );
+    }
+
     // --- player list ---
 
     #[Route('/api/player/list/all/page/{page}', name: 'api_player_list_all', requirements: ['page' => self::PAGE_REQUIREMENT], methods: ['GET'])]

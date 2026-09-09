@@ -171,6 +171,9 @@ class ApiRequestParamsDto
     public ?string $signature = null;
 
     #[Assert\Regex(RegexPattern::INT)]
+    public ?string $since_height = null;
+
+    #[Assert\Regex(RegexPattern::INT)]
     public ?string $since_seq = null;
 
     #[Assert\Regex(RegexPattern::ID)]

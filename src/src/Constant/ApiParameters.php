@@ -110,6 +110,8 @@ class ApiParameters
 
     const string SIGNATURE = 'signature';
 
+    const string SINCE_HEIGHT = 'since_height';
+
     const string SINCE_SEQ = 'since_seq';
 
     const string SOURCE_ID = 'source_id';
