@@ -174,8 +174,8 @@ class TableReadManagerTest extends ApiManagerTestCase
         $this->manager($connection, [])->planetActivityByPlayer('1-61', 1, null);
 
         $this->assertStringContainsString('block_height', $captured);
-        $this->assertStringContainsString("jsonb_build_object('attackerPlayerId', :player_id)", $captured);
-        $this->assertStringContainsString("jsonb_build_object('targetPlayerId', :player_id)", $captured);
+        $this->assertStringContainsString("jsonb_build_object('attackerPlayerId', CAST(:player_id AS text))", $captured);
+        $this->assertStringContainsString("jsonb_build_object('targetPlayerId', CAST(:player_id AS text))", $captured);
         $this->assertStringContainsString("detail->>'fleet_id'", $captured);
         $this->assertStringContainsString("detail->>'struct_id'", $captured);
         $this->assertStringContainsString("detail->>'defender_struct_id'", $captured);
@@ -193,8 +193,8 @@ class TableReadManagerTest extends ApiManagerTestCase
         $this->manager($connection, [])->planetActivityByPlayer('1-61', 1, 'struct_attack');
 
         $this->assertStringContainsString("category = CAST(:category AS structs.grass_category)", $captured);
-        $this->assertStringContainsString("jsonb_build_object('attackerPlayerId', :player_id)", $captured);
-        $this->assertStringContainsString("jsonb_build_object('targetPlayerId', :player_id)", $captured);
+        $this->assertStringContainsString("jsonb_build_object('attackerPlayerId', CAST(:player_id AS text))", $captured);
+        $this->assertStringContainsString("jsonb_build_object('targetPlayerId', CAST(:player_id AS text))", $captured);
         $this->assertStringNotContainsString("detail->>'struct_id'", $captured);
         $this->assertStringNotContainsString("detail->>'fleet_id'", $captured);
     }

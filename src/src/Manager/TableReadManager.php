@@ -1630,8 +1630,9 @@ class TableReadManager
 
     private function planetActivityPlayerAttackPredicate(): string
     {
-        return "detail @> jsonb_build_object('attackerPlayerId', :player_id)"
-            . " OR detail @> jsonb_build_object('eventAttackShotDetail', jsonb_build_array(jsonb_build_object('targetPlayerId', :player_id)))";
+        return "detail @> jsonb_build_object('attackerPlayerId', CAST(:player_id AS text))"
+            . " OR detail @> jsonb_build_object('eventAttackShotDetail',"
+            . " jsonb_build_array(jsonb_build_object('targetPlayerId', CAST(:player_id AS text))))";
     }
 
     private function planetActivityPlayerRaidOrFleetPredicate(): string
