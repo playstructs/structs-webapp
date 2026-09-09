@@ -545,10 +545,11 @@ class PlayerManager
         $query = "
             SELECT count(1) 
             FROM planet_activity pa
-            INNER JOIN planet p
-                ON pa.planet_id = p.id
-            WHERE pa.category = 'fleet_depart'
-            AND p.owner = :player_id
+            INNER JOIN fleet f
+                ON f.id = pa.detail->>'fleet_id'
+            WHERE pa.category = 'raid_status'
+            AND pa.detail->>'status' = 'initiated'
+            AND f.owner = :player_id
         ";
 
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
