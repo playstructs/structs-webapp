@@ -66,12 +66,16 @@ class TableReadManager
 
     private ?string $sinceSeq = null;
 
+    private ?string $sinceHeight = null;
+
     private ?string $afterId = null;
 
-    /** Set by the endpoints that consume order / is_destroyed, so the rest can reject them. */
+    /** Set by the endpoints that consume order / is_destroyed / since_height, so the rest can reject them. */
     private bool $orderApplied = false;
 
     private bool $isDestroyedApplied = false;
+
+    private bool $sinceHeightApplied = false;
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -106,6 +110,10 @@ class TableReadManager
         $sinceSeq = $request->query->get(ApiParameters::SINCE_SEQ);
         if ($sinceSeq !== null && $sinceSeq !== '') {
             $this->sinceSeq = (string) $sinceSeq;
+        }
+        $sinceHeight = $request->query->get(ApiParameters::SINCE_HEIGHT);
+        if ($sinceHeight !== null && $sinceHeight !== '') {
+            $this->sinceHeight = (string) $sinceHeight;
         }
         $afterId = $request->query->get(ApiParameters::AFTER_ID);
         if ($afterId !== null && $afterId !== '') {
@@ -154,11 +162,19 @@ class TableReadManager
         if ($this->isDestroyed !== null && !$this->isDestroyedApplied) {
             return $this->unsupportedListParam(ApiParameters::IS_DESTROYED);
         }
+        if ($this->sinceHeight !== null && !$this->sinceHeightApplied) {
+            return $this->unsupportedListParam(ApiParameters::SINCE_HEIGHT);
+        }
 
         if ($this->updatedSince !== null) {
             $filters[] = 'updated_at > to_timestamp(:updated_since)';
             $params[ApiParameters::UPDATED_SINCE] = $this->updatedSince;
             $required[] = ApiParameters::UPDATED_SINCE;
+        }
+        if ($this->sinceHeight !== null) {
+            $filters[] = 'block_height > :since_height';
+            $params[ApiParameters::SINCE_HEIGHT] = $this->sinceHeight;
+            $required[] = ApiParameters::SINCE_HEIGHT;
         }
 
         // A cursor replaces the offset; mixing the two would skip rows.
@@ -922,6 +938,65 @@ class TableReadManager
     }
 
     /**
+     * Per-player feed. planet_activity has no player_id column, so attribution is
+     * resolved from detail (struct_attack) or current object ownership (everything
+     * else). Ownership is read as it is now, not as it was when the row was written.
+     *
+     * seq is a per-planet counter and is not a cursor here; since_height
+     * (block_height > :since_height) is the incremental high-water mark. It is a
+     * filter, not a keyset, so OFFSET pagination still applies.
+     *
+     * @throws Exception
+     */
+    public function planetActivityByPlayer(string $player_id, int $page, ?string $category): Response
+    {
+        $this->sinceHeightApplied = true;
+        $orderSql = $this->planetActivityPlayerOrderSql();
+        if ($orderSql === null) {
+            $responseContent = new ApiResponseContentDto();
+            $responseContent->errors['order_invalid'] = 'order is not allowlisted for planet-activity player reads';
+
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $category = ($category === null || $category === '') ? null : $category;
+        $attribution = $this->planetActivityPlayerFilter($category);
+        if ($attribution === null) {
+            $responseContent = new ApiResponseContentDto();
+            $responseContent->errors['category_invalid'] = 'category is not allowlisted for planet-activity player reads';
+
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $params = [
+            ApiParameters::PLAYER_ID => $player_id,
+            ApiParameters::PAGE => (string) $page,
+        ];
+        $required = [ApiParameters::PLAYER_ID, ApiParameters::PAGE];
+        if ($category !== null) {
+            $params[ApiParameters::CATEGORY] = $category;
+            $required[] = ApiParameters::CATEGORY;
+        }
+
+        return $this->listQuery(
+            'time, seq, planet_id, block_height, category::text AS category, detail',
+            'structs.planet_activity',
+            [$attribution],
+            $orderSql,
+            $params,
+            $required,
+            $page,
+            null,
+            static function (array $row): array {
+                $decoded = json_decode((string) ($row['detail'] ?? ''), true);
+                $row['detail_json'] = is_array($decoded) ? $decoded : null;
+
+                return $row;
+            },
+        );
+    }
+
+    /**
      * @throws Exception
      */
     public function planetActivityStats(?string $category, ?string $bucket): Response
@@ -1484,5 +1559,99 @@ class TableReadManager
         $this->orderApplied = true;
 
         return $allow[$this->order] ?? null;
+    }
+
+    /**
+     * Global (block_height, time, planet_id, seq) order. seq alone cannot cursor a
+     * cross-planet feed because every planet's sequence starts at 0.
+     */
+    private function planetActivityPlayerOrderSql(): ?string
+    {
+        $allow = [
+            'asc' => 'block_height ASC, time ASC, planet_id ASC, seq ASC',
+            'desc' => 'block_height DESC, time DESC, planet_id DESC, seq DESC',
+        ];
+        if ($this->order === null) {
+            return $allow['desc'];
+        }
+        $this->orderApplied = true;
+
+        return $allow[$this->order] ?? null;
+    }
+
+    /**
+     * @return null|string attribution predicate, or null when $category is not a player-feed category
+     */
+    private function planetActivityPlayerFilter(?string $category): ?string
+    {
+        if ($category === null) {
+            return '(' . implode("\n              OR ", $this->planetActivityPlayerBranches()) . ')';
+        }
+
+        $predicate = $this->planetActivityPlayerPredicate($category);
+        if ($predicate === null) {
+            return null;
+        }
+
+        return "category = CAST(:category AS structs.grass_category) AND ({$predicate})";
+    }
+
+    /**
+     * @return string[]
+     */
+    private function planetActivityPlayerBranches(): array
+    {
+        return [
+            "(category = 'struct_attack' AND (" . $this->planetActivityPlayerAttackPredicate() . '))',
+            "(category = 'raid_status' AND (" . $this->planetActivityPlayerRaidOrFleetPredicate() . '))',
+            "(category IN ('struct_status', 'struct_health', 'struct_move', 'struct_block_build_start', 'struct_block_ore_mine_start', 'struct_block_ore_refine_start') AND (" . $this->planetActivityPlayerStructPredicate() . '))',
+            "(category IN ('struct_defense_add', 'struct_defense_remove') AND (" . $this->planetActivityPlayerDefenderPredicate() . '))',
+            "(category IN ('shield_change', 'block_raid_start') AND (" . $this->planetActivityPlayerPlanetPredicate() . '))',
+            "(category IN ('fleet_arrive', 'fleet_depart') AND (" . $this->planetActivityPlayerRaidOrFleetPredicate() . '))',
+        ];
+    }
+
+    private function planetActivityPlayerPredicate(string $category): ?string
+    {
+        return match ($category) {
+            'struct_attack' => $this->planetActivityPlayerAttackPredicate(),
+            'raid_status', 'fleet_arrive', 'fleet_depart' => $this->planetActivityPlayerRaidOrFleetPredicate(),
+            'struct_status',
+            'struct_health',
+            'struct_move',
+            'struct_block_build_start',
+            'struct_block_ore_mine_start',
+            'struct_block_ore_refine_start' => $this->planetActivityPlayerStructPredicate(),
+            'struct_defense_add', 'struct_defense_remove' => $this->planetActivityPlayerDefenderPredicate(),
+            'shield_change', 'block_raid_start' => $this->planetActivityPlayerPlanetPredicate(),
+            default => null,
+        };
+    }
+
+    private function planetActivityPlayerAttackPredicate(): string
+    {
+        return "detail @> jsonb_build_object('attackerPlayerId', :player_id)"
+            . " OR detail @> jsonb_build_object('eventAttackShotDetail', jsonb_build_array(jsonb_build_object('targetPlayerId', :player_id)))";
+    }
+
+    private function planetActivityPlayerRaidOrFleetPredicate(): string
+    {
+        return "detail->>'fleet_id' IN (SELECT id FROM structs.fleet WHERE owner = :player_id)"
+            . ' OR ' . $this->planetActivityPlayerPlanetPredicate();
+    }
+
+    private function planetActivityPlayerStructPredicate(): string
+    {
+        return "detail->>'struct_id' IN (SELECT id FROM structs.struct WHERE owner = :player_id)";
+    }
+
+    private function planetActivityPlayerDefenderPredicate(): string
+    {
+        return "detail->>'defender_struct_id' IN (SELECT id FROM structs.struct WHERE owner = :player_id)";
+    }
+
+    private function planetActivityPlayerPlanetPredicate(): string
+    {
+        return 'planet_id IN (SELECT id FROM structs.planet WHERE owner = :player_id)';
     }
 }
