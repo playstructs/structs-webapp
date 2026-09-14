@@ -44,6 +44,35 @@ class TableReadManager
 
     private const string GRID_DEFAULT_ORDER = 'updated_at DESC NULLS LAST, id';
 
+    /** @var list<string> */
+    private const array PLANET_ACTIVITY_PLAYER_CATEGORIES = [
+        'struct_attack',
+        'raid_status',
+        'fleet_arrive',
+        'fleet_depart',
+        'struct_status',
+        'struct_health',
+        'struct_move',
+        'struct_block_build_start',
+        'struct_block_ore_mine_start',
+        'struct_block_ore_refine_start',
+        'struct_defense_add',
+        'struct_defense_remove',
+        'shield_change',
+        'block_raid_start',
+    ];
+
+    /** @var list<string> */
+    private const array PLANET_ACTIVITY_PLAYER_ROLES = [
+        'attacker',
+        'target',
+        'owner',
+        'planet_owner',
+        'defender',
+        'protected',
+        'fleet_owner',
+    ];
+
     public EntityManagerInterface $entityManager;
 
     public ValidatorInterface $validator;
@@ -142,7 +171,9 @@ class TableReadManager
         array $required,
         int $page,
         ?string $keyset = self::KEYSET_UPDATED_AT_ID,
-        ?callable $rowMapper = null
+        ?callable $rowMapper = null,
+        string $sinceHeightColumn = 'block_height',
+        ?string $countExpression = null
     ): Response {
         $supportsUpdatedSince = $keyset === self::KEYSET_UPDATED_AT_ID
             || $keyset === self::FILTER_UPDATED_AT;
@@ -172,7 +203,7 @@ class TableReadManager
             $required[] = ApiParameters::UPDATED_SINCE;
         }
         if ($this->sinceHeight !== null) {
-            $filters[] = 'block_height > :since_height';
+            $filters[] = "{$sinceHeightColumn} > :since_height";
             $params[ApiParameters::SINCE_HEIGHT] = $this->sinceHeight;
             $required[] = ApiParameters::SINCE_HEIGHT;
         }
@@ -220,8 +251,9 @@ class TableReadManager
         }
         if ($status === Response::HTTP_OK && $this->includeTotal) {
             // runQuery already validated $params, so the bound values can be reused as-is.
+            $countSelect = $countExpression ?? 'count(*)';
             $responseContent->total = $this->entityManager->getConnection()->fetchOne(
-                "SELECT count(*) FROM {$from} {$where}",
+                "SELECT {$countSelect} FROM {$from} {$where}",
                 array_intersect_key($params, array_flip($required))
             );
         }
@@ -759,7 +791,7 @@ class TableReadManager
             'time, id, address, counterparty, amount, amount_p, block_height, action::text AS action, direction::text AS direction, denom',
             'structs.ledger',
             [],
-            'time DESC, id',
+            'time DESC, id DESC',
             [ApiParameters::PAGE => (string) $page],
             [ApiParameters::PAGE],
             $page,
@@ -773,7 +805,7 @@ class TableReadManager
             'l.time, l.id, l.address, l.counterparty, l.amount, l.amount_p, l.block_height, l.action::text AS action, l.direction::text AS direction, l.denom',
             'structs.ledger l INNER JOIN structs.player_address pa ON pa.address = l.address AND pa.player_id = :player_id',
             [],
-            'l.time DESC, l.id',
+            'l.time DESC, l.id DESC',
             [ApiParameters::PLAYER_ID => $player_id, ApiParameters::PAGE => (string) $page],
             [ApiParameters::PLAYER_ID, ApiParameters::PAGE],
             $page,
@@ -789,7 +821,7 @@ class TableReadManager
             [
                 'address = :address',
             ],
-            'time DESC, id',
+            'time DESC, id DESC',
             [ApiParameters::ADDRESS => $address, ApiParameters::PAGE => (string) $page],
             [ApiParameters::ADDRESS, ApiParameters::PAGE],
             $page,
@@ -938,17 +970,17 @@ class TableReadManager
     }
 
     /**
-     * Per-player feed. planet_activity has no player_id column, so attribution is
-     * resolved from detail (struct_attack) or current object ownership (everything
-     * else). Ownership is read as it is now, not as it was when the row was written.
+     * Per-player feed via structs.planet_activity_player (attribution written at
+     * insert time). Ownership is as-of-event. Dual-role rows on the same parent
+     * are collapsed with DISTINCT ON unless role is requested.
      *
      * seq is a per-planet counter and is not a cursor here; since_height
-     * (block_height > :since_height) is the incremental high-water mark. It is a
+     * (p.block_height > :since_height) is the incremental high-water mark. It is a
      * filter, not a keyset, so OFFSET pagination still applies.
      *
      * @throws Exception
      */
-    public function planetActivityByPlayer(string $player_id, int $page, ?string $category): Response
+    public function planetActivityByPlayer(string $player_id, int $page, ?string $category, ?string $role = null): Response
     {
         $this->sinceHeightApplied = true;
         $orderSql = $this->planetActivityPlayerOrderSql();
@@ -960,28 +992,49 @@ class TableReadManager
         }
 
         $category = ($category === null || $category === '') ? null : $category;
-        $attribution = $this->planetActivityPlayerFilter($category);
-        if ($attribution === null) {
+        if ($category !== null && !in_array($category, self::PLANET_ACTIVITY_PLAYER_CATEGORIES, true)) {
             $responseContent = new ApiResponseContentDto();
             $responseContent->errors['category_invalid'] = 'category is not allowlisted for planet-activity player reads';
 
             return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
         }
 
+        $role = ($role === null || $role === '') ? null : $role;
+        if ($role !== null && !in_array($role, self::PLANET_ACTIVITY_PLAYER_ROLES, true)) {
+            $responseContent = new ApiResponseContentDto();
+            $responseContent->errors['role_invalid'] = 'role is not allowlisted for planet-activity player reads';
+
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $filters = ['p.player_id = :player_id'];
         $params = [
             ApiParameters::PLAYER_ID => $player_id,
             ApiParameters::PAGE => (string) $page,
         ];
         $required = [ApiParameters::PLAYER_ID, ApiParameters::PAGE];
         if ($category !== null) {
+            $filters[] = 'p.category = CAST(:category AS structs.grass_category)';
             $params[ApiParameters::CATEGORY] = $category;
             $required[] = ApiParameters::CATEGORY;
         }
+        if ($role !== null) {
+            $filters[] = 'p.role = :role';
+            $params[ApiParameters::ROLE] = $role;
+            $required[] = ApiParameters::ROLE;
+        }
+
+        $select = $role === null
+            ? 'DISTINCT ON (p.block_height, p.time, p.planet_id, p.seq) a.time, a.seq, a.planet_id, a.block_height, a.category::text AS category, a.detail'
+            : 'a.time, a.seq, a.planet_id, a.block_height, a.category::text AS category, a.detail';
+        $countExpression = $role === null
+            ? 'count(DISTINCT (p.time, p.planet_id, p.seq))'
+            : null;
 
         return $this->listQuery(
-            'time, seq, planet_id, block_height, category::text AS category, detail',
-            'structs.planet_activity',
-            [$attribution],
+            $select,
+            'structs.planet_activity_player p JOIN structs.planet_activity a ON a.time = p.time AND a.planet_id = p.planet_id AND a.seq = p.seq',
+            $filters,
             $orderSql,
             $params,
             $required,
@@ -993,6 +1046,8 @@ class TableReadManager
 
                 return $row;
             },
+            'p.block_height',
+            $countExpression,
         );
     }
 
@@ -1011,7 +1066,12 @@ class TableReadManager
             return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
         }
 
-        $trunc = ($bucket === '1h') ? 'hour' : 'day';
+        $hourly = $bucket === '1h';
+        $table = $hourly ? 'structs.planet_activity_hourly' : 'structs.planet_activity_daily';
+        $windowSql = $hourly
+            ? "bucket >= now() - INTERVAL '30 days'"
+            : "bucket >= date_trunc('day', now() - INTERVAL '30 days')";
+
         $categorySql = '';
         $queryParams = [];
         if ($category !== null && $category !== '') {
@@ -1019,14 +1079,75 @@ class TableReadManager
             $queryParams['category'] = $category;
         }
 
-        $sql = "SELECT date_trunc('{$trunc}', time) AS bucket,
-                category::text AS category,
-                count(*) AS count
-            FROM structs.planet_activity
-            WHERE time >= NOW() - INTERVAL '30 days'
+        $sql = "SELECT bucket, category::text AS category, sum(count) AS count
+            FROM {$table}
+            WHERE {$windowSql}
             {$categorySql}
             GROUP BY bucket, category
             ORDER BY bucket, category";
+
+        $db = $this->entityManager->getConnection();
+        $responseContent->data = $db->fetchAllAssociative($sql, $queryParams);
+        $responseContent->success = true;
+        ResponseMetaUtil::stampHeight($responseContent, $this->entityManager);
+
+        return new JsonResponse($responseContent, Response::HTTP_OK);
+    }
+
+    /**
+     * Per-player daily counts by category and role from the continuous aggregate.
+     *
+     * @throws Exception
+     */
+    public function planetActivityPlayerStats(string $player_id, ?string $category, ?string $role, ?string $bucket): Response
+    {
+        $responseContent = new ApiResponseContentDto();
+        if ($bucket === '1h') {
+            $responseContent->errors['bucket_invalid'] = 'planet-activity player stats only support daily buckets';
+
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $category = ($category === null || $category === '') ? null : $category;
+        $role = ($role === null || $role === '') ? null : $role;
+        if ($role !== null && !in_array($role, self::PLANET_ACTIVITY_PLAYER_ROLES, true)) {
+            $responseContent->errors['role_invalid'] = 'role is not allowlisted for planet-activity player stats';
+
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $params = [
+            ApiParameters::PLAYER_ID => $player_id,
+            ApiParameters::CATEGORY => $category,
+            ApiParameters::ROLE => $role,
+            ApiParameters::BUCKET => $bucket,
+        ];
+        $required = [ApiParameters::PLAYER_ID];
+        $optional = [ApiParameters::CATEGORY, ApiParameters::ROLE, ApiParameters::BUCKET];
+        $parsedRequest = $this->apiRequestParsingManager->parse($params, $required, $optional);
+        $responseContent->errors = $parsedRequest->errors;
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $filters = [
+            'player_id = :player_id',
+            "bucket >= date_trunc('day', now() - INTERVAL '30 days')",
+        ];
+        $queryParams = ['player_id' => $player_id];
+        if ($category !== null) {
+            $filters[] = 'category = CAST(:category AS structs.grass_category)';
+            $queryParams['category'] = $category;
+        }
+        if ($role !== null) {
+            $filters[] = 'role = :role';
+            $queryParams['role'] = $role;
+        }
+
+        $sql = 'SELECT bucket, category::text AS category, role, count
+            FROM structs.planet_activity_player_daily
+            WHERE ' . implode(' AND ', $filters) . '
+            ORDER BY bucket, category, role';
 
         $db = $this->entityManager->getConnection();
         $responseContent->data = $db->fetchAllAssociative($sql, $queryParams);
@@ -1562,14 +1683,15 @@ class TableReadManager
     }
 
     /**
-     * Global (block_height, time, planet_id, seq) order. seq alone cannot cursor a
-     * cross-planet feed because every planet's sequence starts at 0.
+     * Global (block_height, time, planet_id, seq) order on the player side table.
+     * seq alone cannot cursor a cross-planet feed because every planet's sequence
+     * starts at 0. NULLS LAST/FIRST matches planet_activity_player_feed_idx.
      */
     private function planetActivityPlayerOrderSql(): ?string
     {
         $allow = [
-            'asc' => 'block_height ASC, time ASC, planet_id ASC, seq ASC',
-            'desc' => 'block_height DESC, time DESC, planet_id DESC, seq DESC',
+            'asc' => 'p.block_height ASC NULLS FIRST, p.time ASC, p.planet_id ASC, p.seq ASC',
+            'desc' => 'p.block_height DESC NULLS LAST, p.time DESC, p.planet_id DESC, p.seq DESC',
         ];
         if ($this->order === null) {
             return $allow['desc'];
@@ -1577,82 +1699,5 @@ class TableReadManager
         $this->orderApplied = true;
 
         return $allow[$this->order] ?? null;
-    }
-
-    /**
-     * @return null|string attribution predicate, or null when $category is not a player-feed category
-     */
-    private function planetActivityPlayerFilter(?string $category): ?string
-    {
-        if ($category === null) {
-            return '(' . implode("\n              OR ", $this->planetActivityPlayerBranches()) . ')';
-        }
-
-        $predicate = $this->planetActivityPlayerPredicate($category);
-        if ($predicate === null) {
-            return null;
-        }
-
-        return "category = CAST(:category AS structs.grass_category) AND ({$predicate})";
-    }
-
-    /**
-     * @return string[]
-     */
-    private function planetActivityPlayerBranches(): array
-    {
-        return [
-            "(category = 'struct_attack' AND (" . $this->planetActivityPlayerAttackPredicate() . '))',
-            "(category = 'raid_status' AND (" . $this->planetActivityPlayerRaidOrFleetPredicate() . '))',
-            "(category IN ('struct_status', 'struct_health', 'struct_move', 'struct_block_build_start', 'struct_block_ore_mine_start', 'struct_block_ore_refine_start') AND (" . $this->planetActivityPlayerStructPredicate() . '))',
-            "(category IN ('struct_defense_add', 'struct_defense_remove') AND (" . $this->planetActivityPlayerDefenderPredicate() . '))',
-            "(category IN ('shield_change', 'block_raid_start') AND (" . $this->planetActivityPlayerPlanetPredicate() . '))',
-            "(category IN ('fleet_arrive', 'fleet_depart') AND (" . $this->planetActivityPlayerRaidOrFleetPredicate() . '))',
-        ];
-    }
-
-    private function planetActivityPlayerPredicate(string $category): ?string
-    {
-        return match ($category) {
-            'struct_attack' => $this->planetActivityPlayerAttackPredicate(),
-            'raid_status', 'fleet_arrive', 'fleet_depart' => $this->planetActivityPlayerRaidOrFleetPredicate(),
-            'struct_status',
-            'struct_health',
-            'struct_move',
-            'struct_block_build_start',
-            'struct_block_ore_mine_start',
-            'struct_block_ore_refine_start' => $this->planetActivityPlayerStructPredicate(),
-            'struct_defense_add', 'struct_defense_remove' => $this->planetActivityPlayerDefenderPredicate(),
-            'shield_change', 'block_raid_start' => $this->planetActivityPlayerPlanetPredicate(),
-            default => null,
-        };
-    }
-
-    private function planetActivityPlayerAttackPredicate(): string
-    {
-        return "detail @> jsonb_build_object('attackerPlayerId', CAST(:player_id AS text))"
-            . " OR detail @> jsonb_build_object('eventAttackShotDetail',"
-            . " jsonb_build_array(jsonb_build_object('targetPlayerId', CAST(:player_id AS text))))";
-    }
-
-    private function planetActivityPlayerRaidOrFleetPredicate(): string
-    {
-        return "detail->>'fleet_id' IN (SELECT id FROM structs.fleet WHERE owner = :player_id)"
-            . ' OR ' . $this->planetActivityPlayerPlanetPredicate();
-    }
-
-    private function planetActivityPlayerStructPredicate(): string
-    {
-        return "detail->>'struct_id' IN (SELECT id FROM structs.struct WHERE owner = :player_id)";
-    }
-
-    private function planetActivityPlayerDefenderPredicate(): string
-    {
-        return "detail->>'defender_struct_id' IN (SELECT id FROM structs.struct WHERE owner = :player_id)";
-    }
-
-    private function planetActivityPlayerPlanetPredicate(): string
-    {
-        return 'planet_id IN (SELECT id FROM structs.planet WHERE owner = :player_id)';
     }
 }

@@ -92,29 +92,71 @@ class StatReadManagerTest extends ApiManagerTestCase
     }
 
     /**
-     * Samples are change-triggered, so a bucket has to carry forward each object's
-     * last known value rather than aggregating only the objects that moved. The
-     * seed CTE bounds the history scan; without it the query scanned the whole
-     * table once per bucket and timed out at the maximum window.
+     * Aggregates read the precomputed stat_rollup rather than reconstructing LOCF
+     * over the change-triggered stat_* hypertables on every request.
      */
-    public function testAggregateUsesBoundedCarryForward(): void
+    public function testAggregateReadsStatRollup(): void
+    {
+        $captured = null;
+        $capturedParams = null;
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchAllAssociative')
+            ->willReturnCallback(function (string $sql, array $params = []) use (&$captured, &$capturedParams) {
+                $captured = $sql;
+                $capturedParams = $params;
+
+                return [];
+            });
+        $connection->method('fetchAssociative')->willReturn(['source_height' => 1]);
+
+        (new StatReadManager($this->entityManager($connection), $this->validator()))
+            ->getStatAggregate('ore', 'player', (string) (time() - 3600), (string) time(), '1h');
+
+        $this->assertStringContainsString('FROM structs.stat_rollup', $captured);
+        $this->assertStringNotContainsString('seed AS', $captured);
+        $this->assertStringContainsString('CASE WHEN population > 0 THEN sum / population END AS avg', $captured);
+        $this->assertStringContainsString("object_type = CAST(:object_type AS structs.object_type)", $captured);
+        $this->assertSame('player', $capturedParams['object_type']);
+        $this->assertSame('ore', $capturedParams['metric']);
+    }
+
+    public function testAggregateDailyUsesLastHourlyRowPerDay(): void
     {
         $captured = null;
         $connection = $this->capturingConnection($captured);
 
         (new StatReadManager($this->entityManager($connection), $this->validator()))
-            ->getStatAggregate('ore', 'player', (string) (time() - 3600), (string) time(), '1h');
+            ->getStatAggregate('ore', 'player', (string) (time() - 86400), (string) time(), '1d');
 
-        $this->assertStringContainsString('seed AS', $captured);
-        $this->assertStringContainsString('in_range AS', $captured);
-        $this->assertStringContainsString('AS population', $captured);
-        $this->assertStringContainsString('AS samples', $captured);
+        $this->assertStringContainsString("DISTINCT ON (date_trunc('day', bucket))", $captured);
+        $this->assertStringContainsString("ORDER BY date_trunc('day', bucket), bucket DESC", $captured);
+        $this->assertStringContainsString('sum(samples) OVER (PARTITION BY date_trunc(\'day\', bucket))', $captured);
+    }
 
-        // Empty buckets report null, not a false zero that would draw an opening ramp.
-        $this->assertStringContainsString('CASE WHEN population > 0 THEN total END AS sum', $captured);
+    public function testAggregateBindsObjectTypeForFamilyTwo(): void
+    {
+        $capturedParams = null;
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchAllAssociative')
+            ->willReturnCallback(function (string $sql, array $params = []) use (&$capturedParams) {
+                $capturedParams = $params;
 
-        // Both ends of the window are bounded.
-        $this->assertStringContainsString('s.time >= (SELECT b0 + step FROM bounds)', $captured);
-        $this->assertStringContainsString('s.time < (SELECT bn + step FROM bounds)', $captured);
+                return [];
+            });
+        $connection->method('fetchAssociative')->willReturn(['source_height' => 1]);
+
+        (new StatReadManager($this->entityManager($connection), $this->validator()))
+            ->getStatAggregate(
+                'connection_count',
+                'substation',
+                (string) (time() - 3600),
+                (string) time(),
+                '1h'
+            );
+
+        $this->assertSame('substation', $capturedParams['object_type']);
+        $this->assertSame('connection_count', $capturedParams['metric']);
     }
 }

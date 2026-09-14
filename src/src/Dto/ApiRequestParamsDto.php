@@ -164,6 +164,11 @@ class ApiRequestParamsDto
     #[Assert\Length(min: 1, max: 128)]
     public ?string $q = null;
 
+    #[Assert\Choice(choices: [
+        'attacker', 'target', 'owner', 'planet_owner', 'defender', 'protected', 'fleet_owner',
+    ])]
+    public ?string $role = null;
+
     #[Assert\Regex(RegexPattern::SEARCH_STRING)]
     public ?string $search_string = null;
 
