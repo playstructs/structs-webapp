@@ -162,27 +162,30 @@ class TableReadManagerTest extends ApiManagerTestCase
     }
 
     /**
-     * Attacks name the player in detail; raids and structs name an object we own
-     * now. Both halves of struct_attack are required so defensive figures are not
-     * silently zero.
+     * Attribution is pre-written into planet_activity_player; the feed joins back
+     * to the parent row and collapses dual-role duplicates with DISTINCT ON.
      */
-    public function testPlanetActivityByPlayerAttributesAttacksRaidsAndOwnedObjects(): void
+    public function testPlanetActivityByPlayerJoinsSideTable(): void
     {
         $captured = null;
         $connection = $this->capturingConnection($captured);
 
         $this->manager($connection, [])->planetActivityByPlayer('1-61', 1, null);
 
-        $this->assertStringContainsString('block_height', $captured);
-        $this->assertStringContainsString("jsonb_build_object('attackerPlayerId', CAST(:player_id AS text))", $captured);
-        $this->assertStringContainsString("jsonb_build_object('targetPlayerId', CAST(:player_id AS text))", $captured);
-        $this->assertStringContainsString("detail->>'fleet_id'", $captured);
-        $this->assertStringContainsString("detail->>'struct_id'", $captured);
-        $this->assertStringContainsString("detail->>'defender_struct_id'", $captured);
-        $this->assertStringContainsString('FROM structs.fleet WHERE owner = :player_id', $captured);
-        $this->assertStringContainsString('FROM structs.planet WHERE owner = :player_id', $captured);
-        $this->assertStringContainsString('FROM structs.struct WHERE owner = :player_id', $captured);
-        $this->assertStringContainsString('ORDER BY block_height DESC, time DESC, planet_id DESC, seq DESC', $captured);
+        $this->assertStringContainsString('structs.planet_activity_player p', $captured);
+        $this->assertStringContainsString('JOIN structs.planet_activity a', $captured);
+        $this->assertStringContainsString('DISTINCT ON (p.block_height, p.time, p.planet_id, p.seq)', $captured);
+        $this->assertStringContainsString('p.player_id = :player_id', $captured);
+        $this->assertStringContainsString(
+            'ORDER BY p.block_height DESC NULLS LAST, p.time DESC, p.planet_id DESC, p.seq DESC',
+            $captured
+        );
+        $this->assertStringNotContainsString('jsonb_build_object', $captured);
+        $this->assertStringNotContainsString("detail->>'fleet_id'", $captured);
+        $this->assertStringNotContainsString("detail->>'struct_id'", $captured);
+        $this->assertStringNotContainsString('FROM structs.fleet WHERE owner', $captured);
+        $this->assertStringNotContainsString('FROM structs.struct WHERE owner', $captured);
+        $this->assertStringNotContainsString('FROM structs.planet WHERE owner', $captured);
     }
 
     public function testPlanetActivityByPlayerRestrictsToOneCategory(): void
@@ -192,23 +195,33 @@ class TableReadManagerTest extends ApiManagerTestCase
 
         $this->manager($connection, [])->planetActivityByPlayer('1-61', 1, 'struct_attack');
 
-        $this->assertStringContainsString("category = CAST(:category AS structs.grass_category)", $captured);
-        $this->assertStringContainsString("jsonb_build_object('attackerPlayerId', CAST(:player_id AS text))", $captured);
-        $this->assertStringContainsString("jsonb_build_object('targetPlayerId', CAST(:player_id AS text))", $captured);
-        $this->assertStringNotContainsString("detail->>'struct_id'", $captured);
-        $this->assertStringNotContainsString("detail->>'fleet_id'", $captured);
+        $this->assertStringContainsString('p.category = CAST(:category AS structs.grass_category)', $captured);
+        $this->assertStringContainsString('DISTINCT ON (p.block_height, p.time, p.planet_id, p.seq)', $captured);
+        $this->assertStringNotContainsString('jsonb_build_object', $captured);
     }
 
-    public function testPlanetActivityByPlayerDefenseCategoryUsesDefenderStructId(): void
+    public function testPlanetActivityByPlayerFiltersRoleWithoutDistinctOn(): void
     {
         $captured = null;
         $connection = $this->capturingConnection($captured);
 
-        $this->manager($connection, [])->planetActivityByPlayer('1-61', 1, 'struct_defense_add');
+        $this->manager($connection, [])->planetActivityByPlayer('1-61', 1, 'struct_attack', 'target');
 
-        $this->assertStringContainsString("detail->>'defender_struct_id'", $captured);
-        $this->assertStringNotContainsString("detail->>'struct_id'", $captured);
-        $this->assertStringNotContainsString("jsonb_build_object('attackerPlayerId'", $captured);
+        $this->assertStringContainsString('p.role = :role', $captured);
+        $this->assertStringContainsString('p.category = CAST(:category AS structs.grass_category)', $captured);
+        $this->assertStringNotContainsString('DISTINCT ON', $captured);
+    }
+
+    public function testPlanetActivityByPlayerRejectsUnknownRole(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())->method('fetchAllAssociative');
+
+        $response = $this->manager($connection, [])->planetActivityByPlayer('1-61', 1, null, 'spectator');
+
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
+        $content = json_decode($response->getContent(), true);
+        $this->assertArrayHasKey('role_invalid', $content['errors']);
     }
 
     public function testPlanetActivityByPlayerFiltersSinceHeightWithoutDroppingOffset(): void
@@ -218,8 +231,28 @@ class TableReadManagerTest extends ApiManagerTestCase
 
         $this->manager($connection, ['since_height' => '2530000'])->planetActivityByPlayer('1-61', 2, null);
 
-        $this->assertStringContainsString('block_height > :since_height', $captured);
+        $this->assertStringContainsString('p.block_height > :since_height', $captured);
         $this->assertMatchesRegularExpression('/OFFSET\s+\d+/i', $captured);
+    }
+
+    public function testPlanetActivityByPlayerIncludeTotalDedupesDualRoles(): void
+    {
+        $countSql = null;
+        $connection = $this->createMock(Connection::class);
+        $connection->method('fetchAllAssociative')->willReturn([]);
+        $connection->expects($this->once())
+            ->method('fetchOne')
+            ->willReturnCallback(function (string $sql) use (&$countSql) {
+                $countSql = $sql;
+
+                return 3;
+            });
+
+        $response = $this->manager($connection, ['include_total' => '1'])
+            ->planetActivityByPlayer('1-61', 1, null);
+
+        $this->assertSame(3, json_decode($response->getContent(), true)['total']);
+        $this->assertStringContainsString('count(DISTINCT (p.time, p.planet_id, p.seq))', $countSql);
     }
 
     public function testPlanetActivityByPlayerHonoursAscOrder(): void
@@ -229,7 +262,10 @@ class TableReadManagerTest extends ApiManagerTestCase
 
         $this->manager($connection, ['order' => 'asc'])->planetActivityByPlayer('1-61', 1, null);
 
-        $this->assertStringContainsString('ORDER BY block_height ASC, time ASC, planet_id ASC, seq ASC', $captured);
+        $this->assertStringContainsString(
+            'ORDER BY p.block_height ASC NULLS FIRST, p.time ASC, p.planet_id ASC, p.seq ASC',
+            $captured
+        );
     }
 
     public function testPlanetActivityByPlayerRejectsUnknownOrder(): void
@@ -276,6 +312,66 @@ class TableReadManagerTest extends ApiManagerTestCase
 
         $this->assertSame(2531884, $row['block_height']);
         $this->assertSame('initiated', $row['detail_json']['status']);
+    }
+
+    public function testPlanetActivityStatsReadsDailyCagg(): void
+    {
+        $captured = null;
+        $connection = $this->capturingConnection($captured);
+
+        $this->manager($connection, [])->planetActivityStats(null, null);
+
+        $this->assertStringContainsString('FROM structs.planet_activity_daily', $captured);
+        $this->assertStringContainsString('sum(count) AS count', $captured);
+        $this->assertStringContainsString("bucket >= date_trunc('day', now() - INTERVAL '30 days')", $captured);
+        $this->assertDoesNotMatchRegularExpression('/FROM structs\.planet_activity\b(?!_)/', $captured);
+    }
+
+    public function testPlanetActivityStatsReadsHourlyCagg(): void
+    {
+        $captured = null;
+        $connection = $this->capturingConnection($captured);
+
+        $this->manager($connection, [])->planetActivityStats('struct_attack', '1h');
+
+        $this->assertStringContainsString('FROM structs.planet_activity_hourly', $captured);
+        $this->assertStringContainsString("bucket >= now() - INTERVAL '30 days'", $captured);
+        $this->assertStringContainsString('category = CAST(:category AS structs.grass_category)', $captured);
+    }
+
+    public function testPlanetActivityPlayerStatsReadsPlayerDailyCagg(): void
+    {
+        $captured = null;
+        $connection = $this->capturingConnection($captured);
+
+        $this->manager($connection, [])->planetActivityPlayerStats('1-61', null, 'attacker', null);
+
+        $this->assertStringContainsString('FROM structs.planet_activity_player_daily', $captured);
+        $this->assertStringContainsString('player_id = :player_id', $captured);
+        $this->assertStringContainsString('role = :role', $captured);
+        $this->assertStringContainsString('bucket, category::text AS category, role, count', $captured);
+    }
+
+    public function testPlanetActivityPlayerStatsRejectsHourlyBucket(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())->method('fetchAllAssociative');
+
+        $response = $this->manager($connection, [])->planetActivityPlayerStats('1-61', null, null, '1h');
+
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
+        $content = json_decode($response->getContent(), true);
+        $this->assertArrayHasKey('bucket_invalid', $content['errors']);
+    }
+
+    public function testLedgerListOrdersByTimeAndIdDesc(): void
+    {
+        $captured = null;
+        $connection = $this->capturingConnection($captured);
+
+        $this->manager($connection, [])->ledgerListAll(1);
+
+        $this->assertStringContainsString('ORDER BY time DESC, id DESC', $captured);
     }
 
     public function testGridHonoursAllowlistedOrder(): void

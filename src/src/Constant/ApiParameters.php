@@ -104,6 +104,8 @@ class ApiParameters
 
     const string PUBKEY = 'pubkey';
 
+    const string ROLE = 'role';
+
     const string Q = 'q';
 
     const string SEARCH_STRING = 'search_string';

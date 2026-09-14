@@ -45,6 +45,7 @@ class ApiRoutingTest extends KernelTestCase
             ['/api/player/power/at-risk', 'api_player_power_at_risk'],
             ['/api/player/1-101/power', 'api_get_player_power'],
             ['/api/planet-activity/player/1-61/page/1', 'api_planet_activity_by_player'],
+            ['/api/planet-activity/player/1-61/stats', 'api_planet_activity_player_stats'],
             ['/api/planet-activity/planet/2-1/page/1', 'api_planet_activity_by_planet'],
         ];
     }

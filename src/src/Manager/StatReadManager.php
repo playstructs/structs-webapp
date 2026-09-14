@@ -271,106 +271,42 @@ class StatReadManager
             }
         }
 
-        $trunc = ($bucket === '1d') ? 'day' : 'hour';
-        $interval = ($bucket === '1d') ? '1 day' : '1 hour';
-        $table = $isFamilyTwo ? self::FAMILY_TWO_TABLES[$metric] : self::FAMILY_ONE_TABLES[$metric];
-        $typeFilter = $isFamilyTwo
-            ? ''
-            : 'AND s.object_type = CAST(:object_type AS structs.object_type)';
-
-        // Samples are change-triggered: an object reports only when its value moves,
-        // so a plain per-bucket aggregate would describe only the objects that
-        // happened to move. Each bucket instead reports the last-known value of every
-        // object as of the bucket's close (LOCF), carried forward from its most recent
-        // sample. Objects with no sample yet contribute nothing rather than zero.
-        //
-        // Rather than joining every bucket against the table, the running total is
-        // rebuilt from per-object deltas: `seed` collapses all history before the
-        // first bucket closes into one row per object, and `in_range` reads only the
-        // requested window, so the scan is bounded by the range, not the table.
-        $sql = "WITH bounds AS (
-                SELECT
-                    date_trunc('{$trunc}', to_timestamp(:start_ts)) AS b0,
-                    date_trunc('{$trunc}', to_timestamp(:end_ts)) AS bn,
-                    CAST(:bucket_interval AS interval) AS step
-            ),
-            buckets AS (
-                SELECT generate_series(b0, bn, step) AS bucket FROM bounds
-            ),
-            seed AS (
-                SELECT DISTINCT ON (s.object_index)
-                    (SELECT b0 FROM bounds) AS bucket,
-                    s.object_index,
-                    s.value
-                FROM {$table} s
-                WHERE s.time < (SELECT b0 + step FROM bounds)
-                {$typeFilter}
-                ORDER BY s.object_index, s.time DESC
-            ),
-            in_range AS (
-                SELECT DISTINCT ON (date_trunc('{$trunc}', s.time), s.object_index)
-                    date_trunc('{$trunc}', s.time) AS bucket,
-                    s.object_index,
-                    s.value
-                FROM {$table} s
-                WHERE s.time >= (SELECT b0 + step FROM bounds)
-                AND s.time < (SELECT bn + step FROM bounds)
-                {$typeFilter}
-                ORDER BY date_trunc('{$trunc}', s.time), s.object_index, s.time DESC
-            ),
-            observations AS (
-                SELECT * FROM seed
-                UNION ALL
-                SELECT * FROM in_range
-            ),
-            deltas AS (
-                SELECT
-                    bucket,
-                    value - COALESCE(lag(value) OVER w, 0) AS delta,
-                    CASE WHEN lag(value) OVER w IS NULL THEN 1 ELSE 0 END AS is_new
-                FROM observations
-                WINDOW w AS (PARTITION BY object_index ORDER BY bucket)
-            ),
-            per_bucket AS (
-                SELECT bucket, SUM(delta) AS delta_sum, SUM(is_new) AS new_objects
-                FROM deltas
-                GROUP BY bucket
-            ),
-            sample_counts AS (
-                SELECT date_trunc('{$trunc}', s.time) AS bucket, count(*) AS samples
-                FROM {$table} s
-                WHERE s.time >= (SELECT b0 FROM bounds)
-                AND s.time < (SELECT bn + step FROM bounds)
-                {$typeFilter}
-                GROUP BY 1
-            ),
-            rolled AS (
-                SELECT
-                    b.bucket,
-                    SUM(COALESCE(pb.delta_sum, 0)) OVER (ORDER BY b.bucket) AS total,
-                    SUM(COALESCE(pb.new_objects, 0)) OVER (ORDER BY b.bucket) AS population,
-                    COALESCE(sc.samples, 0) AS samples
-                FROM buckets b
-                LEFT JOIN per_bucket pb ON pb.bucket = b.bucket
-                LEFT JOIN sample_counts sc ON sc.bucket = b.bucket
-            )
-            SELECT
-                bucket,
-                CASE WHEN population > 0 THEN total END AS sum,
-                CASE WHEN population > 0 THEN total / population END AS avg,
-                population,
-                samples
-            FROM rolled
-            ORDER BY bucket";
+        // Precomputed LOCF rollups: hourly snapshots of Σ last-known value across
+        // all objects. Empty buckets are absent; the unfinished current hour is not
+        // present until the :02 cron writes it.
+        if ($bucket === '1d') {
+            $sql = "SELECT DISTINCT ON (date_trunc('day', bucket))
+                    date_trunc('day', bucket) AS bucket,
+                    sum,
+                    CASE WHEN population > 0 THEN sum / population END AS avg,
+                    population,
+                    sum(samples) OVER (PARTITION BY date_trunc('day', bucket)) AS samples
+                FROM structs.stat_rollup
+                WHERE metric = :metric
+                AND object_type = CAST(:object_type AS structs.object_type)
+                AND bucket >= date_trunc('day', to_timestamp(:start_ts))
+                AND bucket < date_trunc('day', to_timestamp(:end_ts)) + INTERVAL '1 day'
+                ORDER BY date_trunc('day', bucket), bucket DESC";
+        } else {
+            $sql = "SELECT bucket,
+                    sum,
+                    CASE WHEN population > 0 THEN sum / population END AS avg,
+                    population,
+                    samples
+                FROM structs.stat_rollup
+                WHERE metric = :metric
+                AND object_type = CAST(:object_type AS structs.object_type)
+                AND bucket >= date_trunc('hour', to_timestamp(:start_ts))
+                AND bucket <= date_trunc('hour', to_timestamp(:end_ts))
+                ORDER BY bucket";
+        }
 
         $params = [
+            'metric' => $metric,
+            'object_type' => $object_type,
             'start_ts' => $start,
             'end_ts' => $end,
-            'bucket_interval' => $interval,
         ];
-        if (!$isFamilyTwo) {
-            $params['object_type'] = $object_type;
-        }
 
         $db = $this->entityManager->getConnection();
         $responseContent->data = $db->fetchAllAssociative($sql, $params);

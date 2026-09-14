@@ -549,6 +549,21 @@ class CatalogReadController extends AbstractController
         );
     }
 
+    #[Route('/api/planet-activity/player/{player_id}/stats', name: 'api_planet_activity_player_stats', methods: ['GET'])]
+    public function planetActivityPlayerStats(
+        string $player_id,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return $this->manager($entityManager, $validator, $request)->planetActivityPlayerStats(
+            $player_id,
+            $request->query->get('category'),
+            $request->query->get('role'),
+            $request->query->get('bucket')
+        );
+    }
+
     #[Route('/api/planet-activity/all/page/{page}', name: 'api_planet_activity_all', requirements: ['page' => self::PAGE_REQUIREMENT], methods: ['GET'])]
     public function planetActivityAll(
         int $page,
@@ -592,7 +607,8 @@ class CatalogReadController extends AbstractController
         return $this->manager($entityManager, $validator, $request)->planetActivityByPlayer(
             $player_id,
             $page,
-            $request->query->get('category')
+            $request->query->get('category'),
+            $request->query->get('role')
         );
     }
 
