@@ -971,8 +971,10 @@ class TableReadManager
 
     /**
      * Per-player feed via structs.planet_activity_player (attribution written at
-     * insert time). Ownership is as-of-event. Dual-role rows on the same parent
-     * are collapsed with DISTINCT ON unless role is requested.
+     * insert time). Ownership is as-of-event. Page keys are selected from the
+     * side table first (GROUP BY collapses dual-role rows), then each parent is
+     * fetched with a LATERAL subquery so Timescale can exclude chunks — including
+     * compressed ones — at runtime.
      *
      * seq is a per-planet counter and is not a cursor here; since_height
      * (p.block_height > :since_height) is the incremental high-water mark. It is a
@@ -983,12 +985,27 @@ class TableReadManager
     public function planetActivityByPlayer(string $player_id, int $page, ?string $category, ?string $role = null): Response
     {
         $this->sinceHeightApplied = true;
-        $orderSql = $this->planetActivityPlayerOrderSql();
-        if ($orderSql === null) {
+        $innerOrderSql = $this->planetActivityPlayerOrderSql('p');
+        if ($innerOrderSql === null) {
             $responseContent = new ApiResponseContentDto();
             $responseContent->errors['order_invalid'] = 'order is not allowlisted for planet-activity player reads';
 
             return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+        $outerOrderSql = $this->planetActivityPlayerOrderSql('k');
+
+        // Same unsupported-param policy as listQuery with no keyset.
+        if ($this->updatedSince !== null) {
+            return $this->unsupportedListParam(ApiParameters::UPDATED_SINCE);
+        }
+        if ($this->sinceSeq !== null) {
+            return $this->unsupportedListParam(ApiParameters::SINCE_SEQ);
+        }
+        if ($this->afterId !== null) {
+            return $this->unsupportedListParam(ApiParameters::AFTER_ID);
+        }
+        if ($this->isDestroyed !== null) {
+            return $this->unsupportedListParam(ApiParameters::IS_DESTROYED);
         }
 
         $category = ($category === null || $category === '') ? null : $category;
@@ -1023,32 +1040,59 @@ class TableReadManager
             $params[ApiParameters::ROLE] = $role;
             $required[] = ApiParameters::ROLE;
         }
+        if ($this->sinceHeight !== null) {
+            $filters[] = 'p.block_height > :since_height';
+            $params[ApiParameters::SINCE_HEIGHT] = $this->sinceHeight;
+            $required[] = ApiParameters::SINCE_HEIGHT;
+        }
 
-        $select = $role === null
-            ? 'DISTINCT ON (p.block_height, p.time, p.planet_id, p.seq) a.time, a.seq, a.planet_id, a.block_height, a.category::text AS category, a.detail'
-            : 'a.time, a.seq, a.planet_id, a.block_height, a.category::text AS category, a.detail';
-        $countExpression = $role === null
-            ? 'count(DISTINCT (p.time, p.planet_id, p.seq))'
-            : null;
+        $where = 'WHERE ' . implode(' AND ', $filters);
+        $offset = (max(1, $page) - 1) * $this->pageLimit;
+        $sql = "SELECT a.time, a.seq, a.planet_id, a.block_height, a.category::text AS category, a.detail
+            FROM (
+                SELECT p.block_height, p.time, p.planet_id, p.seq
+                FROM structs.planet_activity_player p
+                {$where}
+                GROUP BY p.block_height, p.time, p.planet_id, p.seq
+                ORDER BY {$innerOrderSql}
+                LIMIT {$this->pageLimit} OFFSET {$offset}
+            ) k
+            CROSS JOIN LATERAL (
+                SELECT a.*
+                FROM structs.planet_activity a
+                WHERE a.time = k.time AND a.planet_id = k.planet_id AND a.seq = k.seq
+                LIMIT 1
+            ) a
+            ORDER BY {$outerOrderSql}";
 
-        return $this->listQuery(
-            $select,
-            'structs.planet_activity_player p JOIN structs.planet_activity a ON a.time = p.time AND a.planet_id = p.planet_id AND a.seq = p.seq',
-            $filters,
-            $orderSql,
+        [$responseContent, $status] = $this->runQuery(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $sql,
             $params,
             $required,
-            $page,
-            null,
-            static function (array $row): array {
+            true
+        );
+
+        if ($status === Response::HTTP_OK && is_array($responseContent->data)) {
+            $responseContent->data = array_map(static function (array $row): array {
                 $decoded = json_decode((string) ($row['detail'] ?? ''), true);
                 $row['detail_json'] = is_array($decoded) ? $decoded : null;
 
                 return $row;
-            },
-            'p.block_height',
-            $countExpression,
-        );
+            }, $responseContent->data);
+        }
+        if ($status === Response::HTTP_OK && $this->includeTotal) {
+            $responseContent->total = $this->entityManager->getConnection()->fetchOne(
+                "SELECT count(DISTINCT (p.time, p.planet_id, p.seq)) FROM structs.planet_activity_player p {$where}",
+                array_intersect_key($params, array_flip($required))
+            );
+        }
+        if ($status === Response::HTTP_OK && $this->includeMeta) {
+            ResponseMetaUtil::stampHeight($responseContent, $this->entityManager);
+        }
+
+        return new JsonResponse($responseContent, $status);
     }
 
     /**
@@ -1687,11 +1731,11 @@ class TableReadManager
      * seq alone cannot cursor a cross-planet feed because every planet's sequence
      * starts at 0. NULLS LAST/FIRST matches planet_activity_player_feed_idx.
      */
-    private function planetActivityPlayerOrderSql(): ?string
+    private function planetActivityPlayerOrderSql(string $alias = 'p'): ?string
     {
         $allow = [
-            'asc' => 'p.block_height ASC NULLS FIRST, p.time ASC, p.planet_id ASC, p.seq ASC',
-            'desc' => 'p.block_height DESC NULLS LAST, p.time DESC, p.planet_id DESC, p.seq DESC',
+            'asc' => "{$alias}.block_height ASC NULLS FIRST, {$alias}.time ASC, {$alias}.planet_id ASC, {$alias}.seq ASC",
+            'desc' => "{$alias}.block_height DESC NULLS LAST, {$alias}.time DESC, {$alias}.planet_id DESC, {$alias}.seq DESC",
         ];
         if ($this->order === null) {
             return $allow['desc'];
