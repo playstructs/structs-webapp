@@ -162,8 +162,9 @@ class TableReadManagerTest extends ApiManagerTestCase
     }
 
     /**
-     * Attribution is pre-written into planet_activity_player; the feed joins back
-     * to the parent row and collapses dual-role duplicates with DISTINCT ON.
+     * Attribution is pre-written into planet_activity_player. Keys are paged from
+     * the side table first; each parent is fetched LATERAL so Timescale excludes
+     * chunks (including compressed ones) at runtime.
      */
     public function testPlanetActivityByPlayerJoinsSideTable(): void
     {
@@ -173,13 +174,19 @@ class TableReadManagerTest extends ApiManagerTestCase
         $this->manager($connection, [])->planetActivityByPlayer('1-61', 1, null);
 
         $this->assertStringContainsString('structs.planet_activity_player p', $captured);
-        $this->assertStringContainsString('JOIN structs.planet_activity a', $captured);
-        $this->assertStringContainsString('DISTINCT ON (p.block_height, p.time, p.planet_id, p.seq)', $captured);
+        $this->assertStringContainsString('CROSS JOIN LATERAL', $captured);
+        $this->assertStringContainsString('FROM structs.planet_activity a', $captured);
+        $this->assertStringContainsString('GROUP BY p.block_height, p.time, p.planet_id, p.seq', $captured);
         $this->assertStringContainsString('p.player_id = :player_id', $captured);
         $this->assertStringContainsString(
             'ORDER BY p.block_height DESC NULLS LAST, p.time DESC, p.planet_id DESC, p.seq DESC',
             $captured
         );
+        $this->assertStringContainsString(
+            'ORDER BY k.block_height DESC NULLS LAST, k.time DESC, k.planet_id DESC, k.seq DESC',
+            $captured
+        );
+        $this->assertStringNotContainsString('DISTINCT ON', $captured);
         $this->assertStringNotContainsString('jsonb_build_object', $captured);
         $this->assertStringNotContainsString("detail->>'fleet_id'", $captured);
         $this->assertStringNotContainsString("detail->>'struct_id'", $captured);
@@ -196,11 +203,12 @@ class TableReadManagerTest extends ApiManagerTestCase
         $this->manager($connection, [])->planetActivityByPlayer('1-61', 1, 'struct_attack');
 
         $this->assertStringContainsString('p.category = CAST(:category AS structs.grass_category)', $captured);
-        $this->assertStringContainsString('DISTINCT ON (p.block_height, p.time, p.planet_id, p.seq)', $captured);
+        $this->assertStringContainsString('CROSS JOIN LATERAL', $captured);
+        $this->assertStringContainsString('GROUP BY p.block_height, p.time, p.planet_id, p.seq', $captured);
         $this->assertStringNotContainsString('jsonb_build_object', $captured);
     }
 
-    public function testPlanetActivityByPlayerFiltersRoleWithoutDistinctOn(): void
+    public function testPlanetActivityByPlayerFiltersRole(): void
     {
         $captured = null;
         $connection = $this->capturingConnection($captured);
@@ -209,6 +217,7 @@ class TableReadManagerTest extends ApiManagerTestCase
 
         $this->assertStringContainsString('p.role = :role', $captured);
         $this->assertStringContainsString('p.category = CAST(:category AS structs.grass_category)', $captured);
+        $this->assertStringContainsString('CROSS JOIN LATERAL', $captured);
         $this->assertStringNotContainsString('DISTINCT ON', $captured);
     }
 
@@ -264,6 +273,10 @@ class TableReadManagerTest extends ApiManagerTestCase
 
         $this->assertStringContainsString(
             'ORDER BY p.block_height ASC NULLS FIRST, p.time ASC, p.planet_id ASC, p.seq ASC',
+            $captured
+        );
+        $this->assertStringContainsString(
+            'ORDER BY k.block_height ASC NULLS FIRST, k.time ASC, k.planet_id ASC, k.seq ASC',
             $captured
         );
     }
