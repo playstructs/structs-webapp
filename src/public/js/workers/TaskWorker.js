@@ -1,3 +1,1321 @@
-/*! For license information please see TaskWorker.js.LICENSE.txt */
-(()=>{var t={71312:(t,s,e)=>{var i;!function(){"use strict";var s="input is invalid type",r="object"==typeof window,h=r?window:{};h.JS_SHA256_NO_WINDOW&&(r=!1);var n=!r&&"object"==typeof self,a=!h.JS_SHA256_NO_NODE_JS&&"object"==typeof process&&process.versions&&process.versions.node&&"renderer"!=process.type;a?h=e.g:n&&(h=self);var o=!h.JS_SHA256_NO_COMMON_JS&&t.exports,c=e.amdO,u=!h.JS_SHA256_NO_ARRAY_BUFFER&&"undefined"!=typeof ArrayBuffer,l="0123456789abcdef".split(""),f=[-2147483648,8388608,32768,128],_=[24,16,8,0],p=[1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221,3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580,3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298],y=["hex","array","digest","arrayBuffer"],d=[];!h.JS_SHA256_NO_NODE_JS&&Array.isArray||(Array.isArray=function(t){return"[object Array]"===Object.prototype.toString.call(t)}),!u||!h.JS_SHA256_NO_ARRAY_BUFFER_IS_VIEW&&ArrayBuffer.isView||(ArrayBuffer.isView=function(t){return"object"==typeof t&&t.buffer&&t.buffer.constructor===ArrayBuffer});var g=function(t,s){return function(e){return new A(s,!0).update(e)[t]()}},b=function(t){var s=g("hex",t);a&&(s=k(s,t)),s.create=function(){return new A(t)},s.update=function(t){return s.create().update(t)};for(var e=0;e<y.length;++e){var i=y[e];s[i]=g(i,t)}return s},k=function(t,i){var r,n=e(24394),a=e(91903).Buffer,o=i?"sha224":"sha256";return r=a.from&&!h.JS_SHA256_NO_BUFFER_FROM?a.from:function(t){return new a(t)},function(e){if("string"==typeof e)return n.createHash(o).update(e,"utf8").digest("hex");if(null==e)throw new Error(s);return e.constructor===ArrayBuffer&&(e=new Uint8Array(e)),Array.isArray(e)||ArrayBuffer.isView(e)||e.constructor===a?n.createHash(o).update(r(e)).digest("hex"):t(e)}},m=function(t,s){return function(e,i){return new v(e,s,!0).update(i)[t]()}},w=function(t){var s=m("hex",t);s.create=function(s){return new v(s,t)},s.update=function(t,e){return s.create(t).update(e)};for(var e=0;e<y.length;++e){var i=y[e];s[i]=m(i,t)}return s};function A(t,s){s?(d[0]=d[16]=d[1]=d[2]=d[3]=d[4]=d[5]=d[6]=d[7]=d[8]=d[9]=d[10]=d[11]=d[12]=d[13]=d[14]=d[15]=0,this.blocks=d):this.blocks=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],t?(this.h0=3238371032,this.h1=914150663,this.h2=812702999,this.h3=4144912697,this.h4=4290775857,this.h5=1750603025,this.h6=1694076839,this.h7=3204075428):(this.h0=1779033703,this.h1=3144134277,this.h2=1013904242,this.h3=2773480762,this.h4=1359893119,this.h5=2600822924,this.h6=528734635,this.h7=1541459225),this.block=this.start=this.bytes=this.hBytes=0,this.finalized=this.hashed=!1,this.first=!0,this.is224=t}function v(t,e,i){var r,h=typeof t;if("string"===h){var n,a=[],o=t.length,c=0;for(r=0;r<o;++r)(n=t.charCodeAt(r))<128?a[c++]=n:n<2048?(a[c++]=192|n>>>6,a[c++]=128|63&n):n<55296||n>=57344?(a[c++]=224|n>>>12,a[c++]=128|n>>>6&63,a[c++]=128|63&n):(n=65536+((1023&n)<<10|1023&t.charCodeAt(++r)),a[c++]=240|n>>>18,a[c++]=128|n>>>12&63,a[c++]=128|n>>>6&63,a[c++]=128|63&n);t=a}else{if("object"!==h)throw new Error(s);if(null===t)throw new Error(s);if(u&&t.constructor===ArrayBuffer)t=new Uint8Array(t);else if(!(Array.isArray(t)||u&&ArrayBuffer.isView(t)))throw new Error(s)}t.length>64&&(t=new A(e,!0).update(t).array());var l=[],f=[];for(r=0;r<64;++r){var _=t[r]||0;l[r]=92^_,f[r]=54^_}A.call(this,e,i),this.update(f),this.oKeyPad=l,this.inner=!0,this.sharedMemory=i}A.prototype.update=function(t){if(!this.finalized){var e,i=typeof t;if("string"!==i){if("object"!==i)throw new Error(s);if(null===t)throw new Error(s);if(u&&t.constructor===ArrayBuffer)t=new Uint8Array(t);else if(!(Array.isArray(t)||u&&ArrayBuffer.isView(t)))throw new Error(s);e=!0}for(var r,h,n=0,a=t.length,o=this.blocks;n<a;){if(this.hashed&&(this.hashed=!1,o[0]=this.block,this.block=o[16]=o[1]=o[2]=o[3]=o[4]=o[5]=o[6]=o[7]=o[8]=o[9]=o[10]=o[11]=o[12]=o[13]=o[14]=o[15]=0),e)for(h=this.start;n<a&&h<64;++n)o[h>>>2]|=t[n]<<_[3&h++];else for(h=this.start;n<a&&h<64;++n)(r=t.charCodeAt(n))<128?o[h>>>2]|=r<<_[3&h++]:r<2048?(o[h>>>2]|=(192|r>>>6)<<_[3&h++],o[h>>>2]|=(128|63&r)<<_[3&h++]):r<55296||r>=57344?(o[h>>>2]|=(224|r>>>12)<<_[3&h++],o[h>>>2]|=(128|r>>>6&63)<<_[3&h++],o[h>>>2]|=(128|63&r)<<_[3&h++]):(r=65536+((1023&r)<<10|1023&t.charCodeAt(++n)),o[h>>>2]|=(240|r>>>18)<<_[3&h++],o[h>>>2]|=(128|r>>>12&63)<<_[3&h++],o[h>>>2]|=(128|r>>>6&63)<<_[3&h++],o[h>>>2]|=(128|63&r)<<_[3&h++]);this.lastByteIndex=h,this.bytes+=h-this.start,h>=64?(this.block=o[16],this.start=h-64,this.hash(),this.hashed=!0):this.start=h}return this.bytes>4294967295&&(this.hBytes+=this.bytes/4294967296|0,this.bytes=this.bytes%4294967296),this}},A.prototype.finalize=function(){if(!this.finalized){this.finalized=!0;var t=this.blocks,s=this.lastByteIndex;t[16]=this.block,t[s>>>2]|=f[3&s],this.block=t[16],s>=56&&(this.hashed||this.hash(),t[0]=this.block,t[16]=t[1]=t[2]=t[3]=t[4]=t[5]=t[6]=t[7]=t[8]=t[9]=t[10]=t[11]=t[12]=t[13]=t[14]=t[15]=0),t[14]=this.hBytes<<3|this.bytes>>>29,t[15]=this.bytes<<3,this.hash()}},A.prototype.hash=function(){var t,s,e,i,r,h,n,a,o,c=this.h0,u=this.h1,l=this.h2,f=this.h3,_=this.h4,y=this.h5,d=this.h6,g=this.h7,b=this.blocks;for(t=16;t<64;++t)s=((r=b[t-15])>>>7|r<<25)^(r>>>18|r<<14)^r>>>3,e=((r=b[t-2])>>>17|r<<15)^(r>>>19|r<<13)^r>>>10,b[t]=b[t-16]+s+b[t-7]+e|0;for(o=u&l,t=0;t<64;t+=4)this.first?(this.is224?(h=300032,g=(r=b[0]-1413257819)-150054599|0,f=r+24177077|0):(h=704751109,g=(r=b[0]-210244248)-1521486534|0,f=r+143694565|0),this.first=!1):(s=(c>>>2|c<<30)^(c>>>13|c<<19)^(c>>>22|c<<10),i=(h=c&u)^c&l^o,g=f+(r=g+(e=(_>>>6|_<<26)^(_>>>11|_<<21)^(_>>>25|_<<7))+(_&y^~_&d)+p[t]+b[t])|0,f=r+(s+i)|0),s=(f>>>2|f<<30)^(f>>>13|f<<19)^(f>>>22|f<<10),i=(n=f&c)^f&u^h,d=l+(r=d+(e=(g>>>6|g<<26)^(g>>>11|g<<21)^(g>>>25|g<<7))+(g&_^~g&y)+p[t+1]+b[t+1])|0,s=((l=r+(s+i)|0)>>>2|l<<30)^(l>>>13|l<<19)^(l>>>22|l<<10),i=(a=l&f)^l&c^n,y=u+(r=y+(e=(d>>>6|d<<26)^(d>>>11|d<<21)^(d>>>25|d<<7))+(d&g^~d&_)+p[t+2]+b[t+2])|0,s=((u=r+(s+i)|0)>>>2|u<<30)^(u>>>13|u<<19)^(u>>>22|u<<10),i=(o=u&l)^u&f^a,_=c+(r=_+(e=(y>>>6|y<<26)^(y>>>11|y<<21)^(y>>>25|y<<7))+(y&d^~y&g)+p[t+3]+b[t+3])|0,c=r+(s+i)|0,this.chromeBugWorkAround=!0;this.h0=this.h0+c|0,this.h1=this.h1+u|0,this.h2=this.h2+l|0,this.h3=this.h3+f|0,this.h4=this.h4+_|0,this.h5=this.h5+y|0,this.h6=this.h6+d|0,this.h7=this.h7+g|0},A.prototype.hex=function(){this.finalize();var t=this.h0,s=this.h1,e=this.h2,i=this.h3,r=this.h4,h=this.h5,n=this.h6,a=this.h7,o=l[t>>>28&15]+l[t>>>24&15]+l[t>>>20&15]+l[t>>>16&15]+l[t>>>12&15]+l[t>>>8&15]+l[t>>>4&15]+l[15&t]+l[s>>>28&15]+l[s>>>24&15]+l[s>>>20&15]+l[s>>>16&15]+l[s>>>12&15]+l[s>>>8&15]+l[s>>>4&15]+l[15&s]+l[e>>>28&15]+l[e>>>24&15]+l[e>>>20&15]+l[e>>>16&15]+l[e>>>12&15]+l[e>>>8&15]+l[e>>>4&15]+l[15&e]+l[i>>>28&15]+l[i>>>24&15]+l[i>>>20&15]+l[i>>>16&15]+l[i>>>12&15]+l[i>>>8&15]+l[i>>>4&15]+l[15&i]+l[r>>>28&15]+l[r>>>24&15]+l[r>>>20&15]+l[r>>>16&15]+l[r>>>12&15]+l[r>>>8&15]+l[r>>>4&15]+l[15&r]+l[h>>>28&15]+l[h>>>24&15]+l[h>>>20&15]+l[h>>>16&15]+l[h>>>12&15]+l[h>>>8&15]+l[h>>>4&15]+l[15&h]+l[n>>>28&15]+l[n>>>24&15]+l[n>>>20&15]+l[n>>>16&15]+l[n>>>12&15]+l[n>>>8&15]+l[n>>>4&15]+l[15&n];return this.is224||(o+=l[a>>>28&15]+l[a>>>24&15]+l[a>>>20&15]+l[a>>>16&15]+l[a>>>12&15]+l[a>>>8&15]+l[a>>>4&15]+l[15&a]),o},A.prototype.toString=A.prototype.hex,A.prototype.digest=function(){this.finalize();var t=this.h0,s=this.h1,e=this.h2,i=this.h3,r=this.h4,h=this.h5,n=this.h6,a=this.h7,o=[t>>>24&255,t>>>16&255,t>>>8&255,255&t,s>>>24&255,s>>>16&255,s>>>8&255,255&s,e>>>24&255,e>>>16&255,e>>>8&255,255&e,i>>>24&255,i>>>16&255,i>>>8&255,255&i,r>>>24&255,r>>>16&255,r>>>8&255,255&r,h>>>24&255,h>>>16&255,h>>>8&255,255&h,n>>>24&255,n>>>16&255,n>>>8&255,255&n];return this.is224||o.push(a>>>24&255,a>>>16&255,a>>>8&255,255&a),o},A.prototype.array=A.prototype.digest,A.prototype.arrayBuffer=function(){this.finalize();var t=new ArrayBuffer(this.is224?28:32),s=new DataView(t);return s.setUint32(0,this.h0),s.setUint32(4,this.h1),s.setUint32(8,this.h2),s.setUint32(12,this.h3),s.setUint32(16,this.h4),s.setUint32(20,this.h5),s.setUint32(24,this.h6),this.is224||s.setUint32(28,this.h7),t},v.prototype=new A,v.prototype.finalize=function(){if(A.prototype.finalize.call(this),this.inner){this.inner=!1;var t=this.array();A.call(this,this.is224,this.sharedMemory),this.update(this.oKeyPad),this.update(t),A.prototype.finalize.call(this)}};var x=b();x.sha256=x,x.sha224=b(!0),x.sha256.hmac=w(),x.sha224.hmac=w(!0),o?t.exports=x:(h.sha256=x.sha256,h.sha224=x.sha224,c&&(void 0===(i=function(){return x}.call(x,e,x,t))||(t.exports=i)))}()},91903:()=>{},24394:()=>{}},s={};function e(i){var r=s[i];if(void 0!==r)return r.exports;var h=s[i]={exports:{}};return t[i](h,h.exports,e),h.exports}e.amdO={},e.g=function(){if("object"==typeof globalThis)return globalThis;try{return this||new Function("return this")()}catch(t){if("object"==typeof window)return window}}(),(()=>{"use strict";const t=6e3,s="NONCE",i="waiting",r="running",h="completed";var n=e(71312);class a{constructor(){this.status="initiated",this.object_id=null,this.target_id=null,this.object_type=null,this.task_type=null,this.identity=null,this.prefix=null,this.postfix=null,this.nonce_start=Math.floor(1e10*Math.random()),this.nonce_current=this.nonce_start,this.iterations=0,this.iterations_since_last_start=0,this.process_start_time=new Date,this.process_end_time=null,this.difficulty_start=null,this.difficulty_target=null,this.block_start=null,this.block_checkpoint=null,this.block_checkpoint_time=null,this.block_current_estimated=null,this.result_exists=!1,this.result_message=null,this.result_nonce=null,this.result_hash=null,this.result_difficulty=0,this.estimated_hashrate=300,this.estimated_block_start_offset=0,this.last_status_change_time=new Date}isCompleted(){return this.status===h}isWaiting(){return this.status===i}isRunning(){return this.status===r}toLog(){return JSON.stringify(this,null,2)}setBlockCheckpoint(t){this.block_checkpoint_time=new Date,this.block_checkpoint=t,this.block_current_estimated=t}setStatus(t){this.last_status_change_time=new Date,this.status=t}setResult(t,s,e,i){this.status=h,this.process_end_time=new Date,this.result_exists=!0,this.result_message=s,this.result_nonce=t+this.postfix,this.result_hash=e,this.result_difficulty=i}setPreviousResult(t){this.status=h,this.process_end_time=new Date,this.result_difficulty=t}getNextNonce(){return this.iterations++,++this.nonce_current}getObjectId(){return this.object_id}getPID(){return this.object_id}getPercentCompleteEstimate(t=this.getHashrate(),s=this.estimated_block_start_offset){if(this.isCompleted())return 1;const e=this.block_current_estimated-this.block_start,i=e+this.getBlockRemainingEstimate(t,s),r=i>0?e/i:0;return Math.min(1,Math.max(0,r))}getBlockRemainingEstimate(t=this.getHashrate(),s=this.estimated_block_start_offset){if(this.isCompleted())return 0;const e=this.getCurrentAgeEstimate(),i=this.difficulty_target;let r=0,h=0;for(;r<1&&h<3e4;){if(h>s){const s=e+h,n=this.getCalculatedDifficulty(s,i);r+=6e3*t*(1/Math.pow(16,n))}h++}return Math.min(h,3e4)}getTimeRemainingEstimate(s=this.getHashrate(),e=this.estimated_block_start_offset){return this.getBlockRemainingEstimate(s,e)*t}getHashrate(){if(!this.isRunning())return this.estimated_hashrate;const t=new Date;return this.iterations_since_last_start/(1*Math.floor(t-this.last_status_change_time))}getMessage(t){return this.prefix+t+this.postfix}getCurrentAgeEstimate(){const s=new Date,e=Math.floor((s-this.block_checkpoint_time)/t);return this.block_current_estimated=Math.floor(this.block_checkpoint+e),this.block_current_estimated-this.block_start}getCurrentDifficulty(){const t=this.getCurrentAgeEstimate();if(t<=1)return 64;let s=64-Math.floor(Math.log10(t)/Math.log10(this.difficulty_target)*63);return Math.max(1,s)}getCalculatedDifficulty(t,s){if(t<=1)return 64;const e=64-Math.floor(Math.log10(t)/Math.log10(s)*63);return Math.max(1,e)}checkResultHashDifficulty(){return this.result_difficulty>=this.getCurrentDifficulty()}}class o extends Error{constructor(t="Function not implemented"){super(t),this.name="NotImplementedError"}}class c{make(t){throw new o}parseList(t){return t.map(this.make)}}const u="RAID";let l=null;const f=new class extends c{make(t){const s=new a;return Object.assign(s,t),s}initRaidTask(t,e,i,r){const h=new a;return h.task_type=u,h.object_type="fleet",h.object_id=t,h.target_id=e,h.block_start=i,h.difficulty_target=r,h.prefix=h.object_id+"@"+h.target_id+h.task_type+h.block_start+s,h.postfix="",h}initStructTask(t,e,i,r){const h=new a;return h.task_type=e,h.object_type="struct",h.object_id=t,h.block_start=i,h.difficulty_target=r,h.prefix=h.object_id+h.task_type+h.block_start+s,h.postfix="",h}initTaskFromWork(t){switch(t.category){case u:return this.initRaidTask(t.object_id,t.target_id,t.block_start,t.difficulty_target);case"BUILD":case"MINE":case"REFINE":return this.initStructTask(t.object_id,t.category,t.block_start,t.difficulty_target);default:throw new Error(`Unknown task type: ${t.category}`)}}};function _(t,s){for(let e=1;e<=s;e++)if("0"!==t[e-1])return!1;return!0}onmessage=async function(t){l=f.make(t.data[0]),"starting"===l.status&&(l.setStatus(i),postMessage([l])),console.log("Start Process Request "+l.getPID()),await async function(){let t=l.getCurrentDifficulty();if(l.status===i){for(;t>10;)console.log("Web Worker chilling because difficulty of task is too high: "+t+" > 10"),await new Promise((t=>setTimeout(t,1e4))),t=l.getCurrentDifficulty();l.setStatus(r),postMessage([l])}let s=1;for(;;){const e=l.getNextNonce(),i=l.getMessage(e),r=(0,n.sha256)(i);if(_(r,t)){l.setResult(e,i,r,t),postMessage([l]);break}if(l.iterations%5e6==0&&(l.iterations_since_last_start=s,postMessage([l])),l.iterations%5e6==0&&(t=l.getCurrentDifficulty(),l.result_exists&&l.result_difficulty>=t)){l.setPreviousResult(t),postMessage([l]);break}s++}}()}})()})();
+/******/ (() => { // webpackBootstrap
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./js/constants/ObjectTypes.js"
+/*!*************************************!*\
+  !*** ./js/constants/ObjectTypes.js ***!
+  \*************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   OBJECT_TYPES: () => (/* binding */ OBJECT_TYPES)
+/* harmony export */ });
+const OBJECT_TYPES = {
+  GUILD: 'guild',
+  PLAYER: 'player',
+  PLANET: 'planet',
+  REACTOR: 'reactor',
+  SUBSTATION: 'substation',
+  STRUCT: 'struct',
+  ALLOCATION: 'allocation',
+  INFUSION: 'infusion',
+  ADDRESS: 'address',
+  FLEET: 'fleet',
+  PROVIDER: 'provider',
+  AGREEMENT: 'agreement',
+};
+
+
+
+/***/ },
+
+/***/ "./js/constants/TaskConstants.js"
+/*!***************************************!*\
+  !*** ./js/constants/TaskConstants.js ***!
+  \***************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TASK: () => (/* binding */ TASK)
+/* harmony export */ });
+const TASK = {
+  WORKER_PATH: '/js/workers/TaskWorker.js',
+  MAX_BLOCKS_WHEN_ESTIMATING: 30000,
+  MAX_CONCURRENT_PROCESSES: 5,
+  CHECKPOINT_COMMIT: 5000000,
+  DIFFICULTY_RECALCULATE: 5000000,
+  DIFFICULTY_START: 10,
+  DIFFICULTY_START_SLEEP_DELAY: 10000,
+  CHECKPOINT_BLOCK: 10,
+  ESTIMATED_BLOCK_TIME: 6000,
+  HASHRATE_INITIAL_ESTIMATE: 300.0,
+  IDENTITY_PREFIX: "IDENTITY",
+  NONCE_PREFIX: "NONCE",
+  TARGET_DELIMITER: "@",
+  AUTOMATIC_STATUS_INTERVAL: 60000,
+  START_DELAY: 8000,
+};
+
+
+/***/ },
+
+/***/ "./js/constants/TaskStatus.js"
+/*!************************************!*\
+  !*** ./js/constants/TaskStatus.js ***!
+  \************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TASK_STATUS: () => (/* binding */ TASK_STATUS)
+/* harmony export */ });
+const TASK_STATUS = {
+  INITIATED: 'initiated',
+  STARTING: 'starting',
+  WAITING: 'waiting',
+  RUNNING: 'running',
+  PAUSED: 'paused',
+  TERMINATED: 'terminated',
+  COMPLETED: 'completed',
+};
+
+
+/***/ },
+
+/***/ "./js/constants/TaskTypes.js"
+/*!***********************************!*\
+  !*** ./js/constants/TaskTypes.js ***!
+  \***********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ORE_TASK_TYPES: () => (/* binding */ ORE_TASK_TYPES),
+/* harmony export */   TASK_TYPES: () => (/* binding */ TASK_TYPES)
+/* harmony export */ });
+const TASK_TYPES = {
+  RAID: 'RAID',
+  BUILD: 'BUILD',
+  MINE: 'MINE',
+  REFINE: 'REFINE',
+};
+
+/**
+ * Task types whose start block is a clock on the planet, shared by every
+ * eligible struct standing on it, rather than one held by the struct itself.
+ */
+const ORE_TASK_TYPES = [TASK_TYPES.MINE, TASK_TYPES.REFINE];
+
+
+/***/ },
+
+/***/ "./js/factories/TaskStateFactory.js"
+/*!******************************************!*\
+  !*** ./js/factories/TaskStateFactory.js ***!
+  \******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TaskStateFactory: () => (/* binding */ TaskStateFactory)
+/* harmony export */ });
+/* harmony import */ var _models_TaskState__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/TaskState */ "./js/models/TaskState.js");
+/* harmony import */ var _framework_AbstractFactory__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/AbstractFactory */ "./js/framework/AbstractFactory.js");
+/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
+/* harmony import */ var _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/TaskTypes */ "./js/constants/TaskTypes.js");
+/* harmony import */ var _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/ObjectTypes */ "./js/constants/ObjectTypes.js");
+
+
+
+
+
+
+class TaskStateFactory extends _framework_AbstractFactory__WEBPACK_IMPORTED_MODULE_1__.AbstractFactory {
+
+  /**
+   * @param {object} obj
+   * @return {TaskState}
+   */
+  make(obj) {
+    const task_state = new _models_TaskState__WEBPACK_IMPORTED_MODULE_0__.TaskState();
+    Object.assign(task_state, obj);
+
+    return task_state;
+  }
+
+
+  /**
+   * @param {string} fleet_id
+   * @param {string} planet_id
+   * @param {number} block_start
+   * @param {number} difficulty_target
+   * @return {TaskState}
+   */
+  initRaidTask(fleet_id, planet_id, block_start, difficulty_target){
+
+    const task_state = new _models_TaskState__WEBPACK_IMPORTED_MODULE_0__.TaskState();
+
+    task_state.task_type = _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.RAID;
+    task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__.OBJECT_TYPES.FLEET;
+    task_state.object_id = fleet_id;
+    task_state.target_id = planet_id;
+    task_state.block_start = block_start;
+    task_state.difficulty_target = difficulty_target;
+
+    task_state.prefix = task_state.object_id + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.TARGET_DELIMITER + task_state.target_id + task_state.task_type + task_state.block_start + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.NONCE_PREFIX;
+    task_state.postfix = '';
+
+    return task_state;
+  }
+
+
+
+  /**
+   * @param {string} struct_id
+   * @param {string} task_type
+   * @param {number} block_start
+   * @param {number} difficulty_target
+   * @return {TaskState}
+   */
+  initStructTask(struct_id, task_type, block_start, difficulty_target){
+
+    const task_state = new _models_TaskState__WEBPACK_IMPORTED_MODULE_0__.TaskState();
+
+    task_state.task_type = task_type;
+    task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__.OBJECT_TYPES.STRUCT;
+    task_state.object_id = struct_id;
+    task_state.block_start = block_start;
+    task_state.difficulty_target = difficulty_target;
+
+    task_state.prefix = task_state.object_id  + task_state.task_type + task_state.block_start + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.NONCE_PREFIX;
+    task_state.postfix = '';
+
+    return task_state;
+  }
+
+  /**
+   * @param {Work} work
+   * @return {TaskState}
+   */
+  initTaskFromWork(work) {
+    switch(work.category) {
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.RAID:
+        return this.initRaidTask(work.object_id, work.target_id, work.block_start, work.difficulty_target);
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.BUILD:
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.MINE:
+      case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.REFINE:
+        return this.initStructTask(work.object_id, work.category, work.block_start, work.difficulty_target);
+      default:
+        throw new Error(`Unknown task type: ${work.category}`);
+    }
+  }
+
+
+}
+
+/***/ },
+
+/***/ "./js/framework/AbstractFactory.js"
+/*!*****************************************!*\
+  !*** ./js/framework/AbstractFactory.js ***!
+  \*****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AbstractFactory: () => (/* binding */ AbstractFactory)
+/* harmony export */ });
+/* harmony import */ var _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./NotImplementedError */ "./js/framework/NotImplementedError.js");
+
+
+class AbstractFactory {
+
+  make(obj) {
+    throw new _NotImplementedError__WEBPACK_IMPORTED_MODULE_0__.NotImplementedError();
+  }
+
+  parseList(list) {
+    return list.map(this.make);
+  }
+}
+
+/***/ },
+
+/***/ "./js/framework/NotImplementedError.js"
+/*!*********************************************!*\
+  !*** ./js/framework/NotImplementedError.js ***!
+  \*********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   NotImplementedError: () => (/* binding */ NotImplementedError)
+/* harmony export */ });
+class NotImplementedError extends Error {
+  constructor(message= 'Function not implemented') {
+    super(message);
+    this.name = "NotImplementedError";
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/models/TaskState.js"
+/*!********************************!*\
+  !*** ./js/models/TaskState.js ***!
+  \********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TaskState: () => (/* binding */ TaskState)
+/* harmony export */ });
+/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
+/* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
+/* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! js-sha256 */ "./node_modules/js-sha256/src/sha256.js");
+/* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(js_sha256__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
+
+
+class TaskState {
+  constructor() {
+    this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.INITIATED;
+    this.object_id = null;
+    this.target_id = null;
+    this.object_type = null;
+    this.task_type = null;
+    this.identity = null;
+
+    this.prefix = null; // Entire string up to NONCE
+    this.postfix = null; // Optional IDENTITY
+    this.nonce_start = Math.floor(Math.random() * 10000000000);
+    this.nonce_current = this.nonce_start;
+    this.iterations = 0;
+    this.iterations_since_last_start = 0;
+    this.process_start_time = new Date();
+    this.process_end_time = null;
+    this.difficulty_start = null;
+    this.difficulty_target = null;
+    this.block_start = null;
+    this.block_checkpoint = null;
+    this.block_checkpoint_time = null;
+    this.block_current_estimated = null;
+    this.result_exists = false;
+    this.result_message = null;
+    this.result_nonce = null;
+    this.result_hash = null;
+    this.result_difficulty = 0;
+
+    this.estimated_hashrate = _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.HASHRATE_INITIAL_ESTIMATE;
+    this.estimated_block_start_offset = 0;
+    this.last_status_change_time = new Date();
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isCompleted() {
+    return this.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.COMPLETED;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isWaiting() {
+    return this.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.WAITING;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isRunning() {
+    return this.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.RUNNING;
+  }
+
+  /**
+   * @return {string}
+   */
+  toLog(){
+    return JSON.stringify(this, null, 2);
+  }
+
+  /**
+   * @param {number} block
+   */
+  setBlockCheckpoint(block) {
+    this.block_checkpoint_time = new Date();
+    this.block_checkpoint = block;
+    this.block_current_estimated = block;
+  }
+
+  /**
+   * @param {string} status
+   */
+  setStatus(status) {
+    this.last_status_change_time = new Date();
+    this.status = status
+  }
+
+  /**
+   * @param {string} nonce
+   * @param {string} message
+   * @param {string} hash
+   * @param {number} difficulty
+   */
+  setResult(nonce, message, hash, difficulty) {
+    this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.COMPLETED;
+    this.process_end_time = new Date();
+    this.result_exists = true;
+    this.result_message = message;
+    this.result_nonce = nonce + this.postfix;
+    this.result_hash = hash;
+    this.result_difficulty = difficulty;
+  }
+
+  /**
+   * @param {number} difficulty
+   */
+  setPreviousResult(difficulty) {
+    this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.COMPLETED;
+    this.process_end_time = new Date();
+    this.result_difficulty = difficulty;
+  }
+
+  getNextNonce() {
+    this.iterations++;
+    return ++this.nonce_current;
+  }
+
+  getObjectId() {
+    return this.object_id;
+  }
+
+  /**
+   * @return {string}
+   */
+  getPID() {
+    return this.object_id;
+  }
+
+  /**
+   * Calculate percent complete using getBlockRemainingEstimate.
+   *
+   * @param {number} hashrate
+   * @param {number} blockStartOffset
+   * @return {number} Percent complete (0.0 to 1.0)
+   */
+  getPercentCompleteEstimate(hashrate = this.getHashrate(), blockStartOffset = this.estimated_block_start_offset) {
+    if (this.isCompleted()) {
+      return 1.0;
+    }
+
+    // Age represents blocks processed since start
+    const age = this.block_current_estimated - this.block_start;
+
+    // Get the blocks remaining using current hash rate
+    const blocksRemaining = this.getBlockRemainingEstimate(hashrate, blockStartOffset);
+
+    // Total blocks needed = blocks already processed + blocks remaining
+    const totalBlocks = age + blocksRemaining;
+
+    // Percent complete = blocks processed / total blocks needed
+    const percent = totalBlocks > 0 ? age / totalBlocks : 0.0;
+
+    return Math.min(1.0, Math.max(0.0, percent));
+  }
+
+
+  /**
+   * @param {number} hashrate
+   * @param {number} blockStartOffset
+   * @return {number}
+   */
+  getBlockRemainingEstimate(hashrate= this.getHashrate(), blockStartOffset = this.estimated_block_start_offset) {
+    if (this.isCompleted()) {
+      return 0;
+    }
+
+    const currentAge = this.getCurrentAgeEstimate()
+
+    const baseDifficultyRange = this.difficulty_target;
+    const maxBlocksToCheck =  _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.MAX_BLOCKS_WHEN_ESTIMATING;
+    const blockTimeSeconds = _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.ESTIMATED_BLOCK_TIME;
+
+    let cumulativeExpectedSuccesses = 0;
+    let blocksAhead = 0;
+
+    while (cumulativeExpectedSuccesses < 1 && blocksAhead < maxBlocksToCheck) {
+      if (blocksAhead > blockStartOffset) {
+        const ageAtBlock = currentAge + blocksAhead;
+        const difficulty = this.getCalculatedDifficulty(ageAtBlock, baseDifficultyRange);
+        const successProbability = 1 / Math.pow(16, difficulty);
+
+        // Expected number of successful hashes in this block
+        const expectedSuccessesInBlock = hashrate * blockTimeSeconds * successProbability;
+        cumulativeExpectedSuccesses += expectedSuccessesInBlock;
+      }
+      blocksAhead++;
+    }
+
+    return Math.min(blocksAhead, maxBlocksToCheck);
+  }
+
+
+  /**
+   * @param {number} hashrate
+   * @param {number} blockStartOffset
+   * @return {number}
+   */
+  getTimeRemainingEstimate(hashrate= this.getHashrate(), blockStartOffset = this.estimated_block_start_offset) {
+    const blocksAhead = this.getBlockRemainingEstimate(hashrate, blockStartOffset);
+    return blocksAhead * _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.ESTIMATED_BLOCK_TIME;
+  }
+
+  /**
+   * @return {number}
+   */
+  getHashrate() {
+    if (!this.isRunning()) {
+      return this.estimated_hashrate;
+    }
+
+    const current_time = new Date();
+    return this.iterations_since_last_start / (Math.floor((current_time - this.last_status_change_time)) * 1);
+  }
+
+  /**
+   * @param {string} nonce
+   * @return {string}
+   */
+  getMessage(nonce) {
+    return this.prefix + nonce + this.postfix;
+  }
+
+  /**
+   * @return {number}
+   */
+  getCurrentAgeEstimate() {
+    const current_time = new Date();
+    const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.ESTIMATED_BLOCK_TIME);
+    this.block_current_estimated = Math.floor(this.block_checkpoint + estimated_blocks_past);
+
+    return this.block_current_estimated - this.block_start;
+  }
+
+  /**
+   * @return {number}
+   */
+  getCurrentDifficulty(){
+    const age = this.getCurrentAgeEstimate();
+
+    if (age <= 1) {
+      return 64;
+    }
+
+    // Using logarithmic function to calculate difficulty
+    let difficulty = 64 - Math.floor(Math.log10(age) / Math.log10(this.difficulty_target) * 63);
+
+    return Math.max(1, difficulty)
+  }
+
+  /**
+   * Calculate difficulty from age
+   *
+   * @param {number} age - Current age in blocks
+   * @param {number} baseDifficultyRange - Base difficulty range
+   * @returns {number} Difficulty (number of leading zeros required in hash)
+   */
+   getCalculatedDifficulty(age, baseDifficultyRange) {
+    if (age <= 1) {
+      return 64;
+    }
+
+    const difficulty = 64 - Math.floor(
+        Math.log10(age) / Math.log10(baseDifficultyRange) * 63
+    );
+
+    return Math.max(1, difficulty);
+  }
+
+  /**
+   * Check to see if Hash was built for an acceptable block height
+   */
+  checkResultHashDifficulty() {
+    return this.result_difficulty >= this.getCurrentDifficulty();
+  }
+}
+
+/***/ },
+
+/***/ "./node_modules/js-sha256/src/sha256.js"
+/*!**********************************************!*\
+  !*** ./node_modules/js-sha256/src/sha256.js ***!
+  \**********************************************/
+(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_RESULT__;/**
+ * [js-sha256]{@link https://github.com/emn178/js-sha256}
+ *
+ * @version 0.11.1
+ * @author Chen, Yi-Cyuan [emn178@gmail.com]
+ * @copyright Chen, Yi-Cyuan 2014-2025
+ * @license MIT
+ */
+/*jslint bitwise: true */
+(function () {
+  'use strict';
+
+  var ERROR = 'input is invalid type';
+  var WINDOW = typeof window === 'object';
+  var root = WINDOW ? window : {};
+  if (root.JS_SHA256_NO_WINDOW) {
+    WINDOW = false;
+  }
+  var WEB_WORKER = !WINDOW && typeof self === 'object';
+  var NODE_JS = !root.JS_SHA256_NO_NODE_JS && typeof process === 'object' && process.versions && process.versions.node && process.type != 'renderer';
+  if (NODE_JS) {
+    root = __webpack_require__.g;
+  } else if (WEB_WORKER) {
+    root = self;
+  }
+  var COMMON_JS = !root.JS_SHA256_NO_COMMON_JS && "object" === 'object' && module.exports;
+  var AMD =  true && __webpack_require__.amdO;
+  var ARRAY_BUFFER = !root.JS_SHA256_NO_ARRAY_BUFFER && typeof ArrayBuffer !== 'undefined';
+  var HEX_CHARS = '0123456789abcdef'.split('');
+  var EXTRA = [-2147483648, 8388608, 32768, 128];
+  var SHIFT = [24, 16, 8, 0];
+  var K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ];
+  var OUTPUT_TYPES = ['hex', 'array', 'digest', 'arrayBuffer'];
+
+  var blocks = [];
+
+  if (root.JS_SHA256_NO_NODE_JS || !Array.isArray) {
+    Array.isArray = function (obj) {
+      return Object.prototype.toString.call(obj) === '[object Array]';
+    };
+  }
+
+  if (ARRAY_BUFFER && (root.JS_SHA256_NO_ARRAY_BUFFER_IS_VIEW || !ArrayBuffer.isView)) {
+    ArrayBuffer.isView = function (obj) {
+      return typeof obj === 'object' && obj.buffer && obj.buffer.constructor === ArrayBuffer;
+    };
+  }
+
+  var createOutputMethod = function (outputType, is224) {
+    return function (message) {
+      return new Sha256(is224, true).update(message)[outputType]();
+    };
+  };
+
+  var createMethod = function (is224) {
+    var method = createOutputMethod('hex', is224);
+    if (NODE_JS) {
+      method = nodeWrap(method, is224);
+    }
+    method.create = function () {
+      return new Sha256(is224);
+    };
+    method.update = function (message) {
+      return method.create().update(message);
+    };
+    for (var i = 0; i < OUTPUT_TYPES.length; ++i) {
+      var type = OUTPUT_TYPES[i];
+      method[type] = createOutputMethod(type, is224);
+    }
+    return method;
+  };
+
+  var nodeWrap = function (method, is224) {
+    var crypto = __webpack_require__(/*! crypto */ "?abf2")
+    var Buffer = (__webpack_require__(/*! buffer */ "?69d9").Buffer);
+    var algorithm = is224 ? 'sha224' : 'sha256';
+    var bufferFrom;
+    if (Buffer.from && !root.JS_SHA256_NO_BUFFER_FROM) {
+      bufferFrom = Buffer.from;
+    } else {
+      bufferFrom = function (message) {
+        return new Buffer(message);
+      };
+    }
+    var nodeMethod = function (message) {
+      if (typeof message === 'string') {
+        return crypto.createHash(algorithm).update(message, 'utf8').digest('hex');
+      } else {
+        if (message === null || message === undefined) {
+          throw new Error(ERROR);
+        } else if (message.constructor === ArrayBuffer) {
+          message = new Uint8Array(message);
+        }
+      }
+      if (Array.isArray(message) || ArrayBuffer.isView(message) ||
+        message.constructor === Buffer) {
+        return crypto.createHash(algorithm).update(bufferFrom(message)).digest('hex');
+      } else {
+        return method(message);
+      }
+    };
+    return nodeMethod;
+  };
+
+  var createHmacOutputMethod = function (outputType, is224) {
+    return function (key, message) {
+      return new HmacSha256(key, is224, true).update(message)[outputType]();
+    };
+  };
+
+  var createHmacMethod = function (is224) {
+    var method = createHmacOutputMethod('hex', is224);
+    method.create = function (key) {
+      return new HmacSha256(key, is224);
+    };
+    method.update = function (key, message) {
+      return method.create(key).update(message);
+    };
+    for (var i = 0; i < OUTPUT_TYPES.length; ++i) {
+      var type = OUTPUT_TYPES[i];
+      method[type] = createHmacOutputMethod(type, is224);
+    }
+    return method;
+  };
+
+  function Sha256(is224, sharedMemory) {
+    if (sharedMemory) {
+      blocks[0] = blocks[16] = blocks[1] = blocks[2] = blocks[3] =
+        blocks[4] = blocks[5] = blocks[6] = blocks[7] =
+        blocks[8] = blocks[9] = blocks[10] = blocks[11] =
+        blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
+      this.blocks = blocks;
+    } else {
+      this.blocks = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    }
+
+    if (is224) {
+      this.h0 = 0xc1059ed8;
+      this.h1 = 0x367cd507;
+      this.h2 = 0x3070dd17;
+      this.h3 = 0xf70e5939;
+      this.h4 = 0xffc00b31;
+      this.h5 = 0x68581511;
+      this.h6 = 0x64f98fa7;
+      this.h7 = 0xbefa4fa4;
+    } else { // 256
+      this.h0 = 0x6a09e667;
+      this.h1 = 0xbb67ae85;
+      this.h2 = 0x3c6ef372;
+      this.h3 = 0xa54ff53a;
+      this.h4 = 0x510e527f;
+      this.h5 = 0x9b05688c;
+      this.h6 = 0x1f83d9ab;
+      this.h7 = 0x5be0cd19;
+    }
+
+    this.block = this.start = this.bytes = this.hBytes = 0;
+    this.finalized = this.hashed = false;
+    this.first = true;
+    this.is224 = is224;
+  }
+
+  Sha256.prototype.update = function (message) {
+    if (this.finalized) {
+      return;
+    }
+    var notString, type = typeof message;
+    if (type !== 'string') {
+      if (type === 'object') {
+        if (message === null) {
+          throw new Error(ERROR);
+        } else if (ARRAY_BUFFER && message.constructor === ArrayBuffer) {
+          message = new Uint8Array(message);
+        } else if (!Array.isArray(message)) {
+          if (!ARRAY_BUFFER || !ArrayBuffer.isView(message)) {
+            throw new Error(ERROR);
+          }
+        }
+      } else {
+        throw new Error(ERROR);
+      }
+      notString = true;
+    }
+    var code, index = 0, i, length = message.length, blocks = this.blocks;
+    while (index < length) {
+      if (this.hashed) {
+        this.hashed = false;
+        blocks[0] = this.block;
+        this.block = blocks[16] = blocks[1] = blocks[2] = blocks[3] =
+          blocks[4] = blocks[5] = blocks[6] = blocks[7] =
+          blocks[8] = blocks[9] = blocks[10] = blocks[11] =
+          blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
+      }
+
+      if (notString) {
+        for (i = this.start; index < length && i < 64; ++index) {
+          blocks[i >>> 2] |= message[index] << SHIFT[i++ & 3];
+        }
+      } else {
+        for (i = this.start; index < length && i < 64; ++index) {
+          code = message.charCodeAt(index);
+          if (code < 0x80) {
+            blocks[i >>> 2] |= code << SHIFT[i++ & 3];
+          } else if (code < 0x800) {
+            blocks[i >>> 2] |= (0xc0 | (code >>> 6)) << SHIFT[i++ & 3];
+            blocks[i >>> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+          } else if (code < 0xd800 || code >= 0xe000) {
+            blocks[i >>> 2] |= (0xe0 | (code >>> 12)) << SHIFT[i++ & 3];
+            blocks[i >>> 2] |= (0x80 | ((code >>> 6) & 0x3f)) << SHIFT[i++ & 3];
+            blocks[i >>> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+          } else {
+            code = 0x10000 + (((code & 0x3ff) << 10) | (message.charCodeAt(++index) & 0x3ff));
+            blocks[i >>> 2] |= (0xf0 | (code >>> 18)) << SHIFT[i++ & 3];
+            blocks[i >>> 2] |= (0x80 | ((code >>> 12) & 0x3f)) << SHIFT[i++ & 3];
+            blocks[i >>> 2] |= (0x80 | ((code >>> 6) & 0x3f)) << SHIFT[i++ & 3];
+            blocks[i >>> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+          }
+        }
+      }
+
+      this.lastByteIndex = i;
+      this.bytes += i - this.start;
+      if (i >= 64) {
+        this.block = blocks[16];
+        this.start = i - 64;
+        this.hash();
+        this.hashed = true;
+      } else {
+        this.start = i;
+      }
+    }
+    if (this.bytes > 4294967295) {
+      this.hBytes += this.bytes / 4294967296 << 0;
+      this.bytes = this.bytes % 4294967296;
+    }
+    return this;
+  };
+
+  Sha256.prototype.finalize = function () {
+    if (this.finalized) {
+      return;
+    }
+    this.finalized = true;
+    var blocks = this.blocks, i = this.lastByteIndex;
+    blocks[16] = this.block;
+    blocks[i >>> 2] |= EXTRA[i & 3];
+    this.block = blocks[16];
+    if (i >= 56) {
+      if (!this.hashed) {
+        this.hash();
+      }
+      blocks[0] = this.block;
+      blocks[16] = blocks[1] = blocks[2] = blocks[3] =
+        blocks[4] = blocks[5] = blocks[6] = blocks[7] =
+        blocks[8] = blocks[9] = blocks[10] = blocks[11] =
+        blocks[12] = blocks[13] = blocks[14] = blocks[15] = 0;
+    }
+    blocks[14] = this.hBytes << 3 | this.bytes >>> 29;
+    blocks[15] = this.bytes << 3;
+    this.hash();
+  };
+
+  Sha256.prototype.hash = function () {
+    var a = this.h0, b = this.h1, c = this.h2, d = this.h3, e = this.h4, f = this.h5, g = this.h6,
+      h = this.h7, blocks = this.blocks, j, s0, s1, maj, t1, t2, ch, ab, da, cd, bc;
+
+    for (j = 16; j < 64; ++j) {
+      // rightrotate
+      t1 = blocks[j - 15];
+      s0 = ((t1 >>> 7) | (t1 << 25)) ^ ((t1 >>> 18) | (t1 << 14)) ^ (t1 >>> 3);
+      t1 = blocks[j - 2];
+      s1 = ((t1 >>> 17) | (t1 << 15)) ^ ((t1 >>> 19) | (t1 << 13)) ^ (t1 >>> 10);
+      blocks[j] = blocks[j - 16] + s0 + blocks[j - 7] + s1 << 0;
+    }
+
+    bc = b & c;
+    for (j = 0; j < 64; j += 4) {
+      if (this.first) {
+        if (this.is224) {
+          ab = 300032;
+          t1 = blocks[0] - 1413257819;
+          h = t1 - 150054599 << 0;
+          d = t1 + 24177077 << 0;
+        } else {
+          ab = 704751109;
+          t1 = blocks[0] - 210244248;
+          h = t1 - 1521486534 << 0;
+          d = t1 + 143694565 << 0;
+        }
+        this.first = false;
+      } else {
+        s0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+        s1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+        ab = a & b;
+        maj = ab ^ (a & c) ^ bc;
+        ch = (e & f) ^ (~e & g);
+        t1 = h + s1 + ch + K[j] + blocks[j];
+        t2 = s0 + maj;
+        h = d + t1 << 0;
+        d = t1 + t2 << 0;
+      }
+      s0 = ((d >>> 2) | (d << 30)) ^ ((d >>> 13) | (d << 19)) ^ ((d >>> 22) | (d << 10));
+      s1 = ((h >>> 6) | (h << 26)) ^ ((h >>> 11) | (h << 21)) ^ ((h >>> 25) | (h << 7));
+      da = d & a;
+      maj = da ^ (d & b) ^ ab;
+      ch = (h & e) ^ (~h & f);
+      t1 = g + s1 + ch + K[j + 1] + blocks[j + 1];
+      t2 = s0 + maj;
+      g = c + t1 << 0;
+      c = t1 + t2 << 0;
+      s0 = ((c >>> 2) | (c << 30)) ^ ((c >>> 13) | (c << 19)) ^ ((c >>> 22) | (c << 10));
+      s1 = ((g >>> 6) | (g << 26)) ^ ((g >>> 11) | (g << 21)) ^ ((g >>> 25) | (g << 7));
+      cd = c & d;
+      maj = cd ^ (c & a) ^ da;
+      ch = (g & h) ^ (~g & e);
+      t1 = f + s1 + ch + K[j + 2] + blocks[j + 2];
+      t2 = s0 + maj;
+      f = b + t1 << 0;
+      b = t1 + t2 << 0;
+      s0 = ((b >>> 2) | (b << 30)) ^ ((b >>> 13) | (b << 19)) ^ ((b >>> 22) | (b << 10));
+      s1 = ((f >>> 6) | (f << 26)) ^ ((f >>> 11) | (f << 21)) ^ ((f >>> 25) | (f << 7));
+      bc = b & c;
+      maj = bc ^ (b & d) ^ cd;
+      ch = (f & g) ^ (~f & h);
+      t1 = e + s1 + ch + K[j + 3] + blocks[j + 3];
+      t2 = s0 + maj;
+      e = a + t1 << 0;
+      a = t1 + t2 << 0;
+      this.chromeBugWorkAround = true;
+    }
+
+    this.h0 = this.h0 + a << 0;
+    this.h1 = this.h1 + b << 0;
+    this.h2 = this.h2 + c << 0;
+    this.h3 = this.h3 + d << 0;
+    this.h4 = this.h4 + e << 0;
+    this.h5 = this.h5 + f << 0;
+    this.h6 = this.h6 + g << 0;
+    this.h7 = this.h7 + h << 0;
+  };
+
+  Sha256.prototype.hex = function () {
+    this.finalize();
+
+    var h0 = this.h0, h1 = this.h1, h2 = this.h2, h3 = this.h3, h4 = this.h4, h5 = this.h5,
+      h6 = this.h6, h7 = this.h7;
+
+    var hex = HEX_CHARS[(h0 >>> 28) & 0x0F] + HEX_CHARS[(h0 >>> 24) & 0x0F] +
+      HEX_CHARS[(h0 >>> 20) & 0x0F] + HEX_CHARS[(h0 >>> 16) & 0x0F] +
+      HEX_CHARS[(h0 >>> 12) & 0x0F] + HEX_CHARS[(h0 >>> 8) & 0x0F] +
+      HEX_CHARS[(h0 >>> 4) & 0x0F] + HEX_CHARS[h0 & 0x0F] +
+      HEX_CHARS[(h1 >>> 28) & 0x0F] + HEX_CHARS[(h1 >>> 24) & 0x0F] +
+      HEX_CHARS[(h1 >>> 20) & 0x0F] + HEX_CHARS[(h1 >>> 16) & 0x0F] +
+      HEX_CHARS[(h1 >>> 12) & 0x0F] + HEX_CHARS[(h1 >>> 8) & 0x0F] +
+      HEX_CHARS[(h1 >>> 4) & 0x0F] + HEX_CHARS[h1 & 0x0F] +
+      HEX_CHARS[(h2 >>> 28) & 0x0F] + HEX_CHARS[(h2 >>> 24) & 0x0F] +
+      HEX_CHARS[(h2 >>> 20) & 0x0F] + HEX_CHARS[(h2 >>> 16) & 0x0F] +
+      HEX_CHARS[(h2 >>> 12) & 0x0F] + HEX_CHARS[(h2 >>> 8) & 0x0F] +
+      HEX_CHARS[(h2 >>> 4) & 0x0F] + HEX_CHARS[h2 & 0x0F] +
+      HEX_CHARS[(h3 >>> 28) & 0x0F] + HEX_CHARS[(h3 >>> 24) & 0x0F] +
+      HEX_CHARS[(h3 >>> 20) & 0x0F] + HEX_CHARS[(h3 >>> 16) & 0x0F] +
+      HEX_CHARS[(h3 >>> 12) & 0x0F] + HEX_CHARS[(h3 >>> 8) & 0x0F] +
+      HEX_CHARS[(h3 >>> 4) & 0x0F] + HEX_CHARS[h3 & 0x0F] +
+      HEX_CHARS[(h4 >>> 28) & 0x0F] + HEX_CHARS[(h4 >>> 24) & 0x0F] +
+      HEX_CHARS[(h4 >>> 20) & 0x0F] + HEX_CHARS[(h4 >>> 16) & 0x0F] +
+      HEX_CHARS[(h4 >>> 12) & 0x0F] + HEX_CHARS[(h4 >>> 8) & 0x0F] +
+      HEX_CHARS[(h4 >>> 4) & 0x0F] + HEX_CHARS[h4 & 0x0F] +
+      HEX_CHARS[(h5 >>> 28) & 0x0F] + HEX_CHARS[(h5 >>> 24) & 0x0F] +
+      HEX_CHARS[(h5 >>> 20) & 0x0F] + HEX_CHARS[(h5 >>> 16) & 0x0F] +
+      HEX_CHARS[(h5 >>> 12) & 0x0F] + HEX_CHARS[(h5 >>> 8) & 0x0F] +
+      HEX_CHARS[(h5 >>> 4) & 0x0F] + HEX_CHARS[h5 & 0x0F] +
+      HEX_CHARS[(h6 >>> 28) & 0x0F] + HEX_CHARS[(h6 >>> 24) & 0x0F] +
+      HEX_CHARS[(h6 >>> 20) & 0x0F] + HEX_CHARS[(h6 >>> 16) & 0x0F] +
+      HEX_CHARS[(h6 >>> 12) & 0x0F] + HEX_CHARS[(h6 >>> 8) & 0x0F] +
+      HEX_CHARS[(h6 >>> 4) & 0x0F] + HEX_CHARS[h6 & 0x0F];
+    if (!this.is224) {
+      hex += HEX_CHARS[(h7 >>> 28) & 0x0F] + HEX_CHARS[(h7 >>> 24) & 0x0F] +
+        HEX_CHARS[(h7 >>> 20) & 0x0F] + HEX_CHARS[(h7 >>> 16) & 0x0F] +
+        HEX_CHARS[(h7 >>> 12) & 0x0F] + HEX_CHARS[(h7 >>> 8) & 0x0F] +
+        HEX_CHARS[(h7 >>> 4) & 0x0F] + HEX_CHARS[h7 & 0x0F];
+    }
+    return hex;
+  };
+
+  Sha256.prototype.toString = Sha256.prototype.hex;
+
+  Sha256.prototype.digest = function () {
+    this.finalize();
+
+    var h0 = this.h0, h1 = this.h1, h2 = this.h2, h3 = this.h3, h4 = this.h4, h5 = this.h5,
+      h6 = this.h6, h7 = this.h7;
+
+    var arr = [
+      (h0 >>> 24) & 0xFF, (h0 >>> 16) & 0xFF, (h0 >>> 8) & 0xFF, h0 & 0xFF,
+      (h1 >>> 24) & 0xFF, (h1 >>> 16) & 0xFF, (h1 >>> 8) & 0xFF, h1 & 0xFF,
+      (h2 >>> 24) & 0xFF, (h2 >>> 16) & 0xFF, (h2 >>> 8) & 0xFF, h2 & 0xFF,
+      (h3 >>> 24) & 0xFF, (h3 >>> 16) & 0xFF, (h3 >>> 8) & 0xFF, h3 & 0xFF,
+      (h4 >>> 24) & 0xFF, (h4 >>> 16) & 0xFF, (h4 >>> 8) & 0xFF, h4 & 0xFF,
+      (h5 >>> 24) & 0xFF, (h5 >>> 16) & 0xFF, (h5 >>> 8) & 0xFF, h5 & 0xFF,
+      (h6 >>> 24) & 0xFF, (h6 >>> 16) & 0xFF, (h6 >>> 8) & 0xFF, h6 & 0xFF
+    ];
+    if (!this.is224) {
+      arr.push((h7 >>> 24) & 0xFF, (h7 >>> 16) & 0xFF, (h7 >>> 8) & 0xFF, h7 & 0xFF);
+    }
+    return arr;
+  };
+
+  Sha256.prototype.array = Sha256.prototype.digest;
+
+  Sha256.prototype.arrayBuffer = function () {
+    this.finalize();
+
+    var buffer = new ArrayBuffer(this.is224 ? 28 : 32);
+    var dataView = new DataView(buffer);
+    dataView.setUint32(0, this.h0);
+    dataView.setUint32(4, this.h1);
+    dataView.setUint32(8, this.h2);
+    dataView.setUint32(12, this.h3);
+    dataView.setUint32(16, this.h4);
+    dataView.setUint32(20, this.h5);
+    dataView.setUint32(24, this.h6);
+    if (!this.is224) {
+      dataView.setUint32(28, this.h7);
+    }
+    return buffer;
+  };
+
+  function HmacSha256(key, is224, sharedMemory) {
+    var i, type = typeof key;
+    if (type === 'string') {
+      var bytes = [], length = key.length, index = 0, code;
+      for (i = 0; i < length; ++i) {
+        code = key.charCodeAt(i);
+        if (code < 0x80) {
+          bytes[index++] = code;
+        } else if (code < 0x800) {
+          bytes[index++] = (0xc0 | (code >>> 6));
+          bytes[index++] = (0x80 | (code & 0x3f));
+        } else if (code < 0xd800 || code >= 0xe000) {
+          bytes[index++] = (0xe0 | (code >>> 12));
+          bytes[index++] = (0x80 | ((code >>> 6) & 0x3f));
+          bytes[index++] = (0x80 | (code & 0x3f));
+        } else {
+          code = 0x10000 + (((code & 0x3ff) << 10) | (key.charCodeAt(++i) & 0x3ff));
+          bytes[index++] = (0xf0 | (code >>> 18));
+          bytes[index++] = (0x80 | ((code >>> 12) & 0x3f));
+          bytes[index++] = (0x80 | ((code >>> 6) & 0x3f));
+          bytes[index++] = (0x80 | (code & 0x3f));
+        }
+      }
+      key = bytes;
+    } else {
+      if (type === 'object') {
+        if (key === null) {
+          throw new Error(ERROR);
+        } else if (ARRAY_BUFFER && key.constructor === ArrayBuffer) {
+          key = new Uint8Array(key);
+        } else if (!Array.isArray(key)) {
+          if (!ARRAY_BUFFER || !ArrayBuffer.isView(key)) {
+            throw new Error(ERROR);
+          }
+        }
+      } else {
+        throw new Error(ERROR);
+      }
+    }
+
+    if (key.length > 64) {
+      key = (new Sha256(is224, true)).update(key).array();
+    }
+
+    var oKeyPad = [], iKeyPad = [];
+    for (i = 0; i < 64; ++i) {
+      var b = key[i] || 0;
+      oKeyPad[i] = 0x5c ^ b;
+      iKeyPad[i] = 0x36 ^ b;
+    }
+
+    Sha256.call(this, is224, sharedMemory);
+
+    this.update(iKeyPad);
+    this.oKeyPad = oKeyPad;
+    this.inner = true;
+    this.sharedMemory = sharedMemory;
+  }
+  HmacSha256.prototype = new Sha256();
+
+  HmacSha256.prototype.finalize = function () {
+    Sha256.prototype.finalize.call(this);
+    if (this.inner) {
+      this.inner = false;
+      var innerHash = this.array();
+      Sha256.call(this, this.is224, this.sharedMemory);
+      this.update(this.oKeyPad);
+      this.update(innerHash);
+      Sha256.prototype.finalize.call(this);
+    }
+  };
+
+  var exports = createMethod();
+  exports.sha256 = exports;
+  exports.sha224 = createMethod(true);
+  exports.sha256.hmac = createHmacMethod();
+  exports.sha224.hmac = createHmacMethod(true);
+
+  if (COMMON_JS) {
+    module.exports = exports;
+  } else {
+    root.sha256 = exports.sha256;
+    root.sha224 = exports.sha224;
+    if (AMD) {
+      !(__WEBPACK_AMD_DEFINE_RESULT__ = (function () {
+        return exports;
+      }).call(exports, __webpack_require__, exports, module),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+    }
+  }
+})();
+
+
+/***/ },
+
+/***/ "?69d9"
+/*!************************!*\
+  !*** buffer (ignored) ***!
+  \************************/
+() {
+
+/* (ignored) */
+
+/***/ },
+
+/***/ "?abf2"
+/*!************************!*\
+  !*** crypto (ignored) ***!
+  \************************/
+() {
+
+/* (ignored) */
+
+/***/ }
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	const __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		const cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		const module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		if (!(moduleId in __webpack_modules__)) {
+/******/ 			delete __webpack_module_cache__[moduleId];
+/******/ 			const e = new Error("Cannot find module '" + moduleId + "'");
+/******/ 			e.code = 'MODULE_NOT_FOUND';
+/******/ 			throw e;
+/******/ 		}
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/amd options */
+/******/ 	(() => {
+/******/ 		__webpack_require__.amdO = {};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__webpack_require__.n = (module) => {
+/******/ 			const getter = module && module.__esModule ?
+/******/ 				() => (module['default']) :
+/******/ 				() => (module);
+/******/ 			__webpack_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter/value functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			if(Array.isArray(definition)) {
+/******/ 				var i = 0;
+/******/ 				while(i < definition.length) {
+/******/ 					var key = definition[i++];
+/******/ 					var binding = definition[i++];
+/******/ 					if(!__webpack_require__.o(exports, key)) {
+/******/ 						if(binding === 0) {
+/******/ 							Object.defineProperty(exports, key, { enumerable: true, value: definition[i++] });
+/******/ 						} else {
+/******/ 							Object.defineProperty(exports, key, { enumerable: true, get: binding });
+/******/ 						}
+/******/ 					} else if(binding === 0) { i++; }
+/******/ 				}
+/******/ 			} else {
+/******/ 				for(var key in definition) {
+/******/ 					if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 						Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 					}
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/global */
+/******/ 	(() => {
+/******/ 		__webpack_require__.g = (function() {
+/******/ 			if (typeof globalThis === 'object') return globalThis;
+/******/ 			try {
+/******/ 				return this || new Function('return this')();
+/******/ 			} catch (e) {
+/******/ 				if (typeof window === 'object') return window;
+/******/ 			}
+/******/ 		})();
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+let __webpack_exports__ = {};
+// This entry needs to be wrapped in an IIFE because it needs to be in strict mode.
+(() => {
+"use strict";
+/*!**********************************!*\
+  !*** ./js/workers/TaskWorker.js ***!
+  \**********************************/
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
+/* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
+/* harmony import */ var _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../factories/TaskStateFactory */ "./js/factories/TaskStateFactory.js");
+/* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! js-sha256 */ "./node_modules/js-sha256/src/sha256.js");
+/* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(js_sha256__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+
+let state = null;
+
+const taskStateFactory = new _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_2__.TaskStateFactory();
+
+onmessage =  async function(process_request) {
+    state = taskStateFactory.make(process_request.data[0]);
+
+    /*
+        If the state is starting, then start the task in a waiting state.
+        Otherwise, if it's been passed as "Running" already, then force it
+        to begin hashing even if difficulty is too high.
+     */
+    if (state.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.STARTING){
+        state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.WAITING);
+        postMessage([state]);
+    }
+    console.log('Start Process Request ' + state.getPID());
+    await work();
+}
+
+async function work() {
+    let difficulty = state.getCurrentDifficulty();
+
+    if (state.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.WAITING){
+        while (difficulty > _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START) {
+            console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START);
+            await new Promise(r => setTimeout(r, _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START_SLEEP_DELAY));
+            difficulty = state.getCurrentDifficulty();
+        }
+        state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.RUNNING);
+        postMessage([state]);
+    }
+
+    let sessionIterations = 1;
+    while (true) {
+        const nonce = state.getNextNonce();
+        const message = state.getMessage(nonce);
+        const hash = (0,js_sha256__WEBPACK_IMPORTED_MODULE_3__.sha256)(message);
+
+        if (difficultyCheck(hash, difficulty)){
+            state.setResult(nonce, message, hash, difficulty);
+            postMessage([state]);
+            break;
+        }
+
+        if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.CHECKPOINT_COMMIT === 0) {
+            state.iterations_since_last_start = sessionIterations;
+            postMessage([state]);
+        }
+
+        if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_RECALCULATE === 0) {
+            difficulty = state.getCurrentDifficulty();
+
+            // Check to see if a previous hash result is now relevant again
+            if (state.result_exists && state.result_difficulty >= difficulty) {
+                state.setPreviousResult(difficulty);
+                postMessage([state]);
+                break;
+            }
+        }
+        sessionIterations++;
+    }
+}
+
+function difficultyCheck(hash, difficulty) {
+    //console.log('dif' + difficulty + ' hash ' + hash)
+    for (let position = 1; position <= difficulty; position++) {
+        if (hash[position - 1] !== "0") {
+            return false;
+        }
+    }
+    return true;
+}
+})();
+
+/******/ })()
+;
 //# sourceMappingURL=TaskWorker.js.map
