@@ -47,6 +47,10 @@ class SignatureValidationManager
         return "PLAYER{$playerId}ADDRESS{$address}";
     }
 
+    public function buildChatRoomMessage(string $kind, string $objectId, string $address, int $timestamp):string {
+        return "CHATROOM{$kind}{$objectId}ADDRESS{$address}DATETIME{$timestamp}";
+    }
+
     public function isMessageTimeValid(string $messageTimestamp): bool {
         return (time() - intval($messageTimestamp)) < self::MSG_EXPIRY_TIME;
     }

@@ -38,6 +38,11 @@ security:
         api_pfp:
             pattern: ^/api/pfp
             security: false
+        # Players of other guilds have no session here; ChatRoomController
+        # accepts a session or a chain-key signature itself.
+        api_chat_room:
+            pattern: ^/api/chat/room/
+            security: false
         api:
             pattern: ^/api/
             security: true
