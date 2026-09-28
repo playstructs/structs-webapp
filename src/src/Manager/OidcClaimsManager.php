@@ -45,7 +45,13 @@ class OidcClaimsManager
               p.primary_address,
               p.guild_id,
               p.username,
-              p.pfp
+              p.pfp,
+              EXISTS (
+                SELECT 1
+                FROM player o
+                WHERE lower(o.username) = lower(p.username)
+                  AND o.id <> p.id
+              ) AS username_shared
             FROM player p
             WHERE p.id = :player_id
               AND p.guild_id = :guild_id
@@ -115,7 +121,7 @@ class OidcClaimsManager
 
         if ($username !== null) {
             $claims['preferred_username'] = $username;
-            $claims['name'] = $username;
+            $claims['name'] = $this->displayName($username, (string) $player['id'], (bool) ($player['username_shared'] ?? false));
         }
 
         $pfp = $this->nonEmpty($player['pfp'] ?? null);
@@ -137,6 +143,22 @@ class OidcClaimsManager
         }
 
         return $claims;
+    }
+
+    /**
+     * The name chat shows for a player, and the only one it will show: MAS
+     * forces it onto the Matrix profile at every login.
+     *
+     * Chain usernames are not unique and may mix scripts, so either could pass
+     * for someone else. In those cases the player id, which nobody else can
+     * hold, is appended.
+     */
+    private function displayName(string $username, string $playerId, bool $shared): string
+    {
+        $mixedScript = preg_match('/[A-Za-z]/', $username) === 1
+            && preg_match('/[^\x00-\x7F]/', $username) === 1;
+
+        return $shared || $mixedScript ? "{$username} ({$playerId})" : $username;
     }
 
     private function nonEmpty(mixed $value): ?string

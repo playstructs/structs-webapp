@@ -90,6 +90,7 @@ abstract class OidcProviderTestCase extends TestCase
             'guild_id'        => $guildId,
             'username'        => $username,
             'pfp'             => null,
+            'username_shared' => false,
         ];
     }
 
