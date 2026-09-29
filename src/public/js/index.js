@@ -21512,10 +21512,10 @@ __webpack_require__.r(__webpack_exports__);
 class UserAgent {
 
   /**
-   * @param {string} userAgent
+   * @param {string|null} userAgent
    */
   constructor(userAgent) {
-   this.userAgent = userAgent;
+   this.userAgent = userAgent || '';
   }
 
   /**
