@@ -20,6 +20,23 @@ export class MenuPageRouter {
      * whether the user has since navigated away.
      */
     this.navigationId = 0;
+
+    /**
+     * Pages that depend on in-flight async work or function-valued options
+     * (which JSON serialization drops), so they cannot be restored after a reload.
+     */
+    this.nonRestorablePages = new Set([
+      'Generic.menuWaiting'
+    ]);
+  }
+
+  /**
+   * @param {{controller: string, page: string}|null} menuPage
+   * @return {boolean}
+   */
+  isRestorable(menuPage) {
+    return !!menuPage
+      && !this.nonRestorablePages.has(`${menuPage.controller}.${menuPage.page}`);
   }
 
   registerController(controller) {
@@ -67,12 +84,14 @@ export class MenuPageRouter {
     const lastMenuPage = JSON.parse(localStorage.getItem("lastMenuPage"));
     const currentMenuPage = JSON.parse(localStorage.getItem("currentMenuPage"));
 
-    if (!currentMenuPage || !lastMenuPage) {
+    if (!currentMenuPage || !lastMenuPage || !this.isRestorable(currentMenuPage)) {
       this.goto(defaultController, defaultPage, defaultOptions);
     } else {
-      this.currentPage = lastMenuPage.page;
-      this.currentController = lastMenuPage.controller;
-      this.currentOptions = lastMenuPage.options;
+      if (this.isRestorable(lastMenuPage)) {
+        this.currentPage = lastMenuPage.page;
+        this.currentController = lastMenuPage.controller;
+        this.currentOptions = lastMenuPage.options;
+      }
 
       this.goto(currentMenuPage.controller, currentMenuPage.page, currentMenuPage.options);
     }

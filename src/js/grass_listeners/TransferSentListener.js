@@ -19,13 +19,15 @@ export class TransferSentListener extends AbstractGrassListener {
   }
 
   handler(messageData) {
+    const subjectPrefix = `structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`;
+
     if (
       this.gameState.thisGuild.id
       && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
       && messageData.category === 'sent'
-      && messageData.subject === `structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
+      && (messageData.subject === subjectPrefix || messageData.subject.startsWith(`${subjectPrefix}.`))
       && messageData.counterparty === this.toAddress
-      && Math.abs(messageData.amount) === this.alphaAmount
+      && Math.abs(parseInt(messageData.amount)) === this.alphaAmount
     ) {
       this.shouldUnregister = () => true;
 
