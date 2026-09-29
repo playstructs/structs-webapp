@@ -230,7 +230,7 @@ class PlayerAddressManager
         $query = "
             SELECT 
               pa.address, 
-              paa.block_time, 
+              COALESCE(paa.block_time, pa.updated_at) AS block_time, 
               pam.ip,
               pam.user_agent,
               p.val AS permissions
@@ -276,7 +276,7 @@ class PlayerAddressManager
               pa.status,
               pam.ip, 
               pam.user_agent,
-              paa.block_time,
+              COALESCE(paa.block_time, pa.updated_at) AS block_time,
               p.val AS permissions,
               ai.balance AS alpha
             FROM player_address pa
