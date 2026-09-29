@@ -3,6 +3,7 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {NumberFormatter} from "../../util/NumberFormatter";
 import {DateFormatter} from "../../util/DateFormatter";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class AccountTransactionViewModel extends AbstractViewModel {
 
@@ -38,7 +39,7 @@ export class AccountTransactionViewModel extends AbstractViewModel {
   initPageCode() {
     if (this.transaction.counterparty_player_id) {
       document.getElementById(this.counterpartyLinkId).addEventListener('click',  () => {
-        console.log(this.transaction.counterparty_player_id);
+        MenuPage.router.goto('Account', 'profile', {playerId: this.transaction.counterparty_player_id});
       });
     }
 
