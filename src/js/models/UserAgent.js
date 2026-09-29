@@ -1,10 +1,10 @@
 export class UserAgent {
 
   /**
-   * @param {string} userAgent
+   * @param {string|null} userAgent
    */
   constructor(userAgent) {
-   this.userAgent = userAgent;
+   this.userAgent = userAgent || '';
   }
 
   /**

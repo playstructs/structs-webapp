@@ -21512,10 +21512,10 @@ __webpack_require__.r(__webpack_exports__);
 class UserAgent {
 
   /**
-   * @param {string} userAgent
+   * @param {string|null} userAgent
    */
   constructor(userAgent) {
-   this.userAgent = userAgent;
+   this.userAgent = userAgent || '';
   }
 
   /**
@@ -26999,6 +26999,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _util_NumberFormatter__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../util/NumberFormatter */ "./js/util/NumberFormatter.js");
 /* harmony import */ var _util_DateFormatter__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../util/DateFormatter */ "./js/util/DateFormatter.js");
 /* harmony import */ var _components_GenericResourceComponent__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../components/GenericResourceComponent */ "./js/view_models/components/GenericResourceComponent.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+
 
 
 
@@ -27039,7 +27041,7 @@ class AccountTransactionViewModel extends _framework_AbstractViewModel__WEBPACK_
   initPageCode() {
     if (this.transaction.counterparty_player_id) {
       document.getElementById(this.counterpartyLinkId).addEventListener('click',  () => {
-        console.log(this.transaction.counterparty_player_id);
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'profile', {playerId: this.transaction.counterparty_player_id});
       });
     }
 
