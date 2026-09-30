@@ -1,6 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {NumberFormatter} from "../../util/NumberFormatter";
+import {fmt, fmtCount} from "../../util/Units";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 
 export class GuildsDirectoryViewModel extends AbstractViewModel {
@@ -16,7 +16,6 @@ export class GuildsDirectoryViewModel extends AbstractViewModel {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
-    this.numberFormatter = new NumberFormatter();
     this.guilds = [];
     this.genericResourceComponent = new GenericResourceComponent(gameState);
 
@@ -96,7 +95,7 @@ export class GuildsDirectoryViewModel extends AbstractViewModel {
                   this.membersId,
                   'sui-icon-players',
                   'Number of members in the guild',
-                  this.numberFormatter.format(guildSearchResultDTO.members)
+                  fmtCount(guildSearchResultDTO.members)
                 )
               }
             </div>
@@ -106,7 +105,7 @@ export class GuildsDirectoryViewModel extends AbstractViewModel {
                   this.alphaInfusedId,
                   'sui-icon-alpha-matter',
                   'Alpha infused with the guild',
-                  this.numberFormatter.format(guildSearchResultDTO.alpha)
+                  fmt(guildSearchResultDTO.alpha_p, 'ualpha')
                 )
               }
             </div>

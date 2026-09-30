@@ -1,6 +1,7 @@
 import {NotificationDialogueSequence} from "../../../framework/NotificationDialogueSequence";
 import {NotificationDialogueSequenceStep} from "../../../framework/NotificationDialogueSequenceStep";
 import {DefeatBannerViewModel} from "../../banners/DefeatBannerViewModel";
+import {fmt} from "../../../util/Units";
 
 export class DefeatedByAttackerDialogueSequence extends NotificationDialogueSequence {
   constructor(alphaOreLost) {
@@ -13,7 +14,7 @@ export class DefeatedByAttackerDialogueSequence extends NotificationDialogueSequ
     this.dialogueSequence = [
       new NotificationDialogueSequenceStep(
         '<i class="sui-icon-md icon-alert sui-text-warning"></i>',
-        `<strong class="sui-text-destructive">Defeat!</strong> Your Planetary Shield was depleted, allowing the enemy to steal <strong class="sui-text-destructive">${this.alphaOreLost} Alpha Ore</strong>.`,
+        `<strong class="sui-text-destructive">Defeat!</strong> Your Planetary Shield was depleted, allowing the enemy to steal <strong class="sui-text-destructive">${fmt(this.alphaOreLost, 'ore')} Alpha Ore</strong>.`,
         () => this.bannerViewModel.close()
       )
     ];

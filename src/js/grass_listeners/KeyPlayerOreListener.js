@@ -1,5 +1,6 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {RaidStatusUtil} from "../util/RaidStatusUtil";
+import {toBase} from "../util/Units";
 
 export class KeyPlayerOreListener extends AbstractGrassListener {
 
@@ -21,7 +22,8 @@ export class KeyPlayerOreListener extends AbstractGrassListener {
       messageData.category === 'ore'
       && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[this.playerType].id}.${this.gameState.keyPlayers[this.playerType].id}`
     ) {
-      this.gameState.keyPlayers[this.playerType].setOre(messageData.value);
+      const precise = toBase(messageData.value_p) ?? toBase(messageData.value);
+      this.gameState.keyPlayers[this.playerType].setOreP(precise);
 
       // Update undiscovered ore count too
       if (this.gameState.keyPlayers[this.playerType].planetUsedForMap) {

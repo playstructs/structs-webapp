@@ -1,5 +1,6 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {toBase} from "../util/Units";
 
 export class PlayerStructsLoadListener extends AbstractGrassListener {
   /**
@@ -15,7 +16,12 @@ export class PlayerStructsLoadListener extends AbstractGrassListener {
       messageData.category === 'structsLoad'
       && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
     ) {
-      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructsLoad(messageData.value);
+      const precise = toBase(messageData.value_p);
+      if (precise !== null) {
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructsLoadP(precise);
+      } else {
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setStructsLoad(messageData.value);
+      }
     }
   }
 }

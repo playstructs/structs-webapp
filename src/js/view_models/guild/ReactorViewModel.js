@@ -1,7 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
-import {NumberFormatter} from "../../util/NumberFormatter";
+import {fmt, fmtPercent} from "../../util/Units";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class ReactorViewModel extends AbstractViewModel {
@@ -19,7 +19,6 @@ export class ReactorViewModel extends AbstractViewModel {
     this.guildAPI = guildAPI;
     this.guildId = this.gameState.thisGuild.id;
     this.genericResourceComponent = new GenericResourceComponent(gameState);
-    this.numberFormatter = new NumberFormatter();
 
     this.guildMinimumId = 'guild-profile-guild-minimum';
     this.commissionId = 'guild-profile-commission';
@@ -47,6 +46,17 @@ export class ReactorViewModel extends AbstractViewModel {
     document.getElementById(this.manageAlphaBtnId).addEventListener('click', () => {
       MenuPage.router.goto('Guild', 'manageAlpha', this.infusion);
     });
+  }
+
+  /**
+   * @return {string}
+   */
+  renderReactorRatioLabel() {
+    const ratio = this.infusion?.ratio_p ?? this.guild?.reactor_ratio;
+    if (ratio === null || ratio === undefined || ratio === '') {
+      return '—';
+    }
+    return `${ratio}KW / g`;
   }
 
   render () {
@@ -79,7 +89,7 @@ export class ReactorViewModel extends AbstractViewModel {
                           this.alphaInfusedId,
                           'sui-icon-alpha-matter',
                           'Alpha infused with the guild',
-                          this.numberFormatter.format(this.infusion.fuel)
+                          fmt(this.infusion.fuel_p, 'ualpha')
                         )
                       }
                     </div>
@@ -103,7 +113,7 @@ export class ReactorViewModel extends AbstractViewModel {
                           this.defusingId,
                           'sui-icon-inert-alpha',
                           'Alpha removed from the reactor that must cooldown before reuse',
-                          this.numberFormatter.format(this.infusion.defusing)
+                          fmt(this.infusion.defusing_p, 'ualpha')
                         )
                       }
                     </div>
@@ -124,7 +134,7 @@ export class ReactorViewModel extends AbstractViewModel {
                           this.totalSupplyId,
                           'sui-icon-energy',
                           'Expected supply of power',
-                          this.numberFormatter.format(this.infusion.power)
+                          fmt(this.infusion.power_p, 'mw')
                         )
                       }
                     </div>
@@ -166,7 +176,7 @@ export class ReactorViewModel extends AbstractViewModel {
                       this.guildMinimumId,
                       'sui-icon-alpha-matter',
                       'Minimum alpha required to join guild',
-                      this.numberFormatter.format(this.guild.join_infusion_minimum)
+                      fmt(this.guild.join_infusion_minimum_p, 'ualpha')
                     )
                   }
                 </div>
@@ -184,8 +194,7 @@ export class ReactorViewModel extends AbstractViewModel {
                   </a>
                 </div>
                 <div>
-                  ${this.numberFormatter.format(this.guild.reactor_ratio)} <i class="sui-icon sui-icon-md sui-icon-energy"></i> /
-                  1 <i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>
+                  ${this.renderReactorRatioLabel()}
                 </div>
               </div>
               <div class="sui-data-card-row">
@@ -206,7 +215,7 @@ export class ReactorViewModel extends AbstractViewModel {
                       this.commissionId,
                       'sui-icon-energy',
                       'The guild\'s cut',
-                      Math.floor(this.guild.default_commission * 100) + '%'
+                      fmtPercent(this.guild.default_commission)
                     )
                   }
                 </div>

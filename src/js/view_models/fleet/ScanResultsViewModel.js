@@ -1,10 +1,10 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {NumberFormatter} from "../../util/NumberFormatter";
 import {Pagination} from "../templates/partials/Pagination";
 import {PAGINATION_LIMITS} from "../../constants/PaginationLimits";
 import {PlanetRaidFactory} from "../../factories/PlanetRaidFactory";
 import {PfpViewerComponent} from "../components/PfpViewerComponent";
+import {fmt} from "../../util/Units";
 
 export class ScanResultsViewModel extends AbstractViewModel {
 
@@ -35,7 +35,6 @@ export class ScanResultsViewModel extends AbstractViewModel {
     this.mapManager = mapManager;
     this.raidSearchRequest = raidSearchRequest;
     this.planetRaidFactory = new PlanetRaidFactory();
-    this.numberFormatter = new NumberFormatter();
     this.players = [];
   }
 
@@ -47,9 +46,9 @@ export class ScanResultsViewModel extends AbstractViewModel {
           planetRaid => {
             MenuPage.router.goto('Fleet', 'preview', {
               planet_id: player.planet_id,
-              planet_undiscovered_ore: player.undiscovered_ore ? player.undiscovered_ore : 0,
+              planet_undiscovered_ore: player.undiscovered_ore_p ?? 0n,
               defender_id: player.id,
-              defender_ore: player.ore ? player.ore : 0,
+              defender_ore: player.ore_p ?? 0n,
               attacker_id: planetRaid.isRaidActive() ? planetRaid.fleet_owner : null
             });
           }
@@ -119,11 +118,11 @@ export class ScanResultsViewModel extends AbstractViewModel {
         <div class="sui-result-row-right-section">
           <div class="sui-result-row-resources">
             <div class="sui-resource">
-              <span>${this.numberFormatter.format(playerSearchResultDTO.undiscovered_ore)}</span>
+              <span>${fmt(playerSearchResultDTO.undiscovered_ore_p, 'ore')}</span>
               <i class="sui-icon sui-icon-undiscovered-ore"></i>
             </div>
             <div class="sui-resource">
-              <span>${this.numberFormatter.format(playerSearchResultDTO.ore)}</span>
+              <span>${fmt(playerSearchResultDTO.ore_p, 'ore')}</span>
               <i class="sui-icon sui-icon-alpha-ore"></i>
             </div>
           </div>

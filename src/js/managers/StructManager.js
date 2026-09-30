@@ -158,13 +158,19 @@ export class StructManager {
   }
 
   /**
-   * @return {number}
+   * Available energy in milliwatts (BigInt).
+   * @return {bigint}
    */
   getEnergySupply() {
-    let totalLoad = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.load + this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.structs_load;
-    let totalCapacity = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.capacity + this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.connection_capacity;
-
-    return totalCapacity - totalLoad;
+    const player = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player;
+    if (!player) {
+      return 0n;
+    }
+    const load = player.load_p ?? 0n;
+    const structsLoad = player.structs_load_p ?? 0n;
+    const capacity = player.capacity_p ?? 0n;
+    const connectionCapacity = player.connection_capacity_p ?? 0n;
+    return (capacity + connectionCapacity) - (load + structsLoad);
   }
 
   /**
@@ -173,7 +179,12 @@ export class StructManager {
    */
   getDeploymentBlockerInsufficientEnergySupply(structType) {
     const energySupply = this.getEnergySupply();
-    return (energySupply < structType.build_draw || energySupply < structType.passive_draw)
+    const buildDraw = structType.build_draw_p
+      ?? (structType.build_draw != null ? BigInt(structType.build_draw) * 1000n : 0n);
+    const passiveDraw = structType.passive_draw_p
+      ?? (structType.passive_draw != null ? BigInt(structType.passive_draw) * 1000n : 0n);
+    // Chain rejects equality: available must be strictly greater than draw.
+    return (energySupply <= buildDraw || energySupply <= passiveDraw)
       ? 'Insufficient energy supply'
       : '';
   }

@@ -22,8 +22,12 @@ export class StructType {
     this.build_limit = null;
     this.build_difficulty = null;
     this.build_draw = null;
+    /** @type {bigint|null} milliwatts */
+    this.build_draw_p = null;
     this.max_health = null;
     this.passive_draw = null;
+    /** @type {bigint|null} milliwatts */
+    this.passive_draw_p = null;
     this.possible_ambit = null;
     this.movable = null;
     this.slot_bound = null;
@@ -94,6 +98,8 @@ export class StructType {
     this.counter_attack_same_ambit = null;
     this.post_destruction_damage = null;
     this.generating_rate = null;
+    /** @type {bigint|null} mW per ualpha (= KW per g) */
+    this.generating_rate_p = null;
     this.planetary_shield_contribution = null;
     this.ore_mining_difficulty = null;
     this.ore_refining_difficulty = null;

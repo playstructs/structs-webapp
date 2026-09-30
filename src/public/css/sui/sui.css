@@ -2730,4 +2730,13 @@ label.sui-form-element-group-label {
   transform: scaleX(-1);
 }
 
+.sui-quantity {
+  font-family: 'DirectiveZero', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.sui-quantity-approx {
+  border-bottom: 1px dotted currentColor;
+}
+
 /* ---- Utility Classes End ---- */

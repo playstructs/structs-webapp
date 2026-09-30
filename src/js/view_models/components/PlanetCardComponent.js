@@ -3,6 +3,7 @@ import {EVENTS} from "../../constants/Events";
 import {GenericResourceComponent} from "./GenericResourceComponent";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {ShieldStatusComponent} from "./ShieldStatusComponent";
+import {fmt} from "../../util/Units";
 
 export class PlanetCardComponent extends AbstractViewModelComponent {
 
@@ -117,7 +118,7 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
               this.undiscoveredOreId,
               'sui-icon-undiscovered-ore',
               'Undiscovered Ore',
-              this.numberFormatter.format(this.undiscoveredOre),
+              fmt(this.undiscoveredOre, 'ore'),
               true
             )
           }
@@ -127,7 +128,7 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
               this.alphaOreId,
               'sui-icon-alpha-ore',
               'Alpha Ore',
-              this.numberFormatter.format(this.alphaOre),
+              fmt(this.alphaOre, 'ore'),
               true
             )
           }

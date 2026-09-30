@@ -15,6 +15,7 @@ import {PermissionManager} from "./managers/PermissionManager";
 import {PlayerAddressPendingFactory} from "./factories/PlayerAddressPendingFactory";
 import {GenericController} from "./controllers/GenericController";
 import {AlphaManager} from "./managers/AlphaManager";
+import {DenomManager} from "./managers/DenomManager";
 import {GuildController} from "./controllers/GuildController";
 import {FleetController} from "./controllers/FleetController";
 import {FleetManager} from "./managers/FleetManager";
@@ -43,6 +44,32 @@ if (!actionBarMigrate) {
   console.log('Migrating to new Struct Type System');
   localStorage.setItem("actionBarMigrate-20260107", "true");
   localStorage.removeItem('getStructTypes');
+}
+
+// Precision (_p) fields were added to several cached GuildAPI responses.
+// Bump those keys so stale payloads without _p cannot reach the new factories.
+const precisionMigrate = localStorage.getItem("precisionMigrate-20260930");
+if (!precisionMigrate) {
+  console.log('Migrating to precision (_p) quantity fields');
+  localStorage.setItem("precisionMigrate-20260930", "true");
+  localStorage.removeItem('getStructTypes');
+  // Guild directory / power stats / ore stats keys are player- or guild-scoped;
+  // clear any matching prefix by scanning localStorage.
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (
+      key
+      && (
+        key.startsWith('getGuildsDirectory')
+        || key.startsWith('getGuildPowerStats')
+        || key.startsWith('getPlayerOreStats')
+      )
+    ) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
 }
 
 const gameState = new GameState();
@@ -117,6 +144,9 @@ const authManager = new AuthManager(
 guildAPI.setReauthenticator(() => authManager.reauthenticate());
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);
+
+const denomManager = new DenomManager(gameState, guildAPI);
+gameState.denomManager = denomManager;
 
 const fleetManager = new FleetManager(gameState, signingClientManager);
 

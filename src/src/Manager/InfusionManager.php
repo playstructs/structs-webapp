@@ -36,6 +36,11 @@ class InfusionManager
     }
 
     /**
+     * Floored display fields stay for existing clients. `_p` columns are raw
+     * precision values cast to text. Commission_p is the unscaled 0–1 rate.
+     * No defusion end-height column is available on infusion (defusion table
+     * only exposes completed_at/created_at).
+     *
      * @param string $player_id
      * @return Response
      * @throws Exception
@@ -49,13 +54,19 @@ class InfusionManager
               i.destination_type,
               i.player_id,
               floor(COALESCE(i.fuel, 0)) AS fuel,
+              COALESCE(i.fuel_p, 0)::text AS fuel_p,
               floor(COALESCE(i.defusing, 0)) AS defusing,
+              COALESCE(i.defusing_p, 0)::text AS defusing_p,
               floor(COALESCE(i.power, 0)) AS power,
+              COALESCE(i.power_p, 0)::text AS power_p,
               floor(COALESCE(i.ratio, 0) * 100) AS ratio,
+              COALESCE(i.ratio_p, 0)::text AS ratio_p,
               floor(COALESCE(i.commission, 0) * 100) AS commission,
+              COALESCE(i.commission, 0)::text AS commission_p,
               i.created_at,
               i.updated_at,
-              g.join_infusion_minimum
+              g.join_infusion_minimum,
+              g.join_infusion_minimum_p::text AS join_infusion_minimum_p
             FROM player p
             INNER JOIN guild g
               ON p.guild_id = g.id

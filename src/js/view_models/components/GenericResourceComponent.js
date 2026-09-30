@@ -30,7 +30,7 @@ export class GenericResourceComponent extends AbstractViewModelComponent {
         data-sui-mod-placement="bottom"
       >
         ${iconPos1}
-        <span id="${elementId}-value">${value}</span>
+        <span id="${elementId}-value" class="sui-quantity">${value}</span>
         ${iconPos2}
       </a>
     `;

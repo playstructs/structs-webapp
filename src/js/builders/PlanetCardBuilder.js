@@ -6,6 +6,7 @@ import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {ClearTileSelectionEvent} from "../events/ClearTileSelectionEvent";
+import {fmt} from "../util/Units";
 
 export class PlanetCardBuilder {
 
@@ -95,7 +96,7 @@ export class PlanetCardBuilder {
       }
       const display = document.getElementById(`${alphaBaseCard.undiscoveredOreId}-value`);
       if (display) {
-        display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
+        display.innerHTML = fmt(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore_p, 'ore');
       }
     };
     alphaBaseCard.alphaOreUpdateHandler = (event) => {
@@ -104,7 +105,7 @@ export class PlanetCardBuilder {
       }
       const display = document.getElementById(`${alphaBaseCard.alphaOreId}-value`);
       if (display) {
-        display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore;
+        display.innerHTML = fmt(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore_p, 'ore');
       }
     };
     alphaBaseCard.deployedStructsUpdateHandler = (event) => {
@@ -130,8 +131,8 @@ export class PlanetCardBuilder {
     alphaBaseCard.planetName = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.name;
 
     alphaBaseCard.hasStatusGroup = true;
-    alphaBaseCard.undiscoveredOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
-    alphaBaseCard.alphaOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore;
+    alphaBaseCard.undiscoveredOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore_p;
+    alphaBaseCard.alphaOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore_p;
     alphaBaseCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.PLAYER);
 
     this.configureAlphaBaseCardCounterUpdateHandlers(alphaBaseCard);
@@ -151,8 +152,8 @@ export class PlanetCardBuilder {
     alphaBaseCard.planetName = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.name;
 
     alphaBaseCard.hasStatusGroup = true;
-    alphaBaseCard.undiscoveredOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore;
-    alphaBaseCard.alphaOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore;
+    alphaBaseCard.undiscoveredOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore_p;
+    alphaBaseCard.alphaOre = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.ore_p;
     alphaBaseCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.PLAYER);
 
     this.configureAlphaBaseCardCounterUpdateHandlers(alphaBaseCard);
@@ -326,8 +327,8 @@ export class PlanetCardBuilder {
     raidCard.planetName = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].getUsername();
 
     raidCard.hasStatusGroup = true;
-    raidCard.undiscoveredOre = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet.undiscovered_ore;
-    raidCard.alphaOre = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.ore;
+    raidCard.undiscoveredOre = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet.undiscovered_ore_p;
+    raidCard.alphaOre = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.ore_p;
     raidCard.deployedStructs = this.structManager.getStructCountByPlayerType(PLAYER_TYPES.RAID_ENEMY);
 
     raidCard.undiscoveredOreUpdateHandler = (event) => {
@@ -336,7 +337,7 @@ export class PlanetCardBuilder {
       }
       const display = document.getElementById(`${raidCard.undiscoveredOreId}-value`);
       if (display) {
-        display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet.undiscovered_ore;
+        display.innerHTML = fmt(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet.undiscovered_ore_p, 'ore');
       }
     };
     raidCard.alphaOreUpdateHandler = (event) => {
@@ -345,7 +346,7 @@ export class PlanetCardBuilder {
       }
       const display = document.getElementById(`${raidCard.alphaOreId}-value`);
       if (display) {
-        display.innerHTML = this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.ore;
+        display.innerHTML = fmt(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player.ore_p, 'ore');
       }
     };
     raidCard.deployedStructsUpdateHandler = (event) => {
@@ -422,7 +423,7 @@ export class PlanetCardBuilder {
 
       type = selectedType;
 
-    } else if (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore === 0) {
+    } else if (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore_p === 0n) {
 
       type = PLANET_CARD_TYPES.ALPHA_BASE_COMPLETED;
 

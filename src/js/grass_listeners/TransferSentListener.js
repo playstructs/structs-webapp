@@ -1,25 +1,37 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {MenuPage} from "../framework/MenuPage";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {toBase, legacyToBase} from "../util/Units";
 
 export class TransferSentListener extends AbstractGrassListener {
 
   /**
    * @param {GameState} gameState
    * @param {string} fromAddress
-   * @param {string} toAddress
-   * @param {number} alphaAmount
+   * @param {string} toAddress - expected primary_address counterparty
+   * @param {string|bigint|number} alphaAmountUalpha - exact ualpha amount signed
    */
-  constructor(gameState, fromAddress, toAddress, alphaAmount) {
+  constructor(gameState, fromAddress, toAddress, alphaAmountUalpha) {
     super('TRANSFER_SENT');
     this.gameState = gameState;
     this.fromAddress = fromAddress;
     this.toAddress = toAddress;
-    this.alphaAmount = alphaAmount;
+    this.alphaAmountP = toBase(alphaAmountUalpha) ?? 0n;
   }
 
   handler(messageData) {
     const subjectPrefix = `structs.inventory.ualpha.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`;
+
+    let eventAmount = toBase(messageData.amount_p);
+    if (eventAmount === null) {
+      eventAmount = legacyToBase(messageData.amount, 6);
+    }
+    if (eventAmount === null) {
+      return;
+    }
+    if (eventAmount < 0n) {
+      eventAmount = -eventAmount;
+    }
 
     if (
       this.gameState.thisGuild.id
@@ -27,7 +39,7 @@ export class TransferSentListener extends AbstractGrassListener {
       && messageData.category === 'sent'
       && (messageData.subject === subjectPrefix || messageData.subject.startsWith(`${subjectPrefix}.`))
       && messageData.counterparty === this.toAddress
-      && Math.abs(parseInt(messageData.amount)) === this.alphaAmount
+      && eventAmount === this.alphaAmountP
     ) {
       this.shouldUnregister = () => true;
 

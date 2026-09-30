@@ -1,9 +1,9 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
-import {NumberFormatter} from "../../util/NumberFormatter";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {PfpViewerComponent} from "../components/PfpViewerComponent";
+import {fmt, fmtSet} from "../../util/Units";
 
 export class AccountProfileViewModel extends AbstractViewModel {
 
@@ -24,7 +24,6 @@ export class AccountProfileViewModel extends AbstractViewModel {
     this.player = null;
     this.guild = null;
     this.isOwnProfile = (this.playerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
-    this.numberFormatter = new NumberFormatter();
     this.editUsernameBtnId = 'account-profile-edit-username-btn';
     this.copyPidBtnId = 'account-profile-copy-pid-btn';
     this.copyPidBtnId2 = 'account-profile-copy-pid-btn-2';
@@ -36,7 +35,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
     this.oreStolenId = 'account-profile-ore-stolen';
     this.oreLostId = 'account-profile-ore-lost';
     this.genericResourceComponent = new GenericResourceComponent(gameState);
-    this.alphaInfused = 0;
+    this.alphaInfused = 0n;
     this.playerOreStats = null;
     this.playerPlanetsCompleted = 0;
     this.playerRaidsLaunched = 0;
@@ -76,7 +75,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
 
     this.player = player;
     this.guild = guild;
-    this.alphaInfused = infusion.fuel;
+    this.alphaInfused = infusion.fuel_p;
     this.playerOreStats = playerOreStats;
     this.playerPlanetsCompleted = playerPlanetsCompleted;
     this.playerRaidsLaunched = playerRaidsLaunched;
@@ -117,17 +116,11 @@ export class AccountProfileViewModel extends AbstractViewModel {
   }
 
   getEnergyUsage() {
-    const load = this.player.load ? this.player.load : 0;
-    const structsLoad = this.player.structs_load ? this.player.structs_load : 0;
-    const capacity = this.player.capacity ? this.player.capacity : 0;
-    const connectionCapacity = this.player.connection_capacity ? this.player.connection_capacity : 0;
+    const totalLoad = this.player.load_p + this.player.structs_load_p;
+    const totalCapacity = this.player.capacity_p + this.player.connection_capacity_p;
+    const [loadStr, capStr] = fmtSet([totalLoad, totalCapacity], 'mw');
 
-    let totalLoad = load + structsLoad;
-    let totalCapacity = capacity + connectionCapacity;
-    totalLoad = this.numberFormatter.format(totalLoad);
-    totalCapacity = this.numberFormatter.format(totalCapacity);
-
-    return `${totalLoad}/${totalCapacity}`;
+    return `${loadStr}/${capStr}`;
   }
 
   renderPageTemplateHeader() {
@@ -246,7 +239,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
                     this.alphaMatterId,
                     'sui-icon-alpha-matter',
                     'Alpha Matter',
-                    this.numberFormatter.format(this.player.alpha)
+                    fmt(this.player.alpha_p, 'ualpha')
                   )
                 }
                 </div>
@@ -259,7 +252,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
                       this.alphaInfusedId, 
                       'sui-icon-alpha-matter', 
                       'Alpha Infused', 
-                      this.alphaInfused
+                      fmt(this.alphaInfused, 'ualpha')
                     )
                   }
                 </div>
@@ -299,7 +292,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
                       this.oreMinedId,
                       'sui-icon-alpha-ore',
                       'Ore Mined',
-                      this.playerOreStats.mined
+                      fmt(this.playerOreStats.mined_p, 'ore')
                     )
                   }
                 </div>
@@ -312,7 +305,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
                       this.oreStolenId,
                       'sui-icon-alpha-ore',
                       'Ore Stolen',
-                      this.playerOreStats.seized
+                      fmt(this.playerOreStats.seized_p, 'ore')
                     )
                   }
                 </div>
@@ -325,7 +318,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
                       this.oreLostId,
                       'sui-icon-alpha-ore',
                       'Ore Lost',
-                      this.playerOreStats.forfeited
+                      fmt(this.playerOreStats.forfeited_p, 'ore')
                     )
                   }
                 </div>

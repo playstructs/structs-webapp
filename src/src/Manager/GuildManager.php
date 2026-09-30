@@ -148,6 +148,7 @@ class GuildManager
               g.id,
               g.endpoint,
               g.join_infusion_minimum,
+              g.join_infusion_minimum_p::text AS join_infusion_minimum_p,
               g.join_infusion_minimum_bypass_by_request,
               g.join_infusion_minimum_bypass_by_invite,
               g.primary_reactor_id,
@@ -335,6 +336,7 @@ class GuildManager
               g.id,
               g.endpoint,
               g.join_infusion_minimum,
+              g.join_infusion_minimum_p::text AS join_infusion_minimum_p,
               g.join_infusion_minimum_bypass_by_request,
               g.join_infusion_minimum_bypass_by_invite,
               g.primary_reactor_id,
@@ -387,6 +389,7 @@ class GuildManager
               COALESCE(NULLIF(g.name, \'\'), gm.name) AS name,
               gm.logo,
               COALESCE(gf.fuel, 0) AS alpha,
+              COALESCE(gf.fuel_p, 0)::text AS alpha_p,
               COUNT(1) AS members
             FROM player p
             INNER JOIN guild g
@@ -396,12 +399,13 @@ class GuildManager
             LEFT JOIN (
               SELECT
                 vr.guild_id,
-                SUM(COALESCE(vr.fuel, 0)) AS fuel
+                SUM(COALESCE(vr.fuel, 0)) AS fuel,
+                SUM(COALESCE(vr.fuel_p, 0)) AS fuel_p
               FROM view.reactor vr
               GROUP BY vr.guild_id
             ) AS gf
               ON g.id = gf.guild_id
-            GROUP BY p.guild_id, COALESCE(NULLIF(g.name, \'\'), gm.name), gm.logo, alpha
+            GROUP BY p.guild_id, COALESCE(NULLIF(g.name, \'\'), gm.name), gm.logo, alpha, alpha_p
             ORDER BY members DESC, alpha DESC, COALESCE(NULLIF(g.name, \'\'), gm.name);
         ';
 

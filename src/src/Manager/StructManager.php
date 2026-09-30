@@ -72,7 +72,11 @@ class StructManager
               CASE
                 WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN UNIT_LEGACY_FORMAT(COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0), \'ualpha\')
                 ELSE 0
-              END AS fuel
+              END AS fuel,
+              (CASE
+                WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0)
+                ELSE 0
+              END)::text AS fuel_p
             FROM struct s
             INNER JOIN struct_type st
               ON s.type = st.id
@@ -158,10 +162,14 @@ class StructManager
               CASE
                 WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN UNIT_LEGACY_FORMAT(COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0), \'ualpha\')
                 ELSE 0
-              END AS fuel
+              END AS fuel,
+              (CASE
+                WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0)
+                ELSE 0
+              END)::text AS fuel_p
             FROM struct s
             INNER JOIN struct_type st
-              ON s.type = st.id    
+              ON s.type = st.id
             LEFT JOIN struct_attribute sa_health
               ON s.id = sa_health.object_id
               AND sa_health.attribute_type = \'health\'

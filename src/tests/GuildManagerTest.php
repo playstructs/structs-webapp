@@ -82,6 +82,41 @@ class GuildManagerTest extends ApiManagerTestCase
         }
     }
 
+    /** Directory alpha_p is the summed reactor fuel_p, cast to text for JSON. */
+    public function testGuildsDirectoryExposesPrecisionAlpha(): void
+    {
+        $captured = null;
+        $manager = new GuildManager(
+            $this->entityManager($this->capturingConnection($captured)),
+            $this->validator()
+        );
+        $manager->getGuildsDirectory();
+
+        $this->assertNotNull($captured);
+        $this->assertStringContainsString('SUM(COALESCE(vr.fuel_p, 0)) AS fuel_p', $captured);
+        $this->assertMatchesRegularExpression('/::text\s+AS\s+alpha_p/i', $captured);
+    }
+
+    /** Guild detail keeps the legacy join minimum and adds the precision twin. */
+    public function testGetGuildSelectsJoinInfusionMinimumP(): void
+    {
+        $captured = null;
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchAssociative')
+            ->willReturnCallback(function (string $sql) use (&$captured) {
+                $captured = $sql;
+
+                return ['id' => '0-1'];
+            });
+
+        (new GuildManager($this->entityManager($connection), $this->validator()))
+            ->getGuild('0-1');
+
+        $this->assertStringContainsString('g.join_infusion_minimum,', $captured);
+        $this->assertMatchesRegularExpression('/join_infusion_minimum_p::text\s+AS\s+join_infusion_minimum_p/i', $captured);
+    }
+
     private function captureRosterSql(): string
     {
         $captured = null;

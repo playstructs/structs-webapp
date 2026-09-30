@@ -230,6 +230,13 @@ export class AuthManager {
 
       this.destroyedStructManager.init();
 
+      // Denom registry requires auth; built-in ladders cover the HUD until this resolves.
+      if (this.gameState.denomManager) {
+        this.gameState.denomManager.load().catch((err) => {
+          console.warn('DenomManager load failed', err);
+        });
+      }
+
       const [
         player,
         height,

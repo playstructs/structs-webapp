@@ -13,7 +13,7 @@ import {ClearDefendTargetsEvent} from "../../../events/ClearDefendTargetsEvent";
 import {ShowAttackTargetsEvent} from "../../../events/ShowAttackTargetsEvent";
 import {ClearAttackTargetsEvent} from "../../../events/ClearAttackTargetsEvent";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
-import {NumberFormatter} from "../../../util/NumberFormatter";
+import {fmtDurationMs, fmt} from "../../../util/Units";
 import {ShowStructStillEvent} from "../../../events/ShowStructStillEvent";
 import {ConsumeAlphaOffcanvas} from "../offcanvas/ConsumeAlphaOffcanvas";
 import {PfpViewerComponent} from "../PfpViewerComponent";
@@ -50,7 +50,6 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.taskManager = taskManager;
     this.alphaManager = alphaManager;
     this.grassManager = grassManager;
-    this.numberFormatter = new NumberFormatter();
 
     /* Style */
     this.themeClass = `sui-theme-${this.playerType === PLAYER_TYPES.PLAYER ? 'player' : 'enemy'}`;
@@ -180,25 +179,33 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         this.updateProgressBar(event.state.getPercentCompleteEstimate());
       } else if (event.state.task_type === TASK_TYPES.MINE || event.state.task_type === TASK_TYPES.REFINE) {
         const estInMS = event.state.getTimeRemainingEstimate();
-        const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
+        const estFormatted = fmtDurationMs(estInMS);
         this.updateInProgressValue(estFormatted);
       }
     });
 
     const undiscoveredOreContainer = document.getElementById(this.undiscoveredOreContainerId);
     if (undiscoveredOreContainer) {
+      // Set initial value
+      if (this.gameState.keyPlayers[this.playerType].planet) {
+        undiscoveredOreContainer.innerHTML = fmt(this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore_p, 'ore');
+      }
       window.addEventListener(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, (event) => {
         if (event.playerType === this.playerType) {
-          undiscoveredOreContainer.innerHTML = this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore;
+          undiscoveredOreContainer.innerHTML = fmt(this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore_p, 'ore');
         }
       });
     }
 
     const oreReadyContainer = document.getElementById(this.oreReadyContainerId);
     if (oreReadyContainer) {
+      // Set initial value
+      if (this.gameState.keyPlayers[this.playerType].player) {
+        oreReadyContainer.innerHTML = fmt(this.gameState.keyPlayers[this.playerType].player.ore_p, 'ore');
+      }
       window.addEventListener(EVENTS.ORE_COUNT_CHANGED, (event) => {
         if (event.playerType === this.playerType) {
-          oreReadyContainer.innerHTML = this.gameState.keyPlayers[this.playerType].player.ore;
+          oreReadyContainer.innerHTML = fmt(this.gameState.keyPlayers[this.playerType].player.ore_p, 'ore');
         }
       });
     }
@@ -826,14 +833,14 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore}">
-        <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value">${this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore}</span>
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${(this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore_p ?? 0n).toString()}">
+        <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value sui-quantity">${fmt(this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore_p, 'ore')}</span>
       </a> 
     `);
 
     if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
-      const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
+      const estFormatted = fmtDurationMs(estInMS);
 
       icons.push(`
         <a href="javascript: void(0)" data-sui-cheatsheet="extractor-active" data-est-time="${estFormatted}">
@@ -858,14 +865,14 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${this.gameState.keyPlayers[this.playerType].player.ore}">
-        <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value">${this.gameState.keyPlayers[this.playerType].player.ore}</span>
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${(this.gameState.keyPlayers[this.playerType].player.ore_p ?? 0n).toString()}">
+        <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value sui-quantity">${fmt(this.gameState.keyPlayers[this.playerType].player.ore_p, 'ore')}</span>
       </a> 
     `);
 
     if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
-      const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
+      const estFormatted = fmtDurationMs(estInMS);
 
       icons.push(`
         <a href="javascript: void(0)" data-sui-cheatsheet="refinery-active" data-est-time="${estFormatted}">
@@ -890,10 +897,13 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     if (struct.isOnline()) {
-      const icon = struct.fuel < 1 ? 'icon-attention' : 'icon-refine';
+      const fuelP = struct.fuel_p ?? 0n;
+      const rate = structType.generating_rate_p ?? 0n;
+      const icon = fuelP === 0n ? 'icon-attention' : 'icon-refine';
+      const powerP = struct.generator_capacity_p ?? (fuelP * rate);
       icons.push(`
-        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${struct.fuel}" data-energy="${struct.fuel * structType.generating_rate}">
-          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value">${struct.fuel}</span>
+        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${fuelP.toString()}" data-energy="${powerP.toString()}">
+          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value sui-quantity">${fmt(fuelP, 'ualpha')}</span>
         </a> 
       `);
     }

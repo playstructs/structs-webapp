@@ -1,6 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {parse, baseToDisplayDecimal} from "../../util/Units";
 
 export class AccountTransferAmountViewModel extends AbstractViewModel {
 
@@ -12,8 +13,9 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
     this.gameState = gameState;
     this.amountInputId = 'transferAmountInput';
     this.nextBtnId = 'transferAmountNextBtn';
-    this.gameState.setTransferAmount(0);
-    this.maxTransfer = Math.min(parseInt(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) || 0, 99);
+    this.gameState.setTransferAmount('0');
+    this.maxAlpha = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha_p ?? 0n;
+    this.maxDisplay = baseToDisplayDecimal(this.maxAlpha);
   }
 
   initPageCode() {
@@ -25,10 +27,10 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
 
     const inputStepperChangeHandler = () => {
       const nextBtn = document.getElementById(this.nextBtnId);
-      if (
-        0 < document.getElementById(this.amountInputId).value
-        && document.getElementById(this.amountInputId).value <= this.maxTransfer
-      ) {
+      const text = document.getElementById(this.amountInputId).value;
+      const amount = parse(text, 'ualpha');
+      
+      if (amount && amount > 0n && amount <= this.maxAlpha) {
         nextBtn.disabled = false;
         nextBtn.classList.add('sui-mod-primary');
         nextBtn.classList.remove('sui-mod-disabled');
@@ -44,8 +46,13 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
     amountInput.addEventListener('input', inputStepperChangeHandler);
 
     document.getElementById(this.nextBtnId).addEventListener('click', () => {
-      this.gameState.setTransferAmount(parseInt(document.getElementById(this.amountInputId).value));
-      MenuPage.router.goto('Account', 'recipientSearch');
+      const text = document.getElementById(this.amountInputId).value;
+      const amount = parse(text, 'ualpha');
+      
+      if (amount && amount > 0n && amount <= this.maxAlpha) {
+        this.gameState.setTransferAmount(amount.toString());
+        MenuPage.router.goto('Account', 'recipientSearch');
+      }
     })
   }
 
@@ -70,8 +77,9 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
               name="${this.amountInputId}"
               type="number"
               step="1"
+              data-decimals="6"
               min="0"
-              max="${this.maxTransfer}"
+              max="${this.maxDisplay}"
               value="0"
             >
             <button class="sui-screen-btn sui-mod-secondary">
