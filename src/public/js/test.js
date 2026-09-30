@@ -2851,11 +2851,18 @@ class KeyPlayer {
   /**
    * @return {boolean}
    */
-  arePlanetaryDefensesSecure() {
+  isCommandStructOnPlanet() {
     return !!(
       this.fleet?.isOnStation()
       && this.isCommandStructAlive()
     );
+  }
+
+  /**
+   * @return {boolean}
+   */
+  arePlanetaryDefensesSecure() {
+    return this.isCommandStructOnPlanet();
   }
 
   /**

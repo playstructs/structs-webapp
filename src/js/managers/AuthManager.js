@@ -25,6 +25,7 @@ import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {KeyPlayerLastActionListener} from "../grass_listeners/KeyPlayerLastActionListener";
 import {KeyPlayerShieldChangeStatusListener} from "../grass_listeners/KeyPlayerShieldChangeStatusListener";
 import {LoginCompleteEvent} from "../events/LoginCompleteEvent";
+import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 import {TX_STATUS} from "../models/SigningTransaction";
 import {RecoverAccountAddressApprovedListener} from "../grass_listeners/RecoverAccountAddressApprovedListener";
 
@@ -286,6 +287,10 @@ export class AuthManager {
 
         this.mapManager.configureRaidMap();
         this.gameState.raidMap.render();
+
+        // The raid status was announced before the raid enemy finished loading,
+        // so anything that rendered then (e.g. the raid card) needs refreshing.
+        window.dispatchEvent(new PlanetRaidStatusChangedEvent(PLAYER_TYPES.RAID_ENEMY));
 
         this.mapManager.showActiveMap();
 
