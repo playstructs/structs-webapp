@@ -8,6 +8,13 @@ import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 export class FleetIndexViewModel extends AbstractViewModel {
 
   /**
+   * Shared across instances so each render replaces the previous listener instead of stacking another.
+   *
+   * @type {function|null}
+   */
+  static raidStatusChangedHandler = null;
+
+  /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    * @param {FleetManager} fleetManager
@@ -63,11 +70,20 @@ export class FleetIndexViewModel extends AbstractViewModel {
     this.alphaBaseCard.initPageCode();
     this.raidCard.initPageCode();
 
-    window.addEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, (event) => {
+    window.removeEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, FleetIndexViewModel.raidStatusChangedHandler);
+
+    FleetIndexViewModel.raidStatusChangedHandler = (event) => {
+      if (!document.getElementById(this.raidCardContainerId)) {
+        window.removeEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, FleetIndexViewModel.raidStatusChangedHandler);
+        return;
+      }
+
       if (event.playerType === PLAYER_TYPES.PLAYER || event.playerType === PLAYER_TYPES.RAID_ENEMY) {
         MenuPage.router.goto('Fleet', 'index');
       }
-    })
+    };
+
+    window.addEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, FleetIndexViewModel.raidStatusChangedHandler);
   }
 
   renderRaidLogBtnHTML() {

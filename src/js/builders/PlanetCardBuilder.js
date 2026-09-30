@@ -167,12 +167,14 @@ export class PlanetCardBuilder {
       this.showAlphaBaseMap();
     }
 
-    alphaBaseCard.hasSecondaryBtn = true;
-    alphaBaseCard.secondaryBtnLabel = 'Depart';
-    alphaBaseCard.secondaryBtnHandler = () => {
-      MenuPage.router.goto('Fleet', 'index', {
-        planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_DEPART
-      });
+    if (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].isCommandStructOnPlanet()) {
+      alphaBaseCard.hasSecondaryBtn = true;
+      alphaBaseCard.secondaryBtnLabel = 'Depart';
+      alphaBaseCard.secondaryBtnHandler = () => {
+        MenuPage.router.goto('Fleet', 'index', {
+          planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_DEPART
+        });
+      }
     }
   }
 
@@ -475,6 +477,18 @@ export class PlanetCardBuilder {
       // above have ruled one out by the time a missing command ship matters.
       type = PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT;
 
+    }
+
+    // The raid status can be known before the enemy's planet and player finish
+    // loading (e.g. a GRASS message re-renders the fleet index mid-login).
+    if (
+      type === PLANET_CARD_TYPES.RAID_ACTIVE
+      && (
+        !this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet
+        || !this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player
+      )
+    ) {
+      type = PLANET_CARD_TYPES.RAID_LOADING;
     }
 
     return type;

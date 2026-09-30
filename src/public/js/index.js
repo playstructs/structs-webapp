@@ -2199,12 +2199,14 @@ class PlanetCardBuilder {
       this.showAlphaBaseMap();
     }
 
-    alphaBaseCard.hasSecondaryBtn = true;
-    alphaBaseCard.secondaryBtnLabel = 'Depart';
-    alphaBaseCard.secondaryBtnHandler = () => {
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Fleet', 'index', {
-        planetCardType: _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.ALPHA_BASE_DEPART
-      });
+    if (this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.PLAYER].isCommandStructOnPlanet()) {
+      alphaBaseCard.hasSecondaryBtn = true;
+      alphaBaseCard.secondaryBtnLabel = 'Depart';
+      alphaBaseCard.secondaryBtnHandler = () => {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Fleet', 'index', {
+          planetCardType: _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.ALPHA_BASE_DEPART
+        });
+      }
     }
   }
 
@@ -2507,6 +2509,18 @@ class PlanetCardBuilder {
       // above have ruled one out by the time a missing command ship matters.
       type = _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT;
 
+    }
+
+    // The raid status can be known before the enemy's planet and player finish
+    // loading (e.g. a GRASS message re-renders the fleet index mid-login).
+    if (
+      type === _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_ACTIVE
+      && (
+        !this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.RAID_ENEMY].planet
+        || !this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_6__.PLAYER_TYPES.RAID_ENEMY].player
+      )
+    ) {
+      type = _constants_PlanetCardTypes__WEBPACK_IMPORTED_MODULE_0__.PLANET_CARD_TYPES.RAID_LOADING;
     }
 
     return type;
@@ -13277,8 +13291,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _grass_listeners_KeyPlayerLastActionListener__WEBPACK_IMPORTED_MODULE_24__ = __webpack_require__(/*! ../grass_listeners/KeyPlayerLastActionListener */ "./js/grass_listeners/KeyPlayerLastActionListener.js");
 /* harmony import */ var _grass_listeners_KeyPlayerShieldChangeStatusListener__WEBPACK_IMPORTED_MODULE_25__ = __webpack_require__(/*! ../grass_listeners/KeyPlayerShieldChangeStatusListener */ "./js/grass_listeners/KeyPlayerShieldChangeStatusListener.js");
 /* harmony import */ var _events_LoginCompleteEvent__WEBPACK_IMPORTED_MODULE_26__ = __webpack_require__(/*! ../events/LoginCompleteEvent */ "./js/events/LoginCompleteEvent.js");
-/* harmony import */ var _models_SigningTransaction__WEBPACK_IMPORTED_MODULE_27__ = __webpack_require__(/*! ../models/SigningTransaction */ "./js/models/SigningTransaction.js");
-/* harmony import */ var _grass_listeners_RecoverAccountAddressApprovedListener__WEBPACK_IMPORTED_MODULE_28__ = __webpack_require__(/*! ../grass_listeners/RecoverAccountAddressApprovedListener */ "./js/grass_listeners/RecoverAccountAddressApprovedListener.js");
+/* harmony import */ var _events_PlanetRaidStatusChangedEvent__WEBPACK_IMPORTED_MODULE_27__ = __webpack_require__(/*! ../events/PlanetRaidStatusChangedEvent */ "./js/events/PlanetRaidStatusChangedEvent.js");
+/* harmony import */ var _models_SigningTransaction__WEBPACK_IMPORTED_MODULE_28__ = __webpack_require__(/*! ../models/SigningTransaction */ "./js/models/SigningTransaction.js");
+/* harmony import */ var _grass_listeners_RecoverAccountAddressApprovedListener__WEBPACK_IMPORTED_MODULE_29__ = __webpack_require__(/*! ../grass_listeners/RecoverAccountAddressApprovedListener */ "./js/grass_listeners/RecoverAccountAddressApprovedListener.js");
+
 
 
 
@@ -13568,6 +13584,10 @@ class AuthManager {
         this.mapManager.configureRaidMap();
         this.gameState.raidMap.render();
 
+        // The raid status was announced before the raid enemy finished loading,
+        // so anything that rendered then (e.g. the raid card) needs refreshing.
+        window.dispatchEvent(new _events_PlanetRaidStatusChangedEvent__WEBPACK_IMPORTED_MODULE_27__.PlanetRaidStatusChangedEvent(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_23__.PLAYER_TYPES.RAID_ENEMY));
+
         this.mapManager.showActiveMap();
 
         // Do this last so block height is available
@@ -13627,7 +13647,7 @@ class AuthManager {
         newAccount.privkey
       );
 
-      this.grassManager.registerListener(new _grass_listeners_RecoverAccountAddressApprovedListener__WEBPACK_IMPORTED_MODULE_28__.RecoverAccountAddressApprovedListener(
+      this.grassManager.registerListener(new _grass_listeners_RecoverAccountAddressApprovedListener__WEBPACK_IMPORTED_MODULE_29__.RecoverAccountAddressApprovedListener(
         this.gameState,
         this,
         playerId,
@@ -13652,7 +13672,7 @@ class AuthManager {
         permissions
       );
 
-      return registerTx.status === _models_SigningTransaction__WEBPACK_IMPORTED_MODULE_27__.TX_STATUS.SUCCEEDED;
+      return registerTx.status === _models_SigningTransaction__WEBPACK_IMPORTED_MODULE_28__.TX_STATUS.SUCCEEDED;
     } catch (error) {
       console.log(error);
       return false;
@@ -19755,11 +19775,18 @@ class KeyPlayer {
   /**
    * @return {boolean}
    */
-  arePlanetaryDefensesSecure() {
+  isCommandStructOnPlanet() {
     return !!(
       this.fleet?.isOnStation()
       && this.isCommandStructAlive()
     );
+  }
+
+  /**
+   * @return {boolean}
+   */
+  arePlanetaryDefensesSecure() {
+    return this.isCommandStructOnPlanet();
   }
 
   /**
@@ -36929,6 +36956,13 @@ __webpack_require__.r(__webpack_exports__);
 class FleetIndexViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__.AbstractViewModel {
 
   /**
+   * Shared across instances so each render replaces the previous listener instead of stacking another.
+   *
+   * @type {function|null}
+   */
+  static raidStatusChangedHandler = null;
+
+  /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    * @param {FleetManager} fleetManager
@@ -36984,11 +37018,20 @@ class FleetIndexViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED
     this.alphaBaseCard.initPageCode();
     this.raidCard.initPageCode();
 
-    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_4__.EVENTS.PLANET_RAID_STATUS_CHANGED, (event) => {
+    window.removeEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_4__.EVENTS.PLANET_RAID_STATUS_CHANGED, FleetIndexViewModel.raidStatusChangedHandler);
+
+    FleetIndexViewModel.raidStatusChangedHandler = (event) => {
+      if (!document.getElementById(this.raidCardContainerId)) {
+        window.removeEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_4__.EVENTS.PLANET_RAID_STATUS_CHANGED, FleetIndexViewModel.raidStatusChangedHandler);
+        return;
+      }
+
       if (event.playerType === _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.PLAYER || event.playerType === _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_5__.PLAYER_TYPES.RAID_ENEMY) {
         _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Fleet', 'index');
       }
-    })
+    };
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_4__.EVENTS.PLANET_RAID_STATUS_CHANGED, FleetIndexViewModel.raidStatusChangedHandler);
   }
 
   renderRaidLogBtnHTML() {
