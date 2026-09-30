@@ -19,6 +19,7 @@ import {TrackDestroyedStructEvent} from "../events/TrackDestroyedStructEvent";
 import {DateFormatter} from "../util/DateFormatter";
 import {RenderPlayerPfpEvent} from "../events/RenderPlayerPfpEvent";
 import {FleetChangedEvent} from "../events/FleetChangedEvent";
+import {legacyToBase, toBase} from "../util/Units";
 
 export class KeyPlayer {
 
@@ -89,9 +90,23 @@ export class KeyPlayer {
 
   }
 
+  /**
+   * Legacy wrapper: whole Alpha (grams) → ualpha on alpha_p.
+   * @param {number|string} alpha
+   */
   setAlpha(alpha) {
-    if (this.player && this.player.hasOwnProperty('alpha')) {
-      this.player.alpha = parseInt(alpha);
+    this.setAlphaP(legacyToBase(alpha, 6));
+  }
+
+  /**
+   * @param {bigint|string|number|null|undefined} alpha_p ualpha
+   */
+  setAlphaP(alpha_p) {
+    if (this.player && this.player.hasOwnProperty('alpha_p')) {
+      this.player.alpha_p = toBase(alpha_p);
+      this.player.alpha = this.player.alpha_p != null
+        ? Number(this.player.alpha_p / 1000000n)
+        : null;
 
       window.dispatchEvent(new SaveGameStateEvent());
       window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
@@ -99,11 +114,22 @@ export class KeyPlayer {
   }
 
   /**
-   * @param {number} connectionCapacity
+   * Legacy wrapper: watts → milliwatts on connection_capacity_p.
+   * @param {number|string} connectionCapacity
    */
   setConnectionCapacity(connectionCapacity) {
-    if (this.player && this.player.hasOwnProperty('connection_capacity')) {
-      this.player.connection_capacity = connectionCapacity;
+    this.setConnectionCapacityP(legacyToBase(connectionCapacity, 3));
+  }
+
+  /**
+   * @param {bigint|string|number|null|undefined} connectionCapacity_p milliwatts
+   */
+  setConnectionCapacityP(connectionCapacity_p) {
+    if (this.player && this.player.hasOwnProperty('connection_capacity_p')) {
+      this.player.connection_capacity_p = toBase(connectionCapacity_p);
+      this.player.connection_capacity = this.player.connection_capacity_p != null
+        ? Number(this.player.connection_capacity_p / 1000n)
+        : null;
 
       window.dispatchEvent(new SaveGameStateEvent());
       window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
@@ -158,11 +184,22 @@ export class KeyPlayer {
   }
 
   /**
-   * @param {number} load
+   * Legacy wrapper: watts → milliwatts on load_p.
+   * @param {number|string} load
    */
   setLoad(load) {
-    if (this.player && this.player.hasOwnProperty('load')) {
-      this.player.load = load;
+    this.setLoadP(legacyToBase(load, 3));
+  }
+
+  /**
+   * @param {bigint|string|number|null|undefined} load_p milliwatts
+   */
+  setLoadP(load_p) {
+    if (this.player && this.player.hasOwnProperty('load_p')) {
+      this.player.load_p = toBase(load_p);
+      this.player.load = this.player.load_p != null
+        ? Number(this.player.load_p / 1000n)
+        : null;
 
       window.dispatchEvent(new SaveGameStateEvent());
       window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
@@ -170,11 +207,22 @@ export class KeyPlayer {
   }
 
   /**
+   * Legacy wrapper / passthrough: ore is already grams (exp 0).
    * @param {number|string} ore
    */
   setOre(ore) {
-    if (this.player && this.player.hasOwnProperty('ore')) {
-      this.player.ore = parseInt(ore);
+    this.setOreP(ore);
+  }
+
+  /**
+   * @param {bigint|string|number|null|undefined} ore_p grams
+   */
+  setOreP(ore_p) {
+    if (this.player && this.player.hasOwnProperty('ore_p')) {
+      this.player.ore_p = toBase(ore_p);
+      this.player.ore = this.player.ore_p != null
+        ? Number(this.player.ore_p)
+        : null;
 
       window.dispatchEvent(new SaveGameStateEvent());
       window.dispatchEvent(new OreCountChangedEvent(this.playerType));
@@ -248,11 +296,22 @@ export class KeyPlayer {
   }
 
   /**
-   * @param {number} capacity
+   * Legacy wrapper: watts → milliwatts on capacity_p.
+   * @param {number|string} capacity
    */
   setPlayerCapacity(capacity) {
-    if (this.player && this.player.hasOwnProperty('capacity')) {
-      this.player.capacity = capacity;
+    this.setPlayerCapacityP(legacyToBase(capacity, 3));
+  }
+
+  /**
+   * @param {bigint|string|number|null|undefined} capacity_p milliwatts
+   */
+  setPlayerCapacityP(capacity_p) {
+    if (this.player && this.player.hasOwnProperty('capacity_p')) {
+      this.player.capacity_p = toBase(capacity_p);
+      this.player.capacity = this.player.capacity_p != null
+        ? Number(this.player.capacity_p / 1000n)
+        : null;
 
       window.dispatchEvent(new SaveGameStateEvent());
       window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
@@ -273,11 +332,22 @@ export class KeyPlayer {
   }
 
   /**
-   * @param {number} structsLoad
+   * Legacy wrapper: watts → milliwatts on structs_load_p.
+   * @param {number|string} structsLoad
    */
   setStructsLoad(structsLoad) {
-    if (this.player && this.player.hasOwnProperty('structs_load')) {
-      this.player.structs_load = structsLoad;
+    this.setStructsLoadP(legacyToBase(structsLoad, 3));
+  }
+
+  /**
+   * @param {bigint|string|number|null|undefined} structsLoad_p milliwatts
+   */
+  setStructsLoadP(structsLoad_p) {
+    if (this.player && this.player.hasOwnProperty('structs_load_p')) {
+      this.player.structs_load_p = toBase(structsLoad_p);
+      this.player.structs_load = this.player.structs_load_p != null
+        ? Number(this.player.structs_load_p / 1000n)
+        : null;
 
       window.dispatchEvent(new SaveGameStateEvent());
       window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));

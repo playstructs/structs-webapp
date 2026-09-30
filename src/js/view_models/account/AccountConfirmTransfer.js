@@ -1,6 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {NumberFormatter} from "../../util/NumberFormatter";
+import {fmtWithExact} from "../../util/Units";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
 import {TransferSentListener} from "../../grass_listeners/TransferSentListener";
 
@@ -26,7 +26,6 @@ export class AccountConfirmTransfer extends AbstractViewModel {
     this.alphaManager = alphaManager;
     this.grassManager = grassManager;
     this.playerSearchResultDTO = playerSearchResultDTO;
-    this.numberFormatter = new NumberFormatter();
     this.cancelBtnId = 'confirm-transfer-cancel-btn';
     this.transferBtnId = 'confirm-transfer-transfer-btn';
   }
@@ -46,11 +45,22 @@ export class AccountConfirmTransfer extends AbstractViewModel {
       this.grassManager.registerListener(new TransferSentListener(
         this.gameState,
         this.gameState.signingAccount.address,
-        this.playerSearchResultDTO.address,
+        this.playerSearchResultDTO.primary_address || this.playerSearchResultDTO.address,
         this.gameState.transferAmount
       ));
 
-      this.alphaManager.transferAlpha(this.playerSearchResultDTO.address, this.gameState.transferAmount).then();
+      this.alphaManager.transferAlpha(
+        this.playerSearchResultDTO.primary_address || this.playerSearchResultDTO.address,
+        this.gameState.transferAmount
+      ).then((result) => {
+        if (!this.alphaManager.isSettledSuccess(result)) {
+          console.error('Transfer failed or settlement unsuccessful');
+          MenuPage.router.goto('Account', 'confirmTransfer', this.playerSearchResultDTO);
+        }
+      }).catch((error) => {
+        console.error('Transfer error:', error);
+        MenuPage.router.goto('Account', 'confirmTransfer', this.playerSearchResultDTO);
+      });
     });
   }
 
@@ -73,7 +83,7 @@ export class AccountConfirmTransfer extends AbstractViewModel {
   }
 
   render () {
-    const amount = this.numberFormatter.format(this.gameState.transferAmount);
+    const amount = fmtWithExact(this.gameState.transferAmount, 'ualpha');
 
     MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
@@ -92,7 +102,7 @@ export class AccountConfirmTransfer extends AbstractViewModel {
               <div>Amount</div>
               <div>
                 <div class="sui-resource">
-                  <span>${amount}</span>
+                  <span class="sui-quantity">${amount}</span>
                   <i class="sui-icon sui-icon-alpha-matter"></i>
                 </div>
               </div>

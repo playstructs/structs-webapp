@@ -1,6 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {NumberFormatter} from "../../util/NumberFormatter";
+import {fmt} from "../../util/Units";
 import {PfpViewerComponent} from "../components/PfpViewerComponent";
 
 export class AccountRecipientViewModel extends AbstractViewModel {
@@ -19,7 +19,6 @@ export class AccountRecipientViewModel extends AbstractViewModel {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.playerSearchResultDTO = playerSearchResultDTO;
-    this.numberFormatter = new NumberFormatter();
     this.selectThisPlayerBtnId = 'select-this-player-btn';
   }
 
@@ -75,11 +74,11 @@ export class AccountRecipientViewModel extends AbstractViewModel {
    * @return {string}
    */
   renderAlphaHTML(playerSearchResultDTO) {
-    if (isNaN(parseInt(playerSearchResultDTO.alpha))) {
+    if (!playerSearchResultDTO.alpha_p) {
       return '';
     }
 
-    const amount = this.numberFormatter.format(playerSearchResultDTO.alpha);
+    const amount = fmt(playerSearchResultDTO.alpha_p, 'ualpha');
     return `
       <span>${amount}</span>
       <i class="sui-icon sui-icon-alpha-matter"></i>

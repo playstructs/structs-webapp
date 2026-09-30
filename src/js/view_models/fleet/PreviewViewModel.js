@@ -1,12 +1,12 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {NumberFormatter} from "../../util/NumberFormatter";
 import {RAID_STATUS} from "../../constants/RaidStatus";
 import {RaidStatusListener} from "../../grass_listeners/RaidStatusListener";
 import {MAP_CONTAINER_IDS} from "../../constants/MapConstants";
 import {PlanetRaidFactory} from "../../factories/PlanetRaidFactory";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {fmt} from "../../util/Units";
 
 export class PreviewViewModel extends AbstractViewModel {
 
@@ -48,7 +48,6 @@ export class PreviewViewModel extends AbstractViewModel {
     this.defender_id = defender_id;
     this.defender_ore = defender_ore;
     this.attacker_id = attacker_id;
-    this.numberFormatter = new NumberFormatter();
     this.planetRaidFactory = new PlanetRaidFactory();
     this.launchFleetBtnId = 'launch-fleet';
     this.undiscoveredOreId = 'preview-planet-undiscovered-ore';
@@ -149,7 +148,7 @@ export class PreviewViewModel extends AbstractViewModel {
                 this.undiscoveredOreId,
                 'sui-icon-undiscovered-ore',
                 'Undiscovered Ore',
-                this.numberFormatter.format(this.planet_undiscovered_ore)
+                fmt(this.planet_undiscovered_ore, 'ore')
               )
             }
             ${
@@ -157,7 +156,7 @@ export class PreviewViewModel extends AbstractViewModel {
                 this.alphaOreId,
                 'sui-icon-alpha-ore',
                 'Ore Mined',
-                this.numberFormatter.format(this.defender_ore)
+                fmt(this.defender_ore, 'ore')
               )
             }
           </div>

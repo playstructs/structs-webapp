@@ -1,7 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
-import {NumberFormatter} from "../../util/NumberFormatter";
+import {fmt, fmtCount, fmtPercent, fmtSet} from "../../util/Units";
 
 export class GuildProfileViewModel extends AbstractViewModel {
 
@@ -20,7 +20,6 @@ export class GuildProfileViewModel extends AbstractViewModel {
     this.guildAPI = guildAPI;
     this.guildId = guildId;
     this.genericResourceComponent = new GenericResourceComponent(gameState);
-    this.numberFormatter = new NumberFormatter();
 
     this.copyGidBtnId = 'guild-profile-copy-gid-btn';
     this.guildMinimumId = 'guild-profile-guild-minimum';
@@ -142,8 +141,23 @@ export class GuildProfileViewModel extends AbstractViewModel {
     return html;
   }
 
+  /**
+   * @return {string}
+   */
+  renderReactorRatioLabel() {
+    const ratio = this.guild?.reactor_ratio;
+    if (ratio === null || ratio === undefined || ratio === '') {
+      return '—';
+    }
+    return `${ratio}KW / g`;
+  }
+
   render () {
     this.fetchPageData().then(() => {
+      const [totalLoad, totalCapacity] = fmtSet(
+        [this.powerStats.total_load_p, this.powerStats.total_capacity_p],
+        'mw'
+      );
 
       MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
 
@@ -207,7 +221,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
                       this.guildMinimumId,
                       'sui-icon-alpha-matter',
                       'Minimum alpha required to join guild',
-                      this.numberFormatter.format(this.guild.join_infusion_minimum)
+                      fmt(this.guild.join_infusion_minimum_p, 'ualpha')
                     )
                   }
                 </div>
@@ -230,7 +244,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
                       this.baseEnergySupplyId,
                       'sui-icon-energy',
                       'Average energy supplied to guild members',
-                      this.numberFormatter.format(this.powerStats.avg_connection_capacity)
+                      fmt(this.powerStats.avg_connection_capacity_p, 'mw')
                     )
                   }
                 </div>
@@ -248,8 +262,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
                   </a>
                 </div>
                 <div>
-                  ${this.numberFormatter.format(this.guild.reactor_ratio)} <i class="sui-icon sui-icon-md sui-icon-energy"></i> /
-                  1 <i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>
+                  ${this.renderReactorRatioLabel()}
                 </div>
               </div>
               <div class="sui-data-card-row">
@@ -260,7 +273,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
                       this.commissionId,
                       'sui-icon-energy',
                       'The guild\'s cut',
-                      Math.floor(this.guild.default_commission * 100) + '%'
+                      fmtPercent(this.guild.default_commission)
                     )
                   }
                 </div>
@@ -273,7 +286,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
                       this.alphaInfusedId,
                       'sui-icon-alpha-matter',
                       'Alpha infused with the guild',
-                      this.numberFormatter.format(this.powerStats.total_fuel)
+                      fmt(this.powerStats.total_fuel_p, 'ualpha')
                     )
                   }
                 </div>
@@ -286,7 +299,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
                       this.energyUsageId,
                       'sui-icon-energy',
                       'Cumulative guild member energy usage',
-                      `${this.numberFormatter.format(this.powerStats.total_load)}/${this.numberFormatter.format(this.powerStats.total_capacity)}` 
+                      `${totalLoad}/${totalCapacity}`
                     )
                   }
                 </div>
@@ -299,11 +312,11 @@ export class GuildProfileViewModel extends AbstractViewModel {
             <div class="sui-data-card-body">
               <div class="sui-data-card-row">
                 <div>Members</div>
-                <div>${this.numberFormatter.format(this.membersCount)}</div>
+                <div>${fmtCount(this.membersCount)}</div>
               </div>
               <div class="sui-data-card-row">
                 <div>Planets Completed</div>
-                <div>${this.numberFormatter.format(this.completePlanetsCount)}</div>
+                <div>${fmtCount(this.completePlanetsCount)}</div>
               </div>
             </div>
           </div>

@@ -1,3 +1,5 @@
+import {legacyToBase} from "../util/Units";
+
 export class Player {
   constructor() {
     this.id = null;
@@ -12,11 +14,23 @@ export class Player {
     this.guild_name = null;
     this.tag = null;
     this.alpha = null;
+    /** @type {bigint|null} ualpha */
+    this.alpha_p = null;
     this.ore = null;
+    /** @type {bigint|null} grams */
+    this.ore_p = null;
     this.load = null;
+    /** @type {bigint|null} milliwatts */
+    this.load_p = null;
     this.structs_load = null;
+    /** @type {bigint|null} milliwatts */
+    this.structs_load_p = null;
     this.capacity = null;
+    /** @type {bigint|null} milliwatts */
+    this.capacity_p = null;
     this.connection_capacity = null;
+    /** @type {bigint|null} milliwatts */
+    this.connection_capacity_p = null;
   }
 
   /**
@@ -37,13 +51,16 @@ export class Player {
    * @return {boolean}
    */
   isOverloaded() {
-    const load = this.load ?? 0;
-    const structsLoad = this.structs_load ?? 0;
-    const capacity = this.capacity ?? 0;
-    const connectionCapacity = this.connection_capacity ?? 0;
+    // Prefer *_p (mW). Legacy load/capacity fields are watts.
+    const load = this.load_p ?? legacyToBase(this.load, 3) ?? 0n;
+    const structsLoad = this.structs_load_p ?? legacyToBase(this.structs_load, 3) ?? 0n;
+    const capacity = this.capacity_p ?? legacyToBase(this.capacity, 3) ?? 0n;
+    const connectionCapacity = this.connection_capacity_p
+      ?? legacyToBase(this.connection_capacity, 3)
+      ?? 0n;
 
-    let totalLoad = load + structsLoad;
-    let totalCapacity = capacity + connectionCapacity;
+    const totalLoad = load + structsLoad;
+    const totalCapacity = capacity + connectionCapacity;
 
     return totalLoad > totalCapacity;
   }

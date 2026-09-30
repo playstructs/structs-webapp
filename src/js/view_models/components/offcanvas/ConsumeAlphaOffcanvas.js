@@ -2,12 +2,12 @@ import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelCo
 import {MenuPage} from "../../../framework/MenuPage";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {GenericResourceComponent} from "../GenericResourceComponent";
-import {NumberFormatter} from "../../../util/NumberFormatter";
 import {Struct} from "../../../models/Struct";
 import {StructType} from "../../../models/StructType";
 import {STRUCT_ACTIONS} from "../../../constants/StructConstants";
 import {GridStructListener} from "../../../grass_listeners/GridStructListener";
 import {ConsumeAlphaChangeListener} from "../../../grass_listeners/ConsumeAlphaChangeListener";
+import {parse, baseToDisplayDecimal, fmt} from "../../../util/Units";
 
 export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
 
@@ -34,12 +34,13 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
     this.amountInputId = 'consumeAlphaAmountInput';
     this.consumeAlphaBtnId = 'consumeAlphaBtn';
     this.projectedSupplyId = 'projectedSupply';
-    this.gameState.setTransferAmount(0);
-    this.maxAlpha = parseInt(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) || 0;
-    this.preexistingSupply = this.struct.fuel * this.structType.generating_rate;
+    this.gameState.setTransferAmount('0');
+    this.maxAlpha = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha_p ?? 0n;
+    this.maxDisplay = baseToDisplayDecimal(this.maxAlpha);
+    const rate = this.structType.generating_rate_p ?? 0n;
+    this.preexistingSupply = (this.struct.fuel_p ?? 0n) * rate;
 
     this.genericResourceComponent = new GenericResourceComponent(gameState);
-    this.numberFormatter = new NumberFormatter();
   }
 
   initPageCode() {
@@ -52,8 +53,10 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
 
     const inputStepperChangeHandler = () => {
       const consumeAlphaBtn = document.getElementById(this.consumeAlphaBtnId);
-      const amount = parseInt(document.getElementById(this.amountInputId).value);
-      if (0 < amount && amount <= this.maxAlpha) {
+      const text = document.getElementById(this.amountInputId).value;
+      const amount = parse(text, 'ualpha');
+      
+      if (amount && amount > 0n && amount <= this.maxAlpha) {
         consumeAlphaBtn.disabled = false;
         consumeAlphaBtn.classList.add('sui-mod-primary');
         consumeAlphaBtn.classList.remove('sui-mod-disabled');
@@ -63,7 +66,13 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
         consumeAlphaBtn.classList.remove('sui-mod-primary');
       }
 
-      projectSupply.innerText = this.numberFormatter.format(this.preexistingSupply + (amount * this.structType.generating_rate));
+      if (amount && amount > 0n) {
+        const rate = this.structType.generating_rate_p ?? 0n;
+        const projectedPower = this.preexistingSupply + (amount * rate);
+        projectSupply.innerText = fmt(projectedPower, 'mw');
+      } else {
+        projectSupply.innerText = fmt(this.preexistingSupply, 'mw');
+      }
     }
 
     decreaseBtn.addEventListener('click', inputStepperChangeHandler);
@@ -71,14 +80,28 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
     amountInput.addEventListener('input', inputStepperChangeHandler);
 
     document.getElementById(this.consumeAlphaBtnId).addEventListener('click', () => {
+      const text = document.getElementById(this.amountInputId).value;
+      const amount = parse(text, 'ualpha');
+      
+      if (!amount || amount === 0n) {
+        return;
+      }
+      
       this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.CONSUME_ALPHA);
       this.gameState.actionBarLock.lock();
 
       this.grassManager.registerListener(new GridStructListener(this.gameState, this.struct.id));
       this.grassManager.registerListener(new ConsumeAlphaChangeListener(this.gameState, this.struct.id));
 
-      const amount = parseInt(document.getElementById(this.amountInputId).value);
-      this.alphaManager.structGeneratorInfuse(this.struct.id, amount).then();
+      this.alphaManager.structGeneratorInfuse(this.struct.id, amount.toString()).then((result) => {
+        if (!this.alphaManager.isSettledSuccess(result)) {
+          this.gameState.actionBarLock.clear();
+          console.error('Infusion failed or settlement unsuccessful', result?.error);
+        }
+      }).catch((error) => {
+        this.gameState.actionBarLock.clear();
+        console.error('Infusion error:', error);
+      });
       MenuPage.sui.offcanvas.close();
     })
   }
@@ -101,8 +124,9 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
                 name="${this.amountInputId}"
                 type="number"
                 step="1"
+                data-decimals="6"
                 min="0"
-                max="${this.maxAlpha}"
+                max="${this.maxDisplay}"
                 value="0"
               >
               <button class="sui-screen-btn sui-mod-secondary">
@@ -122,7 +146,7 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
                   this.projectedSupplyId,
                   'sui-icon-energy',
                   'Project Energy Supply',
-                  this.numberFormatter.format(this.preexistingSupply)
+                  fmt(this.preexistingSupply, 'mw')
                 )
               }
             </div>

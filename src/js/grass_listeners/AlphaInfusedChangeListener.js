@@ -10,7 +10,8 @@ export class AlphaInfusedChangeListener extends AbstractGrassListener {
    * @param {string} category
    */
   constructor(gameState, guildAPI, category) {
-    super('ALPHA_INFUSED_CHANGE');
+    // Unique name per category so Map registration does not overwrite.
+    super(`ALPHA_INFUSED_CHANGE_${category}`);
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.category = category;

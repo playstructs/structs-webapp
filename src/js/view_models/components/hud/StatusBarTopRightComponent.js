@@ -3,6 +3,7 @@ import {EVENTS} from "../../../constants/Events";
 import {MAP_CONTAINER_IDS} from "../../../constants/MapConstants";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {ShieldStatusComponent} from "../ShieldStatusComponent";
+import {fmt} from "../../../util/Units";
 
 export class StatusBarTopRightComponent extends AbstractViewModelComponent {
 
@@ -43,12 +44,20 @@ export class StatusBarTopRightComponent extends AbstractViewModelComponent {
   initPageCode() {
     this.shieldStatusComponent.initPageCode();
 
+    // Set initial ore value
+    const player = this.isRaidPlanet 
+      ? this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player
+      : this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player;
+    if (player) {
+      document.getElementById(this.hudOreValueId).innerText = fmt(player.ore_p, 'ore');
+    }
+
     window.addEventListener(this.oreCountChangedEvent, function (event) {
       if (
         (this.isRaidPlanet && event.playerType === PLAYER_TYPES.RAID_ENEMY && this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player)
         || (!this.isRaidPlanet && event.playerType === PLAYER_TYPES.PLAYER && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player)
       ) {
-        document.getElementById(this.hudOreValueId).innerText = `${this.gameState.keyPlayers[event.playerType].player.ore}`;
+        document.getElementById(this.hudOreValueId).innerText = fmt(this.gameState.keyPlayers[event.playerType].player.ore_p, 'ore');
       }
     }.bind(this));
   }
@@ -64,7 +73,7 @@ export class StatusBarTopRightComponent extends AbstractViewModelComponent {
           data-sui-tooltip="Alpha Ore"
         >
           <i class="sui-icon sui-icon-alpha-ore"></i>
-          <span id="${this.hudOreValueId}"></span>
+          <span id="${this.hudOreValueId}" class="sui-quantity"></span>
         </a>
       </div>
     `;

@@ -24,7 +24,7 @@ export class ConsumeAlphaChangeListener extends AbstractGrassListener {
       this.shouldUnregister = () => true;
 
       this.gameState.guildAPI.getPlayer(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then(player => {
-        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setAlpha(player.alpha); // Refresh owned alpha count
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlayer(player); // Refresh owned alpha count
       });
     }
   }

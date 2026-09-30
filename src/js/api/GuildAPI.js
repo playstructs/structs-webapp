@@ -26,6 +26,7 @@ import {Settings} from "../models/Settings";
 import {Player} from "../models/Player";
 import {Infusion} from "../models/Infusion";
 import {Fleet} from "../models/Fleet";
+import {parseWithBigInt, stringifyWithBigInt} from "../util/BigIntJson";
 
 export class GuildAPI {
 
@@ -104,7 +105,7 @@ export class GuildAPI {
    */
   cacheItem(key, value) {
     const item = new GuildAPICacheItemDTO(value);
-    localStorage.setItem(key, JSON.stringify(item));
+    localStorage.setItem(key, stringifyWithBigInt(item));
   }
 
   /**
@@ -119,7 +120,7 @@ export class GuildAPI {
       return null;
     }
 
-    item = JSON.parse(item);
+    item = parseWithBigInt(item);
 
     if (item.timestamp + ttl < Date.now()) {
       localStorage.removeItem(key);
@@ -818,5 +819,17 @@ export class GuildAPI {
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.settingFactory.parseList(response.data);
+  }
+
+  /**
+   * Machine-readable denom / scale contract. Requires authentication.
+   *
+   * @return {Promise<object>}
+   */
+  async getDenoms() {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/denom`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return response.data;
   }
 }

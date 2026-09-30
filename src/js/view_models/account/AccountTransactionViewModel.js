@@ -1,6 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {NumberFormatter} from "../../util/NumberFormatter";
+import {fmtWithExact} from "../../util/Units";
 import {DateFormatter} from "../../util/DateFormatter";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
@@ -24,7 +24,6 @@ export class AccountTransactionViewModel extends AbstractViewModel {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
-    this.numberFormatter = new NumberFormatter();
     this.dateFormatter = new DateFormatter();
     this.genericResourceComponent = new GenericResourceComponent(gameState);
     this.txId = txId;
@@ -123,7 +122,7 @@ export class AccountTransactionViewModel extends AbstractViewModel {
                       this.amountId,
                       'sui-icon-alpha-matter',
                       'Alpha Matter',
-                      this.numberFormatter.format(transaction.amount)
+                      fmtWithExact(transaction.amount_p, 'ualpha')
                     )
                   }
                 </div>

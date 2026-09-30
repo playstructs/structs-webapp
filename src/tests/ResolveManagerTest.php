@@ -32,6 +32,16 @@ class ResolveManagerTest extends ApiManagerTestCase
         $this->assertSame('alpha', $units['ualpha']['display']);
         $this->assertSame('mass', $units['ualpha']['quantity']);
         $this->assertSame(0, $units['ore']['exponent']);
+        $this->assertSame('μg', $units['ualpha']['scale'][0]['symbol']);
+        $this->assertSame(['ug'], $units['ualpha']['scale'][0]['aliases']);
+        $this->assertSame(0, $units['ualpha']['scale'][0]['min_digits']);
+        $this->assertSame(10, $units['ualpha']['scale'][3]['min_digits']);
+        $this->assertSame(16, $units['ualpha']['scale'][4]['min_digits']);
+
+        $this->assertSame('milliwatt', $units['milliwatt']['denom']);
+        $this->assertSame(15, $units['milliwatt']['scale'][4]['exponent']);
+        $this->assertSame('TW', $units['milliwatt']['scale'][4]['symbol']);
+        $this->assertSame(16, $units['milliwatt']['scale'][4]['min_digits']);
 
         // alpha is never a denomination of its own, only the display of ualpha.
         $this->assertArrayNotHasKey('alpha', $units);
@@ -54,6 +64,8 @@ class ResolveManagerTest extends ApiManagerTestCase
         $this->assertSame('milliwatt', $content['data']['bases']['energy']['denom']);
         $this->assertSame(3, $content['data']['bases']['energy']['exponent']);
         $this->assertTrue($content['data']['bases']['energy']['connection_capacity_is_player_share']);
+        $this->assertSame(15, $content['data']['bases']['energy']['scale'][4]['exponent']);
+        $this->assertSame('TW', $content['data']['bases']['energy']['scale'][4]['symbol']);
     }
 
     public function testResolveNameSearchIncludesSubstation(): void
