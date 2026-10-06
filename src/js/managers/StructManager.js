@@ -54,6 +54,24 @@ export class StructManager {
   }
 
   /**
+   * Whether the struct is a planetary struct left behind on a planet its owner
+   * has since moved away from.
+   *
+   * @param {Struct} struct
+   * @return {boolean}
+   */
+  isAbandonedPlanetaryStruct(struct) {
+    if (struct.location_type !== 'planet') {
+      return false;
+    }
+
+    const owner = Object.values(this.gameState.keyPlayers).find(keyPlayer => keyPlayer.id === struct.owner);
+    const ownerPlanetId = owner?.player?.planet_id;
+
+    return !!ownerPlanetId && struct.location_id !== ownerPlanetId;
+  }
+
+  /**
    * Get a struct by its owner, and it's position on planet or in fleet
    * @param {string} playerId - The id of the struct owner
    * @param {string} locationType - "fleet" or "planet"
@@ -395,6 +413,14 @@ export class StructManager {
     const wasOnline = oldStruct ? oldStruct.isOnline() : null;
 
     const struct = await this.guildAPI.getStruct(structId);
+
+    // Departing a planet abandons its planetary structs, and their status
+    // changes can still be arriving after the owner has reached a new planet.
+    if (this.isAbandonedPlanetaryStruct(struct)) {
+      this.gameState.removeStruct(struct.id);
+      return null;
+    }
+
     this.gameState.setStruct(struct);
 
     const tileType = this.getTileTypeFromStruct(struct);
