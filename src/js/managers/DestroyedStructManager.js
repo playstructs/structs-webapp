@@ -54,7 +54,8 @@ export class DestroyedStructManager {
         const mapId = this.structManager.getMapIdByPlayerTypeAndStruct(item.struct, item.playerType);
         const tileType = this.structManager.getTileTypeFromStruct(item.struct);
 
-        if (mapId && tileType) {
+        // An abandoned struct's old position belongs to whatever is on the new planet now.
+        if (mapId && tileType && !this.structManager.isAbandonedPlanetaryStruct(item.struct)) {
 
           window.dispatchEvent(new ClearStructTileEvent(
             mapId,

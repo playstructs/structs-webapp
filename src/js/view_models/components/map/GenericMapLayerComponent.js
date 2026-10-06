@@ -535,6 +535,12 @@ export class GenericMapLayerComponent extends AbstractViewModelComponent {
       return null;
     }
 
+    // Tiles are matched by position and owner alone, so a planetary struct from
+    // another planet would otherwise land on this planet's tile in the same slot.
+    if (tileType === MAP_TILE_TYPES.PLANETARY_SLOT && struct.location_id !== this.planet?.id) {
+      return null;
+    }
+
     const ambit = struct.operating_ambit ? struct.operating_ambit.toUpperCase() : '';
     const selector = this.buildTileSelector(tileType, ambit, struct.slot, struct.owner);
     const container = document.getElementById(this.containerId);
