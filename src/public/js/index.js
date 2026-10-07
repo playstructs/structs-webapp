@@ -3514,6 +3514,7 @@ const EVENTS = {
   SIGNING_TRANSACTION_SETTLED: 'SIGNING_TRANSACTION_SETTLED',
   STRUCT_COUNT_CHANGED: 'STRUCT_COUNT_CHANGED',
   STRUCT_SELECTION_CHANGED: 'STRUCT_SELECTION_CHANGED',
+  TASK_CMD_AWAIT_REFINE_WORK: 'TASK_CMD_AWAIT_REFINE_WORK',
   TASK_CMD_KILL: 'TASK_CMD_KILL',
   TASK_CMD_MANAGER_PAUSE: 'TASK_CMD_MANAGER_PAUSE',
   TASK_CMD_MANAGER_RESUME: 'TASK_CMD_MANAGER_RESUME',
@@ -4353,6 +4354,7 @@ const TASK = {
   DIFFICULTY_START_SLEEP_DELAY: 10000,
   CHECKPOINT_BLOCK: 10,
   ESTIMATED_BLOCK_TIME: 6000,
+  REFINE_WORK_LOOKUP_BLOCKS: 5,
   HASHRATE_INITIAL_ESTIMATE: 300.0,
   IDENTITY_PREFIX: "IDENTITY",
   NONCE_PREFIX: "NONCE",
@@ -7017,6 +7019,29 @@ class StructSelectionChangedEvent extends CustomEvent {
   constructor(structId = null) {
     super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.STRUCT_SELECTION_CHANGED);
     this.structId = structId;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/TaskCmdAwaitRefineWorkEvent.js"
+/*!**************************************************!*\
+  !*** ./js/events/TaskCmdAwaitRefineWorkEvent.js ***!
+  \**************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TaskCmdAwaitRefineWorkEvent: () => (/* binding */ TaskCmdAwaitRefineWorkEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class TaskCmdAwaitRefineWorkEvent extends CustomEvent {
+  constructor() {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_CMD_AWAIT_REFINE_WORK);
   }
 }
 
@@ -10763,6 +10788,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
 /* harmony import */ var _util_RaidStatusUtil__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../util/RaidStatusUtil */ "./js/util/RaidStatusUtil.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _events_TaskCmdAwaitRefineWorkEvent__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../events/TaskCmdAwaitRefineWorkEvent */ "./js/events/TaskCmdAwaitRefineWorkEvent.js");
+
+
 
 
 
@@ -10786,7 +10815,20 @@ class KeyPlayerOreListener extends _framework_AbstractGrassListener__WEBPACK_IMP
       messageData.category === 'ore'
       && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[this.playerType].id}.${this.gameState.keyPlayers[this.playerType].id}`
     ) {
-      this.gameState.keyPlayers[this.playerType].setOre(messageData.value);
+      const keyPlayer = this.gameState.keyPlayers[this.playerType];
+      const oreBefore = parseInt(keyPlayer.player?.ore ?? 0);
+
+      keyPlayer.setOre(messageData.value);
+
+      // Refining stops when the ore runs out, and extracting more doesn't move
+      // the refine clock, so nothing else will start the refineries again.
+      if (
+        this.playerType === _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER
+        && oreBefore === 0
+        && keyPlayer.player?.ore > 0
+      ) {
+        window.dispatchEvent(new _events_TaskCmdAwaitRefineWorkEvent__WEBPACK_IMPORTED_MODULE_3__.TaskCmdAwaitRefineWorkEvent());
+      }
 
       // Update undiscovered ore count too
       if (this.gameState.keyPlayers[this.playerType].planetUsedForMap) {
@@ -17795,6 +17837,9 @@ class TaskManager {
         /** @type {Object<string, number>} Ore clocks that arrived while the planet was still raided. */
         this.held_ore_clocks = {};
 
+        /** @type {number} Blocks left in which to look for refine work the indexer has yet to list. */
+        this.refine_work_lookups_remaining = 0;
+
         /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
@@ -17877,6 +17922,17 @@ class TaskManager {
         // starts, restarts or stops the work of every eligible struct on it.
         window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_CMD_REFRESH_ORE, function (event) {
             this.refreshOreTasks(event.taskType, event.blockStart);
+        }.bind(this));
+
+        // TASK_CMD_AWAIT_REFINE_WORK
+        // Dispatched when the player's stored ore rises from zero, which makes
+        // refining possible again without moving the refine clock.
+        window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_CMD_AWAIT_REFINE_WORK, function (event) {
+            this.awaitRefineWork();
+        }.bind(this));
+
+        window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.BLOCK_HEIGHT_CHANGED, function (event) {
+            this.lookForAwaitedRefineWork();
         }.bind(this));
 
         // TASK_CMD_SWEEP
@@ -18503,6 +18559,58 @@ class TaskManager {
         }
 
         return this.work_request;
+    }
+
+    /**
+     * Starts looking for the refine work that stored ore rising from zero
+     * makes available.
+     *
+     * Extracting ore leaves the refine clock alone, so no clock event follows
+     * to start the refineries and only the work list knows. The ore change can
+     * reach the browser before the indexer lists that work, so the lookup is
+     * repeated on the next few blocks until a refine task is running.
+     *
+     * Only refine work is synced. The mine clock moves in the same block as the
+     * ore, and the work record may still carry the old one.
+     */
+    awaitRefineWork() {
+        this.refine_work_lookups_remaining = _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_1__.TASK.REFINE_WORK_LOOKUP_BLOCKS;
+        this.lookForAwaitedRefineWork();
+    }
+
+    /**
+     * @return {Promise<void>}
+     */
+    lookForAwaitedRefineWork() {
+        if (this.refine_work_lookups_remaining <= 0) {
+            return Promise.resolve();
+        }
+
+        if (this.getProcessIdsByType(_constants_TaskTypes__WEBPACK_IMPORTED_MODULE_2__.TASK_TYPES.REFINE).length) {
+            this.refine_work_lookups_remaining = 0;
+            return Promise.resolve();
+        }
+
+        this.refine_work_lookups_remaining--;
+
+        return this.fetchWork()
+            .then((work) => this.startAwaitedRefineWork(work))
+            .catch((error) => {
+                console.warn('[TaskManager] could not look for refine work:', error);
+            });
+    }
+
+    /**
+     * @param {Work[]} work
+     */
+    startAwaitedRefineWork(work) {
+        // A refine task started while the request was out runs on the clock
+        // GRASS reported, which leads the work record.
+        if (this.getProcessIdsByType(_constants_TaskTypes__WEBPACK_IMPORTED_MODULE_2__.TASK_TYPES.REFINE).length) {
+            return;
+        }
+
+        this.syncOreTasks(_constants_TaskTypes__WEBPACK_IMPORTED_MODULE_2__.TASK_TYPES.REFINE, work);
     }
 
     /**

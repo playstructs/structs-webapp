@@ -48,6 +48,9 @@ export class TaskManager {
         /** @type {Object<string, number>} Ore clocks that arrived while the planet was still raided. */
         this.held_ore_clocks = {};
 
+        /** @type {number} Blocks left in which to look for refine work the indexer has yet to list. */
+        this.refine_work_lookups_remaining = 0;
+
         /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
@@ -130,6 +133,17 @@ export class TaskManager {
         // starts, restarts or stops the work of every eligible struct on it.
         window.addEventListener(EVENTS.TASK_CMD_REFRESH_ORE, function (event) {
             this.refreshOreTasks(event.taskType, event.blockStart);
+        }.bind(this));
+
+        // TASK_CMD_AWAIT_REFINE_WORK
+        // Dispatched when the player's stored ore rises from zero, which makes
+        // refining possible again without moving the refine clock.
+        window.addEventListener(EVENTS.TASK_CMD_AWAIT_REFINE_WORK, function (event) {
+            this.awaitRefineWork();
+        }.bind(this));
+
+        window.addEventListener(EVENTS.BLOCK_HEIGHT_CHANGED, function (event) {
+            this.lookForAwaitedRefineWork();
         }.bind(this));
 
         // TASK_CMD_SWEEP
@@ -756,6 +770,58 @@ export class TaskManager {
         }
 
         return this.work_request;
+    }
+
+    /**
+     * Starts looking for the refine work that stored ore rising from zero
+     * makes available.
+     *
+     * Extracting ore leaves the refine clock alone, so no clock event follows
+     * to start the refineries and only the work list knows. The ore change can
+     * reach the browser before the indexer lists that work, so the lookup is
+     * repeated on the next few blocks until a refine task is running.
+     *
+     * Only refine work is synced. The mine clock moves in the same block as the
+     * ore, and the work record may still carry the old one.
+     */
+    awaitRefineWork() {
+        this.refine_work_lookups_remaining = TASK.REFINE_WORK_LOOKUP_BLOCKS;
+        this.lookForAwaitedRefineWork();
+    }
+
+    /**
+     * @return {Promise<void>}
+     */
+    lookForAwaitedRefineWork() {
+        if (this.refine_work_lookups_remaining <= 0) {
+            return Promise.resolve();
+        }
+
+        if (this.getProcessIdsByType(TASK_TYPES.REFINE).length) {
+            this.refine_work_lookups_remaining = 0;
+            return Promise.resolve();
+        }
+
+        this.refine_work_lookups_remaining--;
+
+        return this.fetchWork()
+            .then((work) => this.startAwaitedRefineWork(work))
+            .catch((error) => {
+                console.warn('[TaskManager] could not look for refine work:', error);
+            });
+    }
+
+    /**
+     * @param {Work[]} work
+     */
+    startAwaitedRefineWork(work) {
+        // A refine task started while the request was out runs on the clock
+        // GRASS reported, which leads the work record.
+        if (this.getProcessIdsByType(TASK_TYPES.REFINE).length) {
+            return;
+        }
+
+        this.syncOreTasks(TASK_TYPES.REFINE, work);
     }
 
     /**
