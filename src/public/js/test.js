@@ -937,6 +937,7 @@ const EVENTS = {
   SIGNING_TRANSACTION_SETTLED: 'SIGNING_TRANSACTION_SETTLED',
   STRUCT_COUNT_CHANGED: 'STRUCT_COUNT_CHANGED',
   STRUCT_SELECTION_CHANGED: 'STRUCT_SELECTION_CHANGED',
+  TASK_CMD_AWAIT_REFINE_WORK: 'TASK_CMD_AWAIT_REFINE_WORK',
   TASK_CMD_KILL: 'TASK_CMD_KILL',
   TASK_CMD_MANAGER_PAUSE: 'TASK_CMD_MANAGER_PAUSE',
   TASK_CMD_MANAGER_RESUME: 'TASK_CMD_MANAGER_RESUME',
@@ -1523,6 +1524,7 @@ const TASK = {
   DIFFICULTY_START_SLEEP_DELAY: 10000,
   CHECKPOINT_BLOCK: 10,
   ESTIMATED_BLOCK_TIME: 6000,
+  REFINE_WORK_LOOKUP_BLOCKS: 5,
   HASHRATE_INITIAL_ESTIMATE: 300.0,
   IDENTITY_PREFIX: "IDENTITY",
   NONCE_PREFIX: "NONCE",
@@ -2461,6 +2463,29 @@ class StructSelectionChangedEvent extends CustomEvent {
   constructor(structId = null) {
     super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.STRUCT_SELECTION_CHANGED);
     this.structId = structId;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/events/TaskCmdAwaitRefineWorkEvent.js"
+/*!**************************************************!*\
+  !*** ./js/events/TaskCmdAwaitRefineWorkEvent.js ***!
+  \**************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TaskCmdAwaitRefineWorkEvent: () => (/* binding */ TaskCmdAwaitRefineWorkEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class TaskCmdAwaitRefineWorkEvent extends CustomEvent {
+  constructor() {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_CMD_AWAIT_REFINE_WORK);
   }
 }
 
@@ -4251,6 +4276,83 @@ class GridStructListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
 
 /***/ },
 
+/***/ "./js/grass_listeners/KeyPlayerOreListener.js"
+/*!****************************************************!*\
+  !*** ./js/grass_listeners/KeyPlayerOreListener.js ***!
+  \****************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   KeyPlayerOreListener: () => (/* binding */ KeyPlayerOreListener)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+/* harmony import */ var _util_RaidStatusUtil__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../util/RaidStatusUtil */ "./js/util/RaidStatusUtil.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _events_TaskCmdAwaitRefineWorkEvent__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../events/TaskCmdAwaitRefineWorkEvent */ "./js/events/TaskCmdAwaitRefineWorkEvent.js");
+
+
+
+
+
+class KeyPlayerOreListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+
+  /**
+   * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
+   * @param {string} playerType
+   */
+  constructor(gameState, guildAPI, playerType) {
+    super(`${playerType}_ORE`);
+    this.gameState = gameState;
+    this.guildAPI = guildAPI;
+    this.playerType = playerType;
+    this.raidStatusUtil = new _util_RaidStatusUtil__WEBPACK_IMPORTED_MODULE_1__.RaidStatusUtil();
+  }
+
+  handler(messageData) {
+    if (
+      messageData.category === 'ore'
+      && messageData.subject === `structs.grid.player.${this.gameState.keyPlayers[this.playerType].id}.${this.gameState.keyPlayers[this.playerType].id}`
+    ) {
+      const keyPlayer = this.gameState.keyPlayers[this.playerType];
+      const oreBefore = parseInt(keyPlayer.player?.ore ?? 0);
+
+      keyPlayer.setOre(messageData.value);
+
+      // Refining stops when the ore runs out, and extracting more doesn't move
+      // the refine clock, so nothing else will start the refineries again.
+      if (
+        this.playerType === _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER
+        && oreBefore === 0
+        && keyPlayer.player?.ore > 0
+      ) {
+        window.dispatchEvent(new _events_TaskCmdAwaitRefineWorkEvent__WEBPACK_IMPORTED_MODULE_3__.TaskCmdAwaitRefineWorkEvent());
+      }
+
+      // Update undiscovered ore count too
+      if (this.gameState.keyPlayers[this.playerType].planetUsedForMap) {
+        this.guildAPI.getPlanet(this.gameState.keyPlayers[this.playerType].getPlanetId()).then(planet => {
+          this.gameState.keyPlayers[this.playerType].setPlanet(planet);
+        });
+      }
+    }
+
+    if (
+      this.gameState.keyPlayers[this.playerType].isRaidDependent()
+      && messageData.category === 'raid_status'
+      && messageData.subject === `structs.planet.${this.gameState.getPlanetRaidInfoForKeyPlayer(this.playerType).planet_id}.${this.gameState.keyPlayers[this.playerType].id}`
+      && this.raidStatusUtil.hasRaidEnded(messageData.detail.status)
+    ) {
+      this.shouldUnregister = () => true;
+    }
+  }
+}
+
+
+/***/ },
+
 /***/ "./js/managers/DestroyedStructManager.js"
 /*!***********************************************!*\
   !*** ./js/managers/DestroyedStructManager.js ***!
@@ -5049,6 +5151,9 @@ class TaskManager {
         /** @type {Object<string, number>} Ore clocks that arrived while the planet was still raided. */
         this.held_ore_clocks = {};
 
+        /** @type {number} Blocks left in which to look for refine work the indexer has yet to list. */
+        this.refine_work_lookups_remaining = 0;
+
         /*
             TASK_STATE_CHANGED used to propagate task state throughout. Can be
             used by UI elements for updating progress bars and estimates.
@@ -5131,6 +5236,17 @@ class TaskManager {
         // starts, restarts or stops the work of every eligible struct on it.
         window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_CMD_REFRESH_ORE, function (event) {
             this.refreshOreTasks(event.taskType, event.blockStart);
+        }.bind(this));
+
+        // TASK_CMD_AWAIT_REFINE_WORK
+        // Dispatched when the player's stored ore rises from zero, which makes
+        // refining possible again without moving the refine clock.
+        window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.TASK_CMD_AWAIT_REFINE_WORK, function (event) {
+            this.awaitRefineWork();
+        }.bind(this));
+
+        window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.BLOCK_HEIGHT_CHANGED, function (event) {
+            this.lookForAwaitedRefineWork();
         }.bind(this));
 
         // TASK_CMD_SWEEP
@@ -5757,6 +5873,58 @@ class TaskManager {
         }
 
         return this.work_request;
+    }
+
+    /**
+     * Starts looking for the refine work that stored ore rising from zero
+     * makes available.
+     *
+     * Extracting ore leaves the refine clock alone, so no clock event follows
+     * to start the refineries and only the work list knows. The ore change can
+     * reach the browser before the indexer lists that work, so the lookup is
+     * repeated on the next few blocks until a refine task is running.
+     *
+     * Only refine work is synced. The mine clock moves in the same block as the
+     * ore, and the work record may still carry the old one.
+     */
+    awaitRefineWork() {
+        this.refine_work_lookups_remaining = _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_1__.TASK.REFINE_WORK_LOOKUP_BLOCKS;
+        this.lookForAwaitedRefineWork();
+    }
+
+    /**
+     * @return {Promise<void>}
+     */
+    lookForAwaitedRefineWork() {
+        if (this.refine_work_lookups_remaining <= 0) {
+            return Promise.resolve();
+        }
+
+        if (this.getProcessIdsByType(_constants_TaskTypes__WEBPACK_IMPORTED_MODULE_2__.TASK_TYPES.REFINE).length) {
+            this.refine_work_lookups_remaining = 0;
+            return Promise.resolve();
+        }
+
+        this.refine_work_lookups_remaining--;
+
+        return this.fetchWork()
+            .then((work) => this.startAwaitedRefineWork(work))
+            .catch((error) => {
+                console.warn('[TaskManager] could not look for refine work:', error);
+            });
+    }
+
+    /**
+     * @param {Work[]} work
+     */
+    startAwaitedRefineWork(work) {
+        // A refine task started while the request was out runs on the clock
+        // GRASS reported, which leads the work record.
+        if (this.getProcessIdsByType(_constants_TaskTypes__WEBPACK_IMPORTED_MODULE_2__.TASK_TYPES.REFINE).length) {
+            return;
+        }
+
+        this.syncOreTasks(_constants_TaskTypes__WEBPACK_IMPORTED_MODULE_2__.TASK_TYPES.REFINE, work);
     }
 
     /**
@@ -9351,6 +9519,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
 /* harmony import */ var _models_PlanetRaid__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../models/PlanetRaid */ "./js/models/PlanetRaid.js");
 /* harmony import */ var _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../constants/RaidStatus */ "./js/constants/RaidStatus.js");
+/* harmony import */ var _models_KeyPlayer__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../models/KeyPlayer */ "./js/models/KeyPlayer.js");
+/* harmony import */ var _models_Player__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../models/Player */ "./js/models/Player.js");
+/* harmony import */ var _grass_listeners_KeyPlayerOreListener__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../grass_listeners/KeyPlayerOreListener */ "./js/grass_listeners/KeyPlayerOreListener.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+/* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
+
+
+
+
+
 
 
 
@@ -9437,6 +9615,54 @@ class TaskManagerOreTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MOD
       block_start: block_start,
       difficulty_target: 8
     };
+  }
+
+  /**
+   * Replaces the work request with one that never answers, counting how often
+   * it is asked.
+   *
+   * @param {TaskManager} taskManager
+   */
+  static givenPendingWorkRequests(taskManager) {
+    taskManager.work_requests = 0;
+    taskManager.fetchWork = function () {
+      this.work_requests++;
+      return new Promise(() => {});
+    }.bind(taskManager);
+  }
+
+  /**
+   * Delivers a GRASS ore update for a key player holding the given ore, and
+   * collects what the listener dispatched instead of broadcasting it to every
+   * task manager the other tests have left listening.
+   *
+   * @param {string} playerType
+   * @param {number|string|null} oreBefore
+   * @param {number} oreAfter
+   * @return {string[]} the dispatched event types
+   */
+  static whenOreChanges(playerType, oreBefore, oreAfter) {
+    const keyPlayer = new _models_KeyPlayer__WEBPACK_IMPORTED_MODULE_7__.KeyPlayer(playerType, false);
+    keyPlayer.id = '1-1';
+    keyPlayer.player = new _models_Player__WEBPACK_IMPORTED_MODULE_8__.Player();
+    keyPlayer.player.ore = oreBefore;
+
+    const listener = new _grass_listeners_KeyPlayerOreListener__WEBPACK_IMPORTED_MODULE_9__.KeyPlayerOreListener({keyPlayers: {[playerType]: keyPlayer}}, {}, playerType);
+
+    const dispatched = [];
+    const dispatchEvent = window.dispatchEvent;
+    window.dispatchEvent = (event) => {
+      dispatched.push(event.type);
+      return true;
+    };
+
+    try {
+      listener.handler({category: 'ore', subject: 'structs.grid.player.1-1.1-1', value: oreAfter});
+    } finally {
+      window.dispatchEvent = dispatchEvent;
+    }
+
+    return dispatched;
   }
 
   // The clock on the event leads the work record, which the indexer may not
@@ -9612,6 +9838,95 @@ class TaskManagerOreTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MOD
 
     this.assertEquals(taskManager.consumeHeldOreClock(_constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.REFINE), 1600);
     this.assertEquals(taskManager.consumeHeldOreClock(_constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.MINE), 1500);
+  });
+
+  // The regression: the refinery ran the player out of ore and stopped, and an
+  // extractor finishing later left the refine clock alone, so nothing started
+  // it again until the page was reloaded.
+  oreArrivingWithNoneStoredAwaitsRefineWorkTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('oreArrivingWithNoneStoredAwaitsRefineWorkTest', function(params) {
+    const dispatched = TaskManagerOreTest.whenOreChanges(params.playerType, params.oreBefore, params.oreAfter);
+
+    this.assertEquals(dispatched.includes(_constants_Events__WEBPACK_IMPORTED_MODULE_10__.EVENTS.TASK_CMD_AWAIT_REFINE_WORK), params.awaitsRefineWork);
+  }, function() {
+    return [
+      {playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER, oreBefore: 0, oreAfter: 1, awaitsRefineWork: true},
+      {playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER, oreBefore: '0', oreAfter: 1, awaitsRefineWork: true},
+      // A refinery that already had ore to work on is still running.
+      {playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER, oreBefore: 1, oreAfter: 2, awaitsRefineWork: false},
+      {playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER, oreBefore: 1, oreAfter: 0, awaitsRefineWork: false},
+      // Only the player's own refineries are worked on here.
+      {playerType: _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY, oreBefore: 0, oreAfter: 1, awaitsRefineWork: false}
+    ];
+  });
+
+  // The ore update can land before the indexer lists the refinery, so the
+  // lookup carries on over the next few blocks, and no further.
+  refineWorkLookupRetriesOnLaterBlocksTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('refineWorkLookupRetriesOnLaterBlocksTest', function() {
+    const taskManager = TaskManagerOreTest.makeTaskManager();
+    TaskManagerOreTest.givenPendingWorkRequests(taskManager);
+
+    taskManager.awaitRefineWork();
+    this.assertEquals(taskManager.work_requests, 1);
+
+    for (let block = 0; block < _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_11__.TASK.REFINE_WORK_LOOKUP_BLOCKS + 3; block++) {
+      taskManager.lookForAwaitedRefineWork();
+    }
+
+    this.assertEquals(taskManager.work_requests, _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_11__.TASK.REFINE_WORK_LOOKUP_BLOCKS);
+  });
+
+  refineWorkLookupStopsOnceRefiningTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('refineWorkLookupStopsOnceRefiningTest', function() {
+    const taskManager = TaskManagerOreTest.makeTaskManager();
+    TaskManagerOreTest.givenPendingWorkRequests(taskManager);
+
+    taskManager.awaitRefineWork();
+    TaskManagerOreTest.givenRunningTask(taskManager, '5-3', _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.REFINE, 900);
+    taskManager.lookForAwaitedRefineWork();
+    taskManager.lookForAwaitedRefineWork();
+
+    this.assertEquals(taskManager.work_requests, 1);
+    this.assertEquals(taskManager.refine_work_lookups_remaining, 0);
+  });
+
+  // Mining left the refine clock where it was, so the work record's copy is
+  // current. The mine clock moved in the same block and the work record may
+  // still carry the old one, so mining is left to its own clock event.
+  awaitedRefineWorkStartsOnlyTheRefineryTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('awaitedRefineWorkStartsOnlyTheRefineryTest', function() {
+    const taskManager = TaskManagerOreTest.makeTaskManager();
+    TaskManagerOreTest.givenRunningTask(taskManager, '5-1', _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.MINE, 1500);
+
+    const work = [
+      TaskManagerOreTest.makeWork('5-1', _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.MINE, 1400),
+      TaskManagerOreTest.makeWork('5-3', _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.REFINE, 900)
+    ];
+
+    taskManager.startAwaitedRefineWork(work);
+
+    this.assertEquals(taskManager.spawned.length, 1);
+    this.assertEquals(taskManager.spawned[0].object_id, '5-3');
+    this.assertEquals(taskManager.spawned[0].task_type, _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.REFINE);
+    this.assertEquals(taskManager.spawned[0].block_start, 900);
+    this.assertEquals(taskManager.terminated.length, 0);
+  });
+
+  awaitedRefineWorkNotYetListedStartsNothingTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('awaitedRefineWorkNotYetListedStartsNothingTest', function() {
+    const taskManager = TaskManagerOreTest.makeTaskManager();
+
+    taskManager.startAwaitedRefineWork([TaskManagerOreTest.makeWork('5-1', _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.MINE, 1400)]);
+
+    this.assertEquals(taskManager.spawned.length, 0);
+  });
+
+  // A refine clock event can start the refinery while the lookup is out, on a
+  // clock that leads the work record the lookup comes back with.
+  awaitedRefineWorkLeavesAStartedRefineryAloneTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('awaitedRefineWorkLeavesAStartedRefineryAloneTest', function() {
+    const taskManager = TaskManagerOreTest.makeTaskManager();
+    TaskManagerOreTest.givenRunningTask(taskManager, '5-3', _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.REFINE, 1600);
+
+    taskManager.startAwaitedRefineWork([TaskManagerOreTest.makeWork('5-3', _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.REFINE, 900)]);
+
+    this.assertEquals(taskManager.spawned.length, 0);
+    this.assertEquals(taskManager.terminated.length, 0);
   });
 }
 
@@ -10032,6 +10347,54 @@ class NumberFormatter {
   }
 }
 
+
+/***/ },
+
+/***/ "./js/util/RaidStatusUtil.js"
+/*!***********************************!*\
+  !*** ./js/util/RaidStatusUtil.js ***!
+  \***********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RaidStatusUtil: () => (/* binding */ RaidStatusUtil)
+/* harmony export */ });
+/* harmony import */ var _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/RaidStatus */ "./js/constants/RaidStatus.js");
+
+
+class RaidStatusUtil {
+
+  /**
+   * @param {string} raidStatus
+   * @return {boolean}
+   */
+  hasRaidEnded(raidStatus) {
+    return (
+      raidStatus === _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_0__.RAID_STATUS.ATTACKER_DEFEATED
+      || raidStatus === _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_0__.RAID_STATUS.RAID_SUCCESSFUL
+      || raidStatus === _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_0__.RAID_STATUS.DEMILITARIZED
+      || raidStatus === _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_0__.RAID_STATUS.ATTACKER_RETREATED
+    );
+  }
+
+  /**
+   * @param {string} raidStatus
+   * @return {boolean}
+   */
+  isAttackerDefeated(raidStatus) {
+    return raidStatus === _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_0__.RAID_STATUS.ATTACKER_DEFEATED;
+  }
+
+  /**
+   * @param {string} raidStatus
+   * @return {boolean}
+   */
+  isRaidSuccessful(raidStatus) {
+    return raidStatus === _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_0__.RAID_STATUS.RAID_SUCCESSFUL;
+  }
+}
 
 /***/ },
 
