@@ -185,22 +185,47 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       }
     });
 
-    const undiscoveredOreContainer = document.getElementById(this.undiscoveredOreContainerId);
-    if (undiscoveredOreContainer) {
-      window.addEventListener(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, (event) => {
-        if (event.playerType === this.playerType) {
-          undiscoveredOreContainer.innerHTML = this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore;
-        }
-      });
+    // The ore counts only exist while an extractor or refinery is selected, and
+    // every selection draws them afresh, so they are looked up as they change.
+    window.addEventListener(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, (event) => {
+      if (event.playerType === this.playerType) {
+        this.updatePropertyIconValue(
+          this.undiscoveredOreContainerId,
+          'undiscoveredOre',
+          this.gameState.keyPlayers[this.playerType].planet?.undiscovered_ore
+        );
+      }
+    });
+
+    window.addEventListener(EVENTS.ORE_COUNT_CHANGED, (event) => {
+      if (event.playerType === this.playerType) {
+        this.updatePropertyIconValue(
+          this.oreReadyContainerId,
+          'oreReady',
+          this.gameState.keyPlayers[this.playerType].player?.ore
+        );
+      }
+    });
+  }
+
+  /**
+   * Update a property icon's value without re-rendering the entire action bar.
+   *
+   * @param {string} valueContainerId
+   * @param {string} datasetKey The icon's data attribute its cheatsheet reads the value from.
+   * @param {number|string} value
+   */
+  updatePropertyIconValue(valueContainerId, datasetKey, value) {
+    const valueContainer = document.getElementById(valueContainerId);
+    if (!valueContainer) {
+      return;
     }
 
-    const oreReadyContainer = document.getElementById(this.oreReadyContainerId);
-    if (oreReadyContainer) {
-      window.addEventListener(EVENTS.ORE_COUNT_CHANGED, (event) => {
-        if (event.playerType === this.playerType) {
-          oreReadyContainer.innerHTML = this.gameState.keyPlayers[this.playerType].player.ore;
-        }
-      });
+    valueContainer.innerHTML = value;
+
+    const icon = valueContainer.closest('[data-sui-cheatsheet]');
+    if (icon) {
+      icon.dataset[datasetKey] = value;
     }
   }
 

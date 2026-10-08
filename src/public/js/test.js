@@ -9021,6 +9021,162 @@ class AbandonedPlanetaryStructTest extends _framework_DTestFramework__WEBPACK_IM
 
 /***/ },
 
+/***/ "./js/tests/ActionBarOreCountTest.js"
+/*!*******************************************!*\
+  !*** ./js/tests/ActionBarOreCountTest.js ***!
+  \*******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ActionBarOreCountTest: () => (/* binding */ ActionBarOreCountTest)
+/* harmony export */ });
+/* harmony import */ var _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/DTestFramework */ "./js/framework/DTestFramework.js");
+/* harmony import */ var _view_models_components_hud_ActionBarComponent__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../view_models/components/hud/ActionBarComponent */ "./js/view_models/components/hud/ActionBarComponent.js");
+/* harmony import */ var _models_KeyPlayer__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../models/KeyPlayer */ "./js/models/KeyPlayer.js");
+/* harmony import */ var _models_Player__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../models/Player */ "./js/models/Player.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+
+
+
+
+
+
+/**
+ * Covers the ore counts on the action bar of a selected extractor or refinery.
+ *
+ * The action bar is set up once when the page loads, before anything is
+ * selected, and the counts are only drawn once a struct is. The regression these
+ * tests exist for is that the count listeners were only registered if a count
+ * was already on the page at setup, so they never were, and a selected refinery
+ * kept showing the ore it started with until it was selected again.
+ */
+class ActionBarOreCountTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTestSuite {
+
+  constructor() {
+    super('ActionBarOreCountTest');
+  }
+
+  /**
+   * Stands up the action bar the way the HUD does on page load, when the only
+   * element it reaches for is the portrait.
+   *
+   * @param {string} playerType
+   * @return {{elements: Object<string, object>, keyPlayer: KeyPlayer, actionBar: ActionBarComponent}}
+   */
+  static givenActionBarSetUpOnPageLoad(playerType) {
+    const elements = {
+      [`${playerType}-action-bar-portrait`]: {addEventListener: () => {}}
+    };
+
+    __webpack_require__.g.document = {
+      getElementById: (id) => elements[id] ?? null
+    };
+
+    const keyPlayer = new _models_KeyPlayer__WEBPACK_IMPORTED_MODULE_2__.KeyPlayer(playerType, false);
+    keyPlayer.player = new _models_Player__WEBPACK_IMPORTED_MODULE_3__.Player();
+    keyPlayer.player.ore = 2;
+    keyPlayer.planet = {undiscovered_ore: 10};
+
+    const actionBar = new _view_models_components_hud_ActionBarComponent__WEBPACK_IMPORTED_MODULE_1__.ActionBarComponent(
+      {keyPlayers: {[playerType]: keyPlayer}},
+      null,
+      null,
+      null,
+      null,
+      null,
+      playerType,
+      'left',
+      `${playerType}-action-bar`
+    );
+    actionBar.initPageCode();
+
+    return {elements: elements, keyPlayer: keyPlayer, actionBar: actionBar};
+  }
+
+  /**
+   * Draws a property icon and its value, as selecting a struct does.
+   *
+   * @param {Object<string, object>} elements
+   * @param {string} valueContainerId
+   * @param {string} datasetKey
+   * @param {number} value
+   * @return {{icon: object, valueContainer: object}}
+   */
+  static whenPropertyIconIsDrawn(elements, valueContainerId, datasetKey, value) {
+    const icon = {dataset: {suiCheatsheet: 'icon', [datasetKey]: `${value}`}};
+    const valueContainer = {
+      innerHTML: `${value}`,
+      closest: (selector) => selector === '[data-sui-cheatsheet]' ? icon : null
+    };
+    elements[valueContainerId] = valueContainer;
+
+    return {icon: icon, valueContainer: valueContainer};
+  }
+
+  refinedOreUpdatesTheSelectedRefineryTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('refinedOreUpdatesTheSelectedRefineryTest', function() {
+    const {elements, keyPlayer, actionBar} = ActionBarOreCountTest.givenActionBarSetUpOnPageLoad(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER);
+    const {icon, valueContainer} = ActionBarOreCountTest.whenPropertyIconIsDrawn(
+      elements,
+      actionBar.oreReadyContainerId,
+      'oreReady',
+      2
+    );
+
+    keyPlayer.setOre(1);
+
+    this.assertEquals(`${valueContainer.innerHTML}`, '1');
+    // The cheatsheet reads the count off the icon rather than the value shown.
+    this.assertEquals(`${icon.dataset.oreReady}`, '1');
+  });
+
+  minedOreUpdatesTheSelectedExtractorTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('minedOreUpdatesTheSelectedExtractorTest', function() {
+    const {elements, keyPlayer, actionBar} = ActionBarOreCountTest.givenActionBarSetUpOnPageLoad(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER);
+    const {icon, valueContainer} = ActionBarOreCountTest.whenPropertyIconIsDrawn(
+      elements,
+      actionBar.undiscoveredOreContainerId,
+      'undiscoveredOre',
+      10
+    );
+
+    keyPlayer.setPlanet({undiscovered_ore: 9});
+
+    this.assertEquals(`${valueContainer.innerHTML}`, '9');
+    this.assertEquals(`${icon.dataset.undiscoveredOre}`, '9');
+  });
+
+  // Nothing is selected, so there is nothing to update.
+  oreChangeWithNothingSelectedIsHarmlessTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('oreChangeWithNothingSelectedIsHarmlessTest', function() {
+    const {keyPlayer} = ActionBarOreCountTest.givenActionBarSetUpOnPageLoad(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER);
+
+    keyPlayer.setOre(1);
+
+    this.assertEquals(keyPlayer.player.ore, 1);
+  });
+
+  // Each key player has its own action bar, drawn with its own ids.
+  anotherPlayersOreLeavesTheCountAloneTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('anotherPlayersOreLeavesTheCountAloneTest', function() {
+    const {elements, actionBar} = ActionBarOreCountTest.givenActionBarSetUpOnPageLoad(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER);
+    const {valueContainer} = ActionBarOreCountTest.whenPropertyIconIsDrawn(
+      elements,
+      actionBar.oreReadyContainerId,
+      'oreReady',
+      2
+    );
+
+    const raidEnemy = new _models_KeyPlayer__WEBPACK_IMPORTED_MODULE_2__.KeyPlayer(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY, false);
+    raidEnemy.player = new _models_Player__WEBPACK_IMPORTED_MODULE_3__.Player();
+    raidEnemy.player.ore = 5;
+    raidEnemy.setOre(4);
+
+    this.assertEquals(`${valueContainer.innerHTML}`, '2');
+  });
+}
+
+
+/***/ },
+
 /***/ "./js/tests/NumberFormatterTest.js"
 /*!*****************************************!*\
   !*** ./js/tests/NumberFormatterTest.js ***!
@@ -11822,22 +11978,47 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
       }
     });
 
-    const undiscoveredOreContainer = document.getElementById(this.undiscoveredOreContainerId);
-    if (undiscoveredOreContainer) {
-      window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, (event) => {
-        if (event.playerType === this.playerType) {
-          undiscoveredOreContainer.innerHTML = this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore;
-        }
-      });
+    // The ore counts only exist while an extractor or refinery is selected, and
+    // every selection draws them afresh, so they are looked up as they change.
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, (event) => {
+      if (event.playerType === this.playerType) {
+        this.updatePropertyIconValue(
+          this.undiscoveredOreContainerId,
+          'undiscoveredOre',
+          this.gameState.keyPlayers[this.playerType].planet?.undiscovered_ore
+        );
+      }
+    });
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ORE_COUNT_CHANGED, (event) => {
+      if (event.playerType === this.playerType) {
+        this.updatePropertyIconValue(
+          this.oreReadyContainerId,
+          'oreReady',
+          this.gameState.keyPlayers[this.playerType].player?.ore
+        );
+      }
+    });
+  }
+
+  /**
+   * Update a property icon's value without re-rendering the entire action bar.
+   *
+   * @param {string} valueContainerId
+   * @param {string} datasetKey The icon's data attribute its cheatsheet reads the value from.
+   * @param {number|string} value
+   */
+  updatePropertyIconValue(valueContainerId, datasetKey, value) {
+    const valueContainer = document.getElementById(valueContainerId);
+    if (!valueContainer) {
+      return;
     }
 
-    const oreReadyContainer = document.getElementById(this.oreReadyContainerId);
-    if (oreReadyContainer) {
-      window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_1__.EVENTS.ORE_COUNT_CHANGED, (event) => {
-        if (event.playerType === this.playerType) {
-          oreReadyContainer.innerHTML = this.gameState.keyPlayers[this.playerType].player.ore;
-        }
-      });
+    valueContainer.innerHTML = value;
+
+    const icon = valueContainer.closest('[data-sui-cheatsheet]');
+    if (icon) {
+      icon.dataset[datasetKey] = value;
     }
   }
 
@@ -14966,6 +15147,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _TaskManagerOreTest__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./TaskManagerOreTest */ "./js/tests/TaskManagerOreTest.js");
 /* harmony import */ var _ShieldStatusTest__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./ShieldStatusTest */ "./js/tests/ShieldStatusTest.js");
 /* harmony import */ var _AbandonedPlanetaryStructTest__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./AbandonedPlanetaryStructTest */ "./js/tests/AbandonedPlanetaryStructTest.js");
+/* harmony import */ var _ActionBarOreCountTest__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./ActionBarOreCountTest */ "./js/tests/ActionBarOreCountTest.js");
+
 
 
 
@@ -14977,6 +15160,7 @@ __webpack_require__.r(__webpack_exports__);
 (new _TaskManagerOreTest__WEBPACK_IMPORTED_MODULE_2__.TaskManagerOreTest()).run();
 (new _ShieldStatusTest__WEBPACK_IMPORTED_MODULE_3__.ShieldStatusTest()).run();
 (new _AbandonedPlanetaryStructTest__WEBPACK_IMPORTED_MODULE_4__.AbandonedPlanetaryStructTest()).run();
+(new _ActionBarOreCountTest__WEBPACK_IMPORTED_MODULE_5__.ActionBarOreCountTest()).run();
 
 })();
 
