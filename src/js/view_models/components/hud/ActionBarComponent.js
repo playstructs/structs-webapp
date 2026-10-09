@@ -839,6 +839,17 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * @return {string}
+   */
+  buildRaidedPropertyIcon() {
+    return `
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-attention-12">
+        <i class="sui-icon-md icon-attention-12"></i>
+      </a>
+    `;
+  }
+
+  /**
    * @param {Struct} struct
    * @param {StructType} structType
    * @return {string[]}
@@ -856,7 +867,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       </a> 
     `);
 
-    if (struct.isOnline()) {
+    if (this.structManager.isOreWorkHaltedByRaid(struct)) {
+      icons.push(this.buildRaidedPropertyIcon());
+    } else if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
       const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
 
@@ -888,7 +901,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       </a> 
     `);
 
-    if (struct.isOnline()) {
+    if (this.structManager.isOreWorkHaltedByRaid(struct)) {
+      icons.push(this.buildRaidedPropertyIcon());
+    } else if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
       const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
 

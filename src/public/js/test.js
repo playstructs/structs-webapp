@@ -4617,6 +4617,40 @@ class StructManager {
   }
 
   /**
+   * @param {string|null} planetId
+   * @return {boolean}
+   */
+  isPlanetRaided(planetId) {
+    if (!planetId) {
+      return false;
+    }
+    return Object.values(this.gameState.keyPlayers).some(keyPlayer =>
+      keyPlayer.planetRaidInfo.planet_id === planetId
+      && keyPlayer.planetRaidInfo.isRaidActive()
+    );
+  }
+
+  /**
+   * The chain refuses mining and refining while a raider is on the planet, so
+   * a standing extractor or refinery there sits idle until the raid ends.
+   *
+   * @param {Struct} struct
+   * @return {boolean}
+   */
+  isOreWorkHaltedByRaid(struct) {
+    if (!struct || struct.isDestroyed() || !struct.isBuilt() || struct.location_type !== 'planet') {
+      return false;
+    }
+
+    const structType = this.gameState.structTypes.getStructTypeById(struct.type);
+    if (!structType || (!structType.hasPlanetaryMining() && !structType.hasPlanetaryRefinery())) {
+      return false;
+    }
+
+    return this.isPlanetRaided(struct.location_id);
+  }
+
+  /**
    * Whether the struct is a planetary struct left behind on a planet its owner
    * has since moved away from.
    *
@@ -9376,6 +9410,174 @@ class PermissionManagerTest extends _framework_DTestFramework__WEBPACK_IMPORTED_
 
 /***/ },
 
+/***/ "./js/tests/RaidedOreStructTest.js"
+/*!*****************************************!*\
+  !*** ./js/tests/RaidedOreStructTest.js ***!
+  \*****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RaidedOreStructTest: () => (/* binding */ RaidedOreStructTest)
+/* harmony export */ });
+/* harmony import */ var _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/DTestFramework */ "./js/framework/DTestFramework.js");
+/* harmony import */ var _managers_StructManager__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../managers/StructManager */ "./js/managers/StructManager.js");
+/* harmony import */ var _models_KeyPlayer__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../models/KeyPlayer */ "./js/models/KeyPlayer.js");
+/* harmony import */ var _models_Struct__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../models/Struct */ "./js/models/Struct.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../constants/RaidStatus */ "./js/constants/RaidStatus.js");
+/* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../constants/MapConstants */ "./js/constants/MapConstants.js");
+/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../constants/StructConstants */ "./js/constants/StructConstants.js");
+
+
+
+
+
+
+
+
+
+/**
+ * Covers extractors and refineries on a planet under raid. The chain refuses
+ * mining and refining while a raider is on the planet, so the map and action
+ * bar flag those structs and their active loop is held until the raid ends.
+ */
+class RaidedOreStructTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTestSuite {
+
+  static HOME_PLANET_ID = '2-1';
+  static ENEMY_PLANET_ID = '2-2';
+
+  constructor() {
+    super('RaidedOreStructTest');
+  }
+
+  /**
+   * @param {{isExtractor?: boolean, isRefinery?: boolean}} structTypeFlags
+   * @return {object}
+   */
+  static givenGameState({isExtractor = true, isRefinery = false} = {}) {
+    const keyPlayers = {};
+
+    Object.values(_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES).forEach(playerType => {
+      keyPlayers[playerType] = new _models_KeyPlayer__WEBPACK_IMPORTED_MODULE_2__.KeyPlayer(playerType, true, _constants_MapConstants__WEBPACK_IMPORTED_MODULE_6__.MAP_TYPES.ALPHA_BASE);
+    });
+
+    return {
+      keyPlayers: keyPlayers,
+      structTypes: {
+        getStructTypeById: () => ({
+          hasPlanetaryMining: () => isExtractor,
+          hasPlanetaryRefinery: () => isRefinery
+        })
+      }
+    };
+  }
+
+  /**
+   * @param {object} gameState
+   * @param {string} playerType
+   * @param {string} planetId
+   * @param {string} status
+   */
+  static givenRaid(gameState, playerType, planetId, status) {
+    gameState.keyPlayers[playerType].planetRaidInfo.planet_id = planetId;
+    gameState.keyPlayers[playerType].planetRaidInfo.status = status;
+  }
+
+  /**
+   * @param {string} planetId
+   * @param {number} status
+   * @return {Struct}
+   */
+  static makePlanetaryStruct(planetId, status = _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_STATUS_FLAGS.BUILT | _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_STATUS_FLAGS.ONLINE) {
+    const struct = new _models_Struct__WEBPACK_IMPORTED_MODULE_3__.Struct();
+    struct.id = '5-1';
+    struct.location_type = 'planet';
+    struct.location_id = planetId;
+    struct.status = status;
+    struct.destroyed_block = (status & _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_STATUS_FLAGS.DESTROYED) ? 1 : 0;
+    return struct;
+  }
+
+  extractorOnRaidedHomePlanetIsHaltedTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('extractorOnRaidedHomePlanetIsHaltedTest', function() {
+    const gameState = RaidedOreStructTest.givenGameState();
+    RaidedOreStructTest.givenRaid(gameState, _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER, RaidedOreStructTest.HOME_PLANET_ID, _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_5__.RAID_STATUS.ONGOING);
+    const structManager = new _managers_StructManager__WEBPACK_IMPORTED_MODULE_1__.StructManager(gameState, null, null);
+
+    this.assertEquals(
+      structManager.isOreWorkHaltedByRaid(RaidedOreStructTest.makePlanetaryStruct(RaidedOreStructTest.HOME_PLANET_ID)),
+      true
+    );
+  });
+
+  refineryOnPlanetThePlayerRaidsIsHaltedTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('refineryOnPlanetThePlayerRaidsIsHaltedTest', function() {
+    const gameState = RaidedOreStructTest.givenGameState({isExtractor: false, isRefinery: true});
+    RaidedOreStructTest.givenRaid(gameState, _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.RAID_ENEMY, RaidedOreStructTest.ENEMY_PLANET_ID, _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_5__.RAID_STATUS.SHIELDS_VULNERABLE);
+    const structManager = new _managers_StructManager__WEBPACK_IMPORTED_MODULE_1__.StructManager(gameState, null, null);
+
+    this.assertEquals(
+      structManager.isOreWorkHaltedByRaid(RaidedOreStructTest.makePlanetaryStruct(RaidedOreStructTest.ENEMY_PLANET_ID)),
+      true
+    );
+  });
+
+  // Once the raid is over the active loop resumes.
+  extractorAfterRaidEndsIsNotHaltedTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('extractorAfterRaidEndsIsNotHaltedTest', function() {
+    const gameState = RaidedOreStructTest.givenGameState();
+    RaidedOreStructTest.givenRaid(gameState, _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER, RaidedOreStructTest.HOME_PLANET_ID, _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_5__.RAID_STATUS.ATTACKER_DEFEATED);
+    const structManager = new _managers_StructManager__WEBPACK_IMPORTED_MODULE_1__.StructManager(gameState, null, null);
+
+    this.assertEquals(
+      structManager.isOreWorkHaltedByRaid(RaidedOreStructTest.makePlanetaryStruct(RaidedOreStructTest.HOME_PLANET_ID)),
+      false
+    );
+  });
+
+  extractorOnAnotherPlanetIsNotHaltedTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('extractorOnAnotherPlanetIsNotHaltedTest', function() {
+    const gameState = RaidedOreStructTest.givenGameState();
+    RaidedOreStructTest.givenRaid(gameState, _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER, RaidedOreStructTest.HOME_PLANET_ID, _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_5__.RAID_STATUS.ONGOING);
+    const structManager = new _managers_StructManager__WEBPACK_IMPORTED_MODULE_1__.StructManager(gameState, null, null);
+
+    this.assertEquals(
+      structManager.isOreWorkHaltedByRaid(RaidedOreStructTest.makePlanetaryStruct(RaidedOreStructTest.ENEMY_PLANET_ID)),
+      false
+    );
+  });
+
+  nonOreStructOnRaidedPlanetIsNotHaltedTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('nonOreStructOnRaidedPlanetIsNotHaltedTest', function() {
+    const gameState = RaidedOreStructTest.givenGameState({isExtractor: false, isRefinery: false});
+    RaidedOreStructTest.givenRaid(gameState, _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER, RaidedOreStructTest.HOME_PLANET_ID, _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_5__.RAID_STATUS.ONGOING);
+    const structManager = new _managers_StructManager__WEBPACK_IMPORTED_MODULE_1__.StructManager(gameState, null, null);
+
+    this.assertEquals(
+      structManager.isOreWorkHaltedByRaid(RaidedOreStructTest.makePlanetaryStruct(RaidedOreStructTest.HOME_PLANET_ID)),
+      false
+    );
+  });
+
+  destroyedOrUnbuiltExtractorIsNotHaltedTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('destroyedOrUnbuiltExtractorIsNotHaltedTest', function() {
+    const gameState = RaidedOreStructTest.givenGameState();
+    RaidedOreStructTest.givenRaid(gameState, _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_4__.PLAYER_TYPES.PLAYER, RaidedOreStructTest.HOME_PLANET_ID, _constants_RaidStatus__WEBPACK_IMPORTED_MODULE_5__.RAID_STATUS.ONGOING);
+    const structManager = new _managers_StructManager__WEBPACK_IMPORTED_MODULE_1__.StructManager(gameState, null, null);
+
+    this.assertEquals(
+      structManager.isOreWorkHaltedByRaid(RaidedOreStructTest.makePlanetaryStruct(
+        RaidedOreStructTest.HOME_PLANET_ID,
+        _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_STATUS_FLAGS.BUILT | _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_STATUS_FLAGS.DESTROYED
+      )),
+      false
+    );
+    this.assertEquals(
+      structManager.isOreWorkHaltedByRaid(RaidedOreStructTest.makePlanetaryStruct(RaidedOreStructTest.HOME_PLANET_ID, 0)),
+      false
+    );
+  });
+}
+
+
+/***/ },
+
 /***/ "./js/tests/ShieldStatusTest.js"
 /*!**************************************!*\
   !*** ./js/tests/ShieldStatusTest.js ***!
@@ -10782,6 +10984,13 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
     // so the action bar has to be rebuilt. Skip while an action is in flight so
     // an in-progress targeting mode is not torn down underneath the player.
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_5__.EVENTS.ENERGY_USAGE_CHANGED, () => {
+      if (!HUDViewModel.gameState.actionBarLock.getCurrentAction()) {
+        HUDViewModel.refreshActionBar();
+      }
+    });
+
+    // A raid starting or ending halts or resumes extractors and refineries.
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_5__.EVENTS.PLANET_RAID_STATUS_CHANGED, () => {
       if (!HUDViewModel.gameState.actionBarLock.getCurrentAction()) {
         HUDViewModel.refreshActionBar();
       }
@@ -12632,6 +12841,17 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
   }
 
   /**
+   * @return {string}
+   */
+  buildRaidedPropertyIcon() {
+    return `
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-attention-12">
+        <i class="sui-icon-md icon-attention-12"></i>
+      </a>
+    `;
+  }
+
+  /**
    * @param {Struct} struct
    * @param {StructType} structType
    * @return {string[]}
@@ -12649,7 +12869,9 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
       </a> 
     `);
 
-    if (struct.isOnline()) {
+    if (this.structManager.isOreWorkHaltedByRaid(struct)) {
+      icons.push(this.buildRaidedPropertyIcon());
+    } else if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
       const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
 
@@ -12681,7 +12903,9 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
       </a> 
     `);
 
-    if (struct.isOnline()) {
+    if (this.structManager.isOreWorkHaltedByRaid(struct)) {
+      icons.push(this.buildRaidedPropertyIcon());
+    } else if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
       const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
 
@@ -15148,6 +15372,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _ShieldStatusTest__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./ShieldStatusTest */ "./js/tests/ShieldStatusTest.js");
 /* harmony import */ var _AbandonedPlanetaryStructTest__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./AbandonedPlanetaryStructTest */ "./js/tests/AbandonedPlanetaryStructTest.js");
 /* harmony import */ var _ActionBarOreCountTest__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./ActionBarOreCountTest */ "./js/tests/ActionBarOreCountTest.js");
+/* harmony import */ var _RaidedOreStructTest__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./RaidedOreStructTest */ "./js/tests/RaidedOreStructTest.js");
+
 
 
 
@@ -15161,6 +15387,7 @@ __webpack_require__.r(__webpack_exports__);
 (new _ShieldStatusTest__WEBPACK_IMPORTED_MODULE_3__.ShieldStatusTest()).run();
 (new _AbandonedPlanetaryStructTest__WEBPACK_IMPORTED_MODULE_4__.AbandonedPlanetaryStructTest()).run();
 (new _ActionBarOreCountTest__WEBPACK_IMPORTED_MODULE_5__.ActionBarOreCountTest()).run();
+(new _RaidedOreStructTest__WEBPACK_IMPORTED_MODULE_6__.RaidedOreStructTest()).run();
 
 })();
 

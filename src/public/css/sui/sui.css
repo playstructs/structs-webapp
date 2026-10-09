@@ -398,6 +398,13 @@ i.sui-icon-attacker {
   background-image: url("/img/sui/icon/icon-attacker.png");
 }
 
+i.sui-icon-attention {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+
+  background-image: url("/img/sui/icon/icon-attention.png");
+}
+
 i.sui-icon-counter-attack {
   width: var(--icon-lg);
   height: var(--icon-lg);

@@ -266,6 +266,16 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderIndicatorIsRaided(struct) {
+    return this.structManager.isOreWorkHaltedByRaid(struct)
+      ? `<i class="sui-icon sui-icon-sm sui-icon-attention"></i>`
+      : '';
+  }
+
+  /**
    * Get the currently selected struct for this map.
    *
    * @return {Struct|null}
@@ -287,11 +297,11 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   /**
    * @param {Struct} struct
    * @param {Struct|null} selectedStruct
-   * @return {{isDestroyed: boolean, isOffline: boolean, isOverloaded: boolean, isDefended: boolean, isDefending: boolean}}
+   * @return {{isDestroyed: boolean, isOffline: boolean, isOverloaded: boolean, isRaided: boolean, isDefended: boolean, isDefending: boolean}}
    */
   getVisibleStatusIndicators(struct, selectedStruct) {
     if (!selectedStruct || struct.id === selectedStruct.id) {
-      return {isDestroyed: true, isOffline: true, isOverloaded: true, isDefended: true, isDefending: true};
+      return {isDestroyed: true, isOffline: true, isOverloaded: true, isRaided: true, isDefended: true, isDefending: true};
     }
 
     const defendingStructIds = selectedStruct.defending_struct_ids || [];
@@ -300,6 +310,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
       isDestroyed: false,
       isOffline: false,
       isOverloaded: false,
+      isRaided: false,
       isDefended: struct.id === selectedStruct.protected_struct_id,
       isDefending: defendingStructIds.includes(struct.id)
     };
@@ -317,6 +328,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
       ${visible.isDestroyed ? this.renderIndicatorIsDestroyed(struct) : ''}
       ${visible.isOffline ? this.renderIndicatorIsOffline(struct) : ''}
       ${visible.isOverloaded ? this.renderIndicatorIsOverloaded(struct) : ''}
+      ${visible.isRaided ? this.renderIndicatorIsRaided(struct) : ''}
       ${visible.isDefended ? this.renderIndicatorIsDefended(struct) : ''}
       ${visible.isDefending ? this.renderIndicatorIsDefending(struct) : ''}
     `;
@@ -517,6 +529,10 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
     // player's structs at once, so refresh the whole map rather than waiting
     // for each struct to be re-rendered individually.
     this.addWindowEventListener(EVENTS.ENERGY_USAGE_CHANGED, () => {
+      this.refreshAllStatusIndicators();
+    });
+
+    this.addWindowEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, () => {
       this.refreshAllStatusIndicators();
     });
 

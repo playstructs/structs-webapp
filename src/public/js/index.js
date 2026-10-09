@@ -1752,6 +1752,14 @@ class CheatsheetContentBuilder extends _sui_SUICheatsheetContentBuilder__WEBPACK
           `Consume Alpha Matter to generate Energy.`
         );
         break;
+      case 'icon-attention-12':
+        html = this.renderer.renderContentHTML(
+          'Raiders Detected',
+          null,
+          null,
+          `Ore cannot be mined or refined while enemy forces are present.`
+        );
+        break;
       case 'icon-refine':
         html = this.renderPowerGeneration(dataset);
         break;
@@ -17303,6 +17311,40 @@ class StructManager {
   }
 
   /**
+   * @param {string|null} planetId
+   * @return {boolean}
+   */
+  isPlanetRaided(planetId) {
+    if (!planetId) {
+      return false;
+    }
+    return Object.values(this.gameState.keyPlayers).some(keyPlayer =>
+      keyPlayer.planetRaidInfo.planet_id === planetId
+      && keyPlayer.planetRaidInfo.isRaidActive()
+    );
+  }
+
+  /**
+   * The chain refuses mining and refining while a raider is on the planet, so
+   * a standing extractor or refinery there sits idle until the raid ends.
+   *
+   * @param {Struct} struct
+   * @return {boolean}
+   */
+  isOreWorkHaltedByRaid(struct) {
+    if (!struct || struct.isDestroyed() || !struct.isBuilt() || struct.location_type !== 'planet') {
+      return false;
+    }
+
+    const structType = this.gameState.structTypes.getStructTypeById(struct.type);
+    if (!structType || (!structType.hasPlanetaryMining() && !structType.hasPlanetaryRefinery())) {
+      return false;
+    }
+
+    return this.isPlanetRaided(struct.location_id);
+  }
+
+  /**
    * Whether the struct is a planetary struct left behind on a planet its owner
    * has since moved away from.
    *
@@ -24391,6 +24433,13 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
       }
     });
 
+    // A raid starting or ending halts or resumes extractors and refineries.
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_5__.EVENTS.PLANET_RAID_STATUS_CHANGED, () => {
+      if (!HUDViewModel.gameState.actionBarLock.getCurrentAction()) {
+        HUDViewModel.refreshActionBar();
+      }
+    });
+
     // Listen for REFRESH_ACTION_BAR events (when a struct arrives at a position)
     window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_5__.EVENTS.REFRESH_ACTION_BAR_IF_SELECTED, (event) => {
       HUDViewModel.refreshActionBarIfSelected(
@@ -28507,7 +28556,7 @@ class MapStructViewerComponent {
       const struct = this.structManager.getStructById(this.structId);
       const activeLoopAnimation = this.lottieCustomPlayer.getAnimation(_constants_AnimationConstants__WEBPACK_IMPORTED_MODULE_0__.ANIMATION.NAMES.ACTIVE_LOOP);
 
-      if (struct && struct.isOnline()) {
+      if (struct && struct.isOnline() && !this.structManager.isOreWorkHaltedByRaid(struct)) {
         structStillContainer.classList.add('invisible');
         this.lottieCustomPlayer.play(_constants_AnimationConstants__WEBPACK_IMPORTED_MODULE_0__.ANIMATION.NAMES.ACTIVE_LOOP);
       } else {
@@ -31102,6 +31151,17 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
   }
 
   /**
+   * @return {string}
+   */
+  buildRaidedPropertyIcon() {
+    return `
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-attention-12">
+        <i class="sui-icon-md icon-attention-12"></i>
+      </a>
+    `;
+  }
+
+  /**
    * @param {Struct} struct
    * @param {StructType} structType
    * @return {string[]}
@@ -31119,7 +31179,9 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
       </a> 
     `);
 
-    if (struct.isOnline()) {
+    if (this.structManager.isOreWorkHaltedByRaid(struct)) {
+      icons.push(this.buildRaidedPropertyIcon());
+    } else if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
       const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
 
@@ -31151,7 +31213,9 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
       </a> 
     `);
 
-    if (struct.isOnline()) {
+    if (this.structManager.isOreWorkHaltedByRaid(struct)) {
+      icons.push(this.buildRaidedPropertyIcon());
+    } else if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
       const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
 
@@ -34215,6 +34279,16 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
   }
 
   /**
+   * @param {Struct} struct
+   * @return {string}
+   */
+  renderIndicatorIsRaided(struct) {
+    return this.structManager.isOreWorkHaltedByRaid(struct)
+      ? `<i class="sui-icon sui-icon-sm sui-icon-attention"></i>`
+      : '';
+  }
+
+  /**
    * Get the currently selected struct for this map.
    *
    * @return {Struct|null}
@@ -34236,11 +34310,11 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
   /**
    * @param {Struct} struct
    * @param {Struct|null} selectedStruct
-   * @return {{isDestroyed: boolean, isOffline: boolean, isOverloaded: boolean, isDefended: boolean, isDefending: boolean}}
+   * @return {{isDestroyed: boolean, isOffline: boolean, isOverloaded: boolean, isRaided: boolean, isDefended: boolean, isDefending: boolean}}
    */
   getVisibleStatusIndicators(struct, selectedStruct) {
     if (!selectedStruct || struct.id === selectedStruct.id) {
-      return {isDestroyed: true, isOffline: true, isOverloaded: true, isDefended: true, isDefending: true};
+      return {isDestroyed: true, isOffline: true, isOverloaded: true, isRaided: true, isDefended: true, isDefending: true};
     }
 
     const defendingStructIds = selectedStruct.defending_struct_ids || [];
@@ -34249,6 +34323,7 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
       isDestroyed: false,
       isOffline: false,
       isOverloaded: false,
+      isRaided: false,
       isDefended: struct.id === selectedStruct.protected_struct_id,
       isDefending: defendingStructIds.includes(struct.id)
     };
@@ -34266,6 +34341,7 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
       ${visible.isDestroyed ? this.renderIndicatorIsDestroyed(struct) : ''}
       ${visible.isOffline ? this.renderIndicatorIsOffline(struct) : ''}
       ${visible.isOverloaded ? this.renderIndicatorIsOverloaded(struct) : ''}
+      ${visible.isRaided ? this.renderIndicatorIsRaided(struct) : ''}
       ${visible.isDefended ? this.renderIndicatorIsDefended(struct) : ''}
       ${visible.isDefending ? this.renderIndicatorIsDefending(struct) : ''}
     `;
@@ -34466,6 +34542,10 @@ class MapStructHUDLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPO
     // player's structs at once, so refresh the whole map rather than waiting
     // for each struct to be re-rendered individually.
     this.addWindowEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.ENERGY_USAGE_CHANGED, () => {
+      this.refreshAllStatusIndicators();
+    });
+
+    this.addWindowEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.PLANET_RAID_STATUS_CHANGED, () => {
       this.refreshAllStatusIndicators();
     });
 
@@ -34946,6 +35026,20 @@ class MapStructLayerComponent extends _GenericMapLayerComponent__WEBPACK_IMPORTE
         this.mapStructViewers[event.structId].showStructStill();
       }
     })
+
+    // Extractors and refineries stop their active loop while their planet is
+    // raided. Structs mid-animation are skipped since showStructStill() runs
+    // again when their animation completes.
+    this.addWindowEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.PLANET_RAID_STATUS_CHANGED, () => {
+      Object.values(this.mapStructViewers).forEach(viewer => {
+        if (
+          (viewer.structType.hasPlanetaryMining() || viewer.structType.hasPlanetaryRefinery())
+          && !this.gameState.animationEventQueue?.isStructAnimating(viewer.structId)
+        ) {
+          viewer.showStructStill();
+        }
+      });
+    });
   }
 }
 
