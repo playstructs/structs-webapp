@@ -174,6 +174,13 @@ export class HUDViewModel extends AbstractViewModel {
       }
     });
 
+    // A raid starting or ending halts or resumes extractors and refineries.
+    window.addEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, () => {
+      if (!HUDViewModel.gameState.actionBarLock.getCurrentAction()) {
+        HUDViewModel.refreshActionBar();
+      }
+    });
+
     // Listen for REFRESH_ACTION_BAR events (when a struct arrives at a position)
     window.addEventListener(EVENTS.REFRESH_ACTION_BAR_IF_SELECTED, (event) => {
       HUDViewModel.refreshActionBarIfSelected(

@@ -846,6 +846,14 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           `Consume Alpha Matter to generate Energy.`
         );
         break;
+      case 'icon-attention-12':
+        html = this.renderer.renderContentHTML(
+          'Raiders Detected',
+          null,
+          null,
+          `Ore cannot be mined or refined while enemy forces are present.`
+        );
+        break;
       case 'icon-refine':
         html = this.renderPowerGeneration(dataset);
         break;
