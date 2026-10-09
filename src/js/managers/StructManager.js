@@ -54,6 +54,40 @@ export class StructManager {
   }
 
   /**
+   * @param {string|null} planetId
+   * @return {boolean}
+   */
+  isPlanetRaided(planetId) {
+    if (!planetId) {
+      return false;
+    }
+    return Object.values(this.gameState.keyPlayers).some(keyPlayer =>
+      keyPlayer.planetRaidInfo.planet_id === planetId
+      && keyPlayer.planetRaidInfo.isRaidActive()
+    );
+  }
+
+  /**
+   * The chain refuses mining and refining while a raider is on the planet, so
+   * a standing extractor or refinery there sits idle until the raid ends.
+   *
+   * @param {Struct} struct
+   * @return {boolean}
+   */
+  isOreWorkHaltedByRaid(struct) {
+    if (!struct || struct.isDestroyed() || !struct.isBuilt() || struct.location_type !== 'planet') {
+      return false;
+    }
+
+    const structType = this.gameState.structTypes.getStructTypeById(struct.type);
+    if (!structType || (!structType.hasPlanetaryMining() && !structType.hasPlanetaryRefinery())) {
+      return false;
+    }
+
+    return this.isPlanetRaided(struct.location_id);
+  }
+
+  /**
    * Whether the struct is a planetary struct left behind on a planet its owner
    * has since moved away from.
    *
