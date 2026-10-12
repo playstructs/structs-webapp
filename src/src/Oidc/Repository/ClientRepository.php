@@ -54,6 +54,38 @@ class ClientRepository implements ClientRepositoryInterface
     }
 
     /**
+     * Every redirect URI registered by an enabled client bound to this guild.
+     *
+     * Used to work out where the guild's own auth server lives without a
+     * second piece of configuration: MAS's callback is already registered here,
+     * and its origin is the only place a post-login redirect may go.
+     *
+     * @return string[]
+     *
+     * @throws Exception
+     */
+    public function findRedirectUrisForGuild(string $guildId): array
+    {
+        $rows = $this->entityManager->getConnection()->fetchAllAssociative(
+            '
+            SELECT redirect_uris
+            FROM oidc_client
+            WHERE guild_id = :guild_id
+              AND enabled = TRUE
+            ',
+            ['guild_id' => $guildId]
+        );
+
+        $uris = [];
+
+        foreach ($rows as $row) {
+            $uris = array_merge($uris, $this->toList($row['redirect_uris'] ?? null));
+        }
+
+        return array_values(array_unique($uris));
+    }
+
+    /**
      * Upsert used by app:oidc:seed-client. The registry is deployment
      * configuration, so it is reconciled from the environment on every deploy
      * rather than edited by hand.

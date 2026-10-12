@@ -8,6 +8,7 @@ use App\Entity\Player;
 use App\Entity\PlayerAddress;
 use App\Entity\PlayerPending;
 use App\Factory\PlayerPendingFactory;
+use App\Oidc\LoginContinuePolicy;
 use App\Repository\PlayerAddressRepository;
 use App\Security\PlayerAuthenticator;
 use App\Trait\ApiSqlQueryTrait;
@@ -16,6 +17,7 @@ use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
@@ -39,14 +41,22 @@ class AuthManager
 
     public ApiRequestParsingManager $apiRequestParsingManager;
 
+    /**
+     * Absent on code paths that never redirect after login, in which case any
+     * `continue` parameter is refused.
+     */
+    public ?LoginContinuePolicy $loginContinuePolicy;
+
     public function __construct(
         ValidatorInterface $validator,
         EntityManagerInterface $entityManager,
-        SignatureValidationManager $signatureValidationManager
+        SignatureValidationManager $signatureValidationManager,
+        ?LoginContinuePolicy $loginContinuePolicy = null
     ) {
         $this->validator = $validator;
         $this->entityManager = $entityManager;
         $this->signatureValidationManager = $signatureValidationManager;
+        $this->loginContinuePolicy = $loginContinuePolicy;
         $this->constraintViolationUtil = new ConstraintViolationUtil();
         $this->apiRequestParsingManager = new ApiRequestParsingManager(
             $this->validator,
@@ -160,6 +170,13 @@ class AuthManager
     /**
      * Verifies a player for login based on a message signed using the player's private key.
      *
+     * The body may be JSON (the SPA) or an HTML form post (a page that needs the
+     * session cookie set by a top-level navigation, such as the Matrix login
+     * popup). A form post may carry an optional `continue` URL; when it does, a
+     * successful login answers 302 to it instead of 200 JSON. The destination
+     * is restricted by LoginContinuePolicy so this is not an open redirect.
+     * Every failure is the same JSON error regardless of body type.
+     *
      * @param Request $request
      * @param Security $security
      * @return Response
@@ -175,15 +192,40 @@ class AuthManager
 
         $responseContent = new ApiResponseContentDto();
 
-        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
-            ApiParameters::ADDRESS,
-            ApiParameters::SIGNATURE,
-            ApiParameters::PUBKEY,
-            ApiParameters::GUILD_ID,
-            ApiParameters::UNIX_TIMESTAMP,
-        ]);
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonOrFormRequest(
+            $request,
+            [
+                ApiParameters::ADDRESS,
+                ApiParameters::SIGNATURE,
+                ApiParameters::PUBKEY,
+                ApiParameters::GUILD_ID,
+                ApiParameters::UNIX_TIMESTAMP,
+            ],
+            [
+                ApiParameters::CONTINUE,
+            ]
+        );
 
         $responseContent->errors = $parsedRequest->errors;
+
+        // An empty field, as a form with a blank hidden input would send, means
+        // the same as no field.
+        $continueUrl = count($responseContent->errors) === 0 && ($parsedRequest->params->continue ?? '') !== ''
+            ? $parsedRequest->params->continue
+            : null;
+
+        // Checked before the signature so a rejected destination never costs a
+        // signature verification round trip, and never sets a cookie.
+        if ($continueUrl !== null && !$this->isContinueAllowed($continueUrl, $parsedRequest->params->guild_id)) {
+            $responseContent->errors = [
+                'continue_not_allowed' => 'continue must point at the auth server registered for this guild'
+            ];
+
+            return new JsonResponse(
+                $responseContent,
+                Response::HTTP_BAD_REQUEST
+            );
+        }
 
         if (
             count($responseContent->errors) > 0
@@ -246,12 +288,24 @@ class AuthManager
         $session->set('player_id', $player->getId());
         $session->set('guild_id', $parsedRequest->params->guild_id);
 
+        if ($continueUrl !== null) {
+            // The session cookie rides on this response like any other; only
+            // the body changes, because a form post cannot read JSON.
+            return new RedirectResponse($continueUrl, Response::HTTP_FOUND);
+        }
+
         $responseContent->success = true;
 
         return new JsonResponse(
             $responseContent,
             Response::HTTP_OK
         );
+    }
+
+    private function isContinueAllowed(string $continueUrl, string $guildId): bool
+    {
+        return $this->loginContinuePolicy !== null
+            && $this->loginContinuePolicy->isAllowed($continueUrl, $guildId);
     }
 
     /**

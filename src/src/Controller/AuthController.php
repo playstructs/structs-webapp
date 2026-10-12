@@ -6,6 +6,7 @@ use App\Dto\ApiResponseContentDto;
 use App\Factory\PlayerPendingFactory;
 use App\Manager\AuthManager;
 use App\Manager\SignatureValidationManager;
+use App\Oidc\LoginContinuePolicy;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -55,6 +56,7 @@ class AuthController extends AbstractController
      * @param EntityManagerInterface $entityManager
      * @param HttpClientInterface $client
      * @param Security $security
+     * @param LoginContinuePolicy $loginContinuePolicy
      * @return Response
      * @throws ClientExceptionInterface
      * @throws RedirectionExceptionInterface
@@ -67,12 +69,14 @@ class AuthController extends AbstractController
         ValidatorInterface $validator,
         EntityManagerInterface $entityManager,
         HttpClientInterface $client,
-        Security $security
+        Security $security,
+        LoginContinuePolicy $loginContinuePolicy
     ): Response {
         $authManager = new AuthManager(
             $validator,
             $entityManager,
-            new SignatureValidationManager($client)
+            new SignatureValidationManager($client),
+            $loginContinuePolicy
         );
         return $authManager->login($request, $security);
     }

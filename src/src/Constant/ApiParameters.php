@@ -18,6 +18,8 @@ class ApiParameters
 
     const string CODE = 'code';
 
+    const string CONTINUE = 'continue';
+
     const string CONTROLLER = 'controller';
 
     const string COUNT_ONLY = 'count_only';

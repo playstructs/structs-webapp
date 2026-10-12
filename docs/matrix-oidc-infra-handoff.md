@@ -221,6 +221,41 @@ If cookies are blocked for the site, `/oauth/resume` answers with a plain-text
 explanation rather than bouncing the browser back into the SPA. That is the
 symptom to look for when a player reports a login that "just keeps loading".
 
+### Signing in from a third-party web client
+
+A client hosted on another origin cannot set the guild's session cookie from
+JavaScript, and a cookie set during a cross-site `fetch` is increasingly
+refused by browsers. For that case `/api/auth/login` also accepts a plain HTML
+form post, so the client can open a popup and submit the signed login as a
+top-level navigation in the guild's own window:
+
+```html
+<form method="POST" action="https://<webapp-host>/api/auth/login" target="structs-login">
+  <input type="hidden" name="address"        value="structs1...">
+  <input type="hidden" name="pubkey"         value="02...">
+  <input type="hidden" name="signature"      value="...">
+  <input type="hidden" name="guild_id"       value="0-7">
+  <input type="hidden" name="unix_timestamp" value="1787928562">
+  <input type="hidden" name="continue"       value="https://<mas-host>/authorize?client_id=...">
+</form>
+```
+
+The fields, the `LOGIN_GUILD{guild}ADDRESS{addr}DATETIME{ts}` message, and the
+signature check are exactly those of the JSON login. On success the session
+cookie is set and the reply is `302` to `continue`; from there MAS calls
+`/oauth/authorize`, which sees the session and returns the code to MAS without
+the `/?oidc=` detour or `/oauth/resume`. On failure the reply is the usual JSON
+error, never a redirect.
+
+`continue` is optional and is not an open redirect: it is accepted only when its
+origin (scheme, host, port) matches a redirect URI registered for an enabled OIDC
+client of the `guild_id` being logged in to — in practice, the guild's own MAS.
+Anything else is refused with `400` and `continue_not_allowed`, before the
+signature is checked and before any cookie is set. A guild with
+`OIDC_ENABLED=false` refuses every `continue`.
+
+Nothing in MAS, Synapse or CORS changes for this path.
+
 ## Verifying a deployment
 
 ```bash

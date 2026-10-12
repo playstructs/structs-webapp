@@ -60,6 +60,29 @@ class ApiRequestParsingManager
         return $this->parse($content, $requiredParams, $optionalParams);
     }
 
+    /**
+     * Like parseJsonRequest, but also accepts a browser form submission.
+     *
+     * A plain HTML form cannot send JSON, so an endpoint that a page needs to
+     * POST to directly (rather than through fetch) has to read
+     * application/x-www-form-urlencoded as well. The field names and validation
+     * are identical either way; only the envelope differs.
+     */
+    public function parseJsonOrFormRequest(
+        Request $request,
+        array $requiredParams,
+        array $optionalParams = []
+    ): ApiParsedRequestDto
+    {
+        // An empty form body falls through to the JSON path so a request with
+        // no usable content is reported the same way it always has been.
+        if ($request->getContentTypeFormat() === 'form' && $request->request->count() > 0) {
+            return $this->parse($request->request->all(), $requiredParams, $optionalParams);
+        }
+
+        return $this->parseJsonRequest($request, $requiredParams, $optionalParams);
+    }
+
     public function parse(
         array $requestParams,
         array $requiredParams,

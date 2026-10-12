@@ -29,6 +29,15 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::CODE)]
     public ?string $code = null;
 
+    /**
+     * Where a browser form login sends the player afterwards. Only the shape is
+     * checked here; whether the destination is permitted is decided by
+     * App\Oidc\LoginContinuePolicy against the guild's registered auth server.
+     */
+    #[Assert\Url(protocols: ['http', 'https'], requireTld: false)]
+    #[Assert\Length(max: 2048)]
+    public ?string $continue = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $controller = null;
 

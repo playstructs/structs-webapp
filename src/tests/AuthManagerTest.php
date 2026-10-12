@@ -6,6 +6,7 @@ use App\Entity\PlayerPending;
 use App\Factory\PlayerPendingFactory;
 use App\Manager\AuthManager;
 use App\Manager\SignatureValidationManager;
+use App\Oidc\LoginContinuePolicy;
 use App\Repository\PlayerAddressRepository;
 use App\Repository\PlayerPendingRepository;
 use App\Repository\PlayerRepository;
@@ -14,9 +15,13 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
@@ -25,6 +30,8 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class AuthManagerTest extends KernelTestCase
 {
+    private const string LOGIN_PLAYER_ID = '1-42';
+
     /**
      * @dataProvider signupProvider
      * @param mixed $requestContent
@@ -235,25 +242,215 @@ class AuthManagerTest extends KernelTestCase
         int $expectedErrorCount
     ): void
     {
-        // (1) boot the Symfony kernel
-        self::bootKernel();
+        $authManager = $this->buildLoginAuthManager($isSignatureValid, $playerAddressExists, $playerExists);
 
-        // (2) use static::getContainer() to access the service container
+        $request = Request::create('/api/auth/login', 'POST', [], [], [] ,[], json_encode($requestContent));
+        $request->setSession($this->createStub(SessionInterface::class));
+        $response = $authManager->login($request, $this->securityStub());
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
+        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
+    }
+
+    /**
+     * The Matrix login popup posts an HTML form rather than JSON, because the
+     * session cookie has to be set by a top-level navigation in the guild's own
+     * window. The fields and the signature check are the same either way.
+     */
+    public function testLoginAcceptsAFormPostWithTheSameFields(): void
+    {
+        $authManager = $this->buildLoginAuthManager(true, true, true);
+        $session = new Session(new MockArraySessionStorage());
+
+        $request = Request::create('/api/auth/login', 'POST', $this->validLoginFields());
+        $request->setSession($session);
+
+        $response = $authManager->login($request, $this->securityStub());
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertTrue($responseContent['success']);
+        $this->assertSame(self::LOGIN_PLAYER_ID, $session->get('player_id'));
+        $this->assertSame('0-1', $session->get('guild_id'));
+    }
+
+    public function testFormLoginWithAnAllowedContinueSetsTheSessionAndRedirects(): void
+    {
+        $continue = 'https://auth.guild.test/authorize?client_id=mas&state=abc';
+        $authManager = $this->buildLoginAuthManager(true, true, true, $this->continuePolicy(true));
+        $session = new Session(new MockArraySessionStorage());
+
+        $request = Request::create('/api/auth/login', 'POST', $this->validLoginFields(['continue' => $continue]));
+        $request->setSession($session);
+
+        $response = $authManager->login($request, $this->securityStub());
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        $this->assertSame($continue, $response->headers->get('Location'));
+        $this->assertSame(self::LOGIN_PLAYER_ID, $session->get('player_id'), 'The session must be established before redirecting');
+        $this->assertSame('0-1', $session->get('guild_id'));
+    }
+
+    public function testFormLoginWithADisallowedContinueIsRefusedBeforeLoggingIn(): void
+    {
+        $authManager = $this->buildLoginAuthManager(true, true, true, $this->continuePolicy(false));
+        $session = new Session(new MockArraySessionStorage());
+
+        $security = $this->createMock(Security::class);
+        $security->expects($this->never())->method('login');
+
+        $request = Request::create(
+            '/api/auth/login',
+            'POST',
+            $this->validLoginFields(['continue' => 'https://evil.example/phish'])
+        );
+        $request->setSession($session);
+
+        $response = $authManager->login($request, $security);
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
+        $this->assertArrayHasKey('continue_not_allowed', $responseContent['errors']);
+        $this->assertNull($session->get('player_id'), 'A refused redirect must not leave a session behind');
+    }
+
+    public function testContinueIsRefusedWhenNoPolicyIsConfigured(): void
+    {
+        $authManager = $this->buildLoginAuthManager(true, true, true, null);
+
+        $request = Request::create(
+            '/api/auth/login',
+            'POST',
+            $this->validLoginFields(['continue' => 'https://auth.guild.test/authorize'])
+        );
+        $request->setSession(new Session(new MockArraySessionStorage()));
+
+        $response = $authManager->login($request, $this->securityStub());
+
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
+    }
+
+    public function testAMalformedContinueIsAConstraintViolation(): void
+    {
+        $authManager = $this->buildLoginAuthManager(true, true, true, $this->continuePolicy(true));
+
+        $request = Request::create(
+            '/api/auth/login',
+            'POST',
+            $this->validLoginFields(['continue' => 'not a url'])
+        );
+        $request->setSession(new Session(new MockArraySessionStorage()));
+
+        $response = $authManager->login($request, $this->securityStub());
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+        $this->assertNotEmpty(array_filter(
+            $responseContent['errors'],
+            static fn (string $error): bool => str_starts_with($error, 'continue - ')
+        ));
+    }
+
+    public function testAnEmptyContinueFieldBehavesAsIfAbsent(): void
+    {
+        $authManager = $this->buildLoginAuthManager(true, true, true, $this->continuePolicy(false));
+
+        $request = Request::create('/api/auth/login', 'POST', $this->validLoginFields(['continue' => '']));
+        $request->setSession(new Session(new MockArraySessionStorage()));
+
+        $response = $authManager->login($request, $this->securityStub());
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+    }
+
+    /**
+     * A failed form login must answer with the usual JSON error, not a redirect,
+     * so the caller can tell what went wrong and nothing is sent to `continue`
+     * without a session behind it.
+     */
+    public function testFailedFormLoginReturnsJsonErrorEvenWithContinue(): void
+    {
+        $authManager = $this->buildLoginAuthManager(false, true, true, $this->continuePolicy(true));
+
+        $request = Request::create(
+            '/api/auth/login',
+            'POST',
+            $this->validLoginFields(['continue' => 'https://auth.guild.test/authorize'])
+        );
+        $request->setSession(new Session(new MockArraySessionStorage()));
+
+        $response = $authManager->login($request, $this->securityStub());
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+        $this->assertArrayHasKey('signature_validation_failed', $responseContent['errors']);
+    }
+
+    public function testContinueIsHonouredInAJsonBodyToo(): void
+    {
+        $continue = 'https://auth.guild.test/authorize';
+        $authManager = $this->buildLoginAuthManager(true, true, true, $this->continuePolicy(true));
+
+        $request = Request::create(
+            '/api/auth/login',
+            'POST',
+            [],
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode($this->validLoginFields(['continue' => $continue]))
+        );
+        $request->setSession(new Session(new MockArraySessionStorage()));
+
+        $response = $authManager->login($request, $this->securityStub());
+
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        $this->assertSame($continue, $response->headers->get('Location'));
+    }
+
+    /**
+     * @param array<string, string> $overrides
+     *
+     * @return array<string, string>
+     */
+    private function validLoginFields(array $overrides = []): array
+    {
+        return array_merge([
+            'address' => 'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7zaf',
+            'signature' => '6a18392b839c16131a46b279eab627864cd6ad3e13d403ead65d799cd8a5a03608481e384e303823d8e74489310906ee0d0edee0c14c080bc2d63c4cc9cfca5601',
+            'pubkey' => '036ff73ae45ee6d4cf2dba7be689d6df30d1ec53f528fb520ce69b67e2515c6222',
+            'guild_id' => '0-1',
+            'unix_timestamp' => strval(time()),
+        ], $overrides);
+    }
+
+    private function buildLoginAuthManager(
+        bool $isSignatureValid,
+        bool $playerAddressExists,
+        bool $playerExists,
+        ?LoginContinuePolicy $loginContinuePolicy = null
+    ): AuthManager {
+        self::bootKernel();
         $container = static::getContainer();
+
+        $playerAddressStub = $this->createStub(PlayerAddress::class);
+        $playerAddressStub->method('getPlayerId')->willReturn(self::LOGIN_PLAYER_ID);
 
         $playerAddressRepositoryStub = $this->createStub(PlayerAddressRepository::class);
         $playerAddressRepositoryStub->method('findOneBy')
-            ->willReturn($playerAddressExists
-                ? $this->createStub(PlayerAddress::class)
-                : null
-            );
+            ->willReturn($playerAddressExists ? $playerAddressStub : null);
+
+        $playerStub = $this->createStub(Player::class);
+        $playerStub->method('getId')->willReturn(self::LOGIN_PLAYER_ID);
 
         $playerRepositoryStub = $this->createStub(PlayerRepository::class);
         $playerRepositoryStub->method('find')
-            ->willReturn($playerExists
-                ? $this->createStub(Player::class)
-                : null
-            );
+            ->willReturn($playerExists ? $playerStub : null);
 
         $entityManagerStub = $this->createStub(EntityManagerInterface::class);
         $entityManagerStub->method('getRepository')
@@ -261,12 +458,6 @@ class AuthManagerTest extends KernelTestCase
                 [PlayerAddress::class, $playerAddressRepositoryStub],
                 [Player::class, $playerRepositoryStub]
             ]);
-
-        $validator = $container->get(ValidatorInterface::class);
-
-        $securityStub = $this->createStub(Security::class);
-        $securityStub->method('login')
-            ->willReturn(null);
 
         $validateSignatureResponseBody = json_encode([
             'pubkeyFormatError' => false,
@@ -276,23 +467,30 @@ class AuthManagerTest extends KernelTestCase
             'valid' => $isSignatureValid
         ]);
 
-        $responses = [new MockResponse($validateSignatureResponseBody),];
-        $httpClient = new MockHttpClient($responses);
-        $signatureValidationManager = new SignatureValidationManager($httpClient);
+        $httpClient = new MockHttpClient([new MockResponse($validateSignatureResponseBody)]);
 
-        $authManager = new AuthManager(
-            $validator,
+        return new AuthManager(
+            $container->get(ValidatorInterface::class),
             $entityManagerStub,
-            $signatureValidationManager
+            new SignatureValidationManager($httpClient),
+            $loginContinuePolicy
         );
+    }
 
-        $request = Request::create('/api/auth/login', 'POST', [], [], [] ,[], json_encode($requestContent));
-        $request->setSession($this->createStub(SessionInterface::class));
-        $response = $authManager->login($request, $securityStub);
-        $responseContent = json_decode($response->getContent(), true);
+    private function securityStub(): Security
+    {
+        $securityStub = $this->createStub(Security::class);
+        $securityStub->method('login')->willReturn(null);
 
-        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
-        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
+        return $securityStub;
+    }
+
+    private function continuePolicy(bool $allowed): LoginContinuePolicy
+    {
+        $policy = $this->createStub(LoginContinuePolicy::class);
+        $policy->method('isAllowed')->willReturn($allowed);
+
+        return $policy;
     }
 
     public function loginProvider(): array
