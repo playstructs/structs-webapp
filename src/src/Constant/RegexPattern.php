@@ -8,6 +8,9 @@ class RegexPattern
 
     public const string CODE = '/^[A-HJ-NP-Z2-9]{5}$/';
 
+    /** A Matrix device id as MAS accepts it in a device scope. */
+    public const string DEVICE_ID = '/^[A-Za-z0-9]{4,32}$/';
+
     public const string ID = '/^[a-zA-Z0-9\-]+$/';
 
     public const string INET = '/^([a-fA-F0-9]{0,4}(:[a-fA-F0-9]{0,4}){0,7})?(\d{1,3}(\.\d{1,3}){0,3}(\/\d{1,2})?)?$/';

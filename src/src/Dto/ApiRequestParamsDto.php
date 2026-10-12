@@ -59,6 +59,9 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $destination_id = null;
 
+    #[Assert\Regex(RegexPattern::DEVICE_ID)]
+    public ?string $device_id = null;
+
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $end_time = null;
 

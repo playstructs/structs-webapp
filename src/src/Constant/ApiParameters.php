@@ -34,6 +34,8 @@ class ApiParameters
 
     const string DESTINATION_ID = 'destination_id';
 
+    const string DEVICE_ID = 'device_id';
+
     const string END_TIME = 'end_time';
 
     const string ENTRY_SUBSTATION_ID = 'entry_substation_id';

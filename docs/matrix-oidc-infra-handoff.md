@@ -256,6 +256,104 @@ signature is checked and before any cookie is set. A guild with
 
 Nothing in MAS, Synapse or CORS changes for this path.
 
+### Signing in with no browser round trip: `POST /api/auth/matrix`
+
+A web client that would rather not open a popup at all can hand the webapp the
+same wallet-signed login and get a Matrix session back in the JSON reply. No
+cookie, redirect or popup reaches the browser. The webapp runs the MAS sign-in
+chain itself, in the role of a native app: it starts an authorization at MAS,
+follows each redirect by hand with its own cookie jar, serves the hop onto its
+own `/oauth/authorize` in-process with a session for the player, answers MAS's
+consent page if one is shown, reads the code off the loopback redirect without
+visiting it, exchanges it for tokens, and confirms with the homeserver's
+`whoami` that the account is `@<player_id>:<server_name>`.
+
+```json
+POST /api/auth/matrix
+Content-Type: application/json
+
+{
+  "address": "structs1…", "pubkey": "02…", "signature": "…",
+  "guild_id": "0-5", "unix_timestamp": 1760000000,
+  "device_id": "K3J9QX2M7A"
+}
+```
+
+`device_id` is optional (`[A-Za-z0-9]{4,32}`); one is generated when absent.
+Reusing the browser's own id keeps repeat sign-ins from piling up devices.
+
+```json
+200
+{
+  "success": true, "errors": [],
+  "data": {
+    "user_id": "@1-194:matrix.beta.playstructs.com",
+    "device_id": "K3J9QX2M7A",
+    "access_token": "mat_…", "refresh_token": "mar_…", "expires_in": 300,
+    "client_id": "<public MAS client id>",
+    "token_endpoint": "https://<mas-host>/oauth2/token",
+    "revocation_endpoint": "https://<mas-host>/oauth2/revoke"
+  }
+}
+```
+
+The client is public, so the browser refreshes and revokes at MAS directly with
+that `client_id`. Every reply carries `Cache-Control: no-store`. Tokens and
+codes are never logged; a failed chain logs only the step and a status code.
+
+Checks, in order, and what each refuses with:
+
+| Status | Key | When |
+|---|---|---|
+| 503 | `matrix_not_configured` | the variables below are not all set |
+| 400 | `*_required` / `invalid_request_content` / constraint message | a missing or bad field |
+| 429 | `rate_limited` (+ `Retry-After`) | more than 12 attempts per address or 60 per IP in 10 minutes |
+| 401 | `timestamp_expired` | `unix_timestamp` older than 600 s |
+| 401 | `signature_validation_failed` | the signature does not verify |
+| 502 | `signature_validation_unavailable` | structsd could not be asked |
+| 403 | `not_guild_member` | the guild's MAS is not the one registered here, the address is not approved for the guild, or the player is not an eligible member (the `/oauth/userinfo` rule) |
+| 401 | `signature_reused` | the same signature already produced a session; each is single-use for its 600 s |
+| 502 | `matrix_unavailable` | MAS or the homeserver failed; the message names the step: `authorize`, `guild_authorize`, `consent`, `callback`, `token`, `whoami` |
+
+A `guild_authorize` failure means this webapp's own `/oauth/authorize` refused
+the player: the log line carries the OAuth error and hint. A `whoami` failure
+with "expected @…" means MAS maps the player to a different localpart; this
+route requires the localpart to be the player id, so a MAS `localpart_template`
+other than the default is not compatible with it.
+
+#### Setting it up
+
+Once per MAS, register the public client and record the id:
+
+```bash
+bin/console app:matrix:register-client
+#  → Set MATRIX_SIGNIN_CLIENT_ID='01J…' on the webapp.
+```
+
+That registers a `native`, `token_endpoint_auth_method: none` client with the
+loopback redirect URI `http://127.0.0.1:47411/guild/matrix/callback`. Nothing
+listens there; MAS only needs it to be registered. MAS must allow dynamic
+client registration for that to work; otherwise register the same client in
+MAS config by hand and set the id.
+
+| Variable | Value |
+|---|---|
+| `MATRIX_MAS_ISSUER` | `https://<mas-host>`; defaults to the origin of `OIDC_MAS_REDIRECT_URI` |
+| `MATRIX_SIGNIN_CLIENT_ID` | the id printed by `app:matrix:register-client` |
+| `MATRIX_SIGNIN_REDIRECT_URI` | only if the client was registered with a different loopback URI |
+| `MATRIX_SERVER_NAME` | already set for chat rooms; used to check `whoami` |
+| `SYNAPSE_CLIENT_URL` | already set for chat rooms; where `whoami` is asked |
+
+The OIDC provider must be enabled and seeded as above: MAS still signs the
+player in through `/oauth/authorize`, just with this server as the browser.
+The webapp must be able to reach the MAS issuer over the network; it never
+needs to reach itself.
+
+Attempt counters and used signatures live in the app cache. On a deployment
+with several webapp replicas and no shared cache they are per replica, which
+still bounds the rate and still refuses a replay on the replica that saw the
+original.
+
 ## Verifying a deployment
 
 ```bash
