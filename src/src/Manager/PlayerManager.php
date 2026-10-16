@@ -6,11 +6,13 @@ use App\Constant\ApiParameters;
 use App\Constant\PaginationLimits;
 use App\Constant\RegexPattern;
 use App\Dto\ApiResponseContentDto;
+use App\Entity\Player;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
 use App\Util\ResponseMetaUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -711,5 +713,97 @@ class PlayerManager
             LIMIT {$pageLimit}
         ";
         return $this->queryAllStamped($this->entityManager, $this->apiRequestParsingManager, $sql, [], []);
+    }
+
+    /**
+     * Best scores the player has stored for each mini game on one interface.
+     *
+     * @throws Exception
+     */
+    public function getPlayerMiniGameProgress(string $player_id, string $interface_name): Response
+    {
+        $query = '
+            SELECT
+              mgp.game_name,
+              mgp.score,
+              mgp.updated_at
+            FROM mini_game_progress mgp
+            WHERE mgp.player_id = :player_id
+            AND mgp.interface_name = :interface_name
+            ORDER BY mgp.game_name
+        ';
+
+        $requestParams = [
+            ApiParameters::PLAYER_ID => $player_id,
+            ApiParameters::INTERFACE_NAME => $interface_name,
+        ];
+        $requiredFields = [ApiParameters::PLAYER_ID, ApiParameters::INTERFACE_NAME];
+
+        return $this->queryAll(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+
+    /**
+     * Records a mini game score for the logged-in player, keeping the best one.
+     * updated_at only moves when the score improves, so it dates the best score.
+     * The player is always the session's, never one named in the body.
+     *
+     * @throws Exception
+     */
+    public function setPlayerMiniGameProgress(Request $request, Security $security): Response
+    {
+        /** @var Player $player */
+        $player = $security->getUser();
+        $player_id = $player->getId();
+
+        $responseContent = new ApiResponseContentDto();
+
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest(
+            $request,
+            [
+                ApiParameters::INTERFACE_NAME,
+                ApiParameters::GAME_NAME,
+                ApiParameters::SCORE,
+            ]
+        );
+
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $query = '
+            INSERT INTO mini_game_progress (player_id, interface_name, game_name, score)
+            VALUES (:player_id, :interface_name, :game_name, :score)
+            ON CONFLICT (player_id, interface_name, game_name) DO UPDATE
+            SET score = GREATEST(mini_game_progress.score, EXCLUDED.score),
+                updated_at = CASE
+                    WHEN EXCLUDED.score > mini_game_progress.score THEN now()
+                    ELSE mini_game_progress.updated_at
+                END
+            RETURNING interface_name, game_name, score, created_at, updated_at
+        ';
+
+        $db = $this->entityManager->getConnection();
+        $row = $db->fetchAssociative($query, [
+            'player_id' => $player_id,
+            'interface_name' => $parsedRequest->params->interface_name,
+            'game_name' => $parsedRequest->params->game_name,
+            'score' => $parsedRequest->params->score,
+        ]);
+
+        $responseContent->data = $row === false ? null : $row;
+        $responseContent->success = $row !== false;
+
+        return new JsonResponse(
+            $responseContent,
+            $responseContent->success ? Response::HTTP_OK : Response::HTTP_INTERNAL_SERVER_ERROR
+        );
     }
 }

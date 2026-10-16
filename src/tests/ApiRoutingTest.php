@@ -1,6 +1,7 @@
 <?php
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 
 class ApiRoutingTest extends KernelTestCase
 {
@@ -47,6 +48,23 @@ class ApiRoutingTest extends KernelTestCase
             ['/api/planet-activity/player/1-61/page/1', 'api_planet_activity_by_player'],
             ['/api/planet-activity/player/1-61/stats', 'api_planet_activity_player_stats'],
             ['/api/planet-activity/planet/2-1/page/1', 'api_planet_activity_by_planet'],
+            ['/api/player/1-101/mini-game/arcade', 'api_get_player_mini_game_progress'],
         ];
+    }
+
+    /** The PUT literal must resolve, and a GET on it must not fall through to a player read. */
+    public function testMiniGameProgressPutRoute(): void
+    {
+        $router = $this->router();
+        $router->getContext()->setMethod('PUT');
+
+        $this->assertSame(
+            'api_set_player_mini_game_progress',
+            $router->match('/api/player/mini-game/progress')['_route']
+        );
+
+        $router->getContext()->setMethod('GET');
+        $this->expectException(MethodNotAllowedException::class);
+        $router->match('/api/player/mini-game/progress');
     }
 }
