@@ -182,4 +182,21 @@ class PlayerController extends AbstractController
         $playerManager = new PlayerManager($entityManager, $validator);
         return $playerManager->getPlayerRaidsLaunched($player_id);
     }
+
+    /**
+     * @param string $player_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/player/{player_id}/raid/won', name: 'api_get_player_raids_won', methods: ['GET'])]
+    public function getPlayerRaidsWon(
+        string $player_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerManager = new PlayerManager($entityManager, $validator);
+        return $playerManager->getPlayerRaidsWon($player_id);
+    }
 }
