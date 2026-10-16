@@ -565,6 +565,41 @@ class PlayerManager
     }
 
     /**
+     * Raids won: raids the player's fleet completed (raidSuccessful), plus raids
+     * on the player's planet that ended with the attacker defeated. A win counts
+     * whether or not any ore changed hands.
+     *
+     * @throws Exception
+     */
+    public function getPlayerRaidsWon(string $player_id): Response
+    {
+        $query = "
+            SELECT count(1)
+            FROM planet_activity pa
+            LEFT JOIN fleet f
+                ON f.id = pa.detail->>'fleet_id'
+            LEFT JOIN planet p
+                ON p.id = pa.planet_id
+            WHERE pa.category = 'raid_status'
+            AND (
+                (pa.detail->>'status' = 'raidSuccessful' AND f.owner = :player_id)
+                OR (pa.detail->>'status' = 'attackerDefeated' AND p.owner = :player_id)
+            )
+        ";
+
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+
+    /**
      * @throws Exception
      */
     public function countPlayers(): Response
