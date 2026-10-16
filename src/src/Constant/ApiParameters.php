@@ -44,6 +44,8 @@ class ApiParameters
 
     const string FLEET_ID = 'fleet_id';
 
+    const string GAME_NAME = 'game_name';
+
     const string GUILD_ID = 'guild_id';
 
     const string IDS = 'ids';
@@ -51,6 +53,8 @@ class ApiParameters
     const string INCLUDE_META = 'include_meta';
 
     const string INCLUDE_TOTAL = 'include_total';
+
+    const string INTERFACE_NAME = 'interface_name';
 
     const string IP = 'ip';
 
@@ -111,6 +115,8 @@ class ApiParameters
     const string ROLE = 'role';
 
     const string Q = 'q';
+
+    const string SCORE = 'score';
 
     const string SEARCH_STRING = 'search_string';
 
