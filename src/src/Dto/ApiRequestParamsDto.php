@@ -62,6 +62,14 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $fleet_id = null;
 
+    /** Mini game name; typed mixed so a non-string JSON value fails validation instead of being coerced. */
+    #[Assert\Sequentially([
+        new Assert\Type('string'),
+        new Assert\Length(min: 1, max: 64),
+        new Assert\Regex(RegexPattern::SLUG),
+    ])]
+    public mixed $game_name = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $guild_id = null;
 
@@ -73,6 +81,14 @@ class ApiRequestParamsDto
 
     #[Assert\Choice(choices: ['0', '1'])]
     public ?string $include_total = null;
+
+    /** Mini game interface name; typed mixed so a non-string JSON value fails validation instead of being coerced. */
+    #[Assert\Sequentially([
+        new Assert\Type('string'),
+        new Assert\Length(min: 1, max: 64),
+        new Assert\Regex(RegexPattern::SLUG),
+    ])]
+    public mixed $interface_name = null;
 
     #[Assert\Regex(RegexPattern::INET)]
     public ?string $ip = null;
@@ -168,6 +184,13 @@ class ApiRequestParamsDto
         'attacker', 'target', 'owner', 'planet_owner', 'defender', 'protected', 'fleet_owner',
     ])]
     public ?string $role = null;
+
+    /** Mini game score; typed mixed so 1.5, "7" or true are rejected rather than coerced to a numeric string. */
+    #[Assert\Sequentially([
+        new Assert\Type('integer'),
+        new Assert\Range(min: 0, max: 1000000),
+    ])]
+    public mixed $score = null;
 
     #[Assert\Regex(RegexPattern::SEARCH_STRING)]
     public ?string $search_string = null;
