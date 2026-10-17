@@ -646,7 +646,7 @@ export class TutorialDirector {
       TUTORIAL_IDS.TANK_A,
       TUTORIAL_IDS.ENEMY_CMD_SHIP,
       C.RAIL_GUN,
-      C.RAIL_GUN_TARGET,
+      C.RAIL_GUN,
       true
     );
 

@@ -5,12 +5,14 @@
 const hl = (text) => `<span class="tutorial-highlight">${text}</span>`;
 
 /**
- * The design's second highlight colour, used for game terms that link to more help.
+ * A game term in the design's second highlight colour; press-and-hold it for a tip.
+ * The tip opens below, since narration often sits at the top of the screen.
  *
  * @param {string} text
+ * @param {string} tip
  * @return {string}
  */
-const hlSecondary = (text) => `<span class="sui-text-secondary">${text}</span>`;
+const hint = (text, tip) => `<a class="sui-mod-secondary" href="javascript: void(0)" data-sui-tooltip="${tip}" data-sui-mod-placement="bottom">${text}</a>`;
 
 /**
  * @param {string} name file name in /img/sui/icon, without extension
@@ -19,7 +21,7 @@ const hlSecondary = (text) => `<span class="sui-text-secondary">${text}</span>`;
 const icon = (name) => `<img class="tutorial-inline-icon" src="/img/sui/icon/${name}.png" alt="">`;
 
 /**
- * The tutorial's narration, verbatim from the design.
+ * The tutorial's narration, verbatim from the design apart from corrected typos.
  */
 export const TUTORIAL_COPY = {
   SIMULATION_LOADING: 'Simulation loading...',
@@ -48,16 +50,15 @@ export const TUTORIAL_COPY = {
 
   CMD_SHIP_UNPROTECTED: `Your CMD Ship was unprotected, allowing the Raiders to easily Destroy it. Assign ${hl('Defenders')} to protect important Structs.`,
   SELECT_INDICATED_TANK: `First, select indicated Tank.`,
-  DEFEND_OTHER_TANK: `When you have enough Battery Charge, assign the Struct to ${hl('Defend')} your other Tank. You can ${hlSecondary('Inspect')} an ability to see it's Battery Cost.`,
+  DEFEND_OTHER_TANK: `When you have enough Battery Charge, assign the Struct to ${hl('Defend')} your other Tank. You can ${hint('Inspect', 'Press-and-Hold most elements to reveal more information about them.')} an ability to see its Battery Cost.`,
   ASSIGN_DEFENSE: `Next, assign it to ${hl('Defend')} your other Tank.`,
   // Icons as drawn in the design frame for this line.
-  DEFENDED_AND_DEFENDERS: `Good. Structs with &nbsp;the ${icon('icon-defending')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defended')} icon are ${hl('Defenders')}.`,
+  DEFENDED_AND_DEFENDERS: `Good. Structs with the ${icon('icon-defending')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defended')} icon are ${hl('Defenders')}.`,
   CMD_SHIP_TAKES_TIME: `Your new CMD Ship will take time to arrive. You will need to engage the enemy in the meantime.`,
 
   DESTROY_ENEMY_CMD_SHIP: `Destroying the ${hl('enemy CMD Ship')} will force the raiders to retreat.`,
   SELECT_TANK: `Select your Tank.`,
   RAIL_GUN: `The Tank's ${hl('Rail Gun')} ability can target Structs on Land. Use it to attack the enemy CMD Ship.`,
-  RAIL_GUN_TARGET: `The Tanks ${hl('Rail Gun')} ability can target Structs on Land. Use it to attack the enemy CMD Ship.`,
 
   WENT_POORLY: `That went poorly. The enemy CMD Ship was ${hl('Defended')} by a Tank.`,
   DEFENDER_COUNTER_ATTACK: `The Defender hit your Tank with a ${icon('icon-defender-counter')} ${hl('Counter-Attack')}. Be careful when launching attacks: Defenders always fire first.`,
@@ -66,7 +67,7 @@ export const TUTORIAL_COPY = {
   DESTROY_DEFENDER_FIRST: `You'll need to destroy the enemy Defender before you can attack the CMD Ship directly.`,
 
   ONE_MORE_TANK: `Fortunately, you have one more Tank. Select it now.`,
-  ATTACK_ENEMY_TANK: `When ready, attack he enemy Tank.`,
+  ATTACK_ENEMY_TANK: `When ready, attack the enemy Tank.`,
   TRIGGERED_COUNTER_ATTACK: `Your attack triggered a ${hl('Counter-Attack')}. You can avoid Counter-Attacks by considering the abilities of each Struct.`,
   BATTLEGROUNDS: `Each planet has multiple ${hl('Battlegrounds')}, ${icon('icon-land')} Land, ${icon('icon-water')} Water, ${icon('icon-air')} Air, and ${icon('icon-space')} Space.`,
   RAIL_GUN_LAND_ONLY: `The enemy Tank's Rail Gun can only target ${hl('Land')}. Use this to your advantage.`,
