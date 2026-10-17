@@ -35,7 +35,7 @@ export const TUTORIAL_COPY = {
   CMD_SHIP: `The ${hl('CMD Ship')} is the hub of your operations. Defending it is the key to your success.`,
   CMD_SHIP_DESTROYED_WARNING: `If your CMD Ship is destroyed, you will be unable to deploy new Structs and your Alpha Base will be vulnerable.`,
 
-  RAIDERS_ATTACK: `Conveniently, Raiders have just launched an attack on your Alpha Base.`,
+  RAIDERS_ATTACK: `Conveniently, pirates have just launched a ${hl('Raid')} on your Alpha Base.`,
   PLANETARY_DEFENSES: `This icon represents your ${hl('Planetary Defenses')}. Raiders must ${hl('Breach')} these Defenses in order to steal your Ore Reserves.`,
   INSPECT_DEFENSES: `You can Press-and-hold to ${hl('Inspect')} most HUD elements. Inspect your Planetary Defenses to see their status.`,
   CMD_SHIP_PROTECTS: `The CMD Ship protects your Ore Reserves from intrusion. When a CMD Ship is on-station, your Defenses are ${hl('Secure')} and cannot be breached.`,
@@ -49,9 +49,8 @@ export const TUTORIAL_COPY = {
   BATTERY_DEPLETES: `Good. Note that using abilities depletes the ${hl('Battery')}. The Battery will ${hl('Recharge')} automatically.`,
 
   CMD_SHIP_UNPROTECTED: `Your CMD Ship was unprotected, allowing the Raiders to easily Destroy it. Assign ${hl('Defenders')} to protect important Structs.`,
-  SELECT_INDICATED_TANK: `First, select indicated Tank.`,
-  DEFEND_OTHER_TANK: `When you have enough Battery Charge, assign the Struct to ${hl('Defend')} your other Tank. You can ${hint('Inspect', 'Press-and-Hold most elements to reveal more information about them.')} an ability to see its Battery Cost.`,
-  ASSIGN_DEFENSE: `Next, assign it to ${hl('Defend')} your other Tank.`,
+  SELECT_INDICATED_TANK: `First, select the Tank.`,
+  DEFEND_SAM_LAUNCHER: `When you have enough Battery Charge, assign the Tank to ${hl('Defend')} your SAM Launcher. You can ${hint('Inspect', 'Press-and-Hold most elements to reveal more information about them.')} an ability to see its Battery Cost.`,
   // Icons as drawn in the design frame for this line.
   DEFENDED_AND_DEFENDERS: `Good. Structs with the ${icon('icon-defending')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defended')} icon are ${hl('Defenders')}.`,
   CMD_SHIP_TAKES_TIME: `Your new CMD Ship will take time to arrive. You will need to engage the enemy in the meantime.`,
@@ -61,14 +60,11 @@ export const TUTORIAL_COPY = {
   RAIL_GUN: `The Tank's ${hl('Rail Gun')} ability can target Structs on Land. Use it to attack the enemy CMD Ship.`,
 
   WENT_POORLY: `That went poorly. The enemy CMD Ship was ${hl('Defended')} by a Tank.`,
-  DEFENDER_COUNTER_ATTACK: `The Defender hit your Tank with a ${icon('icon-defender-counter')} ${hl('Counter-Attack')}. Be careful when launching attacks: Defenders always fire first.`,
-  DEFENDER_BLOCKED: `The Defender also ${icon('icon-defender-block')} ${hl('Blocked')} your attack, absorbing the incoming DMG and protecting the CMD Ship.`,
-  CMD_SHIP_COUNTER_ATTACK: `The CMD Ship then launched its own ${icon('icon-counter-attack')} ${hl('Counter-Attack')}, destroying your tank.`,
+  DEFENDER_BLOCKED: `The Defender ${icon('icon-defender-block')} ${hl('Blocked')} your attack, absorbing the incoming DMG and protecting the CMD Ship.`,
+  BOTH_COUNTER_ATTACK: `Both units also launched ${icon('icon-counter-attack')} ${hl('Counter-Attacks')}, destroying your Tank.`,
   DESTROY_DEFENDER_FIRST: `You'll need to destroy the enemy Defender before you can attack the CMD Ship directly.`,
+  AVOID_COUNTER_ATTACKS: `You can avoid Counter-Attacks by considering the abilities of each Struct.`,
 
-  ONE_MORE_TANK: `Fortunately, you have one more Tank. Select it now.`,
-  ATTACK_ENEMY_TANK: `When ready, attack the enemy Tank.`,
-  TRIGGERED_COUNTER_ATTACK: `Your attack triggered a ${hl('Counter-Attack')}. You can avoid Counter-Attacks by considering the abilities of each Struct.`,
   BATTLEGROUNDS: `Each planet has multiple ${hl('Battlegrounds')}, ${icon('icon-land')} Land, ${icon('icon-water')} Water, ${icon('icon-air')} Air, and ${icon('icon-space')} Space.`,
   RAIL_GUN_LAND_ONLY: `The enemy Tank's Rail Gun can only target ${hl('Land')}. Use this to your advantage.`,
 
@@ -78,7 +74,7 @@ export const TUTORIAL_COPY = {
 
   RAIDERS_REPELLED: `You have successfully repelled the Raiders. However, without a CMD Ship on-station, your Planetary Defenses are still Vulnerable.`,
   CMD_SHIP_ARRIVING: `Fortunately, your new CMD Ship is arriving now.`,
-  DEFENSES_SECURE: `With a new CMD Ship on-station, your Planetary Defenses are ${hl('Secure')}.`,
+  DEFENSES_SECURE: `With a new CMD Ship on-station, your Planetary Defenses are once again ${hl('Secure')}. This concludes your Combat Training.`,
 
   COMPLETED: `You have successfully completed Combat Training. ${hl('Performance Grade:')} C-`,
   CERTIFIED: `SN.CORP certifies that you now meet the minimum requirements to operate the ST-21 "Spearpoint" CMD Ship. Productive travels, employee.`,

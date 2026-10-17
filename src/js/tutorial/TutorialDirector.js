@@ -436,7 +436,6 @@ export class TutorialDirector {
     await this.summonCommandShip();
     await this.assignDefenders();
     await this.firstAttack();
-    await this.secondAttack();
     await this.bomberAttack();
     await this.destroyEnemyCommandShip();
     await this.newCommandShip();
@@ -470,12 +469,9 @@ export class TutorialDirector {
 
     this.world.startRaid();
     this.rerenderMap();
+    this.focusHome();
 
-    // The camera goes over to the raiders as they arrive.
-    await this.pause(100);
-    this.focus(this.structTileSelector(TUTORIAL_IDS.ENEMY_TANK));
-
-    await this.say(C.RAIDERS_ATTACK, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.ENEMY_TANK)));
+    await this.say(C.RAIDERS_ATTACK, BOTTOM);
     await this.say(C.PLANETARY_DEFENSES, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
     await this.ask(
       C.INSPECT_DEFENSES,
@@ -486,7 +482,6 @@ export class TutorialDirector {
       UP
     );
 
-    this.focusHome();
     await this.say(C.CMD_SHIP_PROTECTS, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.CMD_SHIP)));
 
     await this.cutscene(async () => {
@@ -592,9 +587,10 @@ export class TutorialDirector {
     );
 
     // The Battery is still recharging from the deploy: the Defend button
-    // unlocks by itself once there is enough charge.
+    // unlocks by itself once there is enough charge. The same line stays up
+    // while the player picks the SAM Launcher.
     await this.ask(
-      C.DEFEND_OTHER_TANK,
+      C.DEFEND_SAM_LAUNCHER,
       TOP,
       [SELECTORS.DEFEND_BUTTON],
       () => this.waitForActionMode(STRUCT_ACTIONS.DEFENSE_SET),
@@ -603,14 +599,14 @@ export class TutorialDirector {
 
     const defended = this.waitForAction('defenseSet', result =>
       result.defenderStructId === TUTORIAL_IDS.TANK_A
-      && result.protectedStructId === TUTORIAL_IDS.TANK_B
+      && result.protectedStructId === TUTORIAL_IDS.SAM_LAUNCHER
     );
     await this.ask(
-      C.ASSIGN_DEFENSE,
+      C.DEFEND_SAM_LAUNCHER,
       TOP,
-      [this.structTileSelector(TUTORIAL_IDS.TANK_B)],
+      [this.structTileSelector(TUTORIAL_IDS.SAM_LAUNCHER)],
       () => defended,
-      this.find(this.structTileSelector(TUTORIAL_IDS.TANK_B))
+      this.find(this.structTileSelector(TUTORIAL_IDS.SAM_LAUNCHER))
     );
 
     await this.cutscene(() => this.waitForCombatToSettle());
@@ -624,11 +620,8 @@ export class TutorialDirector {
   async firstAttack() {
     const C = TUTORIAL_COPY;
 
-    // Show the player what they are up against.
-    this.focus(this.structTileSelector(TUTORIAL_IDS.ENEMY_CMD_SHIP));
-    await this.say(C.DESTROY_ENEMY_CMD_SHIP, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.ENEMY_CMD_SHIP)));
+    await this.say(C.DESTROY_ENEMY_CMD_SHIP, BOTTOM);
 
-    this.focusHome();
     this.world.setBreachCountdown('29m');
 
     // The lesson starts with a full Battery, whatever was spent on the Defend.
@@ -650,39 +643,14 @@ export class TutorialDirector {
       true
     );
 
-    // The debrief happens over the enemy formation it explains.
-    this.focus(this.structTileSelector(TUTORIAL_IDS.ENEMY_TANK));
-    const enemyTank = this.find(this.structTileSelector(TUTORIAL_IDS.ENEMY_TANK));
-    const enemyCommandShip = this.find(this.structTileSelector(TUTORIAL_IDS.ENEMY_CMD_SHIP));
+    // The debrief happens back at the Alpha Base.
+    this.focusHome();
 
-    await this.say(C.WENT_POORLY, TOP, enemyTank);
-    await this.say(C.DEFENDER_COUNTER_ATTACK, TOP, enemyTank);
-    await this.say(C.DEFENDER_BLOCKED, TOP, enemyTank);
-    await this.say(C.CMD_SHIP_COUNTER_ATTACK, TOP, enemyCommandShip);
+    await this.say(C.WENT_POORLY, TOP);
+    await this.say(C.DEFENDER_BLOCKED, TOP);
+    await this.say(C.BOTH_COUNTER_ATTACK, TOP);
     await this.say(C.DESTROY_DEFENDER_FIRST, TOP);
-  }
-
-  async secondAttack() {
-    const C = TUTORIAL_COPY;
-
-    this.focus(this.structTileSelector(TUTORIAL_IDS.TANK_B));
-    await this.ask(
-      C.ONE_MORE_TANK,
-      TOP,
-      [this.structTileSelector(TUTORIAL_IDS.TANK_B)],
-      () => this.waitForStructSelected(TUTORIAL_IDS.TANK_B),
-      this.find(this.structTileSelector(TUTORIAL_IDS.TANK_B))
-    );
-
-    await this.guideAttack(
-      TUTORIAL_IDS.TANK_B,
-      TUTORIAL_IDS.ENEMY_TANK,
-      C.ATTACK_ENEMY_TANK,
-      C.ATTACK_ENEMY_TANK,
-      true
-    );
-
-    await this.say(C.TRIGGERED_COUNTER_ATTACK, TOP);
+    await this.say(C.AVOID_COUNTER_ATTACKS, TOP);
     await this.say(C.BATTLEGROUNDS, TOP);
     await this.say(C.RAIL_GUN_LAND_ONLY, TOP);
   }
@@ -710,6 +678,9 @@ export class TutorialDirector {
     );
 
     await this.say(C.SUCCESS, BOTTOM);
+
+    // Free play starts back at the Alpha Base.
+    this.focusHome();
     await this.say(C.CLOSE_TO_VICTORY, BOTTOM);
   }
 

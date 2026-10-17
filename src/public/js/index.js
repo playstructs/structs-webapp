@@ -23618,7 +23618,7 @@ const TUTORIAL_COPY = {
   CMD_SHIP: `The ${hl('CMD Ship')} is the hub of your operations. Defending it is the key to your success.`,
   CMD_SHIP_DESTROYED_WARNING: `If your CMD Ship is destroyed, you will be unable to deploy new Structs and your Alpha Base will be vulnerable.`,
 
-  RAIDERS_ATTACK: `Conveniently, Raiders have just launched an attack on your Alpha Base.`,
+  RAIDERS_ATTACK: `Conveniently, pirates have just launched a ${hl('Raid')} on your Alpha Base.`,
   PLANETARY_DEFENSES: `This icon represents your ${hl('Planetary Defenses')}. Raiders must ${hl('Breach')} these Defenses in order to steal your Ore Reserves.`,
   INSPECT_DEFENSES: `You can Press-and-hold to ${hl('Inspect')} most HUD elements. Inspect your Planetary Defenses to see their status.`,
   CMD_SHIP_PROTECTS: `The CMD Ship protects your Ore Reserves from intrusion. When a CMD Ship is on-station, your Defenses are ${hl('Secure')} and cannot be breached.`,
@@ -23632,9 +23632,8 @@ const TUTORIAL_COPY = {
   BATTERY_DEPLETES: `Good. Note that using abilities depletes the ${hl('Battery')}. The Battery will ${hl('Recharge')} automatically.`,
 
   CMD_SHIP_UNPROTECTED: `Your CMD Ship was unprotected, allowing the Raiders to easily Destroy it. Assign ${hl('Defenders')} to protect important Structs.`,
-  SELECT_INDICATED_TANK: `First, select indicated Tank.`,
-  DEFEND_OTHER_TANK: `When you have enough Battery Charge, assign the Struct to ${hl('Defend')} your other Tank. You can ${hint('Inspect', 'Press-and-Hold most elements to reveal more information about them.')} an ability to see its Battery Cost.`,
-  ASSIGN_DEFENSE: `Next, assign it to ${hl('Defend')} your other Tank.`,
+  SELECT_INDICATED_TANK: `First, select the Tank.`,
+  DEFEND_SAM_LAUNCHER: `When you have enough Battery Charge, assign the Tank to ${hl('Defend')} your SAM Launcher. You can ${hint('Inspect', 'Press-and-Hold most elements to reveal more information about them.')} an ability to see its Battery Cost.`,
   // Icons as drawn in the design frame for this line.
   DEFENDED_AND_DEFENDERS: `Good. Structs with the ${icon('icon-defending')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defended')} icon are ${hl('Defenders')}.`,
   CMD_SHIP_TAKES_TIME: `Your new CMD Ship will take time to arrive. You will need to engage the enemy in the meantime.`,
@@ -23644,14 +23643,11 @@ const TUTORIAL_COPY = {
   RAIL_GUN: `The Tank's ${hl('Rail Gun')} ability can target Structs on Land. Use it to attack the enemy CMD Ship.`,
 
   WENT_POORLY: `That went poorly. The enemy CMD Ship was ${hl('Defended')} by a Tank.`,
-  DEFENDER_COUNTER_ATTACK: `The Defender hit your Tank with a ${icon('icon-defender-counter')} ${hl('Counter-Attack')}. Be careful when launching attacks: Defenders always fire first.`,
-  DEFENDER_BLOCKED: `The Defender also ${icon('icon-defender-block')} ${hl('Blocked')} your attack, absorbing the incoming DMG and protecting the CMD Ship.`,
-  CMD_SHIP_COUNTER_ATTACK: `The CMD Ship then launched its own ${icon('icon-counter-attack')} ${hl('Counter-Attack')}, destroying your tank.`,
+  DEFENDER_BLOCKED: `The Defender ${icon('icon-defender-block')} ${hl('Blocked')} your attack, absorbing the incoming DMG and protecting the CMD Ship.`,
+  BOTH_COUNTER_ATTACK: `Both units also launched ${icon('icon-counter-attack')} ${hl('Counter-Attacks')}, destroying your Tank.`,
   DESTROY_DEFENDER_FIRST: `You'll need to destroy the enemy Defender before you can attack the CMD Ship directly.`,
+  AVOID_COUNTER_ATTACKS: `You can avoid Counter-Attacks by considering the abilities of each Struct.`,
 
-  ONE_MORE_TANK: `Fortunately, you have one more Tank. Select it now.`,
-  ATTACK_ENEMY_TANK: `When ready, attack the enemy Tank.`,
-  TRIGGERED_COUNTER_ATTACK: `Your attack triggered a ${hl('Counter-Attack')}. You can avoid Counter-Attacks by considering the abilities of each Struct.`,
   BATTLEGROUNDS: `Each planet has multiple ${hl('Battlegrounds')}, ${icon('icon-land')} Land, ${icon('icon-water')} Water, ${icon('icon-air')} Air, and ${icon('icon-space')} Space.`,
   RAIL_GUN_LAND_ONLY: `The enemy Tank's Rail Gun can only target ${hl('Land')}. Use this to your advantage.`,
 
@@ -23661,7 +23657,7 @@ const TUTORIAL_COPY = {
 
   RAIDERS_REPELLED: `You have successfully repelled the Raiders. However, without a CMD Ship on-station, your Planetary Defenses are still Vulnerable.`,
   CMD_SHIP_ARRIVING: `Fortunately, your new CMD Ship is arriving now.`,
-  DEFENSES_SECURE: `With a new CMD Ship on-station, your Planetary Defenses are ${hl('Secure')}.`,
+  DEFENSES_SECURE: `With a new CMD Ship on-station, your Planetary Defenses are once again ${hl('Secure')}. This concludes your Combat Training.`,
 
   COMPLETED: `You have successfully completed Combat Training. ${hl('Performance Grade:')} C-`,
   CERTIFIED: `SN.CORP certifies that you now meet the minimum requirements to operate the ST-21 "Spearpoint" CMD Ship. Productive travels, employee.`,
@@ -24238,7 +24234,6 @@ class TutorialDirector {
     await this.summonCommandShip();
     await this.assignDefenders();
     await this.firstAttack();
-    await this.secondAttack();
     await this.bomberAttack();
     await this.destroyEnemyCommandShip();
     await this.newCommandShip();
@@ -24272,12 +24267,9 @@ class TutorialDirector {
 
     this.world.startRaid();
     this.rerenderMap();
+    this.focusHome();
 
-    // The camera goes over to the raiders as they arrive.
-    await this.pause(100);
-    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK));
-
-    await this.say(C.RAIDERS_ATTACK, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK)));
+    await this.say(C.RAIDERS_ATTACK, BOTTOM);
     await this.say(C.PLANETARY_DEFENSES, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
     await this.ask(
       C.INSPECT_DEFENSES,
@@ -24288,7 +24280,6 @@ class TutorialDirector {
       UP
     );
 
-    this.focusHome();
     await this.say(C.CMD_SHIP_PROTECTS, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.CMD_SHIP)));
 
     await this.cutscene(async () => {
@@ -24394,9 +24385,10 @@ class TutorialDirector {
     );
 
     // The Battery is still recharging from the deploy: the Defend button
-    // unlocks by itself once there is enough charge.
+    // unlocks by itself once there is enough charge. The same line stays up
+    // while the player picks the SAM Launcher.
     await this.ask(
-      C.DEFEND_OTHER_TANK,
+      C.DEFEND_SAM_LAUNCHER,
       TOP,
       [SELECTORS.DEFEND_BUTTON],
       () => this.waitForActionMode(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET),
@@ -24405,14 +24397,14 @@ class TutorialDirector {
 
     const defended = this.waitForAction('defenseSet', result =>
       result.defenderStructId === _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_A
-      && result.protectedStructId === _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B
+      && result.protectedStructId === _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.SAM_LAUNCHER
     );
     await this.ask(
-      C.ASSIGN_DEFENSE,
+      C.DEFEND_SAM_LAUNCHER,
       TOP,
-      [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B)],
+      [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.SAM_LAUNCHER)],
       () => defended,
-      this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B))
+      this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.SAM_LAUNCHER))
     );
 
     await this.cutscene(() => this.waitForCombatToSettle());
@@ -24426,11 +24418,8 @@ class TutorialDirector {
   async firstAttack() {
     const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
 
-    // Show the player what they are up against.
-    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_CMD_SHIP));
-    await this.say(C.DESTROY_ENEMY_CMD_SHIP, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_CMD_SHIP)));
+    await this.say(C.DESTROY_ENEMY_CMD_SHIP, BOTTOM);
 
-    this.focusHome();
     this.world.setBreachCountdown('29m');
 
     // The lesson starts with a full Battery, whatever was spent on the Defend.
@@ -24452,39 +24441,14 @@ class TutorialDirector {
       true
     );
 
-    // The debrief happens over the enemy formation it explains.
-    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK));
-    const enemyTank = this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK));
-    const enemyCommandShip = this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_CMD_SHIP));
+    // The debrief happens back at the Alpha Base.
+    this.focusHome();
 
-    await this.say(C.WENT_POORLY, TOP, enemyTank);
-    await this.say(C.DEFENDER_COUNTER_ATTACK, TOP, enemyTank);
-    await this.say(C.DEFENDER_BLOCKED, TOP, enemyTank);
-    await this.say(C.CMD_SHIP_COUNTER_ATTACK, TOP, enemyCommandShip);
+    await this.say(C.WENT_POORLY, TOP);
+    await this.say(C.DEFENDER_BLOCKED, TOP);
+    await this.say(C.BOTH_COUNTER_ATTACK, TOP);
     await this.say(C.DESTROY_DEFENDER_FIRST, TOP);
-  }
-
-  async secondAttack() {
-    const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
-
-    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B));
-    await this.ask(
-      C.ONE_MORE_TANK,
-      TOP,
-      [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B)],
-      () => this.waitForStructSelected(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B),
-      this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B))
-    );
-
-    await this.guideAttack(
-      _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B,
-      _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK,
-      C.ATTACK_ENEMY_TANK,
-      C.ATTACK_ENEMY_TANK,
-      true
-    );
-
-    await this.say(C.TRIGGERED_COUNTER_ATTACK, TOP);
+    await this.say(C.AVOID_COUNTER_ATTACKS, TOP);
     await this.say(C.BATTLEGROUNDS, TOP);
     await this.say(C.RAIL_GUN_LAND_ONLY, TOP);
   }
@@ -24512,6 +24476,9 @@ class TutorialDirector {
     );
 
     await this.say(C.SUCCESS, BOTTOM);
+
+    // Free play starts back at the Alpha Base.
+    this.focusHome();
     await this.say(C.CLOSE_TO_VICTORY, BOTTOM);
   }
 
@@ -27068,7 +27035,7 @@ const TUTORIAL_IDS = {
   EXTRACTOR: '5-90002',
   REFINERY: '5-90003',
   TANK_A: '5-90004',
-  TANK_B: '5-90005',
+  SAM_LAUNCHER: '5-90005',
   BOMBER: '5-90006',
   NEW_CMD_SHIP: '5-90007',
   ENEMY_CMD_SHIP: '5-90101',
@@ -27273,7 +27240,7 @@ class TutorialWorld {
       this.makeStruct(TUTORIAL_IDS.EXTRACTOR, _constants_StructConstants__WEBPACK_IMPORTED_MODULE_10__.STRUCT_TYPES.ORE_EXTRACTOR, P, 'planet', 'land', 1),
       this.makeStruct(TUTORIAL_IDS.REFINERY, _constants_StructConstants__WEBPACK_IMPORTED_MODULE_10__.STRUCT_TYPES.ORE_REFINERY, P, 'planet', 'land', 3),
       this.makeStruct(TUTORIAL_IDS.TANK_A, _constants_StructConstants__WEBPACK_IMPORTED_MODULE_10__.STRUCT_TYPES.TANK, P, 'fleet', 'land', 1),
-      this.makeStruct(TUTORIAL_IDS.TANK_B, _constants_StructConstants__WEBPACK_IMPORTED_MODULE_10__.STRUCT_TYPES.TANK, P, 'fleet', 'land', 3),
+      this.makeStruct(TUTORIAL_IDS.SAM_LAUNCHER, _constants_StructConstants__WEBPACK_IMPORTED_MODULE_10__.STRUCT_TYPES.SAM_LAUNCHER, P, 'fleet', 'land', 3),
       this.makeStruct(TUTORIAL_IDS.BOMBER, _constants_StructConstants__WEBPACK_IMPORTED_MODULE_10__.STRUCT_TYPES.STEALTH_BOMBER, P, 'fleet', 'air', 0),
       this.makeStruct(TUTORIAL_IDS.ENEMY_CMD_SHIP, _constants_StructConstants__WEBPACK_IMPORTED_MODULE_10__.STRUCT_TYPES.COMMAND_SHIP, R, 'fleet', 'land', 0),
       this.makeStruct(TUTORIAL_IDS.ENEMY_TANK, _constants_StructConstants__WEBPACK_IMPORTED_MODULE_10__.STRUCT_TYPES.TANK, R, 'fleet', 'land', 0),
@@ -27685,19 +27652,21 @@ class TutorialWorld {
     }
 
     if (this.isAlive(attacker)) {
-      // 2. A defender in the target's battleground absorbs the shot.
+      // 2. A defender in the target's battleground blocks the shot and takes its DMG.
       const blocker = defenders.find(defender =>
         this.isAlive(defender) && defender.operating_ambit === target.operating_ambit
       );
 
       if (blocker) {
+        const result = this.applyDamage(blocker, damage);
         shot.blocked = true;
         shot.blockedByStructId = blocker.id;
         shot.blockedByStructType = this.getStructTypeById(blocker.type).type;
         shot.blockedByStructOperatingAmbit = blocker.operating_ambit;
         shot.blockedByStructLocationType = blocker.location_type;
-        shot.blockerHealthBefore = blocker.health;
-        shot.blockerHealthAfter = blocker.health;
+        shot.blockerHealthBefore = result.before;
+        shot.blockerHealthAfter = result.after;
+        shot.blockerDestroyed = result.destroyed;
       } else {
         const result = this.applyDamage(target, damage);
         shot.targetHealthAfter = result.after;

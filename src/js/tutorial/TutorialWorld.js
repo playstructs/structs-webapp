@@ -31,7 +31,7 @@ export const TUTORIAL_IDS = {
   EXTRACTOR: '5-90002',
   REFINERY: '5-90003',
   TANK_A: '5-90004',
-  TANK_B: '5-90005',
+  SAM_LAUNCHER: '5-90005',
   BOMBER: '5-90006',
   NEW_CMD_SHIP: '5-90007',
   ENEMY_CMD_SHIP: '5-90101',
@@ -236,7 +236,7 @@ export class TutorialWorld {
       this.makeStruct(TUTORIAL_IDS.EXTRACTOR, STRUCT_TYPES.ORE_EXTRACTOR, P, 'planet', 'land', 1),
       this.makeStruct(TUTORIAL_IDS.REFINERY, STRUCT_TYPES.ORE_REFINERY, P, 'planet', 'land', 3),
       this.makeStruct(TUTORIAL_IDS.TANK_A, STRUCT_TYPES.TANK, P, 'fleet', 'land', 1),
-      this.makeStruct(TUTORIAL_IDS.TANK_B, STRUCT_TYPES.TANK, P, 'fleet', 'land', 3),
+      this.makeStruct(TUTORIAL_IDS.SAM_LAUNCHER, STRUCT_TYPES.SAM_LAUNCHER, P, 'fleet', 'land', 3),
       this.makeStruct(TUTORIAL_IDS.BOMBER, STRUCT_TYPES.STEALTH_BOMBER, P, 'fleet', 'air', 0),
       this.makeStruct(TUTORIAL_IDS.ENEMY_CMD_SHIP, STRUCT_TYPES.COMMAND_SHIP, R, 'fleet', 'land', 0),
       this.makeStruct(TUTORIAL_IDS.ENEMY_TANK, STRUCT_TYPES.TANK, R, 'fleet', 'land', 0),
@@ -648,19 +648,21 @@ export class TutorialWorld {
     }
 
     if (this.isAlive(attacker)) {
-      // 2. A defender in the target's battleground absorbs the shot.
+      // 2. A defender in the target's battleground blocks the shot and takes its DMG.
       const blocker = defenders.find(defender =>
         this.isAlive(defender) && defender.operating_ambit === target.operating_ambit
       );
 
       if (blocker) {
+        const result = this.applyDamage(blocker, damage);
         shot.blocked = true;
         shot.blockedByStructId = blocker.id;
         shot.blockedByStructType = this.getStructTypeById(blocker.type).type;
         shot.blockedByStructOperatingAmbit = blocker.operating_ambit;
         shot.blockedByStructLocationType = blocker.location_type;
-        shot.blockerHealthBefore = blocker.health;
-        shot.blockerHealthAfter = blocker.health;
+        shot.blockerHealthBefore = result.before;
+        shot.blockerHealthAfter = result.after;
+        shot.blockerDestroyed = result.destroyed;
       } else {
         const result = this.applyDamage(target, damage);
         shot.targetHealthAfter = result.after;
