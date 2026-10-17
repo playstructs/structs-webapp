@@ -13423,7 +13423,8 @@ if (tutorialMode) {
   _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideLoadingScreen();
 } else if (!gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_30__.PLAYER_TYPES.PLAYER].id) {
   _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_37__.TutorialMode.consumeExited();
-  _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'introduction');
+  // The opening crawl (Auth/introduction) is shelved for now.
+  _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Auth', 'index');
 
   _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideLoadingScreen();
 } else {

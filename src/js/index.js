@@ -291,7 +291,8 @@ if (tutorialMode) {
   MenuPage.hideLoadingScreen();
 } else if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
   TutorialMode.consumeExited();
-  MenuPage.router.goto('Auth', 'introduction');
+  // The opening crawl (Auth/introduction) is shelved for now.
+  MenuPage.router.goto('Auth', 'index');
 
   MenuPage.hideLoadingScreen();
 } else {
