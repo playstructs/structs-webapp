@@ -434,12 +434,12 @@ export class TutorialDirector {
     await this.introduction();
     await this.raid();
     await this.summonCommandShip();
+    await this.assignDefenders();
     await this.firstAttack();
     await this.secondAttack();
     await this.bomberAttack();
     await this.destroyEnemyCommandShip();
     await this.newCommandShip();
-    await this.setDefenses();
 
     this.allow([]);
     this.pointer.hide();
@@ -470,12 +470,24 @@ export class TutorialDirector {
 
     this.world.startRaid();
     this.rerenderMap();
-    this.focusHome();
 
-    await this.say(C.RAIDERS_ATTACK, BOTTOM);
+    // The camera goes over to the raiders as they arrive.
+    await this.pause(100);
+    this.focus(this.structTileSelector(TUTORIAL_IDS.ENEMY_TANK));
+
+    await this.say(C.RAIDERS_ATTACK, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.ENEMY_TANK)));
     await this.say(C.PLANETARY_DEFENSES, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
+    await this.ask(
+      C.INSPECT_DEFENSES,
+      BOTTOM,
+      [SELECTORS.SHIELD_STATUS],
+      () => this.waitForInspect(SELECTORS.SHIELD_STATUS),
+      this.find(SELECTORS.SHIELD_STATUS),
+      UP
+    );
+
+    this.focusHome();
     await this.say(C.CMD_SHIP_PROTECTS, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.CMD_SHIP)));
-    await this.say(C.DEFENSE_STATUS, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
 
     await this.cutscene(async () => {
       await this.pause(600);
@@ -486,6 +498,22 @@ export class TutorialDirector {
 
     await this.say(C.CMD_SHIP_DESTROYED, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
     await this.say(C.BREACH_COUNTDOWN, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
+  }
+
+  /**
+   * Resolves once the player has press-and-held an element long enough to
+   * open its Inspect panel (cheatsheet) and has let go again.
+   *
+   * @param {string} selector
+   * @return {Promise<void>}
+   */
+  async waitForInspect(selector) {
+    const isInspecting = () => {
+      const panel = document.getElementById('sui-cheatsheet-container');
+      return !!panel && panel.isConnected && !!document.querySelector(selector)?.dataset.suiCheatsheet;
+    };
+    await this.waitUntil(isInspecting, 100);
+    await this.waitUntil(() => !isInspecting(), 100);
   }
 
   async summonCommandShip() {
@@ -506,9 +534,6 @@ export class TutorialDirector {
       this.find(this.commandTileSelector())
     );
 
-    await this.say(C.ACTION_BAR, TOP, this.find(SELECTORS.HEADER));
-    await this.say(C.PRESS_AND_HOLD, TOP, this.find(SELECTORS.TILE_TYPE_ICON));
-
     const deployed = this.waitForAction('build');
     await this.ask(
       C.DEPLOY,
@@ -528,10 +553,7 @@ export class TutorialDirector {
     this.allow([]);
     await this.pause(800);
 
-    await this.say(C.CMD_SHIP_ON_ITS_WAY, TOP);
-    await this.say(C.BATTERY, TOP, this.find(SELECTORS.BATTERY));
-    await this.say(C.BATTERY_RECHARGE, TOP, this.find(SELECTORS.BATTERY));
-    await this.say(C.CMD_SHIP_DELAYED, TOP, this.find(SELECTORS.BATTERY));
+    await this.say(C.BATTERY_DEPLETES, TOP);
   }
 
   /**
@@ -556,19 +578,60 @@ export class TutorialDirector {
     return !!document.querySelector('.deploy-struct-type');
   }
 
+  async assignDefenders() {
+    const C = TUTORIAL_COPY;
+
+    await this.say(C.CMD_SHIP_UNPROTECTED, TOP);
+
+    await this.ask(
+      C.SELECT_INDICATED_TANK,
+      TOP,
+      [this.structTileSelector(TUTORIAL_IDS.TANK_A)],
+      () => this.waitForStructSelected(TUTORIAL_IDS.TANK_A),
+      this.find(this.structTileSelector(TUTORIAL_IDS.TANK_A))
+    );
+
+    // The Battery is still recharging from the deploy: the Defend button
+    // unlocks by itself once there is enough charge.
+    await this.ask(
+      C.DEFEND_OTHER_TANK,
+      TOP,
+      [SELECTORS.DEFEND_BUTTON],
+      () => this.waitForActionMode(STRUCT_ACTIONS.DEFENSE_SET),
+      this.find(SELECTORS.DEFEND_BUTTON)
+    );
+
+    const defended = this.waitForAction('defenseSet', result =>
+      result.defenderStructId === TUTORIAL_IDS.TANK_A
+      && result.protectedStructId === TUTORIAL_IDS.TANK_B
+    );
+    await this.ask(
+      C.ASSIGN_DEFENSE,
+      TOP,
+      [this.structTileSelector(TUTORIAL_IDS.TANK_B)],
+      () => defended,
+      this.find(this.structTileSelector(TUTORIAL_IDS.TANK_B))
+    );
+
+    await this.cutscene(() => this.waitForCombatToSettle());
+
+    await this.say(C.DEFENDED_AND_DEFENDERS, TOP);
+
+    window.dispatchEvent(new ClearTileSelectionEvent());
+    await this.say(C.CMD_SHIP_TAKES_TIME, BOTTOM);
+  }
+
   async firstAttack() {
     const C = TUTORIAL_COPY;
 
-    window.dispatchEvent(new ClearTileSelectionEvent());
-    this.dialogue.hide();
+    // Show the player what they are up against.
+    this.focus(this.structTileSelector(TUTORIAL_IDS.ENEMY_CMD_SHIP));
+    await this.say(C.DESTROY_ENEMY_CMD_SHIP, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.ENEMY_CMD_SHIP)));
+
     this.focusHome();
-
-    await this.say(C.ENGAGE_ENEMY, BOTTOM);
-    await this.say(C.KEY_TO_VICTORY, BOTTOM);
-
     this.world.setBreachCountdown('29m');
 
-    // The lesson starts with a full Battery, whatever was spent on the deploy.
+    // The lesson starts with a full Battery, whatever was spent on the Defend.
     this.world.rechargeBattery();
 
     await this.ask(
@@ -587,19 +650,22 @@ export class TutorialDirector {
       true
     );
 
-    this.focusHome();
+    // The debrief happens over the enemy formation it explains.
+    this.focus(this.structTileSelector(TUTORIAL_IDS.ENEMY_TANK));
+    const enemyTank = this.find(this.structTileSelector(TUTORIAL_IDS.ENEMY_TANK));
+    const enemyCommandShip = this.find(this.structTileSelector(TUTORIAL_IDS.ENEMY_CMD_SHIP));
 
-    await this.say(C.WENT_POORLY, TOP);
-    await this.say(C.DEFENDER_COUNTER_ATTACK, TOP);
-    await this.say(C.DEFENDER_BLOCKED, TOP);
-    await this.say(C.CMD_SHIP_COUNTER_ATTACK, TOP);
-    await this.say(C.DEFENDED_AND_DEFENDERS, TOP);
+    await this.say(C.WENT_POORLY, TOP, enemyTank);
+    await this.say(C.DEFENDER_COUNTER_ATTACK, TOP, enemyTank);
+    await this.say(C.DEFENDER_BLOCKED, TOP, enemyTank);
+    await this.say(C.CMD_SHIP_COUNTER_ATTACK, TOP, enemyCommandShip);
     await this.say(C.DESTROY_DEFENDER_FIRST, TOP);
   }
 
   async secondAttack() {
     const C = TUTORIAL_COPY;
 
+    this.focus(this.structTileSelector(TUTORIAL_IDS.TANK_B));
     await this.ask(
       C.ONE_MORE_TANK,
       TOP,
@@ -608,45 +674,40 @@ export class TutorialDirector {
       this.find(this.structTileSelector(TUTORIAL_IDS.TANK_B))
     );
 
-    await this.say(C.SUFFICIENT_BATTERY, TOP, this.find(SELECTORS.BATTERY));
-    await this.say(C.BATTERY_COST, TOP, this.find(SELECTORS.PRIMARY_WEAPON_BUTTON));
-
     await this.guideAttack(
       TUTORIAL_IDS.TANK_B,
       TUTORIAL_IDS.ENEMY_TANK,
       C.ATTACK_ENEMY_TANK,
-      C.ATTACK_ENEMY_TANK_TARGET
+      C.ATTACK_ENEMY_TANK,
+      true
     );
 
-    this.focusHome();
-
     await this.say(C.TRIGGERED_COUNTER_ATTACK, TOP);
-    await this.say(C.AVOID_COUNTER_ATTACKS, TOP);
     await this.say(C.BATTLEGROUNDS, TOP);
     await this.say(C.RAIL_GUN_LAND_ONLY, TOP);
-    await this.say(C.STEALTH_BOMBER, TOP);
   }
 
   async bomberAttack() {
     const C = TUTORIAL_COPY;
 
+    // The Bomber flies above the land battleground, out of view: bring it in.
+    this.focus(this.structTileSelector(TUTORIAL_IDS.BOMBER));
+    this.world.setBreachCountdown('28m');
+
     await this.ask(
-      C.SELECT_BOMBER,
+      C.STEALTH_BOMBER,
       TOP,
       [this.structTileSelector(TUTORIAL_IDS.BOMBER)],
-      () => this.waitForStructSelected(TUTORIAL_IDS.BOMBER)
+      () => this.waitForStructSelected(TUTORIAL_IDS.BOMBER),
+      this.find(this.structTileSelector(TUTORIAL_IDS.BOMBER))
     );
-
-    this.world.setBreachCountdown('28m');
 
     await this.guideAttack(
       TUTORIAL_IDS.BOMBER,
       TUTORIAL_IDS.ENEMY_TANK,
-      C.BOMBER_DESTROY_TANK,
-      C.BOMBER_DESTROY_TANK
+      C.STEALTH_BOMBER,
+      C.STEALTH_BOMBER
     );
-
-    this.focusHome();
 
     await this.say(C.SUCCESS, BOTTOM);
     await this.say(C.CLOSE_TO_VICTORY, BOTTOM);
@@ -689,45 +750,5 @@ export class TutorialDirector {
     });
 
     await this.say(C.DEFENSES_SECURE, BOTTOM);
-    await this.say(C.REPLACEMENT_COSTS, BOTTOM);
-    await this.say(C.ASSIGN_DEFENDERS, BOTTOM);
-  }
-
-  async setDefenses() {
-    const C = TUTORIAL_COPY;
-
-    // The lesson starts from nothing selected, so the player picks the Tank themselves.
-    window.dispatchEvent(new ClearTileSelectionEvent());
-
-    await this.ask(
-      C.SELECT_THE_TANK,
-      TOP,
-      [this.structTileSelector(TUTORIAL_IDS.TANK_B)],
-      () => this.waitForStructSelected(TUTORIAL_IDS.TANK_B)
-    );
-
-    await this.ask(
-      C.DEFEND,
-      TOP,
-      [SELECTORS.DEFEND_BUTTON],
-      () => this.waitForActionMode(STRUCT_ACTIONS.DEFENSE_SET),
-      this.find(SELECTORS.DEFEND_BUTTON)
-    );
-
-    const defended = this.waitForAction('defenseSet', result =>
-      result.protectedStructId === TUTORIAL_IDS.NEW_CMD_SHIP
-    );
-    await this.ask(
-      C.DEFEND,
-      TOP,
-      [this.structTileSelector(TUTORIAL_IDS.NEW_CMD_SHIP)],
-      () => defended
-    );
-
-    await this.cutscene(() => this.waitForCombatToSettle());
-
-    await this.say(C.TANK_DEFENDING, TOP);
-    await this.say(C.FLEET_STRUCTS_DEFEND, TOP);
-    await this.say(C.PROTECT_COMPANY_ASSETS, TOP);
   }
 }

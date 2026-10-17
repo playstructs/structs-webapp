@@ -5,6 +5,14 @@
 const hl = (text) => `<span class="tutorial-highlight">${text}</span>`;
 
 /**
+ * The design's second highlight colour, used for game terms that link to more help.
+ *
+ * @param {string} text
+ * @return {string}
+ */
+const hlSecondary = (text) => `<span class="sui-text-secondary">${text}</span>`;
+
+/**
  * @param {string} name file name in /img/sui/icon, without extension
  * @return {string}
  */
@@ -22,69 +30,56 @@ export const TUTORIAL_COPY = {
   REFINERY: `Alpha Ore is dangerously unstable. To be useful, it must first be refined into stable ${hl('Alpha Matter')} at a ${hl('Refinery')}.`,
   ORE_RESERVES: `Your current ${hl('Ore Reserves')} are shown here.`,
   ORE_THEFTS: `Ore thefts are common in the uncharted regions. You must be prepared to defend your Ore Reserves against ${hl('Raiders')}.`,
-  CMD_SHIP: `The ${hl('CMD Ship')} is the vanguard of your operations in the uncharted regions. Defending it is the key to victory in combat encounters.`,
+  CMD_SHIP: `The ${hl('CMD Ship')} is the hub of your operations. Defending it is the key to your success.`,
   CMD_SHIP_DESTROYED_WARNING: `If your CMD Ship is destroyed, you will be unable to deploy new Structs and your Alpha Base will be vulnerable.`,
 
   RAIDERS_ATTACK: `Conveniently, Raiders have just launched an attack on your Alpha Base.`,
   PLANETARY_DEFENSES: `This icon represents your ${hl('Planetary Defenses')}. Raiders must ${hl('Breach')} these Defenses in order to steal your Ore Reserves.`,
-  CMD_SHIP_PROTECTS: `The CMD Ship protects your Base from intrusion. When a CMD Ship is on-station, your Defenses are ${hl('Secure')} and cannot be breached by Raiders.`,
-  DEFENSE_STATUS: `Check your Planetary Defense ${hl('Status')} at any time by pressing and holding the icon.`,
+  INSPECT_DEFENSES: `You can Press-and-hold to ${hl('Inspect')} most HUD elements. Inspect your Planetary Defenses to see their status.`,
+  CMD_SHIP_PROTECTS: `The CMD Ship protects your Ore Reserves from intrusion. When a CMD Ship is on-station, your Defenses are ${hl('Secure')} and cannot be breached.`,
   CMD_SHIP_DESTROYED: `Your CMD Ship has been destroyed! Raiders are now attempting to ${hl('Breach')} Planetary Defenses!`,
-  BREACH_COUNTDOWN: `The Breach takes time--the ${hl('Breach Countdown')} estimates the time remaining until the Breach is successful and the enemy steals your Ore.`,
+  BREACH_COUNTDOWN: `The Breach takes time--the ${hl('Breach Countdown')} estimates the time remaining until the enemy steals your Ore.`,
 
   SUMMON_CMD_SHIP: `You must summon a new CMD Ship to re-secure your planetary Defenses. Select the highlighted tile.`,
-  ACTION_BAR: `This is the ${hl('Action Bar')}, where you can review information about a tile and issue commands.`,
-  PRESS_AND_HOLD: `You can ${hl('press-and-hold')} icons in the Action Bar to learn more about a tile or Struct.`,
-  DEPLOY: `To summon a new CMD Ship, press the ${hl('Deploy')} button and select the CMD Ship from the Deploy Menu.`,
+  DEPLOY: `Use the ${hl('Deploy')} ability to summon a new CMD Ship.`,
   DEPLOY_MENU_TITLE: `Deploy Struct`,
-  DEPLOY_MENU_HINT: `<p>Press a Struct to Deploy it.</p><p>Press-and-Hold to reveal more information about it.</p>`,
-  CMD_SHIP_ON_ITS_WAY: `Good. The New CMD Ship is on it's way.`,
-  BATTERY: `This is the ${hl('Battery')}. Most actions, such as deploying Structs or launching attacks, deplete the Battery.`,
-  BATTERY_RECHARGE: `The Battery will ${hl('Recharge')} automatically over time.`,
-  CMD_SHIP_DELAYED: `The new CMD Ship won't arrive for some time--and the enemy Breach is already underway.`,
+  DEPLOY_MENU_HINT: `<p>Press a Struct to Deploy it.</p><p>Press-and-Hold to Inspect it.</p>`,
+  BATTERY_DEPLETES: `Good. Note that using abilities depletes the ${hl('Battery')}. The Battery will ${hl('Recharge')} automatically.`,
 
-  ENGAGE_ENEMY: `You will need to engage the enemy forces to protect your Ore Reserves.`,
-  KEY_TO_VICTORY: `The key to victory is the ${hl('enemy CMD Ship')}. Destroy it, and the raiders will be forced to retreat.`,
-  SELECT_TANK: `First, select your Tank.`,
+  CMD_SHIP_UNPROTECTED: `Your CMD Ship was unprotected, allowing the Raiders to easily Destroy it. Assign ${hl('Defenders')} to protect important Structs.`,
+  SELECT_INDICATED_TANK: `First, select indicated Tank.`,
+  DEFEND_OTHER_TANK: `When you have enough Battery Charge, assign the Struct to ${hl('Defend')} your other Tank. You can ${hlSecondary('Inspect')} an ability to see it's Battery Cost.`,
+  ASSIGN_DEFENSE: `Next, assign it to ${hl('Defend')} your other Tank.`,
+  // Icons as drawn in the design frame for this line.
+  DEFENDED_AND_DEFENDERS: `Good. Structs with &nbsp;the ${icon('icon-defending')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defended')} icon are ${hl('Defenders')}.`,
+  CMD_SHIP_TAKES_TIME: `Your new CMD Ship will take time to arrive. You will need to engage the enemy in the meantime.`,
+
+  DESTROY_ENEMY_CMD_SHIP: `Destroying the ${hl('enemy CMD Ship')} will force the raiders to retreat.`,
+  SELECT_TANK: `Select your Tank.`,
   RAIL_GUN: `The Tank's ${hl('Rail Gun')} ability can target Structs on Land. Use it to attack the enemy CMD Ship.`,
   RAIL_GUN_TARGET: `The Tanks ${hl('Rail Gun')} ability can target Structs on Land. Use it to attack the enemy CMD Ship.`,
 
   WENT_POORLY: `That went poorly. The enemy CMD Ship was ${hl('Defended')} by a Tank.`,
   DEFENDER_COUNTER_ATTACK: `The Defender hit your Tank with a ${icon('icon-defender-counter')} ${hl('Counter-Attack')}. Be careful when launching attacks: Defenders always fire first.`,
   DEFENDER_BLOCKED: `The Defender also ${icon('icon-defender-block')} ${hl('Blocked')} your attack, absorbing the incoming DMG and protecting the CMD Ship.`,
-  CMD_SHIP_COUNTER_ATTACK: `The CMD Ship also launched its own ${icon('icon-counter-attack')} ${hl('Counter-Attack')}, destroying your tank.`,
-  // Icons as drawn in the design frame for this line.
-  DEFENDED_AND_DEFENDERS: `Structs with &nbsp;the ${icon('icon-defending')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defended')} icon are ${hl('Defenders')}.`,
+  CMD_SHIP_COUNTER_ATTACK: `The CMD Ship then launched its own ${icon('icon-counter-attack')} ${hl('Counter-Attack')}, destroying your tank.`,
   DESTROY_DEFENDER_FIRST: `You'll need to destroy the enemy Defender before you can attack the CMD Ship directly.`,
 
   ONE_MORE_TANK: `Fortunately, you have one more Tank. Select it now.`,
-  SUFFICIENT_BATTERY: `Before you attack, make sure you have sufficient ${hl('Battery.')}`,
-  BATTERY_COST: `You can Press-and-hold an ability to see its ${hl('Battery Cost')}.`,
-  ATTACK_ENEMY_TANK: `When ready, attack the enemy Tank with your own Tank.`,
-  ATTACK_ENEMY_TANK_TARGET: `When ready, attack the enemy Tank.`,
-  TRIGGERED_COUNTER_ATTACK: `Your attack triggered a ${hl('Counter-Attack')}. Most Structs automatically launch Counter-Attacks when targeted.`,
-  AVOID_COUNTER_ATTACKS: `You can avoid Counter-Attacks by considering the abilities of each Struct.`,
+  ATTACK_ENEMY_TANK: `When ready, attack he enemy Tank.`,
+  TRIGGERED_COUNTER_ATTACK: `Your attack triggered a ${hl('Counter-Attack')}. You can avoid Counter-Attacks by considering the abilities of each Struct.`,
   BATTLEGROUNDS: `Each planet has multiple ${hl('Battlegrounds')}, ${icon('icon-land')} Land, ${icon('icon-water')} Water, ${icon('icon-air')} Air, and ${icon('icon-space')} Space.`,
-  RAIL_GUN_LAND_ONLY: `The Tank's Rail Gun can only target Land. You can use this to your advantage.`,
-  STEALTH_BOMBER: `A Stealth Bomber can attack the enemy Tank from the safety of the Air.`,
+  RAIL_GUN_LAND_ONLY: `The enemy Tank's Rail Gun can only target ${hl('Land')}. Use this to your advantage.`,
 
-  SELECT_BOMBER: `Select the Stealth Bomber.`,
-  BOMBER_DESTROY_TANK: `When ready, use the Stealth Bomber to destroy the enemy Tank.`,
+  STEALTH_BOMBER: `A Stealth Bomber can attack from the safety of the air. When ready, use it to destroy the Tank.`,
   SUCCESS: `Success! Remember to review enemy abilities and defenses before you strike to penetrate formations and avoid damaging counter-attacks.`,
   CLOSE_TO_VICTORY: `You are close to victory. Use what you have learned to destroy the enemy CMD Ship.`,
 
   RAIDERS_REPELLED: `You have successfully repelled the Raiders. However, without a CMD Ship on-station, your Planetary Defenses are still Vulnerable.`,
   CMD_SHIP_ARRIVING: `Fortunately, your new CMD Ship is arriving now.`,
   DEFENSES_SECURE: `With a new CMD Ship on-station, your Planetary Defenses are ${hl('Secure')}.`,
-  REPLACEMENT_COSTS: `CMD Ship replacement costs will be deducted from your salary. It is your responsibility to protect valuable SN.CORP assets.`,
-  ASSIGN_DEFENDERS: `You can protect Structs by assigning your own ${hl('Defenders')}.`,
-  SELECT_THE_TANK: `Start by selecting the Tank.`,
-  DEFEND: `Assign the Tank to protect the CMD Ship using the ${hl('Defend')} ability.`,
-  TANK_DEFENDING: `Good. The Tank is now Defending the CMD Ship.`,
-  FLEET_STRUCTS_DEFEND: `All Fleet Structs can be assigned to Defend allied units.`,
-  PROTECT_COMPANY_ASSETS: `Employees are expected to make every effort to protect company assets. Plan your defenses accordingly.`,
 
-  CONGRATULATIONS: `Congratulations: you have successfully completed Basic Training.`,
+  COMPLETED: `You have successfully completed Combat Training. ${hl('Performance Grade:')} C-`,
   CERTIFIED: `SN.CORP certifies that you now meet the minimum requirements to operate the ST-21 "Spearpoint" CMD Ship. Productive travels, employee.`,
   FTL_JUMP: `FTL Jump in Progress.`,
 };

@@ -5436,6 +5436,12 @@ class TutorialController extends _framework_AbstractController__WEBPACK_IMPORTED
       }
     });
     this.destroyedStructManager.sweep();
+
+    // With the wreck gone, survivors drop the defense icons it was part of.
+    const mapType = this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__.PLAYER_TYPES.PLAYER].planetMapType;
+    this.world.takeStructsWithBrokenDefenses().forEach(structId => {
+      this.structManager.refreshStruct(structId, mapType, false, false);
+    });
   }
 
   finishSimulation() {
@@ -5446,7 +5452,7 @@ class TutorialController extends _framework_AbstractController__WEBPACK_IMPORTED
   end() {
     const hrBotTalkingTemplate = new _view_models_templates_HRBotTalkingTemplate__WEBPACK_IMPORTED_MODULE_3__.HRBotTalkingTemplate();
     hrBotTalkingTemplate.dialogueSequence = [
-      _tutorial_TutorialCopy__WEBPACK_IMPORTED_MODULE_6__.TUTORIAL_COPY.CONGRATULATIONS,
+      _tutorial_TutorialCopy__WEBPACK_IMPORTED_MODULE_6__.TUTORIAL_COPY.COMPLETED,
       _tutorial_TutorialCopy__WEBPACK_IMPORTED_MODULE_6__.TUTORIAL_COPY.CERTIFIED,
     ];
     hrBotTalkingTemplate.startWithScanLines = true;
@@ -23578,6 +23584,14 @@ __webpack_require__.r(__webpack_exports__);
 const hl = (text) => `<span class="tutorial-highlight">${text}</span>`;
 
 /**
+ * The design's second highlight colour, used for game terms that link to more help.
+ *
+ * @param {string} text
+ * @return {string}
+ */
+const hlSecondary = (text) => `<span class="sui-text-secondary">${text}</span>`;
+
+/**
  * @param {string} name file name in /img/sui/icon, without extension
  * @return {string}
  */
@@ -23595,69 +23609,56 @@ const TUTORIAL_COPY = {
   REFINERY: `Alpha Ore is dangerously unstable. To be useful, it must first be refined into stable ${hl('Alpha Matter')} at a ${hl('Refinery')}.`,
   ORE_RESERVES: `Your current ${hl('Ore Reserves')} are shown here.`,
   ORE_THEFTS: `Ore thefts are common in the uncharted regions. You must be prepared to defend your Ore Reserves against ${hl('Raiders')}.`,
-  CMD_SHIP: `The ${hl('CMD Ship')} is the vanguard of your operations in the uncharted regions. Defending it is the key to victory in combat encounters.`,
+  CMD_SHIP: `The ${hl('CMD Ship')} is the hub of your operations. Defending it is the key to your success.`,
   CMD_SHIP_DESTROYED_WARNING: `If your CMD Ship is destroyed, you will be unable to deploy new Structs and your Alpha Base will be vulnerable.`,
 
   RAIDERS_ATTACK: `Conveniently, Raiders have just launched an attack on your Alpha Base.`,
   PLANETARY_DEFENSES: `This icon represents your ${hl('Planetary Defenses')}. Raiders must ${hl('Breach')} these Defenses in order to steal your Ore Reserves.`,
-  CMD_SHIP_PROTECTS: `The CMD Ship protects your Base from intrusion. When a CMD Ship is on-station, your Defenses are ${hl('Secure')} and cannot be breached by Raiders.`,
-  DEFENSE_STATUS: `Check your Planetary Defense ${hl('Status')} at any time by pressing and holding the icon.`,
+  INSPECT_DEFENSES: `You can Press-and-hold to ${hl('Inspect')} most HUD elements. Inspect your Planetary Defenses to see their status.`,
+  CMD_SHIP_PROTECTS: `The CMD Ship protects your Ore Reserves from intrusion. When a CMD Ship is on-station, your Defenses are ${hl('Secure')} and cannot be breached.`,
   CMD_SHIP_DESTROYED: `Your CMD Ship has been destroyed! Raiders are now attempting to ${hl('Breach')} Planetary Defenses!`,
-  BREACH_COUNTDOWN: `The Breach takes time--the ${hl('Breach Countdown')} estimates the time remaining until the Breach is successful and the enemy steals your Ore.`,
+  BREACH_COUNTDOWN: `The Breach takes time--the ${hl('Breach Countdown')} estimates the time remaining until the enemy steals your Ore.`,
 
   SUMMON_CMD_SHIP: `You must summon a new CMD Ship to re-secure your planetary Defenses. Select the highlighted tile.`,
-  ACTION_BAR: `This is the ${hl('Action Bar')}, where you can review information about a tile and issue commands.`,
-  PRESS_AND_HOLD: `You can ${hl('press-and-hold')} icons in the Action Bar to learn more about a tile or Struct.`,
-  DEPLOY: `To summon a new CMD Ship, press the ${hl('Deploy')} button and select the CMD Ship from the Deploy Menu.`,
+  DEPLOY: `Use the ${hl('Deploy')} ability to summon a new CMD Ship.`,
   DEPLOY_MENU_TITLE: `Deploy Struct`,
-  DEPLOY_MENU_HINT: `<p>Press a Struct to Deploy it.</p><p>Press-and-Hold to reveal more information about it.</p>`,
-  CMD_SHIP_ON_ITS_WAY: `Good. The New CMD Ship is on it's way.`,
-  BATTERY: `This is the ${hl('Battery')}. Most actions, such as deploying Structs or launching attacks, deplete the Battery.`,
-  BATTERY_RECHARGE: `The Battery will ${hl('Recharge')} automatically over time.`,
-  CMD_SHIP_DELAYED: `The new CMD Ship won't arrive for some time--and the enemy Breach is already underway.`,
+  DEPLOY_MENU_HINT: `<p>Press a Struct to Deploy it.</p><p>Press-and-Hold to Inspect it.</p>`,
+  BATTERY_DEPLETES: `Good. Note that using abilities depletes the ${hl('Battery')}. The Battery will ${hl('Recharge')} automatically.`,
 
-  ENGAGE_ENEMY: `You will need to engage the enemy forces to protect your Ore Reserves.`,
-  KEY_TO_VICTORY: `The key to victory is the ${hl('enemy CMD Ship')}. Destroy it, and the raiders will be forced to retreat.`,
-  SELECT_TANK: `First, select your Tank.`,
+  CMD_SHIP_UNPROTECTED: `Your CMD Ship was unprotected, allowing the Raiders to easily Destroy it. Assign ${hl('Defenders')} to protect important Structs.`,
+  SELECT_INDICATED_TANK: `First, select indicated Tank.`,
+  DEFEND_OTHER_TANK: `When you have enough Battery Charge, assign the Struct to ${hl('Defend')} your other Tank. You can ${hlSecondary('Inspect')} an ability to see it's Battery Cost.`,
+  ASSIGN_DEFENSE: `Next, assign it to ${hl('Defend')} your other Tank.`,
+  // Icons as drawn in the design frame for this line.
+  DEFENDED_AND_DEFENDERS: `Good. Structs with &nbsp;the ${icon('icon-defending')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defended')} icon are ${hl('Defenders')}.`,
+  CMD_SHIP_TAKES_TIME: `Your new CMD Ship will take time to arrive. You will need to engage the enemy in the meantime.`,
+
+  DESTROY_ENEMY_CMD_SHIP: `Destroying the ${hl('enemy CMD Ship')} will force the raiders to retreat.`,
+  SELECT_TANK: `Select your Tank.`,
   RAIL_GUN: `The Tank's ${hl('Rail Gun')} ability can target Structs on Land. Use it to attack the enemy CMD Ship.`,
   RAIL_GUN_TARGET: `The Tanks ${hl('Rail Gun')} ability can target Structs on Land. Use it to attack the enemy CMD Ship.`,
 
   WENT_POORLY: `That went poorly. The enemy CMD Ship was ${hl('Defended')} by a Tank.`,
   DEFENDER_COUNTER_ATTACK: `The Defender hit your Tank with a ${icon('icon-defender-counter')} ${hl('Counter-Attack')}. Be careful when launching attacks: Defenders always fire first.`,
   DEFENDER_BLOCKED: `The Defender also ${icon('icon-defender-block')} ${hl('Blocked')} your attack, absorbing the incoming DMG and protecting the CMD Ship.`,
-  CMD_SHIP_COUNTER_ATTACK: `The CMD Ship also launched its own ${icon('icon-counter-attack')} ${hl('Counter-Attack')}, destroying your tank.`,
-  // Icons as drawn in the design frame for this line.
-  DEFENDED_AND_DEFENDERS: `Structs with &nbsp;the ${icon('icon-defending')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defended')} icon are ${hl('Defenders')}.`,
+  CMD_SHIP_COUNTER_ATTACK: `The CMD Ship then launched its own ${icon('icon-counter-attack')} ${hl('Counter-Attack')}, destroying your tank.`,
   DESTROY_DEFENDER_FIRST: `You'll need to destroy the enemy Defender before you can attack the CMD Ship directly.`,
 
   ONE_MORE_TANK: `Fortunately, you have one more Tank. Select it now.`,
-  SUFFICIENT_BATTERY: `Before you attack, make sure you have sufficient ${hl('Battery.')}`,
-  BATTERY_COST: `You can Press-and-hold an ability to see its ${hl('Battery Cost')}.`,
-  ATTACK_ENEMY_TANK: `When ready, attack the enemy Tank with your own Tank.`,
-  ATTACK_ENEMY_TANK_TARGET: `When ready, attack the enemy Tank.`,
-  TRIGGERED_COUNTER_ATTACK: `Your attack triggered a ${hl('Counter-Attack')}. Most Structs automatically launch Counter-Attacks when targeted.`,
-  AVOID_COUNTER_ATTACKS: `You can avoid Counter-Attacks by considering the abilities of each Struct.`,
+  ATTACK_ENEMY_TANK: `When ready, attack he enemy Tank.`,
+  TRIGGERED_COUNTER_ATTACK: `Your attack triggered a ${hl('Counter-Attack')}. You can avoid Counter-Attacks by considering the abilities of each Struct.`,
   BATTLEGROUNDS: `Each planet has multiple ${hl('Battlegrounds')}, ${icon('icon-land')} Land, ${icon('icon-water')} Water, ${icon('icon-air')} Air, and ${icon('icon-space')} Space.`,
-  RAIL_GUN_LAND_ONLY: `The Tank's Rail Gun can only target Land. You can use this to your advantage.`,
-  STEALTH_BOMBER: `A Stealth Bomber can attack the enemy Tank from the safety of the Air.`,
+  RAIL_GUN_LAND_ONLY: `The enemy Tank's Rail Gun can only target ${hl('Land')}. Use this to your advantage.`,
 
-  SELECT_BOMBER: `Select the Stealth Bomber.`,
-  BOMBER_DESTROY_TANK: `When ready, use the Stealth Bomber to destroy the enemy Tank.`,
+  STEALTH_BOMBER: `A Stealth Bomber can attack from the safety of the air. When ready, use it to destroy the Tank.`,
   SUCCESS: `Success! Remember to review enemy abilities and defenses before you strike to penetrate formations and avoid damaging counter-attacks.`,
   CLOSE_TO_VICTORY: `You are close to victory. Use what you have learned to destroy the enemy CMD Ship.`,
 
   RAIDERS_REPELLED: `You have successfully repelled the Raiders. However, without a CMD Ship on-station, your Planetary Defenses are still Vulnerable.`,
   CMD_SHIP_ARRIVING: `Fortunately, your new CMD Ship is arriving now.`,
   DEFENSES_SECURE: `With a new CMD Ship on-station, your Planetary Defenses are ${hl('Secure')}.`,
-  REPLACEMENT_COSTS: `CMD Ship replacement costs will be deducted from your salary. It is your responsibility to protect valuable SN.CORP assets.`,
-  ASSIGN_DEFENDERS: `You can protect Structs by assigning your own ${hl('Defenders')}.`,
-  SELECT_THE_TANK: `Start by selecting the Tank.`,
-  DEFEND: `Assign the Tank to protect the CMD Ship using the ${hl('Defend')} ability.`,
-  TANK_DEFENDING: `Good. The Tank is now Defending the CMD Ship.`,
-  FLEET_STRUCTS_DEFEND: `All Fleet Structs can be assigned to Defend allied units.`,
-  PROTECT_COMPANY_ASSETS: `Employees are expected to make every effort to protect company assets. Plan your defenses accordingly.`,
 
-  CONGRATULATIONS: `Congratulations: you have successfully completed Basic Training.`,
+  COMPLETED: `You have successfully completed Combat Training. ${hl('Performance Grade:')} C-`,
   CERTIFIED: `SN.CORP certifies that you now meet the minimum requirements to operate the ST-21 "Spearpoint" CMD Ship. Productive travels, employee.`,
   FTL_JUMP: `FTL Jump in Progress.`,
 };
@@ -24230,12 +24231,12 @@ class TutorialDirector {
     await this.introduction();
     await this.raid();
     await this.summonCommandShip();
+    await this.assignDefenders();
     await this.firstAttack();
     await this.secondAttack();
     await this.bomberAttack();
     await this.destroyEnemyCommandShip();
     await this.newCommandShip();
-    await this.setDefenses();
 
     this.allow([]);
     this.pointer.hide();
@@ -24266,12 +24267,24 @@ class TutorialDirector {
 
     this.world.startRaid();
     this.rerenderMap();
-    this.focusHome();
 
-    await this.say(C.RAIDERS_ATTACK, BOTTOM);
+    // The camera goes over to the raiders as they arrive.
+    await this.pause(100);
+    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK));
+
+    await this.say(C.RAIDERS_ATTACK, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK)));
     await this.say(C.PLANETARY_DEFENSES, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
+    await this.ask(
+      C.INSPECT_DEFENSES,
+      BOTTOM,
+      [SELECTORS.SHIELD_STATUS],
+      () => this.waitForInspect(SELECTORS.SHIELD_STATUS),
+      this.find(SELECTORS.SHIELD_STATUS),
+      UP
+    );
+
+    this.focusHome();
     await this.say(C.CMD_SHIP_PROTECTS, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.CMD_SHIP)));
-    await this.say(C.DEFENSE_STATUS, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
 
     await this.cutscene(async () => {
       await this.pause(600);
@@ -24282,6 +24295,22 @@ class TutorialDirector {
 
     await this.say(C.CMD_SHIP_DESTROYED, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
     await this.say(C.BREACH_COUNTDOWN, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
+  }
+
+  /**
+   * Resolves once the player has press-and-held an element long enough to
+   * open its Inspect panel (cheatsheet) and has let go again.
+   *
+   * @param {string} selector
+   * @return {Promise<void>}
+   */
+  async waitForInspect(selector) {
+    const isInspecting = () => {
+      const panel = document.getElementById('sui-cheatsheet-container');
+      return !!panel && panel.isConnected && !!document.querySelector(selector)?.dataset.suiCheatsheet;
+    };
+    await this.waitUntil(isInspecting, 100);
+    await this.waitUntil(() => !isInspecting(), 100);
   }
 
   async summonCommandShip() {
@@ -24302,9 +24331,6 @@ class TutorialDirector {
       this.find(this.commandTileSelector())
     );
 
-    await this.say(C.ACTION_BAR, TOP, this.find(SELECTORS.HEADER));
-    await this.say(C.PRESS_AND_HOLD, TOP, this.find(SELECTORS.TILE_TYPE_ICON));
-
     const deployed = this.waitForAction('build');
     await this.ask(
       C.DEPLOY,
@@ -24324,10 +24350,7 @@ class TutorialDirector {
     this.allow([]);
     await this.pause(800);
 
-    await this.say(C.CMD_SHIP_ON_ITS_WAY, TOP);
-    await this.say(C.BATTERY, TOP, this.find(SELECTORS.BATTERY));
-    await this.say(C.BATTERY_RECHARGE, TOP, this.find(SELECTORS.BATTERY));
-    await this.say(C.CMD_SHIP_DELAYED, TOP, this.find(SELECTORS.BATTERY));
+    await this.say(C.BATTERY_DEPLETES, TOP);
   }
 
   /**
@@ -24352,19 +24375,60 @@ class TutorialDirector {
     return !!document.querySelector('.deploy-struct-type');
   }
 
+  async assignDefenders() {
+    const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
+
+    await this.say(C.CMD_SHIP_UNPROTECTED, TOP);
+
+    await this.ask(
+      C.SELECT_INDICATED_TANK,
+      TOP,
+      [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_A)],
+      () => this.waitForStructSelected(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_A),
+      this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_A))
+    );
+
+    // The Battery is still recharging from the deploy: the Defend button
+    // unlocks by itself once there is enough charge.
+    await this.ask(
+      C.DEFEND_OTHER_TANK,
+      TOP,
+      [SELECTORS.DEFEND_BUTTON],
+      () => this.waitForActionMode(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET),
+      this.find(SELECTORS.DEFEND_BUTTON)
+    );
+
+    const defended = this.waitForAction('defenseSet', result =>
+      result.defenderStructId === _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_A
+      && result.protectedStructId === _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B
+    );
+    await this.ask(
+      C.ASSIGN_DEFENSE,
+      TOP,
+      [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B)],
+      () => defended,
+      this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B))
+    );
+
+    await this.cutscene(() => this.waitForCombatToSettle());
+
+    await this.say(C.DEFENDED_AND_DEFENDERS, TOP);
+
+    window.dispatchEvent(new _events_ClearTileSelectionEvent__WEBPACK_IMPORTED_MODULE_8__.ClearTileSelectionEvent());
+    await this.say(C.CMD_SHIP_TAKES_TIME, BOTTOM);
+  }
+
   async firstAttack() {
     const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
 
-    window.dispatchEvent(new _events_ClearTileSelectionEvent__WEBPACK_IMPORTED_MODULE_8__.ClearTileSelectionEvent());
-    this.dialogue.hide();
+    // Show the player what they are up against.
+    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_CMD_SHIP));
+    await this.say(C.DESTROY_ENEMY_CMD_SHIP, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_CMD_SHIP)));
+
     this.focusHome();
-
-    await this.say(C.ENGAGE_ENEMY, BOTTOM);
-    await this.say(C.KEY_TO_VICTORY, BOTTOM);
-
     this.world.setBreachCountdown('29m');
 
-    // The lesson starts with a full Battery, whatever was spent on the deploy.
+    // The lesson starts with a full Battery, whatever was spent on the Defend.
     this.world.rechargeBattery();
 
     await this.ask(
@@ -24383,19 +24447,22 @@ class TutorialDirector {
       true
     );
 
-    this.focusHome();
+    // The debrief happens over the enemy formation it explains.
+    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK));
+    const enemyTank = this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK));
+    const enemyCommandShip = this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_CMD_SHIP));
 
-    await this.say(C.WENT_POORLY, TOP);
-    await this.say(C.DEFENDER_COUNTER_ATTACK, TOP);
-    await this.say(C.DEFENDER_BLOCKED, TOP);
-    await this.say(C.CMD_SHIP_COUNTER_ATTACK, TOP);
-    await this.say(C.DEFENDED_AND_DEFENDERS, TOP);
+    await this.say(C.WENT_POORLY, TOP, enemyTank);
+    await this.say(C.DEFENDER_COUNTER_ATTACK, TOP, enemyTank);
+    await this.say(C.DEFENDER_BLOCKED, TOP, enemyTank);
+    await this.say(C.CMD_SHIP_COUNTER_ATTACK, TOP, enemyCommandShip);
     await this.say(C.DESTROY_DEFENDER_FIRST, TOP);
   }
 
   async secondAttack() {
     const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
 
+    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B));
     await this.ask(
       C.ONE_MORE_TANK,
       TOP,
@@ -24404,45 +24471,40 @@ class TutorialDirector {
       this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B))
     );
 
-    await this.say(C.SUFFICIENT_BATTERY, TOP, this.find(SELECTORS.BATTERY));
-    await this.say(C.BATTERY_COST, TOP, this.find(SELECTORS.PRIMARY_WEAPON_BUTTON));
-
     await this.guideAttack(
       _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B,
       _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK,
       C.ATTACK_ENEMY_TANK,
-      C.ATTACK_ENEMY_TANK_TARGET
+      C.ATTACK_ENEMY_TANK,
+      true
     );
 
-    this.focusHome();
-
     await this.say(C.TRIGGERED_COUNTER_ATTACK, TOP);
-    await this.say(C.AVOID_COUNTER_ATTACKS, TOP);
     await this.say(C.BATTLEGROUNDS, TOP);
     await this.say(C.RAIL_GUN_LAND_ONLY, TOP);
-    await this.say(C.STEALTH_BOMBER, TOP);
   }
 
   async bomberAttack() {
     const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
 
+    // The Bomber flies above the land battleground, out of view: bring it in.
+    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.BOMBER));
+    this.world.setBreachCountdown('28m');
+
     await this.ask(
-      C.SELECT_BOMBER,
+      C.STEALTH_BOMBER,
       TOP,
       [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.BOMBER)],
-      () => this.waitForStructSelected(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.BOMBER)
+      () => this.waitForStructSelected(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.BOMBER),
+      this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.BOMBER))
     );
-
-    this.world.setBreachCountdown('28m');
 
     await this.guideAttack(
       _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.BOMBER,
       _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK,
-      C.BOMBER_DESTROY_TANK,
-      C.BOMBER_DESTROY_TANK
+      C.STEALTH_BOMBER,
+      C.STEALTH_BOMBER
     );
-
-    this.focusHome();
 
     await this.say(C.SUCCESS, BOTTOM);
     await this.say(C.CLOSE_TO_VICTORY, BOTTOM);
@@ -24485,46 +24547,6 @@ class TutorialDirector {
     });
 
     await this.say(C.DEFENSES_SECURE, BOTTOM);
-    await this.say(C.REPLACEMENT_COSTS, BOTTOM);
-    await this.say(C.ASSIGN_DEFENDERS, BOTTOM);
-  }
-
-  async setDefenses() {
-    const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
-
-    // The lesson starts from nothing selected, so the player picks the Tank themselves.
-    window.dispatchEvent(new _events_ClearTileSelectionEvent__WEBPACK_IMPORTED_MODULE_8__.ClearTileSelectionEvent());
-
-    await this.ask(
-      C.SELECT_THE_TANK,
-      TOP,
-      [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B)],
-      () => this.waitForStructSelected(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_B)
-    );
-
-    await this.ask(
-      C.DEFEND,
-      TOP,
-      [SELECTORS.DEFEND_BUTTON],
-      () => this.waitForActionMode(_constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET),
-      this.find(SELECTORS.DEFEND_BUTTON)
-    );
-
-    const defended = this.waitForAction('defenseSet', result =>
-      result.protectedStructId === _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.NEW_CMD_SHIP
-    );
-    await this.ask(
-      C.DEFEND,
-      TOP,
-      [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.NEW_CMD_SHIP)],
-      () => defended
-    );
-
-    await this.cutscene(() => this.waitForCombatToSettle());
-
-    await this.say(C.TANK_DEFENDING, TOP);
-    await this.say(C.FLEET_STRUCTS_DEFEND, TOP);
-    await this.say(C.PROTECT_COMPANY_ASSETS, TOP);
   }
 }
 
@@ -27052,6 +27074,14 @@ class TutorialWorld {
     /** @type {StructListener|null} */
     this.structListener = null;
 
+    /**
+     * Surviving structs whose defender or protectee was destroyed; their
+     * defense icons need refreshing once the wreck is cleared.
+     *
+     * @type {Set<string>}
+     */
+    this.structsWithBrokenDefenses = new Set();
+
     /** @type {GameState|null} */
     this.gameState = null;
 
@@ -27488,14 +27518,26 @@ class TutorialWorld {
     if (struct.protected_struct_id && this.structs[struct.protected_struct_id]) {
       const protectedStruct = this.structs[struct.protected_struct_id];
       protectedStruct.defending_struct_ids = protectedStruct.defending_struct_ids.filter(id => id !== struct.id);
+      this.structsWithBrokenDefenses.add(protectedStruct.id);
     }
     struct.protected_struct_id = null;
     struct.defending_struct_ids.forEach(id => {
       if (this.structs[id]) {
         this.structs[id].protected_struct_id = null;
+        this.structsWithBrokenDefenses.add(id);
       }
     });
     struct.defending_struct_ids = [];
+  }
+
+  /**
+   * @return {string[]} surviving structs whose defenses changed since the last call
+   */
+  takeStructsWithBrokenDefenses() {
+    const structIds = [...this.structsWithBrokenDefenses]
+      .filter(id => this.isAlive(this.structs[id]));
+    this.structsWithBrokenDefenses.clear();
+    return structIds;
   }
 
   /**

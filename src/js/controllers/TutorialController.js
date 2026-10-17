@@ -104,6 +104,12 @@ export class TutorialController extends AbstractController {
       }
     });
     this.destroyedStructManager.sweep();
+
+    // With the wreck gone, survivors drop the defense icons it was part of.
+    const mapType = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetMapType;
+    this.world.takeStructsWithBrokenDefenses().forEach(structId => {
+      this.structManager.refreshStruct(structId, mapType, false, false);
+    });
   }
 
   finishSimulation() {
@@ -114,7 +120,7 @@ export class TutorialController extends AbstractController {
   end() {
     const hrBotTalkingTemplate = new HRBotTalkingTemplate();
     hrBotTalkingTemplate.dialogueSequence = [
-      TUTORIAL_COPY.CONGRATULATIONS,
+      TUTORIAL_COPY.COMPLETED,
       TUTORIAL_COPY.CERTIFIED,
     ];
     hrBotTalkingTemplate.startWithScanLines = true;

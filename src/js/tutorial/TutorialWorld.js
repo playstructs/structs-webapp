@@ -77,6 +77,14 @@ export class TutorialWorld {
     /** @type {StructListener|null} */
     this.structListener = null;
 
+    /**
+     * Surviving structs whose defender or protectee was destroyed; their
+     * defense icons need refreshing once the wreck is cleared.
+     *
+     * @type {Set<string>}
+     */
+    this.structsWithBrokenDefenses = new Set();
+
     /** @type {GameState|null} */
     this.gameState = null;
 
@@ -513,14 +521,26 @@ export class TutorialWorld {
     if (struct.protected_struct_id && this.structs[struct.protected_struct_id]) {
       const protectedStruct = this.structs[struct.protected_struct_id];
       protectedStruct.defending_struct_ids = protectedStruct.defending_struct_ids.filter(id => id !== struct.id);
+      this.structsWithBrokenDefenses.add(protectedStruct.id);
     }
     struct.protected_struct_id = null;
     struct.defending_struct_ids.forEach(id => {
       if (this.structs[id]) {
         this.structs[id].protected_struct_id = null;
+        this.structsWithBrokenDefenses.add(id);
       }
     });
     struct.defending_struct_ids = [];
+  }
+
+  /**
+   * @return {string[]} surviving structs whose defenses changed since the last call
+   */
+  takeStructsWithBrokenDefenses() {
+    const structIds = [...this.structsWithBrokenDefenses]
+      .filter(id => this.isAlive(this.structs[id]));
+    this.structsWithBrokenDefenses.clear();
+    return structIds;
   }
 
   /**
