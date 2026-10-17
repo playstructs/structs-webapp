@@ -10,6 +10,7 @@ export class Orientation6ViewModel extends AbstractViewModel {
     view.bodyTextSequence = {
       0: `Galactic Codex Entry #2722`,
       1: `Status: <span class="sui-text-destructive">DISPUTED</span>`,
+      2: `Status: <span class="sui-text-destructive">DISPUTED</span>`,
     };
 
     view.dialogueSequence = [
@@ -21,7 +22,9 @@ export class Orientation6ViewModel extends AbstractViewModel {
         data-sui-tooltip="A civilization of  machines, discovered approximately 1200 years ago."
       >Structs.</a>`,
 
-      `Structs are not officially recognized as sentient lifeforms by the Alpha Star Council, granting them sole access to Alpha-laced worlds.`
+      `Structs are not officially recognized as sentient lifeforms by the Alpha Star Council, granting them sole access to Alpha-laced worlds.`,
+
+      `Guilds, species and galactic powers across the Milky Way have established contracts with the Structs Conglomerate to secure Alpha Matter.`
     ];
 
     view.actionOnSequenceEnd = () => {
