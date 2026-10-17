@@ -13,6 +13,9 @@ export class TutorialMode {
 
   static EXITED_KEY = 'tutorialExited';
 
+  /** Where the CMD Ship's tile lands vertically, as a fraction of the screen height. */
+  static HOME_VERTICAL_ANCHOR = 0.44;
+
   /**
    * @return {boolean}
    */
@@ -46,5 +49,37 @@ export class TutorialMode {
     const exited = sessionStorage.getItem(TutorialMode.EXITED_KEY) === '1';
     sessionStorage.removeItem(TutorialMode.EXITED_KEY);
     return exited;
+  }
+
+  /**
+   * After the FTL jump the real game opens at the top of its map, in Space.
+   * Frames the land battleground instead, so the player sees their CMD Ship.
+   * The map renders after login, so this waits for the CMD Ship's tile.
+   *
+   * @param {string} playerId
+   */
+  static frameHomeAfterReturn(playerId) {
+    const selector = `.map-tile-selection-tile[data-tile-type="COMMAND"][data-ambit="LAND"][data-player-id="${playerId}"]`;
+    const giveUpAt = performance.now() + 10000;
+
+    const frame = () => {
+      const tile = document.querySelector(selector);
+      if (!tile || !tile.offsetParent) {
+        if (performance.now() < giveUpAt) {
+          setTimeout(frame, 200);
+        }
+        return;
+      }
+
+      // Same framing as the tutorial's home view: CMD Ship at the left edge,
+      // the land battleground's top row just above the middle of the screen.
+      const rect = tile.getBoundingClientRect();
+      window.scrollTo({
+        left: window.scrollX + rect.left,
+        top: window.scrollY + rect.top + (rect.height / 2) - (window.innerHeight * TutorialMode.HOME_VERTICAL_ANCHOR),
+        behavior: 'instant'
+      });
+    };
+    frame();
   }
 }

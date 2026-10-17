@@ -244,6 +244,9 @@ export class TutorialWorld {
       this.structs[struct.id] = struct;
     });
 
+    // The raider's CMD Ship arrives battered, so one strike finishes it in free play.
+    this.structs[TUTORIAL_IDS.ENEMY_CMD_SHIP].health = 2;
+
     // The raider's Tank starts out defending its CMD Ship.
     this.structs[TUTORIAL_IDS.ENEMY_TANK].protected_struct_id = TUTORIAL_IDS.ENEMY_CMD_SHIP;
     this.structs[TUTORIAL_IDS.ENEMY_CMD_SHIP].defending_struct_ids = [TUTORIAL_IDS.ENEMY_TANK];

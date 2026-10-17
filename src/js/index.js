@@ -305,6 +305,9 @@ if (tutorialMode) {
         MenuPage.router.restore('Fleet', 'index');
       }
       MenuPage.hideLoadingScreen();
+      if (returningFromTutorial) {
+        TutorialMode.frameHomeAfterReturn(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
+      }
     });
   });
 }
