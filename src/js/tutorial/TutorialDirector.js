@@ -8,6 +8,7 @@ import {MAP_TILE_TYPES} from "../constants/MapConstants";
 import {STRUCT_ACTIONS} from "../constants/StructConstants";
 import {ClearTileSelectionEvent} from "../events/ClearTileSelectionEvent";
 import {MenuPage} from "../framework/MenuPage";
+import {onboardingTelemetry} from "../telemetry/OnboardingTelemetry";
 
 const TOP = TUTORIAL_DIALOGUE_POSITIONS.TOP;
 const BOTTOM = TUTORIAL_DIALOGUE_POSITIONS.BOTTOM;
@@ -311,15 +312,28 @@ export class TutorialDirector {
   /* Narration */
 
   /**
+   * Records that the player reached a step of the onboarding catalog.
+   *
+   * @param {string|null} stepKey null for moments that are not catalog steps
+   */
+  reached(stepKey) {
+    if (stepKey) {
+      onboardingTelemetry.reached(stepKey);
+    }
+  }
+
+  /**
    * Shows a line the player acknowledges with OK.
    *
+   * @param {string} stepKey
    * @param {string} html
    * @param {string} position
    * @param {function(): (Element|null)|null} pointAt
    * @param {string} pointerDirection
    * @return {Promise<void>}
    */
-  async say(html, position, pointAt = null, pointerDirection = TUTORIAL_POINTER_DIRECTIONS.DOWN) {
+  async say(stepKey, html, position, pointAt = null, pointerDirection = TUTORIAL_POINTER_DIRECTIONS.DOWN) {
+    this.reached(stepKey);
     this.allow([SELECTORS.OK_BUTTON]);
     this.setPointer(pointAt, pointerDirection);
     await this.dialogue.show(html, position, true);
@@ -330,6 +344,7 @@ export class TutorialDirector {
    * Shows a line that asks the player to do something; it stays up until
    * the returned promise from `until` resolves.
    *
+   * @param {string} stepKey
    * @param {string} html
    * @param {string} position
    * @param {string[]} allowedSelectors
@@ -338,7 +353,8 @@ export class TutorialDirector {
    * @param {string} pointerDirection
    * @return {Promise<void>}
    */
-  async ask(html, position, allowedSelectors, until, pointAt = null, pointerDirection = TUTORIAL_POINTER_DIRECTIONS.DOWN) {
+  async ask(stepKey, html, position, allowedSelectors, until, pointAt = null, pointerDirection = TUTORIAL_POINTER_DIRECTIONS.DOWN) {
+    this.reached(stepKey);
     this.allow(allowedSelectors);
     this.setPointer(pointAt, pointerDirection);
     this.dialogue.show(html, position, false);
@@ -362,10 +378,12 @@ export class TutorialDirector {
   /**
    * Plays out something on the map with the narrator out of the way.
    *
+   * @param {string|null} stepKey
    * @param {function(): Promise} scene
    * @return {Promise<void>}
    */
-  async cutscene(scene) {
+  async cutscene(stepKey, scene) {
+    this.reached(stepKey);
     this.allow([]);
     this.pointer.hide();
     this.dialogue.hide();
@@ -377,16 +395,18 @@ export class TutorialDirector {
    *
    * @param {string} attackerId
    * @param {string} targetId
+   * @param {{weapon: string, target: string, combat: string}} stepKeys
    * @param {string} weaponCopy narration for pressing the weapon
    * @param {string} targetCopy narration while choosing the target
    * @param {boolean} pointAtWeapon only the first lesson points out the weapon
    * @return {Promise<void>}
    */
-  async guideAttack(attackerId, targetId, weaponCopy, targetCopy, pointAtWeapon = false) {
+  async guideAttack(attackerId, targetId, stepKeys, weaponCopy, targetCopy, pointAtWeapon = false) {
     // A quick player can outpace the recharge; the lesson should never stall on it.
     this.world.rechargeBattery();
 
     await this.ask(
+      stepKeys.weapon,
       weaponCopy,
       TOP,
       [SELECTORS.PRIMARY_WEAPON_BUTTON],
@@ -397,6 +417,7 @@ export class TutorialDirector {
     // As in the design, the camera stays put: the player pans the map to find the target.
     const attackResolved = this.waitForAction('attack', result => result.targetId === targetId);
     await this.ask(
+      stepKeys.target,
       targetCopy,
       TOP,
       [this.structTileSelector(targetId)],
@@ -404,7 +425,7 @@ export class TutorialDirector {
       this.find(this.structTileSelector(targetId))
     );
 
-    await this.cutscene(() => this.waitForCombatToSettle());
+    await this.cutscene(stepKeys.combat, () => this.waitForCombatToSettle());
     this.afterCombat();
   }
 
@@ -454,14 +475,14 @@ export class TutorialDirector {
   async introduction() {
     const C = TUTORIAL_COPY;
 
-    await this.say(C.WELCOME, BOTTOM);
-    await this.say(C.ALPHA_BASE, BOTTOM);
-    await this.say(C.ALPHA_ORE, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.EXTRACTOR)));
-    await this.say(C.REFINERY, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.REFINERY)));
-    await this.say(C.ORE_RESERVES, BOTTOM, this.find(SELECTORS.ORE), UP);
-    await this.say(C.ORE_THEFTS, BOTTOM, this.find(SELECTORS.ORE), UP);
-    await this.say(C.CMD_SHIP, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.CMD_SHIP)));
-    await this.say(C.CMD_SHIP_DESTROYED_WARNING, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.CMD_SHIP)));
+    await this.say('tutorial.intro.welcome', C.WELCOME, BOTTOM);
+    await this.say('tutorial.intro.alpha_base', C.ALPHA_BASE, BOTTOM);
+    await this.say('tutorial.intro.alpha_ore', C.ALPHA_ORE, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.EXTRACTOR)));
+    await this.say('tutorial.intro.refinery', C.REFINERY, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.REFINERY)));
+    await this.say('tutorial.intro.ore_reserves', C.ORE_RESERVES, BOTTOM, this.find(SELECTORS.ORE), UP);
+    await this.say('tutorial.intro.ore_thefts', C.ORE_THEFTS, BOTTOM, this.find(SELECTORS.ORE), UP);
+    await this.say('tutorial.intro.cmd_ship', C.CMD_SHIP, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.CMD_SHIP)));
+    await this.say('tutorial.intro.cmd_ship_warning', C.CMD_SHIP_DESTROYED_WARNING, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.CMD_SHIP)));
   }
 
   async raid() {
@@ -471,9 +492,10 @@ export class TutorialDirector {
     this.rerenderMap();
     this.focusHome();
 
-    await this.say(C.RAIDERS_ATTACK, BOTTOM);
-    await this.say(C.PLANETARY_DEFENSES, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
+    await this.say('tutorial.raid.raiders_attack', C.RAIDERS_ATTACK, BOTTOM);
+    await this.say('tutorial.raid.planetary_defenses', C.PLANETARY_DEFENSES, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
     await this.ask(
+      'tutorial.raid.inspect_defenses',
       C.INSPECT_DEFENSES,
       BOTTOM,
       [SELECTORS.SHIELD_STATUS],
@@ -482,17 +504,17 @@ export class TutorialDirector {
       UP
     );
 
-    await this.say(C.CMD_SHIP_PROTECTS, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.CMD_SHIP)));
+    await this.say('tutorial.raid.cmd_ship_protects', C.CMD_SHIP_PROTECTS, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.CMD_SHIP)));
 
-    await this.cutscene(async () => {
+    await this.cutscene('tutorial.raid.cmd_ship_strike', async () => {
       await this.pause(600);
       this.world.raiderOpeningStrike();
       await this.waitForCombatToSettle();
       this.world.setBreachCountdown('30m');
     });
 
-    await this.say(C.CMD_SHIP_DESTROYED, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
-    await this.say(C.BREACH_COUNTDOWN, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
+    await this.say('tutorial.raid.cmd_ship_destroyed', C.CMD_SHIP_DESTROYED, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
+    await this.say('tutorial.raid.breach_countdown', C.BREACH_COUNTDOWN, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
   }
 
   /**
@@ -518,6 +540,7 @@ export class TutorialDirector {
     this.sweepWreck(TUTORIAL_IDS.CMD_SHIP);
 
     await this.ask(
+      'tutorial.rebuild.select_command_tile',
       C.SUMMON_CMD_SHIP,
       BOTTOM,
       [this.commandTileSelector()],
@@ -531,6 +554,7 @@ export class TutorialDirector {
 
     const deployed = this.waitForAction('build');
     await this.ask(
+      'tutorial.rebuild.open_deploy',
       C.DEPLOY,
       TOP,
       [SELECTORS.DEPLOY_BUTTON],
@@ -541,6 +565,7 @@ export class TutorialDirector {
     // In the Deploy Menu the narrator steps aside; the menu explains itself.
     this.dialogue.hide();
     this.decorateDeployMenu();
+    this.reached('tutorial.rebuild.deploy_cmd_ship');
     this.allow([SELECTORS.DEPLOY_MENU], [SELECTORS.DEPLOY_MENU_CLOSE]);
     this.pointer.pointAt(() => document.querySelector('.deploy-struct-type'), UP);
     await deployed;
@@ -548,7 +573,7 @@ export class TutorialDirector {
     this.allow([]);
     await this.pause(800);
 
-    await this.say(C.BATTERY_DEPLETES, TOP);
+    await this.say('tutorial.rebuild.battery', C.BATTERY_DEPLETES, TOP);
   }
 
   /**
@@ -576,9 +601,10 @@ export class TutorialDirector {
   async assignDefenders() {
     const C = TUTORIAL_COPY;
 
-    await this.say(C.CMD_SHIP_UNPROTECTED, TOP);
+    await this.say('tutorial.defend.unprotected', C.CMD_SHIP_UNPROTECTED, TOP);
 
     await this.ask(
+      'tutorial.defend.select_tank',
       C.SELECT_INDICATED_TANK,
       TOP,
       [this.structTileSelector(TUTORIAL_IDS.TANK_A)],
@@ -590,6 +616,7 @@ export class TutorialDirector {
     // unlocks by itself once there is enough charge. The same line stays up
     // while the player picks the SAM Launcher.
     await this.ask(
+      'tutorial.defend.press_defend',
       C.DEFEND_SAM_LAUNCHER,
       TOP,
       [SELECTORS.DEFEND_BUTTON],
@@ -602,6 +629,7 @@ export class TutorialDirector {
       && result.protectedStructId === TUTORIAL_IDS.SAM_LAUNCHER
     );
     await this.ask(
+      'tutorial.defend.choose_sam_launcher',
       C.DEFEND_SAM_LAUNCHER,
       TOP,
       [this.structTileSelector(TUTORIAL_IDS.SAM_LAUNCHER)],
@@ -609,18 +637,18 @@ export class TutorialDirector {
       this.find(this.structTileSelector(TUTORIAL_IDS.SAM_LAUNCHER))
     );
 
-    await this.cutscene(() => this.waitForCombatToSettle());
+    await this.cutscene(null, () => this.waitForCombatToSettle());
 
-    await this.say(C.DEFENDED_AND_DEFENDERS, TOP);
+    await this.say('tutorial.defend.icon_legend', C.DEFENDED_AND_DEFENDERS, TOP);
 
     window.dispatchEvent(new ClearTileSelectionEvent());
-    await this.say(C.CMD_SHIP_TAKES_TIME, BOTTOM);
+    await this.say('tutorial.defend.cmd_ship_delay', C.CMD_SHIP_TAKES_TIME, BOTTOM);
   }
 
   async firstAttack() {
     const C = TUTORIAL_COPY;
 
-    await this.say(C.DESTROY_ENEMY_CMD_SHIP, BOTTOM);
+    await this.say('tutorial.first_attack.goal', C.DESTROY_ENEMY_CMD_SHIP, BOTTOM);
 
     this.world.setBreachCountdown('29m');
 
@@ -628,6 +656,7 @@ export class TutorialDirector {
     this.world.rechargeBattery();
 
     await this.ask(
+      'tutorial.first_attack.select_tank',
       C.SELECT_TANK,
       BOTTOM,
       [this.structTileSelector(TUTORIAL_IDS.TANK_A)],
@@ -638,6 +667,11 @@ export class TutorialDirector {
     await this.guideAttack(
       TUTORIAL_IDS.TANK_A,
       TUTORIAL_IDS.ENEMY_CMD_SHIP,
+      {
+        weapon: 'tutorial.first_attack.choose_rail_gun',
+        target: 'tutorial.first_attack.choose_target',
+        combat: 'tutorial.first_attack.combat',
+      },
       C.RAIL_GUN,
       C.RAIL_GUN,
       true
@@ -646,13 +680,13 @@ export class TutorialDirector {
     // The debrief happens back at the Alpha Base.
     this.focusHome();
 
-    await this.say(C.WENT_POORLY, TOP);
-    await this.say(C.DEFENDER_BLOCKED, TOP);
-    await this.say(C.BOTH_COUNTER_ATTACK, TOP);
-    await this.say(C.DESTROY_DEFENDER_FIRST, TOP);
-    await this.say(C.AVOID_COUNTER_ATTACKS, TOP);
-    await this.say(C.BATTLEGROUNDS, TOP);
-    await this.say(C.RAIL_GUN_LAND_ONLY, TOP);
+    await this.say('tutorial.first_attack.went_poorly', C.WENT_POORLY, TOP);
+    await this.say('tutorial.first_attack.blocked', C.DEFENDER_BLOCKED, TOP);
+    await this.say('tutorial.first_attack.counter_attacks', C.BOTH_COUNTER_ATTACK, TOP);
+    await this.say('tutorial.first_attack.defender_first', C.DESTROY_DEFENDER_FIRST, TOP);
+    await this.say('tutorial.first_attack.avoid_counters', C.AVOID_COUNTER_ATTACKS, TOP);
+    await this.say('tutorial.first_attack.battlegrounds', C.BATTLEGROUNDS, TOP);
+    await this.say('tutorial.first_attack.rail_gun_land_only', C.RAIL_GUN_LAND_ONLY, TOP);
   }
 
   async bomberAttack() {
@@ -663,6 +697,7 @@ export class TutorialDirector {
     this.world.setBreachCountdown('28m');
 
     await this.ask(
+      'tutorial.bomber.select_bomber',
       C.STEALTH_BOMBER,
       TOP,
       [this.structTileSelector(TUTORIAL_IDS.BOMBER)],
@@ -673,20 +708,26 @@ export class TutorialDirector {
     await this.guideAttack(
       TUTORIAL_IDS.BOMBER,
       TUTORIAL_IDS.ENEMY_TANK,
+      {
+        weapon: 'tutorial.bomber.choose_weapon',
+        target: 'tutorial.bomber.choose_target',
+        combat: 'tutorial.bomber.combat',
+      },
       C.STEALTH_BOMBER,
       C.STEALTH_BOMBER
     );
 
-    await this.say(C.SUCCESS, BOTTOM);
+    await this.say('tutorial.bomber.success', C.SUCCESS, BOTTOM);
 
     // Free play starts back at the Alpha Base.
     this.focusHome();
-    await this.say(C.CLOSE_TO_VICTORY, BOTTOM);
+    await this.say('tutorial.bomber.close_to_victory', C.CLOSE_TO_VICTORY, BOTTOM);
   }
 
   async destroyEnemyCommandShip() {
     // From here the player is on their own until the enemy CMD Ship falls.
     this.world.protectPlayerStructs = true;
+    this.reached('tutorial.free_play.destroy_cmd_ship');
     this.dialogue.hide();
     this.pointer.hide();
     this.allow([
@@ -712,14 +753,14 @@ export class TutorialDirector {
   async newCommandShip() {
     const C = TUTORIAL_COPY;
 
-    await this.say(C.RAIDERS_REPELLED, BOTTOM);
-    await this.say(C.CMD_SHIP_ARRIVING, BOTTOM);
+    await this.say('tutorial.new_cmd_ship.raiders_repelled', C.RAIDERS_REPELLED, BOTTOM);
+    await this.say('tutorial.new_cmd_ship.arriving', C.CMD_SHIP_ARRIVING, BOTTOM);
 
-    await this.cutscene(async () => {
+    await this.cutscene('tutorial.new_cmd_ship.arrival', async () => {
       this.world.completeBuild(TUTORIAL_IDS.NEW_CMD_SHIP);
       await this.waitForCombatToSettle();
     });
 
-    await this.say(C.DEFENSES_SECURE, BOTTOM);
+    await this.say('tutorial.new_cmd_ship.secure', C.DEFENSES_SECURE, BOTTOM);
   }
 }

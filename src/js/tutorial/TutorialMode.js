@@ -1,3 +1,5 @@
+import {onboardingTelemetry} from "../telemetry/OnboardingTelemetry";
+
 /**
  * The tutorial is a fully simulated session: the page boots with in-memory
  * game data instead of the player's real account, so no chain transactions are
@@ -25,12 +27,14 @@ export class TutorialMode {
   }
 
   static launch() {
+    onboardingTelemetry.flushNow();
     sessionStorage.setItem(TutorialMode.ACTIVE_KEY, '1');
     sessionStorage.removeItem(TutorialMode.EXITED_KEY);
     window.location.reload();
   }
 
   static exit() {
+    onboardingTelemetry.flushNow();
     sessionStorage.removeItem(TutorialMode.ACTIVE_KEY);
     sessionStorage.setItem(TutorialMode.EXITED_KEY, '1');
 

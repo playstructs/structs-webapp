@@ -40,6 +40,7 @@ import {TutorialWorld} from "./tutorial/TutorialWorld";
 import {SimulatedGuildAPI} from "./tutorial/SimulatedGuildAPI";
 import {SimulatedSigningClientManager} from "./tutorial/SimulatedSigningClientManager";
 import {TutorialController} from "./controllers/TutorialController";
+import {onboardingTelemetry} from "./telemetry/OnboardingTelemetry";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -200,6 +201,8 @@ gameState.previewMap = new MapComponent(
 
 MenuPage.gameState = gameState;
 MenuPage.mapManager = mapManager;
+MenuPage.router.onNavigate = (controllerName, pageName) => onboardingTelemetry.recordNavigation(controllerName, pageName);
+
 MenuPage.router.registerController(authController);
 MenuPage.router.registerController(accountController);
 MenuPage.router.registerController(genericController);
@@ -307,6 +310,8 @@ if (tutorialMode) {
       MenuPage.hideLoadingScreen();
       if (returningFromTutorial) {
         TutorialMode.frameHomeAfterReturn(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
+        // The FTL jump counts as finished once the player is in the real game.
+        onboardingTelemetry.reached('tutorial.end.ftl_jump');
       }
     });
   });

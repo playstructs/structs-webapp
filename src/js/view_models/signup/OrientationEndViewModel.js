@@ -2,6 +2,7 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {NavItemDTO} from "../../dtos/NavItemDTO";
 import {MenuPage} from "../../framework/MenuPage";
 import {TutorialMode} from "../../tutorial/TutorialMode";
+import {onboardingTelemetry} from "../../telemetry/OnboardingTelemetry";
 
 export class OrientationEndViewModel extends AbstractViewModel {
 
@@ -33,6 +34,7 @@ export class OrientationEndViewModel extends AbstractViewModel {
       TutorialMode.launch();
     });
     document.getElementById('skipTutorial').addEventListener('click', () => {
+      onboardingTelemetry.skipped('orientation.tutorial_offer');
       MenuPage.close();
     });
   }

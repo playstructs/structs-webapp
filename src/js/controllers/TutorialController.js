@@ -8,6 +8,7 @@ import {TUTORIAL_COPY} from "../tutorial/TutorialCopy";
 import {StructListener} from "../grass_listeners/StructListener";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
+import {onboardingTelemetry} from "../telemetry/OnboardingTelemetry";
 
 /** How long the "Simulation loading..." screen shows before the simulation starts. */
 const LOADING_SCREEN_MS = 3000;
@@ -124,6 +125,10 @@ export class TutorialController extends AbstractController {
       TUTORIAL_COPY.CERTIFIED,
     ];
     hrBotTalkingTemplate.startWithScanLines = true;
+    // Runs as each line is shown.
+    hrBotTalkingTemplate.initPageCode = () => {
+      onboardingTelemetry.reached(['tutorial.end.completed', 'tutorial.end.certified'][hrBotTalkingTemplate.dialogueIndex]);
+    };
     hrBotTalkingTemplate.actionOnSequenceEnd = () => {
       MenuPage.router.goto('Tutorial', 'ftlJump');
     };

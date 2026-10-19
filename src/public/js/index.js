@@ -5330,6 +5330,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _grass_listeners_StructListener__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../grass_listeners/StructListener */ "./js/grass_listeners/StructListener.js");
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
 /* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../constants/MapConstants */ "./js/constants/MapConstants.js");
+/* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
+
 
 
 
@@ -5456,6 +5458,10 @@ class TutorialController extends _framework_AbstractController__WEBPACK_IMPORTED
       _tutorial_TutorialCopy__WEBPACK_IMPORTED_MODULE_6__.TUTORIAL_COPY.CERTIFIED,
     ];
     hrBotTalkingTemplate.startWithScanLines = true;
+    // Runs as each line is shown.
+    hrBotTalkingTemplate.initPageCode = () => {
+      _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_10__.onboardingTelemetry.reached(['tutorial.end.completed', 'tutorial.end.certified'][hrBotTalkingTemplate.dialogueIndex]);
+    };
     hrBotTalkingTemplate.actionOnSequenceEnd = () => {
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Tutorial', 'ftlJump');
     };
@@ -10305,6 +10311,13 @@ class MenuPageRouter {
     this.navigationId = 0;
 
     /**
+     * Called with (controllerName, pageName) on every navigation, before the page renders.
+     *
+     * @type {function(string, string): void}
+     */
+    this.onNavigate = () => {};
+
+    /**
      * Pages that depend on in-flight async work or function-valued options
      * (which JSON serialization drops), so they cannot be restored after a reload.
      */
@@ -10355,6 +10368,8 @@ class MenuPageRouter {
         options: options
       }));
     }
+
+    this.onNavigate(controllerName, pageName);
 
     this.controllers.get(controllerName)[pageName](options);
   }
@@ -11682,6 +11697,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   PlayerCreatedListener: () => (/* binding */ PlayerCreatedListener)
 /* harmony export */ });
 /* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+/* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
+
 
 
 class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
@@ -11703,6 +11720,8 @@ class PlayerCreatedListener extends _framework_AbstractGrassListener__WEBPACK_IM
       && messageData.primary_address === this.playerAddress
     ) {
       console.log(messageData.id);
+
+      _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_1__.onboardingTelemetry.reached(_telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_1__.ONBOARDING_PLAYER_STEP_KEY, messageData.id);
 
       this.authManager.login(messageData.id).then(async function () {
         await this.planetManager.findNewPlanet();
@@ -13130,6 +13149,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _tutorial_SimulatedGuildAPI__WEBPACK_IMPORTED_MODULE_39__ = __webpack_require__(/*! ./tutorial/SimulatedGuildAPI */ "./js/tutorial/SimulatedGuildAPI.js");
 /* harmony import */ var _tutorial_SimulatedSigningClientManager__WEBPACK_IMPORTED_MODULE_40__ = __webpack_require__(/*! ./tutorial/SimulatedSigningClientManager */ "./js/tutorial/SimulatedSigningClientManager.js");
 /* harmony import */ var _controllers_TutorialController__WEBPACK_IMPORTED_MODULE_41__ = __webpack_require__(/*! ./controllers/TutorialController */ "./js/controllers/TutorialController.js");
+/* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_42__ = __webpack_require__(/*! ./telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
+
 
 
 
@@ -13332,6 +13353,8 @@ gameState.previewMap = new _view_models_components_map_MapComponent__WEBPACK_IMP
 
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.gameState = gameState;
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.mapManager = mapManager;
+_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.onNavigate = (controllerName, pageName) => _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_42__.onboardingTelemetry.recordNavigation(controllerName, pageName);
+
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(authController);
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(accountController);
 _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.registerController(genericController);
@@ -13439,6 +13462,8 @@ if (tutorialMode) {
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideLoadingScreen();
       if (returningFromTutorial) {
         _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_37__.TutorialMode.frameHomeAfterReturn(gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_30__.PLAYER_TYPES.PLAYER].id);
+        // The FTL jump counts as finished once the player is in the real game.
+        _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_42__.onboardingTelemetry.reached('tutorial.end.ftl_jump');
       }
     });
   });
@@ -23303,6 +23328,367 @@ class SUIUtil {
 
 /***/ }),
 
+/***/ "./js/telemetry/OnboardingTelemetry.js":
+/*!*********************************************!*\
+  !*** ./js/telemetry/OnboardingTelemetry.js ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ONBOARDING_CONTENT_VERSION: () => (/* binding */ ONBOARDING_CONTENT_VERSION),
+/* harmony export */   ONBOARDING_INTERFACE_NAME: () => (/* binding */ ONBOARDING_INTERFACE_NAME),
+/* harmony export */   ONBOARDING_PLAYER_STEP_KEY: () => (/* binding */ ONBOARDING_PLAYER_STEP_KEY),
+/* harmony export */   ONBOARDING_STEP_KINDS: () => (/* binding */ ONBOARDING_STEP_KINDS),
+/* harmony export */   OnboardingTelemetry: () => (/* binding */ OnboardingTelemetry),
+/* harmony export */   onboardingTelemetry: () => (/* binding */ onboardingTelemetry)
+/* harmony export */ });
+/**
+ * Onboarding telemetry: records which signup and tutorial steps a new player
+ * reaches or skips, so drop-off can be measured per step. See structs-pg
+ * docs/onboarding-telemetry-handoff.md for the data model.
+ *
+ * Writes are insert-only and keyed by (session, step, kind) on the server, so
+ * resending is harmless. Events are queued in sessionStorage because the
+ * tutorial launches and exits with a page reload; pending events are sent with
+ * sendBeacon before those reloads and when the page is hidden.
+ */
+
+/** Same value as mini_game_progress.interface_name for this client. */
+const ONBOARDING_INTERFACE_NAME = 'structs-webapp';
+
+/**
+ * The tutorial design being played. Bump by hand when the tutorial changes,
+ * together with a new onboarding_step catalog in structs-pg.
+ */
+const ONBOARDING_CONTENT_VERSION = 'tutorial-4';
+
+const ONBOARDING_STEP_KINDS = {
+  REACHED: 'reached',
+  SKIPPED: 'skipped',
+};
+
+/** The only step whose reached event carries the player id. */
+const ONBOARDING_PLAYER_STEP_KEY = 'signup.employee_record';
+
+const ENDPOINT = '/api/onboarding/events';
+
+/** Must not exceed the server's OnboardingManager::MAX_EVENTS. */
+const MAX_EVENTS_PER_REQUEST = 64;
+
+/** Steps close together go out in one request. */
+const FLUSH_DELAY_MS = 2000;
+
+/** Wait before retrying after a network error or rate limit. */
+const RETRY_DELAY_MS = 15000;
+
+const STORAGE_KEYS = {
+  BROWSER_ID: 'onboardingBrowserId',
+  SESSION_ID: 'onboardingSessionId',
+  QUEUE: 'onboardingQueue',
+  RECORDED: 'onboardingRecorded',
+};
+
+/** Menu pages that are onboarding steps, as "Controller.page". */
+const NAVIGATION_STEP_KEYS = {
+  'Auth.signupConnectingToCorporate1': 'signup.connecting',
+  'Auth.signupConnectingToCorporate2': 'signup.connected',
+  'Auth.signupIncomingCall1': 'signup.incoming_call',
+  'Auth.signupIncomingCall2': 'signup.hr_greeting',
+  'Auth.signupIncomingCall3': 'signup.orientation_brief',
+  'Auth.signupSetUsername': 'signup.profile',
+  'Auth.signupRecoveryKeyIntro': 'signup.recovery_key_intro',
+  'Auth.signupRecoveryKeyCreation': 'signup.recovery_key_create',
+  'Auth.signupRecoveryKeyFaq': 'signup.recovery_key_faq',
+  'Auth.signupRecoveryKeyConfirmation': 'signup.recovery_key_confirm',
+  'Auth.signupSuccess': 'signup.submit',
+  'Auth.orientationEnd': 'orientation.tutorial_offer',
+  'Tutorial.loading': 'tutorial.loading',
+};
+
+/** The page that starts signup, and so the onboarding session. */
+const SESSION_START_PAGE = 'Auth.signupConnectingToCorporate1';
+
+/**
+ * @return {string}
+ */
+function createUuid() {
+  if (crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/**
+ * Storage can be unavailable (private windows, blocked site data). Telemetry
+ * must never break the game, so every access is guarded.
+ *
+ * @param {Storage} storage
+ * @param {string} key
+ * @return {string|null}
+ */
+function readStorage(storage, key) {
+  try {
+    return storage.getItem(key);
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * @param {Storage} storage
+ * @param {string} key
+ * @param {string} value
+ */
+function writeStorage(storage, key, value) {
+  try {
+    storage.setItem(key, value);
+  } catch (error) {
+    // Telemetry is best effort.
+  }
+}
+
+class OnboardingTelemetry {
+
+  constructor() {
+    this.flushTimer = null;
+    this.sending = false;
+
+    window.addEventListener('pagehide', () => this.flushNow());
+  }
+
+  /**
+   * @return {string} this browser's id, created on first use
+   */
+  getBrowserId() {
+    let browserId = readStorage(localStorage, STORAGE_KEYS.BROWSER_ID);
+    if (!browserId) {
+      browserId = createUuid();
+      writeStorage(localStorage, STORAGE_KEYS.BROWSER_ID, browserId);
+    }
+    return browserId;
+  }
+
+  /**
+   * @return {string|null} this tab's onboarding session, if signup has started in it
+   */
+  getSessionId() {
+    return readStorage(sessionStorage, STORAGE_KEYS.SESSION_ID);
+  }
+
+  /**
+   * Starts this tab's onboarding session, once. A new tab or a later visit
+   * starts a new one; the browser id ties them together.
+   */
+  startSession() {
+    if (!this.getSessionId()) {
+      writeStorage(sessionStorage, STORAGE_KEYS.SESSION_ID, createUuid());
+    }
+  }
+
+  /**
+   * Records the onboarding step for a menu page, if it is one.
+   *
+   * @param {string} controllerName
+   * @param {string} pageName
+   */
+  recordNavigation(controllerName, pageName) {
+    const page = `${controllerName}.${pageName}`;
+    if (page === SESSION_START_PAGE) {
+      this.startSession();
+    }
+    const stepKey = NAVIGATION_STEP_KEYS[page];
+    if (stepKey) {
+      this.reached(stepKey);
+    }
+  }
+
+  /**
+   * @param {string} stepKey
+   * @param {string|null} playerId only for ONBOARDING_PLAYER_STEP_KEY
+   */
+  reached(stepKey, playerId = null) {
+    this.record(stepKey, ONBOARDING_STEP_KINDS.REACHED, playerId);
+  }
+
+  /**
+   * @param {string} stepKey
+   */
+  skipped(stepKey) {
+    this.record(stepKey, ONBOARDING_STEP_KINDS.SKIPPED);
+  }
+
+  /**
+   * Queues an event. Without a session (signup never started in this tab)
+   * nothing is recorded. Each step and kind is recorded once per session, so
+   * page restores and back navigation do not resend.
+   *
+   * @param {string} stepKey
+   * @param {string} kind
+   * @param {string|null} playerId
+   */
+  record(stepKey, kind, playerId = null) {
+    if (!this.getSessionId()) {
+      return;
+    }
+
+    const recorded = this.readList(STORAGE_KEYS.RECORDED);
+    const recordedKey = `${stepKey}|${kind}`;
+    if (recorded.includes(recordedKey)) {
+      return;
+    }
+    recorded.push(recordedKey);
+    writeStorage(sessionStorage, STORAGE_KEYS.RECORDED, JSON.stringify(recorded));
+
+    const event = {id: createUuid(), step_key: stepKey, kind};
+    if (playerId && stepKey === ONBOARDING_PLAYER_STEP_KEY && kind === ONBOARDING_STEP_KINDS.REACHED) {
+      event.player_id = playerId;
+    }
+
+    const queue = this.readList(STORAGE_KEYS.QUEUE);
+    queue.push(event);
+    this.writeQueue(queue);
+
+    this.scheduleFlush(FLUSH_DELAY_MS);
+  }
+
+  /**
+   * @param {number} delayMs
+   */
+  scheduleFlush(delayMs) {
+    if (this.flushTimer) {
+      return;
+    }
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      this.flush().then();
+    }, delayMs);
+  }
+
+  /**
+   * Sends one batch with fetch and removes it from the queue once the server
+   * has it. Rejected batches are dropped rather than retried forever.
+   *
+   * @return {Promise<void>}
+   */
+  async flush() {
+    const queue = this.readList(STORAGE_KEYS.QUEUE);
+    if (this.sending || queue.length === 0 || !this.getSessionId()) {
+      return;
+    }
+
+    const batch = queue.slice(0, MAX_EVENTS_PER_REQUEST);
+    this.sending = true;
+    let retry = false;
+
+    try {
+      const response = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: this.buildBody(batch),
+        keepalive: true,
+      });
+      if (response.status === 429 || response.status >= 500) {
+        retry = true;
+      } else {
+        this.removeFromQueue(batch);
+      }
+    } catch (error) {
+      retry = true;
+    } finally {
+      this.sending = false;
+    }
+
+    if (retry) {
+      this.scheduleFlush(RETRY_DELAY_MS);
+    } else if (this.readList(STORAGE_KEYS.QUEUE).length > 0) {
+      this.scheduleFlush(0);
+    }
+  }
+
+  /**
+   * Sends everything queued with sendBeacon, which survives the page going
+   * away. Used on pagehide and before the tutorial's reloads.
+   */
+  flushNow() {
+    clearTimeout(this.flushTimer);
+    this.flushTimer = null;
+
+    if (!this.getSessionId() || !navigator.sendBeacon) {
+      return;
+    }
+
+    const queue = this.readList(STORAGE_KEYS.QUEUE);
+    while (queue.length > 0) {
+      const batch = queue.slice(0, MAX_EVENTS_PER_REQUEST);
+      // text/plain keeps the beacon a simple request; the server reads the body as JSON.
+      const body = new Blob([this.buildBody(batch)], {type: 'text/plain;charset=UTF-8'});
+      if (!navigator.sendBeacon(ENDPOINT, body)) {
+        break;
+      }
+      queue.splice(0, batch.length);
+    }
+    this.writeQueue(queue);
+  }
+
+  /**
+   * @param {object[]} batch
+   * @return {string}
+   */
+  buildBody(batch) {
+    return JSON.stringify({
+      session_id: this.getSessionId(),
+      browser_id: this.getBrowserId(),
+      interface_name: ONBOARDING_INTERFACE_NAME,
+      content_version: ONBOARDING_CONTENT_VERSION,
+      events: batch.map(({step_key, kind, player_id}) => (
+        player_id ? {step_key, kind, player_id} : {step_key, kind}
+      )),
+    });
+  }
+
+  /**
+   * Removes sent events by id, so events queued while the request was in
+   * flight are kept.
+   *
+   * @param {object[]} batch
+   */
+  removeFromQueue(batch) {
+    const sentIds = new Set(batch.map(event => event.id));
+    this.writeQueue(this.readList(STORAGE_KEYS.QUEUE).filter(event => !sentIds.has(event.id)));
+  }
+
+  /**
+   * @param {object[]} queue
+   */
+  writeQueue(queue) {
+    writeStorage(sessionStorage, STORAGE_KEYS.QUEUE, JSON.stringify(queue));
+  }
+
+  /**
+   * @param {string} key
+   * @return {Array}
+   */
+  readList(key) {
+    try {
+      const list = JSON.parse(readStorage(sessionStorage, key));
+      return Array.isArray(list) ? list : [];
+    } catch (error) {
+      return [];
+    }
+  }
+}
+
+const onboardingTelemetry = new OnboardingTelemetry();
+
+
+/***/ }),
+
 /***/ "./js/tutorial/SimulatedGuildAPI.js":
 /*!******************************************!*\
   !*** ./js/tutorial/SimulatedGuildAPI.js ***!
@@ -23796,6 +24182,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../constants/StructConstants */ "./js/constants/StructConstants.js");
 /* harmony import */ var _events_ClearTileSelectionEvent__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../events/ClearTileSelectionEvent */ "./js/events/ClearTileSelectionEvent.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
+
 
 
 
@@ -24109,15 +24497,28 @@ class TutorialDirector {
   /* Narration */
 
   /**
+   * Records that the player reached a step of the onboarding catalog.
+   *
+   * @param {string|null} stepKey null for moments that are not catalog steps
+   */
+  reached(stepKey) {
+    if (stepKey) {
+      _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_10__.onboardingTelemetry.reached(stepKey);
+    }
+  }
+
+  /**
    * Shows a line the player acknowledges with OK.
    *
+   * @param {string} stepKey
    * @param {string} html
    * @param {string} position
    * @param {function(): (Element|null)|null} pointAt
    * @param {string} pointerDirection
    * @return {Promise<void>}
    */
-  async say(html, position, pointAt = null, pointerDirection = _TutorialPointer__WEBPACK_IMPORTED_MODULE_1__.TUTORIAL_POINTER_DIRECTIONS.DOWN) {
+  async say(stepKey, html, position, pointAt = null, pointerDirection = _TutorialPointer__WEBPACK_IMPORTED_MODULE_1__.TUTORIAL_POINTER_DIRECTIONS.DOWN) {
+    this.reached(stepKey);
     this.allow([SELECTORS.OK_BUTTON]);
     this.setPointer(pointAt, pointerDirection);
     await this.dialogue.show(html, position, true);
@@ -24128,6 +24529,7 @@ class TutorialDirector {
    * Shows a line that asks the player to do something; it stays up until
    * the returned promise from `until` resolves.
    *
+   * @param {string} stepKey
    * @param {string} html
    * @param {string} position
    * @param {string[]} allowedSelectors
@@ -24136,7 +24538,8 @@ class TutorialDirector {
    * @param {string} pointerDirection
    * @return {Promise<void>}
    */
-  async ask(html, position, allowedSelectors, until, pointAt = null, pointerDirection = _TutorialPointer__WEBPACK_IMPORTED_MODULE_1__.TUTORIAL_POINTER_DIRECTIONS.DOWN) {
+  async ask(stepKey, html, position, allowedSelectors, until, pointAt = null, pointerDirection = _TutorialPointer__WEBPACK_IMPORTED_MODULE_1__.TUTORIAL_POINTER_DIRECTIONS.DOWN) {
+    this.reached(stepKey);
     this.allow(allowedSelectors);
     this.setPointer(pointAt, pointerDirection);
     this.dialogue.show(html, position, false);
@@ -24160,10 +24563,12 @@ class TutorialDirector {
   /**
    * Plays out something on the map with the narrator out of the way.
    *
+   * @param {string|null} stepKey
    * @param {function(): Promise} scene
    * @return {Promise<void>}
    */
-  async cutscene(scene) {
+  async cutscene(stepKey, scene) {
+    this.reached(stepKey);
     this.allow([]);
     this.pointer.hide();
     this.dialogue.hide();
@@ -24175,16 +24580,18 @@ class TutorialDirector {
    *
    * @param {string} attackerId
    * @param {string} targetId
+   * @param {{weapon: string, target: string, combat: string}} stepKeys
    * @param {string} weaponCopy narration for pressing the weapon
    * @param {string} targetCopy narration while choosing the target
    * @param {boolean} pointAtWeapon only the first lesson points out the weapon
    * @return {Promise<void>}
    */
-  async guideAttack(attackerId, targetId, weaponCopy, targetCopy, pointAtWeapon = false) {
+  async guideAttack(attackerId, targetId, stepKeys, weaponCopy, targetCopy, pointAtWeapon = false) {
     // A quick player can outpace the recharge; the lesson should never stall on it.
     this.world.rechargeBattery();
 
     await this.ask(
+      stepKeys.weapon,
       weaponCopy,
       TOP,
       [SELECTORS.PRIMARY_WEAPON_BUTTON],
@@ -24195,6 +24602,7 @@ class TutorialDirector {
     // As in the design, the camera stays put: the player pans the map to find the target.
     const attackResolved = this.waitForAction('attack', result => result.targetId === targetId);
     await this.ask(
+      stepKeys.target,
       targetCopy,
       TOP,
       [this.structTileSelector(targetId)],
@@ -24202,7 +24610,7 @@ class TutorialDirector {
       this.find(this.structTileSelector(targetId))
     );
 
-    await this.cutscene(() => this.waitForCombatToSettle());
+    await this.cutscene(stepKeys.combat, () => this.waitForCombatToSettle());
     this.afterCombat();
   }
 
@@ -24252,14 +24660,14 @@ class TutorialDirector {
   async introduction() {
     const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
 
-    await this.say(C.WELCOME, BOTTOM);
-    await this.say(C.ALPHA_BASE, BOTTOM);
-    await this.say(C.ALPHA_ORE, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.EXTRACTOR)));
-    await this.say(C.REFINERY, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.REFINERY)));
-    await this.say(C.ORE_RESERVES, BOTTOM, this.find(SELECTORS.ORE), UP);
-    await this.say(C.ORE_THEFTS, BOTTOM, this.find(SELECTORS.ORE), UP);
-    await this.say(C.CMD_SHIP, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.CMD_SHIP)));
-    await this.say(C.CMD_SHIP_DESTROYED_WARNING, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.CMD_SHIP)));
+    await this.say('tutorial.intro.welcome', C.WELCOME, BOTTOM);
+    await this.say('tutorial.intro.alpha_base', C.ALPHA_BASE, BOTTOM);
+    await this.say('tutorial.intro.alpha_ore', C.ALPHA_ORE, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.EXTRACTOR)));
+    await this.say('tutorial.intro.refinery', C.REFINERY, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.REFINERY)));
+    await this.say('tutorial.intro.ore_reserves', C.ORE_RESERVES, BOTTOM, this.find(SELECTORS.ORE), UP);
+    await this.say('tutorial.intro.ore_thefts', C.ORE_THEFTS, BOTTOM, this.find(SELECTORS.ORE), UP);
+    await this.say('tutorial.intro.cmd_ship', C.CMD_SHIP, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.CMD_SHIP)));
+    await this.say('tutorial.intro.cmd_ship_warning', C.CMD_SHIP_DESTROYED_WARNING, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.CMD_SHIP)));
   }
 
   async raid() {
@@ -24269,9 +24677,10 @@ class TutorialDirector {
     this.rerenderMap();
     this.focusHome();
 
-    await this.say(C.RAIDERS_ATTACK, BOTTOM);
-    await this.say(C.PLANETARY_DEFENSES, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
+    await this.say('tutorial.raid.raiders_attack', C.RAIDERS_ATTACK, BOTTOM);
+    await this.say('tutorial.raid.planetary_defenses', C.PLANETARY_DEFENSES, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
     await this.ask(
+      'tutorial.raid.inspect_defenses',
       C.INSPECT_DEFENSES,
       BOTTOM,
       [SELECTORS.SHIELD_STATUS],
@@ -24280,17 +24689,17 @@ class TutorialDirector {
       UP
     );
 
-    await this.say(C.CMD_SHIP_PROTECTS, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.CMD_SHIP)));
+    await this.say('tutorial.raid.cmd_ship_protects', C.CMD_SHIP_PROTECTS, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.CMD_SHIP)));
 
-    await this.cutscene(async () => {
+    await this.cutscene('tutorial.raid.cmd_ship_strike', async () => {
       await this.pause(600);
       this.world.raiderOpeningStrike();
       await this.waitForCombatToSettle();
       this.world.setBreachCountdown('30m');
     });
 
-    await this.say(C.CMD_SHIP_DESTROYED, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
-    await this.say(C.BREACH_COUNTDOWN, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
+    await this.say('tutorial.raid.cmd_ship_destroyed', C.CMD_SHIP_DESTROYED, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
+    await this.say('tutorial.raid.breach_countdown', C.BREACH_COUNTDOWN, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
   }
 
   /**
@@ -24316,6 +24725,7 @@ class TutorialDirector {
     this.sweepWreck(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.CMD_SHIP);
 
     await this.ask(
+      'tutorial.rebuild.select_command_tile',
       C.SUMMON_CMD_SHIP,
       BOTTOM,
       [this.commandTileSelector()],
@@ -24329,6 +24739,7 @@ class TutorialDirector {
 
     const deployed = this.waitForAction('build');
     await this.ask(
+      'tutorial.rebuild.open_deploy',
       C.DEPLOY,
       TOP,
       [SELECTORS.DEPLOY_BUTTON],
@@ -24339,6 +24750,7 @@ class TutorialDirector {
     // In the Deploy Menu the narrator steps aside; the menu explains itself.
     this.dialogue.hide();
     this.decorateDeployMenu();
+    this.reached('tutorial.rebuild.deploy_cmd_ship');
     this.allow([SELECTORS.DEPLOY_MENU], [SELECTORS.DEPLOY_MENU_CLOSE]);
     this.pointer.pointAt(() => document.querySelector('.deploy-struct-type'), UP);
     await deployed;
@@ -24346,7 +24758,7 @@ class TutorialDirector {
     this.allow([]);
     await this.pause(800);
 
-    await this.say(C.BATTERY_DEPLETES, TOP);
+    await this.say('tutorial.rebuild.battery', C.BATTERY_DEPLETES, TOP);
   }
 
   /**
@@ -24374,9 +24786,10 @@ class TutorialDirector {
   async assignDefenders() {
     const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
 
-    await this.say(C.CMD_SHIP_UNPROTECTED, TOP);
+    await this.say('tutorial.defend.unprotected', C.CMD_SHIP_UNPROTECTED, TOP);
 
     await this.ask(
+      'tutorial.defend.select_tank',
       C.SELECT_INDICATED_TANK,
       TOP,
       [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_A)],
@@ -24388,6 +24801,7 @@ class TutorialDirector {
     // unlocks by itself once there is enough charge. The same line stays up
     // while the player picks the SAM Launcher.
     await this.ask(
+      'tutorial.defend.press_defend',
       C.DEFEND_SAM_LAUNCHER,
       TOP,
       [SELECTORS.DEFEND_BUTTON],
@@ -24400,6 +24814,7 @@ class TutorialDirector {
       && result.protectedStructId === _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.SAM_LAUNCHER
     );
     await this.ask(
+      'tutorial.defend.choose_sam_launcher',
       C.DEFEND_SAM_LAUNCHER,
       TOP,
       [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.SAM_LAUNCHER)],
@@ -24407,18 +24822,18 @@ class TutorialDirector {
       this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.SAM_LAUNCHER))
     );
 
-    await this.cutscene(() => this.waitForCombatToSettle());
+    await this.cutscene(null, () => this.waitForCombatToSettle());
 
-    await this.say(C.DEFENDED_AND_DEFENDERS, TOP);
+    await this.say('tutorial.defend.icon_legend', C.DEFENDED_AND_DEFENDERS, TOP);
 
     window.dispatchEvent(new _events_ClearTileSelectionEvent__WEBPACK_IMPORTED_MODULE_8__.ClearTileSelectionEvent());
-    await this.say(C.CMD_SHIP_TAKES_TIME, BOTTOM);
+    await this.say('tutorial.defend.cmd_ship_delay', C.CMD_SHIP_TAKES_TIME, BOTTOM);
   }
 
   async firstAttack() {
     const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
 
-    await this.say(C.DESTROY_ENEMY_CMD_SHIP, BOTTOM);
+    await this.say('tutorial.first_attack.goal', C.DESTROY_ENEMY_CMD_SHIP, BOTTOM);
 
     this.world.setBreachCountdown('29m');
 
@@ -24426,6 +24841,7 @@ class TutorialDirector {
     this.world.rechargeBattery();
 
     await this.ask(
+      'tutorial.first_attack.select_tank',
       C.SELECT_TANK,
       BOTTOM,
       [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_A)],
@@ -24436,6 +24852,11 @@ class TutorialDirector {
     await this.guideAttack(
       _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.TANK_A,
       _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_CMD_SHIP,
+      {
+        weapon: 'tutorial.first_attack.choose_rail_gun',
+        target: 'tutorial.first_attack.choose_target',
+        combat: 'tutorial.first_attack.combat',
+      },
       C.RAIL_GUN,
       C.RAIL_GUN,
       true
@@ -24444,13 +24865,13 @@ class TutorialDirector {
     // The debrief happens back at the Alpha Base.
     this.focusHome();
 
-    await this.say(C.WENT_POORLY, TOP);
-    await this.say(C.DEFENDER_BLOCKED, TOP);
-    await this.say(C.BOTH_COUNTER_ATTACK, TOP);
-    await this.say(C.DESTROY_DEFENDER_FIRST, TOP);
-    await this.say(C.AVOID_COUNTER_ATTACKS, TOP);
-    await this.say(C.BATTLEGROUNDS, TOP);
-    await this.say(C.RAIL_GUN_LAND_ONLY, TOP);
+    await this.say('tutorial.first_attack.went_poorly', C.WENT_POORLY, TOP);
+    await this.say('tutorial.first_attack.blocked', C.DEFENDER_BLOCKED, TOP);
+    await this.say('tutorial.first_attack.counter_attacks', C.BOTH_COUNTER_ATTACK, TOP);
+    await this.say('tutorial.first_attack.defender_first', C.DESTROY_DEFENDER_FIRST, TOP);
+    await this.say('tutorial.first_attack.avoid_counters', C.AVOID_COUNTER_ATTACKS, TOP);
+    await this.say('tutorial.first_attack.battlegrounds', C.BATTLEGROUNDS, TOP);
+    await this.say('tutorial.first_attack.rail_gun_land_only', C.RAIL_GUN_LAND_ONLY, TOP);
   }
 
   async bomberAttack() {
@@ -24461,6 +24882,7 @@ class TutorialDirector {
     this.world.setBreachCountdown('28m');
 
     await this.ask(
+      'tutorial.bomber.select_bomber',
       C.STEALTH_BOMBER,
       TOP,
       [this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.BOMBER)],
@@ -24471,20 +24893,26 @@ class TutorialDirector {
     await this.guideAttack(
       _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.BOMBER,
       _TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK,
+      {
+        weapon: 'tutorial.bomber.choose_weapon',
+        target: 'tutorial.bomber.choose_target',
+        combat: 'tutorial.bomber.combat',
+      },
       C.STEALTH_BOMBER,
       C.STEALTH_BOMBER
     );
 
-    await this.say(C.SUCCESS, BOTTOM);
+    await this.say('tutorial.bomber.success', C.SUCCESS, BOTTOM);
 
     // Free play starts back at the Alpha Base.
     this.focusHome();
-    await this.say(C.CLOSE_TO_VICTORY, BOTTOM);
+    await this.say('tutorial.bomber.close_to_victory', C.CLOSE_TO_VICTORY, BOTTOM);
   }
 
   async destroyEnemyCommandShip() {
     // From here the player is on their own until the enemy CMD Ship falls.
     this.world.protectPlayerStructs = true;
+    this.reached('tutorial.free_play.destroy_cmd_ship');
     this.dialogue.hide();
     this.pointer.hide();
     this.allow([
@@ -24510,15 +24938,15 @@ class TutorialDirector {
   async newCommandShip() {
     const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
 
-    await this.say(C.RAIDERS_REPELLED, BOTTOM);
-    await this.say(C.CMD_SHIP_ARRIVING, BOTTOM);
+    await this.say('tutorial.new_cmd_ship.raiders_repelled', C.RAIDERS_REPELLED, BOTTOM);
+    await this.say('tutorial.new_cmd_ship.arriving', C.CMD_SHIP_ARRIVING, BOTTOM);
 
-    await this.cutscene(async () => {
+    await this.cutscene('tutorial.new_cmd_ship.arrival', async () => {
       this.world.completeBuild(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.NEW_CMD_SHIP);
       await this.waitForCombatToSettle();
     });
 
-    await this.say(C.DEFENSES_SECURE, BOTTOM);
+    await this.say('tutorial.new_cmd_ship.secure', C.DEFENSES_SECURE, BOTTOM);
   }
 }
 
@@ -24536,6 +24964,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   TutorialMode: () => (/* binding */ TutorialMode)
 /* harmony export */ });
+/* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
+
+
 /**
  * The tutorial is a fully simulated session: the page boots with in-memory
  * game data instead of the player's real account, so no chain transactions are
@@ -24563,12 +24994,14 @@ class TutorialMode {
   }
 
   static launch() {
+    _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_0__.onboardingTelemetry.flushNow();
     sessionStorage.setItem(TutorialMode.ACTIVE_KEY, '1');
     sessionStorage.removeItem(TutorialMode.EXITED_KEY);
     window.location.reload();
   }
 
   static exit() {
+    _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_0__.onboardingTelemetry.flushNow();
     sessionStorage.removeItem(TutorialMode.ACTIVE_KEY);
     sessionStorage.setItem(TutorialMode.EXITED_KEY, '1');
 
@@ -46583,6 +47016,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
 /* harmony import */ var _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../tutorial/TutorialMode */ "./js/tutorial/TutorialMode.js");
+/* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
+
 
 
 
@@ -46618,6 +47053,7 @@ class OrientationEndViewModel extends _framework_AbstractViewModel__WEBPACK_IMPO
       _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_3__.TutorialMode.launch();
     });
     document.getElementById('skipTutorial').addEventListener('click', () => {
+      _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_4__.onboardingTelemetry.skipped('orientation.tutorial_offer');
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.close();
     });
   }
@@ -47113,6 +47549,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
 /* harmony import */ var _components_PfpViewerComponent__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../components/PfpViewerComponent */ "./js/view_models/components/PfpViewerComponent.js");
 /* harmony import */ var _models_PfpClientRenderAttributes__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../models/PfpClientRenderAttributes */ "./js/models/PfpClientRenderAttributes.js");
+/* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
+
 
 
 
@@ -47213,6 +47651,7 @@ class SetUsernameViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
   }
 
   renderSuccessfulSubmission() {
+    _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_6__.onboardingTelemetry.reached('signup.profile_confirmed');
     const regeneratePfpBtn = document.getElementById(this.regeneratePfpBtnId);
     regeneratePfpBtn.classList.add('hidden');
     regeneratePfpBtn.disabled = true;
