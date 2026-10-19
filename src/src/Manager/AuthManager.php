@@ -9,6 +9,7 @@ use App\Entity\PlayerAddress;
 use App\Entity\PlayerPending;
 use App\Factory\PlayerPendingFactory;
 use App\Repository\PlayerAddressRepository;
+use App\Security\BearerTokenManager;
 use App\Security\PlayerAuthenticator;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
@@ -168,11 +169,14 @@ class AuthManager
      * @throws ServerExceptionInterface
      * @throws TransportExceptionInterface
      */
-    public function login(
-        Request $request,
-        Security $security
-    ): Response {
-
+    /**
+     * The commander a signed login request speaks for: the same checks for the session login and the
+     * token login (signature, 600 s window, approved address in this guild, existing player).
+     *
+     * @return array{0: ?Player, 1: ?string, 2: ?JsonResponse} player, guild id, or the error response
+     */
+    private function resolveSignedLogin(Request $request): array
+    {
         $responseContent = new ApiResponseContentDto();
 
         $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
@@ -201,10 +205,7 @@ class AuthManager
         ) {
             $responseContent->errors['signature_validation_failed'] = 'Invalid signature';
 
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_UNAUTHORIZED
-            );
+            return [null, null, new JsonResponse($responseContent, Response::HTTP_UNAUTHORIZED)];
         }
 
         $playerAddressRepo = $this->entityManager->getRepository(PlayerAddress::class);
@@ -217,10 +218,7 @@ class AuthManager
         if (!$playerAddress) {
             $responseContent->errors = ['player_address_does_not_exists' => 'Player address does not exist'];
 
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_UNAUTHORIZED
-            );
+            return [null, null, new JsonResponse($responseContent, Response::HTTP_UNAUTHORIZED)];
         }
 
         $playerRepository = $this->entityManager->getRepository(Player::class);
@@ -229,11 +227,40 @@ class AuthManager
         if (!$player) {
             $responseContent->errors = ['player_does_not_exists' => 'Player does not exist'];
 
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_UNAUTHORIZED
-            );
+            return [null, null, new JsonResponse($responseContent, Response::HTTP_UNAUTHORIZED)];
         }
+
+        return [$player, $parsedRequest->params->guild_id, null];
+    }
+
+    /**
+     * Token login (REQ-AUTH-1): the same signed request as login, answered with a bearer token instead
+     * of a session cookie, for clients on another origin (Safari and Firefox drop third-party cookies).
+     */
+    public function token(Request $request, BearerTokenManager $tokens): Response
+    {
+        [$player, $guildId, $error] = $this->resolveSignedLogin($request);
+        if ($error) {
+            return $error;
+        }
+
+        $responseContent = new ApiResponseContentDto();
+        $responseContent->success = true;
+        $responseContent->data = $tokens->issue((string) $player->getId(), (string) $guildId);
+
+        return new JsonResponse($responseContent, Response::HTTP_OK);
+    }
+
+    public function login(
+        Request $request,
+        Security $security
+    ): Response {
+        [$player, $guildId, $error] = $this->resolveSignedLogin($request);
+        if ($error) {
+            return $error;
+        }
+
+        $responseContent = new ApiResponseContentDto();
 
         $security->login(
             $player,
@@ -244,7 +271,7 @@ class AuthManager
 
         $session = $request->getSession();
         $session->set('player_id', $player->getId());
-        $session->set('guild_id', $parsedRequest->params->guild_id);
+        $session->set('guild_id', $guildId);
 
         $responseContent->success = true;
 
