@@ -882,6 +882,11 @@ const
       GATLING: 'GATLING',
       MISSILE: 'MISSILE',
       TORPEDO: 'TORPEDO',
+    },
+    /** Icons (in /img/sui/icon) the off-screen picture-in-picture shows under a struct. */
+    BADGES: {
+      COUNTER_ATTACK: 'icon-defender-counter',
+      BLOCK: 'icon-defender-block',
     }
   }
 ;

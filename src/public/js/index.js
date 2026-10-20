@@ -3467,6 +3467,11 @@ const
       GATLING: 'GATLING',
       MISSILE: 'MISSILE',
       TORPEDO: 'TORPEDO',
+    },
+    /** Icons (in /img/sui/icon) the off-screen picture-in-picture shows under a struct. */
+    BADGES: {
+      COUNTER_ATTACK: 'icon-defender-counter',
+      BLOCK: 'icon-defender-block',
     }
   }
 ;
@@ -12182,6 +12187,21 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
   }
 
   /**
+   * Marks an animation as a counter-attack or a block; the off-screen
+   * picture-in-picture shows the badge under the struct.
+   *
+   * @param {AnimationEvent|null} animationEvent
+   * @param {string} badge one of ANIMATION.BADGES
+   * @return {AnimationEvent|null}
+   */
+  withBadge(animationEvent, badge) {
+    if (animationEvent) {
+      animationEvent.options = {...animationEvent.options, badge};
+    }
+    return animationEvent;
+  }
+
+  /**
    * @param {string} subject
    * @param {object} messageData
    */
@@ -12621,10 +12641,13 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
 
         // i. Play counterByStruct attack animation
         this.gameState.animationEventQueue.enqueue(
-          this.animationEventFactory.makeAttackAnimationEvent(
-            eventAttackDefenderCounterDetail.counterByStructId,
-            eventAttackDefenderCounterDetail.counterByStructWeaponSystem,
-            mapId
+          this.withBadge(
+            this.animationEventFactory.makeAttackAnimationEvent(
+              eventAttackDefenderCounterDetail.counterByStructId,
+              eventAttackDefenderCounterDetail.counterByStructWeaponSystem,
+              mapId
+            ),
+            _constants_AnimationConstants__WEBPACK_IMPORTED_MODULE_11__.ANIMATION.BADGES.COUNTER_ATTACK
           )
         );
 
@@ -12735,19 +12758,22 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
       if (eventAttackShotDetail.blocked) {
         // d. If blocked, play blockedByStruct receiving damage animation
         this.gameState.animationEventQueue.enqueue(
-          this.animationEventFactory.makeReceiveDamageAnimationEvent(
-            eventAttackShotDetail.blockedByStructId,
-            messageData.detail.attackerStructType,
-            messageData.detail.attackerStructOperatingAmbit,
-            messageData.detail.weaponSystem,
-            eventAttackShotDetail.blockedByStructType,
-            eventAttackShotDetail.blockedByStructOperatingAmbit,
-            eventAttackShotDetail.blockedByStructLocationType,
-            eventAttackShotDetail.blockerHealthBefore,
-            eventAttackShotDetail.blockerHealthAfter,
-            false,
-            '',
-            mapId
+          this.withBadge(
+            this.animationEventFactory.makeReceiveDamageAnimationEvent(
+              eventAttackShotDetail.blockedByStructId,
+              messageData.detail.attackerStructType,
+              messageData.detail.attackerStructOperatingAmbit,
+              messageData.detail.weaponSystem,
+              eventAttackShotDetail.blockedByStructType,
+              eventAttackShotDetail.blockedByStructOperatingAmbit,
+              eventAttackShotDetail.blockedByStructLocationType,
+              eventAttackShotDetail.blockerHealthBefore,
+              eventAttackShotDetail.blockerHealthAfter,
+              false,
+              '',
+              mapId
+            ),
+            _constants_AnimationConstants__WEBPACK_IMPORTED_MODULE_11__.ANIMATION.BADGES.BLOCK
           )
         );
 
@@ -12804,11 +12830,14 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
         //    animation ends; otherwise the still would fall back to gameState (which may not
         //    have refreshed yet) and visually flash backward to the pre-damage health.
         this.gameState.animationEventQueue.enqueue(
-          this.animationEventFactory.makeAttackAnimationEvent(
-            eventAttackShotDetail.targetStructId,
-            eventAttackShotDetail.targetCounterWeaponSystem,
-            mapId,
-            eventAttackShotDetail.targetHealthAfter
+          this.withBadge(
+            this.animationEventFactory.makeAttackAnimationEvent(
+              eventAttackShotDetail.targetStructId,
+              eventAttackShotDetail.targetCounterWeaponSystem,
+              mapId,
+              eventAttackShotDetail.targetHealthAfter
+            ),
+            _constants_AnimationConstants__WEBPACK_IMPORTED_MODULE_11__.ANIMATION.BADGES.COUNTER_ATTACK
           )
         );
 
@@ -12862,10 +12891,13 @@ class StructListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_
 
       if (planetaryDefenseCannonStruct) {
         this.gameState.animationEventQueue.enqueue(
-          this.animationEventFactory.makeAttackAnimationEvent(
-            planetaryDefenseCannonStruct.id,
-            _constants_StructConstants__WEBPACK_IMPORTED_MODULE_5__.STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON,
-            mapId
+          this.withBadge(
+            this.animationEventFactory.makeAttackAnimationEvent(
+              planetaryDefenseCannonStruct.id,
+              _constants_StructConstants__WEBPACK_IMPORTED_MODULE_5__.STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON,
+              mapId
+            ),
+            _constants_AnimationConstants__WEBPACK_IMPORTED_MODULE_11__.ANIMATION.BADGES.COUNTER_ATTACK
           )
         );
 
@@ -39067,6 +39099,10 @@ class MapPictureInPictureComponent extends _framework_AbstractViewModelComponent
     const horizontalPos = this.terrainAmbitHelper.colIndexToHorizontalPos(tilePos.colIndex);
     const terrainTileHTML = this.terrainAmbitHelper.renderTile(ambit, verticalPos, horizontalPos);
     const markerHTML = this.mapTileMarkers.getCellMarker(ambit, tilePos.rowIndex, tilePos.colIndex) || '';
+    // Counter-attacks and blocks are labelled, since the PIP shows one struct
+    // without the attacker that explains why it is firing or taking damage.
+    const badge = animationEvent.options?.badge;
+    const badgeHTML = badge ? `<img class="map-pip-badge" src="/img/sui/icon/${badge}.png" alt="">` : '';
 
     container.innerHTML = `
       <div class="map-pip-focus"></div>
@@ -39078,6 +39114,7 @@ class MapPictureInPictureComponent extends _framework_AbstractViewModelComponent
       <div class="map-pip-caret-container">
         <div class="map-pip-caret"></div>
       </div>
+      ${badgeHTML}
     `;
     container.classList.remove('mod-side-left', 'mod-side-right');
     container.classList.add(side === 'right' ? 'mod-side-right' : 'mod-side-left');

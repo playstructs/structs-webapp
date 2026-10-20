@@ -785,6 +785,17 @@ body.is-map-panning * {
   transform: scaleX(-1);
 }
 
+/* Counter-attack / block badge: the 16px icon at 2x, centred on the bottom edge. */
+.map-pip-badge {
+  position: absolute;
+  bottom: 2px;
+  left: 48px;
+  z-index: 11;
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
 .layer-0 {
   z-index: 0;
 }
