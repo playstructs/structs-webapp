@@ -21,6 +21,11 @@ const hint = (text, tip) => `<a class="sui-mod-secondary" href="javascript: void
 const icon = (name) => `<img class="tutorial-inline-icon" src="/img/sui/icon/${name}.png" alt="">`;
 
 /**
+ * The HUD's Planetary Defenses symbol, as shown while the CMD Ship is on-station.
+ */
+const DEFENSES_ICON = `<img class="tutorial-inline-icon tutorial-inline-icon-wide" src="/img/non_standard_icons/shield_secure_player.png" alt="">`;
+
+/**
  * The tutorial's narration, verbatim from the design apart from corrected typos.
  */
 export const TUTORIAL_COPY = {
@@ -28,15 +33,15 @@ export const TUTORIAL_COPY = {
 
   WELCOME: `Welcome to ${hl('Combat Training')}. This simulation will teach you to defend your mining operations in the uncharted regions.`,
   ALPHA_BASE: `On each planet you explore, you will establish an ${hl('Alpha Base')}, like this one, to harvest Alpha Matter.`,
-  ALPHA_ORE: `${hl('Alpha Ore')}, the raw form of Alpha Matter, is mined from the planet by an ${hl('Extractor')}.`,
-  REFINERY: `Alpha Ore is dangerously unstable. To be useful, it must first be refined into stable ${hl('Alpha Matter')} at a ${hl('Refinery')}.`,
+  ALPHA_ORE: `${icon('icon-alpha-ore')} ${hl('Alpha Ore')}, the raw form of Alpha Matter, is mined from the planet by an ${hl('Extractor')}.`,
+  REFINERY: `Alpha Ore is dangerously unstable. To be useful, it must first be refined into stable ${icon('icon-alpha-matter')} ${hl('Alpha Matter')} at a ${hl('Refinery')}.`,
   ORE_RESERVES: `Your current ${hl('Ore Reserves')} are shown here.`,
   ORE_THEFTS: `Ore thefts are common in the uncharted regions. You must be prepared to defend your Ore Reserves against ${hl('Raiders')}.`,
   CMD_SHIP: `The ${hl('CMD Ship')} is the hub of your operations. Defending it is the key to your success.`,
   CMD_SHIP_DESTROYED_WARNING: `If your CMD Ship is destroyed, you will be unable to deploy new Structs and your Alpha Base will be vulnerable.`,
 
   RAIDERS_ATTACK: `Conveniently, pirates have just launched a ${hl('Raid')} on your Alpha Base.`,
-  PLANETARY_DEFENSES: `This icon represents your ${hl('Planetary Defenses')}. Raiders must ${hl('Breach')} these Defenses in order to steal your Ore Reserves.`,
+  PLANETARY_DEFENSES: `The HUD displays your ${DEFENSES_ICON} ${hl('Planetary Defenses')}. Raiders must ${hl('Breach')} these Defenses in order to steal your Ore Reserves.`,
   INSPECT_DEFENSES: `You can Press-and-hold to ${hl('Inspect')} most HUD elements. Inspect your Planetary Defenses to see their status.`,
   CMD_SHIP_PROTECTS: `The CMD Ship protects your Ore Reserves from intrusion. When a CMD Ship is on-station, your Defenses are ${hl('Secure')} and cannot be breached.`,
   CMD_SHIP_DESTROYED: `Your CMD Ship has been destroyed! Raiders are now attempting to ${hl('Breach')} Planetary Defenses!`,

@@ -2545,6 +2545,11 @@ only screen and (min-height: 2048px) {
   image-rendering: pixelated;
 }
 
+/* The HUD's 2:1 Planetary Defenses symbol. */
+.tutorial-inline-icon-wide {
+  width: 32px;
+}
+
 .tutorial-dialogue-portrait {
   width: 100%;
   height: 100%;
