@@ -758,25 +758,26 @@ body.is-map-panning * {
 /*
  * Terrain tiles and markers ship from their owning components with
  * map-relative positioning (terrain has none, markers use inline top/left
- * for absolute map coordinates). Inside the PIP we re-anchor them to (0,0)
- * so the canonical class names still render correctly inside the 128x128
- * box.
+ * for absolute map coordinates). Inside the PIP we re-anchor them to the
+ * PIP's (0,0) so the canonical class names still render correctly inside the
+ * 128x128 box. They sit inside .map-pip-mask, whose padding box starts 6px in
+ * (5px margin + 1px border), hence the -6px.
  */
 .map-pip .map-terrain-tile {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: -6px;
+  left: -6px;
 }
 
 .map-pip .map-marker {
-  top: 0 !important;
-  left: 0 !important;
+  top: -6px !important;
+  left: -6px !important;
 }
 
 .map-pip-struct {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: -6px;
+  left: -6px;
   width: var(--tile-width);
   height: var(--tile-height);
 }
@@ -785,11 +786,11 @@ body.is-map-panning * {
   transform: scaleX(-1);
 }
 
-/* Counter-attack / block badge: the 16px icon at 2x, centred on the bottom edge. */
+/* Counter-attack / block badge: the 16px icon at 2x, under the struct as drawn in the design. */
 .map-pip-badge {
   position: absolute;
-  bottom: 2px;
-  left: 48px;
+  top: 95px;
+  left: 47px;
   z-index: 11;
   width: 32px;
   height: 32px;
