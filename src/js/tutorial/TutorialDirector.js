@@ -490,9 +490,12 @@ export class TutorialDirector {
 
     this.world.startRaid();
     this.rerenderMap();
+
+    // The raiders land off to the side of the base: show them, then come back.
+    this.focus(this.structTileSelector(TUTORIAL_IDS.ENEMY_TANK));
+    await this.say('tutorial.raid.raiders_attack', C.RAIDERS_ATTACK, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.ENEMY_TANK)));
     this.focusHome();
 
-    await this.say('tutorial.raid.raiders_attack', C.RAIDERS_ATTACK, BOTTOM);
     await this.say('tutorial.raid.planetary_defenses', C.PLANETARY_DEFENSES, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
     await this.ask(
       'tutorial.raid.inspect_defenses',
@@ -648,7 +651,9 @@ export class TutorialDirector {
   async firstAttack() {
     const C = TUTORIAL_COPY;
 
-    await this.say('tutorial.first_attack.goal', C.DESTROY_ENEMY_CMD_SHIP, BOTTOM);
+    this.focus(this.structTileSelector(TUTORIAL_IDS.ENEMY_CMD_SHIP));
+    await this.say('tutorial.first_attack.goal', C.DESTROY_ENEMY_CMD_SHIP, BOTTOM, this.find(this.structTileSelector(TUTORIAL_IDS.ENEMY_CMD_SHIP)));
+    this.focusHome();
 
     this.world.setBreachCountdown('29m');
 

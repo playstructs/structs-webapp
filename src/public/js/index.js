@@ -24126,9 +24126,9 @@ class TutorialDialogue {
   }
 
   init() {
+    // The panel keeps the template's colouring (medium portrait and text
+    // chunks, default button chunk), which is what the design draws.
     this.panel.classList.add('tutorial-dialogue');
-    this.panel.classList.remove('sui-theme-enemy');
-    this.panel.classList.add('sui-theme-player');
     _framework_NotificationDialogue__WEBPACK_IMPORTED_MODULE_0__.NotificationDialogue.setDialogueScreenThemeToNeutral();
   }
 
@@ -24712,9 +24712,12 @@ class TutorialDirector {
 
     this.world.startRaid();
     this.rerenderMap();
+
+    // The raiders land off to the side of the base: show them, then come back.
+    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK));
+    await this.say('tutorial.raid.raiders_attack', C.RAIDERS_ATTACK, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_TANK)));
     this.focusHome();
 
-    await this.say('tutorial.raid.raiders_attack', C.RAIDERS_ATTACK, BOTTOM);
     await this.say('tutorial.raid.planetary_defenses', C.PLANETARY_DEFENSES, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);
     await this.ask(
       'tutorial.raid.inspect_defenses',
@@ -24870,7 +24873,9 @@ class TutorialDirector {
   async firstAttack() {
     const C = _TutorialCopy__WEBPACK_IMPORTED_MODULE_3__.TUTORIAL_COPY;
 
-    await this.say('tutorial.first_attack.goal', C.DESTROY_ENEMY_CMD_SHIP, BOTTOM);
+    this.focus(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_CMD_SHIP));
+    await this.say('tutorial.first_attack.goal', C.DESTROY_ENEMY_CMD_SHIP, BOTTOM, this.find(this.structTileSelector(_TutorialWorld__WEBPACK_IMPORTED_MODULE_2__.TUTORIAL_IDS.ENEMY_CMD_SHIP)));
+    this.focusHome();
 
     this.world.setBreachCountdown('29m');
 

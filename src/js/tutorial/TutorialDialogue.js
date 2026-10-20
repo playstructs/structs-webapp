@@ -21,9 +21,9 @@ export class TutorialDialogue {
   }
 
   init() {
+    // The panel keeps the template's colouring (medium portrait and text
+    // chunks, default button chunk), which is what the design draws.
     this.panel.classList.add('tutorial-dialogue');
-    this.panel.classList.remove('sui-theme-enemy');
-    this.panel.classList.add('sui-theme-player');
     NotificationDialogue.setDialogueScreenThemeToNeutral();
   }
 
