@@ -1,5 +1,5 @@
 # Base image
-FROM php:8.3.14-apache
+FROM php:8.3.36-apache
 
 # Information
 LABEL maintainer="Slow Ninja <info@slow.ninja>"
