@@ -10,6 +10,8 @@ use App\Oidc\LoginContinuePolicy;
 use App\Repository\PlayerAddressRepository;
 use App\Repository\PlayerPendingRepository;
 use App\Repository\PlayerRepository;
+use App\Security\BearerTokenManager;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -491,6 +493,68 @@ class AuthManagerTest extends KernelTestCase
         $policy->method('isAllowed')->willReturn($allowed);
 
         return $policy;
+    }
+
+    /**
+     * Token login runs the same checks as login, and on success answers with a bearer token.
+     * @dataProvider loginProvider
+     */
+    public function testToken(
+        mixed $requestContent,
+        bool $isSignatureValid,
+        bool $playerAddressExists,
+        bool $playerExists,
+        int $expectedHttpStatusCode,
+        int $expectedErrorCount
+    ): void
+    {
+        self::bootKernel();
+        $container = static::getContainer();
+
+        $playerAddressRepositoryStub = $this->createStub(PlayerAddressRepository::class);
+        $playerAddressRepositoryStub->method('findOneBy')
+            ->willReturn($playerAddressExists ? $this->createStub(PlayerAddress::class) : null);
+
+        $player = $this->createStub(Player::class);
+        $player->method('getId')->willReturn('1-404');
+        $playerRepositoryStub = $this->createStub(PlayerRepository::class);
+        $playerRepositoryStub->method('find')->willReturn($playerExists ? $player : null);
+
+        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
+        $entityManagerStub->method('getRepository')
+            ->willReturnMap([
+                [PlayerAddress::class, $playerAddressRepositoryStub],
+                [Player::class, $playerRepositoryStub]
+            ]);
+
+        $httpClient = new MockHttpClient([new MockResponse(json_encode([
+            'pubkeyFormatError' => false,
+            'signatureFormatError' => false,
+            'addressPubkeyMismatch' => false,
+            'signatureInvalid' => false,
+            'valid' => $isSignatureValid
+        ]))]);
+
+        $authManager = new AuthManager(
+            $container->get(ValidatorInterface::class),
+            $entityManagerStub,
+            new SignatureValidationManager($httpClient)
+        );
+        $tokens = new BearerTokenManager('test-secret', new ArrayAdapter());
+
+        $request = Request::create('/api/auth/token', 'POST', [], [], [], [], json_encode($requestContent));
+        $response = $authManager->token($request, $tokens);
+        $responseContent = json_decode($response->getContent(), true);
+
+        $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
+        $this->assertSame($expectedErrorCount, count($responseContent['errors']));
+        if ($expectedHttpStatusCode === Response::HTTP_OK) {
+            $this->assertSame('Bearer', $responseContent['data']['token_type']);
+            $this->assertSame('1-404', $responseContent['data']['player_id']);
+            $this->assertSame('1-404', $tokens->verify($responseContent['data']['access_token'])['p']);
+        } else {
+            $this->assertNull($responseContent['data']);
+        }
     }
 
     public function loginProvider(): array

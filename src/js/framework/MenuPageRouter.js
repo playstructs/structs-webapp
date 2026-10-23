@@ -22,6 +22,13 @@ export class MenuPageRouter {
     this.navigationId = 0;
 
     /**
+     * Called with (controllerName, pageName) on every navigation, before the page renders.
+     *
+     * @type {function(string, string): void}
+     */
+    this.onNavigate = () => {};
+
+    /**
      * Pages that depend on in-flight async work or function-valued options
      * (which JSON serialization drops), so they cannot be restored after a reload.
      */
@@ -72,6 +79,8 @@ export class MenuPageRouter {
         options: options
       }));
     }
+
+    this.onNavigate(controllerName, pageName);
 
     this.controllers.get(controllerName)[pageName](options);
   }

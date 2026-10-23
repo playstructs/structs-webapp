@@ -29,6 +29,14 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::CODE)]
     public ?string $code = null;
 
+    /** Onboarding tutorial design, e.g. tutorial-4. */
+    #[Assert\Sequentially([
+        new Assert\Type('string'),
+        new Assert\Length(min: 1, max: 64),
+        new Assert\Regex(RegexPattern::SLUG),
+    ])]
+    public mixed $content_version = null;
+
     /**
      * Where a browser form login sends the player afterwards. Only the shape is
      * checked here; whether the destination is permitted is decided by
@@ -84,6 +92,13 @@ class ApiRequestParamsDto
 
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $guild_id = null;
+
+    /** Hours without a new onboarding event before a session counts as stopped. */
+    #[Assert\Sequentially([
+        new Assert\Regex(RegexPattern::INT),
+        new Assert\Range(min: 1, max: 720),
+    ])]
+    public ?string $idle_hours = null;
 
     #[Assert\Regex(RegexPattern::IDS)]
     public ?string $ids = null;
@@ -167,6 +182,9 @@ class ApiRequestParamsDto
 
     #[Assert\Json]
     public ?string $pfp_client_render_attributes = null;
+
+    #[Assert\Choice(choices: ['signup', 'tutorial'])]
+    public ?string $phase = null;
 
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $planet_id = null;

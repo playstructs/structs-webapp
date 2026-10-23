@@ -49,6 +49,10 @@ class ApiRoutingTest extends KernelTestCase
             ['/api/planet-activity/player/1-61/stats', 'api_planet_activity_player_stats'],
             ['/api/planet-activity/planet/2-1/page/1', 'api_planet_activity_by_planet'],
             ['/api/player/1-101/mini-game/arcade', 'api_get_player_mini_game_progress'],
+            ['/api/onboarding/catalog/tutorial-4', 'api_onboarding_catalog'],
+            ['/api/onboarding/funnel/tutorial-4/signup', 'api_onboarding_funnel'],
+            ['/api/onboarding/tutorial/outcome/tutorial-4', 'api_onboarding_tutorial_outcome'],
+            ['/api/onboarding/player/1-101', 'api_onboarding_player'],
         ];
     }
 
@@ -66,5 +70,18 @@ class ApiRoutingTest extends KernelTestCase
         $router->getContext()->setMethod('GET');
         $this->expectException(MethodNotAllowedException::class);
         $router->match('/api/player/mini-game/progress');
+    }
+
+    /** Onboarding telemetry is POST only, under the unauthenticated /api/onboarding/ firewall. */
+    public function testOnboardingEventsPostRoute(): void
+    {
+        $router = $this->router();
+        $router->getContext()->setMethod('POST');
+
+        $this->assertSame('api_onboarding_events', $router->match('/api/onboarding/events')['_route']);
+
+        $router->getContext()->setMethod('GET');
+        $this->expectException(MethodNotAllowedException::class);
+        $router->match('/api/onboarding/events');
     }
 }

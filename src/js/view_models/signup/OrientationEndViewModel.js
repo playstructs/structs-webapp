@@ -1,6 +1,8 @@
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {NavItemDTO} from "../../dtos/NavItemDTO";
 import {MenuPage} from "../../framework/MenuPage";
+import {TutorialMode} from "../../tutorial/TutorialMode";
+import {onboardingTelemetry} from "../../telemetry/OnboardingTelemetry";
 
 export class OrientationEndViewModel extends AbstractViewModel {
 
@@ -28,8 +30,11 @@ export class OrientationEndViewModel extends AbstractViewModel {
   }
 
   initPageCode() {
-    document.getElementById('beginOperations').addEventListener('click', () => {
-      console.log('begin operations');
+    document.getElementById('launchTutorial').addEventListener('click', () => {
+      TutorialMode.launch();
+    });
+    document.getElementById('skipTutorial').addEventListener('click', () => {
+      onboardingTelemetry.skipped('orientation.tutorial_offer');
       MenuPage.close();
     });
   }
@@ -52,10 +57,13 @@ export class OrientationEndViewModel extends AbstractViewModel {
       </div>
         
       <div class="common-layout-col">
-        <div><i class="sui-icon-lg icon-success sui-text-primary"></i> Orientation Complete</div>
-        <div class="common-btn-sizing-container">
+        <div><i class="sui-icon-lg icon-incoming sui-text-primary"></i> File Received.</div>
+        <div class="common-btn-sizing-container tutorial-choice-btns">
           <div class="sui-screen-btn-flex-wrapper">
-            <a id="beginOperations" href="javascript: void(0)" class="sui-screen-btn sui-mod-primary">Begin Operations</a>
+            <a id="launchTutorial" href="javascript: void(0)" class="sui-screen-btn sui-mod-primary">Launch Tutorial</a>
+          </div>
+          <div class="sui-screen-btn-flex-wrapper">
+            <a id="skipTutorial" href="javascript: void(0)" class="sui-screen-btn sui-mod-secondary">Skip Tutorial</a>
           </div>
         </div>
       </div>
@@ -65,7 +73,7 @@ export class OrientationEndViewModel extends AbstractViewModel {
 
     MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
     MenuPage.setDialogueScreenContent(
-      `Your orientation has now been completed. It is time for you to commence operations on your first planet.`
+      `Due to increased pirate activity in the frontier regions, SN.CORP recommends all new employees undergo Combat Training.`
     );
     MenuPage.clearDialogueBtnAHandler();
     MenuPage.clearDialogueBtnBHandler();

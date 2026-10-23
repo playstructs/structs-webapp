@@ -1,5 +1,6 @@
 import {AbstractController} from "../framework/AbstractController";
 import {IndexView} from "../view_models/IndexViewModel";
+import {IntroductionViewModel} from "../view_models/signup/IntroductionViewModel";
 import {ConnectingToCorp1ViewModel} from "../view_models/signup/ConnectingToCorp1ViewModel";
 import {ConnectingToCorp2ViewModel} from "../view_models/signup/ConnectingToCorp2ViewModel";
 import {IncomingCall1ViewModel} from "../view_models/signup/IncomingCall1ViewModel";
@@ -63,6 +64,22 @@ export class AuthController extends AbstractController {
 
   index() {
     const viewModel = new IndexView();
+    viewModel.render();
+  }
+
+  /**
+   * The opening crawl, played over the title screen once per browser session.
+   */
+  introduction() {
+    if (sessionStorage.getItem('introductionSeen')) {
+      this.index();
+      return;
+    }
+    sessionStorage.setItem('introductionSeen', '1');
+
+    this.index();
+
+    const viewModel = new IntroductionViewModel(() => {});
     viewModel.render();
   }
 

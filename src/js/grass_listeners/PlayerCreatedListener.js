@@ -1,4 +1,5 @@
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
+import {onboardingTelemetry, ONBOARDING_PLAYER_STEP_KEY} from "../telemetry/OnboardingTelemetry";
 
 export class PlayerCreatedListener extends AbstractGrassListener {
 
@@ -19,6 +20,8 @@ export class PlayerCreatedListener extends AbstractGrassListener {
       && messageData.primary_address === this.playerAddress
     ) {
       console.log(messageData.id);
+
+      onboardingTelemetry.reached(ONBOARDING_PLAYER_STEP_KEY, messageData.id);
 
       this.authManager.login(messageData.id).then(async function () {
         await this.planetManager.findNewPlanet();

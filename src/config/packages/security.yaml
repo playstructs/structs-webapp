@@ -43,6 +43,9 @@ security:
         api_chat_room:
             pattern: ^/api/chat/room/
             security: false
+        api_onboarding_events:
+            pattern: ^/api/onboarding/events$
+            security: false
         api:
             pattern: ^/api/
             security: true

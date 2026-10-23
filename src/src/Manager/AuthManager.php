@@ -10,6 +10,7 @@ use App\Entity\PlayerPending;
 use App\Factory\PlayerPendingFactory;
 use App\Oidc\LoginContinuePolicy;
 use App\Repository\PlayerAddressRepository;
+use App\Security\BearerTokenManager;
 use App\Security\PlayerAuthenticator;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
@@ -168,6 +169,122 @@ class AuthManager
     }
 
     /**
+     * The commander a signed login request speaks for: the same checks for the session login and the
+     * token login (signature, 600 s window, approved address in this guild, existing player).
+     *
+     * With $acceptsContinue the body may also be an HTML form post carrying an optional `continue`
+     * URL, which is checked against LoginContinuePolicy before the signature.
+     *
+     * @return array{0: ?Player, 1: ?string, 2: ?string, 3: ?JsonResponse} player, guild id,
+     *     continue URL, or the error response
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
+     */
+    private function resolveSignedLogin(Request $request, bool $acceptsContinue = false): array
+    {
+        $responseContent = new ApiResponseContentDto();
+
+        $requiredParams = [
+            ApiParameters::ADDRESS,
+            ApiParameters::SIGNATURE,
+            ApiParameters::PUBKEY,
+            ApiParameters::GUILD_ID,
+            ApiParameters::UNIX_TIMESTAMP,
+        ];
+
+        $parsedRequest = $acceptsContinue
+            ? $this->apiRequestParsingManager->parseJsonOrFormRequest(
+                $request,
+                $requiredParams,
+                [ApiParameters::CONTINUE]
+            )
+            : $this->apiRequestParsingManager->parseJsonRequest($request, $requiredParams);
+
+        $responseContent->errors = $parsedRequest->errors;
+
+        // An empty field, as a form with a blank hidden input would send, means
+        // the same as no field.
+        $continueUrl = $acceptsContinue
+            && count($responseContent->errors) === 0
+            && ($parsedRequest->params->continue ?? '') !== ''
+            ? $parsedRequest->params->continue
+            : null;
+
+        // Checked before the signature so a rejected destination never costs a
+        // signature verification round trip, and never sets a cookie.
+        if ($continueUrl !== null && !$this->isContinueAllowed($continueUrl, $parsedRequest->params->guild_id)) {
+            $responseContent->errors = [
+                'continue_not_allowed' => 'continue must point at the auth server registered for this guild'
+            ];
+
+            return [null, null, null, new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST)];
+        }
+
+        if (
+            count($responseContent->errors) > 0
+            || !$this->signatureValidationManager->isMessageTimeValid($parsedRequest->params->unix_timestamp)
+            || !$this->signatureValidationManager->validate(
+                $parsedRequest->params->address,
+                $parsedRequest->params->pubkey,
+                $parsedRequest->params->signature,
+                $this->signatureValidationManager->buildLoginMessage(
+                    $parsedRequest->params->guild_id,
+                    $parsedRequest->params->address,
+                    $parsedRequest->params->unix_timestamp
+                )
+            )
+        ) {
+            $responseContent->errors['signature_validation_failed'] = 'Invalid signature';
+
+            return [null, null, null, new JsonResponse($responseContent, Response::HTTP_UNAUTHORIZED)];
+        }
+
+        $playerAddressRepo = $this->entityManager->getRepository(PlayerAddress::class);
+        $playerAddress = $playerAddressRepo->findOneBy([
+            'address' => $parsedRequest->params->address,
+            'guild_id' => $parsedRequest->params->guild_id,
+            'status' => 'approved'
+        ]);
+
+        if (!$playerAddress) {
+            $responseContent->errors = ['player_address_does_not_exists' => 'Player address does not exist'];
+
+            return [null, null, null, new JsonResponse($responseContent, Response::HTTP_UNAUTHORIZED)];
+        }
+
+        $playerRepository = $this->entityManager->getRepository(Player::class);
+        $player = $playerRepository->find($playerAddress->getPlayerId());
+
+        if (!$player) {
+            $responseContent->errors = ['player_does_not_exists' => 'Player does not exist'];
+
+            return [null, null, null, new JsonResponse($responseContent, Response::HTTP_UNAUTHORIZED)];
+        }
+
+        return [$player, $parsedRequest->params->guild_id, $continueUrl, null];
+    }
+
+    /**
+     * Token login (REQ-AUTH-1): the same signed request as login, answered with a bearer token instead
+     * of a session cookie, for clients on another origin (Safari and Firefox drop third-party cookies).
+     */
+    public function token(Request $request, BearerTokenManager $tokens): Response
+    {
+        [$player, $guildId, , $error] = $this->resolveSignedLogin($request);
+        if ($error) {
+            return $error;
+        }
+
+        $responseContent = new ApiResponseContentDto();
+        $responseContent->success = true;
+        $responseContent->data = $tokens->issue((string) $player->getId(), (string) $guildId);
+
+        return new JsonResponse($responseContent, Response::HTTP_OK);
+    }
+
+    /**
      * Verifies a player for login based on a message signed using the player's private key.
      *
      * The body may be JSON (the SPA) or an HTML form post (a page that needs the
@@ -189,93 +306,12 @@ class AuthManager
         Request $request,
         Security $security
     ): Response {
+        [$player, $guildId, $continueUrl, $error] = $this->resolveSignedLogin($request, true);
+        if ($error) {
+            return $error;
+        }
 
         $responseContent = new ApiResponseContentDto();
-
-        $parsedRequest = $this->apiRequestParsingManager->parseJsonOrFormRequest(
-            $request,
-            [
-                ApiParameters::ADDRESS,
-                ApiParameters::SIGNATURE,
-                ApiParameters::PUBKEY,
-                ApiParameters::GUILD_ID,
-                ApiParameters::UNIX_TIMESTAMP,
-            ],
-            [
-                ApiParameters::CONTINUE,
-            ]
-        );
-
-        $responseContent->errors = $parsedRequest->errors;
-
-        // An empty field, as a form with a blank hidden input would send, means
-        // the same as no field.
-        $continueUrl = count($responseContent->errors) === 0 && ($parsedRequest->params->continue ?? '') !== ''
-            ? $parsedRequest->params->continue
-            : null;
-
-        // Checked before the signature so a rejected destination never costs a
-        // signature verification round trip, and never sets a cookie.
-        if ($continueUrl !== null && !$this->isContinueAllowed($continueUrl, $parsedRequest->params->guild_id)) {
-            $responseContent->errors = [
-                'continue_not_allowed' => 'continue must point at the auth server registered for this guild'
-            ];
-
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_BAD_REQUEST
-            );
-        }
-
-        if (
-            count($responseContent->errors) > 0
-            || !$this->signatureValidationManager->isMessageTimeValid($parsedRequest->params->unix_timestamp)
-            || !$this->signatureValidationManager->validate(
-                $parsedRequest->params->address,
-                $parsedRequest->params->pubkey,
-                $parsedRequest->params->signature,
-                $this->signatureValidationManager->buildLoginMessage(
-                    $parsedRequest->params->guild_id,
-                    $parsedRequest->params->address,
-                    $parsedRequest->params->unix_timestamp
-                )
-            )
-        ) {
-            $responseContent->errors['signature_validation_failed'] = 'Invalid signature';
-
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_UNAUTHORIZED
-            );
-        }
-
-        $playerAddressRepo = $this->entityManager->getRepository(PlayerAddress::class);
-        $playerAddress = $playerAddressRepo->findOneBy([
-            'address' => $parsedRequest->params->address,
-            'guild_id' => $parsedRequest->params->guild_id,
-            'status' => 'approved'
-        ]);
-
-        if (!$playerAddress) {
-            $responseContent->errors = ['player_address_does_not_exists' => 'Player address does not exist'];
-
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_UNAUTHORIZED
-            );
-        }
-
-        $playerRepository = $this->entityManager->getRepository(Player::class);
-        $player = $playerRepository->find($playerAddress->getPlayerId());
-
-        if (!$player) {
-            $responseContent->errors = ['player_does_not_exists' => 'Player does not exist'];
-
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_UNAUTHORIZED
-            );
-        }
 
         $security->login(
             $player,
@@ -286,7 +322,7 @@ class AuthManager
 
         $session = $request->getSession();
         $session->set('player_id', $player->getId());
-        $session->set('guild_id', $parsedRequest->params->guild_id);
+        $session->set('guild_id', $guildId);
 
         if ($continueUrl !== null) {
             // The session cookie rides on this response like any other; only

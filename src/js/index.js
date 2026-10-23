@@ -36,6 +36,12 @@ import {MapPanController} from "./framework/MapPanController";
 import {AnimationEventQueue} from "./data_structures/AnimationEventQueue";
 import {LOG_LEVEL, RESUME_CHECK_INTERVAL_MS} from "./constants/GrassConstants";
 import {OidcContinueManager} from "./managers/OidcContinueManager";
+import {TutorialMode} from "./tutorial/TutorialMode";
+import {TutorialWorld} from "./tutorial/TutorialWorld";
+import {SimulatedGuildAPI} from "./tutorial/SimulatedGuildAPI";
+import {SimulatedSigningClientManager} from "./tutorial/SimulatedSigningClientManager";
+import {TutorialController} from "./controllers/TutorialController";
+import {onboardingTelemetry} from "./telemetry/OnboardingTelemetry";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -52,10 +58,16 @@ const oidcContinueManager = new OidcContinueManager();
 oidcContinueManager.init();
 global.oidcContinueManager = oidcContinueManager;
 
+// The tutorial boots the same app against an in-memory simulation instead of
+// the player's account: no network, no transactions, no saved state.
+const tutorialMode = TutorialMode.isActive();
+const tutorialWorld = tutorialMode ? new TutorialWorld() : null;
+
 const gameState = new GameState();
+gameState.persistenceEnabled = !tutorialMode;
 global.gameState = gameState;
 
-const guildAPI = new GuildAPI();
+const guildAPI = tutorialMode ? new SimulatedGuildAPI(tutorialWorld) : new GuildAPI();
 global.guildAPI = guildAPI;
 gameState.guildAPI = guildAPI;
 
@@ -75,7 +87,9 @@ const blockGrassManager = new GrassManager(
   gameState
 );
 
-const signingClientManager = new SigningClientManager(gameState);
+const signingClientManager = tutorialMode
+  ? new SimulatedSigningClientManager(gameState, tutorialWorld)
+  : new SigningClientManager(gameState);
 global.signingClientManager = signingClientManager;
 
 const structManager = new StructManager(gameState, guildAPI, signingClientManager);
@@ -194,6 +208,8 @@ gameState.previewMap = new MapComponent(
 
 MenuPage.gameState = gameState;
 MenuPage.mapManager = mapManager;
+MenuPage.router.onNavigate = (controllerName, pageName) => onboardingTelemetry.recordNavigation(controllerName, pageName);
+
 MenuPage.router.registerController(authController);
 MenuPage.router.registerController(accountController);
 MenuPage.router.registerController(genericController);
@@ -209,9 +225,11 @@ DialogueKeyboardControls.initListeners();
 
 new MapPanController().init();
 
-grassManager.init();
-blockGrassManager.registerListener(blockListener);
-blockGrassManager.init();
+if (!tutorialMode) {
+  grassManager.init();
+  blockGrassManager.registerListener(blockListener);
+  blockGrassManager.init();
+}
 
 // A backgrounded or slept page can come back with WebSockets that report a
 // healthy readyState but carry no traffic, which no close event announces.
@@ -225,32 +243,36 @@ const onResume = (forceResumeCheck = true) => {
   signingClientManager.resumeCheck(forceResumeCheck).then();
 };
 
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    onResume();
-  }
-});
-window.addEventListener('pageshow', (event) => {
-  if (event.persisted) {
-    onResume();
-  }
-});
+if (!tutorialMode) {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      onResume();
+    }
+  });
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      onResume();
+    }
+  });
 
-// Wrapped so the event object cannot land in the force parameter.
-window.addEventListener('online', () => onResume());
-window.addEventListener('focus', () => onResume());
+  // Wrapped so the event object cannot land in the force parameter.
+  window.addEventListener('online', () => onResume());
+  window.addEventListener('focus', () => onResume());
 
-// The events above only fire when the user comes back, but a socket can go
-// quiet while the tab is right in front of them, and no event announces that.
-// The signing probe rides along throttled, which also covers the case where
-// grass was stale at resume and its own check had to be deferred.
-setInterval(() => {
-  onResume(false);
-}, RESUME_CHECK_INTERVAL_MS);
+  // The events above only fire when the user comes back, but a socket can go
+  // quiet while the tab is right in front of them, and no event announces that.
+  // The signing probe rides along throttled, which also covers the case where
+  // grass was stale at resume and its own check had to be deferred.
+  setInterval(() => {
+    onResume(false);
+  }, RESUME_CHECK_INTERVAL_MS);
+}
 
 const hudContainer = document.getElementById(HUDViewModel.containerId);
 
-await gameState.load();
+if (!tutorialMode) {
+  await gameState.load();
+}
 gameState.settings = await guildAPI.getSettings();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
@@ -260,11 +282,32 @@ HUDViewModel.initPageCode();
 
 MenuPage.sui.autoInitAll();
 
-if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
+if (tutorialMode) {
+  const tutorialController = new TutorialController(
+    gameState,
+    tutorialWorld,
+    signingClientManager,
+    guildAPI,
+    structManager,
+    mapManager,
+    destroyedStructManager
+  );
+  MenuPage.router.registerController(tutorialController);
+
+  // Tutorial pages are never restored after a reload.
+  MenuPage.router.enablePreviewMode();
+  MenuPage.router.goto('Tutorial', 'loading');
+
+  MenuPage.hideLoadingScreen();
+} else if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
+  TutorialMode.consumeExited();
+  // The opening crawl (Auth/introduction) is shelved for now.
   MenuPage.router.goto('Auth', 'index');
 
   MenuPage.hideLoadingScreen();
 } else {
+  const returningFromTutorial = TutorialMode.consumeExited();
+
   authManager.login(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then((success) => {
     // A Matrix login that arrived without a session lands here: the wallet is
     // already in local storage, so the login above quietly restored the session
@@ -276,11 +319,20 @@ if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
 
     return playerAddressManager.addPlayerAddressMeta().then(() => {
       MenuPage.close();
-      MenuPage.router.restore('Fleet', 'index');
+      if (!returningFromTutorial) {
+        MenuPage.router.restore('Fleet', 'index');
+      }
       MenuPage.hideLoadingScreen();
+      if (returningFromTutorial) {
+        TutorialMode.frameHomeAfterReturn(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
+        // The FTL jump counts as finished once the player is in the real game.
+        onboardingTelemetry.reached('tutorial.end.ftl_jump');
+      }
     });
   });
 }
 
-// Start the hashing engine after a delay
-new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(() => window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
+if (!tutorialMode) {
+  // Start the hashing engine after a delay
+  new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(() => window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
+}

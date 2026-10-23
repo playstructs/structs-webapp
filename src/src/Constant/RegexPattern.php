@@ -38,8 +38,14 @@ class RegexPattern
 
     public const string SIGNATURE = '/^[a-zA-Z0-9]+$/';
 
+    /** Canonical UUID, any version. */
+    public const string UUID = '/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/';
+
     /** Alphanumeric, hyphen, underscore — attribute types, denoms, etc. */
     public const string SLUG = '/^[a-zA-Z0-9_.-]+$/';
+
+    /** Onboarding step key: dot-separated lower-case segments, e.g. tutorial.raid.inspect_defenses. */
+    public const string STEP_KEY = '/^[a-z0-9_]+(\.[a-z0-9_]+)+$/';
 
     public const string USERNAME = '/^[\p{L}0-9-_]{3,20}$/';
 }

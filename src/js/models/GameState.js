@@ -30,6 +30,14 @@ export class GameState {
     this.signupRequest = new SignupRequestDTO();
     this.transferAmount = 0;
 
+    /**
+     * Turned off for simulated sessions (the tutorial) so they never
+     * overwrite the player's saved game state.
+     *
+     * @type {boolean}
+     */
+    this.persistenceEnabled = true;
+
     /* Persistent Data */
     this.mnemonic = null;
     this.pubkey = null;
@@ -121,6 +129,10 @@ export class GameState {
   }
 
   save() {
+    if (!this.persistenceEnabled) {
+      return;
+    }
+
     this.lastSaveBlockHeight = this.currentBlockHeight;
 
     localStorage.setItem('gameState', JSON.stringify({
