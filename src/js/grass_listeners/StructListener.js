@@ -73,6 +73,21 @@ export class StructListener extends AbstractGrassListener {
   }
 
   /**
+   * Marks an animation as a counter-attack or a block; the off-screen
+   * picture-in-picture shows the badge under the struct.
+   *
+   * @param {AnimationEvent|null} animationEvent
+   * @param {string} badge one of ANIMATION.BADGES
+   * @return {AnimationEvent|null}
+   */
+  withBadge(animationEvent, badge) {
+    if (animationEvent) {
+      animationEvent.options = {...animationEvent.options, badge};
+    }
+    return animationEvent;
+  }
+
+  /**
    * @param {string} subject
    * @param {object} messageData
    */
@@ -512,10 +527,13 @@ export class StructListener extends AbstractGrassListener {
 
         // i. Play counterByStruct attack animation
         this.gameState.animationEventQueue.enqueue(
-          this.animationEventFactory.makeAttackAnimationEvent(
-            eventAttackDefenderCounterDetail.counterByStructId,
-            eventAttackDefenderCounterDetail.counterByStructWeaponSystem,
-            mapId
+          this.withBadge(
+            this.animationEventFactory.makeAttackAnimationEvent(
+              eventAttackDefenderCounterDetail.counterByStructId,
+              eventAttackDefenderCounterDetail.counterByStructWeaponSystem,
+              mapId
+            ),
+            ANIMATION.BADGES.COUNTER_ATTACK
           )
         );
 
@@ -626,19 +644,22 @@ export class StructListener extends AbstractGrassListener {
       if (eventAttackShotDetail.blocked) {
         // d. If blocked, play blockedByStruct receiving damage animation
         this.gameState.animationEventQueue.enqueue(
-          this.animationEventFactory.makeReceiveDamageAnimationEvent(
-            eventAttackShotDetail.blockedByStructId,
-            messageData.detail.attackerStructType,
-            messageData.detail.attackerStructOperatingAmbit,
-            messageData.detail.weaponSystem,
-            eventAttackShotDetail.blockedByStructType,
-            eventAttackShotDetail.blockedByStructOperatingAmbit,
-            eventAttackShotDetail.blockedByStructLocationType,
-            eventAttackShotDetail.blockerHealthBefore,
-            eventAttackShotDetail.blockerHealthAfter,
-            false,
-            '',
-            mapId
+          this.withBadge(
+            this.animationEventFactory.makeReceiveDamageAnimationEvent(
+              eventAttackShotDetail.blockedByStructId,
+              messageData.detail.attackerStructType,
+              messageData.detail.attackerStructOperatingAmbit,
+              messageData.detail.weaponSystem,
+              eventAttackShotDetail.blockedByStructType,
+              eventAttackShotDetail.blockedByStructOperatingAmbit,
+              eventAttackShotDetail.blockedByStructLocationType,
+              eventAttackShotDetail.blockerHealthBefore,
+              eventAttackShotDetail.blockerHealthAfter,
+              false,
+              '',
+              mapId
+            ),
+            ANIMATION.BADGES.BLOCK
           )
         );
 
@@ -695,11 +716,14 @@ export class StructListener extends AbstractGrassListener {
         //    animation ends; otherwise the still would fall back to gameState (which may not
         //    have refreshed yet) and visually flash backward to the pre-damage health.
         this.gameState.animationEventQueue.enqueue(
-          this.animationEventFactory.makeAttackAnimationEvent(
-            eventAttackShotDetail.targetStructId,
-            eventAttackShotDetail.targetCounterWeaponSystem,
-            mapId,
-            eventAttackShotDetail.targetHealthAfter
+          this.withBadge(
+            this.animationEventFactory.makeAttackAnimationEvent(
+              eventAttackShotDetail.targetStructId,
+              eventAttackShotDetail.targetCounterWeaponSystem,
+              mapId,
+              eventAttackShotDetail.targetHealthAfter
+            ),
+            ANIMATION.BADGES.COUNTER_ATTACK
           )
         );
 
@@ -753,10 +777,13 @@ export class StructListener extends AbstractGrassListener {
 
       if (planetaryDefenseCannonStruct) {
         this.gameState.animationEventQueue.enqueue(
-          this.animationEventFactory.makeAttackAnimationEvent(
-            planetaryDefenseCannonStruct.id,
-            STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON,
-            mapId
+          this.withBadge(
+            this.animationEventFactory.makeAttackAnimationEvent(
+              planetaryDefenseCannonStruct.id,
+              STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON,
+              mapId
+            ),
+            ANIMATION.BADGES.COUNTER_ATTACK
           )
         );
 

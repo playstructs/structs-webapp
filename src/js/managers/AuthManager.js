@@ -410,6 +410,11 @@ export class AuthManager {
   }
 
   logout() {
+    // A simulated session (the tutorial) must never clear the player's saved data.
+    if (!this.gameState.persistenceEnabled) {
+      return;
+    }
+
     this.guildAPI.logout().then(() => {
       localStorage.clear();
       MenuPage.router.goto('Auth', 'index');

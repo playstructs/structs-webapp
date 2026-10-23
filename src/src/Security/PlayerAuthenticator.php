@@ -19,9 +19,9 @@ class PlayerAuthenticator extends AbstractAuthenticator
 {
     public EntityManagerInterface $entityManager;
 
-
     public function __construct(
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        private readonly BearerTokenManager $tokens,
     ) {
         $this->entityManager = $entityManager;
     }
@@ -38,6 +38,18 @@ class PlayerAuthenticator extends AbstractAuthenticator
 
     public function authenticate(Request $request): Passport
     {
+        // A bearer token (POST /api/auth/token) works without cookies, from any origin. A request that
+        // sends one is judged on it alone: a bad or expired token never falls back to the session.
+        $bearer = BearerTokenManager::fromHeader($request->headers->get('Authorization'));
+        if ($bearer !== null) {
+            $claims = $this->tokens->verify($bearer);
+            if ($claims === null) {
+                throw new CustomUserMessageAuthenticationException('Login required');
+            }
+
+            return new SelfValidatingPassport(new UserBadge((string) $claims['p']));
+        }
+
         $session = $request->getSession();
         $playerId = $session->get('player_id');
 
