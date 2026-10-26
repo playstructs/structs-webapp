@@ -40859,6 +40859,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _events_ClearTileSelectionEvent__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../../../events/ClearTileSelectionEvent */ "./js/events/ClearTileSelectionEvent.js");
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../../../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
 /* harmony import */ var _util_AttackTargetUtil__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../../../util/AttackTargetUtil */ "./js/util/AttackTargetUtil.js");
+/* harmony import */ var _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./TargetSelectedIndicator */ "./js/view_models/components/map/TargetSelectedIndicator.js");
+
 
 
 
@@ -40926,6 +40928,8 @@ class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__W
 
     /** @type {Fleet} */
     this.attackerFleet = attackerFleet;
+
+    _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TargetSelectedIndicator.preload();
   }
 
   /**
@@ -41496,6 +41500,8 @@ class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__W
       return;
     }
 
+    _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TargetSelectedIndicator.play(tile, _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TARGET_SELECTED_VARIANTS.FRIENDLY);
+
     // Lock the action bar until we hear the grass notification from the struct defend action
     this.gameState.actionBarLock.lock();
 
@@ -41524,6 +41530,8 @@ class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__W
     if (!targetStructId) {
       return;
     }
+
+    _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TargetSelectedIndicator.play(tile, _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TARGET_SELECTED_VARIANTS.ENEMY);
 
     // Lock the action bar until we hear the grass notification from the struct attack action
     this.gameState.actionBarLock.lock();
@@ -41556,6 +41564,8 @@ class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__W
    * @param {HTMLElement} tile - The tile that was clicked
    */
   async handleMoveTargetClick(tile) {
+    _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TargetSelectedIndicator.play(tile, _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TARGET_SELECTED_VARIANTS.NEUTRAL);
+
     // The lock the action bar until we hear the grass notification from the struct move action
     this.gameState.actionBarLock.lock();
 
@@ -41938,6 +41948,128 @@ class MapTransitionLayerTileSetComponent extends _AbstractMapTransitionLayerComp
     html += `</div>`;
 
     return html;
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/view_models/components/map/TargetSelectedIndicator.js"
+/*!******************************************************************!*\
+  !*** ./js/view_models/components/map/TargetSelectedIndicator.js ***!
+  \******************************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TARGET_SELECTED_VARIANTS: () => (/* binding */ TARGET_SELECTED_VARIANTS),
+/* harmony export */   TargetSelectedIndicator: () => (/* binding */ TargetSelectedIndicator)
+/* harmony export */ });
+const TARGET_SELECTED_VARIANTS = {
+  ENEMY: 'enemy',
+  FRIENDLY: 'friendly',
+  NEUTRAL: 'neutral'
+};
+
+/** How long the art runs, matching the frame delays in the gifs. */
+const PLAY_DURATION_MS = 800;
+
+/**
+ * The burst that plays on a tile once the player picks a valid target for an
+ * action waiting on a map click: red for offensive actions, teal for defensive
+ * ones and yellow for neutral ones.
+ *
+ * The gifs don't loop and end blank, so each play is removed once it has run.
+ * A gif only starts from its first frame the first time its URL is decoded,
+ * which would leave every later play of the same path showing its blank last
+ * frame. Each play is instead given its own object URL of the already
+ * downloaded file.
+ */
+class TargetSelectedIndicator {
+
+  /** @type {Object<string, Blob>} */
+  static blobs = {};
+
+  static preloadStarted = false;
+
+  /**
+   * @type {WeakMap<HTMLElement|object, {element: HTMLImageElement|object, timeoutId: number, objectUrl: string|null}>}
+   */
+  static plays = new WeakMap();
+
+  /**
+   * @param {string} variant see TARGET_SELECTED_VARIANTS
+   * @return {string}
+   */
+  static getAssetPath(variant) {
+    return `/img/focus/target-selected-${variant}.gif`;
+  }
+
+  /**
+   * Download the art up front so the first selection isn't kept waiting on it.
+   */
+  static preload() {
+    if (TargetSelectedIndicator.preloadStarted || typeof fetch !== 'function') {
+      return;
+    }
+
+    TargetSelectedIndicator.preloadStarted = true;
+
+    Object.values(TARGET_SELECTED_VARIANTS).forEach(variant => {
+      fetch(TargetSelectedIndicator.getAssetPath(variant))
+        .then(response => response.ok ? response.blob() : null)
+        .then(blob => {
+          if (blob) {
+            TargetSelectedIndicator.blobs[variant] = blob;
+          }
+        })
+        // Plays fall back to the path, which still runs from the start the first time it is shown.
+        .catch(() => {});
+    });
+  }
+
+  /**
+   * @param {HTMLElement|object} tile
+   * @param {string} variant see TARGET_SELECTED_VARIANTS
+   */
+  static play(tile, variant) {
+    TargetSelectedIndicator.stop(tile);
+
+    const blob = TargetSelectedIndicator.blobs[variant];
+    const objectUrl = blob ? URL.createObjectURL(blob) : null;
+
+    const element = document.createElement('img');
+    element.className = 'map-tile-target-selected';
+    element.alt = '';
+    element.src = objectUrl || TargetSelectedIndicator.getAssetPath(variant);
+    tile.appendChild(element);
+
+    TargetSelectedIndicator.plays.set(tile, {
+      element: element,
+      timeoutId: setTimeout(() => TargetSelectedIndicator.stop(tile), PLAY_DURATION_MS),
+      objectUrl: objectUrl
+    });
+  }
+
+  /**
+   * @param {HTMLElement|object} tile
+   */
+  static stop(tile) {
+    const play = TargetSelectedIndicator.plays.get(tile);
+
+    if (!play) {
+      return;
+    }
+
+    clearTimeout(play.timeoutId);
+    play.element.remove();
+
+    if (play.objectUrl) {
+      URL.revokeObjectURL(play.objectUrl);
+    }
+
+    TargetSelectedIndicator.plays.delete(tile);
   }
 }
 
