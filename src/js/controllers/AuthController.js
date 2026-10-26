@@ -24,6 +24,8 @@ import {Orientation6ViewModel} from "../view_models/signup/Orientation6ViewModel
 import {Orientation7ViewModel} from "../view_models/signup/Orientation7ViewModel";
 import {Orientation8ViewModel} from "../view_models/signup/Orientation8ViewModel";
 import {OrientationEndViewModel} from "../view_models/signup/OrientationEndViewModel";
+import {TutorialConfirmViewModel} from "../view_models/tutorial/TutorialConfirmViewModel";
+import {onboardingTelemetry} from "../telemetry/OnboardingTelemetry";
 import {ActivateDeviceViewModel} from "../view_models/login/ActivateDeviceViewModel";
 import {ActivateDeviceVerifyViewModel} from "../view_models/login/ActivateDeviceVerifyViewModel";
 import {ActivationCodeInfoDTO} from "../dtos/ActivationCodeInfoDTO";
@@ -202,6 +204,22 @@ export class AuthController extends AbstractController {
 
   orientationEnd() {
     const viewModel = new OrientationEndViewModel();
+    viewModel.render();
+  }
+
+  skipTutorialConfirm() {
+    const viewModel = new TutorialConfirmViewModel(
+      'Skip Tutorial?',
+      'Are you sure you want to skip the tutorial? You can revisit the tutorial later from the menu.',
+      'Skip Tutorial',
+      'sui-mod-destructive',
+      () => {
+        onboardingTelemetry.skipped('orientation.tutorial_offer');
+        MenuPage.close();
+      },
+      () => MenuPage.router.goto('Auth', 'orientationEnd'),
+      false
+    );
     viewModel.render();
   }
 

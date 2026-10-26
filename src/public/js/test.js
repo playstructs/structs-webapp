@@ -1,11 +1,11 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./js/builders/StructStillBuilder.js"
+/***/ "./js/builders/StructStillBuilder.js":
 /*!*******************************************!*\
   !*** ./js/builders/StructStillBuilder.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -410,13 +410,13 @@ class StructStillBuilder {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/builders/StructTypeArtSetBuilder.js"
+/***/ "./js/builders/StructTypeArtSetBuilder.js":
 /*!************************************************!*\
   !*** ./js/builders/StructTypeArtSetBuilder.js ***!
   \************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -737,13 +737,13 @@ class StructTypeArtSetBuilder {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/Ambits.js"
+/***/ "./js/constants/Ambits.js":
 /*!********************************!*\
   !*** ./js/constants/Ambits.js ***!
   \********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -777,13 +777,13 @@ const
   }
 ;
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/AnimationConstants.js"
+/***/ "./js/constants/AnimationConstants.js":
 /*!********************************************!*\
   !*** ./js/constants/AnimationConstants.js ***!
   \********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -892,13 +892,13 @@ const
 ;
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/Events.js"
+/***/ "./js/constants/Events.js":
 /*!********************************!*\
   !*** ./js/constants/Events.js ***!
   \********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -963,13 +963,13 @@ const EVENTS = {
   UNDISCOVERED_ORE_COUNT_CHANGED: 'UNDISCOVERED_ORE_COUNT_CHANGED',
 };
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/HUDConstants.js"
+/***/ "./js/constants/HUDConstants.js":
 /*!**************************************!*\
   !*** ./js/constants/HUDConstants.js ***!
   \**************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -987,13 +987,13 @@ const
   }
 ;
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/MapConstants.js"
+/***/ "./js/constants/MapConstants.js":
 /*!**************************************!*\
   !*** ./js/constants/MapConstants.js ***!
   \**************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1107,13 +1107,13 @@ const
   }
 ;
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/MenuPageRouterModes.js"
+/***/ "./js/constants/MenuPageRouterModes.js":
 /*!*********************************************!*\
   !*** ./js/constants/MenuPageRouterModes.js ***!
   \*********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1126,13 +1126,13 @@ const MENU_PAGE_ROUTER_MODES = {
 };
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/ObjectTypes.js"
+/***/ "./js/constants/ObjectTypes.js":
 /*!*************************************!*\
   !*** ./js/constants/ObjectTypes.js ***!
   \*************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1156,13 +1156,13 @@ const OBJECT_TYPES = {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/Permissions.js"
+/***/ "./js/constants/Permissions.js":
 /*!*************************************!*\
   !*** ./js/constants/Permissions.js ***!
   \*************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1202,13 +1202,13 @@ const PERMISSIONS = {
 };
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/PfpConstants.js"
+/***/ "./js/constants/PfpConstants.js":
 /*!**************************************!*\
   !*** ./js/constants/PfpConstants.js ***!
   \**************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1226,13 +1226,13 @@ const
 ;
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/PlayerTypes.js"
+/***/ "./js/constants/PlayerTypes.js":
 /*!*************************************!*\
   !*** ./js/constants/PlayerTypes.js ***!
   \*************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1246,13 +1246,13 @@ const PLAYER_TYPES = {
 };
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/RaidStatus.js"
+/***/ "./js/constants/RaidStatus.js":
 /*!************************************!*\
   !*** ./js/constants/RaidStatus.js ***!
   \************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1271,13 +1271,13 @@ const RAID_STATUS = {
 };
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/SettingConstants.js"
+/***/ "./js/constants/SettingConstants.js":
 /*!******************************************!*\
   !*** ./js/constants/SettingConstants.js ***!
   \******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1297,13 +1297,13 @@ const
 ;
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/StructConstants.js"
+/***/ "./js/constants/StructConstants.js":
 /*!*****************************************!*\
   !*** ./js/constants/StructConstants.js ***!
   \*****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1506,13 +1506,13 @@ const
 ;
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/TaskConstants.js"
+/***/ "./js/constants/TaskConstants.js":
 /*!***************************************!*\
   !*** ./js/constants/TaskConstants.js ***!
   \***************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1539,13 +1539,13 @@ const TASK = {
 };
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/TaskManagerStatus.js"
+/***/ "./js/constants/TaskManagerStatus.js":
 /*!*******************************************!*\
   !*** ./js/constants/TaskManagerStatus.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1558,13 +1558,13 @@ const TASK_MANAGER_STATUS = {
 };
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/TaskStatus.js"
+/***/ "./js/constants/TaskStatus.js":
 /*!************************************!*\
   !*** ./js/constants/TaskStatus.js ***!
   \************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1582,13 +1582,13 @@ const TASK_STATUS = {
 };
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/TaskTypes.js"
+/***/ "./js/constants/TaskTypes.js":
 /*!***********************************!*\
   !*** ./js/constants/TaskTypes.js ***!
   \***********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1610,13 +1610,13 @@ const TASK_TYPES = {
 const ORE_TASK_TYPES = [TASK_TYPES.MINE, TASK_TYPES.REFINE];
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/dtos/MapStructTileRenderParamsDTO.js"
+/***/ "./js/dtos/MapStructTileRenderParamsDTO.js":
 /*!*************************************************!*\
   !*** ./js/dtos/MapStructTileRenderParamsDTO.js ***!
   \*************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1630,13 +1630,13 @@ class MapStructTileRenderParamsDTO {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/dtos/NavItemDTO.js"
+/***/ "./js/dtos/NavItemDTO.js":
 /*!*******************************!*\
   !*** ./js/dtos/NavItemDTO.js ***!
   \*******************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1651,13 +1651,13 @@ class NavItemDTO {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/dtos/PlanetaryShieldInfoDTO.js"
+/***/ "./js/dtos/PlanetaryShieldInfoDTO.js":
 /*!*******************************************!*\
   !*** ./js/dtos/PlanetaryShieldInfoDTO.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1672,13 +1672,13 @@ class PlanetaryShieldInfoDTO {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/errors/AnimationError.js"
+/***/ "./js/errors/AnimationError.js":
 /*!*************************************!*\
   !*** ./js/errors/AnimationError.js ***!
   \*************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1692,13 +1692,13 @@ class AnimationError extends Error {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/AlphaCountChangedEvent.js"
+/***/ "./js/events/AlphaCountChangedEvent.js":
 /*!*********************************************!*\
   !*** ./js/events/AlphaCountChangedEvent.js ***!
   \*********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1720,13 +1720,13 @@ class AlphaCountChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/AnimationEvent.js"
+/***/ "./js/events/AnimationEvent.js":
 /*!*************************************!*\
   !*** ./js/events/AnimationEvent.js ***!
   \*************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1771,13 +1771,13 @@ class AnimationEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/ChargeLevelChangedEvent.js"
+/***/ "./js/events/ChargeLevelChangedEvent.js":
 /*!**********************************************!*\
   !*** ./js/events/ChargeLevelChangedEvent.js ***!
   \**********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1796,13 +1796,13 @@ class ChargeLevelChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/ClearAttackTargetsEvent.js"
+/***/ "./js/events/ClearAttackTargetsEvent.js":
 /*!**********************************************!*\
   !*** ./js/events/ClearAttackTargetsEvent.js ***!
   \**********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1823,13 +1823,13 @@ class ClearAttackTargetsEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/ClearDefendTargetsEvent.js"
+/***/ "./js/events/ClearDefendTargetsEvent.js":
 /*!**********************************************!*\
   !*** ./js/events/ClearDefendTargetsEvent.js ***!
   \**********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1850,13 +1850,13 @@ class ClearDefendTargetsEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/ClearMoveTargetsEvent.js"
+/***/ "./js/events/ClearMoveTargetsEvent.js":
 /*!********************************************!*\
   !*** ./js/events/ClearMoveTargetsEvent.js ***!
   \********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1877,13 +1877,13 @@ class ClearMoveTargetsEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/ClearStructTileEvent.js"
+/***/ "./js/events/ClearStructTileEvent.js":
 /*!*******************************************!*\
   !*** ./js/events/ClearStructTileEvent.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1913,13 +1913,13 @@ class ClearStructTileEvent extends CustomEvent {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/EnergyUsageChangedEvent.js"
+/***/ "./js/events/EnergyUsageChangedEvent.js":
 /*!**********************************************!*\
   !*** ./js/events/EnergyUsageChangedEvent.js ***!
   \**********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1941,13 +1941,13 @@ class EnergyUsageChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/FleetChangedEvent.js"
+/***/ "./js/events/FleetChangedEvent.js":
 /*!****************************************!*\
   !*** ./js/events/FleetChangedEvent.js ***!
   \****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1969,13 +1969,13 @@ class FleetChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/OreCountChangedEvent.js"
+/***/ "./js/events/OreCountChangedEvent.js":
 /*!*******************************************!*\
   !*** ./js/events/OreCountChangedEvent.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -1997,13 +1997,13 @@ class OreCountChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/PendingBuildAddedEvent.js"
+/***/ "./js/events/PendingBuildAddedEvent.js":
 /*!*********************************************!*\
   !*** ./js/events/PendingBuildAddedEvent.js ***!
   \*********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2035,13 +2035,13 @@ class PendingBuildAddedEvent extends CustomEvent {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/PlanetRaidStatusChangedEvent.js"
+/***/ "./js/events/PlanetRaidStatusChangedEvent.js":
 /*!***************************************************!*\
   !*** ./js/events/PlanetRaidStatusChangedEvent.js ***!
   \***************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2063,13 +2063,13 @@ class PlanetRaidStatusChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/RefreshActionBarEvent.js"
+/***/ "./js/events/RefreshActionBarEvent.js":
 /*!********************************************!*\
   !*** ./js/events/RefreshActionBarEvent.js ***!
   \********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2087,13 +2087,13 @@ class RefreshActionBarEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/RefreshActionBarIfSelectedEvent.js"
+/***/ "./js/events/RefreshActionBarIfSelectedEvent.js":
 /*!******************************************************!*\
   !*** ./js/events/RefreshActionBarIfSelectedEvent.js ***!
   \******************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2123,13 +2123,13 @@ class RefreshActionBarIfSelectedEvent extends CustomEvent {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/RenderDeploymentIndicatorEvent.js"
+/***/ "./js/events/RenderDeploymentIndicatorEvent.js":
 /*!*****************************************************!*\
   !*** ./js/events/RenderDeploymentIndicatorEvent.js ***!
   \*****************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2159,13 +2159,13 @@ class RenderDeploymentIndicatorEvent extends CustomEvent {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/RenderPlayerPfpEvent.js"
+/***/ "./js/events/RenderPlayerPfpEvent.js":
 /*!*******************************************!*\
   !*** ./js/events/RenderPlayerPfpEvent.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2187,13 +2187,13 @@ class RenderPlayerPfpEvent extends CustomEvent {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/RenderStructEvent.js"
+/***/ "./js/events/RenderStructEvent.js":
 /*!****************************************!*\
   !*** ./js/events/RenderStructEvent.js ***!
   \****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2221,13 +2221,13 @@ class RenderStructEvent extends CustomEvent {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/RenderStructHUDEvent.js"
+/***/ "./js/events/RenderStructHUDEvent.js":
 /*!*******************************************!*\
   !*** ./js/events/RenderStructHUDEvent.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2252,13 +2252,13 @@ class RenderStructHUDEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/SaveGameStateEvent.js"
+/***/ "./js/events/SaveGameStateEvent.js":
 /*!*****************************************!*\
   !*** ./js/events/SaveGameStateEvent.js ***!
   \*****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2275,13 +2275,13 @@ class SaveGameStateEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/ShieldHealthChangedEvent.js"
+/***/ "./js/events/ShieldHealthChangedEvent.js":
 /*!***********************************************!*\
   !*** ./js/events/ShieldHealthChangedEvent.js ***!
   \***********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2303,13 +2303,13 @@ class ShieldHealthChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/ShowAttackTargetsEvent.js"
+/***/ "./js/events/ShowAttackTargetsEvent.js":
 /*!*********************************************!*\
   !*** ./js/events/ShowAttackTargetsEvent.js ***!
   \*********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2332,13 +2332,13 @@ class ShowAttackTargetsEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/ShowDefendTargetsEvent.js"
+/***/ "./js/events/ShowDefendTargetsEvent.js":
 /*!*********************************************!*\
   !*** ./js/events/ShowDefendTargetsEvent.js ***!
   \*********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2359,13 +2359,13 @@ class ShowDefendTargetsEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/ShowMoveTargetsEvent.js"
+/***/ "./js/events/ShowMoveTargetsEvent.js":
 /*!*******************************************!*\
   !*** ./js/events/ShowMoveTargetsEvent.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2386,13 +2386,13 @@ class ShowMoveTargetsEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/ShowStructStillEvent.js"
+/***/ "./js/events/ShowStructStillEvent.js":
 /*!*******************************************!*\
   !*** ./js/events/ShowStructStillEvent.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2415,13 +2415,13 @@ class ShowStructStillEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/StructCountChangedEvent.js"
+/***/ "./js/events/StructCountChangedEvent.js":
 /*!**********************************************!*\
   !*** ./js/events/StructCountChangedEvent.js ***!
   \**********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2443,13 +2443,13 @@ class StructCountChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/StructSelectionChangedEvent.js"
+/***/ "./js/events/StructSelectionChangedEvent.js":
 /*!**************************************************!*\
   !*** ./js/events/StructSelectionChangedEvent.js ***!
   \**************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2472,13 +2472,13 @@ class StructSelectionChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/TaskCmdAwaitRefineWorkEvent.js"
+/***/ "./js/events/TaskCmdAwaitRefineWorkEvent.js":
 /*!**************************************************!*\
   !*** ./js/events/TaskCmdAwaitRefineWorkEvent.js ***!
   \**************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2495,13 +2495,13 @@ class TaskCmdAwaitRefineWorkEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/TaskCmdKillEvent.js"
+/***/ "./js/events/TaskCmdKillEvent.js":
 /*!***************************************!*\
   !*** ./js/events/TaskCmdKillEvent.js ***!
   \***************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2522,13 +2522,13 @@ class TaskCmdKillEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/TaskCompletedEvent.js"
+/***/ "./js/events/TaskCompletedEvent.js":
 /*!*****************************************!*\
   !*** ./js/events/TaskCompletedEvent.js ***!
   \*****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2549,13 +2549,13 @@ class TaskCompletedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/TaskManagerStatusChangedEvent.js"
+/***/ "./js/events/TaskManagerStatusChangedEvent.js":
 /*!****************************************************!*\
   !*** ./js/events/TaskManagerStatusChangedEvent.js ***!
   \****************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2576,13 +2576,13 @@ class TaskManagerStatusChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/TaskStateChangedEvent.js"
+/***/ "./js/events/TaskStateChangedEvent.js":
 /*!********************************************!*\
   !*** ./js/events/TaskStateChangedEvent.js ***!
   \********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2603,13 +2603,13 @@ class TaskStateChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/TaskWorkerChangedEvent.js"
+/***/ "./js/events/TaskWorkerChangedEvent.js":
 /*!*********************************************!*\
   !*** ./js/events/TaskWorkerChangedEvent.js ***!
   \*********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2630,13 +2630,13 @@ class TaskWorkerChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/TrackDestroyedStructEvent.js"
+/***/ "./js/events/TrackDestroyedStructEvent.js":
 /*!************************************************!*\
   !*** ./js/events/TrackDestroyedStructEvent.js ***!
   \************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2661,13 +2661,13 @@ class TrackDestroyedStructEvent extends CustomEvent {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/TrackDestroyedStructsEvent.js"
+/***/ "./js/events/TrackDestroyedStructsEvent.js":
 /*!*************************************************!*\
   !*** ./js/events/TrackDestroyedStructsEvent.js ***!
   \*************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2690,13 +2690,13 @@ class TrackDestroyedStructsEvent extends CustomEvent {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/UndiscoveredOreCountChangedEvent.js"
+/***/ "./js/events/UndiscoveredOreCountChangedEvent.js":
 /*!*******************************************************!*\
   !*** ./js/events/UndiscoveredOreCountChangedEvent.js ***!
   \*******************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2718,13 +2718,13 @@ class UndiscoveredOreCountChangedEvent extends CustomEvent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/events/UpdateTileStructIdEvent.js"
+/***/ "./js/events/UpdateTileStructIdEvent.js":
 /*!**********************************************!*\
   !*** ./js/events/UpdateTileStructIdEvent.js ***!
   \**********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -2756,13 +2756,13 @@ class UpdateTileStructIdEvent extends CustomEvent {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/factories/AnimationEventFactory.js"
+/***/ "./js/factories/AnimationEventFactory.js":
 /*!***********************************************!*\
   !*** ./js/factories/AnimationEventFactory.js ***!
   \***********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -3251,13 +3251,13 @@ class AnimationEventFactory {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/factories/TaskStateFactory.js"
+/***/ "./js/factories/TaskStateFactory.js":
 /*!******************************************!*\
   !*** ./js/factories/TaskStateFactory.js ***!
   \******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -3358,13 +3358,13 @@ class TaskStateFactory extends _framework_AbstractFactory__WEBPACK_IMPORTED_MODU
 
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/framework/AbstractFactory.js"
+/***/ "./js/framework/AbstractFactory.js":
 /*!*****************************************!*\
   !*** ./js/framework/AbstractFactory.js ***!
   \*****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -3385,13 +3385,13 @@ class AbstractFactory {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/framework/AbstractGrassListener.js"
+/***/ "./js/framework/AbstractGrassListener.js":
 /*!***********************************************!*\
   !*** ./js/framework/AbstractGrassListener.js ***!
   \***********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -3419,13 +3419,13 @@ class AbstractGrassListener {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/framework/AbstractViewModel.js"
+/***/ "./js/framework/AbstractViewModel.js":
 /*!*******************************************!*\
   !*** ./js/framework/AbstractViewModel.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -3442,13 +3442,13 @@ class AbstractViewModel {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/framework/AbstractViewModelComponent.js"
+/***/ "./js/framework/AbstractViewModelComponent.js":
 /*!****************************************************!*\
   !*** ./js/framework/AbstractViewModelComponent.js ***!
   \****************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -3480,13 +3480,13 @@ class AbstractViewModelComponent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/framework/DTestFramework.js"
+/***/ "./js/framework/DTestFramework.js":
 /*!****************************************!*\
   !*** ./js/framework/DTestFramework.js ***!
   \****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -3614,13 +3614,13 @@ class DTestSuite {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/framework/MenuPage.js"
+/***/ "./js/framework/MenuPage.js":
 /*!**********************************!*\
   !*** ./js/framework/MenuPage.js ***!
   \**********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -4033,13 +4033,13 @@ class MenuPage {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/framework/MenuPageRouter.js"
+/***/ "./js/framework/MenuPageRouter.js":
 /*!****************************************!*\
   !*** ./js/framework/MenuPageRouter.js ***!
   \****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -4165,13 +4165,13 @@ class MenuPageRouter {
 
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/framework/NotImplementedError.js"
+/***/ "./js/framework/NotImplementedError.js":
 /*!*********************************************!*\
   !*** ./js/framework/NotImplementedError.js ***!
   \*********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -4186,13 +4186,13 @@ class NotImplementedError extends Error {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/grass_listeners/ConsumeAlphaChangeListener.js"
+/***/ "./js/grass_listeners/ConsumeAlphaChangeListener.js":
 /*!**********************************************************!*\
   !*** ./js/grass_listeners/ConsumeAlphaChangeListener.js ***!
   \**********************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -4234,13 +4234,13 @@ class ConsumeAlphaChangeListener extends _framework_AbstractGrassListener__WEBPA
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/grass_listeners/GridStructListener.js"
+/***/ "./js/grass_listeners/GridStructListener.js":
 /*!**************************************************!*\
   !*** ./js/grass_listeners/GridStructListener.js ***!
   \**************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -4288,13 +4288,13 @@ class GridStructListener extends _framework_AbstractGrassListener__WEBPACK_IMPOR
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/grass_listeners/KeyPlayerOreListener.js"
+/***/ "./js/grass_listeners/KeyPlayerOreListener.js":
 /*!****************************************************!*\
   !*** ./js/grass_listeners/KeyPlayerOreListener.js ***!
   \****************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -4365,13 +4365,13 @@ class KeyPlayerOreListener extends _framework_AbstractGrassListener__WEBPACK_IMP
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/managers/DestroyedStructManager.js"
+/***/ "./js/managers/DestroyedStructManager.js":
 /*!***********************************************!*\
   !*** ./js/managers/DestroyedStructManager.js ***!
   \***********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -4474,13 +4474,13 @@ class DestroyedStructManager {
 
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/managers/PermissionManager.js"
+/***/ "./js/managers/PermissionManager.js":
 /*!******************************************!*\
   !*** ./js/managers/PermissionManager.js ***!
   \******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -4546,13 +4546,13 @@ class PermissionManager {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/managers/StructManager.js"
+/***/ "./js/managers/StructManager.js":
 /*!**************************************!*\
   !*** ./js/managers/StructManager.js ***!
   \**************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -5125,13 +5125,13 @@ class StructManager {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/managers/TaskManager.js"
+/***/ "./js/managers/TaskManager.js":
 /*!************************************!*\
   !*** ./js/managers/TaskManager.js ***!
   \************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -6073,13 +6073,13 @@ class TaskManager {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/Fleet.js"
+/***/ "./js/models/Fleet.js":
 /*!****************************!*\
   !*** ./js/models/Fleet.js ***!
   \****************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -6115,13 +6115,13 @@ class Fleet {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/KeyPlayer.js"
+/***/ "./js/models/KeyPlayer.js":
 /*!********************************!*\
   !*** ./js/models/KeyPlayer.js ***!
   \********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -6577,13 +6577,13 @@ class KeyPlayer {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/PfpClientRenderAttributes.js"
+/***/ "./js/models/PfpClientRenderAttributes.js":
 /*!************************************************!*\
   !*** ./js/models/PfpClientRenderAttributes.js ***!
   \************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -6653,13 +6653,13 @@ class PfpClientRenderAttributes {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/PlanetRaid.js"
+/***/ "./js/models/PlanetRaid.js":
 /*!*********************************!*\
   !*** ./js/models/PlanetRaid.js ***!
   \*********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -6688,13 +6688,13 @@ class PlanetRaid {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/Player.js"
+/***/ "./js/models/Player.js":
 /*!*****************************!*\
   !*** ./js/models/Player.js ***!
   \*****************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -6752,13 +6752,13 @@ class Player {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/SigningTransaction.js"
+/***/ "./js/models/SigningTransaction.js":
 /*!*****************************************!*\
   !*** ./js/models/SigningTransaction.js ***!
   \*****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -6973,13 +6973,13 @@ class SigningTransaction {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/Struct.js"
+/***/ "./js/models/Struct.js":
 /*!*****************************!*\
   !*** ./js/models/Struct.js ***!
   \*****************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -7117,13 +7117,13 @@ class Struct {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/StructType.js"
+/***/ "./js/models/StructType.js":
 /*!*********************************!*\
   !*** ./js/models/StructType.js ***!
   \*********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -7366,13 +7366,13 @@ class StructType {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/StructTypeArtSet.js"
+/***/ "./js/models/StructTypeArtSet.js":
 /*!***************************************!*\
   !*** ./js/models/StructTypeArtSet.js ***!
   \***************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -7403,13 +7403,13 @@ class StructTypeArtSet {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/TaskProcess.js"
+/***/ "./js/models/TaskProcess.js":
 /*!**********************************!*\
   !*** ./js/models/TaskProcess.js ***!
   \**********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -7628,13 +7628,13 @@ class TaskProcess {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/TaskState.js"
+/***/ "./js/models/TaskState.js":
 /*!********************************!*\
   !*** ./js/models/TaskState.js ***!
   \********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -7918,13 +7918,13 @@ class TaskState {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/sui/SUI.js"
+/***/ "./js/sui/SUI.js":
 /*!***********************!*\
   !*** ./js/sui/SUI.js ***!
   \***********************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -7968,13 +7968,13 @@ class SUI {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/sui/SUICheatsheet.js"
+/***/ "./js/sui/SUICheatsheet.js":
 /*!*********************************!*\
   !*** ./js/sui/SUICheatsheet.js ***!
   \*********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -8150,13 +8150,13 @@ class SUICheatsheet extends _SUIFeature_js__WEBPACK_IMPORTED_MODULE_0__.SUIFeatu
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/sui/SUIFeature.js"
+/***/ "./js/sui/SUIFeature.js":
 /*!******************************!*\
   !*** ./js/sui/SUIFeature.js ***!
   \******************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -8178,13 +8178,13 @@ class SUIFeature {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/sui/SUIInputStepper.js"
+/***/ "./js/sui/SUIInputStepper.js":
 /*!***********************************!*\
   !*** ./js/sui/SUIInputStepper.js ***!
   \***********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -8260,13 +8260,13 @@ class SUIInputStepper extends _SUIFeature_js__WEBPACK_IMPORTED_MODULE_0__.SUIFea
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/sui/SUINotImplementedError.js"
+/***/ "./js/sui/SUINotImplementedError.js":
 /*!******************************************!*\
   !*** ./js/sui/SUINotImplementedError.js ***!
   \******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -8286,13 +8286,13 @@ class SUINotImplementedError extends Error {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/sui/SUIOffcanvas.js"
+/***/ "./js/sui/SUIOffcanvas.js":
 /*!********************************!*\
   !*** ./js/sui/SUIOffcanvas.js ***!
   \********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -8444,13 +8444,13 @@ class SUIOffcanvas extends _SUIFeature_js__WEBPACK_IMPORTED_MODULE_0__.SUIFeatur
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/sui/SUITooltip.js"
+/***/ "./js/sui/SUITooltip.js":
 /*!******************************!*\
   !*** ./js/sui/SUITooltip.js ***!
   \******************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -8576,13 +8576,13 @@ class SUITooltip extends _SUIFeature_js__WEBPACK_IMPORTED_MODULE_0__.SUIFeature 
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/sui/SUIUtil.js"
+/***/ "./js/sui/SUIUtil.js":
 /*!***************************!*\
   !*** ./js/sui/SUIUtil.js ***!
   \***************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -8878,13 +8878,13 @@ class SUIUtil {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/tests/AbandonedPlanetaryStructTest.js"
+/***/ "./js/tests/AbandonedPlanetaryStructTest.js":
 /*!**************************************************!*\
   !*** ./js/tests/AbandonedPlanetaryStructTest.js ***!
   \**************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -9067,13 +9067,13 @@ class AbandonedPlanetaryStructTest extends _framework_DTestFramework__WEBPACK_IM
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/tests/ActionBarOreCountTest.js"
+/***/ "./js/tests/ActionBarOreCountTest.js":
 /*!*******************************************!*\
   !*** ./js/tests/ActionBarOreCountTest.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -9223,13 +9223,13 @@ class ActionBarOreCountTest extends _framework_DTestFramework__WEBPACK_IMPORTED_
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/tests/DeployOffcanvasChargeTest.js"
+/***/ "./js/tests/DeployOffcanvasChargeTest.js":
 /*!***********************************************!*\
   !*** ./js/tests/DeployOffcanvasChargeTest.js ***!
   \***********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -9463,13 +9463,13 @@ class DeployOffcanvasChargeTest extends _framework_DTestFramework__WEBPACK_IMPOR
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/tests/NumberFormatterTest.js"
+/***/ "./js/tests/NumberFormatterTest.js":
 /*!*****************************************!*\
   !*** ./js/tests/NumberFormatterTest.js ***!
   \*****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -9517,13 +9517,13 @@ class NumberFormatterTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MO
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/tests/PermissionManagerTest.js"
+/***/ "./js/tests/PermissionManagerTest.js":
 /*!*******************************************!*\
   !*** ./js/tests/PermissionManagerTest.js ***!
   \*******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -9662,13 +9662,13 @@ class PermissionManagerTest extends _framework_DTestFramework__WEBPACK_IMPORTED_
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/tests/RaidedOreStructTest.js"
+/***/ "./js/tests/RaidedOreStructTest.js":
 /*!*****************************************!*\
   !*** ./js/tests/RaidedOreStructTest.js ***!
   \*****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -9830,13 +9830,13 @@ class RaidedOreStructTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MO
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/tests/ShieldStatusTest.js"
+/***/ "./js/tests/ShieldStatusTest.js":
 /*!**************************************!*\
   !*** ./js/tests/ShieldStatusTest.js ***!
   \**************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -10111,13 +10111,13 @@ class ShieldStatusTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MODUL
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/tests/TaskManagerOreTest.js"
+/***/ "./js/tests/TaskManagerOreTest.js":
 /*!****************************************!*\
   !*** ./js/tests/TaskManagerOreTest.js ***!
   \****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -10543,13 +10543,13 @@ class TaskManagerOreTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MOD
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/util/CaseConverter.js"
+/***/ "./js/util/CaseConverter.js":
 /*!**********************************!*\
   !*** ./js/util/CaseConverter.js ***!
   \**********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -10612,13 +10612,13 @@ class CaseConverter {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/util/ChargeCalculator.js"
+/***/ "./js/util/ChargeCalculator.js":
 /*!*************************************!*\
   !*** ./js/util/ChargeCalculator.js ***!
   \*************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -10680,13 +10680,13 @@ class ChargeCalculator {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/util/DateFormatter.js"
+/***/ "./js/util/DateFormatter.js":
 /*!**********************************!*\
   !*** ./js/util/DateFormatter.js ***!
   \**********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -10743,13 +10743,13 @@ class DateFormatter {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/util/DifficultyEstimator.js"
+/***/ "./js/util/DifficultyEstimator.js":
 /*!****************************************!*\
   !*** ./js/util/DifficultyEstimator.js ***!
   \****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -10887,13 +10887,13 @@ class DifficultyEstimator {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/util/NumberFormatter.js"
+/***/ "./js/util/NumberFormatter.js":
 /*!************************************!*\
   !*** ./js/util/NumberFormatter.js ***!
   \************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -10960,13 +10960,13 @@ class NumberFormatter {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/util/RaidStatusUtil.js"
+/***/ "./js/util/RaidStatusUtil.js":
 /*!***********************************!*\
   !*** ./js/util/RaidStatusUtil.js ***!
   \***********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -11008,13 +11008,13 @@ class RaidStatusUtil {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/util/UuidUtil.js"
+/***/ "./js/util/UuidUtil.js":
 /*!*****************************!*\
   !*** ./js/util/UuidUtil.js ***!
   \*****************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -11039,13 +11039,13 @@ class UuidUtil {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/HUDViewModel.js"
+/***/ "./js/view_models/HUDViewModel.js":
 /*!****************************************!*\
   !*** ./js/view_models/HUDViewModel.js ***!
   \****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -11529,13 +11529,13 @@ class HUDViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/AlphaOwnedComponent.js"
+/***/ "./js/view_models/components/AlphaOwnedComponent.js":
 /*!**********************************************************!*\
   !*** ./js/view_models/components/AlphaOwnedComponent.js ***!
   \**********************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -11604,13 +11604,13 @@ class AlphaOwnedComponent extends _framework_AbstractViewModelComponent__WEBPACK
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/EnergyUsageComponent.js"
+/***/ "./js/view_models/components/EnergyUsageComponent.js":
 /*!***********************************************************!*\
   !*** ./js/view_models/components/EnergyUsageComponent.js ***!
   \***********************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -11725,13 +11725,13 @@ class EnergyUsageComponent extends _framework_AbstractViewModelComponent__WEBPAC
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/GenericResourceComponent.js"
+/***/ "./js/view_models/components/GenericResourceComponent.js":
 /*!***************************************************************!*\
   !*** ./js/view_models/components/GenericResourceComponent.js ***!
   \***************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -11778,13 +11778,13 @@ class GenericResourceComponent extends _framework_AbstractViewModelComponent__WE
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/PfpViewerComponent.js"
+/***/ "./js/view_models/components/PfpViewerComponent.js":
 /*!*********************************************************!*\
   !*** ./js/view_models/components/PfpViewerComponent.js ***!
   \*********************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -11910,13 +11910,13 @@ class PfpViewerComponent {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/ShieldStatusComponent.js"
+/***/ "./js/view_models/components/ShieldStatusComponent.js":
 /*!************************************************************!*\
   !*** ./js/view_models/components/ShieldStatusComponent.js ***!
   \************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -12090,13 +12090,13 @@ class ShieldStatusComponent extends _framework_AbstractViewModelComponent__WEBPA
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/StructStillRenderer.js"
+/***/ "./js/view_models/components/StructStillRenderer.js":
 /*!**********************************************************!*\
   !*** ./js/view_models/components/StructStillRenderer.js ***!
   \**********************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -12222,13 +12222,13 @@ class StructStillRenderer extends _framework_AbstractViewModelComponent__WEBPACK
 
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/hud/ActionBarComponent.js"
+/***/ "./js/view_models/components/hud/ActionBarComponent.js":
 /*!*************************************************************!*\
   !*** ./js/view_models/components/hud/ActionBarComponent.js ***!
   \*************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -13875,13 +13875,13 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/hud/StatusBarTopLeftComponent.js"
+/***/ "./js/view_models/components/hud/StatusBarTopLeftComponent.js":
 /*!********************************************************************!*\
   !*** ./js/view_models/components/hud/StatusBarTopLeftComponent.js ***!
   \********************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -13919,13 +13919,13 @@ class StatusBarTopLeftComponent extends _framework_AbstractViewModelComponent__W
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/hud/StatusBarTopRightComponent.js"
+/***/ "./js/view_models/components/hud/StatusBarTopRightComponent.js":
 /*!*********************************************************************!*\
   !*** ./js/view_models/components/hud/StatusBarTopRightComponent.js ***!
   \*********************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -14010,13 +14010,13 @@ class StatusBarTopRightComponent extends _framework_AbstractViewModelComponent__
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/map/GenericMapLayerComponent.js"
+/***/ "./js/view_models/components/map/GenericMapLayerComponent.js":
 /*!*******************************************************************!*\
   !*** ./js/view_models/components/map/GenericMapLayerComponent.js ***!
   \*******************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -14581,13 +14581,13 @@ class GenericMapLayerComponent extends _framework_AbstractViewModelComponent__WE
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/offcanvas/ConsumeAlphaOffcanvas.js"
+/***/ "./js/view_models/components/offcanvas/ConsumeAlphaOffcanvas.js":
 /*!**********************************************************************!*\
   !*** ./js/view_models/components/offcanvas/ConsumeAlphaOffcanvas.js ***!
   \**********************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -14750,13 +14750,13 @@ class ConsumeAlphaOffcanvas extends _framework_AbstractViewModelComponent__WEBPA
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/view_models/components/offcanvas/DeployOffcanvas.js"
+/***/ "./js/view_models/components/offcanvas/DeployOffcanvas.js":
 /*!****************************************************************!*\
   !*** ./js/view_models/components/offcanvas/DeployOffcanvas.js ***!
   \****************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -15015,13 +15015,13 @@ class DeployOffcanvas extends _framework_AbstractViewModelComponent__WEBPACK_IMP
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./node_modules/js-sha256/src/sha256.js"
+/***/ "./node_modules/js-sha256/src/sha256.js":
 /*!**********************************************!*\
   !*** ./node_modules/js-sha256/src/sha256.js ***!
   \**********************************************/
-(module, exports, __webpack_require__) {
+/***/ ((module, exports, __webpack_require__) => {
 
 var __WEBPACK_AMD_DEFINE_RESULT__;/**
  * [js-sha256]{@link https://github.com/emn178/js-sha256}
@@ -15552,54 +15552,48 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/**
 })();
 
 
-/***/ },
+/***/ }),
 
-/***/ "?69d9"
+/***/ "?69d9":
 /*!************************!*\
   !*** buffer (ignored) ***!
   \************************/
-() {
+/***/ (() => {
 
 /* (ignored) */
 
-/***/ },
+/***/ }),
 
-/***/ "?abf2"
+/***/ "?abf2":
 /*!************************!*\
   !*** crypto (ignored) ***!
   \************************/
-() {
+/***/ (() => {
 
 /* (ignored) */
 
-/***/ }
+/***/ })
 
 /******/ 	});
 /************************************************************************/
 /******/ 	// The module cache
-/******/ 	const __webpack_module_cache__ = {};
+/******/ 	var __webpack_module_cache__ = {};
 /******/ 	
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
 /******/ 		// Check if module is in cache
-/******/ 		const cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
 /******/ 		if (cachedModule !== undefined) {
 /******/ 			return cachedModule.exports;
 /******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
-/******/ 		const module = __webpack_module_cache__[moduleId] = {
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
 /******/ 			// no module.id needed
 /******/ 			// no module.loaded needed
 /******/ 			exports: {}
 /******/ 		};
 /******/ 	
 /******/ 		// Execute the module function
-/******/ 		if (!(moduleId in __webpack_modules__)) {
-/******/ 			delete __webpack_module_cache__[moduleId];
-/******/ 			const e = new Error("Cannot find module '" + moduleId + "'");
-/******/ 			e.code = 'MODULE_NOT_FOUND';
-/******/ 			throw e;
-/******/ 		}
 /******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
 /******/ 	
 /******/ 		// Return the exports of the module
@@ -15616,7 +15610,7 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/**
 /******/ 	(() => {
 /******/ 		// getDefaultExport function for compatibility with non-harmony modules
 /******/ 		__webpack_require__.n = (module) => {
-/******/ 			const getter = module && module.__esModule ?
+/******/ 			var getter = module && module.__esModule ?
 /******/ 				() => (module['default']) :
 /******/ 				() => (module);
 /******/ 			__webpack_require__.d(getter, { a: getter });
@@ -15626,26 +15620,11 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/**
 /******/ 	
 /******/ 	/* webpack/runtime/define property getters */
 /******/ 	(() => {
-/******/ 		// define getter/value functions for harmony exports
+/******/ 		// define getter functions for harmony exports
 /******/ 		__webpack_require__.d = (exports, definition) => {
-/******/ 			if(Array.isArray(definition)) {
-/******/ 				var i = 0;
-/******/ 				while(i < definition.length) {
-/******/ 					var key = definition[i++];
-/******/ 					var binding = definition[i++];
-/******/ 					if(!__webpack_require__.o(exports, key)) {
-/******/ 						if(binding === 0) {
-/******/ 							Object.defineProperty(exports, key, { enumerable: true, value: definition[i++] });
-/******/ 						} else {
-/******/ 							Object.defineProperty(exports, key, { enumerable: true, get: binding });
-/******/ 						}
-/******/ 					} else if(binding === 0) { i++; }
-/******/ 				}
-/******/ 			} else {
-/******/ 				for(var key in definition) {
-/******/ 					if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
-/******/ 						Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 					}
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
 /******/ 				}
 /******/ 			}
 /******/ 		};
@@ -15672,7 +15651,7 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/**
 /******/ 	(() => {
 /******/ 		// define __esModule on exports
 /******/ 		__webpack_require__.r = (exports) => {
-/******/ 			if(Symbol.toStringTag) {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
 /******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
 /******/ 			}
 /******/ 			Object.defineProperty(exports, '__esModule', { value: true });
@@ -15680,7 +15659,7 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/**
 /******/ 	})();
 /******/ 	
 /************************************************************************/
-let __webpack_exports__ = {};
+var __webpack_exports__ = {};
 // This entry needs to be wrapped in an IIFE because it needs to be in strict mode.
 (() => {
 "use strict";

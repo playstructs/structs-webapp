@@ -16,6 +16,7 @@ import {EVENTS} from "../constants/Events";
 import {ShieldHealthChangedEvent} from "../events/ShieldHealthChangedEvent";
 import {ChargeLevelChangedEvent} from "../events/ChargeLevelChangedEvent";
 import {PfpViewerComponent} from "../view_models/components/PfpViewerComponent";
+import {TutorialMode} from "./TutorialMode";
 
 const BUILT_ONLINE = STRUCT_STATUS_FLAGS.MATERIALIZED | STRUCT_STATUS_FLAGS.BUILT | STRUCT_STATUS_FLAGS.ONLINE;
 
@@ -134,10 +135,13 @@ export class TutorialWorld {
       pfp_client_render_attributes: new PfpViewerComponent(null, true).pfp,
       alpha: 54,
       ore: 3,
+      // Shown when there is no real player to take the figures from, e.g. a
+      // tutorial opened directly by URL. Matches the design.
       load: 0,
-      structs_load: 32,
-      capacity: 50,
+      structs_load: 1000,
+      capacity: 7000,
       connection_capacity: 0,
+      ...TutorialMode.getPlayerEnergy(),
     });
 
     this.raider = Object.assign(new Player(), {
