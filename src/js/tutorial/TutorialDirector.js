@@ -1,4 +1,4 @@
-import {TutorialDialogue, TUTORIAL_DIALOGUE_POSITIONS} from "./TutorialDialogue";
+import {TutorialDialogue, TUTORIAL_DIALOGUE_POSITIONS, TUTORIAL_MENU_PORTRAIT_ID} from "./TutorialDialogue";
 import {TutorialPointer, TUTORIAL_POINTER_DIRECTIONS} from "./TutorialPointer";
 import {TUTORIAL_IDS} from "./TutorialWorld";
 import {TUTORIAL_COPY} from "./TutorialCopy";
@@ -38,6 +38,13 @@ const SELECTORS = {
   DEPLOY_MENU: '#sui-offcanvas',
   DEPLOY_MENU_CLOSE: '.sui-offcanvas-close-btn',
 };
+
+/** Combat Training's menu stays usable at every step. */
+const MENU_SELECTORS = [
+  '#player-action-bar-portrait',
+  `#${TUTORIAL_MENU_PORTRAIT_ID}`,
+  '#menu-page-layout',
+];
 
 /**
  * Runs the tutorial's script: narration, pointers and the moments where the
@@ -95,7 +102,9 @@ export class TutorialDirector {
       }
       const matches = selector => !!event.target.closest(selector);
       const denied = this.deniedSelectors.some(matches);
-      const allowed = this.allowedSelectors === null || this.allowedSelectors.some(matches);
+      const allowed = this.allowedSelectors === null
+        || this.allowedSelectors.some(matches)
+        || MENU_SELECTORS.some(matches);
 
       if (denied || !allowed) {
         event.preventDefault();

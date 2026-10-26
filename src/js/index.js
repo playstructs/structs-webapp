@@ -270,6 +270,10 @@ gameState.settings = await guildAPI.getSettings();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
 HUDViewModel.init(gameState, signingClientManager, structManager, taskManager, alphaManager, grassManager);
+if (tutorialMode) {
+  // In the simulation the portrait opens Combat Training's own menu.
+  HUDViewModel.bottomLeftActionBar.profileClickHandler = () => TutorialMode.openMenu();
+}
 hudContainer.innerHTML = HUDViewModel.render();
 HUDViewModel.initPageCode();
 
@@ -299,7 +303,8 @@ if (tutorialMode) {
 
   MenuPage.hideLoadingScreen();
 } else {
-  const returningFromTutorial = TutorialMode.consumeExited();
+  const tutorialExit = TutorialMode.consumeExited();
+  const returningFromTutorial = tutorialExit !== null;
 
   authManager.login(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then(() => {
     return playerAddressManager.addPlayerAddressMeta().then(() => {
@@ -311,7 +316,9 @@ if (tutorialMode) {
       if (returningFromTutorial) {
         TutorialMode.frameHomeAfterReturn(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
         // The FTL jump counts as finished once the player is in the real game.
-        onboardingTelemetry.reached('tutorial.end.ftl_jump');
+        if (tutorialExit === TutorialMode.EXIT_COMPLETED) {
+          onboardingTelemetry.reached('tutorial.end.ftl_jump');
+        }
       }
     });
   });
