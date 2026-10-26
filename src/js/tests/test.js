@@ -5,6 +5,7 @@ import {ShieldStatusTest} from "./ShieldStatusTest";
 import {AbandonedPlanetaryStructTest} from "./AbandonedPlanetaryStructTest";
 import {ActionBarOreCountTest} from "./ActionBarOreCountTest";
 import {RaidedOreStructTest} from "./RaidedOreStructTest";
+import {DeployOffcanvasChargeTest} from "./DeployOffcanvasChargeTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -13,3 +14,4 @@ import {RaidedOreStructTest} from "./RaidedOreStructTest";
 (new AbandonedPlanetaryStructTest()).run();
 (new ActionBarOreCountTest()).run();
 (new RaidedOreStructTest()).run();
+(new DeployOffcanvasChargeTest()).run();

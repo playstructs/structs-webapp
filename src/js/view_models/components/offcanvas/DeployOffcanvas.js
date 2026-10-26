@@ -7,6 +7,7 @@ import {RenderDeploymentIndicatorEvent} from "../../../events/RenderDeploymentIn
 import {PendingBuildAddedEvent} from "../../../events/PendingBuildAddedEvent";
 import {SUICheatsheet} from "../../../sui/SUICheatsheet";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
+import {EVENTS} from "../../../constants/Events";
 
 export class DeployOffcanvas extends AbstractViewModelComponent {
 
@@ -40,6 +41,14 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
     this.idPrefix = 'deploy-';
     this.className = 'deploy-struct-type';
     this.disabledClassName = 'deploy-struct-type-disabled';
+
+    /** @type {Set<string>} link IDs that already have deploy handlers attached */
+    this.handledLinkIds = new Set();
+
+    /** @type {HTMLElement|null} */
+    this.listElm = null;
+
+    this.chargeLevelChangedHandler = this.handleChargeLevelChanged.bind(this);
   }
 
   /**
@@ -68,74 +77,130 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
     throw new Error(`Unknown struct type category: ${structType.category}`);
   }
 
-  initPageCode() {
-    this.deployableStructTypes.forEach(structType => {
+  /**
+   * @param {StructType} structType
+   */
+  attachDeployHandler(structType) {
+    const linkId = this.createLinkId(structType);
+    const element = document.getElementById(linkId);
+    let mouseDownTime = null;
+
+    this.handledLinkIds.add(linkId);
+
+    element.addEventListener('mousedown', () => {
+      mouseDownTime = performance.now();
+    });
+
+    element.addEventListener('mouseup', () => {
+      if (mouseDownTime === null) {
+        return;
+      }
+
+      const elapsed = performance.now() - mouseDownTime;
+      mouseDownTime = null;
+
+      if (elapsed > SUICheatsheet.OPEN_DELAY - 50) {
+        return;
+      }
+
+      // The struct may have become blocked again since the handler was attached
       if (this.structManager.getDeploymentBlocker(structType)) {
         return;
       }
 
-      const element = document.getElementById(this.createLinkId(structType));
-      let mouseDownTime = null;
+      console.log(`Deploy: ${structType.type}`);
 
-      element.addEventListener('mousedown', () => {
-        mouseDownTime = performance.now();
-      });
+      const tileType = this.getTileTypeByStructType(structType);
 
-      element.addEventListener('mouseup', () => {
-        if (mouseDownTime === null) {
-          return;
-        }
+      this.signingClientManager.queueMsgStructBuildInitiate(
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
+        structType.id,
+        this.ambit,
+        this.slot,
+        structType.build_charge
+      ).then();
 
-        const elapsed = performance.now() - mouseDownTime;
-        mouseDownTime = null;
+      MenuPage.sui.offcanvas.close();
 
-        if (elapsed > SUICheatsheet.OPEN_DELAY - 50) {
-          return;
-        }
+      // Add pending build to gameState
+      this.gameState.addPendingBuild(
+        tileType,
+        this.ambit,
+        this.slot,
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
+        structType
+      );
 
-        console.log(`Deploy: ${structType.type}`);
+      // Dispatch event to render deployment indicator on struct layer
+      window.dispatchEvent(new RenderDeploymentIndicatorEvent(
+        this.gameState.alphaBaseMap.mapId,
+        tileType,
+        this.ambit,
+        this.slot,
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+      ));
 
-        const tileType = this.getTileTypeByStructType(structType);
-
-        this.signingClientManager.queueMsgStructBuildInitiate(
-          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
-          structType.id,
-          this.ambit,
-          this.slot,
-          structType.build_charge
-        ).then();
-
-        MenuPage.sui.offcanvas.close();
-
-        // Add pending build to gameState
-        this.gameState.addPendingBuild(
-          tileType,
-          this.ambit,
-          this.slot,
-          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
-          structType
-        );
-
-        // Dispatch event to render deployment indicator on struct layer
-        window.dispatchEvent(new RenderDeploymentIndicatorEvent(
-          this.gameState.alphaBaseMap.mapId,
-          tileType,
-          this.ambit,
-          this.slot,
-          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
-        ));
-
-        // Dispatch event to notify that a pending build was added
-        window.dispatchEvent(new PendingBuildAddedEvent(
-          this.gameState.alphaBaseMap.mapId,
-          tileType,
-          this.ambit,
-          this.slot,
-          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
-          structType
-        ));
-      });
+      // Dispatch event to notify that a pending build was added
+      window.dispatchEvent(new PendingBuildAddedEvent(
+        this.gameState.alphaBaseMap.mapId,
+        tileType,
+        this.ambit,
+        this.slot,
+        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
+        structType
+      ));
     });
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isShowing() {
+    const offcanvasElm = MenuPage.sui.offcanvas.offcanvasElm;
+    return !offcanvasElm.classList.contains('hidden') && offcanvasElm.contains(this.listElm);
+  }
+
+  /**
+   * Re-evaluate each struct type's deployment blocker so struct types become selectable
+   * (or blocked again) while the menu is open.
+   */
+  refreshDeploymentBlockers() {
+    this.deployableStructTypes.forEach(structType => {
+      const linkId = this.createLinkId(structType);
+      const element = document.getElementById(linkId);
+      const deploymentBlocker = this.structManager.getDeploymentBlocker(structType);
+
+      element.classList.toggle(this.disabledClassName, !!deploymentBlocker);
+      element.dataset.contextualMsg = deploymentBlocker;
+
+      if (!deploymentBlocker && !this.handledLinkIds.has(linkId)) {
+        this.attachDeployHandler(structType);
+      }
+    });
+  }
+
+  /**
+   * @param {ChargeLevelChangedEvent} event
+   */
+  handleChargeLevelChanged(event) {
+    if (!this.isShowing()) {
+      window.removeEventListener(EVENTS.CHARGE_LEVEL_CHANGED, this.chargeLevelChangedHandler);
+      return;
+    }
+
+    if (event.playerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
+      this.refreshDeploymentBlockers();
+    }
+  }
+
+  initPageCode() {
+    this.deployableStructTypes.forEach(structType => {
+      if (!this.structManager.getDeploymentBlocker(structType)) {
+        this.attachDeployHandler(structType);
+      }
+    });
+
+    window.addEventListener(EVENTS.CHARGE_LEVEL_CHANGED, this.chargeLevelChangedHandler);
   }
 
   /**
@@ -167,6 +232,8 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
   render() {
     MenuPage.sui.offcanvas.setHeader('Select Struct');
     MenuPage.sui.offcanvas.setContent(this.renderHTML());
+    // Held so a later menu reusing the same link IDs isn't mistaken for this one
+    this.listElm = MenuPage.sui.offcanvas.offcanvasElm.querySelector('.offcanvas-struct-list-layout');
     MenuPage.sui.offcanvas.open();
     this.initPageCode();
   }
