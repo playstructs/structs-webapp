@@ -22,6 +22,7 @@ export class AccountIndexViewModel extends AbstractViewModel {
     this.profileBtnId = 'account-menu-profile-btn';
     this.transfersBtnId = 'account-menu-transfers-btn';
     this.devicesBtnId = 'account-menu-devices-btn';
+    this.combatTutorialBtnId = 'account-menu-combat-tutorial-btn';
     this.logoutBtnId = 'account-menu-logout-btn';
   }
 
@@ -42,6 +43,9 @@ export class AccountIndexViewModel extends AbstractViewModel {
     });
     document.getElementById(this.devicesBtnId).addEventListener('click', () => {
       MenuPage.router.goto('Account', 'devices');
+    });
+    document.getElementById(this.combatTutorialBtnId).addEventListener('click', () => {
+      MenuPage.router.goto('Account', 'startTutorial');
     });
   }
 
@@ -102,6 +106,17 @@ export class AccountIndexViewModel extends AbstractViewModel {
                 <i class="sui-icon icon-chevron-right sui-text-primary"></i>
               </div>
               <div class="sui-text-secondary">${addressCount} Devices Active</div>
+            </div>
+          </a>
+          
+          <a id="${this.combatTutorialBtnId}" class="menu-index-btn" href="javascript: void(0)">
+            <i class="sui-icon sui-icon-lg icon-unknown sui-text-primary"></i>
+            <div class="menu-index-btn-labels-container">
+              <div class=menu-index-btn-nav-label>
+                <span class="sui-text-header">Combat Tutorial</span>
+                <i class="sui-icon icon-chevron-right sui-text-primary"></i>
+              </div>
+              <div></div>
             </div>
           </a>
         </div>

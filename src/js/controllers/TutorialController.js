@@ -9,6 +9,8 @@ import {StructListener} from "../grass_listeners/StructListener";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {onboardingTelemetry} from "../telemetry/OnboardingTelemetry";
+import {TutorialMenuViewModel} from "../view_models/tutorial/TutorialMenuViewModel";
+import {TutorialConfirmViewModel} from "../view_models/tutorial/TutorialConfirmViewModel";
 
 /** How long the "Simulation loading..." screen shows before the simulation starts. */
 const LOADING_SCREEN_MS = 3000;
@@ -113,6 +115,35 @@ export class TutorialController extends AbstractController {
     });
   }
 
+  menu() {
+    const viewModel = new TutorialMenuViewModel();
+    viewModel.render();
+  }
+
+  restartConfirm() {
+    const viewModel = new TutorialConfirmViewModel(
+      'Restart Tutorial?',
+      'Are you sure you want to restart the tutorial? Your progress will be reset.',
+      'Restart Tutorial',
+      'sui-mod-primary',
+      () => TutorialMode.restart(),
+      () => MenuPage.router.goto('Tutorial', 'menu')
+    );
+    viewModel.render();
+  }
+
+  abandonConfirm() {
+    const viewModel = new TutorialConfirmViewModel(
+      'Abandon Tutorial?',
+      'Are you sure you want to abandon the tutorial? You can revisit the tutorial later from the menu.',
+      'Abandon Tutorial',
+      'sui-mod-destructive',
+      () => TutorialMode.exit(TutorialMode.EXIT_ABANDONED),
+      () => MenuPage.router.goto('Tutorial', 'menu')
+    );
+    viewModel.render();
+  }
+
   finishSimulation() {
     this.world.stopBlocks();
     MenuPage.router.goto('Tutorial', 'end');
@@ -146,6 +177,6 @@ export class TutorialController extends AbstractController {
     );
     viewModel.render();
 
-    setTimeout(() => TutorialMode.exit(), FTL_SCREEN_MS);
+    setTimeout(() => TutorialMode.exit(TutorialMode.EXIT_COMPLETED), FTL_SCREEN_MS);
   }
 }

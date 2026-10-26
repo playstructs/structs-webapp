@@ -4480,7 +4480,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_account_AccountRecipientSearchResults__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../view_models/account/AccountRecipientSearchResults */ "./js/view_models/account/AccountRecipientSearchResults.js");
 /* harmony import */ var _view_models_account_AccountRecipientViewModel__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../view_models/account/AccountRecipientViewModel */ "./js/view_models/account/AccountRecipientViewModel.js");
 /* harmony import */ var _view_models_account_AccountConfirmTransfer__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../view_models/account/AccountConfirmTransfer */ "./js/view_models/account/AccountConfirmTransfer.js");
-/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _view_models_account_AccountStartTutorialViewModel__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ../view_models/account/AccountStartTutorialViewModel */ "./js/view_models/account/AccountStartTutorialViewModel.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+
 
 
 
@@ -4536,13 +4538,18 @@ class AccountController extends _framework_AbstractController__WEBPACK_IMPORTED_
     viewModel.render();
   }
 
+  startTutorial() {
+    const viewModel = new _view_models_account_AccountStartTutorialViewModel__WEBPACK_IMPORTED_MODULE_19__.AccountStartTutorialViewModel();
+    viewModel.render();
+  }
+
   /**
    * @param {object} options
    */
   profile(options) {
     const playerId = (options.hasOwnProperty('playerId') && options.playerId)
       ? options.playerId
-      : this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_19__.PLAYER_TYPES.PLAYER].id;
+      : this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_20__.PLAYER_TYPES.PLAYER].id;
     const viewModel = new _view_models_account_AccountProfileViewModel__WEBPACK_IMPORTED_MODULE_2__.AccountProfileViewModel(
       this.gameState,
       this.guildAPI,
@@ -4735,20 +4742,24 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_models_signup_Orientation7ViewModel__WEBPACK_IMPORTED_MODULE_23__ = __webpack_require__(/*! ../view_models/signup/Orientation7ViewModel */ "./js/view_models/signup/Orientation7ViewModel.js");
 /* harmony import */ var _view_models_signup_Orientation8ViewModel__WEBPACK_IMPORTED_MODULE_24__ = __webpack_require__(/*! ../view_models/signup/Orientation8ViewModel */ "./js/view_models/signup/Orientation8ViewModel.js");
 /* harmony import */ var _view_models_signup_OrientationEndViewModel__WEBPACK_IMPORTED_MODULE_25__ = __webpack_require__(/*! ../view_models/signup/OrientationEndViewModel */ "./js/view_models/signup/OrientationEndViewModel.js");
-/* harmony import */ var _view_models_login_ActivateDeviceViewModel__WEBPACK_IMPORTED_MODULE_26__ = __webpack_require__(/*! ../view_models/login/ActivateDeviceViewModel */ "./js/view_models/login/ActivateDeviceViewModel.js");
-/* harmony import */ var _view_models_login_ActivateDeviceVerifyViewModel__WEBPACK_IMPORTED_MODULE_27__ = __webpack_require__(/*! ../view_models/login/ActivateDeviceVerifyViewModel */ "./js/view_models/login/ActivateDeviceVerifyViewModel.js");
-/* harmony import */ var _dtos_ActivationCodeInfoDTO__WEBPACK_IMPORTED_MODULE_28__ = __webpack_require__(/*! ../dtos/ActivationCodeInfoDTO */ "./js/dtos/ActivationCodeInfoDTO.js");
-/* harmony import */ var _view_models_login_ActivateDeviceCancelledViewModel__WEBPACK_IMPORTED_MODULE_29__ = __webpack_require__(/*! ../view_models/login/ActivateDeviceCancelledViewModel */ "./js/view_models/login/ActivateDeviceCancelledViewModel.js");
-/* harmony import */ var _view_models_login_ActivateDeviceWaitingForApprovalViewModel__WEBPACK_IMPORTED_MODULE_30__ = __webpack_require__(/*! ../view_models/login/ActivateDeviceWaitingForApprovalViewModel */ "./js/view_models/login/ActivateDeviceWaitingForApprovalViewModel.js");
-/* harmony import */ var _view_models_login_ActivatingDeviceViewModel__WEBPACK_IMPORTED_MODULE_31__ = __webpack_require__(/*! ../view_models/login/ActivatingDeviceViewModel */ "./js/view_models/login/ActivatingDeviceViewModel.js");
-/* harmony import */ var _view_models_login_ActivateDeviceCompleteViewModel__WEBPACK_IMPORTED_MODULE_32__ = __webpack_require__(/*! ../view_models/login/ActivateDeviceCompleteViewModel */ "./js/view_models/login/ActivateDeviceCompleteViewModel.js");
-/* harmony import */ var _view_models_login_RecoverAccountStartViewModel__WEBPACK_IMPORTED_MODULE_33__ = __webpack_require__(/*! ../view_models/login/RecoverAccountStartViewModel */ "./js/view_models/login/RecoverAccountStartViewModel.js");
-/* harmony import */ var _view_models_login_RecoverAccountSuccessViewModel__WEBPACK_IMPORTED_MODULE_34__ = __webpack_require__(/*! ../view_models/login/RecoverAccountSuccessViewModel */ "./js/view_models/login/RecoverAccountSuccessViewModel.js");
-/* harmony import */ var _view_models_login_RecoverAccountFailViewModel__WEBPACK_IMPORTED_MODULE_35__ = __webpack_require__(/*! ../view_models/login/RecoverAccountFailViewModel */ "./js/view_models/login/RecoverAccountFailViewModel.js");
-/* harmony import */ var _view_models_logout_LogoutPermissionsWarningViewModel__WEBPACK_IMPORTED_MODULE_36__ = __webpack_require__(/*! ../view_models/logout/LogoutPermissionsWarningViewModel */ "./js/view_models/logout/LogoutPermissionsWarningViewModel.js");
-/* harmony import */ var _view_models_logout_LogoutAssetsWarningViewModel__WEBPACK_IMPORTED_MODULE_37__ = __webpack_require__(/*! ../view_models/logout/LogoutAssetsWarningViewModel */ "./js/view_models/logout/LogoutAssetsWarningViewModel.js");
-/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_38__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
-/* harmony import */ var _options_MenuWaitingOptions__WEBPACK_IMPORTED_MODULE_39__ = __webpack_require__(/*! ../options/MenuWaitingOptions */ "./js/options/MenuWaitingOptions.js");
+/* harmony import */ var _view_models_tutorial_TutorialConfirmViewModel__WEBPACK_IMPORTED_MODULE_26__ = __webpack_require__(/*! ../view_models/tutorial/TutorialConfirmViewModel */ "./js/view_models/tutorial/TutorialConfirmViewModel.js");
+/* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_27__ = __webpack_require__(/*! ../telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
+/* harmony import */ var _view_models_login_ActivateDeviceViewModel__WEBPACK_IMPORTED_MODULE_28__ = __webpack_require__(/*! ../view_models/login/ActivateDeviceViewModel */ "./js/view_models/login/ActivateDeviceViewModel.js");
+/* harmony import */ var _view_models_login_ActivateDeviceVerifyViewModel__WEBPACK_IMPORTED_MODULE_29__ = __webpack_require__(/*! ../view_models/login/ActivateDeviceVerifyViewModel */ "./js/view_models/login/ActivateDeviceVerifyViewModel.js");
+/* harmony import */ var _dtos_ActivationCodeInfoDTO__WEBPACK_IMPORTED_MODULE_30__ = __webpack_require__(/*! ../dtos/ActivationCodeInfoDTO */ "./js/dtos/ActivationCodeInfoDTO.js");
+/* harmony import */ var _view_models_login_ActivateDeviceCancelledViewModel__WEBPACK_IMPORTED_MODULE_31__ = __webpack_require__(/*! ../view_models/login/ActivateDeviceCancelledViewModel */ "./js/view_models/login/ActivateDeviceCancelledViewModel.js");
+/* harmony import */ var _view_models_login_ActivateDeviceWaitingForApprovalViewModel__WEBPACK_IMPORTED_MODULE_32__ = __webpack_require__(/*! ../view_models/login/ActivateDeviceWaitingForApprovalViewModel */ "./js/view_models/login/ActivateDeviceWaitingForApprovalViewModel.js");
+/* harmony import */ var _view_models_login_ActivatingDeviceViewModel__WEBPACK_IMPORTED_MODULE_33__ = __webpack_require__(/*! ../view_models/login/ActivatingDeviceViewModel */ "./js/view_models/login/ActivatingDeviceViewModel.js");
+/* harmony import */ var _view_models_login_ActivateDeviceCompleteViewModel__WEBPACK_IMPORTED_MODULE_34__ = __webpack_require__(/*! ../view_models/login/ActivateDeviceCompleteViewModel */ "./js/view_models/login/ActivateDeviceCompleteViewModel.js");
+/* harmony import */ var _view_models_login_RecoverAccountStartViewModel__WEBPACK_IMPORTED_MODULE_35__ = __webpack_require__(/*! ../view_models/login/RecoverAccountStartViewModel */ "./js/view_models/login/RecoverAccountStartViewModel.js");
+/* harmony import */ var _view_models_login_RecoverAccountSuccessViewModel__WEBPACK_IMPORTED_MODULE_36__ = __webpack_require__(/*! ../view_models/login/RecoverAccountSuccessViewModel */ "./js/view_models/login/RecoverAccountSuccessViewModel.js");
+/* harmony import */ var _view_models_login_RecoverAccountFailViewModel__WEBPACK_IMPORTED_MODULE_37__ = __webpack_require__(/*! ../view_models/login/RecoverAccountFailViewModel */ "./js/view_models/login/RecoverAccountFailViewModel.js");
+/* harmony import */ var _view_models_logout_LogoutPermissionsWarningViewModel__WEBPACK_IMPORTED_MODULE_38__ = __webpack_require__(/*! ../view_models/logout/LogoutPermissionsWarningViewModel */ "./js/view_models/logout/LogoutPermissionsWarningViewModel.js");
+/* harmony import */ var _view_models_logout_LogoutAssetsWarningViewModel__WEBPACK_IMPORTED_MODULE_39__ = __webpack_require__(/*! ../view_models/logout/LogoutAssetsWarningViewModel */ "./js/view_models/logout/LogoutAssetsWarningViewModel.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_40__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _options_MenuWaitingOptions__WEBPACK_IMPORTED_MODULE_41__ = __webpack_require__(/*! ../options/MenuWaitingOptions */ "./js/options/MenuWaitingOptions.js");
+
+
 
 
 
@@ -4954,8 +4965,24 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
     viewModel.render();
   }
 
+  skipTutorialConfirm() {
+    const viewModel = new _view_models_tutorial_TutorialConfirmViewModel__WEBPACK_IMPORTED_MODULE_26__.TutorialConfirmViewModel(
+      'Skip Tutorial?',
+      'Are you sure you want to skip the tutorial? You can revisit the tutorial later from the menu.',
+      'Skip Tutorial',
+      'sui-mod-destructive',
+      () => {
+        _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_27__.onboardingTelemetry.skipped('orientation.tutorial_offer');
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_40__.MenuPage.close();
+      },
+      () => _framework_MenuPage__WEBPACK_IMPORTED_MODULE_40__.MenuPage.router.goto('Auth', 'orientationEnd'),
+      false
+    );
+    viewModel.render();
+  }
+
   loginActivateDevice() {
-    const viewModel = new _view_models_login_ActivateDeviceViewModel__WEBPACK_IMPORTED_MODULE_26__.ActivateDeviceViewModel(this.guildAPI);
+    const viewModel = new _view_models_login_ActivateDeviceViewModel__WEBPACK_IMPORTED_MODULE_28__.ActivateDeviceViewModel(this.guildAPI);
     viewModel.render();
   }
 
@@ -4963,7 +4990,7 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
    * @param {ActivationCodeInfoDTO|null} activationCodeInfoDTO
    */
   loginActivateDeviceVerify(activationCodeInfoDTO = null) {
-    const viewModel = new _view_models_login_ActivateDeviceVerifyViewModel__WEBPACK_IMPORTED_MODULE_27__.ActivateDeviceVerifyViewModel(
+    const viewModel = new _view_models_login_ActivateDeviceVerifyViewModel__WEBPACK_IMPORTED_MODULE_29__.ActivateDeviceVerifyViewModel(
       this.authManager,
       activationCodeInfoDTO
     );
@@ -4971,7 +4998,7 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   }
 
   loginActivateDeviceCancelled() {
-    const viewModel = new _view_models_login_ActivateDeviceCancelledViewModel__WEBPACK_IMPORTED_MODULE_29__.ActivateDeviceCancelledViewModel();
+    const viewModel = new _view_models_login_ActivateDeviceCancelledViewModel__WEBPACK_IMPORTED_MODULE_31__.ActivateDeviceCancelledViewModel();
     viewModel.render();
   }
 
@@ -4979,7 +5006,7 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
    * @param {ActivationCodeInfoDTO|null} activationCodeInfoDTO
    */
   loginActivateDeviceWaitingForApproval(activationCodeInfoDTO = null) {
-    const viewModel = new _view_models_login_ActivateDeviceWaitingForApprovalViewModel__WEBPACK_IMPORTED_MODULE_30__.ActivateDeviceWaitingForApprovalViewModel(
+    const viewModel = new _view_models_login_ActivateDeviceWaitingForApprovalViewModel__WEBPACK_IMPORTED_MODULE_32__.ActivateDeviceWaitingForApprovalViewModel(
       this.gameState,
       activationCodeInfoDTO
     );
@@ -4990,7 +5017,7 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
    * @param {ActivationCodeInfoDTO|null} activationCodeInfoDTO
    */
   loginActivatingDevice(activationCodeInfoDTO) {
-    const viewModel = new _view_models_login_ActivatingDeviceViewModel__WEBPACK_IMPORTED_MODULE_31__.ActivatingDeviceViewModel(
+    const viewModel = new _view_models_login_ActivatingDeviceViewModel__WEBPACK_IMPORTED_MODULE_33__.ActivatingDeviceViewModel(
       this.gameState,
       this.authManager,
       activationCodeInfoDTO
@@ -4999,22 +5026,22 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
   }
 
   loginActivateDeviceComplete() {
-    const viewModel = new _view_models_login_ActivateDeviceCompleteViewModel__WEBPACK_IMPORTED_MODULE_32__.ActivateDeviceCompleteViewModel(this.gameState);
+    const viewModel = new _view_models_login_ActivateDeviceCompleteViewModel__WEBPACK_IMPORTED_MODULE_34__.ActivateDeviceCompleteViewModel(this.gameState);
     viewModel.render();
   }
 
   loginRecoverAccountStart() {
-    const viewModel = new _view_models_login_RecoverAccountStartViewModel__WEBPACK_IMPORTED_MODULE_33__.RecoverAccountStartViewModel(this.gameState, this.authManager);
+    const viewModel = new _view_models_login_RecoverAccountStartViewModel__WEBPACK_IMPORTED_MODULE_35__.RecoverAccountStartViewModel(this.gameState, this.authManager);
     viewModel.render();
   }
 
   loginRecoverAccountSuccess() {
-    const viewModel = new _view_models_login_RecoverAccountSuccessViewModel__WEBPACK_IMPORTED_MODULE_34__.RecoverAccountSuccessViewModel();
+    const viewModel = new _view_models_login_RecoverAccountSuccessViewModel__WEBPACK_IMPORTED_MODULE_36__.RecoverAccountSuccessViewModel();
     viewModel.render();
   }
 
   loginRecoverAccountFail() {
-    const viewModel = new _view_models_login_RecoverAccountFailViewModel__WEBPACK_IMPORTED_MODULE_35__.RecoverAccountFailViewModel();
+    const viewModel = new _view_models_login_RecoverAccountFailViewModel__WEBPACK_IMPORTED_MODULE_37__.RecoverAccountFailViewModel();
     viewModel.render();
   }
 
@@ -5025,11 +5052,11 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
 
     const addressToRevoke = options.hasOwnProperty('address') ? options.address : null;
 
-    const menuWaitingOptions = new _options_MenuWaitingOptions__WEBPACK_IMPORTED_MODULE_39__.MenuWaitingOptions();
+    const menuWaitingOptions = new _options_MenuWaitingOptions__WEBPACK_IMPORTED_MODULE_41__.MenuWaitingOptions();
     menuWaitingOptions.headerBtnLabel = 'Logout';
     menuWaitingOptions.waitingMessage = 'Logging out.';
 
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_38__.MenuPage.router.goto('Generic', 'menuWaiting', menuWaitingOptions);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_40__.MenuPage.router.goto('Generic', 'menuWaiting', menuWaitingOptions);
 
     if (addressToRevoke) {
       this.authManager.revokeAddress(addressToRevoke).then();
@@ -5042,7 +5069,7 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
    * @param {PlayerAddress} playerAddress
    */
   logoutAssetsWarning(playerAddress) {
-    const viewModel = new _view_models_logout_LogoutAssetsWarningViewModel__WEBPACK_IMPORTED_MODULE_37__.LogoutAssetsWarningViewModel(this.gameState, playerAddress);
+    const viewModel = new _view_models_logout_LogoutAssetsWarningViewModel__WEBPACK_IMPORTED_MODULE_39__.LogoutAssetsWarningViewModel(this.gameState, playerAddress);
     viewModel.render();
   }
 
@@ -5050,7 +5077,7 @@ class AuthController extends _framework_AbstractController__WEBPACK_IMPORTED_MOD
    * @param {PlayerAddress} playerAddress
    */
   logoutPermissionsWarning(playerAddress) {
-    const viewModel = new _view_models_logout_LogoutPermissionsWarningViewModel__WEBPACK_IMPORTED_MODULE_36__.LogoutPermissionsWarningViewModel(this.gameState, playerAddress);
+    const viewModel = new _view_models_logout_LogoutPermissionsWarningViewModel__WEBPACK_IMPORTED_MODULE_38__.LogoutPermissionsWarningViewModel(this.gameState, playerAddress);
     viewModel.render();
   }
 }
@@ -5336,6 +5363,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
 /* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../constants/MapConstants */ "./js/constants/MapConstants.js");
 /* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
+/* harmony import */ var _view_models_tutorial_TutorialMenuViewModel__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../view_models/tutorial/TutorialMenuViewModel */ "./js/view_models/tutorial/TutorialMenuViewModel.js");
+/* harmony import */ var _view_models_tutorial_TutorialConfirmViewModel__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../view_models/tutorial/TutorialConfirmViewModel */ "./js/view_models/tutorial/TutorialConfirmViewModel.js");
+
+
 
 
 
@@ -5451,6 +5482,35 @@ class TutorialController extends _framework_AbstractController__WEBPACK_IMPORTED
     });
   }
 
+  menu() {
+    const viewModel = new _view_models_tutorial_TutorialMenuViewModel__WEBPACK_IMPORTED_MODULE_11__.TutorialMenuViewModel();
+    viewModel.render();
+  }
+
+  restartConfirm() {
+    const viewModel = new _view_models_tutorial_TutorialConfirmViewModel__WEBPACK_IMPORTED_MODULE_12__.TutorialConfirmViewModel(
+      'Restart Tutorial?',
+      'Are you sure you want to restart the tutorial? Your progress will be reset.',
+      'Restart Tutorial',
+      'sui-mod-primary',
+      () => _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_5__.TutorialMode.restart(),
+      () => _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Tutorial', 'menu')
+    );
+    viewModel.render();
+  }
+
+  abandonConfirm() {
+    const viewModel = new _view_models_tutorial_TutorialConfirmViewModel__WEBPACK_IMPORTED_MODULE_12__.TutorialConfirmViewModel(
+      'Abandon Tutorial?',
+      'Are you sure you want to abandon the tutorial? You can revisit the tutorial later from the menu.',
+      'Abandon Tutorial',
+      'sui-mod-destructive',
+      () => _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_5__.TutorialMode.exit(_tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_5__.TutorialMode.EXIT_ABANDONED),
+      () => _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Tutorial', 'menu')
+    );
+    viewModel.render();
+  }
+
   finishSimulation() {
     this.world.stopBlocks();
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Tutorial', 'end');
@@ -5484,7 +5544,7 @@ class TutorialController extends _framework_AbstractController__WEBPACK_IMPORTED
     );
     viewModel.render();
 
-    setTimeout(() => _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_5__.TutorialMode.exit(), FTL_SCREEN_MS);
+    setTimeout(() => _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_5__.TutorialMode.exit(_tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_5__.TutorialMode.EXIT_COMPLETED), FTL_SCREEN_MS);
   }
 }
 
@@ -13454,6 +13514,10 @@ gameState.settings = await guildAPI.getSettings();
 gameState.thisGuild = await guildAPI.getThisGuild();
 
 _view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__.HUDViewModel.init(gameState, signingClientManager, structManager, taskManager, alphaManager, grassManager);
+if (tutorialMode) {
+  // In the simulation the portrait opens Combat Training's own menu.
+  _view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__.HUDViewModel.bottomLeftActionBar.profileClickHandler = () => _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_37__.TutorialMode.openMenu();
+}
 hudContainer.innerHTML = _view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__.HUDViewModel.render();
 _view_models_HUDViewModel__WEBPACK_IMPORTED_MODULE_8__.HUDViewModel.initPageCode();
 
@@ -13483,7 +13547,8 @@ if (tutorialMode) {
 
   _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideLoadingScreen();
 } else {
-  const returningFromTutorial = _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_37__.TutorialMode.consumeExited();
+  const tutorialExit = _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_37__.TutorialMode.consumeExited();
+  const returningFromTutorial = tutorialExit !== null;
 
   authManager.login(gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_30__.PLAYER_TYPES.PLAYER].id).then(() => {
     return playerAddressManager.addPlayerAddressMeta().then(() => {
@@ -13495,7 +13560,9 @@ if (tutorialMode) {
       if (returningFromTutorial) {
         _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_37__.TutorialMode.frameHomeAfterReturn(gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_30__.PLAYER_TYPES.PLAYER].id);
         // The FTL jump counts as finished once the player is in the real game.
-        _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_42__.onboardingTelemetry.reached('tutorial.end.ftl_jump');
+        if (tutorialExit === _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_37__.TutorialMode.EXIT_COMPLETED) {
+          _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_42__.onboardingTelemetry.reached('tutorial.end.ftl_jump');
+        }
       }
     });
   });
@@ -24100,10 +24167,16 @@ const TUTORIAL_COPY = {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   TUTORIAL_DIALOGUE_POSITIONS: () => (/* binding */ TUTORIAL_DIALOGUE_POSITIONS),
+/* harmony export */   TUTORIAL_MENU_PORTRAIT_ID: () => (/* binding */ TUTORIAL_MENU_PORTRAIT_ID),
 /* harmony export */   TutorialDialogue: () => (/* binding */ TutorialDialogue)
 /* harmony export */ });
 /* harmony import */ var _framework_NotificationDialogue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/NotificationDialogue */ "./js/framework/NotificationDialogue.js");
+/* harmony import */ var _TutorialMode__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./TutorialMode */ "./js/tutorial/TutorialMode.js");
 
+
+
+/** The dialogue's portrait; tapping it opens Combat Training's menu. */
+const TUTORIAL_MENU_PORTRAIT_ID = 'notification-dialogue-indicator';
 
 const TUTORIAL_DIALOGUE_POSITIONS = {
   TOP: 'top',
@@ -24129,6 +24202,8 @@ class TutorialDialogue {
     // The panel keeps the template's colouring (medium portrait and text
     // chunks, default button chunk), which is what the design draws.
     this.panel.classList.add('tutorial-dialogue');
+    // The portrait sits where the action bar's portrait does, and opens the same menu.
+    document.getElementById(TUTORIAL_MENU_PORTRAIT_ID).addEventListener('click', () => _TutorialMode__WEBPACK_IMPORTED_MODULE_1__.TutorialMode.openMenu());
     _framework_NotificationDialogue__WEBPACK_IMPORTED_MODULE_0__.NotificationDialogue.setDialogueScreenThemeToNeutral();
   }
 
@@ -24261,6 +24336,13 @@ const SELECTORS = {
   DEPLOY_MENU_CLOSE: '.sui-offcanvas-close-btn',
 };
 
+/** Combat Training's menu stays usable at every step. */
+const MENU_SELECTORS = [
+  '#player-action-bar-portrait',
+  `#${_TutorialDialogue__WEBPACK_IMPORTED_MODULE_0__.TUTORIAL_MENU_PORTRAIT_ID}`,
+  '#menu-page-layout',
+];
+
 /**
  * Runs the tutorial's script: narration, pointers and the moments where the
  * player has to act. The map, HUD and combat are the real game components
@@ -24317,7 +24399,9 @@ class TutorialDirector {
       }
       const matches = selector => !!event.target.closest(selector);
       const denied = this.deniedSelectors.some(matches);
-      const allowed = this.allowedSelectors === null || this.allowedSelectors.some(matches);
+      const allowed = this.allowedSelectors === null
+        || this.allowedSelectors.some(matches)
+        || MENU_SELECTORS.some(matches);
 
       if (denied || !allowed) {
         event.preventDefault();
@@ -25007,6 +25091,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   TutorialMode: () => (/* binding */ TutorialMode)
 /* harmony export */ });
 /* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+
 
 
 /**
@@ -25024,6 +25110,16 @@ class TutorialMode {
 
   static EXITED_KEY = 'tutorialExited';
 
+  /** How the player left the tutorial, as stored under EXITED_KEY. */
+  static EXIT_COMPLETED = 'completed';
+
+  static EXIT_ABANDONED = 'abandoned';
+
+  static PLAYER_ENERGY_KEY = 'tutorialPlayerEnergy';
+
+  /** The player's energy figures; the simulation shows these instead of made-up ones. */
+  static PLAYER_ENERGY_FIELDS = ['load', 'structs_load', 'capacity', 'connection_capacity'];
+
   /** Where the CMD Ship's tile lands vertically, as a fraction of the screen height. */
   static HOME_VERTICAL_ANCHOR = 0.44;
 
@@ -25037,15 +25133,36 @@ class TutorialMode {
 
   static launch() {
     _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_0__.onboardingTelemetry.flushNow();
+    TutorialMode.rememberPlayerEnergy(__webpack_require__.g.gameState?.keyPlayers?.player?.player);
     sessionStorage.setItem(TutorialMode.ACTIVE_KEY, '1');
     sessionStorage.removeItem(TutorialMode.EXITED_KEY);
     window.location.reload();
   }
 
-  static exit() {
+  /**
+   * Opens Combat Training's menu (restart or abandon).
+   */
+  static openMenu() {
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Tutorial', 'menu');
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.open();
+  }
+
+  /**
+   * Starts the simulation over from the loading screen.
+   */
+  static restart() {
+    _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_0__.onboardingTelemetry.flushNow();
+    window.location.reload();
+  }
+
+  /**
+   * @param {string} how TutorialMode.EXIT_COMPLETED or TutorialMode.EXIT_ABANDONED
+   */
+  static exit(how) {
     _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_0__.onboardingTelemetry.flushNow();
     sessionStorage.removeItem(TutorialMode.ACTIVE_KEY);
-    sessionStorage.setItem(TutorialMode.EXITED_KEY, '1');
+    sessionStorage.removeItem(TutorialMode.PLAYER_ENERGY_KEY);
+    sessionStorage.setItem(TutorialMode.EXITED_KEY, how);
 
     const url = new URL(window.location.href);
     url.searchParams.delete('tutorial');
@@ -25053,13 +25170,42 @@ class TutorialMode {
   }
 
   /**
-   * Whether this page load is the return from a finished tutorial. Reading it
-   * clears it, so only the first boot after the tutorial sees it.
+   * The simulation runs without the player's account, so their energy is
+   * carried across the reload into it.
    *
-   * @return {boolean}
+   * @param {Player|null|undefined} player
+   */
+  static rememberPlayerEnergy(player) {
+    if (!player) {
+      sessionStorage.removeItem(TutorialMode.PLAYER_ENERGY_KEY);
+      return;
+    }
+    const energy = {};
+    TutorialMode.PLAYER_ENERGY_FIELDS.forEach(field => {
+      energy[field] = parseInt('' + (player[field] || 0)) || 0;
+    });
+    sessionStorage.setItem(TutorialMode.PLAYER_ENERGY_KEY, JSON.stringify(energy));
+  }
+
+  /**
+   * @return {object|null} the energy fields saved by rememberPlayerEnergy()
+   */
+  static getPlayerEnergy() {
+    try {
+      return JSON.parse(sessionStorage.getItem(TutorialMode.PLAYER_ENERGY_KEY));
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Whether this page load is the return from the tutorial, and how it was
+   * left. Reading it clears it, so only the first boot after the tutorial sees it.
+   *
+   * @return {string|null} TutorialMode.EXIT_COMPLETED, TutorialMode.EXIT_ABANDONED or null
    */
   static consumeExited() {
-    const exited = sessionStorage.getItem(TutorialMode.EXITED_KEY) === '1';
+    const exited = sessionStorage.getItem(TutorialMode.EXITED_KEY);
     sessionStorage.removeItem(TutorialMode.EXITED_KEY);
     return exited;
   }
@@ -27477,6 +27623,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _events_ShieldHealthChangedEvent__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../events/ShieldHealthChangedEvent */ "./js/events/ShieldHealthChangedEvent.js");
 /* harmony import */ var _events_ChargeLevelChangedEvent__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../events/ChargeLevelChangedEvent */ "./js/events/ChargeLevelChangedEvent.js");
 /* harmony import */ var _view_models_components_PfpViewerComponent__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../view_models/components/PfpViewerComponent */ "./js/view_models/components/PfpViewerComponent.js");
+/* harmony import */ var _TutorialMode__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ./TutorialMode */ "./js/tutorial/TutorialMode.js");
+
 
 
 
@@ -27613,10 +27761,13 @@ class TutorialWorld {
       pfp_client_render_attributes: new _view_models_components_PfpViewerComponent__WEBPACK_IMPORTED_MODULE_17__.PfpViewerComponent(null, true).pfp,
       alpha: 54,
       ore: 3,
+      // Shown when there is no real player to take the figures from, e.g. a
+      // tutorial opened directly by URL. Matches the design.
       load: 0,
-      structs_load: 32,
-      capacity: 50,
+      structs_load: 1000,
+      capacity: 7000,
       connection_capacity: 0,
+      ..._TutorialMode__WEBPACK_IMPORTED_MODULE_18__.TutorialMode.getPlayerEnergy(),
     });
 
     this.raider = Object.assign(new _models_Player__WEBPACK_IMPORTED_MODULE_1__.Player(), {
@@ -31173,6 +31324,7 @@ class AccountIndexViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
     this.profileBtnId = 'account-menu-profile-btn';
     this.transfersBtnId = 'account-menu-transfers-btn';
     this.devicesBtnId = 'account-menu-devices-btn';
+    this.combatTutorialBtnId = 'account-menu-combat-tutorial-btn';
     this.logoutBtnId = 'account-menu-logout-btn';
   }
 
@@ -31193,6 +31345,9 @@ class AccountIndexViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
     });
     document.getElementById(this.devicesBtnId).addEventListener('click', () => {
       _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'devices');
+    });
+    document.getElementById(this.combatTutorialBtnId).addEventListener('click', () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'startTutorial');
     });
   }
 
@@ -31253,6 +31408,17 @@ class AccountIndexViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORT
                 <i class="sui-icon icon-chevron-right sui-text-primary"></i>
               </div>
               <div class="sui-text-secondary">${addressCount} Devices Active</div>
+            </div>
+          </a>
+          
+          <a id="${this.combatTutorialBtnId}" class="menu-index-btn" href="javascript: void(0)">
+            <i class="sui-icon sui-icon-lg icon-unknown sui-text-primary"></i>
+            <div class="menu-index-btn-labels-container">
+              <div class=menu-index-btn-nav-label>
+                <span class="sui-text-header">Combat Tutorial</span>
+                <i class="sui-icon icon-chevron-right sui-text-primary"></i>
+              </div>
+              <div></div>
             </div>
           </a>
         </div>
@@ -32318,6 +32484,67 @@ class AccountRecipientViewModel extends _framework_AbstractViewModel__WEBPACK_IM
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
 
     this.initPageCode();
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/view_models/account/AccountStartTutorialViewModel.js"
+/*!*****************************************************************!*\
+  !*** ./js/view_models/account/AccountStartTutorialViewModel.js ***!
+  \*****************************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AccountStartTutorialViewModel: () => (/* binding */ AccountStartTutorialViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _templates_ConfirmTemplate__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../templates/ConfirmTemplate */ "./js/view_models/templates/ConfirmTemplate.js");
+/* harmony import */ var _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../tutorial/TutorialMode */ "./js/tutorial/TutorialMode.js");
+
+
+
+
+
+/**
+ * Confirms replaying Combat Training from the Account menu.
+ */
+class AccountStartTutorialViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__.AbstractViewModel {
+
+  render() {
+    const view = new _templates_ConfirmTemplate__WEBPACK_IMPORTED_MODULE_2__.ConfirmTemplate();
+
+    view.headerBtnLabel = 'Combat Tutorial';
+    view.headerShowBackBtn = true;
+    view.headerBackBtnHandler = () => _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'index');
+
+    view.messageHeaderColorClass = 'sui-mod-warning';
+    view.messageHeaderIconClass = 'icon-alert';
+    view.messageHeaderText = 'Start Tutorial?';
+    view.messageBody1HTML = 'Your Structs will continue to operate normally in the background. You can exit the tutorial at any time from the main menu.';
+
+    view.confirmBtn1Enabled = true;
+    view.confirmBtn1Label = 'Start Tutorial';
+    view.confirmBtn1ColorClass = 'sui-mod-primary';
+
+    view.confirmBtn2Enabled = true;
+    view.confirmBtn2Label = 'Cancel';
+    view.confirmBtn2ColorClass = 'sui-mod-destructive';
+
+    view.initPageCode = () => {
+      document.getElementById(view.confirmBtn1Id).addEventListener('click', () => {
+        _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_3__.TutorialMode.launch();
+      });
+      document.getElementById(view.confirmBtn2Id).addEventListener('click', () => {
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Account', 'index');
+      });
+    };
+
+    view.render();
   }
 }
 
@@ -47263,8 +47490,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
 /* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
 /* harmony import */ var _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../tutorial/TutorialMode */ "./js/tutorial/TutorialMode.js");
-/* harmony import */ var _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../telemetry/OnboardingTelemetry */ "./js/telemetry/OnboardingTelemetry.js");
-
 
 
 
@@ -47300,8 +47525,7 @@ class OrientationEndViewModel extends _framework_AbstractViewModel__WEBPACK_IMPO
       _tutorial_TutorialMode__WEBPACK_IMPORTED_MODULE_3__.TutorialMode.launch();
     });
     document.getElementById('skipTutorial').addEventListener('click', () => {
-      _telemetry_OnboardingTelemetry__WEBPACK_IMPORTED_MODULE_4__.onboardingTelemetry.skipped('orientation.tutorial_offer');
-      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.close();
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Auth', 'skipTutorialConfirm');
     });
   }
 
@@ -48693,6 +48917,176 @@ class SystemModal {
     `;
   }
 }
+
+/***/ },
+
+/***/ "./js/view_models/tutorial/TutorialConfirmViewModel.js"
+/*!*************************************************************!*\
+  !*** ./js/view_models/tutorial/TutorialConfirmViewModel.js ***!
+  \*************************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TutorialConfirmViewModel: () => (/* binding */ TutorialConfirmViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+/**
+ * A "Are you sure?" screen for Combat Training: skipping it at the end of
+ * orientation, and restarting or abandoning it from its menu.
+ */
+class TutorialConfirmViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
+  /**
+   * @param {string} title
+   * @param {string} body
+   * @param {string} confirmLabel
+   * @param {string} confirmColorClass
+   * @param {function(): void} onConfirm
+   * @param {function(): void} onCancel
+   * @param {boolean} closable whether the menu's close button is shown
+   */
+  constructor(title, body, confirmLabel, confirmColorClass, onConfirm, onCancel, closable = true) {
+    super();
+    this.title = title;
+    this.body = body;
+    this.confirmLabel = confirmLabel;
+    this.confirmColorClass = confirmColorClass;
+    this.onConfirm = onConfirm;
+    this.onCancel = onCancel;
+    this.closable = closable;
+    this.confirmBtnId = 'tutorial-confirm-btn';
+    this.cancelBtnId = 'tutorial-cancel-btn';
+  }
+
+  initPageCode() {
+    document.getElementById(this.confirmBtnId).addEventListener('click', () => this.onConfirm());
+    document.getElementById(this.cancelBtnId).addEventListener('click', () => this.onCancel());
+  }
+
+  render() {
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems([
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'Combat Training'
+      )
+    ]);
+    if (this.closable) {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.enableCloseBtn();
+    } else {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.disableCloseBtn();
+    }
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div class="common-layout-col">
+        <div class="confirm-template-text-container">
+          <div class="sui-mod-warning">
+            <i class="sui-icon sui-icon-md icon-alert"></i>
+            ${this.title}
+          </div>
+          <div>${this.body}</div>
+        </div>
+
+        <div class="confirm-template-btn-container">
+          <div class="sui-screen-btn-flex-wrapper">
+            <button id="${this.confirmBtnId}" class="sui-screen-btn ${this.confirmColorClass}">${this.confirmLabel}</button>
+          </div>
+          <div class="sui-screen-btn-flex-wrapper">
+            <button id="${this.cancelBtnId}" class="sui-screen-btn sui-mod-secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.hideAndClearDialoguePanel();
+
+    this.initPageCode();
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/view_models/tutorial/TutorialMenuViewModel.js"
+/*!**********************************************************!*\
+  !*** ./js/view_models/tutorial/TutorialMenuViewModel.js ***!
+  \**********************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TutorialMenuViewModel: () => (/* binding */ TutorialMenuViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../dtos/NavItemDTO */ "./js/dtos/NavItemDTO.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+
+
+/**
+ * Combat Training's main menu, opened from the bottom-left portrait while the
+ * tutorial runs: restart it or leave it.
+ */
+class TutorialMenuViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModel {
+
+  constructor() {
+    super();
+    this.restartBtnId = 'tutorial-menu-restart-btn';
+    this.abandonBtnId = 'tutorial-menu-abandon-btn';
+  }
+
+  initPageCode() {
+    document.getElementById(this.restartBtnId).addEventListener('click', () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Tutorial', 'restartConfirm');
+    });
+    document.getElementById(this.abandonBtnId).addEventListener('click', () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.router.goto('Tutorial', 'abandonConfirm');
+    });
+  }
+
+  render() {
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setNavItems([
+      new _dtos_NavItemDTO__WEBPACK_IMPORTED_MODULE_1__.NavItemDTO(
+        'nav-item-text-only',
+        'Combat Training'
+      )
+    ]);
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.enableCloseBtn();
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.showNav();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.setBodyContent(`
+    <div class="full-screen-content-container">
+      <div class="common-layout-col">
+        <div class="confirm-template-btn-container">
+          <div class="sui-screen-btn-flex-wrapper">
+            <button id="${this.restartBtnId}" class="sui-screen-btn sui-mod-primary">Restart Tutorial</button>
+          </div>
+          <div class="sui-screen-btn-flex-wrapper">
+            <button id="${this.abandonBtnId}" class="sui-screen-btn sui-mod-destructive">Abandon Tutorial</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_2__.MenuPage.hideAndClearDialoguePanel();
+
+    this.initPageCode();
+  }
+}
+
 
 /***/ },
 
