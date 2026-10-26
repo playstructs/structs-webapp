@@ -629,6 +629,15 @@ a.sui-text-secondary:hover {
   cursor: pointer;
 }
 
+.map-tile-target-selected {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--tile-width);
+  height: var(--tile-height);
+  pointer-events: none;
+}
+
 .map-container {
   position: absolute;
   top: 0;

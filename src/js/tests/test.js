@@ -6,6 +6,7 @@ import {AbandonedPlanetaryStructTest} from "./AbandonedPlanetaryStructTest";
 import {ActionBarOreCountTest} from "./ActionBarOreCountTest";
 import {RaidedOreStructTest} from "./RaidedOreStructTest";
 import {DeployOffcanvasChargeTest} from "./DeployOffcanvasChargeTest";
+import {TargetSelectedIndicatorTest} from "./TargetSelectedIndicatorTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -15,3 +16,4 @@ import {DeployOffcanvasChargeTest} from "./DeployOffcanvasChargeTest";
 (new ActionBarOreCountTest()).run();
 (new RaidedOreStructTest()).run();
 (new DeployOffcanvasChargeTest()).run();
+(new TargetSelectedIndicatorTest()).run();

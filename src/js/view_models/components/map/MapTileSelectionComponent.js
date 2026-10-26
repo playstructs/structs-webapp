@@ -17,6 +17,7 @@ import {ClearAttackTargetsEvent} from "../../../events/ClearAttackTargetsEvent";
 import {ClearTileSelectionEvent} from "../../../events/ClearTileSelectionEvent";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {AttackTargetUtil} from "../../../util/AttackTargetUtil";
+import {TARGET_SELECTED_VARIANTS, TargetSelectedIndicator} from "./TargetSelectedIndicator";
 
 
 export class MapTileSelectionComponent extends AbstractViewModelComponent {
@@ -70,6 +71,8 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     /** @type {Fleet} */
     this.attackerFleet = attackerFleet;
+
+    TargetSelectedIndicator.preload();
   }
 
   /**
@@ -640,6 +643,8 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       return;
     }
 
+    TargetSelectedIndicator.play(tile, TARGET_SELECTED_VARIANTS.FRIENDLY);
+
     // Lock the action bar until we hear the grass notification from the struct defend action
     this.gameState.actionBarLock.lock();
 
@@ -668,6 +673,8 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     if (!targetStructId) {
       return;
     }
+
+    TargetSelectedIndicator.play(tile, TARGET_SELECTED_VARIANTS.ENEMY);
 
     // Lock the action bar until we hear the grass notification from the struct attack action
     this.gameState.actionBarLock.lock();
@@ -700,6 +707,8 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
    * @param {HTMLElement} tile - The tile that was clicked
    */
   async handleMoveTargetClick(tile) {
+    TargetSelectedIndicator.play(tile, TARGET_SELECTED_VARIANTS.NEUTRAL);
+
     // The lock the action bar until we hear the grass notification from the struct move action
     this.gameState.actionBarLock.lock();
 
