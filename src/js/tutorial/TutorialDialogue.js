@@ -1,4 +1,8 @@
 import {NotificationDialogue} from "../framework/NotificationDialogue";
+import {TutorialMode} from "./TutorialMode";
+
+/** The dialogue's portrait; tapping it opens Combat Training's menu. */
+export const TUTORIAL_MENU_PORTRAIT_ID = 'notification-dialogue-indicator';
 
 export const TUTORIAL_DIALOGUE_POSITIONS = {
   TOP: 'top',
@@ -24,6 +28,8 @@ export class TutorialDialogue {
     // The panel keeps the template's colouring (medium portrait and text
     // chunks, default button chunk), which is what the design draws.
     this.panel.classList.add('tutorial-dialogue');
+    // The portrait sits where the action bar's portrait does, and opens the same menu.
+    document.getElementById(TUTORIAL_MENU_PORTRAIT_ID).addEventListener('click', () => TutorialMode.openMenu());
     NotificationDialogue.setDialogueScreenThemeToNeutral();
   }
 

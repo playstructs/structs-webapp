@@ -1915,6 +1915,35 @@ class ClearStructTileEvent extends CustomEvent {
 
 /***/ },
 
+/***/ "./js/events/ClearTileSelectionEvent.js"
+/*!**********************************************!*\
+  !*** ./js/events/ClearTileSelectionEvent.js ***!
+  \**********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ClearTileSelectionEvent: () => (/* binding */ ClearTileSelectionEvent)
+/* harmony export */ });
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Events */ "./js/constants/Events.js");
+
+
+class ClearTileSelectionEvent extends CustomEvent {
+
+  /**
+   * @param {boolean} clearSelected if true, clear the currently selected tile too
+   */
+  constructor(clearSelected = true) {
+    super(_constants_Events__WEBPACK_IMPORTED_MODULE_0__.EVENTS.CLEAR_TILE_SELECTION);
+    this.clearSelected = clearSelected;
+  }
+}
+
+
+
+/***/ },
+
 /***/ "./js/events/EnergyUsageChangedEvent.js"
 /*!**********************************************!*\
   !*** ./js/events/EnergyUsageChangedEvent.js ***!
@@ -6655,6 +6684,96 @@ class PfpClientRenderAttributes {
 
 /***/ },
 
+/***/ "./js/models/Planet.js"
+/*!*****************************!*\
+  !*** ./js/models/Planet.js ***!
+  \*****************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Planet: () => (/* binding */ Planet)
+/* harmony export */ });
+/* harmony import */ var _constants_Ambits__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/Ambits */ "./js/constants/Ambits.js");
+/* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/MapConstants */ "./js/constants/MapConstants.js");
+
+
+
+class Planet {
+  constructor() {
+    this.id = null;
+    this.owner = null;
+    this.map = null;
+    this.space_slots = null;
+    this.air_slots = null;
+    this.land_slots = null;
+    this.water_slots = null;
+    this.name = null;
+    this.undiscovered_ore = null;
+
+    // TODO: Temporary, for map testing until ornament system chain side is built
+    this.ornaments = new Map([
+      [_constants_Ambits__WEBPACK_IMPORTED_MODULE_0__.AMBITS.SPACE, []],
+      [_constants_Ambits__WEBPACK_IMPORTED_MODULE_0__.AMBITS.AIR, []],
+      [_constants_Ambits__WEBPACK_IMPORTED_MODULE_0__.AMBITS.LAND, []],
+      [_constants_Ambits__WEBPACK_IMPORTED_MODULE_0__.AMBITS.WATER, []]
+    ]);
+  }
+
+  /**
+   * Get a list of the planet's available ambits.
+   *
+   * @return {string[]}
+   */
+  getAmbits() {
+    const ambits = [];
+    if (this.space_slots && this.space_slots > 0) {
+      ambits.push(_constants_Ambits__WEBPACK_IMPORTED_MODULE_0__.AMBITS.SPACE);
+    }
+    if (this.air_slots && this.air_slots > 0) {
+      ambits.push(_constants_Ambits__WEBPACK_IMPORTED_MODULE_0__.AMBITS.AIR);
+    }
+    if (this.land_slots && this.land_slots > 0) {
+      ambits.push(_constants_Ambits__WEBPACK_IMPORTED_MODULE_0__.AMBITS.LAND);
+    }
+    if (this.water_slots && this.water_slots > 0) {
+      ambits.push(_constants_Ambits__WEBPACK_IMPORTED_MODULE_0__.AMBITS.WATER);
+    }
+    return ambits;
+  }
+
+  /**
+   * Get a map of ambits to ambit map ornaments.
+   *
+   * @return {Map<string, []>}
+   */
+  getOrnaments() {
+    return this.ornaments;
+  }
+
+  /**
+   * @param {string} ambit
+   * @param {StructTypeCollection} structTypes
+   * @return {number}
+   */
+  getPlanetarySlotsByAmbit(ambit, structTypes) {
+    const property = `${ambit.toLowerCase()}_slots`;
+
+    if (this[property] === undefined) {
+      throw new Error(`Invalid ambit: ${ambit}`);
+    }
+
+    if (structTypes.fetchAllByTileTypeAndAmbit(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.PLANETARY_SLOT, ambit).length > 0) {
+      return this[property];
+    }
+
+    return 0;
+  }
+}
+
+/***/ },
+
 /***/ "./js/models/PlanetRaid.js"
 /*!*********************************!*\
   !*** ./js/models/PlanetRaid.js ***!
@@ -10113,6 +10232,183 @@ class ShieldStatusTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MODUL
 
 /***/ },
 
+/***/ "./js/tests/TargetSelectedIndicatorTest.js"
+/*!*************************************************!*\
+  !*** ./js/tests/TargetSelectedIndicatorTest.js ***!
+  \*************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TargetSelectedIndicatorTest: () => (/* binding */ TargetSelectedIndicatorTest)
+/* harmony export */ });
+/* harmony import */ var _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/DTestFramework */ "./js/framework/DTestFramework.js");
+/* harmony import */ var _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../view_models/components/map/TargetSelectedIndicator */ "./js/view_models/components/map/TargetSelectedIndicator.js");
+/* harmony import */ var _view_models_components_map_MapTileSelectionComponent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../view_models/components/map/MapTileSelectionComponent */ "./js/view_models/components/map/MapTileSelectionComponent.js");
+/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/StructConstants */ "./js/constants/StructConstants.js");
+
+
+
+
+
+/**
+ * Covers the burst that plays on a tile once the player picks a valid target
+ * for an attack, a defend or a move.
+ */
+class TargetSelectedIndicatorTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTestSuite {
+
+  constructor() {
+    super('TargetSelectedIndicatorTest');
+  }
+
+  /**
+   * Stands in for the document with only what the indicator reaches for.
+   */
+  static givenDocument() {
+    __webpack_require__.g.document = {
+      createElement: () => {
+        const element = {
+          parent: null,
+          remove: () => {
+            if (element.parent) {
+              element.parent.children.splice(element.parent.children.indexOf(element), 1);
+              element.parent = null;
+            }
+          }
+        };
+        return element;
+      }
+    };
+  }
+
+  /**
+   * @return {{children: object[], appendChild: function(object), getAttribute: function(string): string}}
+   */
+  static createTile() {
+    const tile = {
+      children: [],
+      appendChild: (child) => {
+        child.parent = tile;
+        tile.children.push(child);
+      },
+      getAttribute: (name) => name === 'data-struct-id' ? '5-2' : '1'
+    };
+    return tile;
+  }
+
+  /**
+   * A tile selection layer far enough along for its target click handlers to run.
+   *
+   * @return {MapTileSelectionComponent}
+   */
+  static givenTileSelection() {
+    const actionSourceStruct = {id: '5-1', type: 1, location_type: 'fleet'};
+    const gameState = {
+      actionBarLock: {
+        lock: () => {},
+        getActionSourceStruct: () => actionSourceStruct
+      },
+      structTypes: {getStructTypeById: () => ({})}
+    };
+    const signingClientManager = {
+      queueMsgStructAttack: async () => {},
+      queueMsgStructDefenseSet: async () => {},
+      queueMsgStructMove: async () => {}
+    };
+
+    const tileSelection = new _view_models_components_map_MapTileSelectionComponent__WEBPACK_IMPORTED_MODULE_2__.MapTileSelectionComponent(gameState, signingClientManager, null, [], null, null, null, null, null);
+    // Moving re-points the focus cursor at the new tile, which isn't what these tests are about.
+    tileSelection.addFocusToSourceTile = () => {};
+    return tileSelection;
+  }
+
+  playsTheRequestedVariantOnTheTileTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('playsTheRequestedVariantOnTheTileTest', function() {
+    TargetSelectedIndicatorTest.givenDocument();
+    const tile = TargetSelectedIndicatorTest.createTile();
+
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.play(tile, _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TARGET_SELECTED_VARIANTS.FRIENDLY);
+
+    this.assertEquals(tile.children.length, 1);
+    this.assertEquals(tile.children[0].className, 'map-tile-target-selected');
+    this.assertEquals(tile.children[0].src, '/img/focus/target-selected-friendly.gif');
+
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.stop(tile);
+  });
+
+  // Selecting the same tile again restarts the burst rather than stacking a second one.
+  replayingATileReplacesTheBurstTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('replayingATileReplacesTheBurstTest', function() {
+    TargetSelectedIndicatorTest.givenDocument();
+    const tile = TargetSelectedIndicatorTest.createTile();
+
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.play(tile, _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TARGET_SELECTED_VARIANTS.ENEMY);
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.play(tile, _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TARGET_SELECTED_VARIANTS.ENEMY);
+
+    this.assertEquals(tile.children.length, 1);
+
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.stop(tile);
+
+    this.assertEquals(tile.children.length, 0);
+  });
+
+  // Each play gets its own URL so the gif starts over instead of showing its blank last frame.
+  downloadedArtPlaysFromAFreshUrlEachTimeTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('downloadedArtPlaysFromAFreshUrlEachTimeTest', function() {
+    TargetSelectedIndicatorTest.givenDocument();
+    const tile = TargetSelectedIndicatorTest.createTile();
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.blobs[_view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TARGET_SELECTED_VARIANTS.NEUTRAL] = new Blob(['gif'], {type: 'image/gif'});
+
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.play(tile, _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TARGET_SELECTED_VARIANTS.NEUTRAL);
+    const firstSrc = tile.children[0].src;
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.play(tile, _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TARGET_SELECTED_VARIANTS.NEUTRAL);
+    const secondSrc = tile.children[0].src;
+
+    this.assertEquals(firstSrc.startsWith('blob:'), true);
+    this.assertEquals(firstSrc !== secondSrc, true);
+
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.stop(tile);
+    delete _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.blobs[_view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TARGET_SELECTED_VARIANTS.NEUTRAL];
+  });
+
+  attackTargetPlaysTheOffensiveBurstTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('attackTargetPlaysTheOffensiveBurstTest', function() {
+    TargetSelectedIndicatorTest.givenDocument();
+    const tileSelection = TargetSelectedIndicatorTest.givenTileSelection();
+    const tile = TargetSelectedIndicatorTest.createTile();
+
+    tileSelection.handleAttackTargetClick(tile, _constants_StructConstants__WEBPACK_IMPORTED_MODULE_3__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON);
+
+    this.assertEquals(tile.children[0].src, '/img/focus/target-selected-enemy.gif');
+
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.stop(tile);
+  });
+
+  defendTargetPlaysTheDefensiveBurstTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('defendTargetPlaysTheDefensiveBurstTest', function() {
+    TargetSelectedIndicatorTest.givenDocument();
+    const tileSelection = TargetSelectedIndicatorTest.givenTileSelection();
+    const tile = TargetSelectedIndicatorTest.createTile();
+
+    tileSelection.handleDefendTargetClick(tile);
+
+    this.assertEquals(tile.children[0].src, '/img/focus/target-selected-friendly.gif');
+
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.stop(tile);
+  });
+
+  moveTargetPlaysTheNeutralBurstTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('moveTargetPlaysTheNeutralBurstTest', function() {
+    TargetSelectedIndicatorTest.givenDocument();
+    const tileSelection = TargetSelectedIndicatorTest.givenTileSelection();
+    const tile = TargetSelectedIndicatorTest.createTile();
+
+    tileSelection.handleMoveTargetClick(tile);
+
+    this.assertEquals(tile.children[0].src, '/img/focus/target-selected-neutral.gif');
+
+    _view_models_components_map_TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_1__.TargetSelectedIndicator.stop(tile);
+  });
+}
+
+
+/***/ },
+
 /***/ "./js/tests/TaskManagerOreTest.js"
 /*!****************************************!*\
   !*** ./js/tests/TaskManagerOreTest.js ***!
@@ -10540,6 +10836,177 @@ class TaskManagerOreTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MOD
     this.assertEquals(taskManager.spawned.length, 0);
     this.assertEquals(taskManager.terminated.length, 0);
   });
+}
+
+
+/***/ },
+
+/***/ "./js/util/AmbitUtil.js"
+/*!******************************!*\
+  !*** ./js/util/AmbitUtil.js ***!
+  \******************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AmbitUtil: () => (/* binding */ AmbitUtil)
+/* harmony export */ });
+class AmbitUtil {
+
+  /**
+   * @param {string[]} ambitArray
+   * @param {string} targetAmbit
+   * @param {string|null} localAmbit
+   * @return {boolean}
+   */
+  contains(ambitArray, targetAmbit, localAmbit = null) {
+    targetAmbit = targetAmbit.toLowerCase();
+    localAmbit = localAmbit ? localAmbit.toLowerCase() : '';
+
+    return !!ambitArray.find(ambit => {
+      ambit = ambit.toLowerCase();
+      return ambit === targetAmbit
+      || (ambit === 'local' && localAmbit && localAmbit === targetAmbit)
+    });
+  }
+
+  /**
+   * @param {string|null} ambitA
+   * @param {string|null} ambitB
+   * @return {boolean}
+   */
+  isSame(ambitA, ambitB) {
+    return !!ambitA && !!ambitB && ambitA.toLowerCase() === ambitB.toLowerCase();
+  }
+
+}
+
+/***/ },
+
+/***/ "./js/util/AttackTargetUtil.js"
+/*!*************************************!*\
+  !*** ./js/util/AttackTargetUtil.js ***!
+  \*************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AttackTargetUtil: () => (/* binding */ AttackTargetUtil)
+/* harmony export */ });
+/* harmony import */ var _AmbitUtil__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AmbitUtil */ "./js/util/AmbitUtil.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/StructConstants */ "./js/constants/StructConstants.js");
+/* harmony import */ var _models_Struct__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../models/Struct */ "./js/models/Struct.js");
+
+
+
+
+
+/**
+ * Single source of truth for whether a struct can be attacked by the struct the
+ * player is currently acting with.
+ *
+ * The map draws invalid targets and the tile selection layer accepts clicks on
+ * valid ones, and the two run at different times off different inputs. Sharing
+ * the rule keeps a tile from being clickable while it looks invalid, or the
+ * reverse.
+ */
+class AttackTargetUtil {
+
+  /**
+   * @param {GameState} gameState
+   * @param {StructManager} structManager
+   */
+  constructor(gameState, structManager) {
+    this.gameState = gameState;
+    this.structManager = structManager;
+    this.ambitUtil = new _AmbitUtil__WEBPACK_IMPORTED_MODULE_0__.AmbitUtil();
+  }
+
+  /**
+   * A struct in stealth mode is only reachable from its own ambit, regardless of
+   * what the attacking weapon would otherwise be able to reach.
+   *
+   * @param {Struct} attackingStruct
+   * @param {Struct} targetStruct
+   * @return {boolean}
+   */
+  isConcealedFrom(attackingStruct, targetStruct) {
+    return targetStruct.isHidden()
+      && !this.ambitUtil.isSame(attackingStruct.operating_ambit, targetStruct.operating_ambit);
+  }
+
+  /**
+   * @param {Struct|null} attackingStruct
+   * @param {Struct|null} targetStruct
+   * @param {string[]} weaponAmbitsArray - Valid target ambits for the weapon (e.g. ["space", "air"])
+   * @return {boolean}
+   */
+  isValidTarget(attackingStruct, targetStruct, weaponAmbitsArray) {
+    if (!attackingStruct || !targetStruct || !weaponAmbitsArray) {
+      return false;
+    }
+
+    if (targetStruct.owner === this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_1__.PLAYER_TYPES.PLAYER].id) {
+      return false;
+    }
+
+    if (!this.ambitUtil.contains(
+      weaponAmbitsArray,
+      targetStruct.operating_ambit,
+      attackingStruct.operating_ambit
+    )) {
+      return false;
+    }
+
+    return !this.isConcealedFrom(attackingStruct, targetStruct);
+  }
+
+  /**
+   * @param {string|null} targetStructId
+   * @param {Struct|null} attackingStruct
+   * @param {string[]} weaponAmbitsArray
+   * @return {boolean}
+   */
+  isValidTargetById(targetStructId, attackingStruct, weaponAmbitsArray) {
+    return this.isValidTarget(
+      attackingStruct,
+      this.structManager.getStructById(targetStructId),
+      weaponAmbitsArray
+    );
+  }
+
+  /**
+   * The ambits the action bar's active weapon can currently target, derived from
+   * the action bar rather than from the event that opened targeting mode, so a
+   * re-evaluation mid-selection reads the same state the click handler will.
+   *
+   * @return {string[]|null} null when the action bar is not in attack mode
+   */
+  getActiveWeaponAmbitsArray() {
+    const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+    if (!attackingStruct) {
+      return null;
+    }
+
+    const structType = this.gameState.structTypes.getStructTypeById(attackingStruct.type);
+
+    if (!structType) {
+      return null;
+    }
+
+    switch (this.gameState.actionBarLock.getCurrentAction()) {
+      case _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON:
+        return structType.primary_weapon_ambits_array;
+      case _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON:
+        return structType.secondary_weapon_ambits_array;
+      default:
+        return null;
+    }
+  }
 }
 
 
@@ -14583,6 +15050,1092 @@ class GenericMapLayerComponent extends _framework_AbstractViewModelComponent__WE
 
 /***/ },
 
+/***/ "./js/view_models/components/map/MapTileSelectionComponent.js"
+/*!********************************************************************!*\
+  !*** ./js/view_models/components/map/MapTileSelectionComponent.js ***!
+  \********************************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   MapTileSelectionComponent: () => (/* binding */ MapTileSelectionComponent)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../framework/AbstractViewModelComponent */ "./js/framework/AbstractViewModelComponent.js");
+/* harmony import */ var _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../../constants/MapConstants */ "./js/constants/MapConstants.js");
+/* harmony import */ var _constants_Ambits__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../constants/Ambits */ "./js/constants/Ambits.js");
+/* harmony import */ var _constants_Events__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../../constants/Events */ "./js/constants/Events.js");
+/* harmony import */ var _HUDViewModel__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../HUDViewModel */ "./js/view_models/HUDViewModel.js");
+/* harmony import */ var _models_Planet__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../../models/Planet */ "./js/models/Planet.js");
+/* harmony import */ var _models_Player__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../../models/Player */ "./js/models/Player.js");
+/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../../../constants/StructConstants */ "./js/constants/StructConstants.js");
+/* harmony import */ var _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../../../events/ClearMoveTargetsEvent */ "./js/events/ClearMoveTargetsEvent.js");
+/* harmony import */ var _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../../../events/ClearDefendTargetsEvent */ "./js/events/ClearDefendTargetsEvent.js");
+/* harmony import */ var _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../../../events/ClearAttackTargetsEvent */ "./js/events/ClearAttackTargetsEvent.js");
+/* harmony import */ var _events_ClearTileSelectionEvent__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../../../events/ClearTileSelectionEvent */ "./js/events/ClearTileSelectionEvent.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../../../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+/* harmony import */ var _util_AttackTargetUtil__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../../../util/AttackTargetUtil */ "./js/util/AttackTargetUtil.js");
+/* harmony import */ var _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./TargetSelectedIndicator */ "./js/view_models/components/map/TargetSelectedIndicator.js");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
+
+  /**
+   * @param {GameState} gameState
+   * @param {SigningClientManager} signingClientManager
+   * @param {StructManager} structManager
+   * @param {string[]} mapColBreakdown
+   * @param {Planet|null} planet
+   * @param {Player|null} defender
+   * @param {Player|null} attacker
+   * @param {Fleet|null} defenderFleet
+   * @param {Fleet|null} attackerFleet
+   * @param {string} containerId - The ID of the DOM container element for this tile selection layer
+   * @param {string} mapId
+   */
+  constructor(
+    gameState,
+    signingClientManager,
+    structManager,
+    mapColBreakdown,
+    planet,
+    defender,
+    attacker,
+    defenderFleet,
+    attackerFleet,
+    containerId = "",
+    mapId = ""
+  ) {
+    super(gameState);
+    this.signingClientManager = signingClientManager;
+    this.structManager = structManager;
+    this.attackTargetUtil = new _util_AttackTargetUtil__WEBPACK_IMPORTED_MODULE_13__.AttackTargetUtil(gameState, structManager);
+    this.mapColBreakdown = mapColBreakdown;
+    this.dividerIndex = this.mapColBreakdown.lastIndexOf(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DIVIDER);
+    this.containerId = containerId;
+    this.mapId = mapId;
+
+    /** @type {Planet} */
+    this.planet = planet;
+
+    /** @type {Player} */
+    this.defender = defender;
+
+    /** @type {Player} */
+    this.attacker = attacker;
+
+    /** @type {Fleet} */
+    this.defenderFleet = defenderFleet;
+
+    /** @type {Fleet} */
+    this.attackerFleet = attackerFleet;
+
+    _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TargetSelectedIndicator.preload();
+  }
+
+  /**
+   * @param {number} col
+   * @return {string}
+   */
+  getTileSide(col) {
+    if (col < this.dividerIndex) {
+      return 'left';
+    } else if (col === this.dividerIndex) {
+      return '';
+    } else {
+      return 'right';
+    }
+  }
+
+  /**
+   * @param {string} tileType the tile type. See MAP_TILE_TYPES constant array.
+   * @param {string} side the side of the map the tile is on
+   * @param {string} playerId the ID of the player that owns the tile or empty if no one does such as a transition tile.
+   * @param {string} ambit the ambit the tile is in or empty if it's a transition tile.
+   * @param {string|number} slot the planetary or fleet slot number. Empty if it's not a command, planetary, fleet or command tile.
+   * @param {string} structId the ID of the struct occupying the tile or empty if the tile is not occupied.
+   * @param {string} tileLabel a custom tile label that is displayed in the action bar. Used for transition tiles.
+   * @return {string}
+   */
+  renderSelectionTileHTML(
+    tileType,
+    side = "",
+    playerId = "",
+    ambit = "",
+    slot = "",
+    structId = "",
+    tileLabel = ""
+  ) {
+    return `
+      <a
+        class="map-tile-selection-tile"
+        data-tile-type="${tileType}"
+        data-side="${side}"
+        data-player-id="${playerId}"
+        data-ambit="${ambit}"
+        data-slot="${slot}"
+        data-struct-id="${structId}"
+        data-tile-label="${tileLabel}"
+        href="javascript: void(0)"
+        role="button"
+      >
+      </a>
+    `;
+  }
+
+  /**
+   * @param {string} mapColType
+   * @param {string} tileLabel the label for the fog of war tile. Should be the current ambit for
+   *   ambit rows or the transition tile label for transition rows.
+   * @return {string}
+   */
+  renderFogOfWarTileHTML(mapColType, tileLabel = '') {
+    if (this.attacker) {
+      return '';
+    }
+
+    const mapColTypeLastIndex = this.mapColBreakdown.lastIndexOf(mapColType);
+    const dividerIndex = this.mapColBreakdown.lastIndexOf(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DIVIDER);
+    const attackerSide = (this.mapColBreakdown[0] === _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_ATTACKER_COMMAND) ? 'LEFT' : 'RIGHT';
+
+    if (dividerIndex === -1 || mapColTypeLastIndex === -1) {
+      throw new Error('Divider or map col type not found');
+    }
+
+    if (
+      mapColType === _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DIVIDER
+      || (attackerSide === 'RIGHT' && dividerIndex < mapColTypeLastIndex)
+      || (attackerSide === 'LEFT' && mapColTypeLastIndex < dividerIndex)
+    ) {
+      return this.renderSelectionTileHTML(
+        _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.FOG_OF_WAR,
+        attackerSide.toLowerCase(),
+        '',
+        '',
+        '',
+        '',
+        tileLabel
+      );
+    }
+
+    return '';
+  }
+
+  /**
+   * Determine what the transition tile's label should be based on the current ambit and previous ambit.
+   *
+   * @param {string} topAmbit
+   * @param {string} bottomAmbit
+   * @param {boolean} isFinalTransition
+   * @return {string}
+   */
+  getTransitionTileLabel(
+    topAmbit,
+    bottomAmbit,
+    isFinalTransition = false
+  ) {
+    let label;
+
+    if (isFinalTransition) {
+      label = bottomAmbit.toUpperCase();
+    } else if (topAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_2__.AMBITS.SPACE && bottomAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_2__.AMBITS.AIR) {
+      label = _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TRANSITION_TILE_LABELS.ATMOSPHERE;
+    } else if (
+      (topAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_2__.AMBITS.SPACE || topAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_2__.AMBITS.AIR)
+      && (bottomAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_2__.AMBITS.LAND || bottomAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_2__.AMBITS.WATER)
+    ) {
+      label = _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TRANSITION_TILE_LABELS.HORIZON;
+    } else if (topAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_2__.AMBITS.LAND && bottomAmbit === _constants_Ambits__WEBPACK_IMPORTED_MODULE_2__.AMBITS.WATER) {
+      label = _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TRANSITION_TILE_LABELS.SHORE;
+    } else {
+      label = bottomAmbit.toUpperCase();
+    }
+
+    return label;
+  }
+
+  /**
+   * @param {string} topAmbit the ambit that is on top in the transition
+   * @param {string} bottomAmbit the ambit that is on the bottom in the transition
+   * @param {boolean} isInFinalTransitionPosition is this for the final transition of the map
+   * @param {number|null} totalAmbits the total number of ambits in the ambit
+   * @param {number|null} bottomAmbitIndex the ambit index of the bottom ambit
+   * @return {string} the row of selection tiles for the whole transition row
+   */
+  renderTransitionRowHTML(
+    topAmbit,
+    bottomAmbit,
+    isInFinalTransitionPosition = false,
+    totalAmbits = null,
+    bottomAmbitIndex= null
+  ) {
+    const isFinalTransition = isInFinalTransitionPosition && (bottomAmbitIndex === (totalAmbits - 1));
+
+    if (isInFinalTransitionPosition && !isFinalTransition) {
+      return '';
+    }
+
+    let tiles = '';
+    const tileLabel = this.getTransitionTileLabel(topAmbit, bottomAmbit, isFinalTransition);
+
+    for (let c = 0; c < this.mapColBreakdown.length; c++) {
+      tiles += this.renderFogOfWarTileHTML(this.mapColBreakdown[c], tileLabel)
+        || this.renderSelectionTileHTML(
+          _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.TRANSITION,
+          this.getTileSide(c),
+          '',
+          '',
+          '',
+          '',
+          tileLabel
+        );
+    }
+
+    return `
+      <div class="map-tile-selection-row">
+        ${tiles}
+      </div>
+    `;
+  }
+
+  /**
+   * Creates a command slot tracker object for an ambit.
+   * Each command column type gets 1 usable slot per ambit.
+   *
+   * @return {Object} commandSlotTracker
+   */
+  createCommandSlotTracker() {
+    return {
+      [_constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DEFENDER_COMMAND]: _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_DEFAULT_COMMAND_COL_COUNT,
+      [_constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_ATTACKER_COMMAND]: _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_DEFAULT_COMMAND_COL_COUNT,
+    };
+  }
+
+  /**
+   * @param {string} mapColType
+   * @param {string} side
+   * @param {string} ambit
+   * @param {Object} commandSlotTracker
+   * @return {string}
+   */
+  renderCommandTileHTML(
+    mapColType,
+    side,
+    ambit,
+    commandSlotTracker
+  ) {
+    let playerId = '';
+    let fleetId = '';
+    let fleet = null;
+
+    if (mapColType === _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DEFENDER_COMMAND) {
+      playerId = this.defender.id;
+      fleetId = this.defender.fleet_id;
+      fleet = this.defenderFleet;
+    } else if (mapColType === _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_ATTACKER_COMMAND) {
+      playerId = this.attacker.id;
+      fleetId = this.attacker.fleet_id;
+      fleet = this.attackerFleet;
+    } else {
+      return '';
+    }
+
+    // Check if there's an available command slot for this column type
+    const hasAvailableSlot = commandSlotTracker[mapColType] > 0;
+
+    if (hasAvailableSlot) {
+      commandSlotTracker[mapColType]--;
+    }
+
+    const tileType = hasAvailableSlot
+      ? _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.COMMAND
+      : _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.COMMAND_BLOCKED;
+
+    // Command structs are always slot 0
+    const structId = hasAvailableSlot 
+      ? this.structManager.getStructIdByPositionAndPlayerId(
+        playerId,
+        'fleet',
+        fleetId,
+        this.planet.id,
+        ambit,
+        0,
+        true,
+        fleet
+      )
+      : '';
+
+    return this.renderSelectionTileHTML(
+      tileType,
+      side,
+      playerId,
+      ambit,
+      hasAvailableSlot ? 0 : '',
+      structId
+    );
+  }
+
+  /**
+   * @param {string} mapColType
+   * @param {string} side
+   * @param {string} ambit
+   * @param {string} slot
+   * @return {string}
+   */
+  renderPlanetaryTileHTML(
+    mapColType,
+    side,
+    ambit,
+    slot
+  ) {
+    if (mapColType !== _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DEFENDER_PLANETARY) {
+      return '';
+    }
+
+    const tileType = (slot === '')
+      ? _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.PLANETARY_BLOCKED
+      : _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.PLANETARY_SLOT;
+
+    const structId = slot !== '' 
+      ? this.structManager.getStructIdByPositionAndPlayerId(
+        this.defender.id,
+        'planet',
+        this.planet.id,
+        this.planet.id,
+        ambit,
+        slot,
+        false,
+        this.defenderFleet
+      )
+      : '';
+
+    return this.renderSelectionTileHTML(
+      tileType,
+      side,
+      this.defender.id,
+      ambit,
+      slot,
+      structId
+    );
+  }
+
+  /**
+   * @param {string} mapColType
+   * @param {string} side
+   * @param {string} ambit
+   * @param {string} slot
+   * @return {string}
+   */
+  renderDefenderFleetTileHTML(
+    mapColType,
+    side,
+    ambit,
+    slot
+  ) {
+    if (mapColType !== _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DEFENDER_FLEET) {
+      return '';
+    }
+
+    const structId = slot !== ''
+      ? this.structManager.getStructIdByPositionAndPlayerId(
+        this.defender.id,
+        'fleet',
+        this.defender.fleet_id,
+        this.planet.id,
+        ambit,
+        slot,
+        false,
+        this.defenderFleet
+      )
+      : '';
+
+    return this.renderSelectionTileHTML(
+      _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.FLEET,
+      side,
+      this.defender.id,
+      ambit,
+      slot,
+      structId
+    );
+  }
+
+  /**
+   * @param {string} mapColType
+   * @param {string} side
+   * @param {string} ambit
+   * @param {string} slot
+   * @return {string}
+   */
+  renderAttackerFleetTileHTML(
+    mapColType,
+    side,
+    ambit,
+    slot
+  ) {
+    if (mapColType !== _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_ATTACKER_FLEET) {
+      return '';
+    }
+
+    const structId = slot !== ''
+      ? this.structManager.getStructIdByPositionAndPlayerId(
+        this.attacker.id,
+        'fleet',
+        this.attacker.fleet_id,
+        this.planet.id,
+        ambit,
+        slot,
+        false,
+        this.attackerFleet
+      )
+      : '';
+
+    return this.renderSelectionTileHTML(
+      _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.FLEET,
+      side,
+      this.attacker.id,
+      ambit,
+      slot,
+      structId
+    );
+  }
+
+  /**
+   * @param {string} mapColType
+   * @param {string} ambit
+   * @return {string}
+   */
+  renderDividerTileHTML(
+    mapColType,
+    ambit
+  ) {
+    if (mapColType !== _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DIVIDER) {
+      return '';
+    }
+
+    return this.renderSelectionTileHTML(
+      _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.DIVIDER,
+      '',
+      '',
+      ambit
+    );
+  }
+
+  /**
+   * @param {string} targetColType
+   * @return {{first: null|number, last: null|number}}
+   */
+  findFirstAndLastOccurrencesOfColType(targetColType) {
+    let firstOccurrence = null;
+    let lastOccurrence = null;
+
+    for(let i = 0; i < this.mapColBreakdown.length; i++) {
+
+      if (this.mapColBreakdown[i] !== targetColType) {
+        continue;
+      }
+
+      if (firstOccurrence === null) {
+        firstOccurrence = i;
+      }
+
+      lastOccurrence = i;
+    }
+
+    return {
+      first: firstOccurrence,
+      last: lastOccurrence
+    }
+
+  }
+
+  /**
+   * @param {string} targetColType
+   * @param {number} currentMapRowIndex
+   * @param {number} currentMapColIndex
+   * @param {number} totalSlots
+   * @return {string}
+   */
+  calcSlotNumber(
+    targetColType,
+    currentMapRowIndex,
+    currentMapColIndex,
+    totalSlots
+  ) {
+    let targetColTypeOccurrences = this.findFirstAndLastOccurrencesOfColType(targetColType);
+
+    const tilesOfTargetTypePerRow = (targetColTypeOccurrences.last - targetColTypeOccurrences.first) + 1;
+
+    // Slot indexing from right to left
+    const slotsToReserveThisRow = (targetColTypeOccurrences.last - currentMapColIndex);
+    let slotNumber = slotsToReserveThisRow + currentMapRowIndex * tilesOfTargetTypePerRow;
+
+    // Slot indexing from left to right
+    if (this.mapColBreakdown[0] === _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_ATTACKER_COMMAND) {
+      const slotsAssignedThisRow = currentMapColIndex - targetColTypeOccurrences.first;
+      slotNumber = slotsAssignedThisRow + currentMapRowIndex * tilesOfTargetTypePerRow;
+    }
+
+    return (slotNumber >= totalSlots) ? '' : `${slotNumber}`;
+  }
+
+  /**
+   * @param {HTMLElement|object} tile
+   */
+  clearFocusCursorFromTile(tile) {
+    tile.classList.remove('focus-source');
+    tile.classList.remove('focus-friendly');
+    tile.classList.remove('focus-neutral');
+    tile.classList.remove('focus-enemy');
+  }
+
+  /**
+   * Clear the focus cursor
+   *
+   * @param {boolean} clearSelected if true, clear the currently selected tile too
+   */
+  clearFocusCursor(clearSelected = true) {
+    document.querySelectorAll('a.map-tile-selection-tile.focus-source').forEach(focusedTile => {
+      if (clearSelected || !_HUDViewModel__WEBPACK_IMPORTED_MODULE_4__.HUDViewModel.isCurrentSelectedTile(focusedTile)) {
+        this.clearFocusCursorFromTile(focusedTile);
+      }
+    });
+  }
+
+  /**
+   * Add the relevant focus cursor to a selected tile.
+   * Use this when you select a tile without an action engaged.
+   *
+   * @param {HTMLElement|object} tile
+   * @param {boolean} clearSelected if false, don't clear the currently selected tile
+   */
+  addFocusToSourceTile(tile, clearSelected = true) {
+    this.clearFocusCursor(clearSelected);
+
+    tile.classList.add('focus-source');
+
+    if (tile.dataset.side === 'left' && tile.dataset.playerId) {
+      tile.classList.add('focus-friendly');
+    } else if (tile.dataset.side === 'right' && tile.dataset.playerId) {
+      tile.classList.add('focus-enemy');
+    } else {
+      tile.classList.add('focus-neutral');
+    }
+  }
+
+  /**
+   * Build CSS selector for finding a tile by position.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @return {string}
+   */
+  buildTileSelector(tileType, ambit, slot, playerId) {
+    return `.map-tile-selection-tile[data-tile-type="${tileType}"][data-ambit="${ambit}"][data-slot="${slot}"][data-player-id="${playerId}"]`;
+  }
+
+  /**
+   * Update a tile's struct ID attribute.
+   *
+   * @param {string} tileType
+   * @param {string} ambit
+   * @param {number} slot
+   * @param {string} playerId
+   * @param {string} structId
+   */
+  updateTileStructId(tileType, ambit, slot, playerId, structId) {
+    const selector = this.buildTileSelector(tileType, ambit, slot, playerId);
+    const tileElement = document.getElementById(this.containerId).querySelector(selector);
+    if (tileElement) {
+      tileElement.setAttribute('data-struct-id', structId);
+    }
+  }
+
+  /**
+   * Show move target indicators on valid empty command tiles.
+   */
+  showMoveTargets() {
+    const container = document.getElementById(this.containerId);
+    const playerId = this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_12__.PLAYER_TYPES.PLAYER].id;
+    const structBeingMoved = this.gameState.actionBarLock.getActionSourceStruct();
+
+    // Get all command tiles on the player's side (defender) that are empty
+    const commandTiles = container.querySelectorAll(
+      `.map-tile-selection-tile[data-tile-type="${_constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_TYPES.COMMAND}"][data-player-id="${playerId}"]`
+    );
+
+    commandTiles.forEach(tile => {
+      const structId = tile.getAttribute('data-struct-id');
+      const tileAmbit = tile.getAttribute('data-ambit');
+
+      // Only show indicator on empty tiles in the same ambit (command structs move within ambit)
+      // or empty tiles in any ambit if the struct can move across ambits
+      const structType = this.gameState.structTypes.getStructTypeById(structBeingMoved.type);
+      const possibleAmbits = structType.possible_ambit_array || [structBeingMoved.operating_ambit.toLowerCase()];
+
+      if (!structId && possibleAmbits.includes(tileAmbit.toLowerCase())) {
+        tile.classList.add('focus-move');
+      }
+    });
+  }
+
+  /**
+   * Clear all move target indicators.
+   */
+  clearMoveTargets() {
+    const container = document.getElementById(this.containerId);
+    container.querySelectorAll('.map-tile-selection-tile.focus-move').forEach(tile => {
+      tile.classList.remove('focus-move');
+    });
+  }
+
+  /**
+   * Handle a click on a defend target tile.
+   *
+   * @param {HTMLElement} tile - The tile that was clicked
+   */
+  async handleDefendTargetClick(tile) {
+    const protectedStructId = tile.getAttribute('data-struct-id');
+    if (!protectedStructId) {
+      return;
+    }
+
+    _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TargetSelectedIndicator.play(tile, _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TARGET_SELECTED_VARIANTS.FRIENDLY);
+
+    // Lock the action bar until we hear the grass notification from the struct defend action
+    this.gameState.actionBarLock.lock();
+
+    // Clear defend target indicators
+    window.dispatchEvent(new _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_9__.ClearDefendTargetsEvent(this.mapId));
+
+    const defendingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+    const defendingStructType = this.gameState.structTypes.getStructTypeById(defendingStruct.type);
+
+    // Send defend set message to chain
+    await this.signingClientManager.queueMsgStructDefenseSet(
+      defendingStruct.id,
+      protectedStructId,
+      defendingStructType.defend_change_charge
+    );
+  }
+
+  /**
+   * Handle a click on a valid attack target tile.
+   *
+   * @param {HTMLElement} tile - The tile that was clicked
+   * @param {string} currentAction - The current action (ATTACK_PRIMARY_WEAPON or ATTACK_SECONDARY_WEAPON)
+   */
+  async handleAttackTargetClick(tile, currentAction) {
+    const targetStructId = tile.getAttribute('data-struct-id');
+    if (!targetStructId) {
+      return;
+    }
+
+    _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TargetSelectedIndicator.play(tile, _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TARGET_SELECTED_VARIANTS.ENEMY);
+
+    // Lock the action bar until we hear the grass notification from the struct attack action
+    this.gameState.actionBarLock.lock();
+
+    // Clear attack target indicators
+    window.dispatchEvent(new _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_10__.ClearAttackTargetsEvent(this.mapId));
+
+    const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+    const attackingStructType = this.gameState.structTypes.getStructTypeById(attackingStruct.type);
+    const isPrimaryWeapon = currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON;
+    const weaponSystem = isPrimaryWeapon
+      ? _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON
+      : _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_WEAPON_SYSTEM.SECONDARY_WEAPON;
+    const weaponCharge = isPrimaryWeapon
+      ? attackingStructType.primary_weapon_charge
+      : attackingStructType.secondary_weapon_charge;
+
+    // Send attack message to chain
+    await this.signingClientManager.queueMsgStructAttack(
+      attackingStruct.id,
+      [targetStructId],
+      weaponSystem,
+      weaponCharge
+    );
+  }
+
+  /**
+   * Handle a click on a move target tile.
+   *
+   * @param {HTMLElement} tile - The tile that was clicked
+   */
+  async handleMoveTargetClick(tile) {
+    _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TargetSelectedIndicator.play(tile, _TargetSelectedIndicator__WEBPACK_IMPORTED_MODULE_14__.TARGET_SELECTED_VARIANTS.NEUTRAL);
+
+    // The lock the action bar until we hear the grass notification from the struct move action
+    this.gameState.actionBarLock.lock();
+
+    const ambit = tile.getAttribute('data-ambit');
+    const slot = parseInt(tile.getAttribute('data-slot'), 10);
+    const structBeingMoved = this.gameState.actionBarLock.getActionSourceStruct();
+    const structBeingMovedType = this.gameState.structTypes.getStructTypeById(structBeingMoved.type);
+
+    // Send move message to chain
+    await this.signingClientManager.queueMsgStructMove(
+      structBeingMoved.id,
+      structBeingMoved.location_type,
+      ambit,
+      slot,
+      structBeingMovedType.move_charge
+    );
+
+    if (
+      _HUDViewModel__WEBPACK_IMPORTED_MODULE_4__.HUDViewModel.currentSelectedTile
+      && _HUDViewModel__WEBPACK_IMPORTED_MODULE_4__.HUDViewModel.currentSelectedTile.structId === structBeingMoved.id
+    ) {
+      _HUDViewModel__WEBPACK_IMPORTED_MODULE_4__.HUDViewModel.updateSelectedTilePosition(tile, structBeingMoved.id);
+    }
+
+    // Update focus to the new tile
+    this.addFocusToSourceTile(tile);
+
+    // Dispatch event to clear move targets on all maps
+    window.dispatchEvent(new _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_8__.ClearMoveTargetsEvent(this.mapId));
+  }
+
+  initPageCode() {
+    const container = document.getElementById(this.containerId);
+
+    container.querySelectorAll('a.map-tile-selection-tile').forEach(tile => {
+      tile.addEventListener('click', async (e) => {
+        if (this.gameState.actionBarLock.isLocked()) {
+          return;
+        }
+
+        if (
+          !this.gameState.actionBarLock.getCurrentAction()
+          && _HUDViewModel__WEBPACK_IMPORTED_MODULE_4__.HUDViewModel.isCurrentSelectedTile(e.currentTarget)
+        ) {
+          window.dispatchEvent(new _events_ClearTileSelectionEvent__WEBPACK_IMPORTED_MODULE_11__.ClearTileSelectionEvent());
+          return;
+        }
+
+        const currentAction = this.gameState.actionBarLock.getCurrentAction();
+
+        // Check if we're in move mode and clicked on a valid move target
+        if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE && e.currentTarget.classList.contains('focus-move')) {
+          await this.handleMoveTargetClick(e.currentTarget);
+          return;
+        }
+
+        // If we're in move mode but clicked elsewhere, cancel the move
+        if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE) {
+          this.clearMoveTargets();
+          this.gameState.actionBarLock.clear(false);
+          window.dispatchEvent(new _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_8__.ClearMoveTargetsEvent(this.mapId));
+        }
+
+        // Check if we're in attack mode (primary or secondary weapon)
+        if (
+          currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON
+          || currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON
+        ) {
+          const targetStructId = e.currentTarget.getAttribute('data-struct-id');
+          const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+          const weaponAmbitsArray = this.attackTargetUtil.getActiveWeaponAmbitsArray();
+
+          if (this.attackTargetUtil.isValidTargetById(targetStructId, attackingStruct, weaponAmbitsArray)) {
+            await this.handleAttackTargetClick(e.currentTarget, currentAction);
+            return;
+          }
+
+          // Invalid target or empty tile - cancel attack mode
+          window.dispatchEvent(new _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_10__.ClearAttackTargetsEvent(this.mapId));
+          this.gameState.actionBarLock.clear(false);
+        }
+
+        // Check if we're in defend mode
+        if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET) {
+          const structId = e.currentTarget.getAttribute('data-struct-id');
+          const playerId = e.currentTarget.getAttribute('data-player-id');
+          const defendingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+          // Check if clicked on a valid defend target (friendly struct, not the defending struct itself)
+          const isValidTarget = structId 
+            && structId !== defendingStruct.id
+            && playerId === this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_12__.PLAYER_TYPES.PLAYER].id;
+
+          if (isValidTarget) {
+            await this.handleDefendTargetClick(e.currentTarget);
+            return;
+          }
+
+          // Clicked elsewhere (invalid or empty tile), cancel the defense
+          window.dispatchEvent(new _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_9__.ClearDefendTargetsEvent(this.mapId));
+          this.gameState.actionBarLock.clear(false);
+        }
+
+        this.addFocusToSourceTile(e.currentTarget);
+        _HUDViewModel__WEBPACK_IMPORTED_MODULE_4__.HUDViewModel.showActionBar(e.currentTarget);
+        console.log(e.currentTarget);
+      });
+    });
+
+    // Listen for UPDATE_TILE_STRUCT_ID events
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.UPDATE_TILE_STRUCT_ID, (event) => {
+      if (event.mapId === this.mapId) {
+        this.updateTileStructId(
+          event.tileType,
+          event.ambit,
+          event.slot,
+          event.playerId,
+          event.structId
+        );
+      }
+    });
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.CLEAR_TILE_SELECTION, (event) => {
+      this.clearFocusCursor(event.clearSelected);
+    });
+
+    // Listen for SHOW_MOVE_TARGETS events
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.SHOW_MOVE_TARGETS, (event) => {
+      if (event.mapId === this.mapId) {
+        this.showMoveTargets();
+      }
+    });
+
+    // Listen for CLEAR_MOVE_TARGETS events
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.CLEAR_MOVE_TARGETS, (event) => {
+      if (event.mapId === this.mapId) {
+        this.clearMoveTargets();
+      }
+    });
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.ANIMATION, (event) => {
+      if (event.mapId === this.mapId) {
+        const selector = `.map-tile-selection-tile[data-struct-id="${event.structId}"]`;
+        const tileElement = document.getElementById(this.containerId).querySelector(selector);
+        if (tileElement) {
+          this.addFocusToSourceTile(tileElement, false);
+        }
+      }
+    });
+
+    window.addEventListener(_constants_Events__WEBPACK_IMPORTED_MODULE_3__.EVENTS.ANIMATION_END, (event) => {
+      if (event.mapId === this.mapId) {
+        const selector = `.map-tile-selection-tile[data-struct-id="${event.structId}"]`;
+        const tileElement = document.getElementById(this.containerId).querySelector(selector);
+        if (tileElement && !_HUDViewModel__WEBPACK_IMPORTED_MODULE_4__.HUDViewModel.isCurrentSelectedTile(tileElement)) {
+          this.clearFocusCursorFromTile(tileElement);
+        }
+      }
+    });
+  }
+
+  /**
+   * @return {string}
+   */
+  renderHTML() {
+    let html = '';
+    let previousAmbit = '';
+
+    const planetAmbits = this.planet.getAmbits();
+
+    for (let a = 0; a < planetAmbits.length; a++) {
+
+      const currentAmbit = planetAmbits[a];
+      const numPlanetarySlots = this.planet.getPlanetarySlotsByAmbit(currentAmbit, this.gameState.structTypes);
+      const totalFleetSlotsPerAmbitPerPlayer = _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_ROWS_PER_AMBIT * _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_DEFAULT_FLEET_COL_COUNT;
+      const commandSlotTracker = this.createCommandSlotTracker();
+
+      html += this.renderTransitionRowHTML(previousAmbit, currentAmbit);
+
+      for (let r = 0; r < _constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_TILE_ROWS_PER_AMBIT; r++) {
+
+        html += `<div class="map-tile-selection-row">`;
+
+        for (let c = 0; c < this.mapColBreakdown.length; c++) {
+
+          const mapColType = this.mapColBreakdown[c];
+          let side = this.getTileSide(c);
+
+          html += this.renderFogOfWarTileHTML(mapColType, currentAmbit.toUpperCase())
+            || this.renderCommandTileHTML(mapColType, side, currentAmbit, commandSlotTracker)
+            || this.renderPlanetaryTileHTML(
+              mapColType,
+              side,
+              currentAmbit,
+              this.calcSlotNumber(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DEFENDER_PLANETARY, r, c, numPlanetarySlots)
+            )
+            || this.renderDefenderFleetTileHTML(
+              mapColType,
+              side,
+              currentAmbit,
+              this.calcSlotNumber(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_DEFENDER_FLEET, r, c, totalFleetSlotsPerAmbitPerPlayer)
+            )
+            || this.renderAttackerFleetTileHTML(
+              mapColType,
+              side,
+              currentAmbit,
+              this.calcSlotNumber(_constants_MapConstants__WEBPACK_IMPORTED_MODULE_1__.MAP_COL_ATTACKER_FLEET, r, c, totalFleetSlotsPerAmbitPerPlayer)
+            )
+            || this.renderDividerTileHTML(mapColType, currentAmbit)
+          ;
+        }
+
+        html += `</div>`;
+      }
+
+      html += this.renderTransitionRowHTML(
+        previousAmbit,
+        currentAmbit,
+        true,
+        planetAmbits.length,
+        a
+      );
+
+      previousAmbit = currentAmbit;
+    }
+
+    return html;
+  }
+}
+
+/***/ },
+
+/***/ "./js/view_models/components/map/TargetSelectedIndicator.js"
+/*!******************************************************************!*\
+  !*** ./js/view_models/components/map/TargetSelectedIndicator.js ***!
+  \******************************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TARGET_SELECTED_VARIANTS: () => (/* binding */ TARGET_SELECTED_VARIANTS),
+/* harmony export */   TargetSelectedIndicator: () => (/* binding */ TargetSelectedIndicator)
+/* harmony export */ });
+const TARGET_SELECTED_VARIANTS = {
+  ENEMY: 'enemy',
+  FRIENDLY: 'friendly',
+  NEUTRAL: 'neutral'
+};
+
+/** How long the art runs, matching the frame delays in the gifs. */
+const PLAY_DURATION_MS = 800;
+
+/**
+ * The burst that plays on a tile once the player picks a valid target for an
+ * action waiting on a map click: red for offensive actions, teal for defensive
+ * ones and yellow for neutral ones.
+ *
+ * The gifs don't loop and end blank, so each play is removed once it has run.
+ * A gif only starts from its first frame the first time its URL is decoded,
+ * which would leave every later play of the same path showing its blank last
+ * frame. Each play is instead given its own object URL of the already
+ * downloaded file.
+ */
+class TargetSelectedIndicator {
+
+  /** @type {Object<string, Blob>} */
+  static blobs = {};
+
+  static preloadStarted = false;
+
+  /**
+   * @type {WeakMap<HTMLElement|object, {element: HTMLImageElement|object, timeoutId: number, objectUrl: string|null}>}
+   */
+  static plays = new WeakMap();
+
+  /**
+   * @param {string} variant see TARGET_SELECTED_VARIANTS
+   * @return {string}
+   */
+  static getAssetPath(variant) {
+    return `/img/focus/target-selected-${variant}.gif`;
+  }
+
+  /**
+   * Download the art up front so the first selection isn't kept waiting on it.
+   */
+  static preload() {
+    if (TargetSelectedIndicator.preloadStarted || typeof fetch !== 'function') {
+      return;
+    }
+
+    TargetSelectedIndicator.preloadStarted = true;
+
+    Object.values(TARGET_SELECTED_VARIANTS).forEach(variant => {
+      fetch(TargetSelectedIndicator.getAssetPath(variant))
+        .then(response => response.ok ? response.blob() : null)
+        .then(blob => {
+          if (blob) {
+            TargetSelectedIndicator.blobs[variant] = blob;
+          }
+        })
+        // Plays fall back to the path, which still runs from the start the first time it is shown.
+        .catch(() => {});
+    });
+  }
+
+  /**
+   * @param {HTMLElement|object} tile
+   * @param {string} variant see TARGET_SELECTED_VARIANTS
+   */
+  static play(tile, variant) {
+    TargetSelectedIndicator.stop(tile);
+
+    const blob = TargetSelectedIndicator.blobs[variant];
+    const objectUrl = blob ? URL.createObjectURL(blob) : null;
+
+    const element = document.createElement('img');
+    element.className = 'map-tile-target-selected';
+    element.alt = '';
+    element.src = objectUrl || TargetSelectedIndicator.getAssetPath(variant);
+    tile.appendChild(element);
+
+    TargetSelectedIndicator.plays.set(tile, {
+      element: element,
+      timeoutId: setTimeout(() => TargetSelectedIndicator.stop(tile), PLAY_DURATION_MS),
+      objectUrl: objectUrl
+    });
+  }
+
+  /**
+   * @param {HTMLElement|object} tile
+   */
+  static stop(tile) {
+    const play = TargetSelectedIndicator.plays.get(tile);
+
+    if (!play) {
+      return;
+    }
+
+    clearTimeout(play.timeoutId);
+    play.element.remove();
+
+    if (play.objectUrl) {
+      URL.revokeObjectURL(play.objectUrl);
+    }
+
+    TargetSelectedIndicator.plays.delete(tile);
+  }
+}
+
+
+/***/ },
+
 /***/ "./js/view_models/components/offcanvas/ConsumeAlphaOffcanvas.js"
 /*!**********************************************************************!*\
   !*** ./js/view_models/components/offcanvas/ConsumeAlphaOffcanvas.js ***!
@@ -15696,6 +17249,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _ActionBarOreCountTest__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./ActionBarOreCountTest */ "./js/tests/ActionBarOreCountTest.js");
 /* harmony import */ var _RaidedOreStructTest__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./RaidedOreStructTest */ "./js/tests/RaidedOreStructTest.js");
 /* harmony import */ var _DeployOffcanvasChargeTest__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./DeployOffcanvasChargeTest */ "./js/tests/DeployOffcanvasChargeTest.js");
+/* harmony import */ var _TargetSelectedIndicatorTest__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./TargetSelectedIndicatorTest */ "./js/tests/TargetSelectedIndicatorTest.js");
+
 
 
 
@@ -15713,6 +17268,7 @@ __webpack_require__.r(__webpack_exports__);
 (new _ActionBarOreCountTest__WEBPACK_IMPORTED_MODULE_5__.ActionBarOreCountTest()).run();
 (new _RaidedOreStructTest__WEBPACK_IMPORTED_MODULE_6__.RaidedOreStructTest()).run();
 (new _DeployOffcanvasChargeTest__WEBPACK_IMPORTED_MODULE_7__.DeployOffcanvasChargeTest()).run();
+(new _TargetSelectedIndicatorTest__WEBPACK_IMPORTED_MODULE_8__.TargetSelectedIndicatorTest()).run();
 
 })();
 
