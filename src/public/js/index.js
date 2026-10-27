@@ -41114,6 +41114,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+/** Actions that wait on the player to click a target on the map. */
+const TARGET_SELECTION_ACTIONS = [
+  _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE,
+  _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON,
+  _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON,
+  _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET
+];
+
 
 class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
 
@@ -41835,6 +41843,50 @@ class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__W
     window.dispatchEvent(new _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_8__.ClearMoveTargetsEvent(this.mapId));
   }
 
+  /**
+   * Handle a click while an action is waiting on the player to pick a target.
+   *
+   * Only a valid target does anything. Any other click, including an empty
+   * tile, leaves the player picking a target with the same unit focused, so it
+   * can't be mistaken for the action having gone through. The action is
+   * cancelled from its button on the action bar instead.
+   *
+   * @param {HTMLElement} tile - The tile that was clicked
+   * @param {string} currentAction - One of TARGET_SELECTION_ACTIONS
+   */
+  async handleTargetSelectionClick(tile, currentAction) {
+    if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE) {
+      if (tile.classList.contains('focus-move')) {
+        await this.handleMoveTargetClick(tile);
+      }
+      return;
+    }
+
+    if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET) {
+      const structId = tile.getAttribute('data-struct-id');
+      const playerId = tile.getAttribute('data-player-id');
+      const defendingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+      // A friendly struct other than the defending struct itself
+      const isValidTarget = structId
+        && structId !== defendingStruct.id
+        && playerId === this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_12__.PLAYER_TYPES.PLAYER].id;
+
+      if (isValidTarget) {
+        await this.handleDefendTargetClick(tile);
+      }
+      return;
+    }
+
+    const targetStructId = tile.getAttribute('data-struct-id');
+    const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+    const weaponAmbitsArray = this.attackTargetUtil.getActiveWeaponAmbitsArray();
+
+    if (this.attackTargetUtil.isValidTargetById(targetStructId, attackingStruct, weaponAmbitsArray)) {
+      await this.handleAttackTargetClick(tile, currentAction);
+    }
+  }
+
   initPageCode() {
     const container = document.getElementById(this.containerId);
 
@@ -41854,57 +41906,9 @@ class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__W
 
         const currentAction = this.gameState.actionBarLock.getCurrentAction();
 
-        // Check if we're in move mode and clicked on a valid move target
-        if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE && e.currentTarget.classList.contains('focus-move')) {
-          await this.handleMoveTargetClick(e.currentTarget);
+        if (TARGET_SELECTION_ACTIONS.includes(currentAction)) {
+          await this.handleTargetSelectionClick(e.currentTarget, currentAction);
           return;
-        }
-
-        // If we're in move mode but clicked elsewhere, cancel the move
-        if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE) {
-          this.clearMoveTargets();
-          this.gameState.actionBarLock.clear(false);
-          window.dispatchEvent(new _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_8__.ClearMoveTargetsEvent(this.mapId));
-        }
-
-        // Check if we're in attack mode (primary or secondary weapon)
-        if (
-          currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON
-          || currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON
-        ) {
-          const targetStructId = e.currentTarget.getAttribute('data-struct-id');
-          const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
-          const weaponAmbitsArray = this.attackTargetUtil.getActiveWeaponAmbitsArray();
-
-          if (this.attackTargetUtil.isValidTargetById(targetStructId, attackingStruct, weaponAmbitsArray)) {
-            await this.handleAttackTargetClick(e.currentTarget, currentAction);
-            return;
-          }
-
-          // Invalid target or empty tile - cancel attack mode
-          window.dispatchEvent(new _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_10__.ClearAttackTargetsEvent(this.mapId));
-          this.gameState.actionBarLock.clear(false);
-        }
-
-        // Check if we're in defend mode
-        if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET) {
-          const structId = e.currentTarget.getAttribute('data-struct-id');
-          const playerId = e.currentTarget.getAttribute('data-player-id');
-          const defendingStruct = this.gameState.actionBarLock.getActionSourceStruct();
-
-          // Check if clicked on a valid defend target (friendly struct, not the defending struct itself)
-          const isValidTarget = structId 
-            && structId !== defendingStruct.id
-            && playerId === this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_12__.PLAYER_TYPES.PLAYER].id;
-
-          if (isValidTarget) {
-            await this.handleDefendTargetClick(e.currentTarget);
-            return;
-          }
-
-          // Clicked elsewhere (invalid or empty tile), cancel the defense
-          window.dispatchEvent(new _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_9__.ClearDefendTargetsEvent(this.mapId));
-          this.gameState.actionBarLock.clear(false);
         }
 
         this.addFocusToSourceTile(e.currentTarget);

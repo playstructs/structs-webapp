@@ -8,6 +8,7 @@ import {RaidedOreStructTest} from "./RaidedOreStructTest";
 import {DeployOffcanvasChargeTest} from "./DeployOffcanvasChargeTest";
 import {TargetSelectedIndicatorTest} from "./TargetSelectedIndicatorTest";
 import {DeployCheatsheetTest} from "./DeployCheatsheetTest";
+import {InvalidTargetClickTest} from "./InvalidTargetClickTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -19,3 +20,4 @@ import {DeployCheatsheetTest} from "./DeployCheatsheetTest";
 (new DeployOffcanvasChargeTest()).run();
 (new TargetSelectedIndicatorTest()).run();
 (new DeployCheatsheetTest()).run();
+(new InvalidTargetClickTest()).run();
