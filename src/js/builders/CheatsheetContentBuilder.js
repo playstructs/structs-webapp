@@ -752,6 +752,15 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     let html = '';
 
     switch (dataset.suiCheatsheet) {
+      // Opening the deploy menu is free; only the Struct chosen from it costs battery.
+      case 'deploy':
+        html = this.renderer.renderContentHTML(
+          'Deploy',
+          null,
+          null,
+          `Choose a Struct to deploy.`
+        );
+        break;
       case 'energy-supply-insufficient':
         html = this.renderer.renderContentHTML(
           'Energy Supply',
