@@ -10760,6 +10760,191 @@ class DeployOffcanvasChargeTest extends _framework_DTestFramework__WEBPACK_IMPOR
 
 /***/ },
 
+/***/ "./js/tests/InvalidTargetClickTest.js"
+/*!********************************************!*\
+  !*** ./js/tests/InvalidTargetClickTest.js ***!
+  \********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   InvalidTargetClickTest: () => (/* binding */ InvalidTargetClickTest)
+/* harmony export */ });
+/* harmony import */ var _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/DTestFramework */ "./js/framework/DTestFramework.js");
+/* harmony import */ var _view_models_components_map_MapTileSelectionComponent__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../view_models/components/map/MapTileSelectionComponent */ "./js/view_models/components/map/MapTileSelectionComponent.js");
+/* harmony import */ var _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/StructConstants */ "./js/constants/StructConstants.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+
+
+
+
+
+/**
+ * Covers clicking the map while an action is waiting on a target.
+ *
+ * An invalid click used to cancel the action and focus whatever was clicked,
+ * which testers read as the action having gone through. Now only a valid
+ * target does anything; every other click is ignored.
+ */
+class InvalidTargetClickTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTestSuite {
+
+  constructor() {
+    super('InvalidTargetClickTest');
+  }
+
+  /**
+   * @param {{structId?: string, playerId?: string, classes?: string[]}} options
+   * @return {object}
+   */
+  static createTile({structId = '', playerId = '', classes = []} = {}) {
+    const classSet = new Set(classes);
+    const attributes = {'data-struct-id': structId, 'data-player-id': playerId};
+
+    return {
+      dataset: {structId: structId, playerId: playerId},
+      classList: {contains: (name) => classSet.has(name)},
+      getAttribute: (name) => attributes[name] ?? null,
+      addEventListener(type, handler) {
+        this.clickHandler = handler;
+      }
+    };
+  }
+
+  /**
+   * Stands up a tile selection layer with the given tile on it and an action
+   * waiting on a target, recording whatever the click goes on to do.
+   *
+   * @param {string} currentAction see STRUCT_ACTIONS
+   * @param {object} tile
+   * @return {{click: function(): void, calls: string[]}}
+   */
+  static givenTargetSelectionMode(currentAction, tile) {
+    const calls = [];
+    const sharedWindow = __webpack_require__.g.window;
+
+    __webpack_require__.g.document = {
+      getElementById: () => ({querySelectorAll: () => [tile]})
+    };
+
+    const gameState = {
+      keyPlayers: {[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_3__.PLAYER_TYPES.PLAYER]: {id: '1-1'}},
+      actionBarLock: {
+        isLocked: () => false,
+        getCurrentAction: () => currentAction,
+        getActionSourceStruct: () => ({id: '5-1'}),
+        clear: () => calls.push('clear')
+      }
+    };
+
+    const tileSelection = new _view_models_components_map_MapTileSelectionComponent__WEBPACK_IMPORTED_MODULE_1__.MapTileSelectionComponent(gameState, null, null, [], null, null, null, null, null);
+    tileSelection.handleMoveTargetClick = async () => calls.push('move');
+    tileSelection.handleDefendTargetClick = async () => calls.push('defend');
+    tileSelection.handleAttackTargetClick = async () => calls.push('attack');
+    tileSelection.addFocusToSourceTile = () => calls.push('focus');
+    tileSelection.attackTargetUtil = {
+      getActiveWeaponAmbitsArray: () => ['space'],
+      isValidTargetById: (structId) => structId === '5-9'
+    };
+
+    // initPageCode also listens on the window; keep those listeners out of the shared one.
+    __webpack_require__.g.window = {addEventListener: () => {}, dispatchEvent: (event) => calls.push(event.type)};
+    tileSelection.initPageCode();
+
+    return {
+      // DTest runs synchronously; everything a click decides happens before its first await.
+      click: () => {
+        try {
+          tile.clickHandler({currentTarget: tile});
+        } finally {
+          __webpack_require__.g.window = sharedWindow;
+        }
+      },
+      calls: calls
+    };
+  }
+
+  emptyTileInMoveModeDoesNothingTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('emptyTileInMoveModeDoesNothingTest', function() {
+    const {click, calls} = InvalidTargetClickTest.givenTargetSelectionMode(
+      _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.MOVE,
+      InvalidTargetClickTest.createTile()
+    );
+
+    click();
+
+    this.assertEquals(calls.join(','), '');
+  });
+
+  moveMarkerTileMovesTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('moveMarkerTileMovesTest', function() {
+    const {click, calls} = InvalidTargetClickTest.givenTargetSelectionMode(
+      _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.MOVE,
+      InvalidTargetClickTest.createTile({classes: ['focus-move']})
+    );
+
+    click();
+
+    this.assertEquals(calls.join(','), 'move');
+  });
+
+  enemyStructInDefendModeDoesNothingTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('enemyStructInDefendModeDoesNothingTest', function() {
+    const {click, calls} = InvalidTargetClickTest.givenTargetSelectionMode(
+      _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.DEFENSE_SET,
+      InvalidTargetClickTest.createTile({structId: '5-9', playerId: '1-2'})
+    );
+
+    click();
+
+    this.assertEquals(calls.join(','), '');
+  });
+
+  defendingStructItselfDoesNothingTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('defendingStructItselfDoesNothingTest', function() {
+    const {click, calls} = InvalidTargetClickTest.givenTargetSelectionMode(
+      _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.DEFENSE_SET,
+      InvalidTargetClickTest.createTile({structId: '5-1', playerId: '1-1'})
+    );
+
+    click();
+
+    this.assertEquals(calls.join(','), '');
+  });
+
+  friendlyStructInDefendModeDefendsTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('friendlyStructInDefendModeDefendsTest', function() {
+    const {click, calls} = InvalidTargetClickTest.givenTargetSelectionMode(
+      _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.DEFENSE_SET,
+      InvalidTargetClickTest.createTile({structId: '5-2', playerId: '1-1'})
+    );
+
+    click();
+
+    this.assertEquals(calls.join(','), 'defend');
+  });
+
+  unreachableStructInAttackModeDoesNothingTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('unreachableStructInAttackModeDoesNothingTest', function() {
+    const {click, calls} = InvalidTargetClickTest.givenTargetSelectionMode(
+      _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON,
+      InvalidTargetClickTest.createTile({structId: '5-3', playerId: '1-2'})
+    );
+
+    click();
+
+    this.assertEquals(calls.join(','), '');
+  });
+
+  validStructInAttackModeAttacksTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('validStructInAttackModeAttacksTest', function() {
+    const {click, calls} = InvalidTargetClickTest.givenTargetSelectionMode(
+      _constants_StructConstants__WEBPACK_IMPORTED_MODULE_2__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON,
+      InvalidTargetClickTest.createTile({structId: '5-9', playerId: '1-2'})
+    );
+
+    click();
+
+    this.assertEquals(calls.join(','), 'attack');
+  });
+}
+
+
+/***/ },
+
 /***/ "./js/tests/NumberFormatterTest.js"
 /*!*****************************************!*\
   !*** ./js/tests/NumberFormatterTest.js ***!
@@ -16270,6 +16455,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+/** Actions that wait on the player to click a target on the map. */
+const TARGET_SELECTION_ACTIONS = [
+  _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE,
+  _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON,
+  _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON,
+  _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET
+];
+
 
 class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__WEBPACK_IMPORTED_MODULE_0__.AbstractViewModelComponent {
 
@@ -16991,6 +17184,50 @@ class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__W
     window.dispatchEvent(new _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_8__.ClearMoveTargetsEvent(this.mapId));
   }
 
+  /**
+   * Handle a click while an action is waiting on the player to pick a target.
+   *
+   * Only a valid target does anything. Any other click, including an empty
+   * tile, leaves the player picking a target with the same unit focused, so it
+   * can't be mistaken for the action having gone through. The action is
+   * cancelled from its button on the action bar instead.
+   *
+   * @param {HTMLElement} tile - The tile that was clicked
+   * @param {string} currentAction - One of TARGET_SELECTION_ACTIONS
+   */
+  async handleTargetSelectionClick(tile, currentAction) {
+    if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE) {
+      if (tile.classList.contains('focus-move')) {
+        await this.handleMoveTargetClick(tile);
+      }
+      return;
+    }
+
+    if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET) {
+      const structId = tile.getAttribute('data-struct-id');
+      const playerId = tile.getAttribute('data-player-id');
+      const defendingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+
+      // A friendly struct other than the defending struct itself
+      const isValidTarget = structId
+        && structId !== defendingStruct.id
+        && playerId === this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_12__.PLAYER_TYPES.PLAYER].id;
+
+      if (isValidTarget) {
+        await this.handleDefendTargetClick(tile);
+      }
+      return;
+    }
+
+    const targetStructId = tile.getAttribute('data-struct-id');
+    const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
+    const weaponAmbitsArray = this.attackTargetUtil.getActiveWeaponAmbitsArray();
+
+    if (this.attackTargetUtil.isValidTargetById(targetStructId, attackingStruct, weaponAmbitsArray)) {
+      await this.handleAttackTargetClick(tile, currentAction);
+    }
+  }
+
   initPageCode() {
     const container = document.getElementById(this.containerId);
 
@@ -17010,57 +17247,9 @@ class MapTileSelectionComponent extends _framework_AbstractViewModelComponent__W
 
         const currentAction = this.gameState.actionBarLock.getCurrentAction();
 
-        // Check if we're in move mode and clicked on a valid move target
-        if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE && e.currentTarget.classList.contains('focus-move')) {
-          await this.handleMoveTargetClick(e.currentTarget);
+        if (TARGET_SELECTION_ACTIONS.includes(currentAction)) {
+          await this.handleTargetSelectionClick(e.currentTarget, currentAction);
           return;
-        }
-
-        // If we're in move mode but clicked elsewhere, cancel the move
-        if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.MOVE) {
-          this.clearMoveTargets();
-          this.gameState.actionBarLock.clear(false);
-          window.dispatchEvent(new _events_ClearMoveTargetsEvent__WEBPACK_IMPORTED_MODULE_8__.ClearMoveTargetsEvent(this.mapId));
-        }
-
-        // Check if we're in attack mode (primary or secondary weapon)
-        if (
-          currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_PRIMARY_WEAPON
-          || currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON
-        ) {
-          const targetStructId = e.currentTarget.getAttribute('data-struct-id');
-          const attackingStruct = this.gameState.actionBarLock.getActionSourceStruct();
-          const weaponAmbitsArray = this.attackTargetUtil.getActiveWeaponAmbitsArray();
-
-          if (this.attackTargetUtil.isValidTargetById(targetStructId, attackingStruct, weaponAmbitsArray)) {
-            await this.handleAttackTargetClick(e.currentTarget, currentAction);
-            return;
-          }
-
-          // Invalid target or empty tile - cancel attack mode
-          window.dispatchEvent(new _events_ClearAttackTargetsEvent__WEBPACK_IMPORTED_MODULE_10__.ClearAttackTargetsEvent(this.mapId));
-          this.gameState.actionBarLock.clear(false);
-        }
-
-        // Check if we're in defend mode
-        if (currentAction === _constants_StructConstants__WEBPACK_IMPORTED_MODULE_7__.STRUCT_ACTIONS.DEFENSE_SET) {
-          const structId = e.currentTarget.getAttribute('data-struct-id');
-          const playerId = e.currentTarget.getAttribute('data-player-id');
-          const defendingStruct = this.gameState.actionBarLock.getActionSourceStruct();
-
-          // Check if clicked on a valid defend target (friendly struct, not the defending struct itself)
-          const isValidTarget = structId 
-            && structId !== defendingStruct.id
-            && playerId === this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_12__.PLAYER_TYPES.PLAYER].id;
-
-          if (isValidTarget) {
-            await this.handleDefendTargetClick(e.currentTarget);
-            return;
-          }
-
-          // Clicked elsewhere (invalid or empty tile), cancel the defense
-          window.dispatchEvent(new _events_ClearDefendTargetsEvent__WEBPACK_IMPORTED_MODULE_9__.ClearDefendTargetsEvent(this.mapId));
-          this.gameState.actionBarLock.clear(false);
         }
 
         this.addFocusToSourceTile(e.currentTarget);
@@ -18429,6 +18618,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _DeployOffcanvasChargeTest__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./DeployOffcanvasChargeTest */ "./js/tests/DeployOffcanvasChargeTest.js");
 /* harmony import */ var _TargetSelectedIndicatorTest__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./TargetSelectedIndicatorTest */ "./js/tests/TargetSelectedIndicatorTest.js");
 /* harmony import */ var _DeployCheatsheetTest__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./DeployCheatsheetTest */ "./js/tests/DeployCheatsheetTest.js");
+/* harmony import */ var _InvalidTargetClickTest__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./InvalidTargetClickTest */ "./js/tests/InvalidTargetClickTest.js");
+
 
 
 
@@ -18450,6 +18641,7 @@ __webpack_require__.r(__webpack_exports__);
 (new _DeployOffcanvasChargeTest__WEBPACK_IMPORTED_MODULE_7__.DeployOffcanvasChargeTest()).run();
 (new _TargetSelectedIndicatorTest__WEBPACK_IMPORTED_MODULE_8__.TargetSelectedIndicatorTest()).run();
 (new _DeployCheatsheetTest__WEBPACK_IMPORTED_MODULE_9__.DeployCheatsheetTest()).run();
+(new _InvalidTargetClickTest__WEBPACK_IMPORTED_MODULE_10__.InvalidTargetClickTest()).run();
 
 })();
 
