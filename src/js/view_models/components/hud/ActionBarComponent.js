@@ -561,6 +561,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             id="${deployBtnId}"
             href="javascript: void(0)"
             class="sui-panel-btn ${btnTypeClass}"
+            title="Deploy"
+            data-sui-cheatsheet="deploy"
           >
             <i class="sui-icon-md icon-deploy"></i>
           </a>

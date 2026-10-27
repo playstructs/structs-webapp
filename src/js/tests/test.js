@@ -7,6 +7,7 @@ import {ActionBarOreCountTest} from "./ActionBarOreCountTest";
 import {RaidedOreStructTest} from "./RaidedOreStructTest";
 import {DeployOffcanvasChargeTest} from "./DeployOffcanvasChargeTest";
 import {TargetSelectedIndicatorTest} from "./TargetSelectedIndicatorTest";
+import {DeployCheatsheetTest} from "./DeployCheatsheetTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -17,3 +18,4 @@ import {TargetSelectedIndicatorTest} from "./TargetSelectedIndicatorTest";
 (new RaidedOreStructTest()).run();
 (new DeployOffcanvasChargeTest()).run();
 (new TargetSelectedIndicatorTest()).run();
+(new DeployCheatsheetTest()).run();

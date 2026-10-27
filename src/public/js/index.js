@@ -1658,6 +1658,15 @@ class CheatsheetContentBuilder extends _sui_SUICheatsheetContentBuilder__WEBPACK
     let html = '';
 
     switch (dataset.suiCheatsheet) {
+      // Opening the deploy menu is free; only the Struct chosen from it costs battery.
+      case 'deploy':
+        html = this.renderer.renderContentHTML(
+          'Deploy',
+          null,
+          null,
+          `Choose a Struct to deploy.`
+        );
+        break;
       case 'energy-supply-insufficient':
         html = this.renderer.renderContentHTML(
           'Energy Supply',
@@ -36392,6 +36401,8 @@ class ActionBarComponent extends _framework_AbstractViewModelComponent__WEBPACK_
             id="${deployBtnId}"
             href="javascript: void(0)"
             class="sui-panel-btn ${btnTypeClass}"
+            title="Deploy"
+            data-sui-cheatsheet="deploy"
           >
             <i class="sui-icon-md icon-deploy"></i>
           </a>
