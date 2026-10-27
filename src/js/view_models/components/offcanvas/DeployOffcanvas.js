@@ -230,7 +230,7 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
    }
 
   render() {
-    MenuPage.sui.offcanvas.setHeader('Select Struct');
+    MenuPage.sui.offcanvas.setHeader('Deploy Struct');
     MenuPage.sui.offcanvas.setContent(this.renderHTML());
     // Held so a later menu reusing the same link IDs isn't mistaken for this one
     this.listElm = MenuPage.sui.offcanvas.offcanvasElm.querySelector('.offcanvas-struct-list-layout');

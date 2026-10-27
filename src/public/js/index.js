@@ -42725,7 +42725,7 @@ class DeployOffcanvas extends _framework_AbstractViewModelComponent__WEBPACK_IMP
    }
 
   render() {
-    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.sui.offcanvas.setHeader('Select Struct');
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.sui.offcanvas.setHeader('Deploy Struct');
     _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.sui.offcanvas.setContent(this.renderHTML());
     // Held so a later menu reusing the same link IDs isn't mistaken for this one
     this.listElm = _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.sui.offcanvas.offcanvasElm.querySelector('.offcanvas-struct-list-layout');
