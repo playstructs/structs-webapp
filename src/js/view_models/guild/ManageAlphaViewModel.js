@@ -33,7 +33,9 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     this.numberFormatter = new NumberFormatter();
     this.systemModal = new SystemModal();
 
-    this.alphaToInfuse = this.infusion.fuel;
+    // The API can return the infused amount as a numeric string.
+    this.infusedAlpha = parseInt(this.infusion.fuel) || 0;
+    this.alphaToInfuse = this.infusedAlpha;
     this.joinInfusionMinimum = this.gameState.thisGuild.join_infusion_minimum;
 
     this.addBtnId = 'manage-alpha-add';
@@ -53,6 +55,16 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     return Math.floor(this.alphaToInfuse * this.gameState.thisGuild.reactor_ratio * (1 - this.gameState.thisGuild.default_commission));
   }
 
+  /**
+   * The most alpha the player can have infused: what is already in the
+   * reactor plus what is in their wallet.
+   *
+   * @return {number}
+   */
+  getMaxAlphaToInfuse() {
+    return this.infusedAlpha + (parseInt(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) || 0);
+  }
+
   postToggleRender() {
     const subtractBtn = document.getElementById(this.subtractBtnId);
     const addBtn = document.getElementById(this.addBtnId);
@@ -61,7 +73,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     const errorElm = document.querySelector('.manage-alpha-error');
     const ctaBtns = document.querySelector('.manage-alpha-cta-btns');
 
-    if (this.alphaToInfuse < this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) {
+    if (this.alphaToInfuse < this.getMaxAlphaToInfuse()) {
       addBtn.classList.remove('sui-mod-disabled');
       addBtn.disabled = false;
     } else {
@@ -78,7 +90,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     }
 
     if (
-      this.alphaToInfuse !== this.infusion.fuel
+      this.alphaToInfuse !== this.infusedAlpha
       && this.alphaToInfuse >= this.joinInfusionMinimum
     ) {
       ctaBtns.classList.remove('hidden');
@@ -97,13 +109,13 @@ export class ManageAlphaViewModel extends AbstractViewModel {
   }
 
   infuse() {
-    const alphaDiff = this.alphaToInfuse - this.infusion.fuel;
+    const alphaDiff = this.alphaToInfuse - this.infusedAlpha;
     this.grassManager.registerListener(new AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'infused'));
     this.alphaManager.infuse(alphaDiff).then();
   }
 
   defuse() {
-    const alphaDiff = this.infusion.fuel - this.alphaToInfuse;
+    const alphaDiff = this.infusedAlpha - this.alphaToInfuse;
     this.grassManager.registerListener(new AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'defusion_started'));
     this.alphaManager.defuse(alphaDiff).then();
   }
@@ -124,7 +136,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     document.getElementById(this.addBtnId).addEventListener('click', (event) => {
       event.preventDefault();
 
-      if (this.alphaToInfuse < this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) {
+      if (this.alphaToInfuse < this.getMaxAlphaToInfuse()) {
         this.alphaToInfuse++;
       }
 
@@ -136,7 +148,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     });
     document.getElementById(this.saveChangesBtnId).addEventListener('click', () => {
 
-      document.getElementById(this.systemModal.messageId).innerHTML = (this.alphaToInfuse > this.infusion.fuel)
+      document.getElementById(this.systemModal.messageId).innerHTML = (this.alphaToInfuse > this.infusedAlpha)
         ? this.infusionWarning
         : this.defusionWarning;
 
@@ -154,7 +166,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
       options.navItemId = MenuPage.navItemGuildId;
       options.hasDoNotCloseMessage = false;
 
-      if (this.alphaToInfuse > this.infusion.fuel) {
+      if (this.alphaToInfuse > this.infusedAlpha) {
         this.infuse();
 
         options.headerBtnLabel = 'Infusing...';
