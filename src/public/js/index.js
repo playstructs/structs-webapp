@@ -44585,7 +44585,9 @@ class ManageAlphaViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
     this.numberFormatter = new _util_NumberFormatter__WEBPACK_IMPORTED_MODULE_3__.NumberFormatter();
     this.systemModal = new _templates_partials_SystemModal__WEBPACK_IMPORTED_MODULE_4__.SystemModal();
 
-    this.alphaToInfuse = this.infusion.fuel;
+    // The API can return the infused amount as a numeric string.
+    this.infusedAlpha = parseInt(this.infusion.fuel) || 0;
+    this.alphaToInfuse = this.infusedAlpha;
     this.joinInfusionMinimum = this.gameState.thisGuild.join_infusion_minimum;
 
     this.addBtnId = 'manage-alpha-add';
@@ -44605,6 +44607,16 @@ class ManageAlphaViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
     return Math.floor(this.alphaToInfuse * this.gameState.thisGuild.reactor_ratio * (1 - this.gameState.thisGuild.default_commission));
   }
 
+  /**
+   * The most alpha the player can have infused: what is already in the
+   * reactor plus what is in their wallet.
+   *
+   * @return {number}
+   */
+  getMaxAlphaToInfuse() {
+    return this.infusedAlpha + (parseInt(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_7__.PLAYER_TYPES.PLAYER].player.alpha) || 0);
+  }
+
   postToggleRender() {
     const subtractBtn = document.getElementById(this.subtractBtnId);
     const addBtn = document.getElementById(this.addBtnId);
@@ -44613,7 +44625,7 @@ class ManageAlphaViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
     const errorElm = document.querySelector('.manage-alpha-error');
     const ctaBtns = document.querySelector('.manage-alpha-cta-btns');
 
-    if (this.alphaToInfuse < this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_7__.PLAYER_TYPES.PLAYER].player.alpha) {
+    if (this.alphaToInfuse < this.getMaxAlphaToInfuse()) {
       addBtn.classList.remove('sui-mod-disabled');
       addBtn.disabled = false;
     } else {
@@ -44630,7 +44642,7 @@ class ManageAlphaViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
     }
 
     if (
-      this.alphaToInfuse !== this.infusion.fuel
+      this.alphaToInfuse !== this.infusedAlpha
       && this.alphaToInfuse >= this.joinInfusionMinimum
     ) {
       ctaBtns.classList.remove('hidden');
@@ -44649,13 +44661,13 @@ class ManageAlphaViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
   }
 
   infuse() {
-    const alphaDiff = this.alphaToInfuse - this.infusion.fuel;
+    const alphaDiff = this.alphaToInfuse - this.infusedAlpha;
     this.grassManager.registerListener(new _grass_listeners_AlphaInfusedChangeListener__WEBPACK_IMPORTED_MODULE_5__.AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'infused'));
     this.alphaManager.infuse(alphaDiff).then();
   }
 
   defuse() {
-    const alphaDiff = this.infusion.fuel - this.alphaToInfuse;
+    const alphaDiff = this.infusedAlpha - this.alphaToInfuse;
     this.grassManager.registerListener(new _grass_listeners_AlphaInfusedChangeListener__WEBPACK_IMPORTED_MODULE_5__.AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'defusion_started'));
     this.alphaManager.defuse(alphaDiff).then();
   }
@@ -44676,7 +44688,7 @@ class ManageAlphaViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
     document.getElementById(this.addBtnId).addEventListener('click', (event) => {
       event.preventDefault();
 
-      if (this.alphaToInfuse < this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_7__.PLAYER_TYPES.PLAYER].player.alpha) {
+      if (this.alphaToInfuse < this.getMaxAlphaToInfuse()) {
         this.alphaToInfuse++;
       }
 
@@ -44688,7 +44700,7 @@ class ManageAlphaViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
     });
     document.getElementById(this.saveChangesBtnId).addEventListener('click', () => {
 
-      document.getElementById(this.systemModal.messageId).innerHTML = (this.alphaToInfuse > this.infusion.fuel)
+      document.getElementById(this.systemModal.messageId).innerHTML = (this.alphaToInfuse > this.infusedAlpha)
         ? this.infusionWarning
         : this.defusionWarning;
 
@@ -44706,7 +44718,7 @@ class ManageAlphaViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTE
       options.navItemId = _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.navItemGuildId;
       options.hasDoNotCloseMessage = false;
 
-      if (this.alphaToInfuse > this.infusion.fuel) {
+      if (this.alphaToInfuse > this.infusedAlpha) {
         this.infuse();
 
         options.headerBtnLabel = 'Infusing...';
