@@ -9,6 +9,7 @@ import {DeployOffcanvasChargeTest} from "./DeployOffcanvasChargeTest";
 import {TargetSelectedIndicatorTest} from "./TargetSelectedIndicatorTest";
 import {DeployCheatsheetTest} from "./DeployCheatsheetTest";
 import {InvalidTargetClickTest} from "./InvalidTargetClickTest";
+import {ManageAlphaInfusedTest} from "./ManageAlphaInfusedTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -21,3 +22,4 @@ import {InvalidTargetClickTest} from "./InvalidTargetClickTest";
 (new TargetSelectedIndicatorTest()).run();
 (new DeployCheatsheetTest()).run();
 (new InvalidTargetClickTest()).run();
+(new ManageAlphaInfusedTest()).run();

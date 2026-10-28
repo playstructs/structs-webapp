@@ -5132,6 +5132,62 @@ class NotImplementedError extends Error {
 
 /***/ },
 
+/***/ "./js/grass_listeners/AlphaInfusedChangeListener.js"
+/*!**********************************************************!*\
+  !*** ./js/grass_listeners/AlphaInfusedChangeListener.js ***!
+  \**********************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AlphaInfusedChangeListener: () => (/* binding */ AlphaInfusedChangeListener)
+/* harmony export */ });
+/* harmony import */ var _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/AbstractGrassListener */ "./js/framework/AbstractGrassListener.js");
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+
+
+
+
+class AlphaInfusedChangeListener extends _framework_AbstractGrassListener__WEBPACK_IMPORTED_MODULE_0__.AbstractGrassListener {
+
+  /**
+   * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
+   * @param {string} category
+   */
+  constructor(gameState, guildAPI, category) {
+    super('ALPHA_INFUSED_CHANGE');
+    this.gameState = gameState;
+    this.guildAPI = guildAPI;
+    this.category = category;
+  }
+
+  handler(messageData) {
+    const infusedPrefix = `structs.inventory.ualpha.infused.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].id}`;
+    const defusingPrefix = `structs.inventory.ualpha.defusing.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].id}`;
+
+    if (
+      messageData.category === this.category
+      && (
+        messageData.subject === infusedPrefix || messageData.subject.startsWith(`${infusedPrefix}.`)
+        || messageData.subject === defusingPrefix || messageData.subject.startsWith(`${defusingPrefix}.`)
+        )
+      ) {
+      this.shouldUnregister = () => true;
+
+      this.guildAPI.getPlayer(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].id).then(player => {
+        this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER].setPlayer(player); // Refresh alpha count
+        _framework_MenuPage__WEBPACK_IMPORTED_MODULE_1__.MenuPage.router.goto('Guild', 'reactor'); // Infusion gets reloaded from Guild controller
+      });
+
+    }
+  }
+}
+
+/***/ },
+
 /***/ "./js/grass_listeners/ConsumeAlphaChangeListener.js"
 /*!**********************************************************!*\
   !*** ./js/grass_listeners/ConsumeAlphaChangeListener.js ***!
@@ -8954,6 +9010,35 @@ class TaskState {
 
 /***/ },
 
+/***/ "./js/options/MenuWaitingOptions.js"
+/*!******************************************!*\
+  !*** ./js/options/MenuWaitingOptions.js ***!
+  \******************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   MenuWaitingOptions: () => (/* binding */ MenuWaitingOptions)
+/* harmony export */ });
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/MenuPage */ "./js/framework/MenuPage.js");
+
+
+class MenuWaitingOptions {
+  constructor() {
+    this.navItemId = _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.navItemAccountId
+    this.waitingAnimation = 'DEFAULT';
+    this.waitingMessage = null;
+    this.hasDoNotCloseMessage = true;
+    this.headerBtnLabel = '';
+    this.headerBtnShowBackIcon = false;
+    this.headerBtnHandler = () => {};
+    this.initPageCode = () => {};
+  }
+}
+
+/***/ },
+
 /***/ "./js/sui/SUI.js"
 /*!***********************!*\
   !*** ./js/sui/SUI.js ***!
@@ -10939,6 +11024,112 @@ class InvalidTargetClickTest extends _framework_DTestFramework__WEBPACK_IMPORTED
     click();
 
     this.assertEquals(calls.join(','), 'attack');
+  });
+}
+
+
+/***/ },
+
+/***/ "./js/tests/ManageAlphaInfusedTest.js"
+/*!********************************************!*\
+  !*** ./js/tests/ManageAlphaInfusedTest.js ***!
+  \********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ManageAlphaInfusedTest: () => (/* binding */ ManageAlphaInfusedTest)
+/* harmony export */ });
+/* harmony import */ var _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../framework/DTestFramework */ "./js/framework/DTestFramework.js");
+/* harmony import */ var _view_models_guild_ManageAlphaViewModel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../view_models/guild/ManageAlphaViewModel */ "./js/view_models/guild/ManageAlphaViewModel.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+
+
+
+
+/**
+ * Covers the add button on Manage Alpha when the player already has alpha
+ * infused. It used to be capped at the wallet balance alone, so a player with
+ * 4 alpha infused and 3 in their wallet could not add any.
+ */
+class ManageAlphaInfusedTest extends _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTestSuite {
+
+  constructor() {
+    super('ManageAlphaInfusedTest');
+  }
+
+  static createElement() {
+    const classSet = new Set();
+    return {
+      disabled: false,
+      innerText: '',
+      innerHTML: '',
+      classList: {
+        add: (name) => classSet.add(name),
+        remove: (name) => classSet.delete(name),
+        contains: (name) => classSet.has(name)
+      }
+    };
+  }
+
+  /**
+   * @param {number|string} infusedAlpha as the API returns it
+   * @param {number} walletAlpha
+   * @return {{viewModel: ManageAlphaViewModel, addBtn: object}}
+   */
+  static givenManageAlpha(infusedAlpha, walletAlpha) {
+    const addBtn = ManageAlphaInfusedTest.createElement();
+    const elements = {'manage-alpha-add': addBtn};
+    const other = ManageAlphaInfusedTest.createElement();
+
+    __webpack_require__.g.document = {
+      getElementById: (id) => elements[id] ?? other,
+      querySelector: () => other
+    };
+
+    const gameState = {
+      thisGuild: {join_infusion_minimum: 0, reactor_ratio: 1, default_commission: 0},
+      keyPlayers: {[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_2__.PLAYER_TYPES.PLAYER]: {player: {alpha: walletAlpha}}}
+    };
+    const viewModel = new _view_models_guild_ManageAlphaViewModel__WEBPACK_IMPORTED_MODULE_1__.ManageAlphaViewModel(gameState, null, null, null, {fuel: infusedAlpha});
+
+    return {viewModel, addBtn};
+  }
+
+  canAddWalletAlphaOnTopOfInfusedAlphaTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('canAddWalletAlphaOnTopOfInfusedAlphaTest', function() {
+    const {viewModel, addBtn} = ManageAlphaInfusedTest.givenManageAlpha('4', 3);
+
+    viewModel.postToggleRender();
+
+    this.assertEquals(addBtn.disabled, false);
+  });
+
+  canAddBackSubtractedInfusedAlphaTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('canAddBackSubtractedInfusedAlphaTest', function() {
+    const {viewModel, addBtn} = ManageAlphaInfusedTest.givenManageAlpha('4', 0);
+    viewModel.alphaToInfuse = 3;
+
+    viewModel.postToggleRender();
+
+    this.assertEquals(addBtn.disabled, false);
+  });
+
+  addStopsAtInfusedPlusWalletAlphaTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('addStopsAtInfusedPlusWalletAlphaTest', function() {
+    const {viewModel, addBtn} = ManageAlphaInfusedTest.givenManageAlpha('4', 3);
+    viewModel.alphaToInfuse = 7;
+
+    viewModel.postToggleRender();
+
+    this.assertEquals(addBtn.disabled, true);
+    this.assertEquals(viewModel.getMaxAlphaToInfuse(), 7);
+  });
+
+  // A string fuel would otherwise turn the save check into "4" !== 4.
+  unchangedInfusionHidesSaveTest = new _framework_DTestFramework__WEBPACK_IMPORTED_MODULE_0__.DTest('unchangedInfusionHidesSaveTest', function() {
+    const {viewModel} = ManageAlphaInfusedTest.givenManageAlpha('4', 3);
+
+    this.assertEquals(viewModel.alphaToInfuse === viewModel.infusedAlpha, true);
+    this.assertEquals(viewModel.infusedAlpha, 4);
   });
 }
 
@@ -17937,6 +18128,352 @@ class DeployOffcanvas extends _framework_AbstractViewModelComponent__WEBPACK_IMP
 
 /***/ },
 
+/***/ "./js/view_models/guild/ManageAlphaViewModel.js"
+/*!******************************************************!*\
+  !*** ./js/view_models/guild/ManageAlphaViewModel.js ***!
+  \******************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ManageAlphaViewModel: () => (/* binding */ ManageAlphaViewModel)
+/* harmony export */ });
+/* harmony import */ var _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../framework/MenuPage */ "./js/framework/MenuPage.js");
+/* harmony import */ var _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../framework/AbstractViewModel */ "./js/framework/AbstractViewModel.js");
+/* harmony import */ var _components_GenericResourceComponent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../components/GenericResourceComponent */ "./js/view_models/components/GenericResourceComponent.js");
+/* harmony import */ var _util_NumberFormatter__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../util/NumberFormatter */ "./js/util/NumberFormatter.js");
+/* harmony import */ var _templates_partials_SystemModal__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../templates/partials/SystemModal */ "./js/view_models/templates/partials/SystemModal.js");
+/* harmony import */ var _grass_listeners_AlphaInfusedChangeListener__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../grass_listeners/AlphaInfusedChangeListener */ "./js/grass_listeners/AlphaInfusedChangeListener.js");
+/* harmony import */ var _options_MenuWaitingOptions__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../options/MenuWaitingOptions */ "./js/options/MenuWaitingOptions.js");
+/* harmony import */ var _constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../../constants/PlayerTypes */ "./js/constants/PlayerTypes.js");
+
+
+
+
+
+
+
+
+
+class ManageAlphaViewModel extends _framework_AbstractViewModel__WEBPACK_IMPORTED_MODULE_1__.AbstractViewModel {
+
+  /**
+   * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
+   * @param {GrassManager} grassManager
+   * @param {AlphaManager} alphaManager
+   * @param {Infusion|object} infusion
+   */
+  constructor(
+    gameState,
+    guildAPI,
+    grassManager,
+    alphaManager,
+    infusion
+  ) {
+    super();
+    this.gameState = gameState;
+    this.guildAPI = guildAPI;
+    this.grassManager = grassManager;
+    this.alphaManager = alphaManager;
+    this.infusion = infusion;
+    this.genericResourceComponent = new _components_GenericResourceComponent__WEBPACK_IMPORTED_MODULE_2__.GenericResourceComponent(gameState);
+    this.numberFormatter = new _util_NumberFormatter__WEBPACK_IMPORTED_MODULE_3__.NumberFormatter();
+    this.systemModal = new _templates_partials_SystemModal__WEBPACK_IMPORTED_MODULE_4__.SystemModal();
+
+    // The API can return the infused amount as a numeric string.
+    this.infusedAlpha = parseInt(this.infusion.fuel) || 0;
+    this.alphaToInfuse = this.infusedAlpha;
+    this.joinInfusionMinimum = this.gameState.thisGuild.join_infusion_minimum;
+
+    this.addBtnId = 'manage-alpha-add';
+    this.subtractBtnId = 'manage-alpha-subtract';
+    this.alphaInfusedId = 'manage-alpha-alpha-infused';
+    this.alphaInfusedValueId = 'manage-alpha-alpha-infused-value';
+    this.energyId = 'manage-alpha-energy';
+    this.energyValueId = 'manage-alpha-energy-value';
+    this.cancelBtnId = 'manage-alpha-cancel';
+    this.saveChangesBtnId = 'manage-alpha-save-changes';
+
+    this.infusionWarning = `Alpha will be removed from your inventory and added to the reactor.`;
+    this.defusionWarning = `Alpha will be removed from the reactor and put on cooldown.`;
+  }
+
+  calculateEnergy() {
+    return Math.floor(this.alphaToInfuse * this.gameState.thisGuild.reactor_ratio * (1 - this.gameState.thisGuild.default_commission));
+  }
+
+  /**
+   * The most alpha the player can have infused: what is already in the
+   * reactor plus what is in their wallet.
+   *
+   * @return {number}
+   */
+  getMaxAlphaToInfuse() {
+    return this.infusedAlpha + (parseInt(this.gameState.keyPlayers[_constants_PlayerTypes__WEBPACK_IMPORTED_MODULE_7__.PLAYER_TYPES.PLAYER].player.alpha) || 0);
+  }
+
+  postToggleRender() {
+    const subtractBtn = document.getElementById(this.subtractBtnId);
+    const addBtn = document.getElementById(this.addBtnId);
+    const alphaInfusedValue = document.getElementById(this.alphaInfusedValueId);
+    const energyValue = document.getElementById(this.energyValueId);
+    const errorElm = document.querySelector('.manage-alpha-error');
+    const ctaBtns = document.querySelector('.manage-alpha-cta-btns');
+
+    if (this.alphaToInfuse < this.getMaxAlphaToInfuse()) {
+      addBtn.classList.remove('sui-mod-disabled');
+      addBtn.disabled = false;
+    } else {
+      addBtn.classList.add('sui-mod-disabled');
+      addBtn.disabled = true;
+    }
+
+    if (this.alphaToInfuse > 0 && this.alphaToInfuse > this.joinInfusionMinimum) {
+      subtractBtn.classList.remove('sui-mod-disabled');
+      subtractBtn.disabled = false;
+    } else {
+      subtractBtn.classList.add('sui-mod-disabled');
+      subtractBtn.disabled = true;
+    }
+
+    if (
+      this.alphaToInfuse !== this.infusedAlpha
+      && this.alphaToInfuse >= this.joinInfusionMinimum
+    ) {
+      ctaBtns.classList.remove('hidden');
+    } else {
+      ctaBtns.classList.add('hidden');
+    }
+
+    if (this.alphaToInfuse <= this.joinInfusionMinimum) {
+      errorElm.classList.remove('hidden');
+    } else {
+      errorElm.classList.add('hidden');
+    }
+
+    alphaInfusedValue.innerText = this.alphaToInfuse;
+    energyValue.innerHTML = `${this.calculateEnergy()}`;
+  }
+
+  infuse() {
+    const alphaDiff = this.alphaToInfuse - this.infusedAlpha;
+    this.grassManager.registerListener(new _grass_listeners_AlphaInfusedChangeListener__WEBPACK_IMPORTED_MODULE_5__.AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'infused'));
+    this.alphaManager.infuse(alphaDiff).then();
+  }
+
+  defuse() {
+    const alphaDiff = this.infusedAlpha - this.alphaToInfuse;
+    this.grassManager.registerListener(new _grass_listeners_AlphaInfusedChangeListener__WEBPACK_IMPORTED_MODULE_5__.AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'defusion_started'));
+    this.alphaManager.defuse(alphaDiff).then();
+  }
+
+  initPageCode() {
+    this.systemModal.init();
+
+    document.getElementById(this.subtractBtnId).addEventListener('click', (event) => {
+      event.preventDefault();
+
+      if (this.alphaToInfuse > 0 && this.alphaToInfuse > this.joinInfusionMinimum) {
+        this.alphaToInfuse--;
+      }
+
+      this.postToggleRender();
+    });
+
+    document.getElementById(this.addBtnId).addEventListener('click', (event) => {
+      event.preventDefault();
+
+      if (this.alphaToInfuse < this.getMaxAlphaToInfuse()) {
+        this.alphaToInfuse++;
+      }
+
+      this.postToggleRender();
+    });
+
+    document.getElementById(this.cancelBtnId).addEventListener('click', () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Guild', 'reactor');
+    });
+    document.getElementById(this.saveChangesBtnId).addEventListener('click', () => {
+
+      document.getElementById(this.systemModal.messageId).innerHTML = (this.alphaToInfuse > this.infusedAlpha)
+        ? this.infusionWarning
+        : this.defusionWarning;
+
+      this.systemModal.show();
+    });
+
+    this.postToggleRender();
+  }
+
+  render () {
+
+    this.systemModal.iconClasses = `sui-icon-alpha-matter`;
+    this.systemModal.confirmBtnHandler = () => {
+      const options = new _options_MenuWaitingOptions__WEBPACK_IMPORTED_MODULE_6__.MenuWaitingOptions();
+      options.navItemId = _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.navItemGuildId;
+      options.hasDoNotCloseMessage = false;
+
+      if (this.alphaToInfuse > this.infusedAlpha) {
+        this.infuse();
+
+        options.headerBtnLabel = 'Infusing...';
+        options.waitingAnimation = 'INFUSE';
+      } else {
+        this.defuse();
+
+        options.headerBtnLabel = 'Defusing...';
+        options.waitingAnimation = 'DEFUSE';
+      }
+
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Generic', 'menuWaiting', options);
+    };
+    const modalHTML = this.systemModal.render();
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.enablePageTemplate(_framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.navItemGuildId);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setPageTemplateHeaderBtn('Manage Alpha', true, () => {
+      _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.router.goto('Guild', 'reactor');
+    });
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.setPageTemplateContent(`
+      <div class="manage-alpha-layout">
+        
+        <div class="manage-alpha-toggle-group">
+          <button id="${this.subtractBtnId}" class="sui-screen-btn sui-mod-secondary">
+            <i class="sui-icon sui-icon-md icon-subtract"></i>
+          </button>
+          <img src="/img/reactor-64x92.png" alt="alpha reactor">
+          <button id="${this.addBtnId}" class="sui-screen-btn sui-mod-secondary">
+            <i class="sui-icon sui-icon-md icon-add"></i>
+          </button>
+        </div>
+        
+        <div class="manage-alpha-amounts">
+          ${
+            this.genericResourceComponent.renderHTML(
+              this.alphaInfusedId,
+              'sui-icon-alpha-matter',
+              'Alpha to infuse',
+              this.infusion.fuel
+            )
+          }
+          ${
+            this.genericResourceComponent.renderHTML(
+              this.energyId,
+              'sui-icon-energy',
+              'Expected energy supply',
+              this.numberFormatter.format(this.alphaToInfuse * this.infusion.ratio * (this.infusion.commission/100))
+            )
+          }
+        </div>
+        
+        <div class="manage-alpha-error">
+          <i class="sui-icon sui-icon-md icon-alert sui-text-warning"></i>
+          <span>The Guild Minimum is ${this.joinInfusionMinimum} Alpha Matter.</span>
+        </div>
+        
+        <div class="manage-alpha-cta-btns hidden">
+          <a href="javascript: void(0)" id="${this.cancelBtnId}" class="sui-screen-btn sui-mod-secondary">Cancel</a>
+          <a href="javascript: void(0)" id="${this.saveChangesBtnId}" class="sui-screen-btn sui-mod-primary">Save Changes</a>
+        </div>
+        
+        ${modalHTML}
+      </div>
+    `);
+
+    _framework_MenuPage__WEBPACK_IMPORTED_MODULE_0__.MenuPage.hideAndClearDialoguePanel();
+
+    this.initPageCode();
+  }
+}
+
+
+/***/ },
+
+/***/ "./js/view_models/templates/partials/SystemModal.js"
+/*!**********************************************************!*\
+  !*** ./js/view_models/templates/partials/SystemModal.js ***!
+  \**********************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   SystemModal: () => (/* binding */ SystemModal)
+/* harmony export */ });
+class SystemModal {
+
+  constructor() {
+    this.systemModalId = 'system-modal';
+    this.iconClasses = 'icon-deploy';
+    this.messageId = 'system-modal-message';
+    this.cancelBtnId = 'system-modal-cancel-btn';
+    this.confirmBtnId = 'system-modal-confirm-btn';
+    this.cancelBtnHandler = () => {
+      this.hide();
+    };
+    this.confirmBtnHandler = () => {};
+    this.cancelBtnLabel = 'Cancel';
+    this.confirmBtnLabel = 'Confirm';
+  }
+
+  init() {
+    document.getElementById(this.cancelBtnId).addEventListener('click', this.cancelBtnHandler);
+    document.getElementById(this.confirmBtnId).addEventListener('click', this.confirmBtnHandler);
+  }
+
+  show() {
+    document.getElementById(this.systemModalId).classList.remove('hidden');
+  }
+
+  hide() {
+    document.getElementById(this.systemModalId).classList.add('hidden');
+  }
+
+  render() {
+    return `
+    <!-- System Model Start -->
+    
+    <div id="${this.systemModalId}" class="sui-message-system-model-overlay hidden">
+      <div class="sui-message-system-modal">
+        <div class="sui-message-system-modal-frame">
+          <div class="sui-message-system-modal-frame-left">
+            <div class="sui-message-system-modal-frame-left-top"></div>
+            <div class="sui-message-system-modal-frame-left-middle">
+              <i class="sui-icon sui-icon-md ${this.iconClasses}"></i>
+            </div>
+            <div class="sui-message-system-modal-frame-left-bottom"></div>
+          </div>
+          <div id="${this.messageId}" class="sui-message-system-model-frame-center"></div>
+        </div>
+        <div class="sui-message-system-modal-cta">
+          <div class="sui-message-system-modal-cta-btn-wrapper">
+            <a 
+              href="javascript: void(0)"
+              id="${this.cancelBtnId}"
+              class="sui-screen-btn sui-mod-secondary"
+            >${this.cancelBtnLabel}</a>
+          </div>
+          <div class="sui-message-system-modal-cta-btn-wrapper">
+            <a
+              href="javascript: void(0)"
+              id="${this.confirmBtnId}"
+              class="sui-screen-btn sui-mod-primary"
+            >${this.confirmBtnLabel}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- System Model End -->
+    `;
+  }
+}
+
+/***/ },
+
 /***/ "./node_modules/js-sha256/src/sha256.js"
 /*!**********************************************!*\
   !*** ./node_modules/js-sha256/src/sha256.js ***!
@@ -18619,6 +19156,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _TargetSelectedIndicatorTest__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./TargetSelectedIndicatorTest */ "./js/tests/TargetSelectedIndicatorTest.js");
 /* harmony import */ var _DeployCheatsheetTest__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./DeployCheatsheetTest */ "./js/tests/DeployCheatsheetTest.js");
 /* harmony import */ var _InvalidTargetClickTest__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./InvalidTargetClickTest */ "./js/tests/InvalidTargetClickTest.js");
+/* harmony import */ var _ManageAlphaInfusedTest__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./ManageAlphaInfusedTest */ "./js/tests/ManageAlphaInfusedTest.js");
+
 
 
 
@@ -18642,6 +19181,7 @@ __webpack_require__.r(__webpack_exports__);
 (new _TargetSelectedIndicatorTest__WEBPACK_IMPORTED_MODULE_8__.TargetSelectedIndicatorTest()).run();
 (new _DeployCheatsheetTest__WEBPACK_IMPORTED_MODULE_9__.DeployCheatsheetTest()).run();
 (new _InvalidTargetClickTest__WEBPACK_IMPORTED_MODULE_10__.InvalidTargetClickTest()).run();
+(new _ManageAlphaInfusedTest__WEBPACK_IMPORTED_MODULE_11__.ManageAlphaInfusedTest()).run();
 
 })();
 
