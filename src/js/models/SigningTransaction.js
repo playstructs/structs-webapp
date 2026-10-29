@@ -1,5 +1,6 @@
 import {UuidUtil} from "../util/UuidUtil";
 import {messagePayloadToWire} from "../util/MessagePayload";
+import {transferIntent} from "../util/TransferIntent";
 
 /**
  * Lifecycle states for a queued signing transaction.
@@ -51,6 +52,7 @@ const PERSISTED_FIELDS = [
   'error',
   'submission',
   'intentProtocol',
+  'intent',
 ];
 
 /**
@@ -96,6 +98,7 @@ export class SigningTransaction {
     this.msgResponses = fields.msgResponses ?? null;
     this.submission = fields.submission ?? null;
     this.intentProtocol = fields.intentProtocol ?? null;
+    this.intent = fields.intent ?? null;
   }
 
   /**
@@ -111,10 +114,10 @@ export class SigningTransaction {
    * @param {number} args.enqueuedAtBlock
    * @return {SigningTransaction}
    */
-  static create({ typeUrl, payload, isAction, chargeCost, retryLimit, accountAddress, enqueuedAtBlock, intentProtocol = null }) {
+  static create({ typeUrl, payload, isAction, chargeCost, retryLimit, accountAddress, enqueuedAtBlock, intentProtocol = null, intent = null }) {
     return new SigningTransaction({
       id: UuidUtil.generate(),
-      message: { typeUrl, payload },
+      message: intent ? null : { typeUrl, payload },
       accountAddress,
       isAction: !!isAction,
       chargeCost: isAction ? chargeCost : null,
@@ -128,6 +131,7 @@ export class SigningTransaction {
       error: null,
       msgResponses: null,
       intentProtocol,
+      intent: intent ? transferIntent(intent) : null,
     });
   }
 
@@ -179,23 +183,25 @@ export class SigningTransaction {
    * @return {SigningTransaction|null}
    */
   static fromJSON(obj) {
+    let intent = null;
+    if (obj?.intent!==undefined && obj.intent!==null) {
+      try { intent = transferIntent(obj.intent); } catch { return null; }
+    }
     if (
       !obj
       || typeof obj !== 'object'
       || typeof obj.id !== 'string'
       || obj.id.length === 0
       || !Number.isSafeInteger(obj.createdAt) || obj.createdAt < 0
-      || !obj.message
-      || typeof obj.message.typeUrl !== 'string'
-      || typeof obj.message.payload !== 'object'
-      || obj.message.payload === null
+      || (!intent && (!obj.message || typeof obj.message.typeUrl !== 'string'
+        || typeof obj.message.payload !== 'object' || obj.message.payload === null))
     ) {
       return null;
     }
 
     return new SigningTransaction({
       id: obj.id,
-      message: { typeUrl: obj.message.typeUrl, payload: obj.message.payload },
+      message: obj.message ? { typeUrl: obj.message.typeUrl, payload: obj.message.payload } : null,
       accountAddress: typeof obj.accountAddress === 'string' ? obj.accountAddress : null,
       isAction: !!obj.isAction,
       chargeCost: typeof obj.chargeCost === 'number' ? obj.chargeCost : null,
@@ -210,6 +216,7 @@ export class SigningTransaction {
       msgResponses: null,
       submission: obj.submission ?? null,
       intentProtocol: obj.intentProtocol ?? null,
+      intent,
     });
   }
 }

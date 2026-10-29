@@ -150,6 +150,30 @@ construction, live eligibility, outcome/navigation handling and indexed-ledger
 correlation. Proof persistence, multi-message withdrawal and paid/native fees
 remain separate work. No screen, label or generated production asset changed.
 
+`SigningQueueManager.enqueueTransfer` now accepts a versioned user intent:
+`{kind:"alpha_transfer",version:1,ownerId,recipientId,recipientAddress,amount}`.
+`recipientId` is a selected player ID or NULL for an explicit literal address;
+`amount` is exact ualpha for the existing whole-Alpha 1–99 control. This intent
+remains independent of the resolved wire message and survives queue reload.
+Only known unsent work may be re-resolved when the protocol changes.
+
+Preparation obtains fresh player/inventory metadata and one height-pinned
+native auth/player/address/vault/spendable snapshot. It checks the signing
+key's own transfer bit and live owner, preserving the ordinary signer. Before H
+it retains primary-source/address-recipient semantics and verifies the selected
+address still belongs to that player. After H, selected players resolve through
+VaultSend (including unprovisioned/prefunded vaults), while literal destinations
+use PlayerSend from a provisioned source vault. Self-transfers remain valid.
+Requested amounts are never reduced or replaced with retained-address funds.
+
+The signed result is simulated at that same height before journaling a send.
+Failed simulation, missing gas evidence or gas above the existing 500,000 limit
+cannot broadcast; the protocol is rechecked afterwards. Indexed readiness gaps
+defer known unsent work. Resolved source/destination/amount and query height are
+saved with the signed submission for later ledger correlation. The tests use
+real generated query codecs/offline signing with response fixtures; rendered
+transfer-screen integration and a full post-H execution rehearsal remain open.
+
 ## Verification
 
 Install the existing application lock in `src` before testing. For an already

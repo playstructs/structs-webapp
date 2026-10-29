@@ -7,6 +7,7 @@ import {SigningTransactionSettledEvent} from "../events/SigningTransactionSettle
 import {normalizeMessagePayload} from "../util/MessagePayload";
 import {TransactionJournal} from "./TransactionJournal";
 import {SigningDeferredError} from "./SigningSubmission";
+import {transferIntent} from "../util/TransferIntent";
 
 /**
  * Validate that a payload is safe to persist as JSON. Rejects anything that
@@ -133,6 +134,16 @@ export class SigningQueueManager {
     return this.#enqueue(typeUrl, payload, false, null, options);
   }
 
+  /** Persist user intent without freezing protocol-specific transaction bytes. */
+  enqueueTransfer(value) {
+    const intent = transferIntent(value);
+    this.#assertCanEnqueue();
+    const tx = SigningTransaction.create({intent,isAction:false,chargeCost:null,retryLimit:0,
+      accountAddress:this.gameState.signingAccount.address,enqueuedAtBlock:this.gameState.currentBlockHeight});
+    this.appendToLane(tx);
+    return tx.id;
+  }
+
   /**
    * Enqueue an ordered action-lane transaction. A `chargeCost` of 0 means the
    * action is free but still broadcast in order; only `chargeCost > 0` items
@@ -160,11 +171,7 @@ export class SigningQueueManager {
     assertSerializable(payload);
     payload = normalizeMessagePayload(typeUrl, payload);
 
-    this.#bindScope();
-    if (this.suspended || this.recoveryError || this.unresolved.size || new TransactionJournal(this.gameState.signingAccount.address)
-        .read().some(record=>['broadcasting','accepted','unknown'].includes(record.phase))) {
-      throw new SigningDeferredError('Resolve the existing submission before adding another intent');
-    }
+    this.#assertCanEnqueue();
     // Retained in the saved format; signed submissions are never auto-retried.
     const retryLimit = typeof options.retryLimit === 'number'
       ? options.retryLimit
@@ -183,6 +190,14 @@ export class SigningQueueManager {
 
     this.appendToLane(tx);
     return tx.id;
+  }
+
+  #assertCanEnqueue() {
+    this.#bindScope();
+    if (this.suspended || this.recoveryError || this.unresolved.size || new TransactionJournal(this.gameState.signingAccount.address)
+        .read().some(record=>['broadcasting','accepted','unknown'].includes(record.phase))) {
+      throw new SigningDeferredError('Resolve the existing submission before adding another intent');
+    }
   }
 
   /**
@@ -761,7 +776,7 @@ export class SigningQueueManager {
             this.unresolved.set(tx.id,tx);
           } else if (![TX_STATUS.QUEUED,TX_STATUS.PREPARING].includes(tx.status)) {
             throw new Error('Unknown intent state; recovery required');
-          } else if (Date.now()-tx.createdAt>SIGNING_QUEUE.MAX_QUEUE_AGE_MS || !this.registry.lookupType(tx.message.typeUrl)) {
+          } else if (Date.now()-tx.createdAt>SIGNING_QUEUE.MAX_QUEUE_AGE_MS || (!tx.intent && !this.registry.lookupType(tx.message.typeUrl))) {
             tx.status = TX_STATUS.DROPPED;
             tx.error = 'Unsent intent is expired or unsupported';
             this.#rememberCompleted(tx);
