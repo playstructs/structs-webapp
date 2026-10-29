@@ -53,12 +53,13 @@ class WorkManager
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
         $requiredFields = [ApiParameters::PLAYER_ID];
 
-        return $this->queryAll(
+        return $this->queryAllStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
-            $requiredFields
+            $requiredFields,
+            'work'
         );
     }
 
@@ -86,12 +87,13 @@ class WorkManager
         ];
         $requiredFields = [ApiParameters::GUILD_ID, ApiParameters::PAGE];
 
-        return $this->queryAll(
+        return $this->queryAllStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
-            $requiredFields
+            $requiredFields,
+            'work'
         );
     }
 
@@ -114,12 +116,13 @@ class WorkManager
         $requestParams = [ApiParameters::PAGE => (string) $page];
         $requiredFields = [ApiParameters::PAGE];
 
-        return $this->queryAll(
+        return $this->queryAllStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
-            $requiredFields
+            $requiredFields,
+            'work'
         );
     }
 
@@ -128,12 +131,13 @@ class WorkManager
      */
     public function countWork(): Response
     {
-        return $this->queryOne(
+        return $this->queryOneStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             'SELECT count(*) AS count FROM view.work',
             [],
-            []
+            [],
+            'work'
         );
     }
 }

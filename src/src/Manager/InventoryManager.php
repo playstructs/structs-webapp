@@ -8,6 +8,7 @@ use App\Dto\ApiResponseContentDto;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
 use App\Util\ResponseMetaUtil;
+use App\Util\ConsistentRead;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -136,9 +137,11 @@ class InventoryManager
             ORDER BY bucket, l.action";
 
         $db = $this->entityManager->getConnection();
-        $responseContent->data = $db->fetchAllAssociative($sql, ['guild_id' => $guild_id]);
-        $responseContent->success = true;
-        ResponseMetaUtil::stampHeight($responseContent, $this->entityManager);
+        ConsistentRead::run($db, function () use ($db, $sql, $guild_id, $responseContent): void {
+            $responseContent->data = $db->fetchAllAssociative($sql, ['guild_id' => $guild_id]);
+            $responseContent->meta = ResponseMetaUtil::snapshotMeta($db);
+            $responseContent->success = true;
+        });
 
         return new JsonResponse($responseContent, Response::HTTP_OK);
     }

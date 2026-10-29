@@ -254,7 +254,7 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.playerFactory.make(response.data);
+    return this.playerFactory.make(response.data, response.meta);
   }
 
   /**
@@ -796,7 +796,11 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/work/player/${playerId}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.workFactory.parseList(response.data);
+    const work = this.workFactory.parseList(response.data);
+    for (const item of work) {
+      item.snapshot_meta = response.meta;
+    }
+    return work;
   }
 
   /**
