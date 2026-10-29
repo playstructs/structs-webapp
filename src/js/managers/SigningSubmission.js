@@ -73,7 +73,7 @@ export class SigningSubmission {
       throw new Error('Broadcast response identity is invalid');
     }
     return {code:result.code,transactionHash:tx.submission.hash,chainId:CHAIN.ID,
-      rawLog:result.log ?? '',stage:'check_tx'};
+      codespace:result.codespace ?? '',rawLog:result.log ?? '',stage:'check_tx'};
   }
 
   async find(tx) {
@@ -103,7 +103,7 @@ export class SigningSubmission {
     }
     return {code:result.result.code,transactionHash:tx.submission.hash,chainId:CHAIN.ID,
       height,txIndex:result.index,blockHash:toHex(block.commit.blockId.hash).toUpperCase(),
-      blockTime:toRfc3339WithNanoseconds(block.header.time),rawLog:result.result.log ?? '',stage:'committed',
+      blockTime:toRfc3339WithNanoseconds(block.header.time),codespace:result.result.codespace ?? '',rawLog:result.result.log ?? '',stage:'committed',
       msgResponses:TxMsgData.decode(result.result.data ?? new Uint8Array()).msgResponses};
   }
 }

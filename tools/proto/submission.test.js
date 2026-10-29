@@ -73,13 +73,13 @@ async function fixture(storage=new Storage()){
         if(control.mode==='commit')control.results.set(hash,{height:control.height+1,code:0});
         if(control.mode==='deliver_reject')control.results.set(hash,{height:control.height+1,code:9});
         if(control.results.has(hash))control.height++;
-        return {code:control.mode==='reject'?9:0,hash:fromHex(hash),log:'fixture'};
+        return {code:control.mode==='reject'?9:0,hash:fromHex(hash),codespace:'fixture_check',log:'fixture'};
       },
       tx:async({hash})=>{
         const key=Buffer.from(hash).toString('hex').toUpperCase();
         const result=control.results.get(key);
         if(!result)throw new RpcResponseError({code:-32603,message:'Internal error',data:`tx (${key}) not found`});
-        return {hash,tx:control.bytes.get(key),height:result.height,index:0,result:{code:result.code,data:new Uint8Array(),log:'fixture'}};
+        return {hash,tx:control.bytes.get(key),height:result.height,index:0,result:{code:result.code,codespace:'fixture_deliver',data:new Uint8Array(),log:'fixture'}};
       },
       commit:async height=>({commit:{height,blockId:{hash:new Uint8Array(32)}},header:{height,chainId:control.wrongBlock?'wrong':CHAIN.ID,
         time:new Date('2026-10-29T00:00:00.123Z')}}),
@@ -126,6 +126,9 @@ async function failureAndUnknown(){
   for(const mode of ['reject','deliver_reject']){
     const f=await fixture();f.control.mode=mode;const id=f.enqueue();await f.tick();
     const result=await f.queue.whenSettled(id);assert.equal(result.status,TX_STATUS.DROPPED);
+    assert.equal(result.response.codespace,mode==='reject'?'fixture_check':'fixture_deliver');
+    const reload=f.makeQueue();reload.loadPersistedState();
+    assert.equal((await reload.whenSettled(id)).response.codespace,result.response.codespace);
     await f.tick();assert.equal(f.control.sends,1);assert.equal(f.control.signs,1);
   }
   const f=await fixture();f.control.mode='throw';const id=f.enqueue();await f.tick();
