@@ -296,7 +296,7 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/infusion/player/${playerId}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.infusionFactory.make(response.data);
+    return this.infusionFactory.make(response.data, response.meta);
   }
 
   /**

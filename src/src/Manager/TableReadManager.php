@@ -730,7 +730,7 @@ class TableReadManager
     public function infusionAll(int $page): Response
     {
         return $this->listQuery(
-            'destination_id, address, destination_type, player_id, fuel, fuel_p, defusing, defusing_p, power, power_p, ratio, ratio_p, commission, created_at, updated_at',
+            'destination_id, address, destination_type, player_id, owner_id, generator_disabled, fuel, fuel_p, defusing, defusing_p, power, power_p, ratio, ratio_p, commission, created_at, updated_at',
             'structs.infusion',
             [],
             'updated_at DESC NULLS LAST, destination_id, address',
@@ -744,7 +744,7 @@ class TableReadManager
     public function infusionByDestination(string $destination_id, int $page): Response
     {
         return $this->listQuery(
-            'destination_id, address, destination_type, player_id, fuel, fuel_p, defusing, defusing_p, power, power_p, ratio, ratio_p, commission, created_at, updated_at',
+            'destination_id, address, destination_type, player_id, owner_id, generator_disabled, fuel, fuel_p, defusing, defusing_p, power, power_p, ratio, ratio_p, commission, created_at, updated_at',
             'structs.infusion',
             [
                 'destination_id = :destination_id',
@@ -760,7 +760,7 @@ class TableReadManager
     public function infusionByAddress(string $address, int $page): Response
     {
         return $this->listQuery(
-            'destination_id, address, destination_type, player_id, fuel, fuel_p, defusing, defusing_p, power, power_p, ratio, ratio_p, commission, created_at, updated_at',
+            'destination_id, address, destination_type, player_id, owner_id, generator_disabled, fuel, fuel_p, defusing, defusing_p, power, power_p, ratio, ratio_p, commission, created_at, updated_at',
             'structs.infusion',
             [
                 'address = :address',
@@ -776,10 +776,10 @@ class TableReadManager
     public function infusionByPlayerList(string $player_id, int $page): Response
     {
         return $this->listQuery(
-            'destination_id, address, destination_type, player_id, fuel, fuel_p, defusing, defusing_p, power, power_p, ratio, ratio_p, commission, created_at, updated_at',
+            'destination_id, address, destination_type, player_id, owner_id, generator_disabled, fuel, fuel_p, defusing, defusing_p, power, power_p, ratio, ratio_p, commission, created_at, updated_at',
             'structs.infusion',
             [
-                'player_id = :player_id',
+                'COALESCE(NULLIF(owner_id, \'\'), player_id) = :player_id',
             ],
             'updated_at DESC NULLS LAST, destination_id, address',
             [ApiParameters::PLAYER_ID => $player_id, ApiParameters::PAGE => (string) $page],

@@ -1,6 +1,7 @@
 import {DTest, DTestSuite} from "../framework/DTestFramework";
 import {GuildAPIResponseFactory} from "../factories/GuildAPIResponseFactory";
 import {PlayerFactory} from "../factories/PlayerFactory";
+import {InfusionFactory} from "../factories/InfusionFactory";
 
 export class APIReadinessTest extends DTestSuite {
   constructor() {
@@ -32,5 +33,21 @@ export class APIReadinessTest extends DTestSuite {
     const restored = JSON.parse(JSON.stringify(player));
     this.assertEquals(restored.capacity_p, raw);
     this.assertEquals(restored.snapshot_meta.height, '3353000');
+  });
+
+  preservesExactReactorPositionsAndUnknownTest = new DTest('preservesExactReactorPositionsAndUnknownTest', function() {
+    const meta = {height: '3353000', protocol: 'v0.22.0', data_ready: true};
+    const raw = {fuel_p: '18446744073709551616', defusing_p: null, power_p: '3', owner_power_p: '1',
+      positions_meta: {complete: false}, positions: [{address: 'vault', is_vault: true, fuel_p: '18446744073709551616'}]};
+    const infusion = new InfusionFactory().make(raw, meta);
+    this.assertEquals(infusion.snapshot_meta, meta);
+    this.assertEquals(infusion.fuel_p, raw.fuel_p);
+    this.assertEquals(infusion.defusing_p, null);
+    this.assertEquals(infusion.owner_power_p, '1');
+    this.assertEquals(infusion.positions_meta.complete, false);
+    const restored = new InfusionFactory().make(JSON.parse(JSON.stringify(infusion)));
+    this.assertEquals(restored.snapshot_meta.height, '3353000');
+    this.assertEquals(restored.positions[0].fuel_p, raw.fuel_p);
+    this.assertEquals(new InfusionFactory().make(null, meta).snapshot_meta, meta);
   });
 }
