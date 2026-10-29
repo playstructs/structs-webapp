@@ -462,10 +462,12 @@ class TableReadManager
     public function defusionAll(int $page): Response
     {
         return $this->listQuery(
-            'validator_address, delegator_address, defusion_type, amount_p, amount, denom, completed_at, created_at',
-            'structs.defusion',
+            'validator_address, delegator_address, defusion_type, amount_p::text AS amount_p, amount::text AS amount, denom, completed_at, created_at, '
+                . 'chain_id, block_height::text AS block_height, tx_index, event_index, source_validator_address, '
+                . 'legacy_observed_height::text AS legacy_observed_height, reconciled_height::text AS reconciled_height, pending_state',
+            'structs.defusion_current',
             [],
-            'created_at DESC NULLS LAST, validator_address, delegator_address',
+            'created_at DESC NULLS LAST, validator_address, delegator_address, chain_id, block_height, tx_index, event_index, denom',
             [ApiParameters::PAGE => (string) $page],
             [ApiParameters::PAGE],
             $page,
@@ -476,12 +478,14 @@ class TableReadManager
     public function defusionByValidator(string $validator_address, int $page): Response
     {
         return $this->listQuery(
-            'validator_address, delegator_address, defusion_type, amount_p, amount, denom, completed_at, created_at',
-            'structs.defusion',
+            'validator_address, delegator_address, defusion_type, amount_p::text AS amount_p, amount::text AS amount, denom, completed_at, created_at, '
+                . 'chain_id, block_height::text AS block_height, tx_index, event_index, source_validator_address, '
+                . 'legacy_observed_height::text AS legacy_observed_height, reconciled_height::text AS reconciled_height, pending_state',
+            'structs.defusion_current',
             [
                 'validator_address = :validator_address',
             ],
-            'created_at DESC NULLS LAST, delegator_address',
+            'created_at DESC NULLS LAST, delegator_address, chain_id, block_height, tx_index, event_index, denom',
             [ApiParameters::VALIDATOR_ADDRESS => $validator_address, ApiParameters::PAGE => (string) $page],
             [ApiParameters::VALIDATOR_ADDRESS, ApiParameters::PAGE],
             $page,
@@ -492,12 +496,14 @@ class TableReadManager
     public function defusionByDelegator(string $delegator_address, int $page): Response
     {
         return $this->listQuery(
-            'validator_address, delegator_address, defusion_type, amount_p, amount, denom, completed_at, created_at',
-            'structs.defusion',
+            'validator_address, delegator_address, defusion_type, amount_p::text AS amount_p, amount::text AS amount, denom, completed_at, created_at, '
+                . 'chain_id, block_height::text AS block_height, tx_index, event_index, source_validator_address, '
+                . 'legacy_observed_height::text AS legacy_observed_height, reconciled_height::text AS reconciled_height, pending_state',
+            'structs.defusion_current',
             [
                 'delegator_address = :delegator_address',
             ],
-            'created_at DESC NULLS LAST, validator_address',
+            'created_at DESC NULLS LAST, validator_address, chain_id, block_height, tx_index, event_index, denom',
             [ApiParameters::DELEGATOR_ADDRESS => $delegator_address, ApiParameters::PAGE => (string) $page],
             [ApiParameters::DELEGATOR_ADDRESS, ApiParameters::PAGE],
             $page,
