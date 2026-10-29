@@ -538,7 +538,11 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/transfer/search?${searchStringParam}${guildIdParam}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.playerSearchResultDTOFactory.parseList(response.data);
+    const players = this.playerSearchResultDTOFactory.parseList(response.data);
+    for (const player of players) {
+      player.snapshot_meta = response.meta;
+    }
+    return players;
   }
 
   /**

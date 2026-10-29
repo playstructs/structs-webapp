@@ -214,6 +214,9 @@ class PlayerTest extends KernelTestCase
             ->method('fetchAllAssociative')
             ->with($this->anything(), $expectedQueryParams)
             ->willReturn([]);
+        $connectionMock->method('fetchAssociative')->willReturn(['meta' => json_encode([
+            'height' => '3352999', 'protocol' => 'v0.21.0', 'data_ready' => true,
+        ])]);
 
         $entityManagerStub = $this->createStub(EntityManagerInterface::class);
         $entityManagerStub->method('getConnection')

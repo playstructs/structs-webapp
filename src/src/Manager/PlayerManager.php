@@ -9,6 +9,7 @@ use App\Dto\ApiResponseContentDto;
 use App\Entity\Player;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
+use App\Util\ConsistentRead;
 use App\Util\ResponseMetaUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
@@ -33,12 +34,16 @@ class PlayerManager
 
     public ApiRequestParsingManager $apiRequestParsingManager;
 
+    private VaultFundsManager $vaultFunds;
+
     public function __construct(
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        ?VaultFundsManager $vaultFunds = null
     ) {
         $this->entityManager = $entityManager;
         $this->validator = $validator;
+        $this->vaultFunds = $vaultFunds ?? new VaultFundsManager();
         $this->constraintViolationUtil = new ConstraintViolationUtil();
         $this->apiRequestParsingManager = new ApiRequestParsingManager(
             $this->validator,
@@ -57,6 +62,9 @@ class PlayerManager
             SELECT
               p.id,
               p.primary_address,
+              v.address AS _vault_address,
+              v.account_created AS _vault_account_created,
+              COALESCE(vi.balance, 0)::text AS _vault_balance_p,
               p.guild_id,
               p.substation_id,
               p.planet_id,
@@ -113,6 +121,9 @@ class PlayerManager
                 AND g.attribute_type=\'connectionCapacity\'
               ), 0) as connection_capacity
             FROM player p
+            LEFT JOIN structs.vault v ON v.owner_id = p.id
+            LEFT JOIN structs.api_inventory vi ON vi.owner_type = \'address\'
+              AND vi.owner_id = v.address AND vi.denom = \'ualpha\'
             LEFT JOIN guild gu
               ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
@@ -124,13 +135,23 @@ class PlayerManager
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
         $requiredFields = [ApiParameters::PLAYER_ID];
 
-        return $this->queryOne(
+        [$responseContent, $status] = $this->runQuery(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
-            $requiredFields
+            $requiredFields,
+            false,
+            'inventory',
+            true
         );
+        // The SQL snapshot is closed before any narrowly scoped chain fallback.
+        // Every fallback query must prove that same indexed height.
+        if ($responseContent->success && is_array($responseContent->data)) {
+            $this->vaultFunds->apply($responseContent->data, $responseContent->meta);
+        }
+
+        return new JsonResponse($responseContent, $status);
     }
 
     /**
@@ -399,6 +420,9 @@ class PlayerManager
             SELECT
               p.id,
               pa.address,
+              v.address AS _vault_address,
+              v.account_created AS _vault_account_created,
+              COALESCE(vi.balance, 0)::text AS _vault_balance_p,
               p.username,
               p.pfp,
               p.pfp_client_render_attributes,
@@ -406,8 +430,11 @@ class PlayerManager
               gm.tag,
               COALESCE(vpi.balance, 0) as alpha
             FROM player_address pa
-            LEFT JOIN player p
+            INNER JOIN player p
               ON p.id = pa.player_id
+            LEFT JOIN structs.vault v ON v.owner_id = p.id
+            LEFT JOIN structs.api_inventory vi ON vi.owner_type = 'address'
+              AND vi.owner_id = v.address AND vi.denom = 'ualpha'
             LEFT JOIN guild gu
               ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
@@ -422,6 +449,9 @@ class PlayerManager
             SELECT
               p.id,
               p.primary_address AS address,
+              v.address AS _vault_address,
+              v.account_created AS _vault_account_created,
+              COALESCE(vi.balance, 0)::text AS _vault_balance_p,
               p.username,
               p.pfp,
               p.pfp_client_render_attributes,
@@ -429,6 +459,9 @@ class PlayerManager
               gm.tag,
               COALESCE(vpi.balance, 0) as alpha
             FROM player p
+            LEFT JOIN structs.vault v ON v.owner_id = p.id
+            LEFT JOIN structs.api_inventory vi ON vi.owner_type = 'address'
+              AND vi.owner_id = v.address AND vi.denom = 'ualpha'
             LEFT JOIN guild gu
               ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
@@ -443,10 +476,19 @@ class PlayerManager
         ";
 
         $db = $this->entityManager->getConnection();
-        $result = $db->fetchAllAssociative($query, $queryParams);
-
-        $responseContent->data = $result;
-        $responseContent->success = true;
+        ConsistentRead::run($db, function () use ($db, $query, $queryParams, $responseContent): void {
+            $responseContent->data = $db->fetchAllAssociative($query, $queryParams);
+            $responseContent->meta = ResponseMetaUtil::snapshotMeta($db, 'inventory');
+            $responseContent->success = true;
+        });
+        // Search is a bounded indexed list, not one RPC fan-out per result.
+        // Resolve uncertain spendability only when an individual is requested.
+        $indexedFunds = new VaultFundsManager();
+        foreach ($responseContent->data as &$player) {
+            $meta = $responseContent->meta;
+            $indexedFunds->apply($player, $meta);
+        }
+        unset($player);
 
         return new JsonResponse($responseContent, Response::HTTP_OK);
     }
