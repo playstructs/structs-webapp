@@ -13,18 +13,23 @@ export const protobufPackage = "structs.structs";
 
 export interface AddressRecord {
   address: string;
-  playerIndex: number;
+  playerIndex: string;
+}
+
+export interface AddressNonceRecord {
+  address: string;
+  nonce: string;
 }
 
 export interface AddressAssociation {
   address: string;
-  playerIndex: number;
+  playerIndex: string;
   registrationStatus: registrationStatus;
 }
 
 export interface AddressActivity {
   address: string;
-  blockHeight: number;
+  blockHeight: string;
   blockTime: Date | undefined;
 }
 
@@ -34,7 +39,7 @@ export interface InternalAddressAssociation {
 }
 
 function createBaseAddressRecord(): AddressRecord {
-  return { address: "", playerIndex: 0 };
+  return { address: "", playerIndex: "0" };
 }
 
 export const AddressRecord: MessageFns<AddressRecord> = {
@@ -42,7 +47,7 @@ export const AddressRecord: MessageFns<AddressRecord> = {
     if (message.address !== "") {
       writer.uint32(10).string(message.address);
     }
-    if (message.playerIndex !== 0) {
+    if (message.playerIndex !== "0") {
       writer.uint32(16).uint64(message.playerIndex);
     }
     return writer;
@@ -68,7 +73,7 @@ export const AddressRecord: MessageFns<AddressRecord> = {
             break;
           }
 
-          message.playerIndex = longToNumber(reader.uint64());
+          message.playerIndex = reader.uint64().toString();
           continue;
         }
       }
@@ -83,7 +88,7 @@ export const AddressRecord: MessageFns<AddressRecord> = {
   fromJSON(object: any): AddressRecord {
     return {
       address: isSet(object.address) ? globalThis.String(object.address) : "",
-      playerIndex: isSet(object.playerIndex) ? globalThis.Number(object.playerIndex) : 0,
+      playerIndex: isSet(object.playerIndex) ? globalThis.String(object.playerIndex) : "0",
     };
   },
 
@@ -92,8 +97,8 @@ export const AddressRecord: MessageFns<AddressRecord> = {
     if (message.address !== "") {
       obj.address = message.address;
     }
-    if (message.playerIndex !== 0) {
-      obj.playerIndex = Math.round(message.playerIndex);
+    if (message.playerIndex !== "0") {
+      obj.playerIndex = message.playerIndex;
     }
     return obj;
   },
@@ -104,13 +109,89 @@ export const AddressRecord: MessageFns<AddressRecord> = {
   fromPartial<I extends Exact<DeepPartial<AddressRecord>, I>>(object: I): AddressRecord {
     const message = createBaseAddressRecord();
     message.address = object.address ?? "";
-    message.playerIndex = object.playerIndex ?? 0;
+    message.playerIndex = object.playerIndex ?? "0";
+    return message;
+  },
+};
+
+function createBaseAddressNonceRecord(): AddressNonceRecord {
+  return { address: "", nonce: "0" };
+}
+
+export const AddressNonceRecord: MessageFns<AddressNonceRecord> = {
+  encode(message: AddressNonceRecord, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.address !== "") {
+      writer.uint32(10).string(message.address);
+    }
+    if (message.nonce !== "0") {
+      writer.uint32(16).uint64(message.nonce);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AddressNonceRecord {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAddressNonceRecord();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.address = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.nonce = reader.uint64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AddressNonceRecord {
+    return {
+      address: isSet(object.address) ? globalThis.String(object.address) : "",
+      nonce: isSet(object.nonce) ? globalThis.String(object.nonce) : "0",
+    };
+  },
+
+  toJSON(message: AddressNonceRecord): unknown {
+    const obj: any = {};
+    if (message.address !== "") {
+      obj.address = message.address;
+    }
+    if (message.nonce !== "0") {
+      obj.nonce = message.nonce;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AddressNonceRecord>, I>>(base?: I): AddressNonceRecord {
+    return AddressNonceRecord.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AddressNonceRecord>, I>>(object: I): AddressNonceRecord {
+    const message = createBaseAddressNonceRecord();
+    message.address = object.address ?? "";
+    message.nonce = object.nonce ?? "0";
     return message;
   },
 };
 
 function createBaseAddressAssociation(): AddressAssociation {
-  return { address: "", playerIndex: 0, registrationStatus: 0 };
+  return { address: "", playerIndex: "0", registrationStatus: 0 };
 }
 
 export const AddressAssociation: MessageFns<AddressAssociation> = {
@@ -118,7 +199,7 @@ export const AddressAssociation: MessageFns<AddressAssociation> = {
     if (message.address !== "") {
       writer.uint32(10).string(message.address);
     }
-    if (message.playerIndex !== 0) {
+    if (message.playerIndex !== "0") {
       writer.uint32(16).uint64(message.playerIndex);
     }
     if (message.registrationStatus !== 0) {
@@ -147,7 +228,7 @@ export const AddressAssociation: MessageFns<AddressAssociation> = {
             break;
           }
 
-          message.playerIndex = longToNumber(reader.uint64());
+          message.playerIndex = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -170,7 +251,7 @@ export const AddressAssociation: MessageFns<AddressAssociation> = {
   fromJSON(object: any): AddressAssociation {
     return {
       address: isSet(object.address) ? globalThis.String(object.address) : "",
-      playerIndex: isSet(object.playerIndex) ? globalThis.Number(object.playerIndex) : 0,
+      playerIndex: isSet(object.playerIndex) ? globalThis.String(object.playerIndex) : "0",
       registrationStatus: isSet(object.registrationStatus) ? registrationStatusFromJSON(object.registrationStatus) : 0,
     };
   },
@@ -180,8 +261,8 @@ export const AddressAssociation: MessageFns<AddressAssociation> = {
     if (message.address !== "") {
       obj.address = message.address;
     }
-    if (message.playerIndex !== 0) {
-      obj.playerIndex = Math.round(message.playerIndex);
+    if (message.playerIndex !== "0") {
+      obj.playerIndex = message.playerIndex;
     }
     if (message.registrationStatus !== 0) {
       obj.registrationStatus = registrationStatusToJSON(message.registrationStatus);
@@ -195,14 +276,14 @@ export const AddressAssociation: MessageFns<AddressAssociation> = {
   fromPartial<I extends Exact<DeepPartial<AddressAssociation>, I>>(object: I): AddressAssociation {
     const message = createBaseAddressAssociation();
     message.address = object.address ?? "";
-    message.playerIndex = object.playerIndex ?? 0;
+    message.playerIndex = object.playerIndex ?? "0";
     message.registrationStatus = object.registrationStatus ?? 0;
     return message;
   },
 };
 
 function createBaseAddressActivity(): AddressActivity {
-  return { address: "", blockHeight: 0, blockTime: undefined };
+  return { address: "", blockHeight: "0", blockTime: undefined };
 }
 
 export const AddressActivity: MessageFns<AddressActivity> = {
@@ -210,7 +291,7 @@ export const AddressActivity: MessageFns<AddressActivity> = {
     if (message.address !== "") {
       writer.uint32(10).string(message.address);
     }
-    if (message.blockHeight !== 0) {
+    if (message.blockHeight !== "0") {
       writer.uint32(16).int64(message.blockHeight);
     }
     if (message.blockTime !== undefined) {
@@ -239,7 +320,7 @@ export const AddressActivity: MessageFns<AddressActivity> = {
             break;
           }
 
-          message.blockHeight = longToNumber(reader.int64());
+          message.blockHeight = reader.int64().toString();
           continue;
         }
         case 3: {
@@ -262,7 +343,7 @@ export const AddressActivity: MessageFns<AddressActivity> = {
   fromJSON(object: any): AddressActivity {
     return {
       address: isSet(object.address) ? globalThis.String(object.address) : "",
-      blockHeight: isSet(object.blockHeight) ? globalThis.Number(object.blockHeight) : 0,
+      blockHeight: isSet(object.blockHeight) ? globalThis.String(object.blockHeight) : "0",
       blockTime: isSet(object.blockTime) ? fromJsonTimestamp(object.blockTime) : undefined,
     };
   },
@@ -272,8 +353,8 @@ export const AddressActivity: MessageFns<AddressActivity> = {
     if (message.address !== "") {
       obj.address = message.address;
     }
-    if (message.blockHeight !== 0) {
-      obj.blockHeight = Math.round(message.blockHeight);
+    if (message.blockHeight !== "0") {
+      obj.blockHeight = message.blockHeight;
     }
     if (message.blockTime !== undefined) {
       obj.blockTime = message.blockTime.toISOString();
@@ -287,7 +368,7 @@ export const AddressActivity: MessageFns<AddressActivity> = {
   fromPartial<I extends Exact<DeepPartial<AddressActivity>, I>>(object: I): AddressActivity {
     const message = createBaseAddressActivity();
     message.address = object.address ?? "";
-    message.blockHeight = object.blockHeight ?? 0;
+    message.blockHeight = object.blockHeight ?? "0";
     message.blockTime = object.blockTime ?? undefined;
     return message;
   },
@@ -382,13 +463,13 @@ export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(date: Date): Timestamp {
-  const seconds = Math.trunc(date.getTime() / 1_000);
+  const seconds = Math.trunc(date.getTime() / 1_000).toString();
   const nanos = (date.getTime() % 1_000) * 1_000_000;
   return { seconds, nanos };
 }
 
 function fromTimestamp(t: Timestamp): Date {
-  let millis = (t.seconds || 0) * 1_000;
+  let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
   millis += (t.nanos || 0) / 1_000_000;
   return new globalThis.Date(millis);
 }
@@ -401,17 +482,6 @@ function fromJsonTimestamp(o: any): Date {
   } else {
     return fromTimestamp(Timestamp.fromJSON(o));
   }
-}
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
 }
 
 function isSet(value: any): boolean {

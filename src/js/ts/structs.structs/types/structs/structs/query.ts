@@ -20,18 +20,16 @@ import { Planet, PlanetAttributeRecord, PlanetAttributes } from "./planet";
 import { Player, PlayerInventory } from "./player";
 import { Provider } from "./provider";
 import { Reactor } from "./reactor";
+import { OwnerReactorDiversity } from "./reactor_diversity";
 import { Struct, StructAttributeRecord, StructAttributes, StructType } from "./struct";
 import { Substation } from "./substation";
 
 export const protobufPackage = "structs.structs";
 
-/** QueryParamsRequest is request type for the Query/Params RPC method. */
 export interface QueryParamsRequest {
 }
 
-/** QueryParamsResponse is response type for the Query/Params RPC method. */
 export interface QueryParamsResponse {
-  /** params holds all the parameters of this module. */
   params: Params | undefined;
 }
 
@@ -39,24 +37,17 @@ export interface QueryBlockHeight {
 }
 
 export interface QueryBlockHeightResponse {
-  blockHeight: number;
+  blockHeight: string;
 }
 
 export interface QueryGuildCharter {
 }
 
 export interface QueryGuildCharterResponse {
-  /**
-   * Block height the current puzzle started from. Moves on every guild founded
-   * with a proof, which invalidates any proof or consent bound to the old value.
-   */
-  anchor: number;
-  /** Blocks elapsed since the anchor. */
-  age: number;
-  /** Leading zero bits a proof must currently have. */
+  anchor: string;
+  age: string;
   difficulty: number;
-  /** The decay parameter the difficulty is computed from. */
-  difficultyRange: number;
+  difficultyRange: string;
 }
 
 export interface QueryGetAddressRequest {
@@ -75,7 +66,8 @@ export interface QueryAllAddressRequest {
 export interface QueryAddressResponse {
   address: string;
   playerId: string;
-  permissions: number;
+  permissions: string;
+  proofNonce: string;
 }
 
 export interface QueryAllAddressResponse {
@@ -131,7 +123,7 @@ export interface QueryAllAllocationByDestinationRequest {
 export interface QueryAllAllocationResponse {
   Allocation: Allocation[];
   pagination: PageResponse | undefined;
-  status: number[];
+  status: string[];
 }
 
 export interface QueryGetFleetRequest {
@@ -143,7 +135,7 @@ export interface QueryGetFleetResponse {
 }
 
 export interface QueryGetFleetByIndexRequest {
-  index: number;
+  index: string;
 }
 
 export interface QueryAllFleetRequest {
@@ -163,7 +155,6 @@ export interface QueryAllGridRequest {
   pagination: PageRequest | undefined;
 }
 
-/** Generic Responses for Permissions */
 export interface QueryGetGridResponse {
   gridRecord: GridRecord | undefined;
 }
@@ -246,7 +237,7 @@ export interface QueryAllInfusionRequest {
 export interface QueryAllInfusionResponse {
   Infusion: Infusion[];
   pagination: PageResponse | undefined;
-  status: number[];
+  status: string[];
 }
 
 export interface QueryGetPermissionRequest {
@@ -267,7 +258,6 @@ export interface QueryAllPermissionRequest {
   pagination: PageRequest | undefined;
 }
 
-/** Generic Responses for Permissions */
 export interface QueryGetPermissionResponse {
   permissionRecord: PermissionRecord | undefined;
 }
@@ -328,7 +318,7 @@ export interface QueryGetPlanetAttributeRequest {
 }
 
 export interface QueryGetPlanetAttributeResponse {
-  attribute: number;
+  attribute: string;
 }
 
 export interface QueryAllPlanetAttributeRequest {
@@ -455,7 +445,7 @@ export interface QueryGetStructAttributeRequest {
 }
 
 export interface QueryGetStructAttributeResponse {
-  attribute: number;
+  attribute: string;
 }
 
 export interface QueryAllStructAttributeRequest {
@@ -468,7 +458,7 @@ export interface QueryAllStructAttributeResponse {
 }
 
 export interface QueryGetStructTypeRequest {
-  id: number;
+  id: string;
 }
 
 export interface QueryGetStructTypeResponse {
@@ -502,6 +492,16 @@ export interface QueryAllSubstationResponse {
   pagination: PageResponse | undefined;
 }
 
+export interface QueryVaultRequest {
+  ownerId: string;
+}
+
+export interface QueryVaultResponse {
+  ownerId: string;
+  address: string;
+  provisioned: boolean;
+}
+
 export interface QueryValidateSignatureRequest {
   address: string;
   message: string;
@@ -515,6 +515,41 @@ export interface QueryValidateSignatureResponse {
   addressPubkeyMismatch: boolean;
   signatureInvalid: boolean;
   valid: boolean;
+}
+
+export interface QueryOwnerReactorDiversityRequest {
+  ownerId: string;
+}
+
+export interface QueryOwnerReactorDiversityResponse {
+  stored: OwnerReactorDiversity | undefined;
+  liveBonus: string;
+  usableBonus: string;
+  livePortfolioComplete: boolean;
+  maxBonusBps: string;
+  targetExtraReactors: string;
+  initialized: boolean;
+  storedCapacity: string;
+  usablePrimaryCapacity: string;
+  infusionInventoryComplete: boolean;
+}
+
+export interface QueryReactorStakeShareRequest {
+  reactorId: string;
+}
+
+export interface QueryReactorStakeShareResponse {
+  reactorId: string;
+  validatorAddress: string;
+  validatorTokens: string;
+  stakeDenominator: string;
+  capBps: string;
+  capActive: boolean;
+  externalDepositHeadroom: string;
+  bondedRedelegationHeadroom: string;
+  slashRevision: string;
+  reconciledSlashRevision: string;
+  commissionRepairPending: boolean;
 }
 
 function createBaseQueryParamsRequest(): QueryParamsRequest {
@@ -664,12 +699,12 @@ export const QueryBlockHeight: MessageFns<QueryBlockHeight> = {
 };
 
 function createBaseQueryBlockHeightResponse(): QueryBlockHeightResponse {
-  return { blockHeight: 0 };
+  return { blockHeight: "0" };
 }
 
 export const QueryBlockHeightResponse: MessageFns<QueryBlockHeightResponse> = {
   encode(message: QueryBlockHeightResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.blockHeight !== 0) {
+    if (message.blockHeight !== "0") {
       writer.uint32(8).uint64(message.blockHeight);
     }
     return writer;
@@ -687,7 +722,7 @@ export const QueryBlockHeightResponse: MessageFns<QueryBlockHeightResponse> = {
             break;
           }
 
-          message.blockHeight = longToNumber(reader.uint64());
+          message.blockHeight = reader.uint64().toString();
           continue;
         }
       }
@@ -700,13 +735,13 @@ export const QueryBlockHeightResponse: MessageFns<QueryBlockHeightResponse> = {
   },
 
   fromJSON(object: any): QueryBlockHeightResponse {
-    return { blockHeight: isSet(object.blockHeight) ? globalThis.Number(object.blockHeight) : 0 };
+    return { blockHeight: isSet(object.blockHeight) ? globalThis.String(object.blockHeight) : "0" };
   },
 
   toJSON(message: QueryBlockHeightResponse): unknown {
     const obj: any = {};
-    if (message.blockHeight !== 0) {
-      obj.blockHeight = Math.round(message.blockHeight);
+    if (message.blockHeight !== "0") {
+      obj.blockHeight = message.blockHeight;
     }
     return obj;
   },
@@ -716,7 +751,7 @@ export const QueryBlockHeightResponse: MessageFns<QueryBlockHeightResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<QueryBlockHeightResponse>, I>>(object: I): QueryBlockHeightResponse {
     const message = createBaseQueryBlockHeightResponse();
-    message.blockHeight = object.blockHeight ?? 0;
+    message.blockHeight = object.blockHeight ?? "0";
     return message;
   },
 };
@@ -765,21 +800,21 @@ export const QueryGuildCharter: MessageFns<QueryGuildCharter> = {
 };
 
 function createBaseQueryGuildCharterResponse(): QueryGuildCharterResponse {
-  return { anchor: 0, age: 0, difficulty: 0, difficultyRange: 0 };
+  return { anchor: "0", age: "0", difficulty: 0, difficultyRange: "0" };
 }
 
 export const QueryGuildCharterResponse: MessageFns<QueryGuildCharterResponse> = {
   encode(message: QueryGuildCharterResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.anchor !== 0) {
+    if (message.anchor !== "0") {
       writer.uint32(8).uint64(message.anchor);
     }
-    if (message.age !== 0) {
+    if (message.age !== "0") {
       writer.uint32(16).uint64(message.age);
     }
     if (message.difficulty !== 0) {
       writer.uint32(24).uint32(message.difficulty);
     }
-    if (message.difficultyRange !== 0) {
+    if (message.difficultyRange !== "0") {
       writer.uint32(32).uint64(message.difficultyRange);
     }
     return writer;
@@ -797,7 +832,7 @@ export const QueryGuildCharterResponse: MessageFns<QueryGuildCharterResponse> = 
             break;
           }
 
-          message.anchor = longToNumber(reader.uint64());
+          message.anchor = reader.uint64().toString();
           continue;
         }
         case 2: {
@@ -805,7 +840,7 @@ export const QueryGuildCharterResponse: MessageFns<QueryGuildCharterResponse> = 
             break;
           }
 
-          message.age = longToNumber(reader.uint64());
+          message.age = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -821,7 +856,7 @@ export const QueryGuildCharterResponse: MessageFns<QueryGuildCharterResponse> = 
             break;
           }
 
-          message.difficultyRange = longToNumber(reader.uint64());
+          message.difficultyRange = reader.uint64().toString();
           continue;
         }
       }
@@ -835,26 +870,26 @@ export const QueryGuildCharterResponse: MessageFns<QueryGuildCharterResponse> = 
 
   fromJSON(object: any): QueryGuildCharterResponse {
     return {
-      anchor: isSet(object.anchor) ? globalThis.Number(object.anchor) : 0,
-      age: isSet(object.age) ? globalThis.Number(object.age) : 0,
+      anchor: isSet(object.anchor) ? globalThis.String(object.anchor) : "0",
+      age: isSet(object.age) ? globalThis.String(object.age) : "0",
       difficulty: isSet(object.difficulty) ? globalThis.Number(object.difficulty) : 0,
-      difficultyRange: isSet(object.difficultyRange) ? globalThis.Number(object.difficultyRange) : 0,
+      difficultyRange: isSet(object.difficultyRange) ? globalThis.String(object.difficultyRange) : "0",
     };
   },
 
   toJSON(message: QueryGuildCharterResponse): unknown {
     const obj: any = {};
-    if (message.anchor !== 0) {
-      obj.anchor = Math.round(message.anchor);
+    if (message.anchor !== "0") {
+      obj.anchor = message.anchor;
     }
-    if (message.age !== 0) {
-      obj.age = Math.round(message.age);
+    if (message.age !== "0") {
+      obj.age = message.age;
     }
     if (message.difficulty !== 0) {
       obj.difficulty = Math.round(message.difficulty);
     }
-    if (message.difficultyRange !== 0) {
-      obj.difficultyRange = Math.round(message.difficultyRange);
+    if (message.difficultyRange !== "0") {
+      obj.difficultyRange = message.difficultyRange;
     }
     return obj;
   },
@@ -864,10 +899,10 @@ export const QueryGuildCharterResponse: MessageFns<QueryGuildCharterResponse> = 
   },
   fromPartial<I extends Exact<DeepPartial<QueryGuildCharterResponse>, I>>(object: I): QueryGuildCharterResponse {
     const message = createBaseQueryGuildCharterResponse();
-    message.anchor = object.anchor ?? 0;
-    message.age = object.age ?? 0;
+    message.anchor = object.anchor ?? "0";
+    message.age = object.age ?? "0";
     message.difficulty = object.difficulty ?? 0;
-    message.difficultyRange = object.difficultyRange ?? 0;
+    message.difficultyRange = object.difficultyRange ?? "0";
     return message;
   },
 };
@@ -1071,7 +1106,7 @@ export const QueryAllAddressRequest: MessageFns<QueryAllAddressRequest> = {
 };
 
 function createBaseQueryAddressResponse(): QueryAddressResponse {
-  return { address: "", playerId: "", permissions: 0 };
+  return { address: "", playerId: "", permissions: "0", proofNonce: "0" };
 }
 
 export const QueryAddressResponse: MessageFns<QueryAddressResponse> = {
@@ -1082,8 +1117,11 @@ export const QueryAddressResponse: MessageFns<QueryAddressResponse> = {
     if (message.playerId !== "") {
       writer.uint32(18).string(message.playerId);
     }
-    if (message.permissions !== 0) {
+    if (message.permissions !== "0") {
       writer.uint32(24).uint64(message.permissions);
+    }
+    if (message.proofNonce !== "0") {
+      writer.uint32(32).uint64(message.proofNonce);
     }
     return writer;
   },
@@ -1116,7 +1154,15 @@ export const QueryAddressResponse: MessageFns<QueryAddressResponse> = {
             break;
           }
 
-          message.permissions = longToNumber(reader.uint64());
+          message.permissions = reader.uint64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.proofNonce = reader.uint64().toString();
           continue;
         }
       }
@@ -1132,7 +1178,8 @@ export const QueryAddressResponse: MessageFns<QueryAddressResponse> = {
     return {
       address: isSet(object.address) ? globalThis.String(object.address) : "",
       playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
-      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
+      permissions: isSet(object.permissions) ? globalThis.String(object.permissions) : "0",
+      proofNonce: isSet(object.proofNonce) ? globalThis.String(object.proofNonce) : "0",
     };
   },
 
@@ -1144,8 +1191,11 @@ export const QueryAddressResponse: MessageFns<QueryAddressResponse> = {
     if (message.playerId !== "") {
       obj.playerId = message.playerId;
     }
-    if (message.permissions !== 0) {
-      obj.permissions = Math.round(message.permissions);
+    if (message.permissions !== "0") {
+      obj.permissions = message.permissions;
+    }
+    if (message.proofNonce !== "0") {
+      obj.proofNonce = message.proofNonce;
     }
     return obj;
   },
@@ -1157,7 +1207,8 @@ export const QueryAddressResponse: MessageFns<QueryAddressResponse> = {
     const message = createBaseQueryAddressResponse();
     message.address = object.address ?? "";
     message.playerId = object.playerId ?? "";
-    message.permissions = object.permissions ?? 0;
+    message.permissions = object.permissions ?? "0";
+    message.proofNonce = object.proofNonce ?? "0";
     return message;
   },
 };
@@ -1989,7 +2040,7 @@ export const QueryAllAllocationResponse: MessageFns<QueryAllAllocationResponse> 
         }
         case 3: {
           if (tag === 24) {
-            message.status.push(longToNumber(reader.uint64()));
+            message.status.push(reader.uint64().toString());
 
             continue;
           }
@@ -1997,7 +2048,7 @@ export const QueryAllAllocationResponse: MessageFns<QueryAllAllocationResponse> 
           if (tag === 26) {
             const end2 = reader.uint32() + reader.pos;
             while (reader.pos < end2) {
-              message.status.push(longToNumber(reader.uint64()));
+              message.status.push(reader.uint64().toString());
             }
 
             continue;
@@ -2020,7 +2071,7 @@ export const QueryAllAllocationResponse: MessageFns<QueryAllAllocationResponse> 
         ? object.Allocation.map((e: any) => Allocation.fromJSON(e))
         : [],
       pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
-      status: globalThis.Array.isArray(object?.status) ? object.status.map((e: any) => globalThis.Number(e)) : [],
+      status: globalThis.Array.isArray(object?.status) ? object.status.map((e: any) => globalThis.String(e)) : [],
     };
   },
 
@@ -2033,7 +2084,7 @@ export const QueryAllAllocationResponse: MessageFns<QueryAllAllocationResponse> 
       obj.pagination = PageResponse.toJSON(message.pagination);
     }
     if (message.status?.length) {
-      obj.status = message.status.map((e) => Math.round(e));
+      obj.status = message.status;
     }
     return obj;
   },
@@ -2169,12 +2220,12 @@ export const QueryGetFleetResponse: MessageFns<QueryGetFleetResponse> = {
 };
 
 function createBaseQueryGetFleetByIndexRequest(): QueryGetFleetByIndexRequest {
-  return { index: 0 };
+  return { index: "0" };
 }
 
 export const QueryGetFleetByIndexRequest: MessageFns<QueryGetFleetByIndexRequest> = {
   encode(message: QueryGetFleetByIndexRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.index !== 0) {
+    if (message.index !== "0") {
       writer.uint32(8).uint64(message.index);
     }
     return writer;
@@ -2192,7 +2243,7 @@ export const QueryGetFleetByIndexRequest: MessageFns<QueryGetFleetByIndexRequest
             break;
           }
 
-          message.index = longToNumber(reader.uint64());
+          message.index = reader.uint64().toString();
           continue;
         }
       }
@@ -2205,13 +2256,13 @@ export const QueryGetFleetByIndexRequest: MessageFns<QueryGetFleetByIndexRequest
   },
 
   fromJSON(object: any): QueryGetFleetByIndexRequest {
-    return { index: isSet(object.index) ? globalThis.Number(object.index) : 0 };
+    return { index: isSet(object.index) ? globalThis.String(object.index) : "0" };
   },
 
   toJSON(message: QueryGetFleetByIndexRequest): unknown {
     const obj: any = {};
-    if (message.index !== 0) {
-      obj.index = Math.round(message.index);
+    if (message.index !== "0") {
+      obj.index = message.index;
     }
     return obj;
   },
@@ -2221,7 +2272,7 @@ export const QueryGetFleetByIndexRequest: MessageFns<QueryGetFleetByIndexRequest
   },
   fromPartial<I extends Exact<DeepPartial<QueryGetFleetByIndexRequest>, I>>(object: I): QueryGetFleetByIndexRequest {
     const message = createBaseQueryGetFleetByIndexRequest();
-    message.index = object.index ?? 0;
+    message.index = object.index ?? "0";
     return message;
   },
 };
@@ -3777,7 +3828,7 @@ export const QueryAllInfusionResponse: MessageFns<QueryAllInfusionResponse> = {
         }
         case 3: {
           if (tag === 24) {
-            message.status.push(longToNumber(reader.uint64()));
+            message.status.push(reader.uint64().toString());
 
             continue;
           }
@@ -3785,7 +3836,7 @@ export const QueryAllInfusionResponse: MessageFns<QueryAllInfusionResponse> = {
           if (tag === 26) {
             const end2 = reader.uint32() + reader.pos;
             while (reader.pos < end2) {
-              message.status.push(longToNumber(reader.uint64()));
+              message.status.push(reader.uint64().toString());
             }
 
             continue;
@@ -3806,7 +3857,7 @@ export const QueryAllInfusionResponse: MessageFns<QueryAllInfusionResponse> = {
     return {
       Infusion: globalThis.Array.isArray(object?.Infusion) ? object.Infusion.map((e: any) => Infusion.fromJSON(e)) : [],
       pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
-      status: globalThis.Array.isArray(object?.status) ? object.status.map((e: any) => globalThis.Number(e)) : [],
+      status: globalThis.Array.isArray(object?.status) ? object.status.map((e: any) => globalThis.String(e)) : [],
     };
   },
 
@@ -3819,7 +3870,7 @@ export const QueryAllInfusionResponse: MessageFns<QueryAllInfusionResponse> = {
       obj.pagination = PageResponse.toJSON(message.pagination);
     }
     if (message.status?.length) {
-      obj.status = message.status.map((e) => Math.round(e));
+      obj.status = message.status;
     }
     return obj;
   },
@@ -5079,12 +5130,12 @@ export const QueryGetPlanetAttributeRequest: MessageFns<QueryGetPlanetAttributeR
 };
 
 function createBaseQueryGetPlanetAttributeResponse(): QueryGetPlanetAttributeResponse {
-  return { attribute: 0 };
+  return { attribute: "0" };
 }
 
 export const QueryGetPlanetAttributeResponse: MessageFns<QueryGetPlanetAttributeResponse> = {
   encode(message: QueryGetPlanetAttributeResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.attribute !== 0) {
+    if (message.attribute !== "0") {
       writer.uint32(8).uint64(message.attribute);
     }
     return writer;
@@ -5102,7 +5153,7 @@ export const QueryGetPlanetAttributeResponse: MessageFns<QueryGetPlanetAttribute
             break;
           }
 
-          message.attribute = longToNumber(reader.uint64());
+          message.attribute = reader.uint64().toString();
           continue;
         }
       }
@@ -5115,13 +5166,13 @@ export const QueryGetPlanetAttributeResponse: MessageFns<QueryGetPlanetAttribute
   },
 
   fromJSON(object: any): QueryGetPlanetAttributeResponse {
-    return { attribute: isSet(object.attribute) ? globalThis.Number(object.attribute) : 0 };
+    return { attribute: isSet(object.attribute) ? globalThis.String(object.attribute) : "0" };
   },
 
   toJSON(message: QueryGetPlanetAttributeResponse): unknown {
     const obj: any = {};
-    if (message.attribute !== 0) {
-      obj.attribute = Math.round(message.attribute);
+    if (message.attribute !== "0") {
+      obj.attribute = message.attribute;
     }
     return obj;
   },
@@ -5133,7 +5184,7 @@ export const QueryGetPlanetAttributeResponse: MessageFns<QueryGetPlanetAttribute
     object: I,
   ): QueryGetPlanetAttributeResponse {
     const message = createBaseQueryGetPlanetAttributeResponse();
-    message.attribute = object.attribute ?? 0;
+    message.attribute = object.attribute ?? "0";
     return message;
   },
 };
@@ -7070,12 +7121,12 @@ export const QueryGetStructAttributeRequest: MessageFns<QueryGetStructAttributeR
 };
 
 function createBaseQueryGetStructAttributeResponse(): QueryGetStructAttributeResponse {
-  return { attribute: 0 };
+  return { attribute: "0" };
 }
 
 export const QueryGetStructAttributeResponse: MessageFns<QueryGetStructAttributeResponse> = {
   encode(message: QueryGetStructAttributeResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.attribute !== 0) {
+    if (message.attribute !== "0") {
       writer.uint32(8).uint64(message.attribute);
     }
     return writer;
@@ -7093,7 +7144,7 @@ export const QueryGetStructAttributeResponse: MessageFns<QueryGetStructAttribute
             break;
           }
 
-          message.attribute = longToNumber(reader.uint64());
+          message.attribute = reader.uint64().toString();
           continue;
         }
       }
@@ -7106,13 +7157,13 @@ export const QueryGetStructAttributeResponse: MessageFns<QueryGetStructAttribute
   },
 
   fromJSON(object: any): QueryGetStructAttributeResponse {
-    return { attribute: isSet(object.attribute) ? globalThis.Number(object.attribute) : 0 };
+    return { attribute: isSet(object.attribute) ? globalThis.String(object.attribute) : "0" };
   },
 
   toJSON(message: QueryGetStructAttributeResponse): unknown {
     const obj: any = {};
-    if (message.attribute !== 0) {
-      obj.attribute = Math.round(message.attribute);
+    if (message.attribute !== "0") {
+      obj.attribute = message.attribute;
     }
     return obj;
   },
@@ -7124,7 +7175,7 @@ export const QueryGetStructAttributeResponse: MessageFns<QueryGetStructAttribute
     object: I,
   ): QueryGetStructAttributeResponse {
     const message = createBaseQueryGetStructAttributeResponse();
-    message.attribute = object.attribute ?? 0;
+    message.attribute = object.attribute ?? "0";
     return message;
   },
 };
@@ -7275,12 +7326,12 @@ export const QueryAllStructAttributeResponse: MessageFns<QueryAllStructAttribute
 };
 
 function createBaseQueryGetStructTypeRequest(): QueryGetStructTypeRequest {
-  return { id: 0 };
+  return { id: "0" };
 }
 
 export const QueryGetStructTypeRequest: MessageFns<QueryGetStructTypeRequest> = {
   encode(message: QueryGetStructTypeRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== 0) {
+    if (message.id !== "0") {
       writer.uint32(8).uint64(message.id);
     }
     return writer;
@@ -7298,7 +7349,7 @@ export const QueryGetStructTypeRequest: MessageFns<QueryGetStructTypeRequest> = 
             break;
           }
 
-          message.id = longToNumber(reader.uint64());
+          message.id = reader.uint64().toString();
           continue;
         }
       }
@@ -7311,13 +7362,13 @@ export const QueryGetStructTypeRequest: MessageFns<QueryGetStructTypeRequest> = 
   },
 
   fromJSON(object: any): QueryGetStructTypeRequest {
-    return { id: isSet(object.id) ? globalThis.Number(object.id) : 0 };
+    return { id: isSet(object.id) ? globalThis.String(object.id) : "0" };
   },
 
   toJSON(message: QueryGetStructTypeRequest): unknown {
     const obj: any = {};
-    if (message.id !== 0) {
-      obj.id = Math.round(message.id);
+    if (message.id !== "0") {
+      obj.id = message.id;
     }
     return obj;
   },
@@ -7327,7 +7378,7 @@ export const QueryGetStructTypeRequest: MessageFns<QueryGetStructTypeRequest> = 
   },
   fromPartial<I extends Exact<DeepPartial<QueryGetStructTypeRequest>, I>>(object: I): QueryGetStructTypeRequest {
     const message = createBaseQueryGetStructTypeRequest();
-    message.id = object.id ?? 0;
+    message.id = object.id ?? "0";
     return message;
   },
 };
@@ -7810,6 +7861,156 @@ export const QueryAllSubstationResponse: MessageFns<QueryAllSubstationResponse> 
   },
 };
 
+function createBaseQueryVaultRequest(): QueryVaultRequest {
+  return { ownerId: "" };
+}
+
+export const QueryVaultRequest: MessageFns<QueryVaultRequest> = {
+  encode(message: QueryVaultRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.ownerId !== "") {
+      writer.uint32(10).string(message.ownerId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryVaultRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryVaultRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.ownerId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryVaultRequest {
+    return { ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "" };
+  },
+
+  toJSON(message: QueryVaultRequest): unknown {
+    const obj: any = {};
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryVaultRequest>, I>>(base?: I): QueryVaultRequest {
+    return QueryVaultRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryVaultRequest>, I>>(object: I): QueryVaultRequest {
+    const message = createBaseQueryVaultRequest();
+    message.ownerId = object.ownerId ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryVaultResponse(): QueryVaultResponse {
+  return { ownerId: "", address: "", provisioned: false };
+}
+
+export const QueryVaultResponse: MessageFns<QueryVaultResponse> = {
+  encode(message: QueryVaultResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.ownerId !== "") {
+      writer.uint32(10).string(message.ownerId);
+    }
+    if (message.address !== "") {
+      writer.uint32(18).string(message.address);
+    }
+    if (message.provisioned !== false) {
+      writer.uint32(24).bool(message.provisioned);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryVaultResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryVaultResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.ownerId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.address = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.provisioned = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryVaultResponse {
+    return {
+      ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "",
+      address: isSet(object.address) ? globalThis.String(object.address) : "",
+      provisioned: isSet(object.provisioned) ? globalThis.Boolean(object.provisioned) : false,
+    };
+  },
+
+  toJSON(message: QueryVaultResponse): unknown {
+    const obj: any = {};
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
+    }
+    if (message.address !== "") {
+      obj.address = message.address;
+    }
+    if (message.provisioned !== false) {
+      obj.provisioned = message.provisioned;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryVaultResponse>, I>>(base?: I): QueryVaultResponse {
+    return QueryVaultResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryVaultResponse>, I>>(object: I): QueryVaultResponse {
+    const message = createBaseQueryVaultResponse();
+    message.ownerId = object.ownerId ?? "";
+    message.address = object.address ?? "";
+    message.provisioned = object.provisioned ?? false;
+    return message;
+  },
+};
+
 function createBaseQueryValidateSignatureRequest(): QueryValidateSignatureRequest {
   return { address: "", message: "", proofPubKey: "", proofSignature: "" };
 }
@@ -8056,35 +8257,619 @@ export const QueryValidateSignatureResponse: MessageFns<QueryValidateSignatureRe
   },
 };
 
-/** Query defines the gRPC querier service. */
+function createBaseQueryOwnerReactorDiversityRequest(): QueryOwnerReactorDiversityRequest {
+  return { ownerId: "" };
+}
+
+export const QueryOwnerReactorDiversityRequest: MessageFns<QueryOwnerReactorDiversityRequest> = {
+  encode(message: QueryOwnerReactorDiversityRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.ownerId !== "") {
+      writer.uint32(10).string(message.ownerId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryOwnerReactorDiversityRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryOwnerReactorDiversityRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.ownerId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryOwnerReactorDiversityRequest {
+    return { ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "" };
+  },
+
+  toJSON(message: QueryOwnerReactorDiversityRequest): unknown {
+    const obj: any = {};
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryOwnerReactorDiversityRequest>, I>>(
+    base?: I,
+  ): QueryOwnerReactorDiversityRequest {
+    return QueryOwnerReactorDiversityRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryOwnerReactorDiversityRequest>, I>>(
+    object: I,
+  ): QueryOwnerReactorDiversityRequest {
+    const message = createBaseQueryOwnerReactorDiversityRequest();
+    message.ownerId = object.ownerId ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryOwnerReactorDiversityResponse(): QueryOwnerReactorDiversityResponse {
+  return {
+    stored: undefined,
+    liveBonus: "",
+    usableBonus: "0",
+    livePortfolioComplete: false,
+    maxBonusBps: "0",
+    targetExtraReactors: "0",
+    initialized: false,
+    storedCapacity: "0",
+    usablePrimaryCapacity: "0",
+    infusionInventoryComplete: false,
+  };
+}
+
+export const QueryOwnerReactorDiversityResponse: MessageFns<QueryOwnerReactorDiversityResponse> = {
+  encode(message: QueryOwnerReactorDiversityResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.stored !== undefined) {
+      OwnerReactorDiversity.encode(message.stored, writer.uint32(10).fork()).join();
+    }
+    if (message.liveBonus !== "") {
+      writer.uint32(18).string(message.liveBonus);
+    }
+    if (message.usableBonus !== "0") {
+      writer.uint32(24).uint64(message.usableBonus);
+    }
+    if (message.livePortfolioComplete !== false) {
+      writer.uint32(32).bool(message.livePortfolioComplete);
+    }
+    if (message.maxBonusBps !== "0") {
+      writer.uint32(40).uint64(message.maxBonusBps);
+    }
+    if (message.targetExtraReactors !== "0") {
+      writer.uint32(48).uint64(message.targetExtraReactors);
+    }
+    if (message.initialized !== false) {
+      writer.uint32(56).bool(message.initialized);
+    }
+    if (message.storedCapacity !== "0") {
+      writer.uint32(64).uint64(message.storedCapacity);
+    }
+    if (message.usablePrimaryCapacity !== "0") {
+      writer.uint32(72).uint64(message.usablePrimaryCapacity);
+    }
+    if (message.infusionInventoryComplete !== false) {
+      writer.uint32(80).bool(message.infusionInventoryComplete);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryOwnerReactorDiversityResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryOwnerReactorDiversityResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.stored = OwnerReactorDiversity.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.liveBonus = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.usableBonus = reader.uint64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.livePortfolioComplete = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.maxBonusBps = reader.uint64().toString();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.targetExtraReactors = reader.uint64().toString();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.initialized = reader.bool();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.storedCapacity = reader.uint64().toString();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.usablePrimaryCapacity = reader.uint64().toString();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.infusionInventoryComplete = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryOwnerReactorDiversityResponse {
+    return {
+      stored: isSet(object.stored) ? OwnerReactorDiversity.fromJSON(object.stored) : undefined,
+      liveBonus: isSet(object.liveBonus) ? globalThis.String(object.liveBonus) : "",
+      usableBonus: isSet(object.usableBonus) ? globalThis.String(object.usableBonus) : "0",
+      livePortfolioComplete: isSet(object.livePortfolioComplete)
+        ? globalThis.Boolean(object.livePortfolioComplete)
+        : false,
+      maxBonusBps: isSet(object.maxBonusBps) ? globalThis.String(object.maxBonusBps) : "0",
+      targetExtraReactors: isSet(object.targetExtraReactors) ? globalThis.String(object.targetExtraReactors) : "0",
+      initialized: isSet(object.initialized) ? globalThis.Boolean(object.initialized) : false,
+      storedCapacity: isSet(object.storedCapacity) ? globalThis.String(object.storedCapacity) : "0",
+      usablePrimaryCapacity: isSet(object.usablePrimaryCapacity)
+        ? globalThis.String(object.usablePrimaryCapacity)
+        : "0",
+      infusionInventoryComplete: isSet(object.infusionInventoryComplete)
+        ? globalThis.Boolean(object.infusionInventoryComplete)
+        : false,
+    };
+  },
+
+  toJSON(message: QueryOwnerReactorDiversityResponse): unknown {
+    const obj: any = {};
+    if (message.stored !== undefined) {
+      obj.stored = OwnerReactorDiversity.toJSON(message.stored);
+    }
+    if (message.liveBonus !== "") {
+      obj.liveBonus = message.liveBonus;
+    }
+    if (message.usableBonus !== "0") {
+      obj.usableBonus = message.usableBonus;
+    }
+    if (message.livePortfolioComplete !== false) {
+      obj.livePortfolioComplete = message.livePortfolioComplete;
+    }
+    if (message.maxBonusBps !== "0") {
+      obj.maxBonusBps = message.maxBonusBps;
+    }
+    if (message.targetExtraReactors !== "0") {
+      obj.targetExtraReactors = message.targetExtraReactors;
+    }
+    if (message.initialized !== false) {
+      obj.initialized = message.initialized;
+    }
+    if (message.storedCapacity !== "0") {
+      obj.storedCapacity = message.storedCapacity;
+    }
+    if (message.usablePrimaryCapacity !== "0") {
+      obj.usablePrimaryCapacity = message.usablePrimaryCapacity;
+    }
+    if (message.infusionInventoryComplete !== false) {
+      obj.infusionInventoryComplete = message.infusionInventoryComplete;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryOwnerReactorDiversityResponse>, I>>(
+    base?: I,
+  ): QueryOwnerReactorDiversityResponse {
+    return QueryOwnerReactorDiversityResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryOwnerReactorDiversityResponse>, I>>(
+    object: I,
+  ): QueryOwnerReactorDiversityResponse {
+    const message = createBaseQueryOwnerReactorDiversityResponse();
+    message.stored = (object.stored !== undefined && object.stored !== null)
+      ? OwnerReactorDiversity.fromPartial(object.stored)
+      : undefined;
+    message.liveBonus = object.liveBonus ?? "";
+    message.usableBonus = object.usableBonus ?? "0";
+    message.livePortfolioComplete = object.livePortfolioComplete ?? false;
+    message.maxBonusBps = object.maxBonusBps ?? "0";
+    message.targetExtraReactors = object.targetExtraReactors ?? "0";
+    message.initialized = object.initialized ?? false;
+    message.storedCapacity = object.storedCapacity ?? "0";
+    message.usablePrimaryCapacity = object.usablePrimaryCapacity ?? "0";
+    message.infusionInventoryComplete = object.infusionInventoryComplete ?? false;
+    return message;
+  },
+};
+
+function createBaseQueryReactorStakeShareRequest(): QueryReactorStakeShareRequest {
+  return { reactorId: "" };
+}
+
+export const QueryReactorStakeShareRequest: MessageFns<QueryReactorStakeShareRequest> = {
+  encode(message: QueryReactorStakeShareRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.reactorId !== "") {
+      writer.uint32(10).string(message.reactorId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryReactorStakeShareRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryReactorStakeShareRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.reactorId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryReactorStakeShareRequest {
+    return { reactorId: isSet(object.reactorId) ? globalThis.String(object.reactorId) : "" };
+  },
+
+  toJSON(message: QueryReactorStakeShareRequest): unknown {
+    const obj: any = {};
+    if (message.reactorId !== "") {
+      obj.reactorId = message.reactorId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryReactorStakeShareRequest>, I>>(base?: I): QueryReactorStakeShareRequest {
+    return QueryReactorStakeShareRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryReactorStakeShareRequest>, I>>(
+    object: I,
+  ): QueryReactorStakeShareRequest {
+    const message = createBaseQueryReactorStakeShareRequest();
+    message.reactorId = object.reactorId ?? "";
+    return message;
+  },
+};
+
+function createBaseQueryReactorStakeShareResponse(): QueryReactorStakeShareResponse {
+  return {
+    reactorId: "",
+    validatorAddress: "",
+    validatorTokens: "",
+    stakeDenominator: "",
+    capBps: "0",
+    capActive: false,
+    externalDepositHeadroom: "",
+    bondedRedelegationHeadroom: "",
+    slashRevision: "0",
+    reconciledSlashRevision: "0",
+    commissionRepairPending: false,
+  };
+}
+
+export const QueryReactorStakeShareResponse: MessageFns<QueryReactorStakeShareResponse> = {
+  encode(message: QueryReactorStakeShareResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.reactorId !== "") {
+      writer.uint32(10).string(message.reactorId);
+    }
+    if (message.validatorAddress !== "") {
+      writer.uint32(18).string(message.validatorAddress);
+    }
+    if (message.validatorTokens !== "") {
+      writer.uint32(26).string(message.validatorTokens);
+    }
+    if (message.stakeDenominator !== "") {
+      writer.uint32(34).string(message.stakeDenominator);
+    }
+    if (message.capBps !== "0") {
+      writer.uint32(40).uint64(message.capBps);
+    }
+    if (message.capActive !== false) {
+      writer.uint32(48).bool(message.capActive);
+    }
+    if (message.externalDepositHeadroom !== "") {
+      writer.uint32(58).string(message.externalDepositHeadroom);
+    }
+    if (message.bondedRedelegationHeadroom !== "") {
+      writer.uint32(66).string(message.bondedRedelegationHeadroom);
+    }
+    if (message.slashRevision !== "0") {
+      writer.uint32(72).uint64(message.slashRevision);
+    }
+    if (message.reconciledSlashRevision !== "0") {
+      writer.uint32(80).uint64(message.reconciledSlashRevision);
+    }
+    if (message.commissionRepairPending !== false) {
+      writer.uint32(88).bool(message.commissionRepairPending);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryReactorStakeShareResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryReactorStakeShareResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.reactorId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.validatorAddress = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.validatorTokens = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.stakeDenominator = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.capBps = reader.uint64().toString();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.capActive = reader.bool();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.externalDepositHeadroom = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.bondedRedelegationHeadroom = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.slashRevision = reader.uint64().toString();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.reconciledSlashRevision = reader.uint64().toString();
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.commissionRepairPending = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryReactorStakeShareResponse {
+    return {
+      reactorId: isSet(object.reactorId) ? globalThis.String(object.reactorId) : "",
+      validatorAddress: isSet(object.validatorAddress) ? globalThis.String(object.validatorAddress) : "",
+      validatorTokens: isSet(object.validatorTokens) ? globalThis.String(object.validatorTokens) : "",
+      stakeDenominator: isSet(object.stakeDenominator) ? globalThis.String(object.stakeDenominator) : "",
+      capBps: isSet(object.capBps) ? globalThis.String(object.capBps) : "0",
+      capActive: isSet(object.capActive) ? globalThis.Boolean(object.capActive) : false,
+      externalDepositHeadroom: isSet(object.externalDepositHeadroom)
+        ? globalThis.String(object.externalDepositHeadroom)
+        : "",
+      bondedRedelegationHeadroom: isSet(object.bondedRedelegationHeadroom)
+        ? globalThis.String(object.bondedRedelegationHeadroom)
+        : "",
+      slashRevision: isSet(object.slashRevision) ? globalThis.String(object.slashRevision) : "0",
+      reconciledSlashRevision: isSet(object.reconciledSlashRevision)
+        ? globalThis.String(object.reconciledSlashRevision)
+        : "0",
+      commissionRepairPending: isSet(object.commissionRepairPending)
+        ? globalThis.Boolean(object.commissionRepairPending)
+        : false,
+    };
+  },
+
+  toJSON(message: QueryReactorStakeShareResponse): unknown {
+    const obj: any = {};
+    if (message.reactorId !== "") {
+      obj.reactorId = message.reactorId;
+    }
+    if (message.validatorAddress !== "") {
+      obj.validatorAddress = message.validatorAddress;
+    }
+    if (message.validatorTokens !== "") {
+      obj.validatorTokens = message.validatorTokens;
+    }
+    if (message.stakeDenominator !== "") {
+      obj.stakeDenominator = message.stakeDenominator;
+    }
+    if (message.capBps !== "0") {
+      obj.capBps = message.capBps;
+    }
+    if (message.capActive !== false) {
+      obj.capActive = message.capActive;
+    }
+    if (message.externalDepositHeadroom !== "") {
+      obj.externalDepositHeadroom = message.externalDepositHeadroom;
+    }
+    if (message.bondedRedelegationHeadroom !== "") {
+      obj.bondedRedelegationHeadroom = message.bondedRedelegationHeadroom;
+    }
+    if (message.slashRevision !== "0") {
+      obj.slashRevision = message.slashRevision;
+    }
+    if (message.reconciledSlashRevision !== "0") {
+      obj.reconciledSlashRevision = message.reconciledSlashRevision;
+    }
+    if (message.commissionRepairPending !== false) {
+      obj.commissionRepairPending = message.commissionRepairPending;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<QueryReactorStakeShareResponse>, I>>(base?: I): QueryReactorStakeShareResponse {
+    return QueryReactorStakeShareResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryReactorStakeShareResponse>, I>>(
+    object: I,
+  ): QueryReactorStakeShareResponse {
+    const message = createBaseQueryReactorStakeShareResponse();
+    message.reactorId = object.reactorId ?? "";
+    message.validatorAddress = object.validatorAddress ?? "";
+    message.validatorTokens = object.validatorTokens ?? "";
+    message.stakeDenominator = object.stakeDenominator ?? "";
+    message.capBps = object.capBps ?? "0";
+    message.capActive = object.capActive ?? false;
+    message.externalDepositHeadroom = object.externalDepositHeadroom ?? "";
+    message.bondedRedelegationHeadroom = object.bondedRedelegationHeadroom ?? "";
+    message.slashRevision = object.slashRevision ?? "0";
+    message.reconciledSlashRevision = object.reconciledSlashRevision ?? "0";
+    message.commissionRepairPending = object.commissionRepairPending ?? false;
+    return message;
+  },
+};
+
 export interface Query {
+  OwnerReactorDiversity(request: QueryOwnerReactorDiversityRequest): Promise<QueryOwnerReactorDiversityResponse>;
+  ReactorStakeShare(request: QueryReactorStakeShareRequest): Promise<QueryReactorStakeShareResponse>;
+  Vault(request: QueryVaultRequest): Promise<QueryVaultResponse>;
   GetBlockHeight(request: QueryBlockHeight): Promise<QueryBlockHeightResponse>;
-  /** State of the global guild charter puzzle. */
   GuildCharter(request: QueryGuildCharter): Promise<QueryGuildCharterResponse>;
-  /** Parameters queries the parameters of the module. */
   Params(request: QueryParamsRequest): Promise<QueryParamsResponse>;
-  /** Queries for Addresses. */
   Address(request: QueryGetAddressRequest): Promise<QueryAddressResponse>;
   AddressAll(request: QueryAllAddressRequest): Promise<QueryAllAddressResponse>;
   AddressAllByPlayer(request: QueryAllAddressByPlayerRequest): Promise<QueryAllAddressResponse>;
-  /** Queries a list of Agreement items. */
   Agreement(request: QueryGetAgreementRequest): Promise<QueryGetAgreementResponse>;
   AgreementAll(request: QueryAllAgreementRequest): Promise<QueryAllAgreementResponse>;
   AgreementAllByProvider(request: QueryAllAgreementByProviderRequest): Promise<QueryAllAgreementResponse>;
-  /** Queries a list of Allocation items. */
   Allocation(request: QueryGetAllocationRequest): Promise<QueryGetAllocationResponse>;
   AllocationAll(request: QueryAllAllocationRequest): Promise<QueryAllAllocationResponse>;
   AllocationAllBySource(request: QueryAllAllocationBySourceRequest): Promise<QueryAllAllocationResponse>;
   AllocationAllByDestination(request: QueryAllAllocationByDestinationRequest): Promise<QueryAllAllocationResponse>;
-  /** Queries a list of Fleet items. */
   Fleet(request: QueryGetFleetRequest): Promise<QueryGetFleetResponse>;
   FleetByIndex(request: QueryGetFleetByIndexRequest): Promise<QueryGetFleetResponse>;
   FleetAll(request: QueryAllFleetRequest): Promise<QueryAllFleetResponse>;
-  /** Queries a specific Grid details */
   Grid(request: QueryGetGridRequest): Promise<QueryGetGridResponse>;
-  /** Queries a list of all Grid details */
   GridAll(request: QueryAllGridRequest): Promise<QueryAllGridResponse>;
-  /** Queries a list of Guild items. */
   Guild(request: QueryGetGuildRequest): Promise<QueryGetGuildResponse>;
   GuildAll(request: QueryAllGuildRequest): Promise<QueryAllGuildResponse>;
   GuildBankCollateralAddress(
@@ -8099,37 +8884,26 @@ export interface Query {
   GuildMembershipApplicationAll(
     request: QueryAllGuildMembershipApplicationRequest,
   ): Promise<QueryAllGuildMembershipApplicationResponse>;
-  /** Queries a list of Infusions. */
   Infusion(request: QueryGetInfusionRequest): Promise<QueryGetInfusionResponse>;
   InfusionAll(request: QueryAllInfusionRequest): Promise<QueryAllInfusionResponse>;
   InfusionAllByDestination(request: QueryAllInfusionByDestinationRequest): Promise<QueryAllInfusionResponse>;
-  /** Queries a specific Permission */
   Permission(request: QueryGetPermissionRequest): Promise<QueryGetPermissionResponse>;
-  /** Queries a list of Permissions based on Object */
   PermissionByObject(request: QueryAllPermissionByObjectRequest): Promise<QueryAllPermissionResponse>;
-  /** Queries a list of Permissions based on the Player with the permissions */
   PermissionByPlayer(request: QueryAllPermissionByPlayerRequest): Promise<QueryAllPermissionResponse>;
-  /** Queries a list of all Permissions */
   PermissionAll(request: QueryAllPermissionRequest): Promise<QueryAllPermissionResponse>;
-  /** Queries guild rank permissions by object */
   GuildRankPermissionByObject(
     request: QueryGuildRankPermissionByObjectRequest,
   ): Promise<QueryGuildRankPermissionByObjectResponse>;
-  /** Queries guild rank permissions by object and guild */
   GuildRankPermissionByObjectAndGuild(
     request: QueryGuildRankPermissionByObjectAndGuildRequest,
   ): Promise<QueryGuildRankPermissionByObjectAndGuildResponse>;
-  /** Queries a list of Player items. */
   Player(request: QueryGetPlayerRequest): Promise<QueryGetPlayerResponse>;
   PlayerAll(request: QueryAllPlayerRequest): Promise<QueryAllPlayerResponse>;
-  /** Queries a list of Planet items. */
   Planet(request: QueryGetPlanetRequest): Promise<QueryGetPlanetResponse>;
   PlanetAll(request: QueryAllPlanetRequest): Promise<QueryAllPlanetResponse>;
   PlanetAllByPlayer(request: QueryAllPlanetByPlayerRequest): Promise<QueryAllPlanetResponse>;
   PlanetAttribute(request: QueryGetPlanetAttributeRequest): Promise<QueryGetPlanetAttributeResponse>;
-  /** Queries a list of all Planet Attributes */
   PlanetAttributeAll(request: QueryAllPlanetAttributeRequest): Promise<QueryAllPlanetAttributeResponse>;
-  /** Queries a list of Allocation items. */
   Provider(request: QueryGetProviderRequest): Promise<QueryGetProviderResponse>;
   ProviderAll(request: QueryAllProviderRequest): Promise<QueryAllProviderResponse>;
   ProviderCollateralAddress(
@@ -8138,31 +8912,20 @@ export interface Query {
   ProviderCollateralAddressAll(
     request: QueryAllProviderCollateralAddressRequest,
   ): Promise<QueryAllProviderCollateralAddressResponse>;
-  /**
-   * TODO Requires a lookup table that I don't know if we care about
-   * rpc ProviderByCollateralAddress (QueryGetProviderByCollateralAddressRequest) returns (QueryGetProviderResponse) {
-   * option (google.api.http).get = "/structs/provider_by_collateral_address/{address}";
-   * }
-   */
   ProviderEarningsAddress(
     request: QueryGetProviderEarningsAddressRequest,
   ): Promise<QueryAllProviderEarningsAddressResponse>;
   ProviderEarningsAddressAll(
     request: QueryAllProviderEarningsAddressRequest,
   ): Promise<QueryAllProviderEarningsAddressResponse>;
-  /** Queries a list of Reactor items. */
   Reactor(request: QueryGetReactorRequest): Promise<QueryGetReactorResponse>;
   ReactorAll(request: QueryAllReactorRequest): Promise<QueryAllReactorResponse>;
-  /** Queries a list of Structs items. */
   Struct(request: QueryGetStructRequest): Promise<QueryGetStructResponse>;
   StructAll(request: QueryAllStructRequest): Promise<QueryAllStructResponse>;
   StructAttribute(request: QueryGetStructAttributeRequest): Promise<QueryGetStructAttributeResponse>;
-  /** Queries a list of all Struct Attributes */
   StructAttributeAll(request: QueryAllStructAttributeRequest): Promise<QueryAllStructAttributeResponse>;
-  /** Queries a list of Struct Types items. */
   StructType(request: QueryGetStructTypeRequest): Promise<QueryGetStructTypeResponse>;
   StructTypeAll(request: QueryAllStructTypeRequest): Promise<QueryAllStructTypeResponse>;
-  /** Queries a list of Substation items. */
   Substation(request: QueryGetSubstationRequest): Promise<QueryGetSubstationResponse>;
   SubstationAll(request: QueryAllSubstationRequest): Promise<QueryAllSubstationResponse>;
   ValidateSignature(request: QueryValidateSignatureRequest): Promise<QueryValidateSignatureResponse>;
@@ -8175,6 +8938,9 @@ export class QueryClientImpl implements Query {
   constructor(rpc: Rpc, opts?: { service?: string }) {
     this.service = opts?.service || QueryServiceName;
     this.rpc = rpc;
+    this.OwnerReactorDiversity = this.OwnerReactorDiversity.bind(this);
+    this.ReactorStakeShare = this.ReactorStakeShare.bind(this);
+    this.Vault = this.Vault.bind(this);
     this.GetBlockHeight = this.GetBlockHeight.bind(this);
     this.GuildCharter = this.GuildCharter.bind(this);
     this.Params = this.Params.bind(this);
@@ -8233,6 +8999,24 @@ export class QueryClientImpl implements Query {
     this.SubstationAll = this.SubstationAll.bind(this);
     this.ValidateSignature = this.ValidateSignature.bind(this);
   }
+  OwnerReactorDiversity(request: QueryOwnerReactorDiversityRequest): Promise<QueryOwnerReactorDiversityResponse> {
+    const data = QueryOwnerReactorDiversityRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "OwnerReactorDiversity", data);
+    return promise.then((data) => QueryOwnerReactorDiversityResponse.decode(new BinaryReader(data)));
+  }
+
+  ReactorStakeShare(request: QueryReactorStakeShareRequest): Promise<QueryReactorStakeShareResponse> {
+    const data = QueryReactorStakeShareRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "ReactorStakeShare", data);
+    return promise.then((data) => QueryReactorStakeShareResponse.decode(new BinaryReader(data)));
+  }
+
+  Vault(request: QueryVaultRequest): Promise<QueryVaultResponse> {
+    const data = QueryVaultRequest.encode(request).finish();
+    const promise = this.rpc.request(this.service, "Vault", data);
+    return promise.then((data) => QueryVaultResponse.decode(new BinaryReader(data)));
+  }
+
   GetBlockHeight(request: QueryBlockHeight): Promise<QueryBlockHeightResponse> {
     const data = QueryBlockHeight.encode(request).finish();
     const promise = this.rpc.request(this.service, "GetBlockHeight", data);
@@ -8611,17 +9395,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

@@ -1,4 +1,5 @@
 import {UuidUtil} from "../util/UuidUtil";
+import {messagePayloadToWire} from "../util/MessagePayload";
 
 /**
  * Lifecycle states for a queued signing transaction.
@@ -139,7 +140,7 @@ export class SigningTransaction {
     }
     return {
       typeUrl: this.message.typeUrl,
-      value: type.fromPartial({ ...this.message.payload, creator: this.accountAddress }),
+      value: type.fromPartial({ ...messagePayloadToWire(this.message.typeUrl, this.message.payload), creator: this.accountAddress }),
     };
   }
 

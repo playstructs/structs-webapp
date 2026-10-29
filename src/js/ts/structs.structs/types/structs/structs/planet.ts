@@ -12,76 +12,69 @@ export const protobufPackage = "structs.structs";
 
 export interface Planet {
   id: string;
-  maxOre: number;
+  maxOre: string;
   creator: string;
   owner: string;
   space: string[];
   air: string[];
   land: string[];
   water: string[];
-  spaceSlots: number;
-  airSlots: number;
-  landSlots: number;
-  waterSlots: number;
+  spaceSlots: string;
+  airSlots: string;
+  landSlots: string;
+  waterSlots: string;
   status: planetStatus;
-  /** First in line to battle planet */
   locationListStart: string;
-  /** End of the line */
   locationListLast: string;
   name: string;
-  /**
-   * Visitors allowed beyond the first. Capacity = 1 + locationListExtra.
-   * Zero (protobuf default) means queue length 1.
-   */
-  locationListExtra: number;
-  /** Current number of visiting fleets linked in the raid queue. */
-  locationListCount: number;
+  locationListExtra: string;
+  locationListCount: string;
 }
 
 export interface PlanetAttributeRecord {
   attributeId: string;
-  value: number;
+  value: string;
 }
 
 export interface PlanetAttributes {
-  planetaryShield: number;
-  repairNetworkQuantity: number;
-  defensiveCannonQuantity: number;
-  coordinatedGlobalShieldNetworkQuantity: number;
-  lowOrbitBallisticsInterceptorNetworkQuantity: number;
-  advancedLowOrbitBallisticsInterceptorNetworkQuantity: number;
-  lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator: number;
-  lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator: number;
-  orbitalJammingStationQuantity: number;
-  advancedOrbitalJammingStationQuantity: number;
-  blockStartRaid: number;
-  blockRaiderArrived: number;
-  blockStartOreMine: number;
-  blockStartOreRefine: number;
-  oreMiningActiveQuantity: number;
-  oreRefiningActiveQuantity: number;
+  planetaryShield: string;
+  repairNetworkQuantity: string;
+  defensiveCannonQuantity: string;
+  coordinatedGlobalShieldNetworkQuantity: string;
+  lowOrbitBallisticsInterceptorNetworkQuantity: string;
+  advancedLowOrbitBallisticsInterceptorNetworkQuantity: string;
+  lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator: string;
+  lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator: string;
+  orbitalJammingStationQuantity: string;
+  advancedOrbitalJammingStationQuantity: string;
+  blockStartRaid: string;
+  blockRaiderArrived: string;
+  blockStartOreMine: string;
+  blockStartOreRefine: string;
+  oreMiningActiveQuantity: string;
+  oreRefiningActiveQuantity: string;
 }
 
 function createBasePlanet(): Planet {
   return {
     id: "",
-    maxOre: 0,
+    maxOre: "0",
     creator: "",
     owner: "",
     space: [],
     air: [],
     land: [],
     water: [],
-    spaceSlots: 0,
-    airSlots: 0,
-    landSlots: 0,
-    waterSlots: 0,
+    spaceSlots: "0",
+    airSlots: "0",
+    landSlots: "0",
+    waterSlots: "0",
     status: 0,
     locationListStart: "",
     locationListLast: "",
     name: "",
-    locationListExtra: 0,
-    locationListCount: 0,
+    locationListExtra: "0",
+    locationListCount: "0",
   };
 }
 
@@ -90,7 +83,7 @@ export const Planet: MessageFns<Planet> = {
     if (message.id !== "") {
       writer.uint32(10).string(message.id);
     }
-    if (message.maxOre !== 0) {
+    if (message.maxOre !== "0") {
       writer.uint32(16).uint64(message.maxOre);
     }
     if (message.creator !== "") {
@@ -111,16 +104,16 @@ export const Planet: MessageFns<Planet> = {
     for (const v of message.water) {
       writer.uint32(66).string(v!);
     }
-    if (message.spaceSlots !== 0) {
+    if (message.spaceSlots !== "0") {
       writer.uint32(72).uint64(message.spaceSlots);
     }
-    if (message.airSlots !== 0) {
+    if (message.airSlots !== "0") {
       writer.uint32(80).uint64(message.airSlots);
     }
-    if (message.landSlots !== 0) {
+    if (message.landSlots !== "0") {
       writer.uint32(88).uint64(message.landSlots);
     }
-    if (message.waterSlots !== 0) {
+    if (message.waterSlots !== "0") {
       writer.uint32(96).uint64(message.waterSlots);
     }
     if (message.status !== 0) {
@@ -135,10 +128,10 @@ export const Planet: MessageFns<Planet> = {
     if (message.name !== "") {
       writer.uint32(130).string(message.name);
     }
-    if (message.locationListExtra !== 0) {
+    if (message.locationListExtra !== "0") {
       writer.uint32(136).uint64(message.locationListExtra);
     }
-    if (message.locationListCount !== 0) {
+    if (message.locationListCount !== "0") {
       writer.uint32(144).uint64(message.locationListCount);
     }
     return writer;
@@ -164,7 +157,7 @@ export const Planet: MessageFns<Planet> = {
             break;
           }
 
-          message.maxOre = longToNumber(reader.uint64());
+          message.maxOre = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -220,7 +213,7 @@ export const Planet: MessageFns<Planet> = {
             break;
           }
 
-          message.spaceSlots = longToNumber(reader.uint64());
+          message.spaceSlots = reader.uint64().toString();
           continue;
         }
         case 10: {
@@ -228,7 +221,7 @@ export const Planet: MessageFns<Planet> = {
             break;
           }
 
-          message.airSlots = longToNumber(reader.uint64());
+          message.airSlots = reader.uint64().toString();
           continue;
         }
         case 11: {
@@ -236,7 +229,7 @@ export const Planet: MessageFns<Planet> = {
             break;
           }
 
-          message.landSlots = longToNumber(reader.uint64());
+          message.landSlots = reader.uint64().toString();
           continue;
         }
         case 12: {
@@ -244,7 +237,7 @@ export const Planet: MessageFns<Planet> = {
             break;
           }
 
-          message.waterSlots = longToNumber(reader.uint64());
+          message.waterSlots = reader.uint64().toString();
           continue;
         }
         case 13: {
@@ -284,7 +277,7 @@ export const Planet: MessageFns<Planet> = {
             break;
           }
 
-          message.locationListExtra = longToNumber(reader.uint64());
+          message.locationListExtra = reader.uint64().toString();
           continue;
         }
         case 18: {
@@ -292,7 +285,7 @@ export const Planet: MessageFns<Planet> = {
             break;
           }
 
-          message.locationListCount = longToNumber(reader.uint64());
+          message.locationListCount = reader.uint64().toString();
           continue;
         }
       }
@@ -307,23 +300,23 @@ export const Planet: MessageFns<Planet> = {
   fromJSON(object: any): Planet {
     return {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
-      maxOre: isSet(object.maxOre) ? globalThis.Number(object.maxOre) : 0,
+      maxOre: isSet(object.maxOre) ? globalThis.String(object.maxOre) : "0",
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
       space: globalThis.Array.isArray(object?.space) ? object.space.map((e: any) => globalThis.String(e)) : [],
       air: globalThis.Array.isArray(object?.air) ? object.air.map((e: any) => globalThis.String(e)) : [],
       land: globalThis.Array.isArray(object?.land) ? object.land.map((e: any) => globalThis.String(e)) : [],
       water: globalThis.Array.isArray(object?.water) ? object.water.map((e: any) => globalThis.String(e)) : [],
-      spaceSlots: isSet(object.spaceSlots) ? globalThis.Number(object.spaceSlots) : 0,
-      airSlots: isSet(object.airSlots) ? globalThis.Number(object.airSlots) : 0,
-      landSlots: isSet(object.landSlots) ? globalThis.Number(object.landSlots) : 0,
-      waterSlots: isSet(object.waterSlots) ? globalThis.Number(object.waterSlots) : 0,
+      spaceSlots: isSet(object.spaceSlots) ? globalThis.String(object.spaceSlots) : "0",
+      airSlots: isSet(object.airSlots) ? globalThis.String(object.airSlots) : "0",
+      landSlots: isSet(object.landSlots) ? globalThis.String(object.landSlots) : "0",
+      waterSlots: isSet(object.waterSlots) ? globalThis.String(object.waterSlots) : "0",
       status: isSet(object.status) ? planetStatusFromJSON(object.status) : 0,
       locationListStart: isSet(object.locationListStart) ? globalThis.String(object.locationListStart) : "",
       locationListLast: isSet(object.locationListLast) ? globalThis.String(object.locationListLast) : "",
       name: isSet(object.name) ? globalThis.String(object.name) : "",
-      locationListExtra: isSet(object.locationListExtra) ? globalThis.Number(object.locationListExtra) : 0,
-      locationListCount: isSet(object.locationListCount) ? globalThis.Number(object.locationListCount) : 0,
+      locationListExtra: isSet(object.locationListExtra) ? globalThis.String(object.locationListExtra) : "0",
+      locationListCount: isSet(object.locationListCount) ? globalThis.String(object.locationListCount) : "0",
     };
   },
 
@@ -332,8 +325,8 @@ export const Planet: MessageFns<Planet> = {
     if (message.id !== "") {
       obj.id = message.id;
     }
-    if (message.maxOre !== 0) {
-      obj.maxOre = Math.round(message.maxOre);
+    if (message.maxOre !== "0") {
+      obj.maxOre = message.maxOre;
     }
     if (message.creator !== "") {
       obj.creator = message.creator;
@@ -353,17 +346,17 @@ export const Planet: MessageFns<Planet> = {
     if (message.water?.length) {
       obj.water = message.water;
     }
-    if (message.spaceSlots !== 0) {
-      obj.spaceSlots = Math.round(message.spaceSlots);
+    if (message.spaceSlots !== "0") {
+      obj.spaceSlots = message.spaceSlots;
     }
-    if (message.airSlots !== 0) {
-      obj.airSlots = Math.round(message.airSlots);
+    if (message.airSlots !== "0") {
+      obj.airSlots = message.airSlots;
     }
-    if (message.landSlots !== 0) {
-      obj.landSlots = Math.round(message.landSlots);
+    if (message.landSlots !== "0") {
+      obj.landSlots = message.landSlots;
     }
-    if (message.waterSlots !== 0) {
-      obj.waterSlots = Math.round(message.waterSlots);
+    if (message.waterSlots !== "0") {
+      obj.waterSlots = message.waterSlots;
     }
     if (message.status !== 0) {
       obj.status = planetStatusToJSON(message.status);
@@ -377,11 +370,11 @@ export const Planet: MessageFns<Planet> = {
     if (message.name !== "") {
       obj.name = message.name;
     }
-    if (message.locationListExtra !== 0) {
-      obj.locationListExtra = Math.round(message.locationListExtra);
+    if (message.locationListExtra !== "0") {
+      obj.locationListExtra = message.locationListExtra;
     }
-    if (message.locationListCount !== 0) {
-      obj.locationListCount = Math.round(message.locationListCount);
+    if (message.locationListCount !== "0") {
+      obj.locationListCount = message.locationListCount;
     }
     return obj;
   },
@@ -392,29 +385,29 @@ export const Planet: MessageFns<Planet> = {
   fromPartial<I extends Exact<DeepPartial<Planet>, I>>(object: I): Planet {
     const message = createBasePlanet();
     message.id = object.id ?? "";
-    message.maxOre = object.maxOre ?? 0;
+    message.maxOre = object.maxOre ?? "0";
     message.creator = object.creator ?? "";
     message.owner = object.owner ?? "";
     message.space = object.space?.map((e) => e) || [];
     message.air = object.air?.map((e) => e) || [];
     message.land = object.land?.map((e) => e) || [];
     message.water = object.water?.map((e) => e) || [];
-    message.spaceSlots = object.spaceSlots ?? 0;
-    message.airSlots = object.airSlots ?? 0;
-    message.landSlots = object.landSlots ?? 0;
-    message.waterSlots = object.waterSlots ?? 0;
+    message.spaceSlots = object.spaceSlots ?? "0";
+    message.airSlots = object.airSlots ?? "0";
+    message.landSlots = object.landSlots ?? "0";
+    message.waterSlots = object.waterSlots ?? "0";
     message.status = object.status ?? 0;
     message.locationListStart = object.locationListStart ?? "";
     message.locationListLast = object.locationListLast ?? "";
     message.name = object.name ?? "";
-    message.locationListExtra = object.locationListExtra ?? 0;
-    message.locationListCount = object.locationListCount ?? 0;
+    message.locationListExtra = object.locationListExtra ?? "0";
+    message.locationListCount = object.locationListCount ?? "0";
     return message;
   },
 };
 
 function createBasePlanetAttributeRecord(): PlanetAttributeRecord {
-  return { attributeId: "", value: 0 };
+  return { attributeId: "", value: "0" };
 }
 
 export const PlanetAttributeRecord: MessageFns<PlanetAttributeRecord> = {
@@ -422,7 +415,7 @@ export const PlanetAttributeRecord: MessageFns<PlanetAttributeRecord> = {
     if (message.attributeId !== "") {
       writer.uint32(10).string(message.attributeId);
     }
-    if (message.value !== 0) {
+    if (message.value !== "0") {
       writer.uint32(16).uint64(message.value);
     }
     return writer;
@@ -448,7 +441,7 @@ export const PlanetAttributeRecord: MessageFns<PlanetAttributeRecord> = {
             break;
           }
 
-          message.value = longToNumber(reader.uint64());
+          message.value = reader.uint64().toString();
           continue;
         }
       }
@@ -463,7 +456,7 @@ export const PlanetAttributeRecord: MessageFns<PlanetAttributeRecord> = {
   fromJSON(object: any): PlanetAttributeRecord {
     return {
       attributeId: isSet(object.attributeId) ? globalThis.String(object.attributeId) : "",
-      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+      value: isSet(object.value) ? globalThis.String(object.value) : "0",
     };
   },
 
@@ -472,8 +465,8 @@ export const PlanetAttributeRecord: MessageFns<PlanetAttributeRecord> = {
     if (message.attributeId !== "") {
       obj.attributeId = message.attributeId;
     }
-    if (message.value !== 0) {
-      obj.value = Math.round(message.value);
+    if (message.value !== "0") {
+      obj.value = message.value;
     }
     return obj;
   },
@@ -484,80 +477,80 @@ export const PlanetAttributeRecord: MessageFns<PlanetAttributeRecord> = {
   fromPartial<I extends Exact<DeepPartial<PlanetAttributeRecord>, I>>(object: I): PlanetAttributeRecord {
     const message = createBasePlanetAttributeRecord();
     message.attributeId = object.attributeId ?? "";
-    message.value = object.value ?? 0;
+    message.value = object.value ?? "0";
     return message;
   },
 };
 
 function createBasePlanetAttributes(): PlanetAttributes {
   return {
-    planetaryShield: 0,
-    repairNetworkQuantity: 0,
-    defensiveCannonQuantity: 0,
-    coordinatedGlobalShieldNetworkQuantity: 0,
-    lowOrbitBallisticsInterceptorNetworkQuantity: 0,
-    advancedLowOrbitBallisticsInterceptorNetworkQuantity: 0,
-    lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator: 0,
-    lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator: 0,
-    orbitalJammingStationQuantity: 0,
-    advancedOrbitalJammingStationQuantity: 0,
-    blockStartRaid: 0,
-    blockRaiderArrived: 0,
-    blockStartOreMine: 0,
-    blockStartOreRefine: 0,
-    oreMiningActiveQuantity: 0,
-    oreRefiningActiveQuantity: 0,
+    planetaryShield: "0",
+    repairNetworkQuantity: "0",
+    defensiveCannonQuantity: "0",
+    coordinatedGlobalShieldNetworkQuantity: "0",
+    lowOrbitBallisticsInterceptorNetworkQuantity: "0",
+    advancedLowOrbitBallisticsInterceptorNetworkQuantity: "0",
+    lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator: "0",
+    lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator: "0",
+    orbitalJammingStationQuantity: "0",
+    advancedOrbitalJammingStationQuantity: "0",
+    blockStartRaid: "0",
+    blockRaiderArrived: "0",
+    blockStartOreMine: "0",
+    blockStartOreRefine: "0",
+    oreMiningActiveQuantity: "0",
+    oreRefiningActiveQuantity: "0",
   };
 }
 
 export const PlanetAttributes: MessageFns<PlanetAttributes> = {
   encode(message: PlanetAttributes, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.planetaryShield !== 0) {
+    if (message.planetaryShield !== "0") {
       writer.uint32(8).uint64(message.planetaryShield);
     }
-    if (message.repairNetworkQuantity !== 0) {
+    if (message.repairNetworkQuantity !== "0") {
       writer.uint32(16).uint64(message.repairNetworkQuantity);
     }
-    if (message.defensiveCannonQuantity !== 0) {
+    if (message.defensiveCannonQuantity !== "0") {
       writer.uint32(24).uint64(message.defensiveCannonQuantity);
     }
-    if (message.coordinatedGlobalShieldNetworkQuantity !== 0) {
+    if (message.coordinatedGlobalShieldNetworkQuantity !== "0") {
       writer.uint32(32).uint64(message.coordinatedGlobalShieldNetworkQuantity);
     }
-    if (message.lowOrbitBallisticsInterceptorNetworkQuantity !== 0) {
+    if (message.lowOrbitBallisticsInterceptorNetworkQuantity !== "0") {
       writer.uint32(40).uint64(message.lowOrbitBallisticsInterceptorNetworkQuantity);
     }
-    if (message.advancedLowOrbitBallisticsInterceptorNetworkQuantity !== 0) {
+    if (message.advancedLowOrbitBallisticsInterceptorNetworkQuantity !== "0") {
       writer.uint32(48).uint64(message.advancedLowOrbitBallisticsInterceptorNetworkQuantity);
     }
-    if (message.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator !== 0) {
+    if (message.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator !== "0") {
       writer.uint32(56).uint64(message.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator);
     }
-    if (message.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator !== 0) {
+    if (message.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator !== "0") {
       writer.uint32(64).uint64(message.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator);
     }
-    if (message.orbitalJammingStationQuantity !== 0) {
+    if (message.orbitalJammingStationQuantity !== "0") {
       writer.uint32(72).uint64(message.orbitalJammingStationQuantity);
     }
-    if (message.advancedOrbitalJammingStationQuantity !== 0) {
+    if (message.advancedOrbitalJammingStationQuantity !== "0") {
       writer.uint32(80).uint64(message.advancedOrbitalJammingStationQuantity);
     }
-    if (message.blockStartRaid !== 0) {
+    if (message.blockStartRaid !== "0") {
       writer.uint32(88).uint64(message.blockStartRaid);
     }
-    if (message.blockRaiderArrived !== 0) {
+    if (message.blockRaiderArrived !== "0") {
       writer.uint32(96).uint64(message.blockRaiderArrived);
     }
-    if (message.blockStartOreMine !== 0) {
+    if (message.blockStartOreMine !== "0") {
       writer.uint32(104).uint64(message.blockStartOreMine);
     }
-    if (message.blockStartOreRefine !== 0) {
+    if (message.blockStartOreRefine !== "0") {
       writer.uint32(112).uint64(message.blockStartOreRefine);
     }
-    if (message.oreMiningActiveQuantity !== 0) {
+    if (message.oreMiningActiveQuantity !== "0") {
       writer.uint32(120).uint64(message.oreMiningActiveQuantity);
     }
-    if (message.oreRefiningActiveQuantity !== 0) {
+    if (message.oreRefiningActiveQuantity !== "0") {
       writer.uint32(128).uint64(message.oreRefiningActiveQuantity);
     }
     return writer;
@@ -575,7 +568,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.planetaryShield = longToNumber(reader.uint64());
+          message.planetaryShield = reader.uint64().toString();
           continue;
         }
         case 2: {
@@ -583,7 +576,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.repairNetworkQuantity = longToNumber(reader.uint64());
+          message.repairNetworkQuantity = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -591,7 +584,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.defensiveCannonQuantity = longToNumber(reader.uint64());
+          message.defensiveCannonQuantity = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -599,7 +592,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.coordinatedGlobalShieldNetworkQuantity = longToNumber(reader.uint64());
+          message.coordinatedGlobalShieldNetworkQuantity = reader.uint64().toString();
           continue;
         }
         case 5: {
@@ -607,7 +600,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.lowOrbitBallisticsInterceptorNetworkQuantity = longToNumber(reader.uint64());
+          message.lowOrbitBallisticsInterceptorNetworkQuantity = reader.uint64().toString();
           continue;
         }
         case 6: {
@@ -615,7 +608,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.advancedLowOrbitBallisticsInterceptorNetworkQuantity = longToNumber(reader.uint64());
+          message.advancedLowOrbitBallisticsInterceptorNetworkQuantity = reader.uint64().toString();
           continue;
         }
         case 7: {
@@ -623,7 +616,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator = longToNumber(reader.uint64());
+          message.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator = reader.uint64().toString();
           continue;
         }
         case 8: {
@@ -631,7 +624,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator = longToNumber(reader.uint64());
+          message.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator = reader.uint64().toString();
           continue;
         }
         case 9: {
@@ -639,7 +632,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.orbitalJammingStationQuantity = longToNumber(reader.uint64());
+          message.orbitalJammingStationQuantity = reader.uint64().toString();
           continue;
         }
         case 10: {
@@ -647,7 +640,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.advancedOrbitalJammingStationQuantity = longToNumber(reader.uint64());
+          message.advancedOrbitalJammingStationQuantity = reader.uint64().toString();
           continue;
         }
         case 11: {
@@ -655,7 +648,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.blockStartRaid = longToNumber(reader.uint64());
+          message.blockStartRaid = reader.uint64().toString();
           continue;
         }
         case 12: {
@@ -663,7 +656,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.blockRaiderArrived = longToNumber(reader.uint64());
+          message.blockRaiderArrived = reader.uint64().toString();
           continue;
         }
         case 13: {
@@ -671,7 +664,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.blockStartOreMine = longToNumber(reader.uint64());
+          message.blockStartOreMine = reader.uint64().toString();
           continue;
         }
         case 14: {
@@ -679,7 +672,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.blockStartOreRefine = longToNumber(reader.uint64());
+          message.blockStartOreRefine = reader.uint64().toString();
           continue;
         }
         case 15: {
@@ -687,7 +680,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.oreMiningActiveQuantity = longToNumber(reader.uint64());
+          message.oreMiningActiveQuantity = reader.uint64().toString();
           continue;
         }
         case 16: {
@@ -695,7 +688,7 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
             break;
           }
 
-          message.oreRefiningActiveQuantity = longToNumber(reader.uint64());
+          message.oreRefiningActiveQuantity = reader.uint64().toString();
           continue;
         }
       }
@@ -709,105 +702,102 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
 
   fromJSON(object: any): PlanetAttributes {
     return {
-      planetaryShield: isSet(object.planetaryShield) ? globalThis.Number(object.planetaryShield) : 0,
-      repairNetworkQuantity: isSet(object.repairNetworkQuantity) ? globalThis.Number(object.repairNetworkQuantity) : 0,
+      planetaryShield: isSet(object.planetaryShield) ? globalThis.String(object.planetaryShield) : "0",
+      repairNetworkQuantity: isSet(object.repairNetworkQuantity)
+        ? globalThis.String(object.repairNetworkQuantity)
+        : "0",
       defensiveCannonQuantity: isSet(object.defensiveCannonQuantity)
-        ? globalThis.Number(object.defensiveCannonQuantity)
-        : 0,
+        ? globalThis.String(object.defensiveCannonQuantity)
+        : "0",
       coordinatedGlobalShieldNetworkQuantity: isSet(object.coordinatedGlobalShieldNetworkQuantity)
-        ? globalThis.Number(object.coordinatedGlobalShieldNetworkQuantity)
-        : 0,
+        ? globalThis.String(object.coordinatedGlobalShieldNetworkQuantity)
+        : "0",
       lowOrbitBallisticsInterceptorNetworkQuantity: isSet(object.lowOrbitBallisticsInterceptorNetworkQuantity)
-        ? globalThis.Number(object.lowOrbitBallisticsInterceptorNetworkQuantity)
-        : 0,
+        ? globalThis.String(object.lowOrbitBallisticsInterceptorNetworkQuantity)
+        : "0",
       advancedLowOrbitBallisticsInterceptorNetworkQuantity:
         isSet(object.advancedLowOrbitBallisticsInterceptorNetworkQuantity)
-          ? globalThis.Number(object.advancedLowOrbitBallisticsInterceptorNetworkQuantity)
-          : 0,
+          ? globalThis.String(object.advancedLowOrbitBallisticsInterceptorNetworkQuantity)
+          : "0",
       lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator:
         isSet(object.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator)
-          ? globalThis.Number(object.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator)
-          : 0,
+          ? globalThis.String(object.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator)
+          : "0",
       lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator:
         isSet(object.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator)
-          ? globalThis.Number(object.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator)
-          : 0,
+          ? globalThis.String(object.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator)
+          : "0",
       orbitalJammingStationQuantity: isSet(object.orbitalJammingStationQuantity)
-        ? globalThis.Number(object.orbitalJammingStationQuantity)
-        : 0,
+        ? globalThis.String(object.orbitalJammingStationQuantity)
+        : "0",
       advancedOrbitalJammingStationQuantity: isSet(object.advancedOrbitalJammingStationQuantity)
-        ? globalThis.Number(object.advancedOrbitalJammingStationQuantity)
-        : 0,
-      blockStartRaid: isSet(object.blockStartRaid) ? globalThis.Number(object.blockStartRaid) : 0,
-      blockRaiderArrived: isSet(object.blockRaiderArrived) ? globalThis.Number(object.blockRaiderArrived) : 0,
-      blockStartOreMine: isSet(object.blockStartOreMine) ? globalThis.Number(object.blockStartOreMine) : 0,
-      blockStartOreRefine: isSet(object.blockStartOreRefine) ? globalThis.Number(object.blockStartOreRefine) : 0,
+        ? globalThis.String(object.advancedOrbitalJammingStationQuantity)
+        : "0",
+      blockStartRaid: isSet(object.blockStartRaid) ? globalThis.String(object.blockStartRaid) : "0",
+      blockRaiderArrived: isSet(object.blockRaiderArrived) ? globalThis.String(object.blockRaiderArrived) : "0",
+      blockStartOreMine: isSet(object.blockStartOreMine) ? globalThis.String(object.blockStartOreMine) : "0",
+      blockStartOreRefine: isSet(object.blockStartOreRefine) ? globalThis.String(object.blockStartOreRefine) : "0",
       oreMiningActiveQuantity: isSet(object.oreMiningActiveQuantity)
-        ? globalThis.Number(object.oreMiningActiveQuantity)
-        : 0,
+        ? globalThis.String(object.oreMiningActiveQuantity)
+        : "0",
       oreRefiningActiveQuantity: isSet(object.oreRefiningActiveQuantity)
-        ? globalThis.Number(object.oreRefiningActiveQuantity)
-        : 0,
+        ? globalThis.String(object.oreRefiningActiveQuantity)
+        : "0",
     };
   },
 
   toJSON(message: PlanetAttributes): unknown {
     const obj: any = {};
-    if (message.planetaryShield !== 0) {
-      obj.planetaryShield = Math.round(message.planetaryShield);
+    if (message.planetaryShield !== "0") {
+      obj.planetaryShield = message.planetaryShield;
     }
-    if (message.repairNetworkQuantity !== 0) {
-      obj.repairNetworkQuantity = Math.round(message.repairNetworkQuantity);
+    if (message.repairNetworkQuantity !== "0") {
+      obj.repairNetworkQuantity = message.repairNetworkQuantity;
     }
-    if (message.defensiveCannonQuantity !== 0) {
-      obj.defensiveCannonQuantity = Math.round(message.defensiveCannonQuantity);
+    if (message.defensiveCannonQuantity !== "0") {
+      obj.defensiveCannonQuantity = message.defensiveCannonQuantity;
     }
-    if (message.coordinatedGlobalShieldNetworkQuantity !== 0) {
-      obj.coordinatedGlobalShieldNetworkQuantity = Math.round(message.coordinatedGlobalShieldNetworkQuantity);
+    if (message.coordinatedGlobalShieldNetworkQuantity !== "0") {
+      obj.coordinatedGlobalShieldNetworkQuantity = message.coordinatedGlobalShieldNetworkQuantity;
     }
-    if (message.lowOrbitBallisticsInterceptorNetworkQuantity !== 0) {
-      obj.lowOrbitBallisticsInterceptorNetworkQuantity = Math.round(
-        message.lowOrbitBallisticsInterceptorNetworkQuantity,
-      );
+    if (message.lowOrbitBallisticsInterceptorNetworkQuantity !== "0") {
+      obj.lowOrbitBallisticsInterceptorNetworkQuantity = message.lowOrbitBallisticsInterceptorNetworkQuantity;
     }
-    if (message.advancedLowOrbitBallisticsInterceptorNetworkQuantity !== 0) {
-      obj.advancedLowOrbitBallisticsInterceptorNetworkQuantity = Math.round(
-        message.advancedLowOrbitBallisticsInterceptorNetworkQuantity,
-      );
+    if (message.advancedLowOrbitBallisticsInterceptorNetworkQuantity !== "0") {
+      obj.advancedLowOrbitBallisticsInterceptorNetworkQuantity =
+        message.advancedLowOrbitBallisticsInterceptorNetworkQuantity;
     }
-    if (message.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator !== 0) {
-      obj.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator = Math.round(
-        message.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator,
-      );
+    if (message.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator !== "0") {
+      obj.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator =
+        message.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator;
     }
-    if (message.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator !== 0) {
-      obj.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator = Math.round(
-        message.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator,
-      );
+    if (message.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator !== "0") {
+      obj.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator =
+        message.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator;
     }
-    if (message.orbitalJammingStationQuantity !== 0) {
-      obj.orbitalJammingStationQuantity = Math.round(message.orbitalJammingStationQuantity);
+    if (message.orbitalJammingStationQuantity !== "0") {
+      obj.orbitalJammingStationQuantity = message.orbitalJammingStationQuantity;
     }
-    if (message.advancedOrbitalJammingStationQuantity !== 0) {
-      obj.advancedOrbitalJammingStationQuantity = Math.round(message.advancedOrbitalJammingStationQuantity);
+    if (message.advancedOrbitalJammingStationQuantity !== "0") {
+      obj.advancedOrbitalJammingStationQuantity = message.advancedOrbitalJammingStationQuantity;
     }
-    if (message.blockStartRaid !== 0) {
-      obj.blockStartRaid = Math.round(message.blockStartRaid);
+    if (message.blockStartRaid !== "0") {
+      obj.blockStartRaid = message.blockStartRaid;
     }
-    if (message.blockRaiderArrived !== 0) {
-      obj.blockRaiderArrived = Math.round(message.blockRaiderArrived);
+    if (message.blockRaiderArrived !== "0") {
+      obj.blockRaiderArrived = message.blockRaiderArrived;
     }
-    if (message.blockStartOreMine !== 0) {
-      obj.blockStartOreMine = Math.round(message.blockStartOreMine);
+    if (message.blockStartOreMine !== "0") {
+      obj.blockStartOreMine = message.blockStartOreMine;
     }
-    if (message.blockStartOreRefine !== 0) {
-      obj.blockStartOreRefine = Math.round(message.blockStartOreRefine);
+    if (message.blockStartOreRefine !== "0") {
+      obj.blockStartOreRefine = message.blockStartOreRefine;
     }
-    if (message.oreMiningActiveQuantity !== 0) {
-      obj.oreMiningActiveQuantity = Math.round(message.oreMiningActiveQuantity);
+    if (message.oreMiningActiveQuantity !== "0") {
+      obj.oreMiningActiveQuantity = message.oreMiningActiveQuantity;
     }
-    if (message.oreRefiningActiveQuantity !== 0) {
-      obj.oreRefiningActiveQuantity = Math.round(message.oreRefiningActiveQuantity);
+    if (message.oreRefiningActiveQuantity !== "0") {
+      obj.oreRefiningActiveQuantity = message.oreRefiningActiveQuantity;
     }
     return obj;
   },
@@ -817,25 +807,25 @@ export const PlanetAttributes: MessageFns<PlanetAttributes> = {
   },
   fromPartial<I extends Exact<DeepPartial<PlanetAttributes>, I>>(object: I): PlanetAttributes {
     const message = createBasePlanetAttributes();
-    message.planetaryShield = object.planetaryShield ?? 0;
-    message.repairNetworkQuantity = object.repairNetworkQuantity ?? 0;
-    message.defensiveCannonQuantity = object.defensiveCannonQuantity ?? 0;
-    message.coordinatedGlobalShieldNetworkQuantity = object.coordinatedGlobalShieldNetworkQuantity ?? 0;
-    message.lowOrbitBallisticsInterceptorNetworkQuantity = object.lowOrbitBallisticsInterceptorNetworkQuantity ?? 0;
+    message.planetaryShield = object.planetaryShield ?? "0";
+    message.repairNetworkQuantity = object.repairNetworkQuantity ?? "0";
+    message.defensiveCannonQuantity = object.defensiveCannonQuantity ?? "0";
+    message.coordinatedGlobalShieldNetworkQuantity = object.coordinatedGlobalShieldNetworkQuantity ?? "0";
+    message.lowOrbitBallisticsInterceptorNetworkQuantity = object.lowOrbitBallisticsInterceptorNetworkQuantity ?? "0";
     message.advancedLowOrbitBallisticsInterceptorNetworkQuantity =
-      object.advancedLowOrbitBallisticsInterceptorNetworkQuantity ?? 0;
+      object.advancedLowOrbitBallisticsInterceptorNetworkQuantity ?? "0";
     message.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator =
-      object.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator ?? 0;
+      object.lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator ?? "0";
     message.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator =
-      object.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator ?? 0;
-    message.orbitalJammingStationQuantity = object.orbitalJammingStationQuantity ?? 0;
-    message.advancedOrbitalJammingStationQuantity = object.advancedOrbitalJammingStationQuantity ?? 0;
-    message.blockStartRaid = object.blockStartRaid ?? 0;
-    message.blockRaiderArrived = object.blockRaiderArrived ?? 0;
-    message.blockStartOreMine = object.blockStartOreMine ?? 0;
-    message.blockStartOreRefine = object.blockStartOreRefine ?? 0;
-    message.oreMiningActiveQuantity = object.oreMiningActiveQuantity ?? 0;
-    message.oreRefiningActiveQuantity = object.oreRefiningActiveQuantity ?? 0;
+      object.lowOrbitBallisticsInterceptorNetworkSuccessRateDenominator ?? "0";
+    message.orbitalJammingStationQuantity = object.orbitalJammingStationQuantity ?? "0";
+    message.advancedOrbitalJammingStationQuantity = object.advancedOrbitalJammingStationQuantity ?? "0";
+    message.blockStartRaid = object.blockStartRaid ?? "0";
+    message.blockRaiderArrived = object.blockRaiderArrived ?? "0";
+    message.blockStartOreMine = object.blockStartOreMine ?? "0";
+    message.blockStartOreRefine = object.blockStartOreRefine ?? "0";
+    message.oreMiningActiveQuantity = object.oreMiningActiveQuantity ?? "0";
+    message.oreRefiningActiveQuantity = object.oreRefiningActiveQuantity ?? "0";
     return message;
   },
 };
@@ -851,17 +841,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

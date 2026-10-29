@@ -277,6 +277,16 @@ export class SigningClientManager {
     return this.queue.whenSettled(id);
   }
 
+  /** Owner-to-owner transfer; protocol and spendability are checked before enqueue. */
+  async queueMsgVaultSend(ownerId, recipientOwnerId, amount, options = {}) {
+    const id = this.queue.enqueueImmediate(
+      '/structs.structs.MsgVaultSend',
+      {ownerId, recipientOwnerId, amount},
+      options,
+    );
+    return this.queue.whenSettled(id);
+  }
+
   /**
    * @param {string} playerId
    * @param {string} [name='']
@@ -297,7 +307,7 @@ export class SigningClientManager {
    * @param {string} addressToRegister
    * @param {string} proofPubKey
    * @param {string} proofSignature
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgAddressRegister(playerId, addressToRegister, proofPubKey, proofSignature, permissions, options = {}) {
@@ -415,7 +425,7 @@ export class SigningClientManager {
    * @param {string} controller
    * @param {string} sourceObjectId
    * @param {string} allocationType
-   * @param {number} power
+   * @param {string|number} power
    * @param {object} [options]
    */
   async queueMsgAllocationCreate(controller, sourceObjectId, allocationType, power, options = {}) {
@@ -442,7 +452,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} allocationId
-   * @param {number} power
+   * @param {string|number} power
    * @param {object} [options]
    */
   async queueMsgAllocationUpdate(allocationId, power, options = {}) {
@@ -469,8 +479,8 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {number} amountAlpha
-   * @param {number} amountToken
+   * @param {string|number} amountAlpha
+   * @param {string|number} amountToken
    * @param {string} [guildId] Defaults to the signer's own guild.
    * @param {object} [options]
    */
@@ -485,7 +495,7 @@ export class SigningClientManager {
 
   /**
    * @param {{denom: string, amount: string}} amountToken
-   * @param {number} minAmountAlpha Required and nonzero; the transaction fails
+   * @param {string|number} minAmountAlpha Required and nonzero; the transaction fails
    *   rather than burning tokens when fees or the collateral ratio would return
    *   less alpha.
    * @param {object} [options]
@@ -501,7 +511,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} address
-   * @param {number} amountToken
+   * @param {string|number} amountToken
    * @param {string} [guildId] Defaults to the signer's own guild.
    * @param {object} [options]
    */
@@ -519,8 +529,8 @@ export class SigningClientManager {
    * ratio. The guild's bankConvertInFee is retained in the collateral pool.
    *
    * @param {string} guildId
-   * @param {number} amountAlpha
-   * @param {number} minAmountToken Required and nonzero; guards against ratio or
+   * @param {string|number} amountAlpha
+   * @param {string|number} minAmountToken Required and nonzero; guards against ratio or
    *   fee movement earlier in the block.
    * @param {object} [options]
    */
@@ -540,7 +550,7 @@ export class SigningClientManager {
    *
    * @param {{denom: string, amount: string}} amountToken
    * @param {string} guildId The target guild.
-   * @param {number} minAmountToken Required and nonzero; guards the final
+   * @param {string|number} minAmountToken Required and nonzero; guards the final
    *   target-token output.
    * @param {object} [options]
    */
@@ -721,7 +731,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} guildId
-   * @param {number} joinInfusionMinimum
+   * @param {string|number} joinInfusionMinimum
    * @param {object} [options]
    */
   async queueMsgGuildUpdateJoinInfusionMinimum(guildId, joinInfusionMinimum, options = {}) {
@@ -762,7 +772,7 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {number} newEntryRank
+   * @param {string|number} newEntryRank
    * @param {object} [options]
    */
   async queueMsgGuildUpdateEntryRank(newEntryRank, options = {}) {
@@ -942,7 +952,7 @@ export class SigningClientManager {
   /**
    * @param {string} objectId
    * @param {string} playerId
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionGrantOnObject(objectId, playerId, permissions, options = {}) {
@@ -956,7 +966,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} address
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionGrantOnAddress(address, permissions, options = {}) {
@@ -971,7 +981,7 @@ export class SigningClientManager {
   /**
    * @param {string} objectId
    * @param {string} playerId
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionRevokeOnObject(objectId, playerId, permissions, options = {}) {
@@ -985,7 +995,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} address
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionRevokeOnAddress(address, permissions, options = {}) {
@@ -1000,7 +1010,7 @@ export class SigningClientManager {
   /**
    * @param {string} objectId
    * @param {string} playerId
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionSetOnObject(objectId, playerId, permissions, options = {}) {
@@ -1014,7 +1024,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} address
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionSetOnAddress(address, permissions, options = {}) {
@@ -1029,8 +1039,8 @@ export class SigningClientManager {
   /**
    * @param {string} objectId
    * @param {string} guildId
-   * @param {number} permission
-   * @param {number} rank
+   * @param {string|number} permission
+   * @param {string|number} rank
    * @param {object} [options]
    */
   async queueMsgPermissionGuildRankSet(objectId, guildId, permission, rank, options = {}) {
@@ -1045,7 +1055,7 @@ export class SigningClientManager {
   /**
    * @param {string} objectId
    * @param {string} guildId
-   * @param {number} permission
+   * @param {string|number} permission
    * @param {object} [options]
    */
   async queueMsgPermissionGuildRankRevoke(objectId, guildId, permission, options = {}) {
@@ -1072,7 +1082,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} playerId
-   * @param {number} guildRank
+   * @param {string|number} guildRank
    * @param {object} [options]
    */
   async queueMsgPlayerUpdateGuildRank(playerId, guildRank, options = {}) {
@@ -1326,14 +1336,15 @@ export class SigningClientManager {
 
   /**
    * @param {string} providerId
-   * @param {number} duration
-   * @param {number} capacity
+   * @param {string|number} duration
+   * @param {string|number} capacity
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgAgreementOpen(providerId, duration, capacity, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgAgreementOpen',
-      {providerId, duration, capacity},
+      {providerId, duration, capacity, ownerId: options.ownerId ?? ''},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1354,7 +1365,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} agreementId
-   * @param {number} capacityIncrease
+   * @param {string|number} capacityIncrease
    * @param {object} [options]
    */
   async queueMsgAgreementCapacityIncrease(agreementId, capacityIncrease, options = {}) {
@@ -1368,7 +1379,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} agreementId
-   * @param {number} capacityDecrease
+   * @param {string|number} capacityDecrease
    * @param {object} [options]
    */
   async queueMsgAgreementCapacityDecrease(agreementId, capacityDecrease, options = {}) {
@@ -1382,7 +1393,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} agreementId
-   * @param {number} durationIncrease
+   * @param {string|number} durationIncrease
    * @param {object} [options]
    */
   async queueMsgAgreementDurationIncrease(agreementId, durationIncrease, options = {}) {
@@ -1400,11 +1411,12 @@ export class SigningClientManager {
    * @param {string} accessPolicy
    * @param {string} providerCancellationPenalty
    * @param {string} consumerCancellationPenalty
-   * @param {number} capacityMinimum
-   * @param {number} capacityMaximum
-   * @param {number} durationMinimum
-   * @param {number} durationMaximum
+   * @param {string|number} capacityMinimum
+   * @param {string|number} capacityMaximum
+   * @param {string|number} durationMinimum
+   * @param {string|number} durationMaximum
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgProviderCreate(substationId, rate, accessPolicy, providerCancellationPenalty, consumerCancellationPenalty, capacityMinimum, capacityMaximum, durationMinimum, durationMaximum, options = {}) {
     const id = this.queue.enqueueImmediate(
@@ -1419,6 +1431,7 @@ export class SigningClientManager {
         capacityMaximum,
         durationMinimum,
         durationMaximum,
+        ownerId: options.ownerId ?? '',
       },
       options,
     );
@@ -1441,7 +1454,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} providerId
-   * @param {number} newMinimumCapacity
+   * @param {string|number} newMinimumCapacity
    * @param {object} [options]
    */
   async queueMsgProviderUpdateCapacityMinimum(providerId, newMinimumCapacity, options = {}) {
@@ -1455,7 +1468,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} providerId
-   * @param {number} newMaximumCapacity
+   * @param {string|number} newMaximumCapacity
    * @param {object} [options]
    */
   async queueMsgProviderUpdateCapacityMaximum(providerId, newMaximumCapacity, options = {}) {
@@ -1469,7 +1482,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} providerId
-   * @param {number} newMinimumDuration
+   * @param {string|number} newMinimumDuration
    * @param {object} [options]
    */
   async queueMsgProviderUpdateDurationMinimum(providerId, newMinimumDuration, options = {}) {
@@ -1483,7 +1496,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} providerId
-   * @param {number} newMaximumDuration
+   * @param {string|number} newMaximumDuration
    * @param {object} [options]
    */
   async queueMsgProviderUpdateDurationMaximum(providerId, newMaximumDuration, options = {}) {
@@ -1527,11 +1540,12 @@ export class SigningClientManager {
    * @param {string} validatorAddress
    * @param {{denom: string, amount: string}} amount
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgReactorInfuse(delegatorAddress, validatorAddress, amount, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgReactorInfuse',
-      {delegatorAddress, validatorAddress, amount},
+      {delegatorAddress, validatorAddress, amount, ownerId: options.ownerId ?? ''},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1543,11 +1557,12 @@ export class SigningClientManager {
    * @param {string} validatorDstAddress
    * @param {{denom: string, amount: string}} amount
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgReactorBeginMigration(delegatorAddress, validatorSrcAddress, validatorDstAddress, amount, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgReactorBeginMigration',
-      {delegatorAddress, validatorSrcAddress, validatorDstAddress, amount},
+      {delegatorAddress, validatorSrcAddress, validatorDstAddress, amount, ownerId: options.ownerId ?? ''},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1558,11 +1573,12 @@ export class SigningClientManager {
    * @param {string} validatorAddress
    * @param {{denom: string, amount: string}} amount
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgReactorDefuse(delegatorAddress, validatorAddress, amount, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgReactorDefuse',
-      {delegatorAddress, validatorAddress, amount},
+      {delegatorAddress, validatorAddress, amount, ownerId: options.ownerId ?? ''},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1572,13 +1588,14 @@ export class SigningClientManager {
    * @param {string} delegatorAddress
    * @param {string} validatorAddress
    * @param {{denom: string, amount: string}} amount
-   * @param {number} creationHeight
+   * @param {string|number} creationHeight
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgReactorCancelDefusion(delegatorAddress, validatorAddress, amount, creationHeight, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgReactorCancelDefusion',
-      {delegatorAddress, validatorAddress, amount, creationHeight},
+      {delegatorAddress, validatorAddress, amount, creationHeight, ownerId: options.ownerId ?? ''},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1632,9 +1649,9 @@ export class SigningClientManager {
 
   /**
    * @param {string} playerId
-   * @param {number} structTypeId
+   * @param {string|number} structTypeId
    * @param {string} operatingAmbit
-   * @param {number} slot
+   * @param {string|number} slot
    * @param {number} chargeCost
    * @param {object} [options]
    */
@@ -1696,7 +1713,7 @@ export class SigningClientManager {
    * @param {string} structId
    * @param {string} locationType
    * @param {string} ambit
-   * @param {number} slot
+   * @param {string|number} slot
    * @param {number} chargeCost
    * @param {object} [options]
    */

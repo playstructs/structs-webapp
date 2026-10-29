@@ -6,6 +6,7 @@ import {SIGNING_QUEUE} from "../constants/SigningQueueConstants";
 import {TASK} from "../constants/TaskConstants";
 import {SigningTransaction, TX_STATUS} from "../models/SigningTransaction";
 import {SigningTransactionSettledEvent} from "../events/SigningTransactionSettledEvent";
+import {normalizeMessagePayload} from "../util/MessagePayload";
 
 /**
  * Validate that a payload is safe to persist as JSON. Rejects anything that
@@ -150,6 +151,7 @@ export class SigningQueueManager {
    */
   #enqueue(typeUrl, payload, isAction, chargeCost, options) {
     assertSerializable(payload);
+    payload = normalizeMessagePayload(typeUrl, payload);
 
     // v1: per-tx retryLimit override is accepted but the global default applies
     // unless explicitly provided. Wiring a caller is a one-liner here later.

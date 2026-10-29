@@ -11,29 +11,29 @@ export const protobufPackage = "structs.structs";
 
 export interface GridRecord {
   attributeId: string;
-  value: number;
+  value: string;
 }
 
 export interface GridAttributes {
-  ore: number;
-  fuel: number;
-  capacity: number;
-  load: number;
-  structsLoad: number;
-  power: number;
-  connectionCapacity: number;
-  connectionCount: number;
-  allocationPointerStart: number;
-  allocationPointerEnd: number;
-  proxyNonce: number;
-  lastAction: number;
-  nonce: number;
-  ready: number;
-  checkpointBlock: number;
+  ore: string;
+  fuel: string;
+  capacity: string;
+  load: string;
+  structsLoad: string;
+  power: string;
+  connectionCapacity: string;
+  connectionCount: string;
+  allocationPointerStart: string;
+  allocationPointerEnd: string;
+  proxyNonce: string;
+  lastAction: string;
+  nonce: string;
+  ready: string;
+  checkpointBlock: string;
 }
 
 function createBaseGridRecord(): GridRecord {
-  return { attributeId: "", value: 0 };
+  return { attributeId: "", value: "0" };
 }
 
 export const GridRecord: MessageFns<GridRecord> = {
@@ -41,7 +41,7 @@ export const GridRecord: MessageFns<GridRecord> = {
     if (message.attributeId !== "") {
       writer.uint32(10).string(message.attributeId);
     }
-    if (message.value !== 0) {
+    if (message.value !== "0") {
       writer.uint32(16).uint64(message.value);
     }
     return writer;
@@ -67,7 +67,7 @@ export const GridRecord: MessageFns<GridRecord> = {
             break;
           }
 
-          message.value = longToNumber(reader.uint64());
+          message.value = reader.uint64().toString();
           continue;
         }
       }
@@ -82,7 +82,7 @@ export const GridRecord: MessageFns<GridRecord> = {
   fromJSON(object: any): GridRecord {
     return {
       attributeId: isSet(object.attributeId) ? globalThis.String(object.attributeId) : "",
-      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+      value: isSet(object.value) ? globalThis.String(object.value) : "0",
     };
   },
 
@@ -91,8 +91,8 @@ export const GridRecord: MessageFns<GridRecord> = {
     if (message.attributeId !== "") {
       obj.attributeId = message.attributeId;
     }
-    if (message.value !== 0) {
-      obj.value = Math.round(message.value);
+    if (message.value !== "0") {
+      obj.value = message.value;
     }
     return obj;
   },
@@ -103,76 +103,76 @@ export const GridRecord: MessageFns<GridRecord> = {
   fromPartial<I extends Exact<DeepPartial<GridRecord>, I>>(object: I): GridRecord {
     const message = createBaseGridRecord();
     message.attributeId = object.attributeId ?? "";
-    message.value = object.value ?? 0;
+    message.value = object.value ?? "0";
     return message;
   },
 };
 
 function createBaseGridAttributes(): GridAttributes {
   return {
-    ore: 0,
-    fuel: 0,
-    capacity: 0,
-    load: 0,
-    structsLoad: 0,
-    power: 0,
-    connectionCapacity: 0,
-    connectionCount: 0,
-    allocationPointerStart: 0,
-    allocationPointerEnd: 0,
-    proxyNonce: 0,
-    lastAction: 0,
-    nonce: 0,
-    ready: 0,
-    checkpointBlock: 0,
+    ore: "0",
+    fuel: "0",
+    capacity: "0",
+    load: "0",
+    structsLoad: "0",
+    power: "0",
+    connectionCapacity: "0",
+    connectionCount: "0",
+    allocationPointerStart: "0",
+    allocationPointerEnd: "0",
+    proxyNonce: "0",
+    lastAction: "0",
+    nonce: "0",
+    ready: "0",
+    checkpointBlock: "0",
   };
 }
 
 export const GridAttributes: MessageFns<GridAttributes> = {
   encode(message: GridAttributes, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.ore !== 0) {
+    if (message.ore !== "0") {
       writer.uint32(8).uint64(message.ore);
     }
-    if (message.fuel !== 0) {
+    if (message.fuel !== "0") {
       writer.uint32(16).uint64(message.fuel);
     }
-    if (message.capacity !== 0) {
+    if (message.capacity !== "0") {
       writer.uint32(24).uint64(message.capacity);
     }
-    if (message.load !== 0) {
+    if (message.load !== "0") {
       writer.uint32(32).uint64(message.load);
     }
-    if (message.structsLoad !== 0) {
+    if (message.structsLoad !== "0") {
       writer.uint32(40).uint64(message.structsLoad);
     }
-    if (message.power !== 0) {
+    if (message.power !== "0") {
       writer.uint32(48).uint64(message.power);
     }
-    if (message.connectionCapacity !== 0) {
+    if (message.connectionCapacity !== "0") {
       writer.uint32(56).uint64(message.connectionCapacity);
     }
-    if (message.connectionCount !== 0) {
+    if (message.connectionCount !== "0") {
       writer.uint32(64).uint64(message.connectionCount);
     }
-    if (message.allocationPointerStart !== 0) {
+    if (message.allocationPointerStart !== "0") {
       writer.uint32(72).uint64(message.allocationPointerStart);
     }
-    if (message.allocationPointerEnd !== 0) {
+    if (message.allocationPointerEnd !== "0") {
       writer.uint32(80).uint64(message.allocationPointerEnd);
     }
-    if (message.proxyNonce !== 0) {
+    if (message.proxyNonce !== "0") {
       writer.uint32(88).uint64(message.proxyNonce);
     }
-    if (message.lastAction !== 0) {
+    if (message.lastAction !== "0") {
       writer.uint32(96).uint64(message.lastAction);
     }
-    if (message.nonce !== 0) {
+    if (message.nonce !== "0") {
       writer.uint32(104).uint64(message.nonce);
     }
-    if (message.ready !== 0) {
+    if (message.ready !== "0") {
       writer.uint32(112).uint64(message.ready);
     }
-    if (message.checkpointBlock !== 0) {
+    if (message.checkpointBlock !== "0") {
       writer.uint32(120).uint64(message.checkpointBlock);
     }
     return writer;
@@ -190,7 +190,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.ore = longToNumber(reader.uint64());
+          message.ore = reader.uint64().toString();
           continue;
         }
         case 2: {
@@ -198,7 +198,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.fuel = longToNumber(reader.uint64());
+          message.fuel = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -206,7 +206,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.capacity = longToNumber(reader.uint64());
+          message.capacity = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -214,7 +214,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.load = longToNumber(reader.uint64());
+          message.load = reader.uint64().toString();
           continue;
         }
         case 5: {
@@ -222,7 +222,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.structsLoad = longToNumber(reader.uint64());
+          message.structsLoad = reader.uint64().toString();
           continue;
         }
         case 6: {
@@ -230,7 +230,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.power = longToNumber(reader.uint64());
+          message.power = reader.uint64().toString();
           continue;
         }
         case 7: {
@@ -238,7 +238,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.connectionCapacity = longToNumber(reader.uint64());
+          message.connectionCapacity = reader.uint64().toString();
           continue;
         }
         case 8: {
@@ -246,7 +246,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.connectionCount = longToNumber(reader.uint64());
+          message.connectionCount = reader.uint64().toString();
           continue;
         }
         case 9: {
@@ -254,7 +254,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.allocationPointerStart = longToNumber(reader.uint64());
+          message.allocationPointerStart = reader.uint64().toString();
           continue;
         }
         case 10: {
@@ -262,7 +262,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.allocationPointerEnd = longToNumber(reader.uint64());
+          message.allocationPointerEnd = reader.uint64().toString();
           continue;
         }
         case 11: {
@@ -270,7 +270,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.proxyNonce = longToNumber(reader.uint64());
+          message.proxyNonce = reader.uint64().toString();
           continue;
         }
         case 12: {
@@ -278,7 +278,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.lastAction = longToNumber(reader.uint64());
+          message.lastAction = reader.uint64().toString();
           continue;
         }
         case 13: {
@@ -286,7 +286,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.nonce = longToNumber(reader.uint64());
+          message.nonce = reader.uint64().toString();
           continue;
         }
         case 14: {
@@ -294,7 +294,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.ready = longToNumber(reader.uint64());
+          message.ready = reader.uint64().toString();
           continue;
         }
         case 15: {
@@ -302,7 +302,7 @@ export const GridAttributes: MessageFns<GridAttributes> = {
             break;
           }
 
-          message.checkpointBlock = longToNumber(reader.uint64());
+          message.checkpointBlock = reader.uint64().toString();
           continue;
         }
       }
@@ -316,72 +316,72 @@ export const GridAttributes: MessageFns<GridAttributes> = {
 
   fromJSON(object: any): GridAttributes {
     return {
-      ore: isSet(object.ore) ? globalThis.Number(object.ore) : 0,
-      fuel: isSet(object.fuel) ? globalThis.Number(object.fuel) : 0,
-      capacity: isSet(object.capacity) ? globalThis.Number(object.capacity) : 0,
-      load: isSet(object.load) ? globalThis.Number(object.load) : 0,
-      structsLoad: isSet(object.structsLoad) ? globalThis.Number(object.structsLoad) : 0,
-      power: isSet(object.power) ? globalThis.Number(object.power) : 0,
-      connectionCapacity: isSet(object.connectionCapacity) ? globalThis.Number(object.connectionCapacity) : 0,
-      connectionCount: isSet(object.connectionCount) ? globalThis.Number(object.connectionCount) : 0,
+      ore: isSet(object.ore) ? globalThis.String(object.ore) : "0",
+      fuel: isSet(object.fuel) ? globalThis.String(object.fuel) : "0",
+      capacity: isSet(object.capacity) ? globalThis.String(object.capacity) : "0",
+      load: isSet(object.load) ? globalThis.String(object.load) : "0",
+      structsLoad: isSet(object.structsLoad) ? globalThis.String(object.structsLoad) : "0",
+      power: isSet(object.power) ? globalThis.String(object.power) : "0",
+      connectionCapacity: isSet(object.connectionCapacity) ? globalThis.String(object.connectionCapacity) : "0",
+      connectionCount: isSet(object.connectionCount) ? globalThis.String(object.connectionCount) : "0",
       allocationPointerStart: isSet(object.allocationPointerStart)
-        ? globalThis.Number(object.allocationPointerStart)
-        : 0,
-      allocationPointerEnd: isSet(object.allocationPointerEnd) ? globalThis.Number(object.allocationPointerEnd) : 0,
-      proxyNonce: isSet(object.proxyNonce) ? globalThis.Number(object.proxyNonce) : 0,
-      lastAction: isSet(object.lastAction) ? globalThis.Number(object.lastAction) : 0,
-      nonce: isSet(object.nonce) ? globalThis.Number(object.nonce) : 0,
-      ready: isSet(object.ready) ? globalThis.Number(object.ready) : 0,
-      checkpointBlock: isSet(object.checkpointBlock) ? globalThis.Number(object.checkpointBlock) : 0,
+        ? globalThis.String(object.allocationPointerStart)
+        : "0",
+      allocationPointerEnd: isSet(object.allocationPointerEnd) ? globalThis.String(object.allocationPointerEnd) : "0",
+      proxyNonce: isSet(object.proxyNonce) ? globalThis.String(object.proxyNonce) : "0",
+      lastAction: isSet(object.lastAction) ? globalThis.String(object.lastAction) : "0",
+      nonce: isSet(object.nonce) ? globalThis.String(object.nonce) : "0",
+      ready: isSet(object.ready) ? globalThis.String(object.ready) : "0",
+      checkpointBlock: isSet(object.checkpointBlock) ? globalThis.String(object.checkpointBlock) : "0",
     };
   },
 
   toJSON(message: GridAttributes): unknown {
     const obj: any = {};
-    if (message.ore !== 0) {
-      obj.ore = Math.round(message.ore);
+    if (message.ore !== "0") {
+      obj.ore = message.ore;
     }
-    if (message.fuel !== 0) {
-      obj.fuel = Math.round(message.fuel);
+    if (message.fuel !== "0") {
+      obj.fuel = message.fuel;
     }
-    if (message.capacity !== 0) {
-      obj.capacity = Math.round(message.capacity);
+    if (message.capacity !== "0") {
+      obj.capacity = message.capacity;
     }
-    if (message.load !== 0) {
-      obj.load = Math.round(message.load);
+    if (message.load !== "0") {
+      obj.load = message.load;
     }
-    if (message.structsLoad !== 0) {
-      obj.structsLoad = Math.round(message.structsLoad);
+    if (message.structsLoad !== "0") {
+      obj.structsLoad = message.structsLoad;
     }
-    if (message.power !== 0) {
-      obj.power = Math.round(message.power);
+    if (message.power !== "0") {
+      obj.power = message.power;
     }
-    if (message.connectionCapacity !== 0) {
-      obj.connectionCapacity = Math.round(message.connectionCapacity);
+    if (message.connectionCapacity !== "0") {
+      obj.connectionCapacity = message.connectionCapacity;
     }
-    if (message.connectionCount !== 0) {
-      obj.connectionCount = Math.round(message.connectionCount);
+    if (message.connectionCount !== "0") {
+      obj.connectionCount = message.connectionCount;
     }
-    if (message.allocationPointerStart !== 0) {
-      obj.allocationPointerStart = Math.round(message.allocationPointerStart);
+    if (message.allocationPointerStart !== "0") {
+      obj.allocationPointerStart = message.allocationPointerStart;
     }
-    if (message.allocationPointerEnd !== 0) {
-      obj.allocationPointerEnd = Math.round(message.allocationPointerEnd);
+    if (message.allocationPointerEnd !== "0") {
+      obj.allocationPointerEnd = message.allocationPointerEnd;
     }
-    if (message.proxyNonce !== 0) {
-      obj.proxyNonce = Math.round(message.proxyNonce);
+    if (message.proxyNonce !== "0") {
+      obj.proxyNonce = message.proxyNonce;
     }
-    if (message.lastAction !== 0) {
-      obj.lastAction = Math.round(message.lastAction);
+    if (message.lastAction !== "0") {
+      obj.lastAction = message.lastAction;
     }
-    if (message.nonce !== 0) {
-      obj.nonce = Math.round(message.nonce);
+    if (message.nonce !== "0") {
+      obj.nonce = message.nonce;
     }
-    if (message.ready !== 0) {
-      obj.ready = Math.round(message.ready);
+    if (message.ready !== "0") {
+      obj.ready = message.ready;
     }
-    if (message.checkpointBlock !== 0) {
-      obj.checkpointBlock = Math.round(message.checkpointBlock);
+    if (message.checkpointBlock !== "0") {
+      obj.checkpointBlock = message.checkpointBlock;
     }
     return obj;
   },
@@ -391,21 +391,21 @@ export const GridAttributes: MessageFns<GridAttributes> = {
   },
   fromPartial<I extends Exact<DeepPartial<GridAttributes>, I>>(object: I): GridAttributes {
     const message = createBaseGridAttributes();
-    message.ore = object.ore ?? 0;
-    message.fuel = object.fuel ?? 0;
-    message.capacity = object.capacity ?? 0;
-    message.load = object.load ?? 0;
-    message.structsLoad = object.structsLoad ?? 0;
-    message.power = object.power ?? 0;
-    message.connectionCapacity = object.connectionCapacity ?? 0;
-    message.connectionCount = object.connectionCount ?? 0;
-    message.allocationPointerStart = object.allocationPointerStart ?? 0;
-    message.allocationPointerEnd = object.allocationPointerEnd ?? 0;
-    message.proxyNonce = object.proxyNonce ?? 0;
-    message.lastAction = object.lastAction ?? 0;
-    message.nonce = object.nonce ?? 0;
-    message.ready = object.ready ?? 0;
-    message.checkpointBlock = object.checkpointBlock ?? 0;
+    message.ore = object.ore ?? "0";
+    message.fuel = object.fuel ?? "0";
+    message.capacity = object.capacity ?? "0";
+    message.load = object.load ?? "0";
+    message.structsLoad = object.structsLoad ?? "0";
+    message.power = object.power ?? "0";
+    message.connectionCapacity = object.connectionCapacity ?? "0";
+    message.connectionCount = object.connectionCount ?? "0";
+    message.allocationPointerStart = object.allocationPointerStart ?? "0";
+    message.allocationPointerEnd = object.allocationPointerEnd ?? "0";
+    message.proxyNonce = object.proxyNonce ?? "0";
+    message.lastAction = object.lastAction ?? "0";
+    message.nonce = object.nonce ?? "0";
+    message.ready = object.ready ?? "0";
+    message.checkpointBlock = object.checkpointBlock ?? "0";
     return message;
   },
 };
@@ -421,17 +421,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

@@ -12,14 +12,14 @@ export const protobufPackage = "structs.structs";
 
 export interface Player {
   id: string;
-  index: number;
+  index: string;
   guildId: string;
   substationId: string;
   creator: string;
   primaryAddress: string;
   planetId: string;
   fleetId: string;
-  guildRank: number;
+  guildRank: string;
   name: string;
   pfp: string;
   pfpClientRenderAttributes: string;
@@ -32,14 +32,14 @@ export interface PlayerInventory {
 function createBasePlayer(): Player {
   return {
     id: "",
-    index: 0,
+    index: "0",
     guildId: "",
     substationId: "",
     creator: "",
     primaryAddress: "",
     planetId: "",
     fleetId: "",
-    guildRank: 0,
+    guildRank: "0",
     name: "",
     pfp: "",
     pfpClientRenderAttributes: "",
@@ -51,7 +51,7 @@ export const Player: MessageFns<Player> = {
     if (message.id !== "") {
       writer.uint32(10).string(message.id);
     }
-    if (message.index !== 0) {
+    if (message.index !== "0") {
       writer.uint32(16).uint64(message.index);
     }
     if (message.guildId !== "") {
@@ -72,7 +72,7 @@ export const Player: MessageFns<Player> = {
     if (message.fleetId !== "") {
       writer.uint32(66).string(message.fleetId);
     }
-    if (message.guildRank !== 0) {
+    if (message.guildRank !== "0") {
       writer.uint32(72).uint64(message.guildRank);
     }
     if (message.name !== "") {
@@ -107,7 +107,7 @@ export const Player: MessageFns<Player> = {
             break;
           }
 
-          message.index = longToNumber(reader.uint64());
+          message.index = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -163,7 +163,7 @@ export const Player: MessageFns<Player> = {
             break;
           }
 
-          message.guildRank = longToNumber(reader.uint64());
+          message.guildRank = reader.uint64().toString();
           continue;
         }
         case 10: {
@@ -202,14 +202,14 @@ export const Player: MessageFns<Player> = {
   fromJSON(object: any): Player {
     return {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
-      index: isSet(object.index) ? globalThis.Number(object.index) : 0,
+      index: isSet(object.index) ? globalThis.String(object.index) : "0",
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
       substationId: isSet(object.substationId) ? globalThis.String(object.substationId) : "",
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       primaryAddress: isSet(object.primaryAddress) ? globalThis.String(object.primaryAddress) : "",
       planetId: isSet(object.planetId) ? globalThis.String(object.planetId) : "",
       fleetId: isSet(object.fleetId) ? globalThis.String(object.fleetId) : "",
-      guildRank: isSet(object.guildRank) ? globalThis.Number(object.guildRank) : 0,
+      guildRank: isSet(object.guildRank) ? globalThis.String(object.guildRank) : "0",
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       pfp: isSet(object.pfp) ? globalThis.String(object.pfp) : "",
       pfpClientRenderAttributes: isSet(object.pfpClientRenderAttributes)
@@ -223,8 +223,8 @@ export const Player: MessageFns<Player> = {
     if (message.id !== "") {
       obj.id = message.id;
     }
-    if (message.index !== 0) {
-      obj.index = Math.round(message.index);
+    if (message.index !== "0") {
+      obj.index = message.index;
     }
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
@@ -244,8 +244,8 @@ export const Player: MessageFns<Player> = {
     if (message.fleetId !== "") {
       obj.fleetId = message.fleetId;
     }
-    if (message.guildRank !== 0) {
-      obj.guildRank = Math.round(message.guildRank);
+    if (message.guildRank !== "0") {
+      obj.guildRank = message.guildRank;
     }
     if (message.name !== "") {
       obj.name = message.name;
@@ -265,14 +265,14 @@ export const Player: MessageFns<Player> = {
   fromPartial<I extends Exact<DeepPartial<Player>, I>>(object: I): Player {
     const message = createBasePlayer();
     message.id = object.id ?? "";
-    message.index = object.index ?? 0;
+    message.index = object.index ?? "0";
     message.guildId = object.guildId ?? "";
     message.substationId = object.substationId ?? "";
     message.creator = object.creator ?? "";
     message.primaryAddress = object.primaryAddress ?? "";
     message.planetId = object.planetId ?? "";
     message.fleetId = object.fleetId ?? "";
-    message.guildRank = object.guildRank ?? 0;
+    message.guildRank = object.guildRank ?? "0";
     message.name = object.name ?? "";
     message.pfp = object.pfp ?? "";
     message.pfpClientRenderAttributes = object.pfpClientRenderAttributes ?? "";
@@ -349,17 +349,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;
