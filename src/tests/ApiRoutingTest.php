@@ -40,6 +40,8 @@ class ApiRoutingTest extends KernelTestCase
             ['/api/leaderboard/player', 'api_leaderboard'],
             ['/api/player/count', 'api_count_players'],
             ['/api/player/1-101', 'api_get_player'],
+            ['/api/ledger/player/1-101/transfer-source', 'api_transfer_source'],
+            ['/api/ledger/123', 'api_get_transaction'],
             ['/api/struct/count', 'api_count_structs'],
             ['/api/planet/count', 'api_count_planets'],
             ['/api/stat/load/aggregate/range', 'api_stat_aggregate_range'],

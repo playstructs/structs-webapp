@@ -50,6 +50,16 @@ class LedgerController extends AbstractController
         return $ledgerManager->countTransactions($player_id);
     }
 
+    #[Route('/api/ledger/player/{player_id}/transfer-source', name: 'api_transfer_source', methods: ['GET'])]
+    public function getTransferSource(
+        string $player_id,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return (new LedgerManager($entityManager, $validator))->getTransferSource($player_id, $request->query->all());
+    }
+
     /**
      * @throws Exception
      */

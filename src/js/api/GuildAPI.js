@@ -502,7 +502,10 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/player/${playerId}/page/${page}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.transactionFactory.parseList(response.data);
+    const transactions = this.transactionFactory.parseList(response.data);
+    transactions.snapshot_meta = response.meta;
+    for (const transaction of transactions) transaction.snapshot_meta = response.meta;
+    return transactions;
   }
 
   /**
@@ -522,7 +525,22 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/${txId}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.transactionFactory.make(response.data);
+    const transaction = this.transactionFactory.make(response.data);
+    transaction.snapshot_meta = response.meta;
+    return transaction;
+  }
+
+  /** Source fields come from the verified committed result and exact transfer intent. */
+  async getTransferSource(playerId, source) {
+    const query = new URLSearchParams(source);
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/player/${encodeURIComponent(playerId)}/transfer-source?${query}`);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    if (response.data) {
+      response.data = this.transactionFactory.make(response.data);
+      response.data.snapshot_meta = response.meta;
+    }
+    return response;
   }
 
   /**
