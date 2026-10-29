@@ -4,22 +4,33 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptoCodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx"
+	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+	authTx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/cosmos/gogoproto/jsonpb"
 	"github.com/cosmos/gogoproto/proto"
-	_ "structs/x/structs/types"
+	structsTypes "structs/x/structs/types"
 )
 
 type fixture struct {
-	Release  string `json:"release"`
-	SignedTx string `json:"signed_tx"`
-	Messages []struct {
+	Release       string `json:"release"`
+	SignedTx      string `json:"signed_tx"`
+	AccountNumber string `json:"account_number"`
+	TimeoutHeight string `json:"timeout_height"`
+	Messages      []struct {
 		TypeURL  string         `json:"type_url"`
 		Expected map[string]any `json:"expected"`
 	} `json:"messages"`
@@ -74,13 +85,41 @@ func main() {
 	}
 	var publicKey secp256k1.PubKey
 	must(proto.Unmarshal(auth.SignerInfos[0].PublicKey.Value, &publicKey))
-	signDoc := tx.SignDoc{BodyBytes: raw.BodyBytes, AuthInfoBytes: raw.AuthInfoBytes, ChainId: "structstestnet-111", AccountNumber: 0}
+	var accountNumber uint64
+	if f.AccountNumber != "" {
+		accountNumber, err = strconv.ParseUint(f.AccountNumber, 10, 64)
+		must(err)
+	}
+	signDoc := tx.SignDoc{BodyBytes: raw.BodyBytes, AuthInfoBytes: raw.AuthInfoBytes, ChainId: "structstestnet-111", AccountNumber: accountNumber}
 	signBytes, err := proto.Marshal(&signDoc)
 	must(err)
 	if !publicKey.VerifySignature(signBytes, raw.Signatures[0]) {
 		panic("offline signature did not verify")
 	}
 	fmt.Println("verified offline signature with release SDK; no broadcast")
+	if f.TimeoutHeight != "" {
+		if f.TimeoutHeight != "3352999" || body.TimeoutHeight != 3352999 {
+			panic("wrong signed upgrade expiry")
+		}
+		interfaces := codecTypes.NewInterfaceRegistry()
+		cryptoCodec.RegisterInterfaces(interfaces)
+		structsTypes.RegisterInterfaces(interfaces)
+		config := authTx.NewTxConfig(codec.NewProtoCodec(interfaces), authTx.DefaultSignModes)
+		decoded, err := config.TxDecoder()(wire)
+		must(err)
+		for _, height := range []int64{3352999, 3353000} {
+			reached := false
+			_, err := ante.NewTxTimeoutHeightDecorator().AnteHandle(sdk.Context{}.WithBlockHeight(height), decoded, false,
+				func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { reached = true; return ctx, nil })
+			if height == 3352999 && (err != nil || !reached) {
+				panic("H-1 was incorrectly expired")
+			}
+			if height == 3353000 && (!errors.Is(err, sdkerrors.ErrTxTimeoutHeight) || reached) {
+				panic("H was not expired")
+			}
+		}
+		fmt.Println("verified actual queued signed body with SDK timeout decorator: H-1 passes, H expires; no handler/broadcast claim")
+	}
 }
 
 func must(err error) {

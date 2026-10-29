@@ -11,6 +11,8 @@ import {SigningQueueManager} from "./SigningQueueManager";
 import {ChainQueryClient} from "../api/ChainQueryClient";
 import {OwnedRpcClient} from "../api/OwnedRpcClient";
 import {validateSigningSnapshot} from "../util/ChainProtocol";
+import {SigningSubmission} from "./SigningSubmission";
+import {TransactionJournal} from "./TransactionJournal";
 
 /** Floor between unforced probes, so an idle player barely touches the node. */
 const PROBE_INTERVAL_MS = 5 * 60 * 1000;
@@ -60,6 +62,10 @@ export class SigningClientManager {
     this.queue = new SigningQueueManager(this.gameState, {
       registry: this.registry,
       wsUrl: this.wsUrl,
+      submission: new SigningSubmission(this),
+    });
+    window.addEventListener('storage',event=>{
+      if (event.key===TransactionJournal.SESSION_CLOSED_KEY) this.stopForLogout();
     });
   }
 
@@ -68,12 +74,12 @@ export class SigningClientManager {
    */
   async initSigningClient() {
     console.debug("Initializing signing client...");
+    // Wallet/account initialization precedes this call. Load evidence even if
+    // the node is temporarily unreachable; a failed connect cannot hide it.
+    this.queue.loadPersistedState();
     await this.connect();
     console.info("Signing client initialized.");
-
-    // The signing account is now known — safe to rehydrate the per-account queue
-    // (Review hardening #1: storage key needs the address).
-    this.queue.loadPersistedState();
+    this.queue.reconcilePending().catch(error=>console.warn('[SigningClientManager] reconciliation unavailable:',error));
   }
 
   /**
@@ -133,6 +139,11 @@ export class SigningClientManager {
     }
   }
 
+  stopForLogout() {
+    this.queue.suspended = true;
+    this.disconnect();
+  }
+
   /**
    * A dead WebSocket goes on reporting readyState OPEN, so the only answer worth
    * trusting comes from a round trip that has to complete.
@@ -179,6 +190,10 @@ export class SigningClientManager {
   resumeCheck(force = false) {
     if (!this.connectionCheck) {
       this.connectionCheck = this.checkConnection(force)
+        .then(async alive => {
+          if (alive) await this.queue.reconcilePending();
+          return alive;
+        })
         .catch((error) => {
           console.warn('[SigningClientManager] connection check failed:', error);
           return false;
@@ -213,7 +228,7 @@ export class SigningClientManager {
     // us over a different service, so their arrival is what proves the network
     // is fine and isolates the fault to this transport. Rebuilding during a
     // wider outage would just churn sockets.
-    if (this.gameState.msSinceLastBlock() >= STALE_BLOCK_MS) {
+    if (this.gameState.msSinceLastBlock() >= STALE_BLOCK_MS && !this.queue.hasUnresolvedSubmissions()) {
       return false;
     }
 
@@ -237,7 +252,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} id
-   * @return {boolean}
+   * @return {Promise<boolean>}
    */
   cancelQueueItem(id) {
     return this.queue.cancelQueueItem(id);

@@ -1,12 +1,12 @@
-import {TimeoutError} from "@cosmjs/stargate";
 import {EVENTS} from "../constants/Events";
-import {FEE} from "../constants/Fee";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {SIGNING_QUEUE} from "../constants/SigningQueueConstants";
 import {TASK} from "../constants/TaskConstants";
 import {SigningTransaction, TX_STATUS} from "../models/SigningTransaction";
 import {SigningTransactionSettledEvent} from "../events/SigningTransactionSettledEvent";
 import {normalizeMessagePayload} from "../util/MessagePayload";
+import {TransactionJournal} from "./TransactionJournal";
+import {SigningDeferredError} from "./SigningSubmission";
 
 /**
  * Validate that a payload is safe to persist as JSON. Rejects anything that
@@ -80,10 +80,17 @@ export class SigningQueueManager {
    * @param {import('@cosmjs/proto-signing').Registry} deps.registry
    * @param {string} deps.wsUrl - Endpoint, used to scope the storage key per chain.
    */
-  constructor(gameState, {registry, wsUrl}) {
+  constructor(gameState, {registry, wsUrl, submission = null}) {
     this.gameState = gameState;
     this.registry = registry;
     this.wsUrl = wsUrl;
+    this.submission = submission;
+    this.unresolved = new Map();
+    this.completed = new Map();
+    this.working = false;
+    this.recoveryError = null;
+    this.storageScope = null;
+    this.suspended = false;
 
     /** @type {SigningTransaction[]} Unordered lane; fired ASAP. */
     this.immediateQueue = [];
@@ -95,7 +102,7 @@ export class SigningQueueManager {
     this.lastBroadcastHeight = 0;
     /** @type {number} Bridges GRASS lag between successful charge broadcasts. */
     this.scheduleAnchorHeight = 0;
-    /** @type {Map<string, {resolve: function}>} In-memory only; backs whenSettled. */
+    /** @type {Map<string, Set<function>>} In-memory only; backs whenSettled. */
     this.settlementWaiters = new Map();
     /** @type {number[]} In-memory ring buffer of block timestamps for ETA math. */
     this.blockTimestamps = [];
@@ -153,8 +160,12 @@ export class SigningQueueManager {
     assertSerializable(payload);
     payload = normalizeMessagePayload(typeUrl, payload);
 
-    // v1: per-tx retryLimit override is accepted but the global default applies
-    // unless explicitly provided. Wiring a caller is a one-liner here later.
+    this.#bindScope();
+    if (this.suspended || this.recoveryError || this.unresolved.size || new TransactionJournal(this.gameState.signingAccount.address)
+        .read().some(record=>['broadcasting','accepted','unknown'].includes(record.phase))) {
+      throw new SigningDeferredError('Resolve the existing submission before adding another intent');
+    }
+    // Retained in the saved format; signed submissions are never auto-retried.
     const retryLimit = typeof options.retryLimit === 'number'
       ? options.retryLimit
       : SIGNING_QUEUE.DEFAULT_RETRY_LIMIT;
@@ -167,6 +178,7 @@ export class SigningQueueManager {
       retryLimit,
       accountAddress: this.gameState.signingAccount?.address ?? null,
       enqueuedAtBlock: this.gameState.currentBlockHeight,
+      intentProtocol: options.intentProtocol ?? null,
     });
 
     this.appendToLane(tx);
@@ -174,8 +186,7 @@ export class SigningQueueManager {
   }
 
   /**
-   * Push a transaction onto the tail of its lane and persist. Shared by enqueue
-   * and the failure-retry path — retry is identical to a fresh enqueue at tail.
+   * Push a demonstrably unsent intent onto its lane and persist.
    *
    * @param {SigningTransaction} tx
    */
@@ -322,300 +333,206 @@ export class SigningQueueManager {
   // Broadcast loop
   // ---------------------------------------------------------------------------
 
-  /**
-   * Block listener handler. Selects at most one transaction to broadcast this
-   * block: charge head if its lazy gate passes, otherwise the immediate head.
-   */
-  transactOnBlock() {
-    const H = this.gameState.currentBlockHeight;
-    if (this.inFlight) {
-      return;
-    }
-    if (!this.gameState.signingClient || !this.gameState.signingAccount?.address) {
-      return;
-    }
-    if (this.lastBroadcastHeight >= H) {
-      return;
-    }
-
-    // Hold the entire action lane until the confirmed last-action height is
-    // loaded from the API/GRASS. Until then the charge base is unknown (defaults
-    // to 0 = full charge), so broadcasting could send a charge action the chain
-    // rejects. The immediate lane has no charge dependency and still proceeds.
-    const head = this.actionQueue[0];
-    if (head && this.isConfirmedActionLoaded() && this.projectedChargeAt(H) >= head.chargeCost) {
-      this.actionQueue.shift();
-      this.broadcast(head);
-      return;
-    }
-    // Action head not ready (or empty) → use this block's slot for immediate lane.
-
-    if (this.immediateQueue.length > 0) {
-      const tx = this.immediateQueue.shift();
-      this.broadcast(tx);
-    }
+  /** At most one new send per block/account; unresolved work only reconciles. */
+  async transactOnBlock(reconcileOnly = false) {
+    if (this.suspended || this.working || !this.gameState.signingClient || !this.gameState.signingAccount?.address || !this.submission) return;
+    this.working = true;
+    try {
+      this.#bindScope();
+      const journal = new TransactionJournal(this.gameState.signingAccount.address);
+      await journal.exclusive(async () => {
+        this.#mergeJournal(journal);
+        if (this.unresolved.size) {
+          // Bounded work on each block. Unknown legacy records never become retries.
+          const pending = [...this.unresolved.values()];
+          for (const tx of pending.slice(0, 4)) {
+            if (!tx.submission) {
+              this.unresolved.delete(tx.id); this.unresolved.set(tx.id,tx);
+              continue;
+            }
+            try {
+              const response = tx.response?.stage==='committed' || (tx.response?.stage==='check_tx' && tx.response.code>0)
+                ? tx.response : await this.#deadline(this.submission.find(tx),SIGNING_QUEUE.RECONCILE_TIMEOUT_MS);
+              if (response) this.#finish(tx,response,journal);
+            } catch (error) { tx.error = String(error); }
+            // Rotate so a temporarily unavailable hash cannot starve other records.
+            if (this.unresolved.has(tx.id)) { this.unresolved.delete(tx.id); this.unresolved.set(tx.id,tx); }
+          }
+          return;
+        }
+        if (reconcileOnly || this.recoveryError) return;
+        const height = this.gameState.currentBlockHeight;
+        if (this.lastBroadcastHeight >= height) return;
+        const head = this.actionQueue[0];
+        const lane = head && this.isConfirmedActionLoaded() && this.projectedChargeAt(height)>=head.chargeCost
+          ? this.actionQueue : this.immediateQueue;
+        const tx = lane.shift();
+        if (tx) await this.#broadcast(tx,journal);
+      });
+    } catch (error) {
+      console.warn('[SigningQueueManager] signing/recovery unavailable:',error);
+    } finally { this.working = false; }
   }
 
-  /**
-   * Sign and broadcast a single transaction. The only place `inFlight` is set
-   * or cleared. Persists before the first await so a mid-flight refresh can
-   * rehydrate.
-   *
-   * @param {SigningTransaction} tx
-   * @return {Promise<void>}
-   */
-  async broadcast(tx) {
-    tx.status = TX_STATUS.IN_FLIGHT;
-    this.inFlight = tx;
-    tx.broadcastAtBlock = this.gameState.currentBlockHeight;
-    this.lastBroadcastHeight = this.gameState.currentBlockHeight;
-    this.persist();
+  /** Existing resume timer may recover results even when GRASS has missed blocks. */
+  reconcilePending() {
+    return this.transactOnBlock(true);
+  }
 
-    // Multi-account / Review hardening #4: never sign with the wrong key. If the
-    // active signer is not this tx's owner, hold it (restore to its lane head).
-    if (tx.accountAddress && tx.accountAddress !== this.gameState.signingAccount.address) {
-      console.warn(
-        `[SigningQueueManager] Holding tx ${tx.id}: owner ${tx.accountAddress} != active signer ${this.gameState.signingAccount.address}`
-      );
-      this.inFlight = null;
+  hasUnresolvedSubmissions() {
+    return this.unresolved.size>0;
+  }
+
+  async #broadcast(tx, journal) {
+    if (tx.accountAddress!==this.gameState.signingAccount.address) {
       this.#restoreToLaneHead(tx);
       return;
     }
-
-    let msg;
-    try {
-      msg = tx.toCosmosMsg(this.registry);
-    } catch (err) {
-      // Encoding bug — treat as a normal failure (retry/drop per policy).
-      this.inFlight = null;
-      this.#handleBroadcastFailure(tx, err);
+    if (tx.createdAt>Date.now() || Date.now()-tx.createdAt>SIGNING_QUEUE.MAX_QUEUE_AGE_MS || TransactionJournal.isSessionClosed(tx)) {
+      try { this.#finish(tx,null,journal,'Unsent intent expired'); }
+      catch (error) { this.#restoreToLaneHead(tx); throw error; }
       return;
     }
-
-    console.debug('[SigningQueueManager] Broadcasting transaction:', {
-      id: tx.id,
-      typeUrl: tx.message.typeUrl,
-      payload: tx.message.payload,
-      isAction: tx.isAction,
-      chargeCost: tx.chargeCost,
-      attempts: tx.attempts,
-      broadcastAtBlock: tx.broadcastAtBlock,
-      creator: this.gameState.signingAccount.address,
-      msg,
-    });
-
+    tx.status = TX_STATUS.PREPARING;
+    this.inFlight = tx;
+    this.persist();
+    let active = true;
+    let sending = false;
     try {
-      const response = await this.#signAndBroadcastWithTimeout(msg);
-      this.#handleBroadcastResponse(tx, response);
-    } catch (err) {
-      if (err instanceof TimeoutError && err.txId) {
-        // Submitted but not yet included — it frequently lands a block or two
-        // later. Poll before treating as failure to avoid duplicate actions.
-        const found = await this.pollForTx(err.txId);
-        if (found) {
-          this.#handleBroadcastResponse(tx, {
-            code: found.code,
-            transactionHash: found.hash,
-            height: found.height,
-            rawLog: found.rawLog,
-            msgResponses: found.msgResponses,
-            events: found.events,
-          });
-          return;
+      tx.submission = await this.#deadline(this.submission.prepare(tx,()=>{
+        if (!active || this.suspended || TransactionJournal.isSessionClosed(tx)) throw new Error('Signing preparation expired or session closed');
+      }),SIGNING_QUEUE.BROADCAST_TIMEOUT_MS);
+      // Both writes are synchronous under the account lock. No network call is
+      // reachable until exact bytes/hash and then the send marker are durable.
+      journal.write(tx,'prepared');
+      tx.status = TX_STATUS.UNKNOWN;
+      tx.broadcastAtBlock = this.gameState.currentBlockHeight;
+      journal.write(tx,'broadcasting');
+      sending = true;
+      this.unresolved.set(tx.id,tx);
+      this.lastBroadcastHeight = this.gameState.currentBlockHeight;
+      this.persist();
+      const response = await this.#deadline(this.submission.send(tx),SIGNING_QUEUE.RECONCILE_TIMEOUT_MS);
+      if (response.code!==0) {
+        this.#finish(tx,response,journal);
+        return;
+      }
+      // CheckTx acceptance is not a terminal success.
+      tx.response = response;
+      journal.write(tx,'accepted');
+      const committed = await this.#deadline(this.submission.find(tx),SIGNING_QUEUE.RECONCILE_TIMEOUT_MS);
+      if (committed) this.#finish(tx,committed,journal);
+    } catch (error) {
+      tx.error = String(error);
+      if (sending) {
+        tx.status = TX_STATUS.UNKNOWN;
+        this.unresolved.set(tx.id,tx);
+        // The durable broadcasting/accepted record already protects this intent.
+        // A failed later write must not erase that evidence or settle as failure.
+        try { journal.write(tx,'unknown'); } catch (persistError) { console.warn('[SigningQueueManager] outcome persistence unavailable:',persistError); }
+      } else if (error instanceof SigningDeferredError) {
+        tx.submission = null;
+        this.#restoreToLaneHead(tx);
+      } else {
+        try { this.#finish(tx,null,journal,String(error)); }
+        catch {
+          tx.submission = null;
+          this.#restoreToLaneHead(tx);
         }
       }
+    } finally {
+      active = false;
       this.inFlight = null;
-      this.#handleBroadcastFailure(tx, err);
-    }
-  }
-
-  /**
-   * Sign and broadcast against a hard deadline.
-   *
-   * cosmjs bounds the wait for *inclusion* itself and raises a TimeoutError
-   * carrying a txId, which the caller recovers from by polling. That timer only
-   * arms once the transaction has been submitted, so it does nothing for a
-   * transport that dies mid-broadcast: the promise never settles, `inFlight`
-   * stays set, and every later block tick returns early, wedging both lanes
-   * until the page is reloaded. This bounds that case and nothing else.
-   *
-   * @param {object} msg
-   * @return {Promise<object>}
-   */
-  #signAndBroadcastWithTimeout(msg) {
-    const broadcast = this.gameState.signingClient.signAndBroadcast(
-      this.gameState.signingAccount.address,
-      [msg],
-      FEE
-    );
-
-    // Promise.race leaves the loser pending. Should the transport eventually
-    // fail after the deadline has already been reported, absorb it here rather
-    // than let it surface as an unhandled rejection.
-    broadcast.catch(() => {});
-
-    let timer;
-    const deadline = new Promise((resolve, reject) => {
-      timer = setTimeout(
-        () => reject(new Error(`Broadcast exceeded ${SIGNING_QUEUE.BROADCAST_TIMEOUT_MS}ms`)),
-        SIGNING_QUEUE.BROADCAST_TIMEOUT_MS
-      );
-    });
-
-    return Promise.race([broadcast, deadline]).finally(() => clearTimeout(timer));
-  }
-
-  /**
-   * Process a resolved broadcast response (from signAndBroadcast or a successful
-   * post-timeout poll). Mirrors the always-on logging from the old transactQueue.
-   *
-   * @param {SigningTransaction} tx
-   * @param {object} response
-   */
-  #handleBroadcastResponse(tx, response) {
-    tx.response = {
-      code: response.code,
-      transactionHash: response.transactionHash,
-      height: response.height,
-      rawLog: response.rawLog ?? null,
-    };
-
-    if (response.code === 0) {
-      console.debug('Transaction Successful: Code 0');
-    } else {
-      console.warn('Transaction Failed: Code ', response.code);
-    }
-    console.debug('Transaction Hash:', response.transactionHash);
-    console.debug('Height:', response.height);
-    if (Array.isArray(response.msgResponses)) {
-      try {
-        tx.msgResponses = response.msgResponses.map((m) => ({
-          typeUrl: m.typeUrl,
-          value: this.registry.decode(m),
-        }));
-        console.debug('Msg Responses:', tx.msgResponses);
-      } catch (decodeErr) {
-        console.debug('Msg Responses (undecoded):', response.msgResponses, decodeErr);
-      }
-    }
-    if (response.events) {
-      console.debug('Events:', response.events);
-    }
-
-    if (response.code !== 0) {
-      this.inFlight = null;
-      this.#handleBroadcastFailure(tx, new Error(`Broadcast rejected: code ${response.code}`));
-      return;
-    }
-
-    tx.status = TX_STATUS.SUCCEEDED;
-    tx.error = null;
-    if (tx.chargeCost > 0) {
-      // Only charge-consuming actions reset the on-chain bar. Free ordered
-      // actions (chargeCost 0) keep their lane order but never anchor.
-      // Anchor convention: chain inclusion height when present, else
-      // broadcastAtBlock + 1 (matches the old optimistic client convention).
-      const anchor = (typeof response.height === 'number' && response.height > 0)
-        ? response.height
-        : tx.broadcastAtBlock + 1;
-      this.scheduleAnchorHeight = Math.max(this.scheduleAnchorHeight, anchor);
-      this.clampScheduleAnchor();
-    }
-    this.inFlight = null;
-    this.settle(tx);
-    this.persist();
-  }
-
-  /**
-   * Apply the retry policy after a failure: re-queue at tail if attempts remain,
-   * otherwise drop and settle. Never mutates KeyPlayer (grass-only lastAction).
-   *
-   * @param {SigningTransaction} tx
-   * @param {Error} err
-   */
-  #handleBroadcastFailure(tx, err) {
-    console.warn('Sign and Broadcast Error:', err);
-    tx.attempts++;
-    tx.error = String(err);
-    if (this.canRetry(tx)) {
-      this.appendToLane(tx);
-    } else {
-      tx.status = TX_STATUS.DROPPED;
-      this.settle(tx);
       this.persist();
     }
   }
 
-  /**
-   * Poll the chain for a tx hash for up to SIGNING_QUEUE.TIMEOUT_POLL_BLOCKS block ticks.
-   * `inFlight` stays set during the poll (still one logical broadcast).
-   *
-   * @param {string} txId
-   * @return {Promise<object|null>} the indexed tx, or null if not found in time
-   */
-  async pollForTx(txId) {
-    for (let i = 0; i < SIGNING_QUEUE.TIMEOUT_POLL_BLOCKS; i++) {
-      try {
-        const found = await this.gameState.signingClient.getTx(txId);
-        if (found) {
-          return found;
-        }
-      } catch (err) {
-        console.debug('[SigningQueueManager] pollForTx error (will retry):', err);
-      }
-      await this.#waitForNextBlock();
-    }
-    try {
-      return await this.gameState.signingClient.getTx(txId);
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Resolve on the next BLOCK_HEIGHT_CHANGED (with a time-based safety net so we
-   * never hang if blocks stall).
-   *
-   * @return {Promise<void>}
-   */
-  #waitForNextBlock() {
-    return new Promise((resolve) => {
-      let done = false;
-      const finish = () => {
-        if (done) {
-          return;
-        }
-        done = true;
-        window.removeEventListener(EVENTS.BLOCK_HEIGHT_CHANGED, finish);
-        resolve();
-      };
-      window.addEventListener(EVENTS.BLOCK_HEIGHT_CHANGED, finish);
-      setTimeout(finish, Math.max(TASK.ESTIMATED_BLOCK_TIME, this.getAvgBlockMs()) * 2);
+  #deadline(operation, milliseconds) {
+    let timer;
+    const deadline = new Promise((resolve,reject)=>{
+      timer = setTimeout(()=>reject(new Error('Transaction operation timed out')),milliseconds);
     });
+    return Promise.race([operation,deadline]).finally(()=>clearTimeout(timer));
   }
 
-  /**
-   * @param {SigningTransaction} tx
-   * @return {boolean}
-   */
-  canRetry(tx) {
-    if (tx.retryLimit === -1) {
-      return true;
+  #finish(tx, response, journal, error = null) {
+    const {msgResponses, ...savedResponse} = response ?? {};
+    tx.response = response ? savedResponse : null;
+    tx.status = response?.stage==='committed' && response.code===0 ? TX_STATUS.SUCCEEDED : TX_STATUS.DROPPED;
+    tx.error = error ?? (tx.status===TX_STATUS.SUCCEEDED ? null : `Transaction rejected: ${response?.code ?? 'not submitted'}`);
+    try { journal.write(tx,'settled'); }
+    catch (failure) { tx.status = TX_STATUS.UNKNOWN; throw failure; }
+    this.unresolved.delete(tx.id);
+    this.#removeFromLanes(tx.id);
+    this.#rememberCompleted(tx);
+    if (Array.isArray(response?.msgResponses)) {
+      try { tx.msgResponses = response.msgResponses.map(message=>({typeUrl:message.typeUrl,value:this.registry.decode(message)})); }
+      catch (decodeError) { console.debug('[SigningQueueManager] response decoding unavailable:',decodeError); }
     }
-    return tx.attempts < 1 + tx.retryLimit;
+    this.persist();
+    this.settle(tx);
   }
 
-  /**
-   * Restore a held/shifted transaction to the head of its lane (preserves order
-   * for the signer-match hold path).
-   *
-   * @param {SigningTransaction} tx
-   */
+  #rememberCompleted(tx) {
+    this.completed.set(tx.id,tx);
+    if (tx.status===TX_STATUS.SUCCEEDED && tx.chargeCost>0 && tx.response?.stage==='committed') {
+      const height = Number(tx.response.height);
+      if (Number.isSafeInteger(height) && height>0) this.scheduleAnchorHeight = Math.max(this.scheduleAnchorHeight,height);
+      this.clampScheduleAnchor();
+    }
+  }
+
+  #removeFromLanes(id) {
+    this.immediateQueue = this.immediateQueue.filter(tx=>tx.id!==id);
+    this.actionQueue = this.actionQueue.filter(tx=>tx.id!==id);
+  }
+
+  #mergeJournal(journal, persistLegacy = true) {
+    const records = journal.read();
+    const ids = new Set();
+    for (const record of records) {
+      const tx = SigningTransaction.fromJSON(record.transaction);
+      if (!tx || tx.accountAddress!==journal.accountAddress) throw new Error('Invalid journal transaction; recovery required');
+      ids.add(tx.id);
+      const known = this.getTransaction(tx.id);
+      if (Number.isSafeInteger(tx.broadcastAtBlock)) this.lastBroadcastHeight = Math.max(this.lastBroadcastHeight,tx.broadcastAtBlock);
+      this.#removeFromLanes(tx.id);
+      if (record.phase==='settled') {
+        const notify = known && !known.isTerminal();
+        this.unresolved.delete(tx.id);
+        this.#rememberCompleted(tx);
+        if (notify) this.settle(tx);
+      } else if (record.phase==='prepared') {
+        // New code could not transmit without first replacing this record with
+        // broadcasting. Rebuild only this demonstrably unsent intent.
+        tx.submission = null;
+        tx.status = TX_STATUS.QUEUED;
+        this.unresolved.delete(tx.id);
+        (tx.isAction ? this.actionQueue : this.immediateQueue).unshift(tx);
+      } else {
+        tx.status = TX_STATUS.UNKNOWN;
+        if (known?.submission?.hash===tx.submission?.hash && (known?.response?.stage==='committed'
+            || (known?.response?.stage==='check_tx' && known.response.code>0))) tx.response = known.response;
+        this.unresolved.set(tx.id,tx);
+      }
+    }
+    for (const tx of this.unresolved.values()) {
+      if (persistLegacy && !ids.has(tx.id)) journal.write(tx,'unknown');
+    }
+  }
+
   #restoreToLaneHead(tx) {
     tx.status = TX_STATUS.QUEUED;
     const lane = tx.isAction ? this.actionQueue : this.immediateQueue;
     lane.unshift(tx);
     this.persist();
+  }
+
+  #bindScope() {
+    const key = this.getStorageKey();
+    if (!key) throw new Error('Signing account is unavailable');
+    if (this.storageScope && this.storageScope!==key) throw new Error('Signing account changed; reload its queue before submitting');
+    this.storageScope = key;
   }
 
   // ---------------------------------------------------------------------------
@@ -632,7 +549,7 @@ export class SigningQueueManager {
     const waiter = this.settlementWaiters.get(tx.id);
     if (waiter) {
       this.settlementWaiters.delete(tx.id);
-      waiter.resolve(tx);
+      for (const resolve of waiter) resolve(tx);
     }
     window.dispatchEvent(new SigningTransactionSettledEvent(
       tx.id,
@@ -646,8 +563,8 @@ export class SigningQueueManager {
   /**
    * Promise that resolves (never rejects) with the transaction when it reaches a
    * terminal state. Callers MUST check `tx.status`. Already-terminal txs resolve
-   * immediately; unknown ids resolve with a synthetic terminal record so callers
-   * never hang.
+   * immediately. Missing/ambiguous evidence never becomes a fabricated failure;
+   * a waiter remains pending until a terminal result is established.
    *
    * @param {string} id
    * @return {Promise<SigningTransaction|object>}
@@ -657,13 +574,10 @@ export class SigningQueueManager {
     if (existing && existing.isTerminal()) {
       return Promise.resolve(existing);
     }
-    if (!existing) {
-      // No such live tx (e.g. settled before the caller awaited, or rehydrated
-      // without a waiter). Resolve so .then()/await never hangs.
-      return Promise.resolve({id, status: TX_STATUS.DROPPED, response: null, error: 'unknown transaction'});
-    }
     return new Promise((resolve) => {
-      this.settlementWaiters.set(id, {resolve});
+      const waiters = this.settlementWaiters.get(id) ?? new Set();
+      waiters.add(resolve);
+      this.settlementWaiters.set(id,waiters);
     });
   }
 
@@ -676,23 +590,26 @@ export class SigningQueueManager {
    * Refuses if the tx is currently in flight.
    *
    * @param {string} id
-   * @return {boolean}
+   * @return {Promise<boolean>}
    */
-  cancelQueueItem(id) {
-    if (this.inFlight && this.inFlight.id === id) {
-      return false;
-    }
-    for (const lane of [this.immediateQueue, this.actionQueue]) {
-      const index = lane.findIndex((tx) => tx.id === id);
-      if (index !== -1) {
-        const [tx] = lane.splice(index, 1);
-        tx.status = TX_STATUS.CANCELLED;
-        this.persist();
-        this.settle(tx);
-        return true;
-      }
-    }
-    return false;
+  async cancelQueueItem(id) {
+    if (this.working) return false;
+    this.#bindScope();
+    const journal = new TransactionJournal(this.gameState.signingAccount.address);
+    return journal.exclusive(async () => {
+      this.#mergeJournal(journal);
+      if (this.unresolved.has(id) || this.inFlight?.id===id) return false;
+      const tx = this.immediateQueue.find(tx=>tx.id===id) ?? this.actionQueue.find(tx=>tx.id===id);
+      if (!tx) return false;
+      tx.status = TX_STATUS.CANCELLED;
+      try { journal.write(tx,'settled'); }
+      catch (error) { tx.status = TX_STATUS.QUEUED; throw error; }
+      this.#removeFromLanes(id);
+      this.#rememberCompleted(tx);
+      this.persist();
+      this.settle(tx);
+      return true;
+    });
   }
 
   /**
@@ -762,6 +679,8 @@ export class SigningQueueManager {
     }
     return this.immediateQueue.find((tx) => tx.id === id)
       ?? this.actionQueue.find((tx) => tx.id === id)
+      ?? this.unresolved.get(id)
+      ?? this.completed.get(id)
       ?? null;
   }
 
@@ -789,8 +708,8 @@ export class SigningQueueManager {
    */
   persist() {
     const storageKey = this.getStorageKey();
-    if (!storageKey) {
-      return;
+    if (!storageKey || this.recoveryError || (this.storageScope && storageKey!==this.storageScope)) {
+      return false;
     }
     const snapshot = {
       version: SIGNING_QUEUE.STORAGE_VERSION,
@@ -801,137 +720,65 @@ export class SigningQueueManager {
       immediateQueue: this.immediateQueue.map((tx) => tx.toJSON()),
       actionQueue: this.actionQueue.map((tx) => tx.toJSON()),
       inFlight: this.inFlight ? this.inFlight.toJSON() : null,
+      unresolved: [...this.unresolved.values()].map(tx=>tx.toJSON()),
     };
     try {
       localStorage.setItem(storageKey, JSON.stringify(snapshot));
+      return true;
     } catch (err) {
       console.error('[SigningQueueManager] persist failed:', err);
+      return false;
     }
   }
 
-  /**
-   * Rehydrate from localStorage. Called once the signing account is available
-   * (from SigningClientManager.initSigningClient). Defensive: never throws,
-   * worst case starts empty. Stale snapshots are quarantined, not replayed.
-   */
+  /** Restore unsent work; preserve ambiguous evidence regardless of age/schema. */
   loadPersistedState() {
-    if (this.rehydrated) {
-      return;
-    }
-    const storageKey = this.getStorageKey();
-    if (!storageKey) {
-      console.warn('[SigningQueueManager] cannot rehydrate: no signing account/endpoint yet.');
-      return;
-    }
-    this.rehydrated = true;
-
-    let raw;
+    if (this.rehydrated) return;
     try {
-      raw = localStorage.getItem(storageKey);
-    } catch (err) {
-      console.error('[SigningQueueManager] localStorage read failed:', err);
-      return;
-    }
-    if (!raw) {
-      return;
-    }
-
-    let state;
-    try {
-      state = JSON.parse(raw);
-    } catch (err) {
-      console.error('[SigningQueueManager] corrupt persisted queue, quarantining:', err);
-      this.#quarantine(storageKey, raw);
-      return;
-    }
-
-    // Review hardening #2: stale-queue guard (applies before version check).
-    if (typeof state.savedAt === 'number'
-      && Date.now() - state.savedAt > SIGNING_QUEUE.MAX_QUEUE_AGE_MS) {
-      console.warn('[SigningQueueManager] persisted queue is stale; quarantining, starting empty.');
-      this.#quarantine(storageKey, raw);
-      return;
-    }
-
-    if (state.version !== SIGNING_QUEUE.STORAGE_VERSION) {
-      console.warn(
-        `[SigningQueueManager] queue version mismatch (have ${state.version}, want ${SIGNING_QUEUE.STORAGE_VERSION}); starting empty.`
-      );
-      return;
-    }
-
-    try {
-      this.scheduleAnchorHeight = typeof state.scheduleAnchorHeight === 'number' ? state.scheduleAnchorHeight : 0;
-      this.lastBroadcastHeight = typeof state.lastBroadcastHeight === 'number' ? state.lastBroadcastHeight : 0;
-
-      this.immediateQueue = this.#rehydrateLane(state.immediateQueue);
-      this.actionQueue = this.#rehydrateLane(state.actionQueue);
-
-      if (state.inFlight) {
-        const tx = SigningTransaction.fromJSON(state.inFlight);
-        if (tx) {
-          // We cannot know if it landed on-chain before unload. Conservative:
-          // re-queue at tail with attempts++ (same as a failure retry).
-          tx.attempts = (tx.attempts ?? 0) + 1;
-          if (this.canRetry(tx)) {
-            this.appendToLane(tx);
-          } else {
+      this.#bindScope();
+      const raw = localStorage.getItem(this.storageScope);
+      if (raw) {
+        const state = JSON.parse(raw);
+        if (!state || ![2,SIGNING_QUEUE.STORAGE_VERSION].includes(state.version)
+            || !Array.isArray(state.immediateQueue) || !Array.isArray(state.actionQueue)) {
+          throw new Error('Unrecognized saved queue; recovery required');
+        }
+        this.scheduleAnchorHeight = Number.isSafeInteger(state.scheduleAnchorHeight) ? state.scheduleAnchorHeight : 0;
+        this.lastBroadcastHeight = Number.isSafeInteger(state.lastBroadcastHeight) ? state.lastBroadcastHeight : 0;
+        const seen = new Set();
+        // Ambiguous evidence outranks a duplicate unsigned lane entry.
+        const records = [...(state.unresolved ?? []),...(state.inFlight ? [state.inFlight] : []),...state.immediateQueue,...state.actionQueue];
+        for (const json of records) {
+          const tx = SigningTransaction.fromJSON(json);
+          if (!tx || tx.accountAddress!==this.gameState.signingAccount.address) throw new Error('Invalid saved intent; recovery required');
+          if (seen.has(tx.id)) continue;
+          seen.add(tx.id);
+          if (tx.isTerminal()) { this.#rememberCompleted(tx); continue; }
+          const unknown = tx.submission || [TX_STATUS.IN_FLIGHT,TX_STATUS.UNKNOWN].includes(tx.status)
+            || (json===state.inFlight && !(state.version===3 && tx.status===TX_STATUS.PREPARING));
+          if (unknown) {
+            tx.status = TX_STATUS.UNKNOWN;
+            this.unresolved.set(tx.id,tx);
+          } else if (![TX_STATUS.QUEUED,TX_STATUS.PREPARING].includes(tx.status)) {
+            throw new Error('Unknown intent state; recovery required');
+          } else if (Date.now()-tx.createdAt>SIGNING_QUEUE.MAX_QUEUE_AGE_MS || !this.registry.lookupType(tx.message.typeUrl)) {
             tx.status = TX_STATUS.DROPPED;
-            this.settle(tx);
+            tx.error = 'Unsent intent is expired or unsupported';
+            this.#rememberCompleted(tx);
+          } else {
+            tx.status = TX_STATUS.QUEUED;
+            (tx.isAction ? this.actionQueue : this.immediateQueue).push(tx);
           }
         }
       }
-      console.info('[SigningQueueManager] queue rehydrated.');
+      this.#mergeJournal(new TransactionJournal(this.gameState.signingAccount.address),false);
+      this.rehydrated = true;
       this.persist();
-    } catch (err) {
-      console.error('[SigningQueueManager] rehydrate failed, starting empty:', err);
-      this.immediateQueue = [];
-      this.actionQueue = [];
-      this.inFlight = null;
-    }
-  }
-
-  /**
-   * Rebuild a lane from persisted JSON, dropping corrupt entries and any whose
-   * typeUrl is no longer in the registry.
-   *
-   * @param {Array<object>} rawLane
-   * @return {SigningTransaction[]}
-   */
-  #rehydrateLane(rawLane) {
-    if (!Array.isArray(rawLane)) {
-      return [];
-    }
-    const lane = [];
-    for (const json of rawLane) {
-      const tx = SigningTransaction.fromJSON(json);
-      if (!tx) {
-        console.warn('[SigningQueueManager] dropping corrupt persisted tx:', json);
-        continue;
-      }
-      if (!this.registry.lookupType(tx.message.typeUrl)) {
-        console.warn('[SigningQueueManager] dropping tx with unknown typeUrl:', tx.message.typeUrl);
-        continue;
-      }
-      // A persisted in_flight in a lane never happened; normalize to queued.
-      if (tx.status === TX_STATUS.IN_FLIGHT) {
-        tx.status = TX_STATUS.QUEUED;
-      }
-      lane.push(tx);
-    }
-    return lane;
-  }
-
-  /**
-   * @param {string} storageKey
-   * @param {string} raw
-   */
-  #quarantine(storageKey, raw) {
-    try {
-      localStorage.setItem(`${storageKey}.corrupt`, raw);
-      localStorage.removeItem(storageKey);
-    } catch (err) {
-      console.error('[SigningQueueManager] quarantine failed:', err);
+    } catch (error) {
+      // Keep the original queue/journal untouched. Starting empty here could
+      // make a previously broadcast payment look safe to replace.
+      this.recoveryError = String(error);
+      console.error('[SigningQueueManager] saved evidence needs recovery:',error);
     }
   }
 }

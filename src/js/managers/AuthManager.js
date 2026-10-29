@@ -28,6 +28,7 @@ import {LoginCompleteEvent} from "../events/LoginCompleteEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 import {TX_STATUS} from "../models/SigningTransaction";
 import {RecoverAccountAddressApprovedListener} from "../grass_listeners/RecoverAccountAddressApprovedListener";
+import {TransactionJournal} from "./TransactionJournal";
 
 export class AuthManager {
 
@@ -415,8 +416,9 @@ export class AuthManager {
       return;
     }
 
+    this.signingClientManager.stopForLogout();
     this.guildAPI.logout().then(() => {
-      localStorage.clear();
+      TransactionJournal.clearSession();
       MenuPage.router.goto('Auth', 'index');
       MenuPage.open();
       window.location.reload();

@@ -24,7 +24,7 @@ if (diagnostics.length) {
 } else {
   console.log('Generated bindings and targeted wire types passed TypeScript checking.');
   const config = {mode:'development',target:'node',devtool:false,context:root,
-    entry:{wire:path.join(__dirname,'wire.test.js'),query:path.join(__dirname,'query.test.js')},
+    entry:{wire:path.join(__dirname,'wire.test.js'),query:path.join(__dirname,'query.test.js'),submission:path.join(__dirname,'submission.test.js')},
     output:{path:temporary,filename:'[name].cjs'},
     resolve:{extensions:['.js','.ts','.json'],modules:[modules,'node_modules']},
     module:{rules:[{test:/\.ts$/,loader:path.join(modules,'ts-loader'),options:{transpileOnly:true,
@@ -32,7 +32,7 @@ if (diagnostics.length) {
   webpack(config, (error, stats) => {
     try {
       if (error || stats.hasErrors()) throw error || new Error(stats.toString({all:false,errors:true}));
-      for (const name of ['wire','query']) {
+      for (const name of ['wire','query','submission']) {
         const run = spawnSync(process.execPath,[path.join(temporary,`${name}.cjs`)], {cwd:root,stdio:'inherit',env:process.env,timeout:60000});
         if (run.error) console.error(run.error);
         if (run.status !== 0) { process.exitCode = run.status ?? 1; break; }

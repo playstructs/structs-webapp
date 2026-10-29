@@ -1,6 +1,14 @@
 const MAX_PENDING = 64;
 const MAX_MESSAGE_BYTES = 2 * 1048576;
 
+export class RpcResponseError extends Error {
+  constructor(error) {
+    super(`RPC query failed: ${error?.code ?? 'unknown'} ${error?.message ?? ''}`);
+    this.code = error?.code;
+    this.data = error?.data;
+  }
+}
+
 /**
  * CosmJS's public RpcClient interface, without automatic reconnection. The
  * installed ReconnectingSocket schedules a reconnect even from disconnect().
@@ -65,7 +73,7 @@ export class OwnedRpcClient {
       this.pending.delete(response.id);
       clearTimeout(entry.timer);
       if (Object.hasOwn(response, 'error')) {
-        entry.reject(new Error(`RPC query failed: ${response.error?.code ?? 'unknown'} ${response.error?.message ?? ''}`));
+        entry.reject(new RpcResponseError(response.error));
       } else {
         entry.resolve(response);
       }

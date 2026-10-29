@@ -223,6 +223,13 @@ export class GuildAPI {
     return `${timestamp}`;
   }
 
+  /** Fresh internal protocol context; no cached block response may select signing rules. */
+  async getBlockSnapshot() {
+    const response = await this.ajax.get(`${this.apiUrl}/block`);
+    if (response.success!==true || !response.data || !response.meta) throw new Error('Indexed protocol state unavailable');
+    return response;
+  }
+
   /**
    * @param {SignupRequestDTO} signupRequestDTO
    * @return {Promise<GuildAPIResponse>}

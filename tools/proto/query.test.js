@@ -234,8 +234,9 @@ async function testOwnedConnection() {
     intercepted = deferred(); holdStatus = true;
     const interrupted = manager.connect();
     await intercepted.promise;
-    manager.disconnect();
+    manager.stopForLogout();
     await assert.rejects(interrupted,/closed|superseded/);
+    assert.equal(manager.queue.suspended,true);
     assert.equal(state.signingClient,null); assert.equal(manager.chainQuery,null);
     assert.ok(methods.every(method=>['status','abci_query'].includes(method)));
     const closedAt = connections;

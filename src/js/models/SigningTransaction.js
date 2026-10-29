@@ -4,16 +4,17 @@ import {messagePayloadToWire} from "../util/MessagePayload";
 /**
  * Lifecycle states for a queued signing transaction.
  *
- * Retryable failures do NOT get a persistent `failed` status — they return to
- * `queued` (with `attempts` / `error` set) until they either `succeeded` or are
- * `dropped` (no retries left).
+ * Preparing is demonstrably unsent in the current saved format. Legacy
+ * in_flight and unknown records require reconciliation and never auto-retry.
  *
  * @readonly
  * @enum {string}
  */
 export const TX_STATUS = {
   QUEUED: 'queued',
+  PREPARING: 'preparing',
   IN_FLIGHT: 'in_flight',
+  UNKNOWN: 'unknown',
   SUCCEEDED: 'succeeded',
   DROPPED: 'dropped',
   CANCELLED: 'cancelled',
@@ -48,6 +49,8 @@ const PERSISTED_FIELDS = [
   'retryLimit',
   'response',
   'error',
+  'submission',
+  'intentProtocol',
 ];
 
 /**
@@ -83,7 +86,7 @@ export class SigningTransaction {
     this.broadcastAtBlock = fields.broadcastAtBlock;
     /** @type {number} */
     this.attempts = fields.attempts;
-    /** @type {number} Per-tx retry policy: -1 infinite, 0 one-shot, n>0 up to 1+n attempts. */
+    /** @type {number} Legacy saved field; signed submissions never auto-retry. */
     this.retryLimit = fields.retryLimit;
     /** @type {object|null} Serializable snapshot of the broadcast response. */
     this.response = fields.response;
@@ -91,6 +94,8 @@ export class SigningTransaction {
     this.error = fields.error;
     /** @type {Array<object>|null} In-memory only; never persisted. */
     this.msgResponses = fields.msgResponses ?? null;
+    this.submission = fields.submission ?? null;
+    this.intentProtocol = fields.intentProtocol ?? null;
   }
 
   /**
@@ -106,7 +111,7 @@ export class SigningTransaction {
    * @param {number} args.enqueuedAtBlock
    * @return {SigningTransaction}
    */
-  static create({ typeUrl, payload, isAction, chargeCost, retryLimit, accountAddress, enqueuedAtBlock }) {
+  static create({ typeUrl, payload, isAction, chargeCost, retryLimit, accountAddress, enqueuedAtBlock, intentProtocol = null }) {
     return new SigningTransaction({
       id: UuidUtil.generate(),
       message: { typeUrl, payload },
@@ -122,6 +127,7 @@ export class SigningTransaction {
       response: null,
       error: null,
       msgResponses: null,
+      intentProtocol,
     });
   }
 
@@ -167,7 +173,7 @@ export class SigningTransaction {
 
   /**
    * Rebuild from a persisted snapshot. Returns null if the object is missing
-   * the structural fields needed to ever broadcast (caller quarantines).
+   * the structural fields needed for recovery (caller preserves the original store).
    *
    * @param {object} obj
    * @return {SigningTransaction|null}
@@ -177,6 +183,8 @@ export class SigningTransaction {
       !obj
       || typeof obj !== 'object'
       || typeof obj.id !== 'string'
+      || obj.id.length === 0
+      || !Number.isSafeInteger(obj.createdAt) || obj.createdAt < 0
       || !obj.message
       || typeof obj.message.typeUrl !== 'string'
       || typeof obj.message.payload !== 'object'
@@ -192,7 +200,7 @@ export class SigningTransaction {
       isAction: !!obj.isAction,
       chargeCost: typeof obj.chargeCost === 'number' ? obj.chargeCost : null,
       status: typeof obj.status === 'string' ? obj.status : TX_STATUS.QUEUED,
-      createdAt: typeof obj.createdAt === 'number' ? obj.createdAt : Date.now(),
+      createdAt: obj.createdAt,
       enqueuedAtBlock: typeof obj.enqueuedAtBlock === 'number' ? obj.enqueuedAtBlock : null,
       broadcastAtBlock: typeof obj.broadcastAtBlock === 'number' ? obj.broadcastAtBlock : null,
       attempts: typeof obj.attempts === 'number' ? obj.attempts : 0,
@@ -200,6 +208,8 @@ export class SigningTransaction {
       response: obj.response ?? null,
       error: typeof obj.error === 'string' ? obj.error : null,
       msgResponses: null,
+      submission: obj.submission ?? null,
+      intentProtocol: obj.intentProtocol ?? null,
     });
   }
 }
