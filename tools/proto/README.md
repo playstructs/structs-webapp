@@ -49,7 +49,10 @@ that custom Go marshaler itself. Calling its raw encoder with `"0.1"` gives
 bytes the chain cannot decode. This covers the existing provider cancellation
 penalties and guild conversion fee builders. Generated query/custom-decimal
 results likewise retain their raw wire representation; query consumers must
-explicitly interpret that representation in their query adapter.
+explicitly interpret that representation in their query adapter. Use
+`legacyDecimalFromWire` for those annotated protobuf fields; it converts the
+scaled integer to exact human decimal text. Do not apply it to LCD JSON decimal
+strings, ordinary Coin amounts, or all string fields indiscriminately.
 
 The existing reactor, provider-create and agreement-open builders accept the
 optional v0.22 `options.ownerId` without changing their prior positional
@@ -60,6 +63,48 @@ current permission/spendability, atomic withdrawal eligibility or broadcast
 recovery. Those existing flow adapters must be completed before rollout. No new
 UI is added. Legacy guild-create consent/work fields remain decodable; post-H
 callers must leave them empty under the activation-aware adapter.
+
+## Query snapshots and connection ownership
+
+`SigningClientManager.chainQuery` shares the signer's explicitly owned Comet
+connection. `readSnapshot(async rpc => ..., {height})` supplies the generated
+`QueryClientImpl` RPC interface. Omit height to select the fresh status height,
+or supply an exact positive decimal string no higher than that node. Every query
+and page must return that same height. Heights outside Number's safe range are
+refused because the installed Comet API cannot represent them; amounts and
+other generated 64-bit fields retain their independent exact-string domains.
+
+```js
+const result = await signingClientManager.chainQuery.readSnapshot(async rpc => {
+  const query = new QueryClientImpl(rpc);
+  return query.Vault({ownerId});
+});
+// result: {chainId, height, observedHeight, data}
+```
+
+Await all query/decode/page work inside the callback and return staged data;
+do not mutate application state there. A failed transport/page cannot be caught
+and converted into a successful partial snapshot. Identity and node height are
+checked again before publication. Limits: 64 queries, 5 seconds per request,
+15 seconds for the whole callback, 1 MiB per protobuf value and 2 MiB per RPC
+JSON message. Timeouts close the owned connection. Missing/mismatched heights,
+pruning, wrong chain, catching-up nodes and unsupported RPC versions fail.
+This deployment supports structstestnet-111 through the installed Comet 0.38/1.0
+decoder; it does not guess another network's activation height. These are
+trusted-node checks, not a light-client proof of consensus.
+
+The installed CosmJS WebSocket wrapper reconnects even when disconnect is
+called. `OwnedRpcClient` implements its public execute/disconnect interface with
+a native WebSocket, explicit request correlation and no automatic resend or
+reconnect. The manager owns reconnection and rejects superseded initializations;
+GRASS subscriptions remain separate. No dependency version changed.
+
+`getSigningContext(meta, requiredModels)` checks the metadata from the exact API
+response used by an action against fresh node identity/height. It refuses
+missing, mixed-protocol or unready required models and returns an exact H-1
+timeout height for the legacy era. This helper is not yet invoked by the queue:
+protocol-aware intent rebuilding, signed expiry, proof/nonces, live eligibility
+and durable broadcast reconciliation must still be wired before deployment.
 
 ## Verification
 
@@ -81,6 +126,15 @@ fixture with a public test mnemonic; the third archives the pinned chain release
 into temporary storage and verifies each message and its signature using that
 release's Go types/SDK. Nothing is broadcast; these are encoding and persistence
 checks, not transaction execution, gas measurement or a network rollout proof.
+
+The same test command also checks the query/connection lifecycle, bounds,
+protocol metadata and LegacyDec decoding using a local WebSocket fixture.
+It requires no live service. To additionally read player/address/bank data at
+one verified height from a local running node (no signing or broadcast):
+
+```sh
+STRUCTS_QUERY_RPC=ws://127.0.0.1:26657 npm --prefix src run test:proto
+```
 
 `legacy-wire.json` pins eight pre-migration encoder fixtures. Empty new fields
 must preserve these bytes. Its provenance includes the old webapp revision and

@@ -32,6 +32,19 @@ function decimalAtoms(value, field) {
   return (negative ? -atoms : atoms).toString();
 }
 
+/** Decode a custom LegacyDec protobuf string without passing through Number. */
+export function legacyDecimalFromWire(value) {
+  if (typeof value !== 'string' || value.length > 98 || !/^(0|[1-9][0-9]*|-[1-9][0-9]*)$/.test(value)) {
+    throw new Error('Invalid LegacyDec wire integer');
+  }
+  const negative = value.startsWith('-');
+  const atoms = BigInt(negative ? value.slice(1) : value);
+  if (atoms >= (1n << 256n) * 1000000000000000000n) throw new Error('LegacyDec outside SDK range');
+  const whole = atoms / 1000000000000000000n;
+  const fraction = (atoms % 1000000000000000000n).toString().padStart(18, '0').replace(/0+$/, '');
+  return `${negative ? '-' : ''}${whole}${fraction ? '.' + fraction : ''}`;
+}
+
 /**
  * Normalize the actual request schema before persistence and again on reload.
  * Generated fromPartial methods do not validate runtime JS objects or reject

@@ -1,5 +1,6 @@
 import {Registry} from "@cosmjs/proto-signing";
 import {defaultRegistryTypes, SigningStargateClient} from "@cosmjs/stargate";
+import {Comet38Client} from "@cosmjs/tendermint-rpc";
 // noinspection ES6PreferShortImport
 import {msgTypes} from "../ts/structs.structs/registry";
 import {AMBIT_ENUM} from "../constants/Ambits";
@@ -7,9 +8,9 @@ import {LOCATION_TYPE_INDEX} from "../constants/LocationTypes";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {STALE_BLOCK_MS} from "../constants/GrassConstants";
 import {SigningQueueManager} from "./SigningQueueManager";
-
-/** How long a liveness probe may take before the transport is presumed dead. */
-const PROBE_TIMEOUT_MS = 5000;
+import {ChainQueryClient} from "../api/ChainQueryClient";
+import {OwnedRpcClient} from "../api/OwnedRpcClient";
+import {validateSigningSnapshot} from "../util/ChainProtocol";
 
 /** Floor between unforced probes, so an idle player barely touches the node. */
 const PROBE_INTERVAL_MS = 5 * 60 * 1000;
@@ -52,6 +53,10 @@ export class SigningClientManager {
     /** @type {?Promise<boolean>} The single in-flight connection check, if any. */
     this.connectionCheck = null;
 
+    this.connectionEpoch = 0;
+    this.chainQuery = null;
+    this.pendingRpc = null;
+
     this.queue = new SigningQueueManager(this.gameState, {
       registry: this.registry,
       wsUrl: this.wsUrl,
@@ -78,15 +83,29 @@ export class SigningClientManager {
    */
   async connect() {
     this.disconnect();
-
-    this.gameState.signingClient = await SigningStargateClient.connectWithSigner(
-      this.wsUrl,
-      this.gameState.wallet,
-      {
-        registry: this.registry,
-      },
-    );
-    this.lastProbeAt = Date.now();
+    const epoch = this.connectionEpoch;
+    const wallet = this.gameState.wallet;
+    // Own the socket before the first await, including failed/overlapping connects.
+    const rpc = new OwnedRpcClient(this.wsUrl);
+    this.pendingRpc = rpc;
+    try {
+      const comet = await Comet38Client.create(rpc);
+      if (epoch !== this.connectionEpoch) throw new Error('Signing connection superseded');
+      const query = new ChainQueryClient(comet);
+      this.chainQuery = query;
+      this.pendingRpc = null;
+      await query.status();
+      const client = await SigningStargateClient.createWithSigner(comet, wallet, {registry: this.registry});
+      if (epoch !== this.connectionEpoch || wallet !== this.gameState.wallet) {
+        throw new Error('Signing connection superseded');
+      }
+      this.gameState.signingClient = client;
+      this.lastProbeAt = Date.now();
+    } catch (error) {
+      if (epoch === this.connectionEpoch) this.disconnect();
+      else rpc.disconnect();
+      throw error;
+    }
   }
 
   /**
@@ -96,15 +115,19 @@ export class SigningClientManager {
    */
   disconnect() {
     const client = this.gameState.signingClient;
-
-    if (!client) {
-      return;
-    }
-
+    const query = this.chainQuery;
+    const pendingRpc = this.pendingRpc;
+    this.connectionEpoch++;
     this.gameState.signingClient = null;
+    this.chainQuery = null;
+    this.pendingRpc = null;
+    this.lastProbeAt = 0;
 
     try {
-      client.disconnect();
+      // Query and signer share one socket. Close its owner only once.
+      if (query) query.disconnect();
+      else if (pendingRpc) pendingRpc.disconnect();
+      else if (client) client.disconnect();
     } catch (error) {
       console.warn('[SigningClientManager] error closing previous client:', error);
     }
@@ -118,31 +141,32 @@ export class SigningClientManager {
    */
   async isAlive() {
     const client = this.gameState.signingClient;
-
-    if (!client) {
+    const query = this.chainQuery;
+    if (!client || !query) {
       return false;
     }
-
-    // getHeight always reaches the node. getChainId would not: it memoises after
-    // the first call and answers from memory over a dead socket.
-    const height = client.getHeight();
-    height.catch(() => {});
-
-    let timer;
-    const deadline = new Promise((resolve, reject) => {
-      timer = setTimeout(() => reject(new Error('liveness probe timed out')), PROBE_TIMEOUT_MS);
-    });
-
     try {
-      await Promise.race([height, deadline]);
+      // A fresh, bounded status call checks chain identity as well as liveness.
+      await query.status();
+      if (query !== this.chainQuery || client !== this.gameState.signingClient) return false;
       this.lastProbeAt = Date.now();
       return true;
     } catch (error) {
       console.warn('[SigningClientManager] liveness probe failed:', error);
       return false;
-    } finally {
-      clearTimeout(timer);
     }
+  }
+
+  /** Validate the exact API response used by an action against a fresh node read. */
+  async getSigningContext(meta, requiredModels = []) {
+    const query = this.chainQuery;
+    const client = this.gameState.signingClient;
+    if (!query || !client) throw new Error('Signing connection unavailable');
+    const observed = await query.status();
+    if (query !== this.chainQuery || client !== this.gameState.signingClient) {
+      throw new Error('Signing connection superseded');
+    }
+    return validateSigningSnapshot(meta, observed, requiredModels);
   }
 
   /**
@@ -176,7 +200,8 @@ export class SigningClientManager {
       return false;
     }
 
-    if (!force && Date.now() - this.lastProbeAt < PROBE_INTERVAL_MS) {
+    if (!force && this.gameState.signingClient && this.chainQuery && !this.chainQuery.closed
+        && Date.now() - this.lastProbeAt < PROBE_INTERVAL_MS) {
       return true;
     }
 
