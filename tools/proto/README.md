@@ -145,10 +145,10 @@ and session data but retains public queue/submission evidence. A saved logout
 boundary prevents old unsigned actions from resuming; previously sent records
 remain available for read-only reconciliation after login.
 
-The existing transfer/Alpha controls still require protocol-aware intent
-construction, live eligibility, outcome/navigation handling and indexed-ledger
-correlation. Proof persistence, multi-message withdrawal and paid/native fees
-remain separate work. No screen, label or generated production asset changed.
+The existing transfer controls now submit protocol-aware intents and observe
+durable settlement, then exact indexed-ledger correlation. Reactor/generator
+flows, proof persistence, multi-message withdrawal and paid/native fees remain
+separate work. No screen, label or generated production asset changed.
 
 `SigningQueueManager.enqueueTransfer` now accepts a versioned user intent:
 `{kind:"alpha_transfer",version:1,ownerId,recipientId,recipientAddress,amount}`.
@@ -171,8 +171,30 @@ Failed simulation, missing gas evidence or gas above the existing 500,000 limit
 cannot broadcast; the protocol is rechecked afterwards. Indexed readiness gaps
 defer known unsent work. Resolved source/destination/amount and query height are
 saved with the signed submission for later ledger correlation. The tests use
-real generated query codecs/offline signing with response fixtures; rendered
-transfer-screen integration and a full post-H execution rehearsal remain open.
+real generated query codecs/offline signing with response fixtures; actual
+browser acceptance and a full post-H execution rehearsal remain open.
+
+`AlphaManager.transferAlpha(address, wholeAlpha, recipientId, signal)` preserves
+the selected player ID (NULL for a literal) and returns the settled transaction.
+The optional navigation signal cancels observation only. `whenSettled(id, signal)`
+rejects on that signal's abort; it never interprets transport uncertainty as
+failure. The unchanged confirmation screen returns a definitive rejection to
+the same recipient/amount and preserves its previous Back destination. The
+old amount/address-only GRASS completion listener is removed.
+
+Success requires the signed single-message identity, matching committed hash,
+chain/height/index/block time, resolved transfer context and a unique ready
+sent/debit row from `getTransferSource`. Its reads time out after five seconds
+and retry with 2–30 second backoff while that navigation remains active. Missing,
+ambiguous or delayed rows cannot return the user to a resend screen. Navigation
+aborts lookups/timers/waiters without altering the journal. Recovery remains
+available after reload even when the non-restorable waiting screen is gone.
+
+The amount control loads a fresh ready player snapshot. Post-H it floors exact
+`spendable_alpha_p` and caps at the existing 99 Alpha before Number conversion;
+retained wealth and stale cached `alpha` cannot set the spending limit. Missing
+readiness disables the existing controls while bounded reads retry. Signing
+still rechecks the full chosen amount and never silently reduces it.
 
 ## Verification
 

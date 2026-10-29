@@ -210,7 +210,10 @@ export class SigningQueueManager {
     tx.error = tx.error ?? null;
     const lane = tx.isAction ? this.actionQueue : this.immediateQueue;
     lane.push(tx);
-    this.persist();
+    if (!this.persist()) {
+      lane.pop();
+      throw new Error('Unsent intent could not be persisted');
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -576,23 +579,36 @@ export class SigningQueueManager {
   }
 
   /**
-   * Promise that resolves (never rejects) with the transaction when it reaches a
+   * Promise that resolves with the transaction when it reaches a
    * terminal state. Callers MUST check `tx.status`. Already-terminal txs resolve
    * immediately. Missing/ambiguous evidence never becomes a fabricated failure;
    * a waiter remains pending until a terminal result is established.
+   * An optional signal rejects only this observer on abort; the transaction continues.
    *
    * @param {string} id
+   * @param {AbortSignal} [signal]
    * @return {Promise<SigningTransaction|object>}
    */
-  whenSettled(id) {
+  whenSettled(id, signal = undefined) {
+    if (signal?.aborted) return Promise.reject(signal.reason);
     const existing = this.getTransaction(id);
     if (existing && existing.isTerminal()) {
       return Promise.resolve(existing);
     }
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const waiters = this.settlementWaiters.get(id) ?? new Set();
-      waiters.add(resolve);
+      const settled = tx => {
+        signal?.removeEventListener('abort', abort);
+        resolve(tx);
+      };
+      const abort = () => {
+        waiters.delete(settled);
+        if (!waiters.size) this.settlementWaiters.delete(id);
+        reject(signal.reason);
+      };
+      waiters.add(settled);
       this.settlementWaiters.set(id,waiters);
+      signal?.addEventListener('abort', abort, {once: true});
     });
   }
 

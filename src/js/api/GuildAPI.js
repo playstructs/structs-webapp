@@ -257,8 +257,8 @@ export class GuildAPI {
    * @param {string} playerId
    * @return {Promise<Player>}
    */
-  async getPlayer(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}`);
+  async getPlayer(playerId, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.playerFactory.make(response.data, response.meta);
@@ -531,9 +531,9 @@ export class GuildAPI {
   }
 
   /** Source fields come from the verified committed result and exact transfer intent. */
-  async getTransferSource(playerId, source) {
+  async getTransferSource(playerId, source, options = {}) {
     const query = new URLSearchParams(source);
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/player/${encodeURIComponent(playerId)}/transfer-source?${query}`);
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/player/${encodeURIComponent(playerId)}/transfer-source?${query}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     if (response.data) {

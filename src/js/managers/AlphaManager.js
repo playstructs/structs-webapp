@@ -19,19 +19,21 @@ export class AlphaManager {
     return (BigInt(alphaAmount) * BigInt(1000000)).toString();
   }
 
-    /**
+  /**
    * @param {string} recipientAddress
    * @param {number} alphaAmount
+   * @param {string|null} recipientId
+   * @param {AbortSignal} [signal]
    */
-  async transferAlpha(recipientAddress, alphaAmount) {
-    await this.signingClientManager.queueMsgPlayerSend(
-      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.primary_address,
+  async transferAlpha(recipientAddress, alphaAmount, recipientId = null, signal = undefined) {
+    return this.signingClientManager.queueTransfer({
+      kind: 'alpha_transfer',
+      version: 1,
+      ownerId: this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
+      recipientId,
       recipientAddress,
-      [{
-        denom: "ualpha",
-        amount: this.convertAlphaToUAlpha(alphaAmount),
-      }]
-    );
+      amount: this.convertAlphaToUAlpha(alphaAmount),
+    }, signal);
   }
 
   /**

@@ -302,6 +302,13 @@ export class SigningClientManager {
   // Immediate-lane messages (no charge drain)
   // ---------------------------------------------------------------------------
 
+  /** The observer may leave the screen; that never cancels or replaces the intent. */
+  async queueTransfer(intent, signal = undefined) {
+    signal?.throwIfAborted();
+    const id = this.queue.enqueueTransfer(intent);
+    return this.queue.whenSettled(id, signal);
+  }
+
   /**
    * @param {string} fromAddress
    * @param {string} toAddress

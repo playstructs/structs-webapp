@@ -1,19 +1,24 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {transferLimit} from "../../util/TransferLimit";
+import {abortableDelay} from "../../util/AbortableDelay";
 
 export class AccountTransferAmountViewModel extends AbstractViewModel {
 
   /**
    * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
    */
-  constructor(gameState) {
+  constructor(gameState, guildAPI) {
     super();
     this.gameState = gameState;
+    this.guildAPI = guildAPI;
     this.amountInputId = 'transferAmountInput';
     this.nextBtnId = 'transferAmountNextBtn';
     this.gameState.setTransferAmount(0);
-    this.maxTransfer = Math.min(parseInt(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) || 0, 99);
+    this.maxTransfer = 0;
+    this.fundsReady = false;
   }
 
   initPageCode() {
@@ -26,7 +31,8 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
     const inputStepperChangeHandler = () => {
       const nextBtn = document.getElementById(this.nextBtnId);
       if (
-        0 < document.getElementById(this.amountInputId).value
+        this.fundsReady
+        && /^[1-9][0-9]?$/.test(document.getElementById(this.amountInputId).value)
         && document.getElementById(this.amountInputId).value <= this.maxTransfer
       ) {
         nextBtn.disabled = false;
@@ -44,9 +50,45 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
     amountInput.addEventListener('input', inputStepperChangeHandler);
 
     document.getElementById(this.nextBtnId).addEventListener('click', () => {
+      if (!this.fundsReady || !/^[1-9][0-9]?$/.test(amountInput.value) || Number(amountInput.value) > this.maxTransfer) return;
       this.gameState.setTransferAmount(parseInt(document.getElementById(this.amountInputId).value));
       MenuPage.router.goto('Account', 'recipientSearch');
-    })
+    });
+
+    amountInput.disabled = true;
+    decreaseBtn.disabled = true;
+    increaseBtn.disabled = true;
+    const signal = MenuPage.router.navigationSignal;
+    const ownerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    this.loadLimit(ownerId, signal).then(maxTransfer => {
+      if (signal.aborted || this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id !== ownerId) return;
+      this.maxTransfer = maxTransfer;
+      this.fundsReady = true;
+      amountInput.max = this.maxTransfer;
+      amountInput.disabled = false;
+      decreaseBtn.disabled = Number(amountInput.value) <= 0;
+      increaseBtn.disabled = Number(amountInput.value) >= this.maxTransfer;
+      inputStepperChangeHandler();
+    }).catch(error => {
+      if (!signal.aborted) console.debug('[AccountTransferAmount] funds unavailable:', error);
+    });
+  }
+
+  async loadLimit(ownerId, signal) {
+    let delay = 2000;
+    while (!signal.aborted) {
+      try {
+        const player = await this.guildAPI.getPlayer(ownerId, {signal, timeoutMs: 5000});
+        signal.throwIfAborted();
+        return transferLimit(player, ownerId, this.gameState.currentBlockHeight);
+      } catch (error) {
+        signal.throwIfAborted();
+        console.debug('[AccountTransferAmount] funds unavailable:', error);
+      }
+      await abortableDelay(delay, signal);
+      delay = Math.min(delay * 2, 30000);
+    }
+    signal.throwIfAborted();
   }
 
   render () {
