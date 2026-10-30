@@ -56,6 +56,17 @@ const COUNTER_DAMAGE = {
 };
 
 /**
+ * Training displays the real account's power figures, but its scripted combat
+ * has its own power supply. An overloaded account must still be able to train.
+ * Keep this policy on the simulated model so normal players retain their gates.
+ */
+class TutorialPlayer extends Player {
+  isOverloaded() {
+    return false;
+  }
+}
+
+/**
  * In-memory stand-in for the chain and the Guild API during the tutorial.
  *
  * It owns the authoritative copy of every simulated struct, resolves combat
@@ -126,7 +137,7 @@ export class TutorialWorld {
   }
 
   buildPlayers() {
-    this.player = Object.assign(new Player(), {
+    this.player = Object.assign(new TutorialPlayer(), {
       id: TUTORIAL_IDS.PLAYER,
       primary_address: 'structs1tutorial',
       planet_id: TUTORIAL_IDS.PLANET,
@@ -144,7 +155,7 @@ export class TutorialWorld {
       ...TutorialMode.getPlayerEnergy(),
     });
 
-    this.raider = Object.assign(new Player(), {
+    this.raider = Object.assign(new TutorialPlayer(), {
       id: TUTORIAL_IDS.RAIDER,
       primary_address: 'structs1raider',
       planet_id: TUTORIAL_IDS.RAIDER_PLANET,
@@ -288,10 +299,10 @@ export class TutorialWorld {
    */
   getPlayer(playerId) {
     if (playerId === TUTORIAL_IDS.PLAYER) {
-      return Object.assign(new Player(), this.player);
+      return Object.assign(new TutorialPlayer(), this.player);
     }
     if (playerId === TUTORIAL_IDS.RAIDER) {
-      return Object.assign(new Player(), this.raider);
+      return Object.assign(new TutorialPlayer(), this.raider);
     }
     return null;
   }
