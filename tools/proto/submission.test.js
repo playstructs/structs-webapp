@@ -299,11 +299,59 @@ async function liveRecovery(){
   }finally{query.disconnect();}
 }
 
+async function accountHandoff(){
+  const replacement={address:'replacement-device',pubkey:new Uint8Array([2])};
+  {
+    const f=await fixture();const id=f.enqueue();await f.tick();
+    const hash=f.queue.getTransaction(id).submission.hash, oldKey=f.queue.getStorageKey();
+    const observer=assert.rejects(f.queue.whenSettled(id),/Signing account changed/);
+    const {AuthManager}=require('../../src/js/managers/AuthManager');
+    const auth=Object.create(AuthManager.prototype);auth.gameState=f.state;
+    auth.walletManager={createWallet:async()=>({getAccountsWithPrivkeys:async()=>[replacement]}),bytesToHex:()=> '02'};
+    let stopped=0;
+    auth.signingClientManager={queue:f.queue,stopForLogout(){stopped++;f.queue.suspended=true;f.state.signingClient=null;}};
+    await auth.initWallet('public fixture replacement');await observer;
+    assert.equal(stopped,1);assert.equal(f.state.signingAccount.address,replacement.address);
+    f.queue.loadPersistedState();f.queue.suspended=false;
+    assert.equal(f.queue.getTransaction(id),null,'old evidence is not attached to the new account');
+    const next=f.queue.enqueueImmediate('/structs.structs.MsgPlayerSend',
+      {fromAddress:replacement.address,toAddress:account.address,amount:[{denom:'ualpha',amount:'1'}]});
+    assert.equal(f.queue.getTransaction(next).accountAddress,replacement.address,'new device can enqueue without reload');
+    assert.equal(JSON.parse(f.storage.getItem(oldKey)).unresolved[0].id,id);
+    assert.equal(f.journal.read()[0].transaction.submission.hash,hash);
+    await f.queue.releaseAccount();f.state.signingAccount=account;
+    f.state.signingClient={};f.queue.loadPersistedState();f.queue.suspended=false;
+    f.commit(hash);await f.queue.reconcilePending();
+    assert.equal(f.queue.getTransaction(id).status,TX_STATUS.SUCCEEDED);
+    assert.equal(f.control.sends,1,'returning to the previous account only reconciles its original send');
+    assert.equal(f.queue.getTransaction(next),null);
+  }
+  {
+    const f=await fixture();const gate=deferred();f.control.signGate=gate;f.enqueue();
+    const signing=f.tick();while(f.control.signs===0)await new Promise(resolve=>setImmediate(resolve));
+    let released=false;const handoff=f.queue.releaseAccount().then(()=>{released=true;});
+    await new Promise(resolve=>setImmediate(resolve));assert.equal(released,false);
+    gate.resolve();await Promise.all([signing,handoff]);
+    assert.equal(f.control.sends,0,'late old-wallet signatures cannot send during handoff');
+    assert.equal(f.journal.read()[0].phase,'settled');
+  }
+  {
+    const f=await fixture();const id=f.enqueue();const key=f.queue.getStorageKey();
+    f.storage.fail=k=>k===key;
+    await assert.rejects(f.queue.releaseAccount(),/could not be saved/);
+    assert.equal(f.queue.getTransaction(id).id,id,'failed persistence does not detach the old queue');
+    assert.equal(f.queue.suspended,true);
+    f.storage.fail=()=>false;await f.queue.releaseAccount();
+    f.queue.loadPersistedState();assert.equal(f.queue.getTransaction(id).status,TX_STATUS.QUEUED);
+  }
+  console.log('Account handoff preserves scoped evidence, drains in-flight work and enables the new device without reload.');
+}
+
 async function main(){
   wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
   [account]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);
   await acceptedReload();await failureAndUnknown();await storageAndPrepared();await legacyAndEpoch();await overlappingTabs();
-  await malformedWalletAndRetention();await actualDeadlines();await logoutRecovery();await liveRecovery();
+  await malformedWalletAndRetention();await actualDeadlines();await logoutRecovery();await accountHandoff();await liveRecovery();
   console.log('Durable signing suite passed. Submission responses are fixtures; optional live recovery is read-only. No transaction broadcast to a chain.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

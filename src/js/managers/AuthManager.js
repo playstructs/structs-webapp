@@ -102,9 +102,17 @@ export class AuthManager {
     const epoch=this.walletEpoch=(this.walletEpoch ?? 0)+1;
     const wallet=await this.walletManager.createWallet(mnemonic);
     const [account]=await wallet.getAccountsWithPrivkeys();
-    signal?.throwIfAborted();
-    if (epoch !== this.walletEpoch || this.gameState.persistenceEnabled === false
-        || this.gameState.isSessionCurrent?.() === false) throw new Error('Wallet initialization was superseded');
+    const assertCurrent=()=>{
+      signal?.throwIfAborted();
+      if (epoch !== this.walletEpoch || this.gameState.persistenceEnabled === false
+          || this.gameState.isSessionCurrent?.() === false) throw new Error('Wallet initialization was superseded');
+    };
+    assertCurrent();
+    if (this.gameState.signingAccount && this.gameState.signingAccount.address !== account.address) {
+      this.signingClientManager.stopForLogout();
+      await this.signingClientManager.queue.releaseAccount();
+      assertCurrent();
+    }
     this.gameState.wallet=wallet;
     this.gameState.signingAccount=account;
     this.gameState.pubkey=this.walletManager.bytesToHex(account.pubkey);

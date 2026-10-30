@@ -286,6 +286,7 @@ async function navigationTests() {
   // Slow wallet derivation from a departed screen cannot overwrite the current
   // signer (or the wallet object it was derived from).
   const manager=Object.create(AuthManager.prototype);manager.gameState={signingAccount:signerAccount};
+  manager.signingClientManager={stopForLogout(){},queue:{releaseAccount:async()=>{}}};
   let oldResolve;
   manager.walletManager={createWallet:async key=>key==='old' ? new Promise(r=>oldResolve=r) : {getAccountsWithPrivkeys:async()=>[account]},bytesToHex:toHex};
   const old=manager.initWallet('old');const oldRejected=assert.rejects(old,/superseded/);
@@ -294,6 +295,14 @@ async function navigationTests() {
   const abort=new AbortController();abort.abort();
   await assert.rejects(()=>manager.initWallet('new',abort.signal),error=>error.name==='AbortError');
   assert.equal(manager.gameState.signingAccount.address,account.address);
+
+  let release;
+  manager.gameState.signingAccount=signerAccount;
+  manager.signingClientManager.queue.releaseAccount=()=>new Promise(resolve=>{release=resolve;});
+  const departed=new AbortController(),changing=manager.initWallet('new',departed.signal);
+  const cancelled=assert.rejects(changing,error=>error.name==='AbortError');
+  await tick();departed.abort();release();await cancelled;
+  assert.equal(manager.gameState.signingAccount.address,signerAccount.address,'departing during queue drain cannot install a new wallet');
 }
 
 async function main() {

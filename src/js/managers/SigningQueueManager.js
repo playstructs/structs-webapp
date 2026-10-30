@@ -95,6 +95,7 @@ export class SigningQueueManager {
     this.unresolved = new Map();
     this.completed = new Map();
     this.working = false;
+    this.idleWaiters = new Set();
     this.recoveryError = null;
     this.storageScope = null;
     this.suspended = false;
@@ -425,6 +426,7 @@ export class SigningQueueManager {
       this.#bindScope();
       const journal = new TransactionJournal(this.gameState.signingAccount.address);
       await journal.exclusive(async () => {
+        if (this.suspended) return;
         this.#mergeJournal(journal);
         if (this.unresolved.size) {
           // Bounded work on each block. Unknown legacy records never become retries.
@@ -455,7 +457,36 @@ export class SigningQueueManager {
       });
     } catch (error) {
       console.warn('[SigningQueueManager] signing/recovery unavailable:',error);
-    } finally { this.working = false; }
+    } finally {
+      this.working = false;
+      for (const resolve of this.idleWaiters) resolve();
+      this.idleWaiters.clear();
+    }
+  }
+
+  /** Detach an account only after its current send has saved its outcome. */
+  async releaseAccount() {
+    this.suspended = true;
+    if (this.working) await new Promise(resolve=>this.idleWaiters.add(resolve));
+    // The caller still owns the old wallet here. Never move its evidence into
+    // another account's queue or erase a malformed snapshot while switching.
+    if (this.storageScope && !this.recoveryError && !this.persist()) {
+      throw new Error('Signing account queue could not be saved');
+    }
+    for (const waiters of this.settlementWaiters.values()) {
+      for (const waiter of [...waiters]) waiter.cancel(new Error('Signing account changed'));
+    }
+    this.settlementWaiters.clear();
+    this.immediateQueue = [];
+    this.actionQueue = [];
+    this.inFlight = null;
+    this.unresolved.clear();
+    this.completed.clear();
+    this.lastBroadcastHeight = 0;
+    this.scheduleAnchorHeight = 0;
+    this.recoveryError = null;
+    this.storageScope = null;
+    this.rehydrated = false;
   }
 
   /** Existing resume timer may recover results even when GRASS has missed blocks. */
@@ -667,11 +698,14 @@ export class SigningQueueManager {
         signal?.removeEventListener('abort', abort);
         resolve(tx);
       };
-      const abort = () => {
+      const cancel = reason => {
         waiters.delete(settled);
         if (!waiters.size) this.settlementWaiters.delete(id);
-        reject(signal.reason);
+        signal?.removeEventListener('abort', abort);
+        reject(reason);
       };
+      const abort = () => cancel(signal.reason);
+      settled.cancel = cancel;
       waiters.add(settled);
       this.settlementWaiters.set(id,waiters);
       signal?.addEventListener('abort', abort, {once: true});
