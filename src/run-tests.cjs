@@ -42,7 +42,18 @@ console.log = (...args) => {
   log(...args);
 };
 
-require('./public/js/test.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const assetDirectory = process.env.STRUCTS_TEST_ASSET_DIR || path.join(__dirname, 'public/js');
+const manifest = JSON.parse(fs.readFileSync(path.join(assetDirectory, 'manifest.json'), 'utf8'));
+const testBundle = manifest['js/test.js'];
+if (!/^js\/test\.[a-f0-9]+\.js$/.test(testBundle || '')) throw new Error('Build the test assets before running the suite');
+const bundlePath = path.join(assetDirectory, testBundle.slice(3));
+// Webpack resolves its worker chunks relative to the executing script.
+const bundleUrl = require('node:url').pathToFileURL(bundlePath).href;
+global.document = {baseURI: bundleUrl, currentScript: {tagName: 'SCRIPT', src: bundleUrl}};
+global.self = global.window;
+require(bundlePath);
 
 log(`\n${failures === 0 ? 'ALL TESTS PASSED' : failures + ' FAILING ASSERTION(S)'}`);
 process.exit(failures === 0 ? 0 : 1);

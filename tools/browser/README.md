@@ -96,8 +96,13 @@ proxy_http and proxy_wstunnel enabled, with `/fixture/rpc/` forwarding to
 `http://structsd:26657/` (WebSocket upgrade enabled) and `/fixture/nats` to
 `ws://fixture-nats:1443/`. Serve `public.json` from the node as
 `/js/fixture-public.json`, adding `isolation: "structs-v022-browser"`. A separate
-fixture HTML page loading `/js/bootstrap.js` establishes the initial session.
+generated `/js/bootstrap.html` page loads the fingerprinted bootstrap bundle
+and establishes the initial session. The normal shell resolves its bundle from
+`/js/manifest.json`; keep that manifest and every emitted chunk together.
 None of these test entry points is part of the production webpack build.
+The generated `/js/worker-check.html` runs the actual TaskProcess and browser
+Worker loader, verifies a completed proof and reports pass/fail without any
+wallet, RPC connection or transaction.
 
 Fund the test player's vault with a transaction on this isolated node, then
 use the normal browser controls. Check signed API login, fresh vault balance,

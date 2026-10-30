@@ -25,7 +25,7 @@ if (diagnostics.length) {
   console.log('Generated bindings and targeted wire types passed TypeScript checking.');
   const config = {mode:'development',target:'node',devtool:false,context:root,
     entry:{wire:path.join(__dirname,'wire.test.js'),query:path.join(__dirname,'query.test.js'),submission:path.join(__dirname,'submission.test.js'),ledger:path.join(__dirname,'ledger.test.js'),transfer:path.join(__dirname,'transfer.test.js'),transferFlow:path.join(__dirname,'transfer-flow.test.js'),reactor:path.join(__dirname,'reactor.test.js'),reactorFlow:path.join(__dirname,'reactor-flow.test.js'),alphaRefresh:path.join(__dirname,'alpha-refresh.test.js'),generator:path.join(__dirname,'generator.test.js')},
-    output:{path:temporary,filename:'[name].cjs'},
+    output:{path:temporary,filename:'[name].cjs',chunkFilename:'[name].[contenthash].js'},
     resolve:{extensions:['.js','.ts','.json'],modules:[modules,'node_modules']},
     module:{rules:[{test:/\.ts$/,loader:path.join(modules,'ts-loader'),options:{transpileOnly:true,
       compiler:path.join(__dirname,'node_modules/typescript'),configFile:path.join(root,'src/tsconfig.json')}}]}};

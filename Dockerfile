@@ -66,4 +66,4 @@ WORKDIR /src
 #RUN "composer update"
 
 # Install JS project dependencies
-RUN npm install
+RUN npm ci && npm run build

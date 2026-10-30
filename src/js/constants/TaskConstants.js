@@ -1,5 +1,4 @@
 export const TASK = {
-  WORKER_PATH: '/js/workers/TaskWorker.js?version=work-v022-1',
   WORKER_VERSION: 'work-v022-1',
   WORKER_HANDSHAKE_TIMEOUT: 10000,
   HASH_BATCH_SIZE: 4096,

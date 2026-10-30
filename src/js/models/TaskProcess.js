@@ -31,7 +31,7 @@ export class TaskProcess {
     }
 
     this.clearWorker();
-    const worker = new Worker(TASK.WORKER_PATH);
+    const worker = new Worker(new URL(/* webpackChunkName: "workers/TaskWorker" */ '../workers/TaskWorker.js', import.meta.url));
     this.worker = worker;
     this.workerRevision++;
 

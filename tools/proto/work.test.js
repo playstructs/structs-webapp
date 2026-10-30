@@ -123,7 +123,7 @@ let received=0;
 window.addEventListener(EVENTS.TASK_WORKER_CHANGED,()=>received++);
 const taskProcess = new TaskProcess(task('25','3353025'));
 taskProcess.start();const first=workers.at(-1), firstRequest=first.messages.at(-1);
-assert.match(first.url,/version=work-v022-1/);
+assert.match(String(first.url),/workers\/TaskWorker.*\.js$/);
 const reply=(worker,request,state=request.state)=>worker.onmessage({data:{version:TASK.WORKER_VERSION,revision:request.revision,state}});
 taskProcess.setBlockCheckpoint('3353026');
 reply(first,firstRequest);assert.equal(received,0);
