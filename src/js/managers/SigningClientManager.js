@@ -32,8 +32,9 @@ export class SigningClientManager {
   /**
    * @param {GameState} gameState
    * @param {boolean} publicEndpoint
+   * @param {string|null} wsUrl Explicit transport endpoint for an isolated client instance.
    */
-  constructor(gameState, publicEndpoint = false) {
+  constructor(gameState, publicEndpoint = false, wsUrl = null) {
     console.info('Initiating Signing Client Manager');
     this.gameState = gameState;
 
@@ -41,9 +42,9 @@ export class SigningClientManager {
     // Possibly a database setting or env, provided via server
     //this.wsUrl = `ws://${window.location.hostname}:26657`;
     this.publicEndpoint = publicEndpoint;
-    this.wsUrl = this.publicEndpoint
+    this.wsUrl = wsUrl ?? (this.publicEndpoint
         ? `wss://public.testnet.structs.network:26657`
-        : `ws://${window.location.hostname}:26657`;
+        : `ws://${window.location.hostname}:26657`);
     console.info('[SigningClientManager] Endpoint ' + this.wsUrl);
 
     this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
