@@ -1,5 +1,6 @@
 import * as natsCore from "@nats-io/nats-core";
 import {LOG_LEVEL, STALE_BLOCK_MS} from "../constants/GrassConstants";
+import {EVENTS} from "../constants/Events";
 
 /**
  * Guild Rapid Alert System Stream
@@ -184,6 +185,8 @@ export class GrassManager {
         console.info('[GrassManager] connected:', this.subject);
 
         this.subscription = this.nc.subscribe(this.subject);
+        window.dispatchEvent(new Event(EVENTS.GRASS_CONNECTED));
+        this.observeStatus(this.nc).catch(error=>console.debug('[GrassManager] status stream ended:',error));
 
         for await (const message of this.subscription) {
           let messageData;
@@ -227,5 +230,12 @@ export class GrassManager {
     }
 
     this.supervising = false;
+  }
+
+  async observeStatus(connection) {
+    for await (const status of connection.status()) {
+      if (this.nc !== connection || !this.running) return;
+      if (status.type === 'reconnect') window.dispatchEvent(new Event(EVENTS.GRASS_CONNECTED));
+    }
   }
 }

@@ -29,6 +29,7 @@ import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEve
 import {TX_STATUS} from "../models/SigningTransaction";
 import {RecoverAccountAddressApprovedListener} from "../grass_listeners/RecoverAccountAddressApprovedListener";
 import {TransactionJournal} from "./TransactionJournal";
+import {AlphaRefreshManager} from "./AlphaRefreshManager";
 
 export class AuthManager {
 
@@ -78,6 +79,7 @@ export class AuthManager {
     this.structManager = structManager;
     this.destroyedStructManager = destroyedStructManager;
     this.permissionManager = permissionManager;
+    this.gameState.alphaRefresh = new AlphaRefreshManager(gameState,guildAPI);
   }
 
   /**
@@ -200,6 +202,7 @@ export class AuthManager {
     console.log('Login response status:', response);
 
     if (response.success) {
+      this.gameState.alphaRefresh.stop();
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setId(playerId); // Must be set before registering many GRASS listeners
 
       this.grassManager.registerListener(new KeyPlayerLastActionListener(this.gameState, PLAYER_TYPES.PLAYER));
@@ -215,7 +218,7 @@ export class AuthManager {
         this.guildAPI,
         this.gameState.signingAccount.address
       ));
-      this.grassManager.registerListener(new AlphaChangeListener(this.gameState, this.guildAPI));
+      this.grassManager.registerListener(new AlphaChangeListener(this.gameState));
 
       // Task related listeners
       this.grassManager.registerListener(new StructListener(
@@ -246,7 +249,8 @@ export class AuthManager {
         this.guildAPI.getStructsByPlayerId(playerId)
       ]);
 
-      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlayer(player);
+      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlayer(player,this.gameState.currentBlockHeight);
+      this.gameState.alphaRefresh.start();
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
       this.gameState.setStructTypes(structTypes);
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setFleet(fleet);
@@ -417,6 +421,8 @@ export class AuthManager {
     }
 
     this.signingClientManager.stopForLogout();
+    this.gameState.alphaRefresh.stop();
+    this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].clearFunds();
     this.guildAPI.logout().then(() => {
       TransactionJournal.clearSession();
       MenuPage.router.goto('Auth', 'index');

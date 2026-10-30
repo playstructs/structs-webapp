@@ -390,7 +390,7 @@ export class TutorialWorld {
     this.gameState.setStructTypes(this.structTypes);
 
     keyPlayer.setId(TUTORIAL_IDS.PLAYER);
-    keyPlayer.setPlayer(this.getPlayer(TUTORIAL_IDS.PLAYER));
+    keyPlayer.setPlayer(this.getPlayer(TUTORIAL_IDS.PLAYER),null,{simulated:true});
     keyPlayer.setLastActionBlockHeight(this.blockHeight, 0);
     keyPlayer.setFleet(this.getFleetByPlayerId(TUTORIAL_IDS.PLAYER));
     keyPlayer.setStructs(this.getStructsByPlayerId(TUTORIAL_IDS.PLAYER));
@@ -415,7 +415,7 @@ export class TutorialWorld {
 
     const raider = this.gameState.keyPlayers.planet_raider;
     this.gameState.setPlanetPlanetRaidInfo(this.getPlanetRaid(), false);
-    raider.setPlayer(this.getPlayer(TUTORIAL_IDS.RAIDER));
+    raider.setPlayer(this.getPlayer(TUTORIAL_IDS.RAIDER),null,{simulated:true});
     raider.setLastActionBlockHeight(this.blockHeight, 0);
     raider.setFleet(this.getFleetByPlayerId(TUTORIAL_IDS.RAIDER));
     raider.setStructs(this.getStructsByPlayerId(TUTORIAL_IDS.RAIDER));

@@ -25,6 +25,7 @@ export class GameState {
 
     /** @type {GuildAPI} */
     this.guildAPI = null;
+    this.alphaRefresh = null;
 
     /* Multistep Request Data */
     this.signupRequest = new SignupRequestDTO();

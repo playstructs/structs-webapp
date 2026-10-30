@@ -19,6 +19,9 @@ import {TrackDestroyedStructEvent} from "../events/TrackDestroyedStructEvent";
 import {DateFormatter} from "../util/DateFormatter";
 import {RenderPlayerPfpEvent} from "../events/RenderPlayerPfpEvent";
 import {FleetChangedEvent} from "../events/FleetChangedEvent";
+import {playerFunds} from "../util/PlayerFunds";
+import {exactQueryHeight, maxQueryHeight, protocolAtHeight} from "../util/ChainProtocol";
+import {CHAIN} from "../constants/ChainConstants";
 
 export class KeyPlayer {
 
@@ -47,6 +50,8 @@ export class KeyPlayer {
 
     /** @type {Player} */
     this.player = null;
+    this.alphaSnapshot = null;
+    this.fundsObservedHeight = null;
 
     /** @type {number} UI/display value; may be optimistically drained on enqueue. */
     this.lastActionBlockHeight = 0;
@@ -89,13 +94,55 @@ export class KeyPlayer {
 
   }
 
-  setAlpha(alpha) {
-    if (this.player && this.player.hasOwnProperty('alpha')) {
-      this.player.alpha = parseInt(alpha);
+  setFunds(player, observedHeight = null) {
+    if (!this.player || this.player.id !== this.id || player?.id !== this.id) return false;
+    // Clearing an expired balance may mutate this.player. Stage the incoming
+    // fields first, including when setPlayer just installed the same object.
+    player = {...player};
+    const meta = player.snapshot_meta;
+    try {
+      // A known activation boundary invalidates legacy funds even while the
+      // new inventory projection or individual vault evidence is unavailable.
+      if (meta?.chain_id === CHAIN.ID && meta.api_contract === CHAIN.API_CONTRACT
+          && meta.observed_protocol === protocolAtHeight(CHAIN.ID,meta.observed_tip)) this.expireFunds(meta.observed_tip);
+    } catch { return false; }
+    let snapshot;
+    try {
+      const observed = this.fundsObservedHeight && observedHeight
+        ? maxQueryHeight(this.fundsObservedHeight,observedHeight) : this.fundsObservedHeight || observedHeight;
+      snapshot = playerFunds(player,observed);
+    } catch { return false; }
+    if (this.alphaSnapshot && BigInt(snapshot.height) < BigInt(this.alphaSnapshot.height)) return false;
+    if (this.alphaSnapshot?.height === snapshot.height && (['alpha','vault_address','spendable_alpha_p','protocol'].some(
+      field=>this.alphaSnapshot[field] !== snapshot[field]) || this.alphaSnapshot.funds_meta?.provisioned !== snapshot.funds_meta?.provisioned)) return false;
+    this.expireFunds(maxQueryHeight(snapshot.snapshot_meta.observed_tip,observedHeight || snapshot.snapshot_meta.observed_tip));
+    this.alphaSnapshot = snapshot;
+    this.applyFunds();
+    window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
+    return true;
+  }
 
-      window.dispatchEvent(new SaveGameStateEvent());
-      window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
+  applyFunds() {
+    if (!this.player) return;
+    const snapshot = this.alphaSnapshot;
+    for (const field of ['alpha','vault_address','spendable_alpha_p','funds_meta']) {
+      this.player[field] = snapshot ? structuredClone(snapshot[field]) : null;
     }
+    // Funds refresh independently of profile/grid fields. Never stamp an old
+    // full player row with the newer funds height.
+    this.player.funds_snapshot_meta = snapshot ? structuredClone(snapshot.snapshot_meta) : null;
+  }
+
+  clearFunds() {
+    this.alphaSnapshot = null;
+    this.applyFunds();
+    window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
+  }
+
+  expireFunds(height) {
+    try { this.fundsObservedHeight = this.fundsObservedHeight ? maxQueryHeight(this.fundsObservedHeight,height) : exactQueryHeight(height); }
+    catch { return; }
+    if (this.alphaSnapshot && protocolAtHeight(CHAIN.ID,this.fundsObservedHeight) !== this.alphaSnapshot.protocol) this.clearFunds();
   }
 
   /**
@@ -123,7 +170,14 @@ export class KeyPlayer {
    * @param {string} id
    */
   setId(id) {
+    const changed = id !== this.id;
+    if (changed) {
+      this.player = null;
+      this.alphaSnapshot = null;
+      this.fundsObservedHeight = null;
+    }
     this.id = id;
+    if (changed) window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
 
     window.dispatchEvent(new SaveGameStateEvent());
   }
@@ -238,13 +292,26 @@ export class KeyPlayer {
   /**
    * @param {Player} player
    */
-  setPlayer(player) {
+  setPlayer(player, observedHeight = null, {simulated = false} = {}) {
+    if (player?.id !== this.id) return false;
+    if (this.player?.snapshot_meta) {
+      try {
+        if (BigInt(exactQueryHeight(player.snapshot_meta?.height)) < BigInt(exactQueryHeight(this.player.snapshot_meta.height))) return false;
+      } catch { return false; }
+    }
+    if (observedHeight) this.expireFunds(observedHeight);
     this.player = player;
+    let fundsApplied = false;
+    if (!simulated || player.snapshot_meta || this.alphaSnapshot) {
+      fundsApplied = this.setFunds(player,observedHeight);
+      if (!fundsApplied) this.applyFunds();
+    }
 
-    window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
+    if (!fundsApplied) window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
     window.dispatchEvent(new EnergyUsageChangedEvent(this.playerType));
     window.dispatchEvent(new OreCountChangedEvent(this.playerType));
     window.dispatchEvent(new RenderPlayerPfpEvent(this.playerType));
+    return true;
   }
 
   /**

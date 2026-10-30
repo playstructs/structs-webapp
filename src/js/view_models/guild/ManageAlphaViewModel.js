@@ -197,7 +197,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
       if (!active()) return;
       const keyPlayer = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER];
       const currentHeight = keyPlayer.player?.snapshot_meta?.height;
-      if (!currentHeight || BigInt(refreshed.player.snapshot_meta.height) >= BigInt(currentHeight)) keyPlayer.setPlayer(refreshed.player);
+      if (!currentHeight || BigInt(refreshed.player.snapshot_meta.height) >= BigInt(currentHeight)) keyPlayer.setPlayer(refreshed.player,this.gameState.currentBlockHeight);
       MenuPage.router.goto('Guild','reactor',{}, {replace:true});
     } catch (error) {
       if (active()) console.warn('[ManageAlpha] committed change needs indexed evidence:',error);

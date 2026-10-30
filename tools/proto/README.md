@@ -311,3 +311,12 @@ real signed app/ante/staking transactions on in-memory chains. It measures
 back when the last fails, and checks fractional-share cooldown outcomes against
 native state. It uses the same zero-ualpha fee and 20M gas limit as preparation.
 It does not modify the chain checkout or broadcast on the running testnet.
+
+The client suite also exercises reactor control/completion and shared Alpha
+refresh through the real managers, queue and view handlers with controlled API
+and submission responses. Alpha refresh tests cover exact vault funds, legacy
+units, per-field snapshot heights, duplicate/retained notifications, owner and
+session changes, H activation, index lag, native NATS reconnect status, hidden
+page/resume behavior and logout cancellation. This is not a rendered-browser,
+live notification delivery or full post-H rollout test. Run the existing browser
+entries/tests as well when changing shared models or HUD consumers.
