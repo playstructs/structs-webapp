@@ -16,4 +16,17 @@ class PlayerAuthenticatorPathTest extends KernelTestCase
         }
     }
 
+    public function testLoginRemainsPublicForBothPathSpellings(): void
+    {
+        self::bootKernel(['environment' => 'test']);
+        foreach (['/api/auth/login', '/%61pi/auth/login'] as $path) {
+            $request = Request::create($path, 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], '{}');
+            $response = self::$kernel->handle($request);
+            $this->assertSame(401, $response->getStatusCode(), 'Public login rejects the missing signed proof');
+            $body = json_decode($response->getContent(), true);
+            $this->assertArrayNotHasKey('authentication_error', $body['errors']);
+            $this->assertArrayHasKey('address_required', $body['errors']);
+            $this->assertSame('Invalid signature', $body['errors']['signature_validation_failed']);
+        }
+    }
 }
