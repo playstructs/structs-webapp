@@ -4,10 +4,12 @@ import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {NumberFormatter} from "../../util/NumberFormatter";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {CHAIN} from "../../constants/ChainConstants";
-import {maxQueryHeight, validateSigningSnapshot} from "../../util/ChainProtocol";
+import {exactQueryHeight, maxQueryHeight, validateSigningSnapshot} from "../../util/ChainProtocol";
 import {exactAlphaAmount} from "../../util/ReactorIntent";
 import {commissionAtoms} from "../../util/ReactorState";
 import {abortableDelay} from "../../util/AbortableDelay";
+import {EVENTS} from "../../constants/Events";
+import {startupReads} from "../../managers/StartupRecovery";
 
 export class ReactorViewModel extends AbstractViewModel {
 
@@ -23,6 +25,8 @@ export class ReactorViewModel extends AbstractViewModel {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.guildId = this.gameState.thisGuild.id;
+    this.ownerId = this.gameState.keyPlayers?.[PLAYER_TYPES.PLAYER]?.id;
+    this.account = this.gameState.signingAccount?.address;
     this.genericResourceComponent = new GenericResourceComponent(gameState);
     this.numberFormatter = new NumberFormatter();
 
@@ -39,15 +43,74 @@ export class ReactorViewModel extends AbstractViewModel {
 
   async fetchPageData(signal) {
 
-    const [guild, infusion] = await Promise.all([
-      this.guildAPI.getGuild(this.guildId,{signal,timeoutMs:5000}),
-      this.guildAPI.getInfusionByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,{signal,timeoutMs:5000})
+    const [guild, infusion] = await startupReads([
+      ()=>this.guildAPI.getGuild(this.guildId,{signal,timeoutMs:5000}),
+      ()=>this.guildAPI.getInfusionByPlayerId(this.ownerId,{signal,timeoutMs:5000})
     ]);
     signal.throwIfAborted();
-    if (guild.id !== this.guildId || infusion.destination_id !== guild.primary_reactor_id
-        || infusion.player_id !== this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) throw new Error('Reactor view identity changed');
+    if (!this.current(signal) || guild.id !== this.guildId || infusion.destination_id !== guild.primary_reactor_id
+        || infusion.player_id !== this.ownerId) throw new Error('Reactor view identity changed');
+    if (this.infusion && BigInt(exactQueryHeight(infusion.snapshot_meta?.height))
+        < BigInt(exactQueryHeight(this.infusion.snapshot_meta?.height))) throw new Error('Reactor read moved backwards');
     this.guild = guild;
     this.infusion = infusion;
+    this.refreshReady = true;
+  }
+
+  current(signal) {
+    return !signal.aborted && this.gameState.persistenceEnabled !== false
+      && this.account === this.gameState.signingAccount?.address
+      && this.ownerId === this.gameState.keyPlayers?.[PLAYER_TYPES.PLAYER]?.id
+      && this.guildId === this.gameState.thisGuild.id;
+  }
+
+  updateValues() {
+    for (const [id,value] of [[this.alphaInfusedId,this.rawDisplay('fuel_p',1000000n)],
+      [this.defusingId,this.rawDisplay('defusing_p',1000000n)],
+      [this.totalSupplyId,this.rawDisplay('power_p',1000n)],[this.commissionId,this.commissionDisplay()],
+      [this.guildMinimumId,this.rawDisplay('join_infusion_minimum_p',1000000n)]]) {
+      document.getElementById(`${id}-value`).textContent=value;
+    }
+    document.getElementById(this.manageAlphaBtnId).classList.toggle('sui-mod-disabled',!this.canManage());
+  }
+
+  startRefresh(signal, {pollMs=30000,coalesceMs=100,retryMs=2000,maxRetryMs=30000} = {}) {
+    let timer=null,running=false,dirty=false,retry=retryMs;
+    const schedule=delay=>{
+      if (!this.current(signal) || document.visibilityState==='hidden' || running || timer!==null) return;
+      timer=setTimeout(()=>{timer=null;refresh();},delay);
+    };
+    const request=()=>{dirty=true;schedule(coalesceMs);};
+    const refresh=async()=>{
+      if (!this.current(signal) || document.visibilityState==='hidden') return;
+      running=true;dirty=false;
+      let delay=coalesceMs;
+      try {
+        await this.fetchPageData(signal);
+        if (!this.current(signal)) return;
+        this.updateValues();
+        retry=retryMs;
+        if (!this.canManage()) { dirty=true;delay=retry; }
+      } catch(error) {
+        if (!this.current(signal)) return;
+        this.refreshReady=false;
+        document.getElementById(this.manageAlphaBtnId).classList.add('sui-mod-disabled');
+        console.debug('[ReactorView] refresh unavailable:',error);
+        dirty=true;delay=retry;retry=Math.min(retry*2,maxRetryMs);
+      } finally {
+        running=false;
+        if (dirty) schedule(delay);
+      }
+    };
+    const options={signal};
+    window.addEventListener(EVENTS.ALPHA_COUNT_CHANGED,event=>{
+      if (event.playerType===PLAYER_TYPES.PLAYER) request();
+    },options);
+    for (const name of ['focus','online',EVENTS.GRASS_CONNECTED]) window.addEventListener(name,request,options);
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') request();},options);
+    const poll=setInterval(request,pollMs);
+    signal.addEventListener('abort',()=>{clearTimeout(timer);clearInterval(poll);},{once:true});
+    if (!this.canManage()) request();
   }
 
   initPageCode() {
@@ -60,6 +123,7 @@ export class ReactorViewModel extends AbstractViewModel {
   }
 
   canManage() {
+    if (this.refreshReady===false) return false;
     try {
       const meta = this.infusion.snapshot_meta;
       validateSigningSnapshot(meta,{chainId:CHAIN.ID,height:maxQueryHeight(meta.observed_tip,this.gameState.currentBlockHeight || meta.observed_tip)},['inventory']);
@@ -80,7 +144,7 @@ export class ReactorViewModel extends AbstractViewModel {
   render () {
     const signal = MenuPage.router.navigationSignal;
     this.fetchPageData(signal).then(() => {
-      if (signal.aborted) return;
+      if (!this.current(signal)) return;
 
       MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
 
@@ -251,9 +315,9 @@ export class ReactorViewModel extends AbstractViewModel {
       MenuPage.hideAndClearDialoguePanel();
 
       this.initPageCode();
-      if (!this.canManage()) return abortableDelay(2000,signal).then(()=>this.render());
+      this.startRefresh(signal);
     }).catch(error=>{
-      if (signal.aborted) return;
+      if (!this.current(signal)) return;
       console.debug('[ReactorView] data unavailable:',error);
       abortableDelay(5000,signal).then(()=>this.render()).catch(()=>{});
     });

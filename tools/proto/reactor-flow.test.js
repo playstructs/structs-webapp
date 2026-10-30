@@ -223,11 +223,44 @@ async function flow() {
   return {state,api,alpha,queue,submit,control,router,element,click,get view(){return view;}};
 }
 
+async function reactorDisplayRefresh() {
+  globalThis.window=new EventTarget();
+  const element=dom();
+  Object.assign(document,{visibilityState:'visible',addEventListener:()=>{}});
+  const state={currentBlockHeight:3353001,signingAccount:signer,thisGuild:{id:'0-1'},keyPlayers:{player:{id:'1-1'}}};
+  let next=indexed(),reads=0,release;
+  const api={getGuild:async()=>({id:'0-1',primary_reactor_id:'3-1'}),getInfusionByPlayerId:async()=>{reads++;return next;}};
+  const view=new ReactorViewModel(state,api),controller=new AbortController();
+  await view.fetchPageData(controller.signal);
+  view.startRefresh(controller.signal,{pollMs:100000,coalesceMs:1,retryMs:5,maxRetryMs:10});
+  const changed=()=>{const event=new Event(EVENTS.ALPHA_COUNT_CHANGED);event.playerType='player';window.dispatchEvent(event);};
+  next=new Promise(resolve=>{release=resolve;});changed();await pause(5);
+  for(let i=0;i<20;i++)changed();
+  assert.equal(reads,2,'external changes coalesce without overlapping reads');
+  const updated={...indexed(),fuel_p:'9000000',snapshot_meta:meta('3353001')};next=updated;release(updated);await pause(10);
+  assert.equal(element('guild-profile-alpha-infused-value').textContent,'9');
+  assert.equal(view.canManage(),true);
+  api.getInfusionByPlayerId=async()=>{throw new Error('temporary API outage');};changed();await pause(5);
+  assert.equal(view.canManage(),false);assert.equal(element(view.manageAlphaBtnId).classList.contains('sui-mod-disabled'),true);
+  api.getInfusionByPlayerId=async()=>updated;await pause(20);
+  assert.equal(view.canManage(),true);assert.equal(element(view.manageAlphaBtnId).classList.contains('sui-mod-disabled'),false);
+  api.getInfusionByPlayerId=async()=>indexed();
+  await assert.rejects(view.fetchPageData(controller.signal),/moved backwards/);
+  assert.equal(view.infusion.fuel_p,'9000000');
+  api.getInfusionByPlayerId=()=>new Promise(resolve=>{release=resolve;});
+  changed();await pause(5);state.signingAccount={address:address(9)};
+  release({...updated,fuel_p:'7000000'});await pause(5);
+  assert.equal(element('guild-profile-alpha-infused-value').textContent,'9','late prior-account reads cannot update the screen');
+  controller.abort();let afterClose=0;api.getInfusionByPlayerId=async()=>{afterClose++;return updated;};
+  changed();window.dispatchEvent(new Event('focus'));await pause(5);assert.equal(afterClose,0);
+}
+
 async function main() {
   await postgresVaultSnapshot();
   const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
   [signer]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);offline=await SigningStargateClient.offline(wallet,{registry});
   await mathAndNativeSnapshot();
+  await reactorDisplayRefresh();
   for(const direction of ['infuse','defuse']) {
     const tx=await signedChange(intent(direction));const committed=reactorCommit(tx);
     assert.equal(committed.height,'3353000');assert.equal(reactorRefreshReady(indexed(),player(),committed,3353000),true);
