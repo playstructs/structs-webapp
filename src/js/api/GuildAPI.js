@@ -861,6 +861,8 @@ export class GuildAPI {
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     const work = this.workFactory.parseList(response.data);
+    // An empty but complete snapshot also carries authority (for stopping work).
+    work.snapshot_meta = response.meta;
     for (const item of work) {
       item.snapshot_meta = response.meta;
     }

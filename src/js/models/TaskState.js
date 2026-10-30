@@ -1,6 +1,7 @@
 import {TASK} from "../constants/TaskConstants";
 import {TASK_STATUS} from "../constants/TaskStatus";
 import {sha256} from "js-sha256";
+import {hashDifficulty, workDifficultyAtHeight, workUint64} from "../util/WorkDifficulty";
 
 
 export class TaskState {
@@ -22,6 +23,7 @@ export class TaskState {
     this.process_end_time = null;
     this.difficulty_start = null;
     this.difficulty_target = null;
+    this.rules_height = null;
     this.block_start = null;
     this.block_checkpoint = null;
     this.block_checkpoint_time = null;
@@ -69,9 +71,11 @@ export class TaskState {
    * @param {number} block
    */
   setBlockCheckpoint(block) {
+    const next = workUint64(block);
+    if (this.block_checkpoint !== null && next < workUint64(this.block_checkpoint)) return;
     this.block_checkpoint_time = new Date();
-    this.block_checkpoint = block;
-    this.block_current_estimated = block;
+    this.block_checkpoint = String(next);
+    this.block_current_estimated = Number(next);
   }
 
   /**
@@ -95,7 +99,7 @@ export class TaskState {
     this.result_message = message;
     this.result_nonce = nonce + this.postfix;
     this.result_hash = hash;
-    this.result_difficulty = difficulty;
+    this.result_difficulty = hashDifficulty(hash);
   }
 
   /**
@@ -104,7 +108,7 @@ export class TaskState {
   setPreviousResult(difficulty) {
     this.status = TASK_STATUS.COMPLETED;
     this.process_end_time = new Date();
-    this.result_difficulty = difficulty;
+    this.result_difficulty = hashDifficulty(this.result_hash);
   }
 
   getNextNonce() {
@@ -121,6 +125,25 @@ export class TaskState {
    */
   getPID() {
     return this.object_id;
+  }
+
+  /** The proof input changes only when the work identity or original anchor changes. */
+  isSameWork(other) {
+    return this.object_id === other.object_id && this.target_id === other.target_id
+      && this.task_type === other.task_type && String(this.block_start) === String(other.block_start)
+      && this.prefix === other.prefix && this.postfix === other.postfix;
+  }
+
+  /** Keep searched nonces and proof candidates when only the rule or observed height changes. */
+  updateRules(other) {
+    if (!this.isSameWork(other)) throw new Error('Cannot update a different work identity');
+    this.setBlockCheckpoint(other.block_checkpoint);
+    // A delayed catalog response or unversioned notification cannot overwrite
+    // a rule already read from a newer indexed snapshot.
+    if (this.rules_height !== null && (other.rules_height == null
+        || workUint64(other.rules_height) < workUint64(this.rules_height))) return;
+    this.difficulty_target = String(workUint64(other.difficulty_target));
+    this.rules_height = other.rules_height == null ? null : String(workUint64(other.rules_height));
   }
 
   /**
@@ -223,7 +246,7 @@ export class TaskState {
   getCurrentAgeEstimate() {
     const current_time = new Date();
     const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / TASK.ESTIMATED_BLOCK_TIME);
-    this.block_current_estimated = Math.floor(this.block_checkpoint + estimated_blocks_past);
+    this.block_current_estimated = Math.floor(Number(this.block_checkpoint) + estimated_blocks_past);
 
     return this.block_current_estimated - this.block_start;
   }
@@ -232,20 +255,11 @@ export class TaskState {
    * @return {number}
    */
   getCurrentDifficulty(){
-    const age = this.getCurrentAgeEstimate();
-
-    if (age <= 1) {
-      return 64;
-    }
-
-    // Using logarithmic function to calculate difficulty
-    let difficulty = 64 - Math.floor(Math.log10(age) / Math.log10(this.difficulty_target) * 63);
-
-    return Math.max(1, difficulty)
+    return workDifficultyAtHeight(this.block_start, this.difficulty_target, this.block_checkpoint);
   }
 
   /**
-   * Calculate difficulty from age
+   * Display-only estimate. Proof eligibility uses getCurrentDifficulty instead.
    *
    * @param {number} age - Current age in blocks
    * @param {number} baseDifficultyRange - Base difficulty range
@@ -267,6 +281,9 @@ export class TaskState {
    * Check to see if Hash was built for an acceptable block height
    */
   checkResultHashDifficulty() {
-    return this.result_difficulty >= this.getCurrentDifficulty();
+    if (!this.result_exists || this.result_nonce === null || workUint64(this.block_start) === 0n
+        || workUint64(this.block_checkpoint) < workUint64(this.block_start)) return false;
+    const expected = this.prefix + this.result_nonce;
+    return sha256(expected) === this.result_hash && hashDifficulty(this.result_hash) >= this.getCurrentDifficulty();
   }
 }

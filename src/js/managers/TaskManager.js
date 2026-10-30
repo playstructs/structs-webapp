@@ -60,17 +60,22 @@ export class TaskManager {
             as Pausing and Resuming.
          */
         window.addEventListener(EVENTS.TASK_WORKER_CHANGED, function (event) {
+            const process = this.processes[event.state.getPID()];
+            if (!process || !process.state.isSameWork(event.state)) return;
             this.setState(event.state);
-            console.log(this.processes[event.state.getPID()].state)
+            if (event.state.status === TASK_STATUS.TERMINATED) {
+                this.terminate(event.state.getPID());
+                return;
+            }
             if (event.state.isCompleted()) {
 
                 event.state.setBlockCheckpoint(this.gameState.currentBlockHeight);
-                // Make sure the hash is acceptable compared to the estimations performed in the worker
+                // Recheck the actual proof at the latest observed block.
                 if (event.state.checkResultHashDifficulty()) {
                     this.complete(event.state.getPID());
                 } else {
                     event.state.setStatus(TASK_STATUS.STARTING);
-                    this.spawn(event.state);
+                    process.start();
                 }
 
             }
@@ -143,6 +148,9 @@ export class TaskManager {
         }.bind(this));
 
         window.addEventListener(EVENTS.BLOCK_HEIGHT_CHANGED, function (event) {
+            for (const process of Object.values(this.processes)) {
+                process.setBlockCheckpoint(this.gameState.currentBlockHeight);
+            }
             this.lookForAwaitedRefineWork();
         }.bind(this));
 
@@ -729,27 +737,13 @@ export class TaskManager {
             const task_block_start = block_start ?? workTask.block_start;
 
             // Without a clock there is nothing to hash against.
-            if (!task_block_start) {
+            if (task_block_start === null || String(task_block_start) === '0') {
                 continue;
             }
 
-            // Replacing a task restarts its worker and throws away every nonce
-            // it has searched, so only do it once the clock has actually moved.
-            const process = this.processes[workTask.object_id];
-            if (
-                process
-                && process.state.task_type === taskType
-                && process.state.block_start === task_block_start
-            ) {
-                continue;
-            }
-
-            this.spawn(this.taskStateFactory.initStructTask(
-                workTask.object_id,
-                taskType,
-                task_block_start,
-                workTask.difficulty_target
-            ));
+            // Refresh even an unchanged range's source height. TaskProcess
+            // preserves nonces at the same anchor and refuses older rules.
+            this.spawn(this.taskStateFactory.initTaskFromWork({...workTask, block_start: task_block_start}));
         }
     }
 
@@ -862,13 +856,6 @@ export class TaskManager {
             }
 
             const task = this.taskStateFactory.initTaskFromWork(workTask);
-
-            // Only fill in the gaps. A struct that already has a process is
-            // being worked on, and respawning it would restart the worker and
-            // throw away the progress it has made.
-            if (this.processes[task.getPID()]) {
-                return;
-            }
 
             // A raid task may only run while the targeted planet's shield is
             // vulnerable. The backend work record can persist outside that

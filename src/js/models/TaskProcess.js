@@ -4,6 +4,7 @@ import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TaskState} from "./TaskState";
 import {TaskWorkerChangedEvent} from "../events/TaskWorkerChangedEvent";
 import {TaskStateChangedEvent} from "../events/TaskStateChangedEvent";
+import {workUint64} from "../util/WorkDifficulty";
 
 
 export class TaskProcess {
@@ -14,6 +15,8 @@ export class TaskProcess {
   constructor(state) {
     this.worker = null;
     this.state = state;
+    this.workerRevision = 0;
+    this.workerHandshake = null;
   }
 
   start() {
@@ -27,15 +30,33 @@ export class TaskProcess {
       return false;
     }
 
-    if (this.hasWorker()) {
-      this.worker.terminate();
-    }
+    this.clearWorker();
+    const worker = new Worker(TASK.WORKER_PATH);
+    this.worker = worker;
+    this.workerRevision++;
 
-    this.worker = new Worker(TASK.WORKER_PATH);
+    const failed = () => {
+      if (this.worker !== worker) return;
+      console.warn('[TaskProcess] worker unavailable or incompatible:', this.getPID());
+      this.clearWorker();
+      this.state.setStatus(TASK_STATUS.TERMINATED);
+      window.dispatchEvent(new TaskWorkerChangedEvent(this.state));
+    };
+    worker.onerror = failed;
+    this.workerHandshake = setTimeout(failed, TASK.WORKER_HANDSHAKE_TIMEOUT);
 
-    this.worker.onmessage = async function (result) {
+    worker.onmessage = (result) => {
+      const reply = result.data;
+      // A terminated/replaced worker, or a reply made before a rule update,
+      // cannot replace current state or submit its proof.
+      if (this.worker !== worker) return;
+      if (reply?.version !== TASK.WORKER_VERSION) { failed(); return; }
+      clearTimeout(this.workerHandshake);
+      this.workerHandshake = null;
+      if (reply.revision !== this.workerRevision) return;
       const taskStateFactory = new TaskStateFactory();
-      let state = taskStateFactory.make(result.data[0]);
+      const state = taskStateFactory.make(reply.state);
+      if (!this.state.isSameWork(state)) return;
       window.dispatchEvent(new TaskWorkerChangedEvent(state));
     }
 
@@ -44,7 +65,7 @@ export class TaskProcess {
       this.state.status = TASK_STATUS.STARTING;
     }
     this.clearEstimatedBlockStartOffset();
-    this.worker.postMessage([this.state]);
+    worker.postMessage({version: TASK.WORKER_VERSION, revision: this.workerRevision, kind: 'start', state: this.state});
     return true
   }
 
@@ -52,6 +73,13 @@ export class TaskProcess {
    * @param {TaskState} new_state
    */
   replaceState(new_state) {
+    if (workUint64(new_state.block_start) < workUint64(this.state.block_start)) return;
+    if (this.state.isSameWork(new_state)) {
+      this.state.updateRules(new_state);
+      this.updateWorker();
+      this.dispatchProgress();
+      return;
+    }
     switch (this.state.status) {
       case TASK_STATUS.INITIATED:
       case TASK_STATUS.PAUSED:
@@ -60,6 +88,7 @@ export class TaskProcess {
         break;
 
       case TASK_STATUS.STARTING:
+      case TASK_STATUS.WAITING:
       case TASK_STATUS.RUNNING:
       case TASK_STATUS.TERMINATED:
         this.setState(new_state);
@@ -70,6 +99,18 @@ export class TaskProcess {
         console.log("Tried to spawn new state over completed task " + this.state.getPID());
         break;
     }
+  }
+
+  setBlockCheckpoint(block) {
+    this.state.setBlockCheckpoint(block);
+    this.updateWorker();
+  }
+
+  updateWorker() {
+    if (!this.worker) return;
+    this.workerRevision++;
+    this.worker.postMessage({version: TASK.WORKER_VERSION, revision: this.workerRevision,
+      kind: 'update', state: this.state});
   }
 
   pause(estimatedHashrate, estimatedBlockStartOffset) {
@@ -84,6 +125,8 @@ export class TaskProcess {
   }
 
   clearWorker() {
+    clearTimeout(this.workerHandshake);
+    this.workerHandshake = null;
     if (this.worker) {
       this.worker.terminate();
     }

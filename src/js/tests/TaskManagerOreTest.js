@@ -69,7 +69,7 @@ export class TaskManagerOreTest extends DTestSuite {
    */
   static givenRunningTask(taskManager, pid, taskType, block_start) {
     taskManager.processes[pid] = {
-      state: {task_type: taskType, block_start: block_start}
+      state: {task_type: taskType, block_start: block_start, difficulty_target: 8}
     };
     taskManager.running_queue.push(pid);
   }
@@ -156,8 +156,8 @@ export class TaskManagerOreTest extends DTestSuite {
       taskManager.spawned.map((task) => task.object_id),
       ['5-1', '5-2']
     );
-    this.assertEquals(taskManager.spawned[0].block_start, 1234);
-    this.assertEquals(taskManager.spawned[1].block_start, 1234);
+    this.assertEquals(taskManager.spawned[0].block_start, '1234');
+    this.assertEquals(taskManager.spawned[1].block_start, '1234');
 
     // The block is what the chain checks the hash against.
     this.assertEquals(taskManager.spawned[0].prefix, '5-1MINE1234NONCE');
@@ -171,11 +171,12 @@ export class TaskManagerOreTest extends DTestSuite {
     taskManager.syncOreTasks(TASK_TYPES.MINE, work);
 
     this.assertEquals(taskManager.spawned.length, 1);
-    this.assertEquals(taskManager.spawned[0].block_start, 900);
+    this.assertEquals(taskManager.spawned[0].block_start, '900');
   });
 
-  // Respawning restarts the worker and discards every nonce already searched.
-  unchangedClockLeavesProgressAloneTest = new DTest('unchangedClockLeavesProgressAloneTest', function() {
+  // The process receives current rules even when its clock is unchanged;
+  // TaskProcess updates that worker in place and preserves its nonce progress.
+  unchangedClockRefreshesRulesTest = new DTest('unchangedClockRefreshesRulesTest', function() {
     const taskManager = TaskManagerOreTest.makeTaskManager();
     TaskManagerOreTest.givenRunningTask(taskManager, '5-1', TASK_TYPES.MINE, 900);
 
@@ -183,7 +184,7 @@ export class TaskManagerOreTest extends DTestSuite {
 
     taskManager.syncOreTasks(TASK_TYPES.MINE, work, 900);
 
-    this.assertEquals(taskManager.spawned.length, 0);
+    this.assertEquals(taskManager.spawned.length, 1);
     this.assertEquals(taskManager.terminated.length, 0);
   });
 
@@ -196,7 +197,7 @@ export class TaskManagerOreTest extends DTestSuite {
     taskManager.syncOreTasks(TASK_TYPES.MINE, work, 1500);
 
     this.assertEquals(taskManager.spawned.length, 1);
-    this.assertEquals(taskManager.spawned[0].block_start, 1500);
+    this.assertEquals(taskManager.spawned[0].block_start, '1500');
   });
 
   // The chain no longer reports a per-struct stop, so falling off the work list
@@ -211,7 +212,8 @@ export class TaskManagerOreTest extends DTestSuite {
     taskManager.syncOreTasks(TASK_TYPES.MINE, work, 900);
 
     this.assertArrayEquals(taskManager.terminated, ['5-2']);
-    this.assertEquals(taskManager.spawned.length, 0);
+    this.assertEquals(taskManager.spawned.length, 1);
+    this.assertEquals(taskManager.spawned[0].object_id, '5-1');
   });
 
   // Build work shares the process table but is driven by a per-struct clock.
@@ -279,7 +281,7 @@ export class TaskManagerOreTest extends DTestSuite {
     // Mining restarts, and on the shifted clock rather than the stale one the
     // indexer may still be serving.
     this.assertEquals(taskManager.spawned.length, 1);
-    this.assertEquals(taskManager.spawned[0].block_start, 1500);
+    this.assertEquals(taskManager.spawned[0].block_start, '1500');
   });
 
   // A held clock is only good once; a later reconcile must fall back to the
@@ -379,7 +381,7 @@ export class TaskManagerOreTest extends DTestSuite {
     this.assertEquals(taskManager.spawned.length, 1);
     this.assertEquals(taskManager.spawned[0].object_id, '5-3');
     this.assertEquals(taskManager.spawned[0].task_type, TASK_TYPES.REFINE);
-    this.assertEquals(taskManager.spawned[0].block_start, 900);
+    this.assertEquals(taskManager.spawned[0].block_start, '900');
     this.assertEquals(taskManager.terminated.length, 0);
   });
 
