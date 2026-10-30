@@ -46,6 +46,9 @@ if not genesis.exists():
     validator = cli('keys', 'show', 'validator', '-a', '--bech', 'val', '--keyring-backend', 'test').strip()
     data = json.loads(genesis.read_text())
     data['app_state']['staking']['params']['bond_denom'] = 'ualpha'
+    # Fresh disposable chains must exercise actual maturity, not only enqueue
+    # unbondings whose production duration outlives the acceptance run.
+    data['app_state']['staking']['params']['unbonding_time'] = '120s'
     genesis.write_text(json.dumps(data))
     cli('genesis', 'add-genesis-account', validator_account, '1000000000000ualpha')
     cli('genesis', 'add-genesis-account', actor, '1000000000ualpha')

@@ -55,6 +55,10 @@ a private temporary directory mounted at `/fixture`, and network alias
 `structsd`. It creates a single-validator chain with no testnet peers and a
 public browser key. The test player deliberately lacks Delete permission so
 local-only logout can be exercised. All state and keys belong to this fixture.
+Fresh fixture genesis uses a two-minute staking unbonding period so the real SDK
+completion path can be observed during browser acceptance. Existing fixture
+genesis is never rewritten; create a fresh private directory to test this case.
+Production/testnet staking parameters and the release difficulty rules are unchanged.
 
 Create a separate PG container, deploy the full Sqitch plan with the paired
 ledger/signer contracts, and use a non-superuser `structs_webapp` role. Before
@@ -71,6 +75,13 @@ both RPC primary and seed pointing at the isolated node and LCD at
 No production database or key volume belongs on this network. Keep the node,
 database and NATS unexposed. Only the disposable Apache frontend also joins a
 host-accessible network and publishes HTTP on `127.0.0.1`.
+
+Use dedicated temporary database credentials for the frontend and GRASS, with
+authenticated `pg_hba.conf` entries scoped to this internal network. GRASS needs
+its own non-superuser login and CONNECT on the fixture database for LISTEN; it
+does not need a superuser or table-write grant. A fresh image may not already
+contain that login. Supply a writable disposable Symfony cache with
+`--tmpfs /src/var:rw,mode=1777` when mounting the application source read-only.
 
 Build into a temporary directory outside the checkout:
 
