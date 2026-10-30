@@ -56,6 +56,9 @@ class GeneratorSnapshotTest extends ApiManagerTestCase
             $db->executeStatement("INSERT INTO structs.current_block(chain,height,tip_height,status) VALUES('structstestnet-111',3353000,3353000,'current')");
             $db->executeStatement("INSERT INTO structs.api_refresh_state(model,source_height,source_time,inventory_authority)
                 VALUES('inventory',3353000,'2026-10-30T00:00:00Z','current-claims-v1')");
+            $this->assertFalse(\App\Util\ResponseMetaUtil::snapshotMeta($db, 'inventory')['data_ready'],
+                'A refreshed projection alone does not certify complete v0.22 source events');
+            \App\Tests\ReadinessFixture::economyCoverage($db);
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
             $manager = new StructManager($this->entityManager($db), $this->validator());
             $body = json_decode($manager->getGeneratorSnapshot('5-990988', 'generatorvault')->getContent(), true);

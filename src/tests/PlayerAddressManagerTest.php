@@ -1,12 +1,8 @@
 <?php
 
-use App\Entity\PlayerAddress;
 use App\Entity\PlayerAddressPending;
-use App\Factory\PlayerAddressPendingFactory;
 use App\Manager\PlayerAddressManager;
 use App\Manager\SignatureValidationManager;
-use App\Repository\PlayerAddressPendingRepository;
-use App\Repository\PlayerAddressRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -50,29 +46,24 @@ class PlayerAddressManagerTest extends KernelTestCase
         // (2) use static::getContainer() to access the service container
         $container = static::getContainer();
 
-        $playerAddressPendingRepositoryStub = $this->createStub(PlayerAddressPendingRepository::class);
-        $playerAddressPendingRepositoryStub->method('find')
-            ->willReturn($playerAddressPendingExists
-                ? $this->createStub(PlayerAddressPending::class)
-                : null
-            );
-
-        $playerAddressRepositoryStub = $this->createStub(PlayerAddressRepository::class);
-        $playerAddressRepositoryStub->method('findApprovedByAddressAndGuild')
-            ->willReturn($playerAddressExists
-                ? $this->createStub(PlayerAddress::class)
-                : null
-            );
-
+        $connection = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $code = ['code' => 'BN3QQ', 'player_id' => '1-137', 'guild_id' => '0-1'];
+        $connection->method('fetchAssociative')->willReturnCallback(function ($sql) use ($code, $playerAddressPendingExists) {
+            return str_contains($sql, 'FROM player_address_pending')
+                ? ($playerAddressPendingExists ? ['address' => 'other-device'] : false) : $code;
+        });
+        $connection->method('transactional')->willReturnCallback(fn ($callback) => $callback($connection));
         $entityManagerStub = $this->createStub(EntityManagerInterface::class);
-        $entityManagerStub->method('getRepository')
-            ->willReturnMap([
-                [PlayerAddressPending::class, $playerAddressPendingRepositoryStub],
-                [PlayerAddress::class, $playerAddressRepositoryStub]
-            ]);
+        $entityManagerStub->method('getConnection')->willReturn($connection);
+        $proofManager = $this->createMock(\App\Manager\AddressRegistrationProofManager::class);
+        $proofManager->method('readContext')->willReturn([
+            'chain_id' => 'structstestnet-111', 'protocol' => 'v0.22.0', 'source_height' => '3353001',
+            'player_id' => '1-137', 'address' => 'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
+            'proof_nonce' => '9007199254740993', 'registered_player_id' => $playerAddressExists ? '1-137' : '',
+            'timeout_height' => '0',
+        ]);
 
         $validator = $container->get(ValidatorInterface::class);
-        $playerAddressPendingFactory = new PlayerAddressPendingFactory();
         $validateSignatureResponseBody = json_encode([
             'pubkeyFormatError' => false,
             'signatureFormatError' => false,
@@ -89,7 +80,7 @@ class PlayerAddressManagerTest extends KernelTestCase
             $validator
         );
         $request = Request::create('/api/player-address', 'POST', [], [], [] ,[], json_encode($requestContent));
-        $response = $playerAddressManager->addPendingAddress($request, $playerAddressPendingFactory, $signatureValidationManager);
+        $response = $playerAddressManager->addPendingAddress($request, $signatureValidationManager, $proofManager);
         $responseContent = json_decode($response->getContent(), true);
 
         $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
@@ -259,20 +250,18 @@ class PlayerAddressManagerTest extends KernelTestCase
         $playerAddressPending->setIp('127.0.0.1');
         $playerAddressPending->setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0');
 
-        $playerAddressPendingRepository = $this->createMock(PlayerAddressPendingRepository::class);
-        $playerAddressPendingRepository->expects($this->exactly($expectedHttpStatusCode === Response::HTTP_BAD_REQUEST ? 0 : 1))
-            ->method('findOneBy')
-            ->with(['code' => $code])
-            ->willReturn($playerAddressPendingExists
-                ? $playerAddressPending
-                : null
-            );
-
+        $connection = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $connection->expects($this->exactly($expectedHttpStatusCode === Response::HTTP_BAD_REQUEST ? 0 : 1))
+            ->method('fetchAssociative')
+            ->with($this->callback(fn ($sql) => str_contains($sql, 'active.player_id = :player_id')),
+                ['code' => $code, 'player_id' => '1-137'])
+            ->willReturn($playerAddressPendingExists ? $expectedData : false);
         $entityManagerStub = $this->createStub(EntityManagerInterface::class);
-        $entityManagerStub->method('getRepository')
-            ->willReturnMap([
-                [PlayerAddressPending::class, $playerAddressPendingRepository]
-            ]);
+        $entityManagerStub->method('getConnection')->willReturn($connection);
+        $player = new \App\Entity\Player();
+        $player->setId('1-137');
+        $security = $this->createStub(\Symfony\Bundle\SecurityBundle\Security::class);
+        $security->method('getUser')->willReturn($player);
 
         $validator = $container->get(ValidatorInterface::class);
 
@@ -280,7 +269,7 @@ class PlayerAddressManagerTest extends KernelTestCase
             $entityManagerStub,
             $validator
         );
-        $response = $playerAddressManager->getPendingAddressByCode($code);
+        $response = $playerAddressManager->getPendingAddressByCode($code, $security);
         $responseContent = json_decode($response->getContent(), true);
 
         $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());

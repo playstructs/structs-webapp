@@ -6,6 +6,7 @@ import {TxMsgData} from "cosmjs-types/cosmos/base/abci/v1beta1/abci";
 import {ServiceClientImpl as TxService} from "cosmjs-types/cosmos/tx/v1beta1/service";
 import {prepareTransfer} from "./TransferPreparation";
 import {prepareReactor} from "./ReactorPreparation";
+import {prepareRegistration} from "./RegistrationPreparation";
 import {prepareGenerator} from "./GeneratorPreparation";
 import {CHAIN} from "../constants/ChainConstants";
 import {FEE} from "../constants/Fee";
@@ -31,16 +32,18 @@ export class SigningSubmission {
           || tx.accountAddress!==manager.gameState.signingAccount?.address) throw new SigningDeferredError('Signing connection changed');
     };
     check();
+    const isRegistration = tx.intent?.kind === 'address_register';
+    const isEconomic = tx.intent && !isRegistration;
     const isReactor = tx.intent?.kind === 'reactor_change';
     const isGenerator = tx.intent?.kind === 'generator_fund';
-    const prepareIntent = {alpha_transfer:prepareTransfer,reactor_change:prepareReactor,generator_fund:prepareGenerator}[tx.intent?.kind];
+    const prepareIntent = {address_register:prepareRegistration,alpha_transfer:prepareTransfer,reactor_change:prepareReactor,generator_fund:prepareGenerator}[tx.intent?.kind];
     if (tx.intent && !prepareIntent) throw new Error('Unsupported transaction intent');
     const isWithdrawal = isReactor && tx.intent.direction === 'defuse';
-    const data = tx.intent ? await manager.gameState.guildAPI[isWithdrawal ? 'getInfusionByPlayerId' : 'getPlayer'](tx.intent.ownerId) : null;
+    const data = isEconomic ? await manager.gameState.guildAPI[isWithdrawal ? 'getInfusionByPlayerId' : 'getPlayer'](tx.intent.ownerId) : null;
     const response = data ? {meta:data.snapshot_meta} : await manager.gameState.guildAPI.getBlockSnapshot();
     check();
     const accountSnapshot = await query.readSnapshot(async rpc=>{
-      if (tx.intent) {
+      if (isEconomic) {
         try { validateSigningSnapshot(response.meta,{chainId:rpc.chainId,height:rpc.height},['inventory']); }
         catch (error) { throw new SigningDeferredError(error.message); }
         if (response.meta.protocol===CHAIN.PROTOCOL && !isWithdrawal && data.funds_meta?.ready!==true) {
@@ -59,7 +62,7 @@ export class SigningSubmission {
     check();
     let context;
     try {
-      context = validateSigningSnapshot(response.meta,{chainId:accountSnapshot.chainId,height:accountSnapshot.observedHeight},tx.intent ? ['inventory'] : []);
+      context = validateSigningSnapshot(response.meta,{chainId:accountSnapshot.chainId,height:accountSnapshot.observedHeight},isEconomic ? ['inventory'] : []);
     } catch (error) { throw new SigningDeferredError(error.message); }
     // Post-H actions must be rebuilt/revalidated by their protocol-aware caller.
     // An old primary-address payload is not made vault-aware by new codecs.
@@ -95,7 +98,7 @@ export class SigningSubmission {
     check();
     if (protocolAtHeight(current.chainId,current.height)!==context.protocol) throw new SigningDeferredError('Protocol changed while signing');
     return {...submission,connectionEpoch:epoch,...(tx.intent
-      ? (isReactor ? {reactor:accountSnapshot.data.prepared.reactor} : isGenerator
+      ? (isRegistration ? {registration:accountSnapshot.data.prepared.registration} : isReactor ? {reactor:accountSnapshot.data.prepared.reactor} : isGenerator
         ? {generator:accountSnapshot.data.prepared.generator} : {transfer:accountSnapshot.data.prepared.transfer}) : {})};
   }
 

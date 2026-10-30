@@ -34,6 +34,7 @@ async function ready(base) {
     let seeded = false;
     let attached = false;
     try {
+        assert.equal(docker(['inspect', '--format', '{{index .Config.Labels \"structs.task\"}}', database]), 'v022-integration');
         sql("BEGIN; INSERT INTO structs.guild(id,name,primary_reactor_id) VALUES ('0-990970','Public guild fixture','3-990970');\n" +
             "INSERT INTO structs.reactor(id,validator,guild_id) VALUES('3-990970','publicguildvalidator','0-990970');\n" +
             "INSERT INTO structs.guild_meta(id,this_infrastructure) VALUES('0-990970',false);\n" +
@@ -68,6 +69,16 @@ async function ready(base) {
                     checks++;
                 }
             }
+            const proof = await request(base, '/api/auth/player-address/invalid/player/1-1/proof', false);
+            assert.equal(proof.status, 409, surface + ' registration context is public but validates its identity');
+            assert.equal((await proof.json()).errors.proof_unavailable, 'Current registration proof is unavailable');
+            assert.equal(proof.headers.get('cache-control').includes('no-store'), true);
+            const pendingRoute = '/api/player-address/code/ZZZQQ';
+            assert.equal((await request(base, pendingRoute, false)).status, 401, surface + ' pending devices require authentication');
+            const pending = await request(base, pendingRoute);
+            assert.equal(pending.status, 200);
+            assert.equal((await pending.json()).data, null);
+            checks += 3;
             const guildRoutes = ['guild/this', 'guild/name', 'guild/count', 'guild/directory', 'guild/0-990970',
                 'guild/0-990970/name', 'guild/0-990970/members/count', 'guild/0-990970/power/stats',
                 'guild/0-990970/roster', 'guild/0-990970/planet/complete/count'];

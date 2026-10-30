@@ -72,6 +72,7 @@ class InfusionManagerTest extends ApiManagerTestCase
             $db->executeStatement("INSERT INTO sync_state.native_staking_position(chain_id,address,validator,bonded,unbonding,unbonding_entries)
                 VALUES('structstestnet-111','reactor-api-vault','reactor-api-validator',9007199254740993,0,0),
                 ('structstestnet-111','reactor-api-retained','reactor-api-validator',7,0,1)");
+            \App\Tests\ReadinessFixture::economyCoverage($db);
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
             $manager = new InfusionManager($this->entityManager($db), $this->validator());
             $body = json_decode($manager->getInfusionByPlayerId('1-990987')->getContent(), true);

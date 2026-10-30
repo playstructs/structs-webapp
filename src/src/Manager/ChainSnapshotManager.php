@@ -34,6 +34,28 @@ class ChainSnapshotManager
         return $this->read($path, $height, $deadline);
     }
 
+    public function head(string $chainId, ?float $deadline = null): array
+    {
+        if (($this->read('/cosmos/base/tendermint/v1beta1/syncing', null, $deadline)['syncing'] ?? null) !== false) {
+            throw new UnexpectedValueException('Chain snapshot node is not synchronized');
+        }
+        $block = $this->read('/cosmos/base/tendermint/v1beta1/blocks/latest', null, $deadline);
+        $header = $block['sdk_block']['header'] ?? $block['block']['header'] ?? null;
+        $height = ExactAmount::unsigned($header['height'] ?? null, '9007199254740991');
+        if ($height === '0' || $chainId === '' || ($header['chain_id'] ?? null) !== $chainId) {
+            throw new UnexpectedValueException('Chain snapshot head identity mismatch');
+        }
+        // SDK responses can include both old and new block envelopes.
+        foreach (['block', 'sdk_block'] as $key) {
+            if (isset($block[$key]) && (($block[$key]['header']['height'] ?? null) !== $height
+                || ($block[$key]['header']['chain_id'] ?? null) !== $chainId)) {
+                throw new UnexpectedValueException('Chain snapshot block envelopes disagree');
+            }
+        }
+
+        return ['chain_id' => $chainId, 'height' => $height];
+    }
+
     private function read(string $path, ?string $height = null, ?float $deadline = null): array
     {
         if (!str_starts_with($path, '/') || str_starts_with($path, '//')) {

@@ -74,7 +74,6 @@ async function main() {
   await manager.queueMsgReactorCancelDefusion('', 'validator',amount,'9223372036854775807',{ownerId:'1-1'});
   await manager.queueMsgProviderCreate('4-1',{denom:'ualpha',amount:'2'},0,'0.1','0.2','1',max,'1','9007199254740993',{ownerId:'0-1'});
   await manager.queueMsgAgreementOpen('5-1','9007199254740993',max,{ownerId:'1-1'});
-  await manager.queueMsgAddressRegister('1-1','new-address','pubkey','proof',255);
   await manager.queueMsgGuildCreate('3-1','endpoint','4-1');
   await manager.queueMsgGuildUpdateBankConvertInFee('0-1','0.000000000000000001');
   await manager.queueMsgGuildUpdateBankConvertOutFee('0-1','0.999999999999999999');
@@ -94,8 +93,7 @@ async function main() {
   assert.equal(persisted[7].message.payload.providerCancellationPenalty,'0.1');
   assert.equal(decoded[8].duration,'9007199254740993');
   assert.equal(decoded[8].ownerId,'1-1');
-  assert.equal(decoded[9].permissions,'255');
-  for (const name of ['proof','nonce','founderPlayerId','address','proofPubKey','proofSignature']) assert.equal(decoded[10][name],'');
+  for (const name of ['proof','nonce','founderPlayerId','address','proofPubKey','proofSignature']) assert.equal(decoded[9][name],'');
 
   // Public test mnemonic; sign offline only. Go independently decodes these
   // bytes with the pinned release types, including the actual signed TxBody.

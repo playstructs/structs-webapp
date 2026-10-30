@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Factory\PlayerAddressPendingFactory;
+use App\Manager\AddressRegistrationProofManager;
 use App\Manager\PlayerAddressManager;
 use App\Manager\SignatureValidationManager;
 use Doctrine\DBAL\Exception;
@@ -36,6 +36,22 @@ class PlayerAddressController extends AbstractController
         return $playerAddressManager->getPlayerIdByAddressAndGuild($address, $guild_id);
     }
 
+    #[Route(
+        '/api/auth/player-address/{address}/player/{player_id}/proof',
+        name: 'api_get_address_registration_proof',
+        methods: ['GET']
+    )]
+    public function getAddressRegistrationProof(
+        string $address,
+        string $player_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator,
+        AddressRegistrationProofManager $proofManager
+    ): Response {
+        $manager = new PlayerAddressManager($entityManager, $validator);
+        return $manager->getRegistrationProofContext($player_id, $address, $proofManager);
+    }
+
     /**
      * @param Request $request
      * @param ValidatorInterface $validator
@@ -56,14 +72,15 @@ class PlayerAddressController extends AbstractController
         Request $request,
         ValidatorInterface $validator,
         EntityManagerInterface $entityManager,
-        HttpClientInterface $client
+        HttpClientInterface $client,
+        AddressRegistrationProofManager $proofManager
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
         $signatureValidationManager = new SignatureValidationManager($client);
         return $playerAddressManager->addPendingAddress(
             $request,
-            new PlayerAddressPendingFactory(),
-            $signatureValidationManager
+            $signatureValidationManager,
+            $proofManager
         );
     }
 
@@ -150,10 +167,11 @@ class PlayerAddressController extends AbstractController
     public function getPendingAddressByCode(
         string $code,
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        Security $security
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
-        return $playerAddressManager->getPendingAddressByCode($code);
+        return $playerAddressManager->getPendingAddressByCode($code, $security);
     }
 
     /**
@@ -213,10 +231,11 @@ class PlayerAddressController extends AbstractController
     public function setPendingAddressPermissions(
         Request $request,
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        Security $security
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
-        return $playerAddressManager->setPendingAddressPermissions($request);
+        return $playerAddressManager->setPendingAddressPermissions($request, $security);
     }
 
     /**

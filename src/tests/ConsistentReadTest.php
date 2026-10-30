@@ -55,7 +55,7 @@ class ConsistentReadTest extends TestCase
         }
         $writer = DriverManager::getConnection(['url' => $url]);
         $reader = DriverManager::getConnection(['url' => $url]);
-        $tables = ['structs.current_block', 'sync_state.sync_cursor', 'structs.api_refresh_state'];
+        $tables = ['structs.current_block', 'sync_state.sync_cursor', 'structs.api_refresh_state', 'sync_state.economy_contract'];
         $saved = [];
         $address = 'api-consistent-read-fixture';
         try {
@@ -85,6 +85,7 @@ class ConsistentReadTest extends TestCase
                 $writer->executeStatement("UPDATE sync_state.sync_cursor SET last_height=3353000,last_block_time='2026-10-29T12:00:05Z',tip_height=3353000");
                 $writer->executeStatement('UPDATE structs.current_block SET height=3353000,tip_height=3353000');
                 $writer->executeStatement("UPDATE structs.api_refresh_state SET source_height=3353000,source_time='2026-10-29T12:00:05Z'");
+                \App\Tests\ReadinessFixture::economyCoverage($writer);
                 $writer->commit();
 
                 return [$data, ResponseMetaUtil::snapshotMeta($reader, 'inventory')];

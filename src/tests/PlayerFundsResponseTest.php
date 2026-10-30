@@ -75,6 +75,7 @@ class PlayerFundsResponseTest extends ApiManagerTestCase
                 VALUES('structstestnet-111',3353000,3353000,'current')");
             $db->executeStatement("INSERT INTO structs.api_refresh_state(model,source_height,source_time,inventory_authority)
                 VALUES('inventory',3353000,'2026-10-29T12:00:00Z','current-claims-v1')");
+            \App\Tests\ReadinessFixture::economyCoverage($db);
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
             $chain = $this->createMock(ChainSnapshotManager::class);
             $chain->expects($this->never())->method('verifyChain');

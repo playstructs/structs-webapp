@@ -222,6 +222,7 @@ class LedgerManagerTest extends ApiManagerTestCase
             VALUES('structstestnet-111',:height,:height,'current')", ['height' => $height]);
         $db->executeStatement("INSERT INTO structs.api_refresh_state(model,source_height,source_time,inventory_authority)
             VALUES('inventory',:height,:time,'current-claims-v1')", ['height' => $height, 'time' => self::TIME]);
+        \App\Tests\ReadinessFixture::economyCoverage($db);
     }
 
     private function body($response): array

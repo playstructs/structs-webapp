@@ -301,7 +301,10 @@ class AuthManager
               ON pa.guild_id = gm.id
             INNER JOIN player p
               ON pa.player_id = p.id
-            WHERE paac.code = :code;
+            WHERE paac.code = :code
+              AND paac.player_id = pa.player_id AND pa.status = \'approved\'
+              AND p.guild_id = pa.guild_id
+              AND paac.created_at > statement_timestamp() - interval \'1 hour\';
         ';
 
         $requestParams = [ApiParameters::CODE => $code];

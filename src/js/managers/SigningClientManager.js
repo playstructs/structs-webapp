@@ -378,11 +378,11 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgAddressRegister(playerId, addressToRegister, proofPubKey, proofSignature, permissions, options = {}) {
-    const id = this.queue.enqueueImmediate(
-      '/structs.structs.MsgAddressRegister',
-      {playerId, address: addressToRegister, proofPubKey, proofSignature, permissions},
-      options,
-    );
+    if (typeof permissions === 'number' && (!Number.isSafeInteger(permissions) || permissions < 0)) {
+      throw new Error('Invalid registration permissions');
+    }
+    const id = this.queue.enqueueRegistration({kind:'address_register',version:1,ownerId:playerId,address:addressToRegister,
+      pubkey:proofPubKey,signature:proofSignature,permissions:String(permissions),proof:options.proofContext});
     return this.queue.whenSettled(id);
   }
 

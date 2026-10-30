@@ -9,6 +9,7 @@ import {TransactionJournal} from "./TransactionJournal";
 import {SigningDeferredError} from "./SigningSubmission";
 import {transferIntent} from "../util/TransferIntent";
 import {reactorIntent} from "../util/ReactorIntent";
+import {registrationIntent} from "../util/RegistrationIntent";
 import {generatorIntent} from "../util/GeneratorIntent";
 
 /**
@@ -147,6 +148,10 @@ export class SigningQueueManager {
 
   enqueueGenerator(value) {
     return this.#enqueueIntent(generatorIntent(value));
+  }
+
+  enqueueRegistration(value) {
+    return this.#enqueueIntent(registrationIntent(value));
   }
 
   #enqueueIntent(intent) {

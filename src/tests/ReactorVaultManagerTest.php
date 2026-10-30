@@ -249,6 +249,7 @@ class ReactorVaultManagerTest extends ApiManagerTestCase
                     json_encode(self::nativeResponse(parse_url($url, PHP_URL_PATH))));
                 return new MockResponse($data, ['response_headers' => ['x-cosmos-block-height: 3353000']]);
             });
+            \App\Tests\ReadinessFixture::economyCoverage($db);
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
             $manager = new InfusionManager($this->entityManager($db), $this->validator(), new ReactorVaultManager(new ChainSnapshotManager($http)));
             $body = json_decode($manager->getInfusionByPlayerId($owner)->getContent(), true);

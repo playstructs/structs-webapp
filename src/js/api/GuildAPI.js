@@ -1,3 +1,4 @@
+import {registrationProofContext, registrationProofMessage} from "../util/RegistrationProof";
 import {JsonAjaxer} from "../framework/JsonAjaxer";
 import {GuildFactory} from "../factories/GuildFactory";
 import {PlayerFactory} from "../factories/PlayerFactory";
@@ -134,8 +135,21 @@ export class GuildAPI {
    * @param {string} address
    * @return {string}
    */
-  buildAddressRegisterMessage(playerId, address) {
-    return `PLAYER${playerId}ADDRESS${address}`;
+  buildAddressRegisterMessage(playerId, address, context) {
+    const proof = registrationProofContext(context);
+    if (proof.player_id !== playerId || proof.address !== address) throw new Error('Registration proof identity mismatch');
+    return registrationProofMessage(proof);
+  }
+
+  async getAddressRegistrationProof(playerId, address) {
+    const response = this.guildAPIResponseFactory.make(await this.ajax.get(
+      `${this.apiUrl}/auth/player-address/${encodeURIComponent(address)}/player/${encodeURIComponent(playerId)}/proof`,
+      {timeoutMs:16000}
+    ));
+    this.handleResponseFailure(response);
+    const proof = registrationProofContext(response.data);
+    if (proof.player_id !== playerId || proof.address !== address) throw new Error('Registration proof identity mismatch');
+    return proof;
   }
 
   /**
@@ -477,6 +491,14 @@ export class GuildAPI {
    * @param {string} address
    * @return {Promise<PlayerAddress>}
    */
+  async getPendingAddressByCode(code) {
+    const response = this.guildAPIResponseFactory.make(await this.ajax.get(
+      `${this.apiUrl}/player-address/code/${encodeURIComponent(code)}`, {timeoutMs:5000}
+    ));
+    this.handleResponseFailure(response);
+    return response.data;
+  }
+
   async getPlayerAddress(address) {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/${address}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);

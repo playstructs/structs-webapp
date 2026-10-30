@@ -1,3 +1,4 @@
+import {pendingRegistrationProof} from "../util/RegistrationProof";
 import {PlayerCreatedListener} from "../grass_listeners/PlayerCreatedListener";
 import {LoginRequestDTO} from "../dtos/LoginRequestDTO";
 import {KeyPlayerOreListener} from "../grass_listeners/KeyPlayerOreListener";
@@ -339,6 +340,10 @@ export class AuthManager {
         this.gameState.thisGuild.id
       );
 
+      // The recovery key can establish the existing player's API session before
+      // the queued registration needs authenticated readiness reads.
+      if (!await this.reauthenticate()) return false;
+
       // Create a fresh device identity
       const newMnemonic = this.walletManager.createMnemonic();
       const newWallet = await this.walletManager.createWallet(newMnemonic);
@@ -347,9 +352,11 @@ export class AuthManager {
       const newPubkey = this.walletManager.bytesToHex(newAccount.pubkey);
 
       // Proof that the new device consents to being registered to the player.
+      const proofContext = await this.guildAPI.getAddressRegistrationProof(playerId, newAccount.address);
       const registerMessage = this.guildAPI.buildAddressRegisterMessage(
         playerId,
-        newAccount.address
+        newAccount.address,
+        proofContext
       );
       const proofSignature = await this.walletManager.createSignatureForProxyMessage(
         registerMessage,
@@ -378,7 +385,8 @@ export class AuthManager {
         newAccount.address,
         newPubkey,
         proofSignature,
-        permissions
+        permissions,
+        {proofContext}
       );
 
       return registerTx.status === TX_STATUS.SUCCEEDED;
@@ -440,9 +448,11 @@ export class AuthManager {
 
     await this.initWallet(this.gameState.mnemonic);
 
+    const proofContext = await this.guildAPI.getAddressRegistrationProof(activationCodeInfo.player_id, this.gameState.signingAccount.address);
     const message = this.guildAPI.buildAddressRegisterMessage(
       activationCodeInfo.player_id,
-      this.gameState.signingAccount.address
+      this.gameState.signingAccount.address,
+      proofContext
     );
 
     const signature = await this.walletManager.createSignatureForProxyMessage(
@@ -496,6 +506,12 @@ export class AuthManager {
    * @return {Promise<boolean>}
    */
   async activateDevice(playerAddressPending) {
+    // GRASS is an invalidation hint: JSON numeric nonces in its payload may
+    // already be rounded. Fetch the scoped row with exact SQL decimal strings.
+    const pending = await this.guildAPI.getPendingAddressByCode(playerAddressPending.code);
+    if (!pending || pending.address !== playerAddressPending.address || pending.pubkey !== playerAddressPending.pubkey
+        || pending.signature !== playerAddressPending.signature) return false;
+    const proofContext = pendingRegistrationProof(pending);
     const setPermissionsRequest = new SetPendingAddressPermissionsRequestDTO();
     setPermissionsRequest.code = playerAddressPending.code;
     setPermissionsRequest.address = playerAddressPending.address;
@@ -514,13 +530,16 @@ export class AuthManager {
     );
     this.grassManager.registerListener(playerAddressApprovedListener);
 
-    await this.signingClientManager.queueMsgAddressRegister(
+    const registration = await this.signingClientManager.queueMsgAddressRegister(
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
       playerAddressPending.address,
       playerAddressPending.pubkey,
       playerAddressPending.signature,
-      playerAddressPending.permissions
+      playerAddressPending.permissions,
+      {proofContext}
     );
+
+    if (registration.status !== TX_STATUS.SUCCEEDED) return false;
 
     await this.guildAPI.deleteActivationCode(playerAddressPending.code);
 
