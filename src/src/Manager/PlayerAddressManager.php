@@ -5,10 +5,6 @@ namespace App\Manager;
 use App\Constant\ApiParameters;
 use App\Dto\ApiResponseContentDto;
 use App\Entity\Player;
-use App\Entity\PlayerAddress;
-use App\Entity\PlayerAddressMeta;
-use App\Repository\PlayerAddressMetaRepository;
-use App\Repository\PlayerAddressRepository;
 use App\Trait\ApiSqlQueryTrait;
 use App\Trait\ApiFetchEntityTrait;
 use App\Util\ConstraintViolationUtil;
@@ -183,7 +179,7 @@ class PlayerAddressManager
         }
     }
 
-    public function getRegistrationStatus(string $playerId, string $address, AddressRegistrationProofManager $proofManager): Response
+    public function getRegistrationStatus(string $playerId, string $address, AddressRegistrationProofManager $proofManager, bool $withPermissions = false): Response
     {
         $parsed = $this->apiRequestParsingManager->parse(
             [ApiParameters::PLAYER_ID => $playerId, ApiParameters::ADDRESS => $address],
@@ -198,10 +194,14 @@ class PlayerAddressManager
         $content = new ApiResponseContentDto();
         try {
             [$row, $meta] = \App\Util\ConsistentRead::run($db, fn () => [
-                $db->fetchAssociative('SELECT address,player_id,guild_id,status FROM player_address WHERE address=:address', ['address' => $address]),
+                $db->fetchAssociative($withPermissions
+                    ? "SELECT a.address,a.player_id,a.guild_id,a.status,COALESCE(p.val,0)::text AS permissions
+                        FROM player_address a LEFT JOIN permission p ON p.player_id=a.player_id AND p.object_id=a.player_id
+                            AND p.object_type='address' AND p.object_index=a.address WHERE a.address=:address"
+                    : 'SELECT address,player_id,guild_id,status FROM player_address WHERE address=:address', ['address' => $address]),
                 \App\Util\ResponseMetaUtil::snapshotMeta($db),
             ]);
-            $context = $proofManager->readContext($playerId, $address);
+            $context = $withPermissions ? $proofManager->readState($playerId, $address) : $proofManager->readContext($playerId, $address);
             $content->data = ['indexed' => $row ?: null, 'chain' => $context];
             $content->meta = $meta;
             $content->success = true;
@@ -251,8 +251,11 @@ class PlayerAddressManager
      * @return Response
      * @throws Exception
      */
-    public function countPlayerAddresses(string $player_id): Response
+    public function countPlayerAddresses(string $player_id, Security $security): Response
     {
+        if ($player_id !== $security->getUser()->getId()) {
+            return $this->deviceResponse(null, ['forbidden' => 'Device data belongs to another player'], Response::HTTP_FORBIDDEN);
+        }
         $countQuery = "
             SELECT COUNT(*) AS count
             FROM player_address
@@ -263,13 +266,15 @@ class PlayerAddressManager
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
         $requiredFields = [ApiParameters::PLAYER_ID];
 
-        return $this->queryOne(
+        $response = $this->queryOne(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $countQuery,
             $requestParams,
             $requiredFields
         );
+        $response->headers->set('Cache-Control', 'no-store');
+        return $response;
     }
 
     /**
@@ -277,15 +282,18 @@ class PlayerAddressManager
      * @return Response
      * @throws Exception
      */
-    public function getAddressList(string $player_id): Response
+    public function getAddressList(string $player_id, Security $security): Response
     {
+        if ($player_id !== $security->getUser()->getId()) {
+            return $this->deviceResponse(null, ['forbidden' => 'Device data belongs to another player'], Response::HTTP_FORBIDDEN);
+        }
         $query = "
             SELECT 
               pa.address, 
               COALESCE(paa.block_time, pa.updated_at) AS block_time, 
               pam.ip,
               pam.user_agent,
-              p.val AS permissions
+              COALESCE(p.val,0)::text AS permissions
             FROM player_address pa
             LEFT JOIN player_address_activity paa
               ON pa.address = paa.address
@@ -304,13 +312,15 @@ class PlayerAddressManager
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
         $requiredFields = [ApiParameters::PLAYER_ID];
 
-        return $this->queryAll(
+        $response = $this->queryAll(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
             $requiredFields
         );
+        $response->headers->set('Cache-Control', 'no-store');
+        return $response;
     }
 
     /**
@@ -318,7 +328,7 @@ class PlayerAddressManager
      * @return Response
      * @throws Exception
      */
-    public function getAddressDetails(string $address): Response
+    public function getAddressDetails(string $address, Security $security): Response
     {
         $query = "
             SELECT
@@ -329,7 +339,7 @@ class PlayerAddressManager
               pam.ip, 
               pam.user_agent,
               COALESCE(paa.block_time, pa.updated_at) AS block_time,
-              p.val AS permissions,
+              COALESCE(p.val,0)::text AS permissions,
               ai.balance AS alpha
             FROM player_address pa
             LEFT JOIN player_address_meta pam
@@ -345,21 +355,24 @@ class PlayerAddressManager
               ON pa.address = ai.address
                 AND ai.denom = 'alpha'
             WHERE pa.address = :address
+            AND pa.player_id = :player_id
             AND pa.status = 'approved'
             LIMIT 1;
         ";
         // TODO: Will need to get the location associated with the IP address when GeoIP DB added
 
-        $requestParams = [ApiParameters::ADDRESS => $address];
-        $requiredFields = [ApiParameters::ADDRESS];
+        $requestParams = [ApiParameters::ADDRESS => $address, ApiParameters::PLAYER_ID => $security->getUser()->getId()];
+        $requiredFields = [ApiParameters::ADDRESS, ApiParameters::PLAYER_ID];
 
-        return $this->queryOne(
+        $response = $this->queryOne(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
             $requiredFields
         );
+        $response->headers->set('Cache-Control', 'no-store');
+        return $response;
     }
 
     /**
@@ -369,70 +382,31 @@ class PlayerAddressManager
      * @throws RedirectionExceptionInterface
      * @throws ServerExceptionInterface
      */
-    public function addPlayerAddressMeta(
-        Request $request
-    ): Response {
-        $responseContent = new ApiResponseContentDto();
+    public function addPlayerAddressMeta(Request $request, Security $security): Response
+    {
+        $parsed = $this->apiRequestParsingManager->parseJsonRequest($request,
+            [ApiParameters::ADDRESS, ApiParameters::GUILD_ID], [ApiParameters::USER_AGENT]);
+        if ($parsed->errors) return $this->deviceResponse(null, $parsed->errors, Response::HTTP_BAD_REQUEST);
 
-        /** @var PlayerAddressMetaRepository $playerAddressMetaRepository */
-        $playerAddressMetaRepository = $this->entityManager->getRepository(PlayerAddressMeta::class);
-
-        /** @var PlayerAddressRepository $playerAddressRepository */
-        $playerAddressRepository = $this->entityManager->getRepository(PlayerAddress::class);
-
-        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest($request, [
-            ApiParameters::ADDRESS,
-            ApiParameters::GUILD_ID
-        ], [
-            ApiParameters::USER_AGENT
-        ]);
-
-        $responseContent->errors = $parsedRequest->errors;
-
-        if (count($responseContent->errors) > 0) {
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_BAD_REQUEST
-            );
+        // Check ownership in the write itself; a caller-supplied address/guild
+        // does not authorize changing another player's private device record.
+        $address = $this->entityManager->getConnection()->fetchOne('
+            INSERT INTO player_address_meta(address,ip,user_agent,updated_at)
+            SELECT a.address,CAST(:ip AS inet),:user_agent,statement_timestamp()
+            FROM player_address a JOIN player p ON p.id = a.player_id AND p.guild_id = a.guild_id
+            WHERE a.address = :address AND a.player_id = :player_id AND a.guild_id = :guild_id
+                AND a.status = \'approved\'
+            ON CONFLICT (address) DO UPDATE SET ip = EXCLUDED.ip,
+                user_agent = EXCLUDED.user_agent,updated_at = EXCLUDED.updated_at
+            RETURNING address', [
+                'address' => $parsed->params->address, 'guild_id' => $parsed->params->guild_id,
+                'player_id' => $security->getUser()->getId(), 'ip' => $request->getClientIp(),
+                'user_agent' => $parsed->params->user_agent,
+            ]);
+        if ($address === false) {
+            return $this->deviceResponse(null, ['address_does_not_exist' => 'Approved address does not belong to this player and guild'], Response::HTTP_FORBIDDEN);
         }
-
-        if (
-            !$playerAddressRepository->findApprovedByAddressAndGuild(
-                $parsedRequest->params->address,
-                $parsedRequest->params->guild_id
-            )
-        ) {
-            $responseContent->errors = ['address_does_not_exist' => 'Address does not exist'];
-
-            return new JsonResponse(
-                $responseContent,
-                Response::HTTP_BAD_REQUEST
-            );
-        }
-
-        $playerAddressMeta = $playerAddressMetaRepository->find($parsedRequest->params->address);
-        $isNew = !$playerAddressMeta;
-
-        if ($isNew) {
-            $playerAddressMeta = new PlayerAddressMeta();
-            $playerAddressMeta->setAddress($parsedRequest->params->address);
-        }
-
-        $playerAddressMeta->setIp($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null);
-        $playerAddressMeta->setUserAgent($parsedRequest->params->user_agent);
-
-        if ($isNew) {
-            $this->entityManager->persist($playerAddressMeta);
-        }
-
-        $this->entityManager->flush();
-
-        $responseContent->success = true;
-
-        return new JsonResponse(
-            $responseContent,
-            Response::HTTP_CREATED
-        );
+        return $this->deviceResponse(null, [], Response::HTTP_CREATED);
     }
 
     /**
@@ -516,52 +490,10 @@ class PlayerAddressManager
         Request $request,
         Security $security
     ): Response {
-        /** @var Player $player */
-        $player = $security->getUser();
-        $player_id = $player->getId();
-
-        $responseContent = new ApiResponseContentDto();
-
-        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest(
-            $request,
-            [
-                ApiParameters::ADDRESS,
-                ApiParameters::PERMISSIONS
-            ]
-        );
-
-        $responseContent->errors = $parsedRequest->errors;
-
-        if (count($responseContent->errors) > 0) {
-            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
-        }
-
-        $query = "
-            UPDATE permission
-            SET val = :permissions
-            WHERE player_id = :player_id
-            AND object_id = :player_id
-            AND object_type = 'address'
-            AND object_index = :address;
-        ";
-
-        $db = $this->entityManager->getConnection();
-        $rowsAffected = $db->executeStatement($query, [
-            'permissions' => intval($parsedRequest->params->permissions),
-            'player_id' => $player_id,
-            'address' => $parsedRequest->params->address
-        ]);
-
-        $responseContent->data = ['rows_affected' => $rowsAffected];
-        $responseContent->success = $rowsAffected > 0;
-        $status = Response::HTTP_OK;
-
-        if (!$responseContent->success) {
-            $responseContent->errors = ['not_found' => 'Address not found in DB.'];
-            $status = Response::HTTP_INTERNAL_SERVER_ERROR;
-        }
-
-        return new JsonResponse($responseContent, $status);
+        // Permissions are chain state. A successful SQL write cannot grant or
+        // revoke the signing authority represented by this projection.
+        return $this->deviceResponse(null, ['chain_transaction_required' => 'Submit MsgPermissionSetOnAddress and wait for confirmed indexing'],
+            Response::HTTP_GONE);
     }
 
     /**

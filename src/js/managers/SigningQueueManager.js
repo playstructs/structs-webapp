@@ -1,3 +1,4 @@
+import {deviceChangeIntent} from "../util/DeviceChangeIntent";
 import {EVENTS} from "../constants/Events";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {SIGNING_QUEUE} from "../constants/SigningQueueConstants";
@@ -151,6 +152,18 @@ export class SigningQueueManager {
   }
 
   findRegistration(ownerId, address) {
+    return this.#findIntent(tx=>tx?.intent?.kind === 'address_register' && tx.intent.ownerId === ownerId && tx.intent.address === address);
+  }
+
+  findPendingDeviceChange(ownerId, address) {
+    return this.#findIntent(tx=>tx?.intent?.kind === 'device_change' && tx.intent.ownerId === ownerId && tx.intent.address === address && !tx.isTerminal());
+  }
+
+  enqueueDeviceChange(value) {
+    return this.#enqueueIntent(deviceChangeIntent(value));
+  }
+
+  #findIntent(matches) {
     this.loadPersistedState();
     if (this.recoveryError) throw new Error('Saved signing evidence requires recovery');
     this.#bindScope();
@@ -159,7 +172,7 @@ export class SigningQueueManager {
     if (!this.working) this.#mergeJournal(new TransactionJournal(this.gameState.signingAccount.address),false);
     const candidates=[...this.immediateQueue,...this.actionQueue,...this.unresolved.values(),...this.completed.values(),
       ...(this.inFlight ? [this.inFlight] : [])];
-    return candidates.filter(tx=>tx?.intent?.kind === 'address_register' && tx.intent.ownerId === ownerId && tx.intent.address === address)
+    return candidates.filter(matches)
       .sort((a,b)=>Number(a.isTerminal())-Number(b.isTerminal()) || b.createdAt-a.createdAt || b.id.localeCompare(a.id))[0] ?? null;
   }
 

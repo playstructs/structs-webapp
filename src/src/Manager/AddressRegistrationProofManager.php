@@ -15,6 +15,16 @@ class AddressRegistrationProofManager
 
     public function readContext(string $playerId, string $address): array
     {
+        return $this->readAddress($playerId, $address, false);
+    }
+
+    public function readState(string $playerId, string $address): array
+    {
+        return $this->readAddress($playerId, $address, true);
+    }
+
+    private function readAddress(string $playerId, string $address, bool $withPermissions): array
+    {
         self::validateIdentity($playerId, $address);
         $deadline = hrtime(true) / 1e9 + 15.0;
         $head = $this->chain->head(ChainProtocol::CHAIN_ID, $deadline);
@@ -44,7 +54,7 @@ class AddressRegistrationProofManager
             'player_id' => $playerId, 'address' => $address, 'proof_nonce' => $nonce,
             'registered_player_id' => $owner,
             'timeout_height' => $protocol === ChainProtocol::LEGACY ? ChainProtocol::legacyTimeoutHeight() : '0',
-        ];
+        ] + ($withPermissions ? ['permissions' => ExactAmount::unsigned($row['permissions'] ?? null, '18446744073709551615')] : []);
     }
 
     public static function message(array $context): string

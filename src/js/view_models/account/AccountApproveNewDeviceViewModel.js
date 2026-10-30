@@ -1,9 +1,9 @@
+import {selectedDevicePermissions} from "../../util/DeviceChangeIntent";
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {UserAgent} from "../../models/UserAgent";
 import {PlayerAddressPending} from "../../models/PlayerAddressPending";
 import {Blockies} from "../../vendor/Blockies";
-import {PERMISSIONS} from "../../constants/Permissions";
 
 export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
 
@@ -36,13 +36,9 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
     document.getElementById(`${this.approveDeviceBtnId}`).addEventListener(
       'click',
       () => {
-        this.playerAddressPending.permissions = this.permissionManager.getDefaultPlayerPermissions();
-        this.playerAddressPending.permissions |= (document.getElementById(this.manageDevicesCheckboxId).checked
-          ? this.permissionManager.getManageDevicesPermissions()
-          : 0);
-        this.playerAddressPending.permissions |= document.getElementById(this.transferAssetsCheckboxId).checked
-          ? PERMISSIONS.ASSETS_ALL
-          : 0;
+        this.playerAddressPending.permissions = selectedDevicePermissions(String(this.permissionManager.getDefaultPlayerPermissions()),
+          document.getElementById(this.manageDevicesCheckboxId).checked,
+          document.getElementById(this.transferAssetsCheckboxId).checked);
 
         MenuPage.router.goto('Account', 'activatingDevice', this.playerAddressPending);
       }

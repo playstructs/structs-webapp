@@ -262,8 +262,8 @@ export class GuildAPI {
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
-  async logout() {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/auth/logout`);
+  async logout(options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/auth/logout`, options);
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
@@ -403,8 +403,8 @@ export class GuildAPI {
    * @param {string} playerId
    * @return {Promise<PlayerAddress[]>}
    */
-  async getPlayerAddressList(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/player/${playerId}`);
+  async getPlayerAddressList(playerId, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/player/${playerId}`, {timeoutMs:16000,...options});
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.playerAddressFactory.parseList(response.data);
@@ -491,6 +491,12 @@ export class GuildAPI {
    * @param {string} address
    * @return {Promise<PlayerAddress>}
    */
+  async getDeviceState(address, options = {}) {
+    const response=await this.ajax.get(`${this.apiUrl}/player-address/${encodeURIComponent(address)}/state`,{timeoutMs:16000,...options});
+    if (response.success !== true || !response.meta || !response.data) throw new Error('Device state is unavailable');
+    return response;
+  }
+
   async getRegistrationStatus(playerId, address, options = {}) {
     const response=await this.ajax.get(`${this.apiUrl}/auth/player-address/${encodeURIComponent(address)}/player/${encodeURIComponent(playerId)}/registration`,
       {timeoutMs:16000,...options});
@@ -506,11 +512,11 @@ export class GuildAPI {
     return response.data;
   }
 
-  async getPlayerAddress(address) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/${address}`);
+  async getPlayerAddress(address, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/${address}`, {timeoutMs:16000,...options});
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.playerAddressFactory.make(response.data);
+    return response.data === null ? null : this.playerAddressFactory.make(response.data);
   }
 
   /**

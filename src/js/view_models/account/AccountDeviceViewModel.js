@@ -3,7 +3,7 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {UserAgent} from "../../models/UserAgent";
 import {PERMISSIONS} from "../../constants/Permissions";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
-import {SetAddressPermissionsRequestDTO} from "../../dtos/SetAddressPermissionsRequestDTO";
+import {selectedDevicePermissions} from "../../util/DeviceChangeIntent";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
 
 export class AccountDeviceViewModel extends AbstractViewModel {
@@ -19,12 +19,14 @@ export class AccountDeviceViewModel extends AbstractViewModel {
     guildAPI,
     permissionManager,
     deviceAddress,
+    authManager,
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.permissionManager = permissionManager;
     this.deviceAddress = deviceAddress;
+    this.authManager = authManager;
     this.playerAddressDetails = null;
     this.deviceLogoutBtnId = 'deviceLogoutBtn';
     this.manageDevicesCheckboxId = 'manageDevicesCheckbox';
@@ -35,6 +37,8 @@ export class AccountDeviceViewModel extends AbstractViewModel {
     this.isPrimaryDevice = (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.primary_address === this.deviceAddress.address);
     this.isCurrentDevice = (this.gameState.signingAccount.address === this.deviceAddress.address);
     this.canEditPermissions = true;
+    this.canRevokeCurrentDevice = false;
+    this.saving = false;
   }
 
   initPageCode() {
@@ -49,15 +53,12 @@ export class AccountDeviceViewModel extends AbstractViewModel {
       document.getElementById(this.saveDeviceChangesBtnId).addEventListener(
         'click',
         () => {
-          const request = new SetAddressPermissionsRequestDTO();
-          request.address = this.playerAddressDetails.address;
-          request.permissions = this.permissionManager.getDefaultPlayerPermissions();
-          request.permissions |= (document.getElementById(this.manageDevicesCheckboxId).checked
-            ? this.permissionManager.getManageDevicesPermissions()
-            : 0);
-          request.permissions |= document.getElementById(this.transferAssetsCheckboxId).checked
-            ? PERMISSIONS.ASSETS_ALL
-            : 0;
+          if (this.saving) return;
+          const expected=this.playerAddressDetails.permissions;
+          const permissions=selectedDevicePermissions(expected,
+            document.getElementById(this.manageDevicesCheckboxId).checked,
+            document.getElementById(this.transferAssetsCheckboxId).checked);
+          this.saving = true;
 
           const options = new MenuWaitingOptions();
           options.headerBtnLabel = 'Manage Device';
@@ -65,8 +66,14 @@ export class AccountDeviceViewModel extends AbstractViewModel {
 
           MenuPage.router.goto('Generic', 'menuWaiting', options);
 
-          this.guildAPI.setAddressPermissions(request).then(() => {
-            MenuPage.router.goto('Account', 'devices');
+          const signal=MenuPage.router.navigationSignal;
+          this.authManager.setDevicePermissions(this.playerAddressDetails.address,permissions,expected,signal).then(success=>{
+            if (!signal.aborted) MenuPage.router.goto('Account',success ? 'devices' : 'manageDevice',this.deviceAddress);
+          }).catch(error=>{
+            if (!signal.aborted) {
+              console.debug('[DevicePermissions] change unavailable:',error);
+              MenuPage.router.goto('Account','manageDevice',this.deviceAddress);
+            }
           });
         }
       );
@@ -77,7 +84,9 @@ export class AccountDeviceViewModel extends AbstractViewModel {
       logoutBtn.addEventListener(
         'click',
         () => {
-          if (!this.isPrimaryDevice && this.playerAddressDetails.alpha) {
+          if (this.isCurrentDevice && !this.canRevokeCurrentDevice) {
+            MenuPage.router.goto('Auth', 'logout');
+          } else if (!this.isPrimaryDevice && this.playerAddressDetails.alpha && BigInt(this.playerAddressDetails.alpha) > 0n) {
             MenuPage.router.goto('Auth', 'logoutAssetsWarning', this.playerAddressDetails);
           } else if (this.playerAddressDetails.isOnlyManagingDevice) {
             MenuPage.router.goto('Auth', 'logoutPermissionsWarning', this.playerAddressDetails);
@@ -91,18 +100,26 @@ export class AccountDeviceViewModel extends AbstractViewModel {
   }
 
   render() {
-    const fetchTargetDevice = this.guildAPI.getPlayerAddress(this.deviceAddress.address);
+    const signal=MenuPage.router.navigationSignal;
+    const fetchTargetDevice = this.guildAPI.getPlayerAddress(this.deviceAddress.address,{signal});
     const fetchCurrentDevice = this.isCurrentDevice
       ? fetchTargetDevice
-      : this.guildAPI.getPlayerAddress(this.gameState.signingAccount.address);
+      : this.guildAPI.getPlayerAddress(this.gameState.signingAccount.address,{signal});
 
     Promise.all([fetchTargetDevice, fetchCurrentDevice]).then(([playerAddress, currentDevicePlayerAddress]) => {
+      if (signal.aborted) return;
+      if (playerAddress?.address !== this.deviceAddress.address
+          || currentDevicePlayerAddress?.address !== this.gameState.signingAccount.address) {
+        MenuPage.router.goto('Account','devices');
+        return;
+      }
       this.playerAddressDetails = playerAddress;
       this.playerAddressDetails.isOnlyManagingDevice = this.deviceAddress.isOnlyManagingDevice;
 
-      const currentDevicePermissions = parseInt(currentDevicePlayerAddress.permissions);
+      const currentDevicePermissions = BigInt(currentDevicePlayerAddress.permissions);
+      this.canRevokeCurrentDevice = (currentDevicePermissions & BigInt(PERMISSIONS.DELETE)) !== 0n;
       this.canEditPermissions =
-        (currentDevicePermissions & this.permissionManager.getManageDevicesPermissions()) === this.permissionManager.getManageDevicesPermissions();
+        (currentDevicePermissions & BigInt(this.permissionManager.getManageDevicesPermissions())) === BigInt(this.permissionManager.getManageDevicesPermissions());
 
       const userAgent = new UserAgent(playerAddress.user_agent);
 
@@ -129,8 +146,8 @@ export class AccountDeviceViewModel extends AbstractViewModel {
         `;
       }
 
-      const isCheckedManageDevices = (parseInt(playerAddress.permissions) & this.permissionManager.getManageDevicesPermissions()) === this.permissionManager.getManageDevicesPermissions();
-      const isCheckedTransferAssets = (parseInt(playerAddress.permissions) & PERMISSIONS.ASSETS_ALL) === PERMISSIONS.ASSETS_ALL;
+      const isCheckedManageDevices = (BigInt(playerAddress.permissions) & BigInt(this.permissionManager.getManageDevicesPermissions())) === BigInt(this.permissionManager.getManageDevicesPermissions());
+      const isCheckedTransferAssets = (BigInt(playerAddress.permissions) & BigInt(PERMISSIONS.ASSETS_ALL)) === BigInt(PERMISSIONS.ASSETS_ALL);
       const checkboxDisabledAttr = this.canEditPermissions ? '' : 'disabled';
 
       MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
@@ -231,6 +248,11 @@ export class AccountDeviceViewModel extends AbstractViewModel {
       MenuPage.hideAndClearDialoguePanel();
 
       this.initPageCode();
+    }).catch(error=>{
+      if (!signal.aborted) {
+        console.debug('[DevicePermissions] device unavailable:',error);
+        MenuPage.router.goto('Account','devices');
+      }
     });
   }
 }

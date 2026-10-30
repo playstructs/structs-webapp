@@ -60,6 +60,28 @@ async function ready(base) {
         await ready(proxied);
         let checks = 0;
         for (const [surface, base] of [['apache', direct], ['control-dev-proxy', proxied]]) {
+            for (const route of ['/api/player-address/player/1-990970', '/api/player-address/count/player/1-990970',
+                '/api/player-address/cataloghttpprimary']) {
+                assert.equal((await request(base, route, false)).status, 401);
+                const owned = await request(base, route);
+                assert.equal(owned.status, 200, surface + ' own private device read');
+                assert.equal(owned.headers.get('cache-control').includes('no-store'), true);
+                checks++;
+            }
+            for (const route of ['/api/player-address/player/1-990971', '/api/player-address/count/player/1-990971']) {
+                assert.equal((await request(base, route)).status, 403, surface + ' refuses other player device data');
+                checks++;
+            }
+            for (const [address, expected] of [['cataloghttpprimary', 201], ['cataloghttpother', 403]]) {
+                const response = await fetch(base + '/api/player-address/meta', {method:'POST',
+                    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+                    body:JSON.stringify({address,guild_id:'0-990970',user_agent:surface}),signal:AbortSignal.timeout(10000)});
+                assert.equal(response.status, expected, surface + ' scoped private metadata write');
+                checks++;
+            }
+            const device = await request(base, '/api/player-address/cataloghttpprimary');
+            assert.equal((await device.json()).data.user_agent, surface, surface + ' metadata persisted under restricted role');
+            checks++;
             // Signup bootstrap reads are deliberately public, including equivalent API paths.
             for (const prefix of surface === 'apache' ? ['/api/', '/api%2F', '/%61pi/'] : ['/api/', '/api%2F']) {
                 for (const route of ['guild/this', 'setting', 'timestamp']) {
@@ -82,7 +104,17 @@ async function ready(base) {
             assert.equal(registration.status, 400, surface + ' registration association is public but validates its identity');
             assert.equal(registration.headers.get('cache-control').includes('no-store'), true);
             assert.equal((await request(base, '/api/player-address/code/ZZZQQ')).status, 400, 'Issued instance is mandatory');
-            checks += 5;
+            assert.equal((await request(base, '/api/player-address/invalid/state', false)).status, 401, 'Device state is authenticated');
+            assert.equal((await request(base, '/api/player-address/invalid/state')).status, 400);
+            for (const auth of [false,true]) {
+                const response = await fetch(base + '/api/player-address/permissions', {method:'PUT',
+                    headers: {'Content-Type':'application/json',...(auth ? {Authorization:'Bearer '+token} : {})},
+                    body:JSON.stringify({address:'structs19rl4cm2hmr8afy4kldpxz3fka4jguq0acpz60a',permissions:'0'}),
+                    signal:AbortSignal.timeout(10000)});
+                assert.equal(response.status,auth ? 410 : 401,'Permission writes require a chain transaction');
+                if (auth) assert.equal((await response.json()).success,false);
+            }
+            checks += 9;
             const guildRoutes = ['guild/this', 'guild/name', 'guild/count', 'guild/directory', 'guild/0-990970',
                 'guild/0-990970/name', 'guild/0-990970/members/count', 'guild/0-990970/power/stats',
                 'guild/0-990970/roster', 'guild/0-990970/planet/complete/count'];
@@ -202,7 +234,9 @@ async function ready(base) {
         for (const name of [proxy, apache]) { try { docker(['rm', '-f', name]); } catch (_) {} }
         if (attached) docker(['network', 'disconnect', network, database]);
         try { docker(['network', 'rm', network]); } catch (_) {}
-        if (seeded) sql("BEGIN; DELETE FROM structs.api_inventory WHERE owner_type='address' AND owner_id IN ('cataloghttpfirst','cataloghttpsecond');\n" +
+        if (seeded) sql("BEGIN; DELETE FROM structs.player_address_meta WHERE address='cataloghttpprimary';\n" +
+            "DELETE FROM structs.player_address WHERE address='cataloghttpprimary';\n" +
+            "DELETE FROM structs.api_inventory WHERE owner_type='address' AND owner_id IN ('cataloghttpfirst','cataloghttpsecond');\n" +
             "DELETE FROM structs.provider WHERE id IN ('9-990970','9-990971','9-990972','9-990973');\n" +
             "DELETE FROM structs.player_address WHERE player_id='1-990970'; DELETE FROM structs.player WHERE id='1-990970'; " +
             "DELETE FROM structs.guild_meta WHERE id='0-990970'; DELETE FROM structs.reactor WHERE id='3-990970'; DELETE FROM structs.guild WHERE id='0-990970'; COMMIT;");

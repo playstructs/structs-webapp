@@ -131,7 +131,8 @@ export class AccountController extends AbstractController {
       this.gameState,
       this.guildAPI,
       this.permissionManager,
-      deviceAddress
+      deviceAddress,
+      this.authManager
     );
     viewModel.render();
   }

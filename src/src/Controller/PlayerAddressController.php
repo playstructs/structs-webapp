@@ -52,6 +52,14 @@ class PlayerAddressController extends AbstractController
         return $manager->getRegistrationProofContext($player_id, $address, $proofManager);
     }
 
+    #[Route('/api/player-address/{address}/state', name: 'api_get_device_state', methods: ['GET'])]
+    public function getDeviceState(string $address, EntityManagerInterface $entityManager, ValidatorInterface $validator,
+        Security $security, AddressRegistrationProofManager $proofManager): Response
+    {
+        return (new PlayerAddressManager($entityManager, $validator))->getRegistrationStatus(
+            $security->getUser()->getId(), $address, $proofManager, true);
+    }
+
     #[Route('/api/auth/player-address/{address}/player/{player_id}/registration', name: 'api_get_address_registration_status', methods: ['GET'])]
     public function getAddressRegistrationStatus(string $address, string $player_id, EntityManagerInterface $entityManager,
         ValidatorInterface $validator, AddressRegistrationProofManager $proofManager): Response
@@ -108,10 +116,11 @@ class PlayerAddressController extends AbstractController
     public function addPlayerAddressMeta(
         Request $request,
         ValidatorInterface $validator,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        Security $security
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
-        return $playerAddressManager->addPlayerAddressMeta($request);
+        return $playerAddressManager->addPlayerAddressMeta($request, $security);
     }
 
     /**
@@ -198,10 +207,11 @@ class PlayerAddressController extends AbstractController
     public function countAddresses(
         string $player_id,
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        Security $security
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
-        return $playerAddressManager->countPlayerAddresses($player_id);
+        return $playerAddressManager->countPlayerAddresses($player_id, $security);
     }
 
     /**
@@ -219,10 +229,11 @@ class PlayerAddressController extends AbstractController
     public function getAddressList(
         string $player_id,
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        Security $security
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
-        return $playerAddressManager->getAddressList($player_id);
+        return $playerAddressManager->getAddressList($player_id, $security);
     }
 
     /**
@@ -285,9 +296,10 @@ class PlayerAddressController extends AbstractController
     public function getAddressDetails(
         string $address,
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        Security $security
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
-        return $playerAddressManager->getAddressDetails($address);
+        return $playerAddressManager->getAddressDetails($address, $security);
     }
 }

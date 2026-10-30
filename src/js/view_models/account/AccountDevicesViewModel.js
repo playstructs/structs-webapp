@@ -36,7 +36,7 @@ export class AccountDevicesViewModel extends AbstractViewModel {
 
     let numManagingDevices = 0;
     this.devices.forEach((device) => {
-      numManagingDevices += ((parseInt(device.playerAddress.permissions) & this.permissionManager.getManageDevicesPermissions()) === this.permissionManager.getManageDevicesPermissions()) ? 1 : 0;
+      numManagingDevices += ((BigInt(device.playerAddress.permissions) & BigInt(this.permissionManager.getManageDevicesPermissions())) === BigInt(this.permissionManager.getManageDevicesPermissions())) ? 1 : 0;
     });
 
     this.devices.forEach((device, address) => {
@@ -44,7 +44,7 @@ export class AccountDevicesViewModel extends AbstractViewModel {
       document.getElementById(`manage-${address}`).addEventListener('click', () => {
         if (
           numManagingDevices === 1
-          && ((parseInt(device.playerAddress.permissions) & this.permissionManager.getManageDevicesPermissions()) === this.permissionManager.getManageDevicesPermissions())
+          && ((BigInt(device.playerAddress.permissions) & BigInt(this.permissionManager.getManageDevicesPermissions())) === BigInt(this.permissionManager.getManageDevicesPermissions()))
         ) {
           device.playerAddress.isOnlyManagingDevice = true;
         }
@@ -111,7 +111,10 @@ export class AccountDevicesViewModel extends AbstractViewModel {
   }
 
   render () {
-    this.guildAPI.getPlayerAddressList(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then((playerAddresses) => {
+    const signal=MenuPage.router.navigationSignal;
+    this.guildAPI.getPlayerAddressList(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,{signal}).then((playerAddresses) => {
+      if (signal.aborted) return;
+      this.devices.clear();
 
       const deviceListHtml = playerAddresses.reduce((html, playerAddress) => {
         return html + this.renderDevice(playerAddress)
@@ -136,6 +139,11 @@ export class AccountDevicesViewModel extends AbstractViewModel {
       MenuPage.hideAndClearDialoguePanel();
 
       this.initPageCode();
+    }).catch(error=>{
+      if (!signal.aborted) {
+        console.debug('[Devices] list unavailable:',error);
+        MenuPage.router.goto('Account','index');
+      }
     });
   }
 }

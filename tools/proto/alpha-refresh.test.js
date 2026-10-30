@@ -25,7 +25,11 @@ const player=(height='3353000',amount='2999999',id='1-1')=>({id,load:7,alpha:'99
 let AuthManager;
 const deferred=()=>{let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};};
 async function until(check,label){for(let i=0;i<100;i++){if(check())return;await pause(5);}throw new Error(`Timed out: ${label}`);}
-function environment(){globalThis.window=new EventTarget();globalThis.document=new EventTarget();document.visibilityState='visible';}
+function environment(){
+  globalThis.window=new EventTarget();globalThis.document=new EventTarget();document.visibilityState='visible';
+  const memory=new Map();globalThis.localStorage={getItem:k=>memory.get(k)??null,setItem:(k,v)=>memory.set(k,v),
+    removeItem:k=>memory.delete(k),key:i=>[...memory.keys()][i],get length(){return memory.size;}};
+}
 function state(){
   const key=new KeyPlayer('player',false);key.setId('1-1');key.setPlayer(player());
   return {persistenceEnabled:true,currentBlockHeight:3353000,signingAccount:{address:address(2)},thisGuild:{id:'0-1'},keyPlayers:{player:key}};

@@ -1,3 +1,4 @@
+import {prepareDeviceChange} from "./DeviceChangePreparation";
 import {accountFromAny} from "@cosmjs/stargate";
 import {fromHex, toBase64, toHex} from "@cosmjs/encoding";
 import {toRfc3339WithNanoseconds} from "@cosmjs/tendermint-rpc";
@@ -33,10 +34,11 @@ export class SigningSubmission {
     };
     check();
     const isRegistration = tx.intent?.kind === 'address_register';
-    const isEconomic = tx.intent && !isRegistration;
+    const isDeviceChange = tx.intent?.kind === 'device_change';
+    const isEconomic = ['alpha_transfer','reactor_change','generator_fund'].includes(tx.intent?.kind);
     const isReactor = tx.intent?.kind === 'reactor_change';
     const isGenerator = tx.intent?.kind === 'generator_fund';
-    const prepareIntent = {address_register:prepareRegistration,alpha_transfer:prepareTransfer,reactor_change:prepareReactor,generator_fund:prepareGenerator}[tx.intent?.kind];
+    const prepareIntent = {device_change:prepareDeviceChange,address_register:prepareRegistration,alpha_transfer:prepareTransfer,reactor_change:prepareReactor,generator_fund:prepareGenerator}[tx.intent?.kind];
     if (tx.intent && !prepareIntent) throw new Error('Unsupported transaction intent');
     const isWithdrawal = isReactor && tx.intent.direction === 'defuse';
     const data = isEconomic ? await manager.gameState.guildAPI[isWithdrawal ? 'getInfusionByPlayerId' : 'getPlayer'](tx.intent.ownerId) : null;
@@ -98,7 +100,7 @@ export class SigningSubmission {
     check();
     if (protocolAtHeight(current.chainId,current.height)!==context.protocol) throw new SigningDeferredError('Protocol changed while signing');
     return {...submission,connectionEpoch:epoch,...(tx.intent
-      ? (isRegistration ? {registration:accountSnapshot.data.prepared.registration} : isReactor ? {reactor:accountSnapshot.data.prepared.reactor} : isGenerator
+      ? (isDeviceChange ? {deviceChange:accountSnapshot.data.prepared.deviceChange} : isRegistration ? {registration:accountSnapshot.data.prepared.registration} : isReactor ? {reactor:accountSnapshot.data.prepared.reactor} : isGenerator
         ? {generator:accountSnapshot.data.prepared.generator} : {transfer:accountSnapshot.data.prepared.transfer}) : {})};
   }
 

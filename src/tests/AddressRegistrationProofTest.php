@@ -53,6 +53,15 @@ class AddressRegistrationProofTest extends TestCase
         }
     }
 
+    public function testDeviceStatePreservesExactNativePermissions(): void
+    {
+        $state = $this->manager(['address_row' => ['permissions' => '18446744073709551615']])->readState('1-137', self::ADDRESS);
+        $this->assertSame('18446744073709551615', $state['permissions']);
+        $this->assertArrayNotHasKey('permissions', $this->manager()->readContext('1-137', self::ADDRESS), 'Proof response shape is unchanged');
+        $this->expectException(UnexpectedValueException::class);
+        $this->manager(['address_row' => ['permissions' => 127]])->readState('1-137', self::ADDRESS);
+    }
+
     public function testLegacyProofKeepsItsFormatAndRequiresSignedExpiry(): void
     {
         $context = $this->manager(['height' => '3352999', 'missing_nonce' => true,

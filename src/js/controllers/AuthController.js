@@ -291,7 +291,7 @@ export class AuthController extends AbstractController {
   /**
    * @param {object} options
    */
-  logout(options) {
+  logout(options = {}) {
 
     const addressToRevoke = options.hasOwnProperty('address') ? options.address : null;
 
@@ -302,7 +302,16 @@ export class AuthController extends AbstractController {
     MenuPage.router.goto('Generic', 'menuWaiting', menuWaitingOptions);
 
     if (addressToRevoke) {
-      this.authManager.revokeAddress(addressToRevoke).then();
+      const signal=MenuPage.router.navigationSignal;
+      const isCurrentDevice=addressToRevoke === this.gameState.signingAccount.address;
+      this.authManager.revokeAddress(addressToRevoke,signal).then(success=>{
+        if (!signal.aborted && (!success || !isCurrentDevice)) MenuPage.router.goto('Account','devices');
+      }).catch(error=>{
+        if (!signal.aborted) {
+          console.debug('[DeviceRevocation] revocation unavailable:',error);
+          MenuPage.router.goto('Account','devices');
+        }
+      });
     } else {
       this.authManager.logout();
     }

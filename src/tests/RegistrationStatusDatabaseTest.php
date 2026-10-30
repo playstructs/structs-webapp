@@ -56,6 +56,29 @@ class RegistrationStatusDatabaseTest extends ApiManagerTestCase
             $this->assertSame(['address' => self::ADDRESS, 'player_id' => '1-990965', 'guild_id' => '0-990965', 'status' => 'approved'], $body['data']['indexed']);
 
             $db->executeStatement('RESET ROLE');
+            $db->executeStatement("INSERT INTO structs.permission(id,object_id,object_type,object_index,player_id,val)
+                VALUES('device-state-permission','1-990965','address',:address,'1-990965',33554431)", ['address' => self::ADDRESS]);
+            $db->executeStatement('SET LOCAL ROLE structs_webapp');
+            $stateProof = $this->createMock(AddressRegistrationProofManager::class);
+            $stateProof->expects($this->never())->method('readContext');
+            $stateProof->method('readState')->willReturn($context + ['permissions' => '33554431']);
+            $device = json_decode($manager->getRegistrationStatus('1-990965', self::ADDRESS, $stateProof, true)->getContent(), true);
+            $this->assertSame('33554431', $device['data']['indexed']['permissions']);
+            $this->assertSame('33554431', $device['data']['chain']['permissions']);
+            $this->assertSame('3353011', $device['meta']['height']);
+            $security = $this->createStub(\Symfony\Bundle\SecurityBundle\Security::class);
+            $request = \Symfony\Component\HttpFoundation\Request::create('/api/player-address/permissions', 'PUT', [], [], [], [],
+                json_encode(['address' => self::ADDRESS, 'permissions' => '0']));
+            $retired = $manager->setAddressPermissions($request, $security);
+            $this->assertSame(410, $retired->getStatusCode());
+            $this->assertSame(33554431, $db->fetchOne("SELECT val FROM permission WHERE id='device-state-permission'"), 'HTTP cannot change the chain projection');
+            $db->executeStatement('RESET ROLE');
+            $db->executeStatement("DELETE FROM structs.permission WHERE id='device-state-permission'");
+            $db->executeStatement('SET LOCAL ROLE structs_webapp');
+            $device = json_decode($manager->getRegistrationStatus('1-990965', self::ADDRESS, $stateProof, true)->getContent(), true);
+            $this->assertSame('0', $device['data']['indexed']['permissions'], 'Missing native permission row represents zero, not a guessed default grant');
+
+            $db->executeStatement('RESET ROLE');
             $db->executeStatement("UPDATE structs.player_address SET player_id='1-990966' WHERE address=:address", ['address' => self::ADDRESS]);
             $db->executeStatement('DELETE FROM sync_state.economy_contract');
             $db->executeStatement('SET LOCAL ROLE structs_webapp');

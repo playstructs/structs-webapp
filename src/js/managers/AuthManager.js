@@ -1,3 +1,8 @@
+import {CHAIN} from "../constants/ChainConstants";
+import {deviceChangeIntent} from "../util/DeviceChangeIntent";
+import {readDeviceContext, readDeviceAuthority} from "./DeviceChangePreparation";
+import {PERMISSIONS} from "../constants/Permissions";
+import {deviceChangeCommit, waitForDeviceChange} from "../util/DeviceChangeCompletion";
 import {DeviceRegistrationStore} from "./DeviceRegistrationStore";
 import {registrationAssociation, registrationCommit, waitForRegistration} from "../util/RegistrationCompletion";
 import {registrationIntent} from "../util/RegistrationIntent";
@@ -418,19 +423,89 @@ export class AuthManager {
   /**
    * @param {string|null} addressToRevoke
    */
-  async revokeAddress(addressToRevoke) {
-    this.grassManager.registerListener(new PlayerAddressRevokedListener(
-      this.gameState,
-      this.guildAPI,
-      addressToRevoke
-    ));
+  deviceActionKey(address) {
+    return `deviceChange:${CHAIN.ID}:${this.gameState.signingAccount.address}:${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}:${address}`;
+  }
 
-    await this.signingClientManager.queueMsgAddressRevoke(
-      addressToRevoke
-    );
+  async changeDevice(address, operation, permissions, expectedPermissions, signal) {
+    const ownerId=this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id, signer=this.gameState.signingAccount.address;
+    const key=this.deviceActionKey(address), queue=this.signingClientManager.queue;
+    if (!globalThis.navigator?.locks?.request) throw new Error('Exclusive device action storage is unavailable');
+    const id=await navigator.locks.request(key,{mode:'exclusive',ifAvailable:true},async lock=>{
+      if (!lock) throw new Error('A device action is already being prepared');
+      const pending=queue.findPendingDeviceChange(ownerId,address);
+      const raw=localStorage.getItem(key), saved=raw ? JSON.parse(raw) : null;
+      let existing=pending ?? (saved ? queue.getTransaction(saved.id) : null);
+      if (saved && !existing) throw new Error('Saved device action requires recovery');
+      if (existing?.isTerminal() && (existing.status !== TX_STATUS.SUCCEEDED
+          || existing.intent?.operation !== operation || existing.intent?.permissions !== permissions)) {
+        // This is a new explicit action after a known outcome, never an
+        // automatic replacement for an uncertain send.
+        localStorage.removeItem(key);
+        existing=null;
+      }
+      if (existing) {
+        const intent=deviceChangeIntent(existing.intent);
+        if (existing.accountAddress !== signer || intent.ownerId !== ownerId || intent.address !== address
+            || intent.operation !== operation || intent.permissions !== permissions) throw new Error('Resolve the existing device action before changing it');
+      } else {
+        const query=this.signingClientManager.chainQuery;
+        if (!query || query.closed) throw new Error('Device chain connection is unavailable');
+        const snapshot=await query.readSnapshot(rpc=>readDeviceContext(rpc,ownerId,address));
+        signal.throwIfAborted();
+        if (this.gameState.signingAccount.address !== signer || this.signingClientManager.chainQuery !== query) throw new Error('Device signer changed');
+        const intent=deviceChangeIntent({kind:'device_change',version:1,ownerId,address,operation,permissions,expectedPermissions,context:snapshot.data});
+        existing=queue.getTransaction(queue.enqueueDeviceChange(intent));
+      }
+      const record=JSON.stringify({id:existing.id});
+      localStorage.setItem(key,record);
+      if (localStorage.getItem(key) !== record) throw new Error('Device action could not be persisted');
+      return existing.id;
+    });
+    const tx=await queue.whenSettled(id,signal);
+    signal.throwIfAborted();
+    const clear=()=>{
+      const saved=localStorage.getItem(key);
+      if (saved && JSON.parse(saved).id === id) localStorage.removeItem(key);
+    };
+    if (tx.status !== TX_STATUS.SUCCEEDED) { clear();return false; }
+    const committed=deviceChangeCommit(tx);
+    // A self-revoked key may no longer authenticate an indexed read. Confirmed
+    // inclusion is sufficient to erase this browser's key/session on logout.
+    if (operation !== 'revoke' || address !== signer) await waitForDeviceChange(this.guildAPI,committed,signal);
+    signal.throwIfAborted();
+    if (this.gameState.signingAccount.address !== signer) throw new Error('Device signer changed');
+    clear();
+    return true;
+  }
+
+  async setDevicePermissions(address, permissions, expectedPermissions, signal = MenuPage.router.navigationSignal) {
+    return this.changeDevice(address,'permissions',permissions,expectedPermissions,signal);
+  }
+
+  async revokeAddress(addressToRevoke, signal = MenuPage.router.navigationSignal) {
+    const signer=this.gameState.signingAccount.address;
+    if (addressToRevoke === signer) {
+      const query=this.signingClientManager.chainQuery;
+      if (!query || query.closed) throw new Error('Device chain connection is unavailable');
+      const {data:authority}=await query.readSnapshot(rpc=>readDeviceAuthority(rpc,signer));
+      signal.throwIfAborted();
+      if (this.gameState.signingAccount.address !== signer || this.signingClientManager.chainQuery !== query) throw new Error('Device signer changed');
+      if (authority.playerId !== this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+          || (BigInt(authority.permissions) & BigInt(PERMISSIONS.DELETE)) === 0n) {
+        // A key without revocation authority can still leave this browser.
+        // Retain the public send journal; this does not revoke the on-chain key.
+        await this.logout();
+        return true;
+      }
+    }
+    const success=await this.changeDevice(addressToRevoke,'revoke',null,null,signal);
+    if (success && addressToRevoke === signer) await this.logout();
+    return success;
   }
 
   logout() {
+    if (this.logoutPromise) return this.logoutPromise;
     // A simulated session (the tutorial) must never clear the player's saved data.
     if (!this.gameState.persistenceEnabled) {
       return;
@@ -439,12 +514,22 @@ export class AuthManager {
     this.signingClientManager.stopForLogout();
     this.gameState.alphaRefresh.stop();
     this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].clearFunds();
-    this.guildAPI.logout().then(() => {
-      TransactionJournal.clearSession();
+    this.walletEpoch=(this.walletEpoch ?? 0)+1;
+    this.gameState.persistenceEnabled=false;
+    TransactionJournal.clearSession();
+    this.gameState.mnemonic=null;
+    this.gameState.wallet=null;
+    this.gameState.signingAccount=null;
+    this.gameState.pubkey=null;
+    // Local logout must complete even if the server session endpoint is down.
+    this.logoutPromise=Promise.resolve().then(()=>this.guildAPI.logout({timeoutMs:5000})).catch(error=>{
+      console.debug('[Logout] server session cleanup unavailable:',error);
+    }).finally(() => {
       MenuPage.router.goto('Auth', 'index');
       MenuPage.open();
       window.location.reload();
     });
+    return this.logoutPromise;
   }
 
   /**
