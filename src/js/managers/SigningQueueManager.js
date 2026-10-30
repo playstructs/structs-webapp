@@ -8,6 +8,7 @@ import {normalizeMessagePayload} from "../util/MessagePayload";
 import {TransactionJournal} from "./TransactionJournal";
 import {SigningDeferredError} from "./SigningSubmission";
 import {transferIntent} from "../util/TransferIntent";
+import {reactorIntent} from "../util/ReactorIntent";
 
 /**
  * Validate that a payload is safe to persist as JSON. Rejects anything that
@@ -136,7 +137,14 @@ export class SigningQueueManager {
 
   /** Persist user intent without freezing protocol-specific transaction bytes. */
   enqueueTransfer(value) {
-    const intent = transferIntent(value);
+    return this.#enqueueIntent(transferIntent(value));
+  }
+
+  enqueueReactor(value) {
+    return this.#enqueueIntent(reactorIntent(value));
+  }
+
+  #enqueueIntent(intent) {
     this.#assertCanEnqueue();
     const tx = SigningTransaction.create({intent,isAction:false,chargeCost:null,retryLimit:0,
       accountAddress:this.gameState.signingAccount.address,enqueuedAtBlock:this.gameState.currentBlockHeight});

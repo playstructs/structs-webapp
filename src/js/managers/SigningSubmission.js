@@ -5,6 +5,7 @@ import {QueryClientImpl as AuthQueryClient} from "cosmjs-types/cosmos/auth/v1bet
 import {TxMsgData} from "cosmjs-types/cosmos/base/abci/v1beta1/abci";
 import {ServiceClientImpl as TxService} from "cosmjs-types/cosmos/tx/v1beta1/service";
 import {prepareTransfer} from "./TransferPreparation";
+import {prepareReactor} from "./ReactorPreparation";
 import {CHAIN} from "../constants/ChainConstants";
 import {FEE} from "../constants/Fee";
 import {exactQueryHeight, protocolAtHeight, validateSigningSnapshot} from "../util/ChainProtocol";
@@ -28,23 +29,28 @@ export class SigningSubmission {
           || tx.accountAddress!==manager.gameState.signingAccount?.address) throw new SigningDeferredError('Signing connection changed');
     };
     check();
-    const player = tx.intent ? await manager.gameState.guildAPI.getPlayer(tx.intent.ownerId) : null;
-    const response = player ? {meta:player.snapshot_meta} : await manager.gameState.guildAPI.getBlockSnapshot();
+    const isReactor = tx.intent?.kind === 'reactor_change';
+    const isWithdrawal = isReactor && tx.intent.direction === 'defuse';
+    const data = tx.intent ? await manager.gameState.guildAPI[isWithdrawal ? 'getInfusionByPlayerId' : 'getPlayer'](tx.intent.ownerId) : null;
+    const response = data ? {meta:data.snapshot_meta} : await manager.gameState.guildAPI.getBlockSnapshot();
     check();
     const accountSnapshot = await query.readSnapshot(async rpc=>{
       if (tx.intent) {
         try { validateSigningSnapshot(response.meta,{chainId:rpc.chainId,height:rpc.height},['inventory']); }
         catch (error) { throw new SigningDeferredError(error.message); }
-        if (response.meta.protocol===CHAIN.PROTOCOL && player.funds_meta?.ready!==true) {
+        if (response.meta.protocol===CHAIN.PROTOCOL && !isWithdrawal && data.funds_meta?.ready!==true) {
           throw new SigningDeferredError('Indexed vault spendability is not ready');
+        }
+        if (response.meta.protocol===CHAIN.PROTOCOL && isWithdrawal && data.positions_meta?.complete!==true) {
+          throw new SigningDeferredError('Indexed reactor positions are not ready');
         }
       }
       const authResponse = await new AuthQueryClient(rpc).Account({address:tx.accountAddress});
       if (!authResponse.account) throw new Error('Signing account unavailable');
       const account = accountFromAny(authResponse.account);
-      const prepared = tx.intent ? await prepareTransfer(rpc,tx,player) : null;
+      const prepared = tx.intent ? await (isReactor ? prepareReactor : prepareTransfer)(rpc,tx,data) : null;
       return {account,prepared};
-    });
+    }, isReactor ? {height:response.meta?.height} : {});
     check();
     let context;
     try {
@@ -53,8 +59,9 @@ export class SigningSubmission {
     // Post-H actions must be rebuilt/revalidated by their protocol-aware caller.
     // An old primary-address payload is not made vault-aware by new codecs.
     if (tx.intent) {
-      if (accountSnapshot.data.prepared.protocol!==context.protocol) throw new SigningDeferredError('Protocol changed while preparing transfer');
-      tx.message = accountSnapshot.data.prepared.message;
+      if (accountSnapshot.data.prepared.protocol!==context.protocol) throw new SigningDeferredError('Protocol changed while preparing intent');
+      tx.message = accountSnapshot.data.prepared.message ?? null;
+      tx.messages = accountSnapshot.data.prepared.messages ?? null;
       tx.intentProtocol = context.protocol;
     } else if ((tx.intentProtocol && tx.intentProtocol!==context.protocol)
         || (context.protocol===CHAIN.PROTOCOL && tx.intentProtocol!==CHAIN.PROTOCOL)) {
@@ -65,23 +72,25 @@ export class SigningSubmission {
         || !Number.isSafeInteger(account.sequence) || account.accountNumber<0 || account.sequence<0) {
       throw new Error('Unsupported signing account identity');
     }
-    const messages = [tx.toCosmosMsg(manager.registry)];
-    const raw = await client.sign(tx.accountAddress,messages,FEE,'',{
+    const messages = tx.toCosmosMsgs(manager.registry);
+    const fee = accountSnapshot.data.prepared?.fee ?? FEE;
+    const raw = await client.sign(tx.accountAddress,messages,fee,'',{
       accountNumber:account.accountNumber,sequence:account.sequence,chainId:context.chainId,
     },BigInt(context.timeoutHeight));
     check();
-    const submission = await signedSubmission(raw,{messages,registry:manager.registry,fee:FEE,
+    const submission = await signedSubmission(raw,{messages,registry:manager.registry,fee,
       accountAddress:tx.accountAddress,accountNumber:account.accountNumber,sequence:account.sequence,context});
     check();
     if (tx.intent) {
       const simulation = await query.readSnapshot(rpc=>new TxService(rpc).Simulate({txBytes:submissionBytes(submission)}),{height:accountSnapshot.height});
       check();
-      if (!simulation.data.gasInfo || simulation.data.gasInfo.gasUsed>BigInt(FEE.gas)) throw new Error('Transfer exceeds the transaction gas limit');
+      if (!simulation.data.gasInfo || simulation.data.gasInfo.gasUsed>BigInt(fee.gas)) throw new Error('Intent exceeds the transaction gas limit');
     }
     const current = await query.status();
     check();
     if (protocolAtHeight(current.chainId,current.height)!==context.protocol) throw new SigningDeferredError('Protocol changed while signing');
-    return {...submission,connectionEpoch:epoch,...(tx.intent ? {transfer:accountSnapshot.data.prepared.transfer} : {})};
+    return {...submission,connectionEpoch:epoch,...(tx.intent
+      ? (isReactor ? {reactor:accountSnapshot.data.prepared.reactor} : {transfer:accountSnapshot.data.prepared.transfer}) : {})};
   }
 
   async send(tx) {

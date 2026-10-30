@@ -196,6 +196,51 @@ retained wealth and stale cached `alpha` cannot set the spending limit. Missing
 readiness disables the existing controls while bounded reads retry. Signing
 still rechecks the full chosen amount and never silently reduces it.
 
+## Reactor intent preparation
+
+`SigningQueueManager.enqueueReactor` and `SigningClientManager.queueReactor`
+accept `{kind:"reactor_change",version:1,ownerId,guildId,reactorId,direction,amount}`.
+The direction is `infuse` or `defuse`; amount is an exact positive ualpha string
+for a whole-Alpha delta. Player/guild/reactor IDs are pinned by the user's
+intent, so a membership change refuses it instead of choosing another reactor.
+These adapters are implemented; AlphaManager and the existing reactor controls
+still need completion, preview and ready-data integration before activation.
+
+Preparation uses fresh indexed inventory metadata and pins native reads to that
+same indexed height. This makes candidate ownership and staking eligibility a
+single snapshot. It checks the actor's own infuse/defuse bit, actual owner,
+guild/reactor relationship, canonical validator, bond denomination and native
+unbonding entry limit. Pre-H keeps the primary-address route and signed H−1
+expiry. Post-H deposits use the player's vault and native spendable balance.
+Withdrawals require a provisioned indexed vault plus complete positions; they
+try the vault first, then retained addresses in bytewise address order, checking
+each address's ownership at the selected height. Chain admission remains final
+if authority, balance or queue state changes after that snapshot.
+
+Native delegation/unbonding lists are complete, address-scoped and cursor-paged.
+Empty complete lists establish absence; RPC errors never become zero balances.
+Positive exact native shares and queried Coin balances are validated. Held,
+zero-balance and past-time unbonding entries all consume slots until staking
+removes them. A full queue makes that position ineligible; the remaining ordered
+positions must cover the entire request. No partial withdrawal is submitted.
+
+The client bounds inspection to 16 candidate positions, at most four pages of
+100 rows per native list, and the existing 64-query / 15-second snapshot budget.
+The signed group is at most 16 messages in one transaction. Every actual group
+is simulated with the release's 20,000,000 Structs free-gas limit; this is separate
+from the native staking free-gas path. Tested fixtures do not establish a
+worst-case gas bound for every chain state. Oversized/incomplete requests refuse
+as a whole. They are never split into successive sends.
+
+The journal persists the entire signed group, requested delta and selected legs
+as one submission. Unknown outcomes survive reload and block replacement just
+like transfers. Native share conversion can make a successful cooldown amount
+differ from the requested amount: the release test below pins a 1,000,000 request
+returning 999,999 ualpha after a slash, and a full queried-balance request losing
+one ualpha in conversion too. Completion must refresh authoritative indexed
+state through the committed height, not infer a failure or fabricate a balance
+change from the request. The screen completion integration remains next.
+
 ## Verification
 
 Install the existing application lock in `src` before testing. For an already
@@ -248,3 +293,21 @@ must preserve these bytes. Its provenance includes the old webapp revision and
 tx source checksum; `legacy-fixtures.cjs` reproduces it from that local Git
 history. The provider-decimal correction is deliberately covered by independent
 Go decoding rather than preservation of the old invalid decimal encoding.
+
+Reactor preparation/atomic signing and unknown-group recovery are also included
+in `test:proto`. Native responses are fixtures, while generated codecs, offline
+signing and queue persistence run normally. To independently decode that actual
+group and verify its signature using the pinned release:
+
+```sh
+STRUCTS_REACTOR_FIXTURE=/tmp/structs-reactor-tx.json npm --prefix src run test:proto
+node tools/proto/verify-release.cjs /path/to/structsd /tmp/structs-reactor-tx.json
+node tools/proto/verify-reactor-release.cjs /path/to/structsd
+```
+
+The last command archives the exact release into temporary storage and runs
+real signed app/ante/staking transactions on in-memory chains. It measures
+1/4/8/16 vault-plus-retained withdrawals, verifies every preceding leg rolls
+back when the last fails, and checks fractional-share cooldown outcomes against
+native state. It uses the same zero-ualpha fee and 20M gas limit as preparation.
+It does not modify the chain checkout or broadcast on the running testnet.

@@ -1,6 +1,7 @@
 import {UuidUtil} from "../util/UuidUtil";
 import {messagePayloadToWire} from "../util/MessagePayload";
-import {transferIntent} from "../util/TransferIntent";
+import {transactionIntent} from "../util/TransactionIntent";
+import {REACTOR_TRANSACTION} from "../constants/ReactorTransactions";
 
 /**
  * Lifecycle states for a queued signing transaction.
@@ -39,6 +40,7 @@ const TERMINAL_STATUSES = [TX_STATUS.SUCCEEDED, TX_STATUS.DROPPED, TX_STATUS.CAN
 const PERSISTED_FIELDS = [
   'id',
   'message',
+  'messages',
   'accountAddress',
   'isAction',
   'chargeCost',
@@ -72,6 +74,7 @@ export class SigningTransaction {
     this.id = fields.id;
     /** @type {{ typeUrl: string, payload: object }} */
     this.message = fields.message;
+    this.messages = fields.messages ?? null;
     /** @type {string} Owning signer address; persisted; used as `creator` at broadcast. */
     this.accountAddress = fields.accountAddress;
     /** @type {boolean} True when this tx belongs to the ordered action lane. */
@@ -131,7 +134,7 @@ export class SigningTransaction {
       error: null,
       msgResponses: null,
       intentProtocol,
-      intent: intent ? transferIntent(intent) : null,
+      intent: intent ? transactionIntent(intent) : null,
     });
   }
 
@@ -144,13 +147,27 @@ export class SigningTransaction {
    * @return {{ typeUrl: string, value: object }}
    */
   toCosmosMsg(registry) {
-    const type = registry.lookupType(this.message.typeUrl);
+    if (this.messages) throw new Error('Atomic message groups must be encoded together');
+    return this.encodeMessage(registry, this.message);
+  }
+
+  toCosmosMsgs(registry) {
+    if (!this.messages) return [this.toCosmosMsg(registry)];
+    if (this.intent?.kind !== 'reactor_change' || !Array.isArray(this.messages)
+        || !this.messages.length || this.messages.length > REACTOR_TRANSACTION.MAX_POSITIONS) {
+      throw new Error('Invalid atomic reactor message group');
+    }
+    return this.messages.map(message => this.encodeMessage(registry, message));
+  }
+
+  encodeMessage(registry, message) {
+    const type = registry.lookupType(message.typeUrl);
     if (!type) {
-      throw new Error(`Unknown typeUrl in registry: ${this.message.typeUrl}`);
+      throw new Error(`Unknown typeUrl in registry: ${message.typeUrl}`);
     }
     return {
-      typeUrl: this.message.typeUrl,
-      value: type.fromPartial({ ...messagePayloadToWire(this.message.typeUrl, this.message.payload), creator: this.accountAddress }),
+      typeUrl: message.typeUrl,
+      value: type.fromPartial({ ...messagePayloadToWire(message.typeUrl, message.payload), creator: this.accountAddress }),
     };
   }
 
@@ -185,7 +202,7 @@ export class SigningTransaction {
   static fromJSON(obj) {
     let intent = null;
     if (obj?.intent!==undefined && obj.intent!==null) {
-      try { intent = transferIntent(obj.intent); } catch { return null; }
+      try { intent = transactionIntent(obj.intent); } catch { return null; }
     }
     if (
       !obj
@@ -202,6 +219,7 @@ export class SigningTransaction {
     return new SigningTransaction({
       id: obj.id,
       message: obj.message ? { typeUrl: obj.message.typeUrl, payload: obj.message.payload } : null,
+      messages: obj.messages ?? null,
       accountAddress: typeof obj.accountAddress === 'string' ? obj.accountAddress : null,
       isAction: !!obj.isAction,
       chargeCost: typeof obj.chargeCost === 'number' ? obj.chargeCost : null,

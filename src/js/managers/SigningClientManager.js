@@ -309,6 +309,12 @@ export class SigningClientManager {
     return this.queue.whenSettled(id, signal);
   }
 
+  async queueReactor(intent, signal = undefined) {
+    signal?.throwIfAborted();
+    const id = this.queue.enqueueReactor(intent);
+    return this.queue.whenSettled(id, signal);
+  }
+
   /**
    * @param {string} fromAddress
    * @param {string} toAddress
