@@ -38,7 +38,7 @@ export class JsonAjaxer {
    * @param {object} [data]
    * @return {Promise<object>}
    */
-  async request (method, url, data = undefined, {signal, timeoutMs} = {}) {
+  async request (method, url, data = undefined, {signal, timeoutMs=15000, reauthenticate=true} = {}) {
     const controller = new AbortController();
     const abort = () => controller.abort(signal.reason);
     if (signal?.aborted) abort();
@@ -47,7 +47,7 @@ export class JsonAjaxer {
     try {
       let response = await this.send(method, url, data, controller.signal);
 
-      if (this.isAuthFailure(response) && this.onUnauthorized) {
+      if (this.isAuthFailure(response) && this.onUnauthorized && reauthenticate) {
         controller.signal.throwIfAborted();
         if (await this.waitForAuthorization(controller.signal)) {
           response = await this.send(method, url, data, controller.signal);
@@ -123,6 +123,9 @@ export class JsonAjaxer {
    * @return {Promise<object>}
    */
   async parse (response, method, url) {
+    if (response.status >= 500) {
+      throw new HttpError(`${method} ${url} failed with status ${response.status}.`,response.status);
+    }
     try {
       return await response.json();
     } catch (error) {

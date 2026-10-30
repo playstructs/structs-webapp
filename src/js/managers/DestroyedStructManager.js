@@ -72,6 +72,8 @@ export class DestroyedStructManager {
   }
 
   init() {
+    if (this.initialized) return;
+    this.initialized = true;
     window.addEventListener(EVENTS.BLOCK_HEIGHT_CHANGED, () => {
       this.sweep();
     });

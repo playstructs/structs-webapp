@@ -54,6 +54,7 @@ export class SigningClientManager {
 
     /** @type {?Promise<boolean>} The single in-flight connection check, if any. */
     this.connectionCheck = null;
+    this.readyForResume = false;
 
     this.connectionEpoch = 0;
     this.sessionController = new AbortController();
@@ -72,12 +73,15 @@ export class SigningClientManager {
    */
   async initSigningClient() {
     console.debug("Initializing signing client...");
+    this.readyForResume = false;
     this.sessionController.abort();
     this.sessionController = new AbortController();
     // Wallet/account initialization precedes this call. Load evidence even if
     // the node is temporarily unreachable; a failed connect cannot hide it.
     this.queue.loadPersistedState();
     await this.connect();
+    this.queue.suspended = false;
+    this.readyForResume = true;
     console.info("Signing client initialized.");
     this.queue.reconcilePending().catch(error=>console.warn('[SigningClientManager] reconciliation unavailable:',error));
   }
@@ -140,6 +144,7 @@ export class SigningClientManager {
   }
 
   stopForLogout() {
+    this.readyForResume = false;
     this.sessionController.abort();
     this.queue.suspended = true;
     this.disconnect();
@@ -193,6 +198,9 @@ export class SigningClientManager {
    * @return {Promise<boolean>} whether a usable client is in place
    */
   resumeCheck(force = false) {
+    // Startup owns the first connection. Resume probes must not supersede its
+    // in-flight socket or restart signing after a rejected/closed session.
+    if (!this.readyForResume || this.queue.suspended) return Promise.resolve(false);
     if (!this.connectionCheck) {
       this.connectionCheck = this.checkConnection(force)
         .then(async alive => {
@@ -216,6 +224,7 @@ export class SigningClientManager {
    * @return {Promise<boolean>}
    */
   async checkConnection(force) {
+    const epoch = this.connectionEpoch;
     if (!this.gameState.wallet) {
       return false;
     }
@@ -225,7 +234,9 @@ export class SigningClientManager {
       return true;
     }
 
-    if (await this.isAlive()) {
+    const alive = await this.isAlive();
+    if (epoch !== this.connectionEpoch || !this.readyForResume || this.queue.suspended) return false;
+    if (alive) {
       return true;
     }
 

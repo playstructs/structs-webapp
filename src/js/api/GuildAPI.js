@@ -259,8 +259,9 @@ export class GuildAPI {
    * @param {LoginRequestDTO} loginRequestDTO
    * @return {GuildAPIResponse}
    */
-  async login(loginRequestDTO) {
-    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/login`, loginRequestDTO);
+  async login(loginRequestDTO, options = {}) {
+    // Login cannot recover itself through the protected-read recovery hook.
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/login`, loginRequestDTO, {...options,reauthenticate:false});
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 

@@ -38,6 +38,7 @@ if (diagnostics.length) {
   config.entry.freshness = path.join(__dirname,'freshness.test.js');
   config.entry.workRecovery = path.join(__dirname,'work-recovery.test.js');
   config.entry.accountNavigation = path.join(__dirname,'account-navigation.test.js');
+  config.entry.startup = path.join(__dirname,'startup.test.js');
   const workerConfig = {mode:'production',target:'webworker',devtool:false,context:root,
     entry:path.join(root,'src/js/workers/TaskWorker.js'),
     output:{path:temporary,filename:'task-worker.js'},
@@ -45,7 +46,7 @@ if (diagnostics.length) {
   webpack([config,workerConfig], (error, stats) => {
     try {
       if (error || stats.hasErrors()) throw error || new Error(stats.toString({all:false,errors:true}));
-      for (const name of ['wire','query','submission','ledger','transfer','transferFlow','reactor','reactorFlow','alphaRefresh','generator','generatorFlow','registration','deviceChange','work','session','gameplay','freshness','workRecovery','accountNavigation']) {
+      for (const name of ['wire','query','submission','ledger','transfer','transferFlow','reactor','reactorFlow','alphaRefresh','generator','generatorFlow','registration','deviceChange','work','session','gameplay','freshness','workRecovery','accountNavigation','startup']) {
         const run = spawnSync(process.execPath,[path.join(temporary,`${name}.cjs`)], {cwd:root,stdio:'inherit',
           env:{...process.env,STRUCTS_WORKER_TEST_BUNDLE:path.join(temporary,'task-worker.js')},timeout:60000});
         if (run.error) console.error(run.error);

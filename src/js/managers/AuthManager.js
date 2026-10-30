@@ -38,6 +38,7 @@ import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEve
 import {TX_STATUS} from "../models/SigningTransaction";
 import {TransactionJournal} from "./TransactionJournal";
 import {AlphaRefreshManager} from "./AlphaRefreshManager";
+import {startupReads} from "./StartupRecovery";
 
 export class AuthManager {
 
@@ -212,14 +213,20 @@ export class AuthManager {
    * @param {string} playerId
    * @return {Promise<boolean>}
    */
-  async login(playerId, signal = undefined) {
+  async login(playerId, signal = undefined, retry = operation=>operation()) {
     const address=this.gameState.signingAccount.address;
     const assertCurrent=()=>{
       signal?.throwIfAborted();
-      if (this.gameState.signingAccount?.address !== address) throw new Error('Login device changed');
+      if (this.gameState.signingAccount?.address !== address || this.gameState.isSessionCurrent?.() === false) throw new Error('Login device changed');
     };
+    const recover=operation=>retry(async()=>{
+      assertCurrent();
+      const result=await operation();
+      assertCurrent();
+      return result;
+    });
     assertCurrent();
-    const response = await this.guildAPI.login(await this.buildLoginRequest());
+    const response = await recover(async()=>this.guildAPI.login(await this.buildLoginRequest(),{signal}));
     assertCurrent();
 
     console.log('Login response status:', response);
@@ -254,9 +261,9 @@ export class AuthManager {
       this.grassManager.registerListener(new StructMineStatusListener(this.gameState));
       this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 
-      await this.signingClientManager.initSigningClient();
+      await recover(()=>this.signingClientManager.initSigningClient());
       assertCurrent();
-      await this.playerAddressManager.addPlayerAddressMeta();
+      await recover(()=>this.playerAddressManager.addPlayerAddressMeta());
       assertCurrent();
 
       this.destroyedStructManager.init();
@@ -267,13 +274,13 @@ export class AuthManager {
         structTypes,
         fleet,
         structs
-      ] = await Promise.all([
-        this.guildAPI.getPlayer(playerId),
-        this.guildAPI.getPlayerLastActionBlockHeight(playerId),
-        this.guildAPI.getStructTypes(),
-        this.guildAPI.getFleetByPlayerId(playerId),
-        this.guildAPI.getStructsByPlayerId(playerId)
-      ]);
+      ] = await recover(()=>startupReads([
+        ()=>this.guildAPI.getPlayer(playerId,{signal}),
+        ()=>this.guildAPI.getPlayerLastActionBlockHeight(playerId),
+        ()=>this.guildAPI.getStructTypes(),
+        ()=>this.guildAPI.getFleetByPlayerId(playerId),
+        ()=>this.guildAPI.getStructsByPlayerId(playerId)
+      ]));
 
       assertCurrent();
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlayer(player,this.gameState.currentBlockHeight);
@@ -298,12 +305,12 @@ export class AuthManager {
           shieldInfo,
           planetPlanetRaidInfo,
           raidPlanetRaidInfo
-        ] = await Promise.all([
-          this.guildAPI.getPlanet(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id),
-          this.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id),
-          this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id),
-          this.guildAPI.getActivePlanetRaidByFleetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id)
-        ]);
+        ] = await recover(()=>startupReads([
+          ()=>this.guildAPI.getPlanet(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id),
+          ()=>this.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id),
+          ()=>this.guildAPI.getActivePlanetRaidByPlanetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.planet_id),
+          ()=>this.guildAPI.getActivePlanetRaidByFleetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id)
+        ]));
 
         assertCurrent();
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanet(planet);
@@ -311,10 +318,13 @@ export class AuthManager {
         this.gameState.setPlanetPlanetRaidInfo(planetPlanetRaidInfo);
         this.gameState.setRaidPlanetRaidInfo(raidPlanetRaidInfo);
 
-        await Promise.all([
-          this.raidManager.initPlanetRaider(),
-          this.raidManager.initRaidEnemy(),
-        ]);
+        await recover(async()=>{
+          const loaded=await startupReads([
+            ()=>this.raidManager.initPlanetRaider(assertCurrent,false),
+            ()=>this.raidManager.initRaidEnemy(assertCurrent,false),
+          ]);
+          if(loaded.includes(false)) throw new Error('Raid state is unavailable');
+        });
 
         assertCurrent();
         this.mapManager.configureAlphaBaseMap();

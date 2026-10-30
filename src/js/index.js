@@ -41,6 +41,8 @@ import {SimulatedGuildAPI} from "./tutorial/SimulatedGuildAPI";
 import {SimulatedSigningClientManager} from "./tutorial/SimulatedSigningClientManager";
 import {TutorialController} from "./controllers/TutorialController";
 import {onboardingTelemetry} from "./telemetry/OnboardingTelemetry";
+import {StartupRecovery, startupReads} from "./managers/StartupRecovery";
+import {AuthenticationError} from "./errors/AuthenticationError";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -262,74 +264,101 @@ if (!tutorialMode) {
 }
 
 const hudContainer = document.getElementById(HUDViewModel.containerId);
+const startupRecovery=tutorialMode ? null : new StartupRecovery(
+  ()=>gameState.persistenceEnabled && gameState.isSessionCurrent()
+);
 
-if (!tutorialMode) {
-  await gameState.load();
-}
-gameState.settings = await guildAPI.getSettings();
-gameState.thisGuild = await guildAPI.getThisGuild();
+async function startApplication() {
+  if (!tutorialMode) {
+    await gameState.load();
+  }
+  const loadConfiguration=()=>startupReads([()=>guildAPI.getSettings(),()=>guildAPI.getThisGuild()]);
+  [gameState.settings,gameState.thisGuild] = startupRecovery
+    ? await startupRecovery.run(loadConfiguration,{retryAuthentication:true})
+    : await loadConfiguration();
 
-HUDViewModel.init(gameState, signingClientManager, structManager, taskManager, alphaManager, grassManager);
-if (tutorialMode) {
-  // In the simulation the portrait opens Combat Training's own menu.
-  HUDViewModel.bottomLeftActionBar.profileClickHandler = () => TutorialMode.openMenu();
-}
-hudContainer.innerHTML = HUDViewModel.render();
-HUDViewModel.initPageCode();
+  HUDViewModel.init(gameState, signingClientManager, structManager, taskManager, alphaManager, grassManager);
+  if (tutorialMode) {
+    // In the simulation the portrait opens Combat Training's own menu.
+    HUDViewModel.bottomLeftActionBar.profileClickHandler = () => TutorialMode.openMenu();
+  }
+  hudContainer.innerHTML = HUDViewModel.render();
+  HUDViewModel.initPageCode();
 
-MenuPage.sui.autoInitAll();
+  MenuPage.sui.autoInitAll();
 
-if (tutorialMode) {
-  const tutorialController = new TutorialController(
-    gameState,
-    tutorialWorld,
-    signingClientManager,
-    guildAPI,
-    structManager,
-    mapManager,
-    destroyedStructManager
-  );
-  MenuPage.router.registerController(tutorialController);
+  if (tutorialMode) {
+    const tutorialController = new TutorialController(
+      gameState,
+      tutorialWorld,
+      signingClientManager,
+      guildAPI,
+      structManager,
+      mapManager,
+      destroyedStructManager
+    );
+    MenuPage.router.registerController(tutorialController);
 
-  // Tutorial pages are never restored after a reload.
-  MenuPage.router.enablePreviewMode();
-  MenuPage.router.goto('Tutorial', 'loading');
+    // Tutorial pages are never restored after a reload.
+    MenuPage.router.enablePreviewMode();
+    MenuPage.router.goto('Tutorial', 'loading');
 
-  MenuPage.hideLoadingScreen();
-} else if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
-  TutorialMode.consumeExited();
-  // The opening crawl (Auth/introduction) is shelved for now.
-  try {
-    if (!await authManager.restoreDeviceActivation()) MenuPage.router.goto('Auth', 'index');
-  } catch (error) {
-    console.debug('[DeviceActivation] saved activation unavailable:',error);
-    MenuPage.router.goto('Auth', 'index');
+    MenuPage.hideLoadingScreen();
+  } else if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
+    TutorialMode.consumeExited();
+    // The opening crawl (Auth/introduction) is shelved for now.
+    try {
+      if (!await authManager.restoreDeviceActivation()) MenuPage.router.goto('Auth', 'index');
+    } catch (error) {
+      console.debug('[DeviceActivation] saved activation unavailable:',error);
+      MenuPage.router.goto('Auth', 'index');
+    }
+
+    MenuPage.hideLoadingScreen();
+  } else {
+    const tutorialExit = TutorialMode.consumeExited();
+    const returningFromTutorial = tutorialExit !== null;
+    const savedAddress=gameState.signingAccount?.address;
+    const savedPlayerId=gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const current=startupRecovery.current;
+    startupRecovery.current=()=>current() && gameState.signingAccount?.address===savedAddress
+      && gameState.keyPlayers[PLAYER_TYPES.PLAYER].id===savedPlayerId;
+
+    const loggedIn=await authManager.login(savedPlayerId,
+      startupRecovery.signal,operation=>startupRecovery.run(operation));
+    if (!loggedIn) throw new AuthenticationError('Saved session was rejected',401);
+    startupRecovery.assertCurrent();
+    MenuPage.close();
+    if (!returningFromTutorial) {
+      MenuPage.router.restore('Fleet', 'index');
+    }
+    MenuPage.hideLoadingScreen();
+    if (returningFromTutorial) {
+      TutorialMode.frameHomeAfterReturn(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
+      // The FTL jump counts as finished once the player is in the real game.
+      if (tutorialExit === TutorialMode.EXIT_COMPLETED) {
+        onboardingTelemetry.reached('tutorial.end.ftl_jump');
+      }
+    }
   }
 
+  if (!tutorialMode) {
+    // Start the hashing engine after a delay
+    new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(() => window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
+  }
+}
+
+startApplication().catch(error=>{
+  if(startupRecovery?.signal.aborted || (!tutorialMode && !gameState.isSessionCurrent())) return;
+  console.warn('[Startup] session could not be restored:',error);
+  // Stop partial runtime work, retaining the saved key and signed journal. A
+  // rejected API login is not authoritative evidence of native revocation.
+  signingClientManager.stopForLogout?.();
+  authManager.sessionAuthority?.stop();
+  authManager.workRefresh?.stop();
+  gameState.alphaRefresh?.stop();
+  taskManager.closeSession?.();
+  MenuPage.router.goto('Auth','index');
+  MenuPage.open();
   MenuPage.hideLoadingScreen();
-} else {
-  const tutorialExit = TutorialMode.consumeExited();
-  const returningFromTutorial = tutorialExit !== null;
-
-  authManager.login(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then(() => {
-    return playerAddressManager.addPlayerAddressMeta().then(() => {
-      MenuPage.close();
-      if (!returningFromTutorial) {
-        MenuPage.router.restore('Fleet', 'index');
-      }
-      MenuPage.hideLoadingScreen();
-      if (returningFromTutorial) {
-        TutorialMode.frameHomeAfterReturn(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
-        // The FTL jump counts as finished once the player is in the real game.
-        if (tutorialExit === TutorialMode.EXIT_COMPLETED) {
-          onboardingTelemetry.reached('tutorial.end.ftl_jump');
-        }
-      }
-    });
-  });
-}
-
-if (!tutorialMode) {
-  // Start the hashing engine after a delay
-  new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(() => window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
-}
+}).finally(()=>startupRecovery?.finish());
