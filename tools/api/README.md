@@ -16,7 +16,10 @@ sequence counters can advance.
 
 Checks include encoded IBC/factory slashes and colons, exact numeric balance order
 and pagination, unchanged native/guild denomination paths, required authentication,
-and refusal of invalid/double-encoded denomination parameters. The proxy uses its
+and refusal of invalid/double-encoded denomination parameters. Public signup
+bootstrap and all approved guild reads are checked without a cookie or bearer token,
+including encoded paths, HEAD, cross-origin response headers and protected device writes.
+The public contract is documented in [public-guild-api.md](public-guild-api.md). The proxy uses its
 packaged source, not a live-mounted control checkout. A deployed upstream proxy must
 also preserve the request path; this check does not certify another operator's proxy.
 

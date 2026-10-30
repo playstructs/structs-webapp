@@ -34,7 +34,9 @@ async function ready(base) {
     let seeded = false;
     let attached = false;
     try {
-        sql('BEGIN; INSERT INTO structs.guild(id) VALUES (\'0-990970\');\n' +
+        sql("BEGIN; INSERT INTO structs.guild(id,name,primary_reactor_id) VALUES ('0-990970','Public guild fixture','3-990970');\n" +
+            "INSERT INTO structs.reactor(id,validator,guild_id) VALUES('3-990970','publicguildvalidator','0-990970');\n" +
+            "INSERT INTO structs.guild_meta(id,this_infrastructure) VALUES('0-990970',false);\n" +
             "INSERT INTO structs.player(id,guild_id,primary_address) VALUES('1-990970','0-990970','cataloghttpprimary');\n" +
             denoms.map((denom, i) => `INSERT INTO structs.provider(id,owner,rate_amount,rate_denom) VALUES('9-${990970+i}','0-990970',1,'${denom}');\n` +
                 `INSERT INTO structs.api_inventory(owner_type,owner_id,denom,balance) VALUES ('address','cataloghttpfirst','${denom}',${balance}),('address','cataloghttpsecond','${denom}',${balance}-1);`).join('\n') + '\nCOMMIT;');
@@ -57,12 +59,82 @@ async function ready(base) {
         await ready(proxied);
         let checks = 0;
         for (const [surface, base] of [['apache', direct], ['control-dev-proxy', proxied]]) {
+            // Signup bootstrap reads are deliberately public, including equivalent API paths.
+            for (const prefix of surface === 'apache' ? ['/api/', '/api%2F', '/%61pi/'] : ['/api/', '/api%2F']) {
+                for (const route of ['guild/this', 'setting', 'timestamp']) {
+                    const response = await request(base, prefix + route, false);
+                    assert.equal(response.status, 200, surface + ' public bootstrap ' + prefix + route);
+                    assert.equal((await response.json()).success, true);
+                    checks++;
+                }
+            }
+            const guildRoutes = ['guild/this', 'guild/name', 'guild/count', 'guild/directory', 'guild/0-990970',
+                'guild/0-990970/name', 'guild/0-990970/members/count', 'guild/0-990970/power/stats',
+                'guild/0-990970/roster', 'guild/0-990970/planet/complete/count'];
+            for (const prefix of surface === 'apache' ? ['/api/', '/api%2F', '/%61pi/'] : ['/api/', '/api%2F']) {
+                for (const route of guildRoutes) {
+                    const response = await fetch(base + prefix + route, {
+                        headers: {Origin: 'https://other-guild.example'}, credentials: 'omit',
+                        redirect: 'manual', signal: AbortSignal.timeout(10000),
+                    });
+                    const text = await response.text();
+                    assert.equal(response.status, 200, surface + ' public guild read ' + prefix + route + ' ' + text.slice(0, 300));
+                    const body = JSON.parse(text);
+                    assert.equal(body.success, true);
+                    assert.equal(response.headers.get('access-control-allow-origin'), '*');
+                    assert.equal(response.headers.get('access-control-allow-credentials'), null);
+                    if (route === 'guild/0-990970') assert.equal(body.data.id, '0-990970');
+                    if (route === 'guild/0-990970/name') assert.equal(body.data.name, 'Public guild fixture');
+                    if (route === 'guild/0-990970/members/count') assert.equal(String(body.data.count), '1');
+                    if (route === 'guild/0-990970/roster') assert.equal(body.data[0].id, '1-990970');
+                    checks++;
+                }
+            }
+            const head = await fetch(base + '/api/guild/0-990970', {method: 'HEAD', signal: AbortSignal.timeout(10000)});
+            assert.equal(head.status, 200);
+            assert.equal(head.headers.get('access-control-allow-origin'), '*');
+            assert.equal(await head.text(), '');
+            checks++;
+            const preflight = await fetch(base + '/api/guild/0-990970/roster', {
+                method: 'OPTIONS', headers: {Origin: 'https://other-guild.example',
+                    'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'Content-Type'},
+                signal: AbortSignal.timeout(10000),
+            });
+            assert.equal(preflight.status, 204);
+            assert.equal(preflight.headers.get('access-control-allow-origin'), '*');
+            assert.equal(preflight.headers.get('access-control-allow-methods'), 'GET, HEAD');
+            assert.match(preflight.headers.get('access-control-allow-headers'), /content-type/);
+            assert.equal(preflight.headers.get('access-control-allow-credentials'), null);
+            assert.equal(await preflight.text(), '');
+            checks++;
+            for (const [route, method, headers] of [['guild/0-990970', 'POST', 'content-type'],
+                ['guild/0-990970', 'GET', 'authorization'], ['player-address/meta', 'POST', 'content-type']]) {
+                const response = await fetch(base + '/api/' + route, {
+                    method: 'OPTIONS', headers: {Origin: 'https://other-guild.example',
+                        'Access-Control-Request-Method': method, 'Access-Control-Request-Headers': headers},
+                    signal: AbortSignal.timeout(10000),
+                });
+                assert.ok(response.status >= 400, surface + ' excludes non-public preflights');
+                assert.equal(response.headers.get('access-control-allow-origin'), null);
+                checks++;
+            }
+            for (const prefix of surface === 'apache' ? ['/api/', '/api%2F', '/%61pi/'] : ['/api/', '/api%2F']) {
+                const response = await fetch(base + prefix + 'player-address/meta', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', Origin: 'https://other-guild.example'},
+                    body: '{}', signal: AbortSignal.timeout(10000),
+                });
+                assert.equal(response.status, 401, surface + ' device writes stay authenticated');
+                assert.equal((await response.json()).errors.authentication_error, 'Login required');
+                assert.equal(response.headers.get('access-control-allow-origin'), null);
+                checks++;
+            }
             for (let i=0; i<denoms.length; i++) {
                 const denom = denoms[i];
                 for (const resource of ['inventory', 'provider']) {
                     const route = `/api/${resource}/denom/${encodeURIComponent(denom)}/page/1?limit=1`;
                     const unauthorized = await request(base, route, false);
                     assert.equal(unauthorized.status, 401, surface + ' authentication ' + route);
+                    assert.equal(unauthorized.headers.get('access-control-allow-origin'), null);
                     const response = await request(base, route);
                     const text = await response.text();
                     assert.equal(response.status, 200, surface + ' ' + route + ' ' + text.slice(0, 300));
@@ -117,6 +189,7 @@ async function ready(base) {
         try { docker(['network', 'rm', network]); } catch (_) {}
         if (seeded) sql("BEGIN; DELETE FROM structs.api_inventory WHERE owner_type='address' AND owner_id IN ('cataloghttpfirst','cataloghttpsecond');\n" +
             "DELETE FROM structs.provider WHERE id IN ('9-990970','9-990971','9-990972','9-990973');\n" +
-            "DELETE FROM structs.player_address WHERE player_id='1-990970'; DELETE FROM structs.player WHERE id='1-990970'; DELETE FROM structs.guild WHERE id='0-990970'; COMMIT;");
+            "DELETE FROM structs.player_address WHERE player_id='1-990970'; DELETE FROM structs.player WHERE id='1-990970'; " +
+            "DELETE FROM structs.guild_meta WHERE id='0-990970'; DELETE FROM structs.reactor WHERE id='3-990970'; DELETE FROM structs.guild WHERE id='0-990970'; COMMIT;");
     }
 })().catch(error => { console.error(error); process.exitCode = 1; });
