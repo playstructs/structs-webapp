@@ -12,6 +12,7 @@ const apache = network + '-apache';
 const proxy = network + '-proxy';
 const secret = randomBytes(32).toString('hex');
 const denoms = ['ualpha', 'uguild.0-990970', 'ibc/' + 'A'.repeat(64), 'factory/structs1issuer/token:one'];
+const recoveryAddress = 'structs1avgyh77ycn997ja45q5q8ss8y9mr424jymd59f';
 const balance = '1000000000000000000000000000000000000000000000000000000000000';
 const docker = (args, input) => execFileSync('docker', args, {encoding: 'utf8', input, timeout: 60000, stdio: ['pipe', 'pipe', 'pipe']}).trim();
 const sql = query => docker(['exec', '-i', '--user', 'structs', database, 'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-d', 'structs', '-At'], query);
@@ -39,6 +40,7 @@ async function ready(base) {
             "INSERT INTO structs.reactor(id,validator,guild_id) VALUES('3-990970','publicguildvalidator','0-990970');\n" +
             "INSERT INTO structs.guild_meta(id,this_infrastructure) VALUES('0-990970',false);\n" +
             "INSERT INTO structs.player(id,guild_id,primary_address) VALUES('1-990970','0-990970','cataloghttpprimary');\n" +
+            `INSERT INTO structs.player_address(address,player_id,guild_id,status) VALUES('${recoveryAddress}','1-990970','0-990970','approved');\n` +
             denoms.map((denom, i) => `INSERT INTO structs.provider(id,owner,rate_amount,rate_denom) VALUES('9-${990970+i}','0-990970',1,'${denom}');\n` +
                 `INSERT INTO structs.api_inventory(owner_type,owner_id,denom,balance) VALUES ('address','cataloghttpfirst','${denom}',${balance}),('address','cataloghttpsecond','${denom}',${balance}-1);`).join('\n') + '\nCOMMIT;');
         seeded = true;
@@ -103,6 +105,16 @@ async function ready(base) {
                     checks++;
                 }
             }
+            // Recovery must resolve the real mapped entity before a browser can sign in.
+            for (const [guild,status,expected] of [['0-990970','approved',{player_id:'1-990970'}],
+                ['0-990971','approved',null],['0-990970','pending',null]]) {
+                sql(`UPDATE structs.player_address SET status='${status}' WHERE address='${recoveryAddress}';`);
+                const response = await request(base, `/api/auth/player-address/${recoveryAddress}/guild/${guild}/player-id`, false);
+                assert.equal(response.status,200,surface+' public recovery lookup');
+                const body=await response.json();assert.equal(body.success,true);assert.deepEqual(body.data,expected);
+                checks++;
+            }
+            sql(`UPDATE structs.player_address SET status='approved' WHERE address='${recoveryAddress}';`);
             const proof = await request(base, '/api/auth/player-address/invalid/player/1-1/proof', false);
             assert.equal(proof.status, 409, surface + ' registration context is public but validates its identity');
             assert.equal((await proof.json()).errors.proof_unavailable, 'Current registration proof is unavailable');

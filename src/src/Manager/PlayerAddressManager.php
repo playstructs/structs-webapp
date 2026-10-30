@@ -5,6 +5,7 @@ namespace App\Manager;
 use App\Constant\ApiParameters;
 use App\Dto\ApiResponseContentDto;
 use App\Entity\Player;
+use App\Entity\PlayerAddress;
 use App\Trait\ApiSqlQueryTrait;
 use App\Trait\ApiFetchEntityTrait;
 use App\Util\ConstraintViolationUtil;
