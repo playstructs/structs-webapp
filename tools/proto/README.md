@@ -358,3 +358,18 @@ full-amount rejection and uint64 overflow. It also runs the release's generator
 rollback/migration/export-restart tests. No chain checkout or running testnet is
 modified. Per-request simulation and full browser/rollout acceptance remain
 required; these fixtures do not establish universal gas bounds.
+
+### Session lifecycle
+
+`session.test.js` exercises native address ownership checks on login, focus,
+reconnect and a visible-page poll. A GRASS revocation prompts a read; it does
+not erase the wallet by itself. Failed/stale queries and results for a replaced
+wallet or connection cannot terminate the current session.
+
+Logout publishes a shared boundary before clearing private browser storage.
+Other tabs erase their in-memory key, stop signing and disable persistence
+without issuing another server logout or another boundary. Game-state saves,
+pending device-key writes and late wallet derivation respect that boundary.
+Signed submission evidence remains available for reconciliation. These checks
+cover the lifecycle without changing screens; real-browser acceptance remains
+a separate release gate.

@@ -15,13 +15,22 @@ export class TransactionJournal {
 
   /** Remove wallet/session data without erasing public submission evidence. */
   static clearSession() {
+    // Publish the boundary before removing private state, so an old tab's
+    // synchronous save cannot repopulate it while this tab clears storage.
+    const previous=Number(localStorage.getItem(this.SESSION_CLOSED_KEY));
+    const boundary=Number.isSafeInteger(previous) && previous>=0 && previous<Number.MAX_SAFE_INTEGER
+      ? Math.max(Date.now(),previous+1) : Date.now();
+    let boundaryWritten=false;
+    try {
+      localStorage.setItem(this.SESSION_CLOSED_KEY,String(boundary));
+      boundaryWritten=true;
+    } catch { /* A full store may need private records removed before adding the marker. */ }
     const keys = Array.from({length:localStorage.length},(_,i)=>localStorage.key(i));
     for (const key of keys) {
       if (key && !key.startsWith('signingJournal:') && !key.startsWith(`${SIGNING_QUEUE.STORAGE_KEY_PREFIX}:`)
           && key!==this.SESSION_CLOSED_KEY) localStorage.removeItem(key);
     }
-    // Preserved unsigned queue entries cannot resume after an explicit logout.
-    localStorage.setItem(this.SESSION_CLOSED_KEY,String(Date.now()));
+    if (!boundaryWritten) localStorage.setItem(this.SESSION_CLOSED_KEY,String(boundary));
   }
 
   constructor(accountAddress) {

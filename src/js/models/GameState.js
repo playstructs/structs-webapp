@@ -1,3 +1,4 @@
+import {TransactionJournal} from "../managers/TransactionJournal";
 import {SignupRequestDTO} from "../dtos/SignupRequestDTO";
 import {ChargeCalculator} from "../util/ChargeCalculator";
 import {EVENTS} from "../constants/Events";
@@ -38,6 +39,7 @@ export class GameState {
      * @type {boolean}
      */
     this.persistenceEnabled = true;
+    this.sessionBoundary = localStorage.getItem(TransactionJournal.SESSION_CLOSED_KEY);
 
     /* Persistent Data */
     this.mnemonic = null;
@@ -129,8 +131,12 @@ export class GameState {
     window.addEventListener(EVENTS.SAVE_GAME_STATE, this.save.bind(this));
   }
 
+  isSessionCurrent() {
+    return this.sessionBoundary === localStorage.getItem(TransactionJournal.SESSION_CLOSED_KEY);
+  }
+
   save() {
-    if (!this.persistenceEnabled) {
+    if (!this.persistenceEnabled || !this.isSessionCurrent()) {
       return;
     }
 
@@ -178,8 +184,14 @@ export class GameState {
 
     if (this.mnemonic) {
       // Properties to re-instantiate
-      this.wallet = await this.walletManager.createWallet(this.mnemonic);
-      const accounts = await this.wallet.getAccountsWithPrivkeys();
+      const wallet = await this.walletManager.createWallet(this.mnemonic);
+      const accounts = await wallet.getAccountsWithPrivkeys();
+      if (!this.persistenceEnabled || !this.isSessionCurrent()) {
+        this.mnemonic = null;
+        this.pubkey = null;
+        return;
+      }
+      this.wallet = wallet;
       this.signingAccount = accounts[0];
     }
   }

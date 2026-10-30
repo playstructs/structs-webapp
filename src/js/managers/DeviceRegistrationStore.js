@@ -1,3 +1,4 @@
+import {TransactionJournal} from "./TransactionJournal";
 import {CHAIN} from "../constants/ChainConstants";
 import {transferAddress} from "../util/TransferIntent";
 
@@ -14,11 +15,19 @@ export class DeviceRegistrationStore {
   }
 
   constructor(mode, guildId, playerId, source) {
+    this.sessionBoundary = localStorage.getItem(TransactionJournal.SESSION_CLOSED_KEY);
     this.scope = {mode,guildId,playerId,source};
     this.key = DeviceRegistrationStore.key(mode,guildId,playerId,source);
   }
 
+  assertCurrentSession() {
+    if (this.sessionBoundary !== localStorage.getItem(TransactionJournal.SESSION_CLOSED_KEY)) {
+      throw new Error('Device registration session was closed');
+    }
+  }
+
   read() {
+    this.assertCurrentSession();
     const raw = localStorage.getItem(this.key);
     if (raw === null) return null;
     const record = JSON.parse(raw);
@@ -49,11 +58,13 @@ export class DeviceRegistrationStore {
     if (!globalThis.navigator?.locks?.request) throw new Error('Exclusive device storage is unavailable');
     return navigator.locks.request(this.key,{mode:'exclusive',ifAvailable:true},lock=>{
       if (!lock) throw new Error('Device registration is already being prepared');
+      this.assertCurrentSession();
       return action();
     });
   }
 
   markActive() {
+    this.assertCurrentSession();
     localStorage.setItem(`deviceRegistrationActive:${CHAIN.ID}:${this.scope.guildId}`,this.key);
   }
 
@@ -74,6 +85,7 @@ export class DeviceRegistrationStore {
   }
 
   clearActive() {
+    this.assertCurrentSession();
     const key=`deviceRegistrationActive:${CHAIN.ID}:${this.scope.guildId}`;
     if (localStorage.getItem(key) === this.key) localStorage.removeItem(key);
   }

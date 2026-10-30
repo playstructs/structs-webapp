@@ -1,3 +1,4 @@
+import {SessionAuthorityManager} from "./SessionAuthorityManager";
 import {CHAIN} from "../constants/ChainConstants";
 import {deviceChangeIntent} from "../util/DeviceChangeIntent";
 import {readDeviceContext, readDeviceAuthority} from "./DeviceChangePreparation";
@@ -86,6 +87,8 @@ export class AuthManager {
     this.destroyedStructManager = destroyedStructManager;
     this.permissionManager = permissionManager;
     this.gameState.alphaRefresh = new AlphaRefreshManager(gameState,guildAPI);
+    this.sessionAuthority = new SessionAuthorityManager(gameState,signingClientManager,()=>this.logout());
+    window.addEventListener('storage',event=>this.handleSessionClosed(event));
   }
 
   /**
@@ -97,7 +100,8 @@ export class AuthManager {
     const wallet=await this.walletManager.createWallet(mnemonic);
     const [account]=await wallet.getAccountsWithPrivkeys();
     signal?.throwIfAborted();
-    if (epoch !== this.walletEpoch) throw new Error('Wallet initialization was superseded');
+    if (epoch !== this.walletEpoch || this.gameState.persistenceEnabled === false
+        || this.gameState.isSessionCurrent?.() === false) throw new Error('Wallet initialization was superseded');
     this.gameState.wallet=wallet;
     this.gameState.signingAccount=account;
     this.gameState.pubkey=this.walletManager.bytesToHex(account.pubkey);
@@ -210,7 +214,7 @@ export class AuthManager {
     const address=this.gameState.signingAccount.address;
     const assertCurrent=()=>{
       signal?.throwIfAborted();
-      if (this.gameState.signingAccount.address !== address) throw new Error('Login device changed');
+      if (this.gameState.signingAccount?.address !== address) throw new Error('Login device changed');
     };
     assertCurrent();
     const response = await this.guildAPI.login(await this.buildLoginRequest());
@@ -233,7 +237,8 @@ export class AuthManager {
       this.grassManager.registerListener(new PlayerAddressRevokedListener(
         this.gameState,
         this.guildAPI,
-        this.gameState.signingAccount.address
+        this.gameState.signingAccount.address,
+        this.sessionAuthority
       ));
       this.grassManager.registerListener(new AlphaChangeListener(this.gameState));
 
@@ -271,6 +276,7 @@ export class AuthManager {
       assertCurrent();
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlayer(player,this.gameState.currentBlockHeight);
       this.gameState.alphaRefresh.start();
+      this.sessionAuthority?.start();
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
       this.gameState.setStructTypes(structTypes);
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setFleet(fleet);
@@ -335,7 +341,7 @@ export class AuthManager {
           this.mapManager
         );
         newPlanetListener.redirectCallback = () => {
-          if (signal?.aborted || this.gameState.signingAccount.address !== address) return;
+          if (signal?.aborted || this.gameState.signingAccount?.address !== address) return;
           window.dispatchEvent(new LoginCompleteEvent());
         };
 
@@ -504,7 +510,13 @@ export class AuthManager {
     return success;
   }
 
-  logout() {
+  handleSessionClosed(event) {
+    if (event.key === TransactionJournal.SESSION_CLOSED_KEY && this.gameState.isSessionCurrent?.() === false) {
+      return this.logout({fromOtherTab:true});
+    }
+  }
+
+  logout({fromOtherTab = false} = {}) {
     if (this.logoutPromise) return this.logoutPromise;
     // A simulated session (the tutorial) must never clear the player's saved data.
     if (!this.gameState.persistenceEnabled) {
@@ -512,17 +524,21 @@ export class AuthManager {
     }
 
     this.signingClientManager.stopForLogout();
+    this.sessionAuthority?.stop();
     this.gameState.alphaRefresh.stop();
     this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].clearFunds();
     this.walletEpoch=(this.walletEpoch ?? 0)+1;
     this.gameState.persistenceEnabled=false;
-    TransactionJournal.clearSession();
     this.gameState.mnemonic=null;
     this.gameState.wallet=null;
     this.gameState.signingAccount=null;
     this.gameState.pubkey=null;
+    if (!fromOtherTab) {
+      try { TransactionJournal.clearSession(); }
+      catch (error) { console.warn('[Logout] private storage cleanup failed:',error); }
+    }
     // Local logout must complete even if the server session endpoint is down.
-    this.logoutPromise=Promise.resolve().then(()=>this.guildAPI.logout({timeoutMs:5000})).catch(error=>{
+    this.logoutPromise=Promise.resolve().then(()=>fromOtherTab ? undefined : this.guildAPI.logout({timeoutMs:5000})).catch(error=>{
       console.debug('[Logout] server session cleanup unavailable:',error);
     }).finally(() => {
       MenuPage.router.goto('Auth', 'index');

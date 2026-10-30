@@ -12,7 +12,6 @@ import {ChainQueryClient} from "../api/ChainQueryClient";
 import {OwnedRpcClient} from "../api/OwnedRpcClient";
 import {validateSigningSnapshot} from "../util/ChainProtocol";
 import {SigningSubmission} from "./SigningSubmission";
-import {TransactionJournal} from "./TransactionJournal";
 
 /** Floor between unforced probes, so an idle player barely touches the node. */
 const PROBE_INTERVAL_MS = 5 * 60 * 1000;
@@ -64,9 +63,6 @@ export class SigningClientManager {
       registry: this.registry,
       wsUrl: this.wsUrl,
       submission: new SigningSubmission(this),
-    });
-    window.addEventListener('storage',event=>{
-      if (event.key===TransactionJournal.SESSION_CLOSED_KEY) this.stopForLogout();
     });
   }
 
