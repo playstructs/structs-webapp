@@ -28,7 +28,8 @@ class InfusionManager
 
     public function __construct(
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        private ?ReactorVaultManager $vaultPositions = null
     ) {
         $this->entityManager = $entityManager;
         $this->validator = $validator;
@@ -99,12 +100,27 @@ class InfusionManager
                 $responseContent->data = is_string($row)
                     ? json_decode($row, true, 512, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING)
                     : null;
-                $positionsMeta = $responseContent->data['positions_meta'] ?? [];
-                $responseContent->meta['transaction_ready'] = ($responseContent->meta['transaction_ready'] ?? false)
-                    && ($positionsMeta['complete'] ?? false) && ($positionsMeta['power_ready'] ?? false);
             }
             $responseContent->success = true;
         });
+
+        if (($responseContent->meta['protocol'] ?? null) === 'v0.22.0') {
+            if (is_array($responseContent->data)) {
+                $this->vaultPositions?->apply($responseContent->data, $responseContent->meta, $db);
+            }
+            $positionsMeta = $responseContent->data['positions_meta'] ?? [];
+            if (in_array($positionsMeta['reason'] ?? null, ['vault_unindexed', 'vault_evidence_unavailable'], true)) {
+                // The retained rows alone cannot certify total applied power at
+                // an as-yet-unresolved canonical vault address.
+                $positionsMeta['power_ready'] = false;
+                $responseContent->data['positions_meta'] = $positionsMeta;
+                foreach (['power_p', 'owner_power_p', 'power', 'owner_power'] as $field) {
+                    $responseContent->data[$field] = null;
+                }
+            }
+            $responseContent->meta['transaction_ready'] = ($responseContent->meta['transaction_ready'] ?? false)
+                && ($positionsMeta['complete'] ?? false) && ($positionsMeta['power_ready'] ?? false);
+        }
 
         return new JsonResponse($responseContent);
     }

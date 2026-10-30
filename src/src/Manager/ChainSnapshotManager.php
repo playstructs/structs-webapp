@@ -17,32 +17,36 @@ class ChainSnapshotManager
     ) {
     }
 
-    public function verifyChain(string $chainId): void
+    public function verifyChain(string $chainId, ?float $deadline = null): void
     {
-        if ($chainId === '' || ($this->read('/cosmos/base/tendermint/v1beta1/node_info')['default_node_info']['network'] ?? null) !== $chainId) {
+        if ($chainId === '' || ($this->read('/cosmos/base/tendermint/v1beta1/node_info', null, $deadline)['default_node_info']['network'] ?? null) !== $chainId) {
             throw new UnexpectedValueException('Chain snapshot network mismatch');
         }
     }
 
-    public function get(string $path, string $height): array
+    public function get(string $path, string $height, ?float $deadline = null): array
     {
         ExactAmount::unsigned($height, '9223372036854775807');
         if ($height === '0') {
             throw new UnexpectedValueException('Chain snapshot height must be positive');
         }
 
-        return $this->read($path, $height);
+        return $this->read($path, $height, $deadline);
     }
 
-    private function read(string $path, ?string $height = null): array
+    private function read(string $path, ?string $height = null, ?float $deadline = null): array
     {
         if (!str_starts_with($path, '/') || str_starts_with($path, '//')) {
             throw new UnexpectedValueException('Chain snapshot path must be local');
         }
+        $remaining = $deadline === null ? 3.0 : min(3.0, $deadline - hrtime(true) / 1e9);
+        if ($remaining <= 0) {
+            throw new UnexpectedValueException('Chain snapshot deadline exceeded');
+        }
         $response = $this->httpClient->request('GET', rtrim($this->baseUrl, '/') . $path, [
             'headers' => $height === null ? [] : ['x-cosmos-block-height' => $height],
-            'timeout' => 2,
-            'max_duration' => 3,
+            'timeout' => min(2.0, $remaining),
+            'max_duration' => $remaining,
             'max_redirects' => 0,
             'on_progress' => static function (int $downloaded): void {
                 if ($downloaded > self::MAX_RESPONSE_BYTES) {
@@ -70,6 +74,9 @@ class ChainSnapshotManager
                 }
             }
             $body = $response->getContent(false);
+            if ($deadline !== null && hrtime(true) / 1e9 >= $deadline) {
+                throw new UnexpectedValueException('Chain snapshot deadline exceeded');
+            }
             if (strlen($body) > self::MAX_RESPONSE_BYTES) {
                 throw new UnexpectedValueException('Chain snapshot response is too large');
             }

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {setTimeout as pause} from 'node:timers/promises';
 import {toBech32} from '@cosmjs/encoding';
 import {Registry, DirectSecp256k1HdWallet} from '@cosmjs/proto-signing';
@@ -22,6 +23,7 @@ import {signedSubmission} from '../../src/js/util/SignedSubmission';
 import {NumberFormatter} from '../../src/js/util/NumberFormatter';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {EVENTS} from '../../src/js/constants/Events';
+import {GuildAPI} from '../../src/js/api/GuildAPI';
 
 const address = n=>toBech32('structs',new Uint8Array(20).fill(n));
 const validator = toBech32('structsvaloper',new Uint8Array(20).fill(8));
@@ -42,6 +44,36 @@ const indexed = () => ({owner_id:'1-1',player_id:'1-1',destination_id:'3-1',vali
     {address:address(1),is_vault:true,owner_id:'1-1',validator,native_ready:true,power_ready:true,unbonding_entries:0,
       fuel_p:'1000000',power_p:'1000000',owner_power_p:'500000',commission:'0.5'}]});
 const player = () => ({id:'1-1',alpha:'2',spendable_alpha_p:'2999999',funds_meta:{height:'3353000',ready:true},snapshot_meta:meta()});
+
+async function postgresVaultSnapshot() {
+  const body=JSON.parse(fs.readFileSync(process.env.STRUCTS_REACTOR_VAULT_FIXTURE || 'tools/proto/reactor-unprovisioned-api.json','utf8'));
+  const api=new GuildAPI();api.ajax.get=async()=>body;
+  const indexed=await api.getInfusionByPlayerId(body.data.player_id);
+  const rpc={chainId:CHAIN.ID,height:body.meta.height,request:async(service,method,bytes)=>{
+    if(service==='structs.structs.Query') {
+      if(method==='Player')return Structs.QueryGetPlayerResponse.encode(Structs.QueryGetPlayerResponse.fromPartial({Player:{id:indexed.player_id,guildId:'0-991087',primaryAddress:indexed.positions[1].address}})).finish();
+      if(method==='Guild')return Structs.QueryGetGuildResponse.encode(Structs.QueryGetGuildResponse.fromPartial({Guild:{id:'0-991087',primaryReactorId:indexed.destination_id,joinInfusionMinimum:'0'}})).finish();
+      if(method==='Reactor')return Structs.QueryGetReactorResponse.encode(Structs.QueryGetReactorResponse.fromPartial({Reactor:{id:indexed.destination_id,validator:indexed.validator,defaultCommission:'500000000000000000'}})).finish();
+      if(method==='Vault')return Structs.QueryVaultResponse.encode({ownerId:indexed.player_id,address:indexed.vault_address,provisioned:false}).finish();
+    }
+    if(service==='cosmos.staking.v1beta1.Query') {
+      if(method==='Validator')return Staking.QueryValidatorResponse.encode(Staking.QueryValidatorResponse.fromPartial({validator:{operatorAddress:indexed.validator,jailed:false,status:3}})).finish();
+      if(method==='Params')return Staking.QueryParamsResponse.encode(Staking.QueryParamsResponse.fromPartial({params:{bondDenom:'ualpha',maxEntries:7}})).finish();
+    }
+    if(service==='cosmos.bank.v1beta1.Query') {
+      assert.equal(QuerySpendableBalanceByDenomRequest.decode(bytes).address,indexed.vault_address);
+      return QuerySpendableBalanceByDenomResponse.encode({balance:{denom:'ualpha',amount:'5000000'}}).finish();
+    }
+    throw new Error(`Unexpected unprovisioned query ${service}/${method}`);
+  }};
+  const state=await readReactorSnapshot(rpc,indexed,indexed.player_id,'0-991087','1000');
+  assert.equal(indexed.positions_meta.vault_provisioned,false);
+  assert.equal(state.fuel,18014398509481988n);assert.equal(state.maxAlpha,18014398514n);
+  assert.equal(state.positions[0].isVault,true);assert.equal(state.positions[0].fuel,9007199254740995n);
+  assert.equal(state.ownerPower,1n,'Stored applied power is distinct from native stake');
+  assert.equal(reactorPreview(state,state.initialAlpha+1n),4503599627870n);
+  console.log('Captured restricted-role PostgreSQL/PHP unprovisioned-vault response passed the actual API factory and native reactor preview adapter.');
+}
 const intent = direction => ({kind:'reactor_change',version:1,ownerId:'1-1',guildId:'0-1',reactorId:'3-1',direction,amount:'2000000'});
 let registry, signer, offline;
 
@@ -192,6 +224,7 @@ async function flow() {
 }
 
 async function main() {
+  await postgresVaultSnapshot();
   const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
   [signer]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);offline=await SigningStargateClient.offline(wallet,{registry});
   await mathAndNativeSnapshot();

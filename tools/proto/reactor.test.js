@@ -148,9 +148,13 @@ async function main() {
   changedOwner.control.reassigned.add(address(2));
   assert.equal((await changedOwner.submission.prepare(changedOwner.tx)).reactor.legs.some(p=>p.address===address(2)),false);
   for(const patch of [{permissions:'2'},{permissions:'16'},{permissions:'18446744073709551616'},
-      {guild:'0-9'},{reactor:'3-9'},{provisioned:false},{maxEntries:0}]) {
+      {guild:'0-9'},{reactor:'3-9'},{maxEntries:0}]) {
     const bad=fixture();Object.assign(bad.control,patch);await assert.rejects(()=>bad.submission.prepare(bad.tx));assert.equal(bad.control.signed,0);
   }
+  const unprovisioned=fixture();unprovisioned.control.provisioned=false;unprovisioned.control.balances.delete(address(1));
+  const retainedOnly=await unprovisioned.submission.prepare(unprovisioned.tx);
+  assert.equal(retainedOnly.reactor.legs.every(leg=>!leg.isVault),true,'A verified empty unprovisioned vault does not block retained withdrawals');
+  assert.equal(retainedOnly.reactor.legs.reduce((total,leg)=>total+BigInt(leg.amount),0n),3000000n);
   const insufficient=fixture();insufficient.control.balances.clear();
   await assert.rejects(()=>insufficient.submission.prepare(insufficient.tx),/complete withdrawal/);assert.equal(insufficient.control.signed,0);
   const unready=fixture();unready.control.complete=false;

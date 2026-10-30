@@ -121,7 +121,6 @@ export async function prepareReactor(rpc, tx, indexed) {
     const vault = await query.Vault({ownerId:intent.ownerId});
     if (vault.ownerId !== intent.ownerId || typeof vault.provisioned !== 'boolean') throw new Error('Invalid reactor vault');
     source = transferAddress(vault.address);
-    if (intent.direction === 'defuse' && !vault.provisioned) throw new Error('Indexed reactor vault is not provisioned');
   }
   const requested = exactAlphaAmount(intent.amount);
   const legs = [];
