@@ -1,4 +1,6 @@
 import {registrationProofContext, registrationProofMessage} from "../util/RegistrationProof";
+import {CHAIN} from "../constants/ChainConstants";
+import {validateReadSnapshot} from "../util/ChainProtocol";
 import {JsonAjaxer} from "../framework/JsonAjaxer";
 import {GuildFactory} from "../factories/GuildFactory";
 import {PlayerFactory} from "../factories/PlayerFactory";
@@ -819,15 +821,19 @@ export class GuildAPI {
    * @return {Promise<StructType[]>}
    */
   async getStructTypes(forceRefresh = false) {
-    let structTypeResponseData = this.getCachedItem(this.getStructTypesCacheKey(), 1000 * 60 * 60 * 24);
-    if (structTypeResponseData === null || forceRefresh) {
-      const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/type`);
-      const response = this.guildAPIResponseFactory.make(jsonResponse);
-      this.handleResponseFailure(response);
-      structTypeResponseData = response.data;
-      this.cacheItem(this.getStructTypesCacheKey(), structTypeResponseData);
+    // The old day-long cache has no source height or protocol identity. A
+    // fresh consistent catalog is small; share only concurrent network reads.
+    if (!this.structTypesRequest) {
+      this.structTypesRequest = this.ajax.get(`${this.apiUrl}/struct/type`, {timeoutMs:15000}).then(jsonResponse=>{
+        const response=this.guildAPIResponseFactory.make(jsonResponse);
+        this.handleResponseFailure(response);
+        validateReadSnapshot(response.meta,{chainId:CHAIN.ID,height:response.meta?.observed_tip});
+        const types=this.structTypeFactory.parseList(response.data);
+        types.snapshot_meta=response.meta;
+        return types;
+      }).finally(()=>{this.structTypesRequest=null;});
     }
-    return this.structTypeFactory.parseList(structTypeResponseData);
+    return this.structTypesRequest;
   }
 
   /**
@@ -857,10 +863,16 @@ export class GuildAPI {
    * @return {Promise<Work[]>}
    */
   async getWorkByPlayerId(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/work/player/${playerId}`);
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/work/player/${playerId}`, {timeoutMs:15000});
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
+    validateReadSnapshot(response.meta,{chainId:CHAIN.ID,height:response.meta?.observed_tip},['work']);
     const work = this.workFactory.parseList(response.data);
+    const identities=new Set();
+    for (const item of work) {
+      if (item.player_id !== playerId || identities.has(item.object_id)) throw new Error('Work owner or identity is invalid');
+      identities.add(item.object_id);
+    }
     // An empty but complete snapshot also carries authority (for stopping work).
     work.snapshot_meta = response.meta;
     for (const item of work) {

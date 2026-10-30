@@ -28,6 +28,15 @@ export function maxQueryHeight(height, other = height) {
  * This establishes protocol agreement, not live spendability or permissions.
  */
 export function validateSigningSnapshot(meta, observed, requiredModels = []) {
+  return validateIndexedSnapshot(meta,observed,requiredModels,true);
+}
+
+/** Data may be complete while catching up; only signing requires a current writer. */
+export function validateReadSnapshot(meta, observed, requiredModels = []) {
+  return validateIndexedSnapshot(meta,observed,requiredModels,false);
+}
+
+function validateIndexedSnapshot(meta, observed, requiredModels, signing) {
   const observedHeight = exactQueryHeight(observed?.height);
   const protocol = protocolAtHeight(observed?.chainId, observedHeight);
   const indexed = exactQueryHeight(meta?.indexed_height);
@@ -36,7 +45,7 @@ export function validateSigningSnapshot(meta, observed, requiredModels = []) {
   if (meta.chain_id !== observed.chainId || meta.activation_height !== CHAIN.UPGRADE_HEIGHT
       || meta.api_contract !== CHAIN.API_CONTRACT || meta.cache_epoch !== `${CHAIN.API_CONTRACT}:${protocol}`
       || meta.protocol !== protocol || meta.observed_protocol !== protocol
-      || meta.data_ready !== true || meta.transaction_ready !== true || height !== indexed
+      || meta.data_ready !== true || (signing && meta.transaction_ready !== true) || height !== indexed
       || BigInt(indexed) > BigInt(observedHeight) || BigInt(tip) < BigInt(indexed)
       || protocolAtHeight(meta.chain_id, tip) !== protocol
       || (protocol === CHAIN.PROTOCOL && meta.inventory_authority !== 'current-claims-v1')) {

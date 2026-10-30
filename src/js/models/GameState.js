@@ -1,4 +1,7 @@
 import {TransactionJournal} from "../managers/TransactionJournal";
+import {CHAIN} from "../constants/ChainConstants";
+import {maxQueryHeight, validateReadSnapshot} from "../util/ChainProtocol";
+import {workUint64} from "../util/WorkDifficulty";
 import {SignupRequestDTO} from "../dtos/SignupRequestDTO";
 import {ChargeCalculator} from "../util/ChargeCalculator";
 import {EVENTS} from "../constants/Events";
@@ -278,7 +281,20 @@ export class GameState {
    * @param {array} types
    */
   setStructTypes(types) {
+    if (this.persistenceEnabled) {
+      if (!this.isSessionCurrent()) return false;
+      const meta=types?.snapshot_meta;
+      validateReadSnapshot(meta,{chainId:CHAIN.ID,height:maxQueryHeight(meta?.observed_tip,this.currentBlockHeight || meta?.observed_tip)});
+      const previous=this.structTypes.snapshot_meta;
+      if (previous && BigInt(meta.height)<BigInt(previous.height)) return false;
+      if (previous?.height === meta.height && JSON.stringify(types)!==JSON.stringify(this.structTypes.structTypes)) return false;
+    }
+    if (!Array.isArray(types) || !types.length || new Set(types.map(type=>type.id)).size !== types.length) throw new Error('Invalid struct catalog');
+    for (const type of types) {
+      for (const field of ['build_difficulty','ore_mining_difficulty','ore_refining_difficulty']) workUint64(type[field]);
+    }
     this.structTypes.setStructTypes(types);
+    return true;
   }
 
   /**

@@ -1,4 +1,5 @@
 import {SessionAuthorityManager} from "./SessionAuthorityManager";
+import {WorkRefreshManager} from "./WorkRefreshManager";
 import {CHAIN} from "../constants/ChainConstants";
 import {deviceChangeIntent} from "../util/DeviceChangeIntent";
 import {readDeviceContext, readDeviceAuthority} from "./DeviceChangePreparation";
@@ -88,6 +89,7 @@ export class AuthManager {
     this.permissionManager = permissionManager;
     this.gameState.alphaRefresh = new AlphaRefreshManager(gameState,guildAPI);
     this.sessionAuthority = new SessionAuthorityManager(gameState,signingClientManager,()=>this.logout());
+    this.workRefresh = new WorkRefreshManager(gameState,guildAPI,taskManager);
     window.addEventListener('storage',event=>this.handleSessionClosed(event));
   }
 
@@ -330,6 +332,7 @@ export class AuthManager {
         // Do this last so block height is available
         await this.taskManager.restoreTasksFromDB();
         assertCurrent();
+        this.workRefresh?.start();
 
         window.dispatchEvent(new LoginCompleteEvent());
 
@@ -342,6 +345,7 @@ export class AuthManager {
         );
         newPlanetListener.redirectCallback = () => {
           if (signal?.aborted || this.gameState.signingAccount?.address !== address) return;
+          this.workRefresh?.start();
           window.dispatchEvent(new LoginCompleteEvent());
         };
 
@@ -525,6 +529,8 @@ export class AuthManager {
 
     this.signingClientManager.stopForLogout();
     this.sessionAuthority?.stop();
+    this.workRefresh?.stop();
+    this.taskManager?.closeSession?.();
     this.gameState.alphaRefresh.stop();
     this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].clearFunds();
     this.walletEpoch=(this.walletEpoch ?? 0)+1;

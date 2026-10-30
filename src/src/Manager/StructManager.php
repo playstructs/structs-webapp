@@ -285,7 +285,7 @@ class StructManager
             ORDER BY id;
         ';
 
-        return $this->queryAll(
+        return $this->queryAllStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,

@@ -41,7 +41,7 @@ export class TaskManagerOreTest extends DTestSuite {
       }
     };
 
-    const taskManager = new TaskManager(gameState, {}, {}, new TaskStateFactory());
+    const taskManager = new TaskManager(gameState, {simulated:true}, {}, new TaskStateFactory());
 
     taskManager.spawned = [];
     taskManager.terminated = [];

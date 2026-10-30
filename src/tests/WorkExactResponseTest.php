@@ -48,6 +48,9 @@ class WorkExactResponseTest extends ApiManagerTestCase
             }
             $catalog = new StructManager($this->entityManager($db), $this->validator());
             $catalogPayload = json_decode($catalog->getAllStructTypes()->getContent(), true);
+            $this->assertArrayHasKey('meta', $catalogPayload);
+            $this->assertSame('structs-api-v022-1', $catalogPayload['meta']['api_contract']);
+            $this->assertSame([], $catalogPayload['meta']['required_models']);
             $type = array_values(array_filter($catalogPayload['data'], static fn (array $row): bool => (int) $row['id'] === 990970))[0];
             foreach (['build_difficulty', 'ore_mining_difficulty', 'ore_refining_difficulty'] as $field) {
                 $this->assertSame($difficulty, $type[$field]);

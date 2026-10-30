@@ -173,12 +173,15 @@ console.log('Work consensus vectors, actual worker control loop, proof validatio
 
 async function workAPI() {
   const {GuildAPI}=require('../../src/js/api/GuildAPI');
-  const api=new GuildAPI(), meta={height:'3353000',data_ready:true};
+  const api=new GuildAPI(), meta={height:'3353000',indexed_height:'3353000',observed_tip:'3353000',
+    chain_id:'structstestnet-111',activation_height:'3353000',protocol:'v0.22.0',observed_protocol:'v0.22.0',
+    api_contract:'structs-api-v022-1',cache_epoch:'structs-api-v022-1:v0.22.0',inventory_authority:'current-claims-v1',
+    data_ready:true,transaction_ready:true,required_models:['work'],models:{work:{height:'3353000',ready:true}}};
   let rows=[];
   api.ajax={get:async()=>({success:true,errors:[],data:rows,meta})};
   const empty=await api.getWorkByPlayerId('1-1');
   assert.equal(empty.length,0);assert.equal(empty.snapshot_meta,meta);
-  rows=[{object_id:'5-1',category:TASK_TYPES.BUILD,block_start:'9007199254740993',difficulty_target:'18446744073709551615'}];
+  rows=[{object_id:'5-1',player_id:'1-1',category:TASK_TYPES.BUILD,block_start:'9007199254740993',difficulty_target:'18446744073709551615'}];
   const work=await api.getWorkByPlayerId('1-1');
   assert.equal(work[0].snapshot_meta,meta);
   assert.equal(factory.initTaskFromWork(work[0]).block_start,'9007199254740993');

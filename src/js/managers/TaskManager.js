@@ -9,6 +9,11 @@ import {TASK_STATUS} from "../constants/TaskStatus";
 import {OBJECT_TYPES} from "../constants/ObjectTypes";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {RAID_STATUS} from "../constants/RaidStatus";
+import {CHAIN} from "../constants/ChainConstants";
+import {maxQueryHeight, validateReadSnapshot} from "../util/ChainProtocol";
+import {workUint64} from "../util/WorkDifficulty";
+import {TX_STATUS} from "../models/SigningTransaction";
+import {workMessageIdentity, workSubmissionMatches, workSubmissionCommit, workAttemptHeight} from "../util/WorkSubmission";
 
 
 /*
@@ -44,6 +49,12 @@ export class TaskManager {
 
         /** @type {Promise<Work[]>|null} In-flight work request, shared by concurrent callers. */
         this.work_request = null;
+        this.workSession = 0;
+        this.workSnapshot = null;
+        this.workHeightFloor = 0n;
+        this.proofObservers = new Map();
+        this.proofController = new AbortController();
+        this.proofRetryNeeded = false;
 
         /** @type {Object<string, number>} Ore clocks that arrived while the planet was still raided. */
         this.held_ore_clocks = {};
@@ -122,7 +133,11 @@ export class TaskManager {
         // TASK_CMD_SPAWN
         // Can be dispatched anywhere to execute new tasks.
         window.addEventListener(EVENTS.TASK_CMD_SPAWN, function (event) {
-            this.spawn(event.state);
+            if (this.guildAPI.simulated === true) this.spawn(event.state);
+            else {
+                this.requireObservedWork();
+                this.spawnOutstandingWork();
+            }
         }.bind(this));
 
 
@@ -130,6 +145,7 @@ export class TaskManager {
         // Can be dispatched anywhere the chain may have handed the player work
         // that no local task is covering yet.
         window.addEventListener(EVENTS.TASK_CMD_RECONCILE, function (event) {
+            this.requireObservedWork();
             this.spawnOutstandingWork();
         }.bind(this));
 
@@ -152,6 +168,11 @@ export class TaskManager {
                 process.setBlockCheckpoint(this.gameState.currentBlockHeight);
             }
             this.lookForAwaitedRefineWork();
+            this.retryCompletedProofs();
+            if (this.proofRetryNeeded) {
+                this.proofRetryNeeded=false;
+                this.spawnOutstandingWork();
+            }
         }.bind(this));
 
         // TASK_CMD_SWEEP
@@ -166,55 +187,19 @@ export class TaskManager {
             this.sweepAll();
         }.bind(this));
 
-        // Handle a completed task
-        window.addEventListener(EVENTS.TASK_COMPLETED, async function (event) {
-            console.log('It is done! \n ' + event.state.toLog());
-
-            // TODO - restructure this to not be switch based
-            // TODO - add result verification (check hash, difficulty, etc)
-            // TODO - More complex result handling, currently assumes
-            //          only processing your own work.
-            //
-                // If the Task belongs to this user
-                    // Create a transactions
-                // else
-                    // submit to guild
-
-            let msg;
-            this.sweep(event.state.getPID());
-            switch (event.state.task_type) {
-                case TASK_TYPES.RAID:
-                    await this.signingClientManager.queueMsgPlanetRaidComplete(
-                        event.state.object_id,
-                        event.state.result_hash,
-                        event.state.result_nonce
-                    );
-                    break;
-                case TASK_TYPES.BUILD:
-                    await this.signingClientManager.queueMsgStructBuildComplete(
-                        event.state.object_id,
-                        event.state.result_hash,
-                        event.state.result_nonce
-                    );
-                    break;
-
-                case TASK_TYPES.MINE:
-                    await this.signingClientManager.queueMsgStructOreMinerComplete(
-                        event.state.object_id,
-                        event.state.result_hash,
-                        event.state.result_nonce
-                    );
-                    break;
-
-                case TASK_TYPES.REFINE:
-                    await this.signingClientManager.queueMsgStructOreRefineryComplete(
-                        event.state.object_id,
-                        event.state.result_hash,
-                        event.state.result_nonce
-                    );
-                    break;
+        // Queue acceptance and inclusion are separate from finishing the hash.
+        window.addEventListener(EVENTS.TASK_COMPLETED, event => {
+            if (this.guildAPI.simulated !== true) {
+                this.submitCompletedProof(event.state);
+                return;
             }
-        }.bind(this));
+            const methods={RAID:'queueMsgPlanetRaidComplete',BUILD:'queueMsgStructBuildComplete',
+                MINE:'queueMsgStructOreMinerComplete',REFINE:'queueMsgStructOreRefineryComplete'};
+            const method=methods[event.state.task_type];
+            if (method) this.signingClientManager[method](event.state.object_id,event.state.result_hash,event.state.result_nonce)
+                .then(()=>this.sweep(event.state.getPID()))
+                .catch(error=>console.debug('[TaskManager] simulated proof unavailable:',error));
+        });
 
         // Add Console Utilities
         setInterval(() => this.StatusAll(), TASK.AUTOMATIC_STATUS_INTERVAL);
@@ -260,6 +245,34 @@ export class TaskManager {
 
         task_state.setBlockCheckpoint(this.gameState.currentBlockHeight);
 
+        if (this.guildAPI.simulated !== true) {
+            try {
+                const existing=this.signingClientManager.queue.findWorkSubmission(task_state);
+                if (existing) {
+                    if (existing.status === TX_STATUS.SUCCEEDED) {
+                        workSubmissionCommit(existing,task_state,this.signingClientManager.registry);
+                        this.sweep(pid);
+                        return pid;
+                    }
+                    if (!existing.isTerminal()) {
+                        this.sweep(pid);
+                        this.observeWorkSubmission(task_state,existing);
+                        return pid;
+                    }
+                    // A failed attempt is not permission to hash/retry against
+                    // the same stale projection. A new work snapshot is needed.
+                    if (task_state.rules_height == null || workUint64(task_state.rules_height) <= workAttemptHeight(existing)) return pid;
+                }
+            } catch (error) {
+                console.warn('[TaskManager] saved proof needs reconciliation:',error);
+                return pid;
+            }
+        }
+
+        if (this.processes[pid]?.state.isCompleted() && !this.processes[pid].state.isSameWork(task_state)) {
+            // Replacing a local candidate never erases its queued/signed record.
+            this.sweep(pid);
+        }
         if (this.processes[pid]) {
             this.processes[pid].replaceState(task_state);
         } else {
@@ -302,9 +315,9 @@ export class TaskManager {
      * @param {string} pid
      */
     terminate(pid) {
-        const running_index = this.running_queue.indexOf(pid);
-        const waiting_index = this.waiting_queue.indexOf(pid);
-        if ((running_index !== -1) || (waiting_index !== -1)) {
+        // A completed candidate awaiting queue capacity is in neither lane,
+        // but authoritative removal of its work must still discard it.
+        if (this.processes[pid]) {
             this.processes[pid].terminate();
 
             this.runningQueueRemove(pid);
@@ -330,6 +343,73 @@ export class TaskManager {
 
            this.runNext();
        }
+    }
+
+    retryCompletedProofs() {
+        if (this.guildAPI.simulated === true || !this.gameState.signingAccount?.address) return;
+        for (const process of Object.values(this.processes)) {
+            if (process.state.isCompleted()) this.submitCompletedProof(process.state);
+        }
+    }
+
+    submitCompletedProof(state) {
+        if (!this.gameState.signingAccount?.address || this.gameState.isSessionCurrent?.() === false
+            || !this.processes[state.getPID()]?.state.isSameWork(state)) return;
+        const queue=this.signingClientManager.queue;
+        try {
+            const existing=queue.findWorkSubmission(state);
+            if (existing) {
+                if (!existing.isTerminal() || existing.status === TX_STATUS.SUCCEEDED) return this.observeWorkSubmission(state,existing);
+                if (state.rules_height == null || workUint64(state.rules_height) <= workAttemptHeight(existing)) {
+                    this.sweep(state.getPID());
+                    this.workHeightFloor=this.workHeightFloor > workAttemptHeight(existing)+1n ? this.workHeightFloor : workAttemptHeight(existing)+1n;
+                    this.proofRetryNeeded=true;
+                    return;
+                }
+            }
+            state.setBlockCheckpoint(this.gameState.currentBlockHeight);
+            if (!state.checkResultHashDifficulty()) {
+                this.sweep(state.getPID());
+                this.requireObservedWork();
+                this.proofRetryNeeded=true;
+                return;
+            }
+            const message=workMessageIdentity(state);
+            const payload={[message.field]:state.object_id,proof:state.result_hash,nonce:state.result_nonce};
+            if (!workSubmissionMatches({message:{typeUrl:message.typeUrl,payload}},state,this.signingClientManager.registry)) {
+                throw new Error('Completed proof does not match its work identity');
+            }
+            const id=queue.enqueueGameplayImmediate(message.typeUrl,payload);
+            return this.observeWorkSubmission(state,queue.getTransaction(id));
+        } catch (error) {
+            // Queue pressure/unknown evidence or unavailable storage leaves the
+            // completed candidate in memory. A later block may enqueue it only
+            // if the durable queue proves that no submission already owns it.
+            console.debug('[TaskManager] completed proof awaiting queue:',error);
+        }
+    }
+
+    observeWorkSubmission(state, tx) {
+        if (this.proofObservers.has(tx.id)) return this.proofObservers.get(tx.id);
+        const session=this.workSession, ownerId=this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+        const address=this.gameState.signingAccount?.address;
+        const current=()=>session === this.workSession && address === this.gameState.signingAccount?.address
+            && ownerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id && this.gameState.isSessionCurrent?.() !== false;
+        const observation=this.signingClientManager.queue.whenSettled(tx.id,this.proofController.signal).then(result=>{
+            if (!current()) return;
+            const height=result.status === TX_STATUS.SUCCEEDED
+                ? BigInt(workSubmissionCommit(result,state,this.signingClientManager.registry)) : workAttemptHeight(result)+1n;
+            if (height > this.workHeightFloor) this.workHeightFloor=height;
+            const process=this.processes[state.getPID()];
+            if (process?.state.isSameWork(state)) this.sweep(state.getPID());
+            this.proofRetryNeeded=true;
+        }).catch(error=>{
+            if (current()) console.warn('[TaskManager] proof outcome unavailable:',error);
+        }).finally(()=>{
+            if (this.proofObservers.get(tx.id) === observation) this.proofObservers.delete(tx.id);
+        });
+        this.proofObservers.set(tx.id,observation);
+        return observation;
     }
 
 
@@ -678,9 +758,21 @@ export class TaskManager {
      * @return {Promise<void>}
      */
     async refreshOreTasks(taskType, block_start) {
+        if (this.guildAPI.simulated !== true) {
+            // A notification requests a refresh, including a zero/cleared
+            // clock. Only the ready snapshot may replace or remove real work.
+            this.requireObservedWork();
+            try {
+                const work=await this.fetchWork();
+                this.syncOreTasks(taskType,work);
+            } catch (error) {
+                console.warn('[TaskManager] could not refresh ore work:',error);
+            }
+            return;
+        }
         // A cleared clock stops the work outright, and cancels anything held
         // over from a raid since there is no longer a clock to go back to.
-        if (!block_start) {
+        if (block_start == null || workUint64(block_start) === 0n) {
             delete this.held_ore_clocks[taskType];
             this.terminateAllByType(taskType);
             return;
@@ -698,6 +790,7 @@ export class TaskManager {
         }
 
         delete this.held_ore_clocks[taskType];
+        this.requireObservedWork();
 
         try {
             const work = await this.fetchWork();
@@ -722,9 +815,11 @@ export class TaskManager {
      *   leads the indexed work record. Falls back to the work record's own.
      */
     syncOreTasks(taskType, work, block_start = null) {
+        if (!this.isWorkCurrent(work)) return;
         const eligible = this.isPlayerPlanetRaided()
             ? []
-            : work.filter((workTask) => workTask.category === taskType);
+            : work.filter((workTask) => workTask.category === taskType
+                && workUint64(this.guildAPI.simulated === true ? block_start ?? workTask.block_start : workTask.block_start) > 0n);
         const eligible_ids = eligible.map((workTask) => workTask.object_id);
 
         for (const pid of this.getProcessIdsByType(taskType)) {
@@ -734,7 +829,7 @@ export class TaskManager {
         }
 
         for (const workTask of eligible) {
-            const task_block_start = block_start ?? workTask.block_start;
+            const task_block_start = this.guildAPI.simulated === true ? block_start ?? workTask.block_start : workTask.block_start;
 
             // Without a clock there is nothing to hash against.
             if (task_block_start === null || String(task_block_start) === '0') {
@@ -756,14 +851,71 @@ export class TaskManager {
      */
     fetchWork() {
         if (!this.work_request) {
+            const ownerId=this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+            const address=this.gameState.signingAccount?.address;
+            const session=this.workSession;
             this.work_request = this.guildAPI
-                .getWorkByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id)
+                .getWorkByPlayerId(ownerId)
+                .then(work=>{
+                    if (session !== this.workSession || ownerId !== this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+                        || address !== this.gameState.signingAccount?.address || this.gameState.isSessionCurrent?.() === false) {
+                        throw new Error('Work session changed');
+                    }
+                    if (this.guildAPI.simulated !== true) {
+                        const meta=work.snapshot_meta;
+                        validateReadSnapshot(meta,{chainId:CHAIN.ID,height:maxQueryHeight(meta?.observed_tip,this.gameState.currentBlockHeight || meta?.observed_tip)},['work']);
+                        const height=BigInt(meta.height);
+                        if (height < this.workHeightFloor || (this.workSnapshot?.ownerId === ownerId && height < BigInt(this.workSnapshot.height))) {
+                            throw new Error('Work snapshot is older than the current state');
+                        }
+                        const rows=JSON.stringify(work.map(({snapshot_meta,...item})=>item)
+                            .sort((a,b)=>a.object_id < b.object_id ? -1 : a.object_id > b.object_id ? 1 : 0));
+                        if (this.workSnapshot?.ownerId === ownerId && this.workSnapshot.height === meta.height
+                            && this.workSnapshot.rows !== rows) throw new Error('Work snapshot changed at the same height');
+                        this.workSnapshot={ownerId,height:meta.height,rows};
+                        work.workSession={ownerId,address,session};
+                    }
+                    return work;
+                })
                 .finally(() => {
-                    this.work_request = null;
+                    if (session === this.workSession) this.work_request = null;
                 });
         }
 
         return this.work_request;
+    }
+
+    isWorkCurrent(work) {
+        if (this.guildAPI.simulated === true) return true;
+        const scope=work.workSession;
+        return scope?.session === this.workSession && scope.ownerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+            && scope.address === this.gameState.signingAccount?.address && this.gameState.isSessionCurrent?.() !== false
+            && work.snapshot_meta?.height === this.workSnapshot?.height;
+    }
+
+    requireObservedWork() {
+        if (this.guildAPI.simulated === true) return;
+        const height=BigInt(this.gameState.currentBlockHeight);
+        if (height > this.workHeightFloor) this.workHeightFloor=height;
+    }
+
+    closeSession() {
+        this.workSession++;
+        this.proofController.abort();
+        this.proofController=new AbortController();
+        this.proofObservers.clear();
+        this.proofRetryNeeded=false;
+        this.work_request=null;
+        this.outstanding_work_lookup=null;
+        this.workSnapshot=null;
+        this.workHeightFloor=0n;
+        this.refine_work_lookups_remaining=0;
+        this.held_ore_clocks={};
+        this.setManagerStatus(TASK_MANAGER_STATUS.OFFLINE);
+        for (const process of Object.values(this.processes)) process.clearWorker();
+        this.processes={};
+        this.waiting_queue=[];
+        this.running_queue=[];
     }
 
     /**
@@ -822,20 +974,22 @@ export class TaskManager {
      * Picks up outstanding work the player isn't running yet, such as refining
      * that only became possible once ore changed hands during a raid.
      *
-     * Build and raid work is only ever started here, since the chain reports
-     * those stopping with a start block of zero. Ore work has no such per-struct
-     * signal, so it is reconciled in both directions.
+     * A complete snapshot reconciles removals as well as new work. Ore tasks
+     * additionally depend on the planet's shared clocks and raid state.
      *
      * @return {Promise<void>}
      */
     async spawnOutstandingWork() {
         if (!this.outstanding_work_lookup) {
+            const session=this.workSession;
             this.outstanding_work_lookup = this.fetchAndSpawnOutstandingWork()
+                .then(()=>true)
                 .catch((error) => {
                     console.warn('[TaskManager] could not pick up outstanding work:', error);
+                    return false;
                 })
                 .finally(() => {
-                    this.outstanding_work_lookup = null;
+                    if (session === this.workSession) this.outstanding_work_lookup = null;
                 });
         }
 
@@ -847,6 +1001,12 @@ export class TaskManager {
      */
     async fetchAndSpawnOutstandingWork() {
         const work = await this.fetchWork();
+        if (!this.isWorkCurrent(work)) return;
+
+        const identities=new Set(work.map(item=>item.object_id));
+        for (const [pid,process] of Object.entries(this.processes)) {
+            if (!ORE_TASK_TYPES.includes(process.state.task_type) && !identities.has(pid)) this.terminate(pid);
+        }
 
         work.forEach((workTask) => {
             // Ore work runs off the planet's shared clock and is reconciled
@@ -865,6 +1025,7 @@ export class TaskManager {
                 task.task_type === TASK_TYPES.RAID
                 && !this.isRaidTaskShieldVulnerable(task)
             ) {
+                this.terminate(task.getPID());
                 return;
             }
 

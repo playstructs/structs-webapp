@@ -410,5 +410,32 @@ including reload, authority changes, protocol crossing, charge ordering and
 uncertain outcomes. The release check uses real signed app transactions and
 native simulation on disposable in-memory chains: build proofs, refinement to
 the vault, stale anchors, destroyed state, charge and dynamic name permissions.
-No running testnet state is changed. Full task recovery, catalog freshness and
-rendered-browser acceptance remain separate gates.
+No running testnet state is changed. Rendered-browser acceptance remains a
+separate release gate.
+
+### Catalog/work freshness and proof recovery
+
+The catalog API stamps its data from one consistent SQL snapshot. The client
+discards the old metadata-free day-long cache, validates protocol/read readiness,
+and preserves existing type-object references when a complete newer catalog
+arrives. Visible polling, reconnect and activation-boundary refresh also reconcile
+the player's work. Reads time out after 15 seconds; stale, conflicting, malformed
+or incomplete work cannot replace or remove accepted tasks. Notifications request
+a fresh read instead of supplying an unversioned proof anchor.
+
+Finishing a hash attaches an observer to its durable queue ID. Recovery matches
+the original object, category, raid target and anchor through the actual proof
+input; signed bytes outrank a mutable saved intent. Unknown submissions only
+reconcile. A definitive failure permits hashing again only after a newer complete
+work snapshot. Removing a local task or logging out does not remove its journal.
+Storage or queue pressure retains an unsent completed candidate for a later
+block, while logout cancels its observer. Tutorial costs use the release's
+BuildCharge=1 and extractor BuildDifficulty=10, and simulated unsupported actions
+cannot enter the real queue.
+
+The freshness and work-recovery suites exercise these paths with the real API
+parsers, task/queue managers and offline signed transactions. Together with the
+existing checks, `test:proto` runs 18 suites. These are controlled fixtures, not
+live broadcasts or full end-to-end browser acceptance. The legacy `src/js/tests`
+bundle also contains Node-only global mocks; loading that bundle into a native
+browser is not a valid substitute for testing the rendered controls.

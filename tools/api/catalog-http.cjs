@@ -60,6 +60,18 @@ async function ready(base) {
         await ready(proxied);
         let checks = 0;
         for (const [surface, base] of [['apache', direct], ['control-dev-proxy', proxied]]) {
+            for (const [route, models] of [['/api/struct/type', []], ['/api/work/player/1-990970', ['work']]]) {
+                assert.equal((await request(base, route, false)).status, 401);
+                const response = await request(base, route);
+                assert.equal(response.status, 200, surface + ' stamped catalog/work read');
+                const body = await response.json();
+                assert.equal(body.success, true);
+                assert.ok(Array.isArray(body.data));
+                assert.equal(body.meta.api_contract, 'structs-api-v022-1');
+                assert.deepEqual(body.meta.required_models, models);
+                assert.match(response.headers.get('cache-control'), /\bno-(cache|store)\b|\bmax-age=0\b/);
+                checks += 2;
+            }
             for (const route of ['/api/player-address/player/1-990970', '/api/player-address/count/player/1-990970',
                 '/api/player-address/cataloghttpprimary']) {
                 assert.equal((await request(base, route, false)).status, 401);

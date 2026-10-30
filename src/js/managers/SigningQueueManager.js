@@ -13,6 +13,7 @@ import {reactorIntent} from "../util/ReactorIntent";
 import {registrationIntent} from "../util/RegistrationIntent";
 import {generatorIntent} from "../util/GeneratorIntent";
 import {gameplayIntent} from "../util/GameplayIntent";
+import {workSubmissionMatches} from "../util/WorkSubmission";
 
 /**
  * Validate that a payload is safe to persist as JSON. Rejects anything that
@@ -174,11 +175,15 @@ export class SigningQueueManager {
     return this.#findIntent(tx=>tx?.intent?.kind === 'device_change' && tx.intent.ownerId === ownerId && tx.intent.address === address && !tx.isTerminal());
   }
 
+  findWorkSubmission(state) {
+    return this.#findIntent(tx=>workSubmissionMatches(tx,state,this.registry),true);
+  }
+
   enqueueDeviceChange(value) {
     return this.#enqueueIntent(deviceChangeIntent(value));
   }
 
-  #findIntent(matches) {
+  #findIntent(matches, successFirst = false) {
     this.loadPersistedState();
     if (this.recoveryError) throw new Error('Saved signing evidence requires recovery');
     this.#bindScope();
@@ -188,7 +193,8 @@ export class SigningQueueManager {
     const candidates=[...this.immediateQueue,...this.actionQueue,...this.unresolved.values(),...this.completed.values(),
       ...(this.inFlight ? [this.inFlight] : [])];
     return candidates.filter(matches)
-      .sort((a,b)=>Number(a.isTerminal())-Number(b.isTerminal()) || b.createdAt-a.createdAt || b.id.localeCompare(a.id))[0] ?? null;
+      .sort((a,b)=>(successFirst ? Number(b.status === TX_STATUS.SUCCEEDED)-Number(a.status === TX_STATUS.SUCCEEDED) : 0)
+        || Number(a.isTerminal())-Number(b.isTerminal()) || b.createdAt-a.createdAt || b.id.localeCompare(a.id))[0] ?? null;
   }
 
   enqueueRegistration(value) {
