@@ -189,8 +189,8 @@ export class GuildAPI {
    * @param {string} dataProperty
    * @return {Promise<*>}
    */
-  async getSingleDataValue(requestUrl, dataProperty) {
-    const jsonResponse = await this.ajax.get(requestUrl);
+  async getSingleDataValue(requestUrl, dataProperty, options = {}) {
+    const jsonResponse = await this.ajax.get(requestUrl, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
 
@@ -302,10 +302,10 @@ export class GuildAPI {
    * @param {boolean} forceRefresh
    * @return {Promise<number>}
    */
-  async getPlayerAddressCount(playerId, forceRefresh = false) {
+  async getPlayerAddressCount(playerId, forceRefresh = false, options = {}) {
     let count = this.getCachedItem(this.getPlayerAddressCountCacheKey(playerId));
     if (count === null || forceRefresh) {
-      count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
+      count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count', options);
       this.cacheItem(this.getPlayerAddressCountCacheKey(playerId), count);
     }
     return parseInt(count);
@@ -535,8 +535,8 @@ export class GuildAPI {
    * @param {number} page
    * @return {Promise<Transaction[]>}
    */
-  async getTransactions(playerId, page) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/player/${playerId}/page/${page}`);
+  async getTransactions(playerId, page, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/player/${playerId}/page/${page}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     const transactions = this.transactionFactory.parseList(response.data);
@@ -549,8 +549,8 @@ export class GuildAPI {
    * @param {string} playerId
    * @return {Promise<number>}
    */
-  async countTransactions(playerId) {
-    const count = await this.getSingleDataValue(`${this.apiUrl}/ledger/player/${playerId}/count`, 'count');
+  async countTransactions(playerId, options = {}) {
+    const count = await this.getSingleDataValue(`${this.apiUrl}/ledger/player/${playerId}/count`, 'count', options);
     return parseInt(count);
   }
 
@@ -558,8 +558,8 @@ export class GuildAPI {
    * @param {number} txId
    * @return {Promise<Transaction>}
    */
-  async getTransaction(txId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/${txId}`);
+  async getTransaction(txId, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/${txId}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     const transaction = this.transactionFactory.make(response.data);
@@ -583,8 +583,8 @@ export class GuildAPI {
   /**
    * @return {Promise<Guild[]>}
    */
-  async getGuildFilterList() {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/name`);
+  async getGuildFilterList(options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/name`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.guildFactory.parseList(response.data);
@@ -594,10 +594,10 @@ export class GuildAPI {
    * @param transferSearchRequestDTO
    * @return {Promise<PlayerSearchResultDTO[]>}
    */
-  async transferSearch(transferSearchRequestDTO) {
+  async transferSearch(transferSearchRequestDTO, options = {}) {
     const searchStringParam = `search_string=${transferSearchRequestDTO.search_string}`;
     const guildIdParam = transferSearchRequestDTO.guild_id ? `&guild_id=${transferSearchRequestDTO.guild_id}` : '';
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/transfer/search?${searchStringParam}${guildIdParam}`);
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/transfer/search?${searchStringParam}${guildIdParam}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     const players = this.playerSearchResultDTOFactory.parseList(response.data);

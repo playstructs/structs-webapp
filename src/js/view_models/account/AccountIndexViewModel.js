@@ -50,7 +50,14 @@ export class AccountIndexViewModel extends AbstractViewModel {
   }
 
   render () {
-    this.guildAPI.getPlayerAddressCount(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then((addressCount) => {
+    const signal = MenuPage.router.navigationSignal;
+    const account = this.gameState.signingAccount?.address;
+    const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const active = () => !signal.aborted
+      && this.gameState.signingAccount?.address === account
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id === playerId;
+    return this.guildAPI.getPlayerAddressCount(playerId, false, {signal, timeoutMs: 15000}).then((addressCount) => {
+      if (!active()) return;
 
       MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
@@ -126,6 +133,8 @@ export class AccountIndexViewModel extends AbstractViewModel {
 
       this.initPageCode();
 
+    }).catch(error => {
+      if (active()) console.warn('[AccountIndexViewModel] read failed:', error);
     });
   }
 }

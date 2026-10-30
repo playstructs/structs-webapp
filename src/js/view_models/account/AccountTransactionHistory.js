@@ -83,8 +83,16 @@ export class AccountTransactionHistory extends AbstractViewModel {
   }
 
   render () {
-    this.guildAPI.getTransactions(this.playerId, this.page).then((transactions) => {
-      this.guildAPI.countTransactions(this.playerId).then(transactionCount => {
+    const signal = MenuPage.router.navigationSignal;
+    const account = this.gameState.signingAccount?.address;
+    const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const active = () => !signal.aborted
+      && this.gameState.signingAccount?.address === account
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id === playerId;
+    return this.guildAPI.getTransactions(this.playerId, this.page, {signal, timeoutMs: 15000}).then((transactions) => {
+      if (!active()) return;
+      return this.guildAPI.countTransactions(this.playerId, {signal, timeoutMs: 15000}).then(transactionCount => {
+        if (!active()) return;
 
         this.transactions = transactions;
 
@@ -136,6 +144,8 @@ export class AccountTransactionHistory extends AbstractViewModel {
         this.initPageCode();
         pagination.init();
       });
+    }).catch(error => {
+      if (active()) console.warn('[AccountTransactionHistory] read failed:', error);
     });
   }
 }
