@@ -9,6 +9,8 @@ export class SUIOffcanvas extends SUIFeature {
     this.placement = 'left';
     this.theme = 'player';
     this.narrow = 'narrow';
+    this.viewController = new AbortController();
+    this.outsideClickTimer = null;
 
     // Closes the offcanvas when a click occurs outside of it. Bound here so
     // the same reference can be added/removed from the document listener.
@@ -32,6 +34,9 @@ export class SUIOffcanvas extends SUIFeature {
   }
 
   hide() {
+    this.viewController.abort();
+    clearTimeout(this.outsideClickTimer);
+    document.removeEventListener('click', this.handleOutsideClick);
     this.offcanvasElm.classList.add('hidden');
     this.offcanvasElm.classList.remove(`sui-mod-${this.narrow}`);
   }
@@ -42,6 +47,7 @@ export class SUIOffcanvas extends SUIFeature {
   }
 
   open(qualitativeWidth = '') {
+    if (this.viewController.signal.aborted) this.viewController = new AbortController();
     this.unhide();
 
     if (qualitativeWidth) {
@@ -52,8 +58,10 @@ export class SUIOffcanvas extends SUIFeature {
     // to the document listener and immediately close the offcanvas. The
     // browser de-duplicates identical (listener, options) pairs, so repeated
     // open() calls remain safe.
-    setTimeout(() => {
-      document.addEventListener('click', this.handleOutsideClick);
+    const signal = this.viewController.signal;
+    clearTimeout(this.outsideClickTimer);
+    this.outsideClickTimer = setTimeout(() => {
+      if (!signal.aborted) document.addEventListener('click', this.handleOutsideClick);
     }, 0);
   }
 
@@ -67,7 +75,13 @@ export class SUIOffcanvas extends SUIFeature {
   }
 
   setContent(content) {
+    this.viewController.abort();
+    this.viewController = new AbortController();
     this.offcanvasElm.querySelector('.sui-offcanvas-body').innerHTML = content;
+  }
+
+  get signal() {
+    return this.viewController.signal;
   }
 
   renderOffcanvasInnerHTML() {

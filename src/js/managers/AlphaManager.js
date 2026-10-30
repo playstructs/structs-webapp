@@ -1,6 +1,9 @@
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {readReactorSnapshot} from "./ReactorSnapshot";
-import {validateSigningSnapshot} from "../util/ChainProtocol";
+import {maxQueryHeight, validateSigningSnapshot} from "../util/ChainProtocol";
+import {readGeneratorSnapshot} from "./GeneratorSnapshot";
+import {playerFunds} from "../util/PlayerFunds";
+import {CHAIN} from "../constants/ChainConstants";
 
 export class AlphaManager {
 
@@ -83,10 +86,38 @@ export class AlphaManager {
    * @param {string} structId
    * @param {number} alphaAmount
    */
-  async structGeneratorInfuse(structId, alphaAmount) {
-    await this.signingClientManager.queueMsgStructGeneratorInfuse(
-      structId,
-      `${this.convertAlphaToUAlpha(alphaAmount)}ualpha`
-    );
+  async structGeneratorInfuse(structId, alphaAmount, context, signal = undefined) {
+    const ownerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    if (context?.ownerId !== ownerId || context.structId !== structId) throw new Error('Generator funding context changed');
+    return this.signingClientManager.queueGenerator({kind:'generator_fund',version:1,ownerId,structId,
+      amount:this.convertAlphaToUAlpha(alphaAmount)}, signal);
+  }
+
+  async getGeneratorState(structId, signal) {
+    signal.throwIfAborted();
+    const manager = this.signingClientManager;
+    const query = manager.chainQuery;
+    const keyPlayer = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER];
+    const ownerId = keyPlayer.id;
+    const account = this.gameState.signingAccount?.address;
+    if (!query || query.closed) throw new Error('Generator query connection unavailable');
+    const options = {signal,timeoutMs:5000};
+    const player = await this.gameState.guildAPI.getPlayer(ownerId,options);
+    const funds = playerFunds(player,this.gameState.currentBlockHeight);
+    if (funds.ownerId !== ownerId) throw new Error('Generator funds owner changed');
+    const source = funds.protocol === CHAIN.PROTOCOL ? player.vault_address : player.primary_address;
+    const indexed = await this.gameState.guildAPI.getGeneratorSnapshot(structId,source,options);
+    signal.throwIfAborted();
+    if (!indexed) throw new Error('Generator snapshot unavailable');
+    const snapshot = await query.readSnapshot(rpc=>readGeneratorSnapshot(rpc,indexed,ownerId,structId,account),
+      {height:indexed.snapshot_meta?.height});
+    signal.throwIfAborted();
+    if (query !== manager.chainQuery || account !== this.gameState.signingAccount?.address
+        || keyPlayer !== this.gameState.keyPlayers[PLAYER_TYPES.PLAYER] || ownerId !== keyPlayer.id) {
+      throw new Error('Generator view context changed');
+    }
+    validateSigningSnapshot(indexed.snapshot_meta,{chainId:snapshot.chainId,
+      height:maxQueryHeight(snapshot.observedHeight,this.gameState.currentBlockHeight || snapshot.observedHeight)},['inventory']);
+    return snapshot.data;
   }
 }

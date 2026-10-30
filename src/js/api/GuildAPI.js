@@ -803,7 +803,7 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/player/${playerId}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.structFactory.parseList(response.data);
+    return response.data.map(row=>this.structFactory.make(row,response.meta));
   }
 
   /**
@@ -840,16 +840,23 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/${structId}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.structFactory.make(response.data);
+    return this.structFactory.make(response.data,response.meta);
   }
 
   /** Exact stored generator output; sourceAddress is a read selector, not authority. */
   async getGeneratorSnapshot(structId, sourceAddress, options = {}) {
+    const response = await this.getGeneratorSnapshotResult(structId,sourceAddress,options);
+    return response.data;
+  }
+
+  /** Retain the snapshot metadata even when the struct has since been removed. */
+  async getGeneratorSnapshotResult(structId, sourceAddress, options = {}) {
     const query = new URLSearchParams({address:sourceAddress});
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/${encodeURIComponent(structId)}/generator?${query}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return response.data === null ? null : {...response.data,snapshot_meta:response.meta};
+    if (response.data !== null) response.data = {...response.data,snapshot_meta:response.meta};
+    return response;
   }
 
   /**

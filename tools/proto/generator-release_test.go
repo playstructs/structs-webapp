@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"encoding/json"
 	"math/rand"
 	"testing"
 
@@ -139,6 +140,28 @@ func TestClientGeneratorFunding(t *testing.T) {
 				}
 			} else {
 				require.Zero(t, result.Code, result.Log)
+				receipts := 0
+				for _, event := range result.Events {
+					if event.Type != "structs.structs.EventAlphaInfuse" {
+						continue
+					}
+					receipts++
+					matched := 0
+					for _, attribute := range event.Attributes {
+						if attribute.Key != "eventAlphaInfuseDetail" {
+							continue
+						}
+						matched++
+						var detail map[string]string
+						require.NoError(t, json.Unmarshal([]byte(attribute.Value), &detail))
+						require.Equal(t, actor.Id, detail["playerId"])
+						require.Equal(t, address.String(), detail["primaryAddress"])
+						require.Equal(t, vault.String(), detail["vaultAddress"])
+						require.Equal(t, "3000000", detail["amount"])
+					}
+					require.Equal(t, 1, matched)
+				}
+				require.Equal(t, 1, receipts, "the single signed generator message identifies one actual funding receipt")
 				require.Less(t, result.GasUsed, int64(ante.DefaultFreeGasCap))
 				require.Equal(t, vaultBalance-3_000_000, bApp.BankKeeper.GetBalance(final, vault, "ualpha").Amount.Int64())
 				require.Equal(t, supplyBefore.SubRaw(3_000_000), bApp.BankKeeper.GetSupply(final, "ualpha").Amount)

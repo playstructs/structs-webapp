@@ -56,6 +56,7 @@ export class SigningClientManager {
     this.connectionCheck = null;
 
     this.connectionEpoch = 0;
+    this.sessionController = new AbortController();
     this.chainQuery = null;
     this.pendingRpc = null;
 
@@ -74,6 +75,8 @@ export class SigningClientManager {
    */
   async initSigningClient() {
     console.debug("Initializing signing client...");
+    this.sessionController.abort();
+    this.sessionController = new AbortController();
     // Wallet/account initialization precedes this call. Load evidence even if
     // the node is temporarily unreachable; a failed connect cannot hide it.
     this.queue.loadPersistedState();
@@ -140,8 +143,13 @@ export class SigningClientManager {
   }
 
   stopForLogout() {
+    this.sessionController.abort();
     this.queue.suspended = true;
     this.disconnect();
+  }
+
+  get sessionSignal() {
+    return this.sessionController.signal;
   }
 
   /**

@@ -6,81 +6,241 @@ import {NumberFormatter} from "../../../util/NumberFormatter";
 import {Struct} from "../../../models/Struct";
 import {StructType} from "../../../models/StructType";
 import {STRUCT_ACTIONS} from "../../../constants/StructConstants";
-import {GridStructListener} from "../../../grass_listeners/GridStructListener";
-import {ConsumeAlphaChangeListener} from "../../../grass_listeners/ConsumeAlphaChangeListener";
+import {EVENTS} from "../../../constants/Events";
+import {CHAIN} from "../../../constants/ChainConstants";
+import {TX_STATUS} from "../../../models/SigningTransaction";
+import {generatorPreview} from "../../../util/GeneratorState";
+import {waitForGeneratorRefresh} from "../../../util/GeneratorCompletion";
+import {maxQueryHeight, protocolAtHeight} from "../../../util/ChainProtocol";
 
 export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
 
   /**
    * @param {GameState} gameState
    * @param {AlphaManager} alphaManager
-   * @param {GrassManager} grassManager
    * @param {Struct} struct
    * @param {StructType} structType
    */
   constructor(
     gameState,
     alphaManager,
-    grassManager,
     struct,
     structType
   ) {
     super(gameState);
     this.alphaManager = alphaManager;
-    this.grassManager = grassManager;
     this.struct = struct;
     this.structType = structType;
 
     this.amountInputId = 'consumeAlphaAmountInput';
     this.consumeAlphaBtnId = 'consumeAlphaBtn';
     this.projectedSupplyId = 'projectedSupply';
-    this.gameState.setTransferAmount(0);
-    this.maxAlpha = parseInt(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha) || 0;
-    this.preexistingSupply = this.struct.fuel * this.structType.generating_rate;
+    this.maxAlpha = '0';
+    this.preexistingSupply = '';
+    this.state = null;
+    this.busy = false;
+    this.refreshVersion = 0;
+    this.refreshPromise = null;
+    this.retryDelay = 2000;
+    this.timer = null;
 
     this.genericResourceComponent = new GenericResourceComponent(gameState);
     this.numberFormatter = new NumberFormatter();
   }
 
   initPageCode() {
-    MenuPage.sui.inputStepper.autoInitAll();
-
-    const amountInput = document.getElementById(this.amountInputId);
-    const decreaseBtn = amountInput.previousElementSibling;
-    const increaseBtn = amountInput.nextElementSibling;
-    const projectSupply = document.getElementById(`${this.projectedSupplyId}-value`);
-
-    const inputStepperChangeHandler = () => {
-      const consumeAlphaBtn = document.getElementById(this.consumeAlphaBtnId);
-      const amount = parseInt(document.getElementById(this.amountInputId).value);
-      if (0 < amount && amount <= this.maxAlpha) {
-        consumeAlphaBtn.disabled = false;
-        consumeAlphaBtn.classList.add('sui-mod-primary');
-        consumeAlphaBtn.classList.remove('sui-mod-disabled');
-      } else {
-        consumeAlphaBtn.disabled = true;
-        consumeAlphaBtn.classList.add('sui-mod-disabled');
-        consumeAlphaBtn.classList.remove('sui-mod-primary');
-      }
-
-      projectSupply.innerText = this.numberFormatter.format(this.preexistingSupply + (amount * this.structType.generating_rate));
+    this.signal = MenuPage.sui.offcanvas.signal;
+    this.sessionSignal = this.alphaManager.signingClientManager.sessionSignal;
+    this.keyPlayer = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER];
+    this.ownerId = this.keyPlayer.id;
+    this.account = this.gameState.signingAccount?.address;
+    this.input = document.getElementById(this.amountInputId);
+    this.button = document.getElementById(this.consumeAlphaBtnId);
+    this.decrease = this.input.previousElementSibling;
+    this.increase = this.input.nextElementSibling;
+    this.supply = document.getElementById(`${this.projectedSupplyId}-value`);
+    const retire = () => { if (MenuPage.sui.offcanvas.signal === this.signal) MenuPage.sui.offcanvas.close(); };
+    this.sessionSignal.addEventListener('abort',retire,{once:true});
+    this.signal.addEventListener('abort',()=>{
+      clearTimeout(this.timer);
+      this.sessionSignal.removeEventListener('abort',retire);
+    },{once:true});
+    const options = {signal:this.signal};
+    this.input.addEventListener('input',()=>this.updateControls(),options);
+    this.decrease.addEventListener('click',event=>{
+      event.preventDefault();
+      const amount = this.amount();
+      if (!this.busy && amount !== null && amount > 0n) this.input.value = (amount-1n).toString();
+      this.updateControls();
+    },options);
+    this.increase.addEventListener('click',event=>{
+      event.preventDefault();
+      const amount = this.amount();
+      if (!this.busy && this.state && amount !== null && amount < BigInt(this.state.maxAlpha)) this.input.value = (amount+1n).toString();
+      this.updateControls();
+    },options);
+    this.button.addEventListener('click',()=>this.submit(),options);
+    window.addEventListener(EVENTS.ALPHA_COUNT_CHANGED,event=>{
+      if (event.playerType === PLAYER_TYPES.PLAYER) this.invalidate();
+    },options);
+    window.addEventListener(EVENTS.RENDER_STRUCT,event=>{
+      if (event.struct?.id === this.struct.id) this.invalidate();
+    },options);
+    for (const name of [EVENTS.FLEET_CHANGED,EVENTS.GRASS_CONNECTED,'focus','online']) {
+      window.addEventListener(name,()=>this.invalidate(),options);
     }
+    window.addEventListener(EVENTS.BLOCK_HEIGHT_CHANGED,()=>{
+      if (!this.isSessionCurrent()) return retire();
+      if (this.state && protocolAtHeight(CHAIN.ID,maxQueryHeight(this.state.height,this.gameState.currentBlockHeight)) !== this.state.protocol) this.invalidate();
+    },options);
+    this.updateControls();
+    if (this.sessionSignal.aborted) retire();
+    else this.refresh();
+  }
 
-    decreaseBtn.addEventListener('click', inputStepperChangeHandler);
-    increaseBtn.addEventListener('click', inputStepperChangeHandler);
-    amountInput.addEventListener('input', inputStepperChangeHandler);
+  isSessionCurrent() {
+    return !this.sessionSignal.aborted && this.keyPlayer === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]
+      && this.ownerId === this.keyPlayer.id && this.account === this.gameState.signingAccount?.address;
+  }
 
-    document.getElementById(this.consumeAlphaBtnId).addEventListener('click', () => {
-      this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.CONSUME_ALPHA);
-      this.gameState.actionBarLock.lock();
+  isCurrent() {
+    return !this.signal.aborted && this.isSessionCurrent() && document.getElementById(this.amountInputId) === this.input;
+  }
 
-      this.grassManager.registerListener(new GridStructListener(this.gameState, this.struct.id));
-      this.grassManager.registerListener(new ConsumeAlphaChangeListener(this.gameState, this.struct.id));
+  amount() {
+    return /^[0-9]{1,14}$/.test(this.input.value) ? BigInt(this.input.value) : null;
+  }
 
-      const amount = parseInt(document.getElementById(this.amountInputId).value);
-      this.alphaManager.structGeneratorInfuse(this.struct.id, amount).then();
-      MenuPage.sui.offcanvas.close();
-    })
+  updateControls() {
+    if (!this.isCurrent()) return;
+    const amount = this.amount();
+    let valid = false;
+    let power = '';
+    if (this.state && amount !== null) {
+      try {
+        power = this.numberFormatter.formatExact(generatorPreview(this.state,amount).toString());
+        valid = amount > 0n;
+      } catch { /* Keep the user's amount intact when it is no longer affordable. */ }
+    }
+    const unavailable = this.busy || !this.state || this.gameState.actionBarLock.isLocked();
+    this.input.disabled = unavailable;
+    this.input.max = this.state?.maxAlpha ?? '0';
+    this.decrease.disabled = unavailable || amount === null || amount <= 0n;
+    this.increase.disabled = unavailable || amount === null || amount >= BigInt(this.input.max);
+    this.button.disabled = unavailable || !valid;
+    this.button.classList.toggle('sui-mod-primary',!this.button.disabled);
+    this.button.classList.toggle('sui-mod-disabled',this.button.disabled);
+    this.supply.innerText = power;
+  }
+
+  invalidate() {
+    if (!this.isCurrent()) return;
+    this.refreshVersion++;
+    this.state = null;
+    this.updateControls();
+    clearTimeout(this.timer);
+    if (!this.busy && !this.refreshPromise) this.timer = setTimeout(()=>this.refresh(),100);
+  }
+
+  async refresh() {
+    if (!this.isCurrent()) return;
+    if (this.refreshPromise) return this.refreshPromise;
+    clearTimeout(this.timer);
+    const version = this.refreshVersion;
+    this.refreshPromise = (async()=>{
+      try {
+        const state = await this.alphaManager.getGeneratorState(this.struct.id,this.signal);
+        if (this.isCurrent() && version === this.refreshVersion) {
+          this.state = state;
+          this.maxAlpha = state.maxAlpha;
+          this.retryDelay = 2000;
+        }
+      } catch (error) {
+        if (this.isCurrent()) {
+          this.state = null;
+          console.debug('[ConsumeAlpha] generator snapshot unavailable:',error);
+        }
+      } finally {
+        this.refreshPromise = null;
+        if (this.isCurrent()) {
+          this.updateControls();
+          if (!this.busy) {
+            const delay = version !== this.refreshVersion ? 100 : this.state ? 30000 : this.retryDelay;
+            this.retryDelay = Math.min(this.retryDelay*2,30000);
+            this.timer = setTimeout(()=>{ this.invalidate(); this.refresh(); },delay);
+          }
+        }
+      }
+    })();
+    return this.refreshPromise;
+  }
+
+  async submit() {
+    if (!this.isCurrent() || this.button.disabled || this.busy || this.gameState.actionBarLock.isLocked()) return;
+    const amount = this.amount();
+    this.busy = true;
+    this.state = null;
+    this.refreshVersion++;
+    this.updateControls();
+    await this.refresh();
+    if (!this.isCurrent()) return;
+    try {
+      if (!this.state || amount === null || amount <= 0n) return;
+      generatorPreview(this.state,amount); // Recheck the complete choice without shrinking it.
+      const lock = this.gameState.actionBarLock;
+      if (lock.isLocked()) return;
+      lock.setCurrentAction(STRUCT_ACTIONS.CONSUME_ALPHA);
+      lock.setActionSourceStruct(this.struct);
+      const signal = lock.lock({completionManaged:true});
+      const cancel = () => { if (!signal.aborted) lock.clear(); };
+      this.sessionSignal.addEventListener('abort',cancel,{once:true});
+      const settled = this.alphaManager.structGeneratorInfuse(this.struct.id,amount,this.state,signal);
+      this.operation = this.finishOperation(settled,signal).finally(()=>this.sessionSignal.removeEventListener('abort',cancel));
+      MenuPage.sui.offcanvas.close(); // Only the preview ends; the operation has its own scope.
+    } catch (error) {
+      console.debug('[ConsumeAlpha] selected amount is unavailable:',error);
+    } finally {
+      this.busy = false;
+      if (this.isCurrent()) {
+        this.updateControls();
+        this.timer = setTimeout(()=>this.invalidate(),2000);
+      }
+    }
+  }
+
+  async finishOperation(settled, signal) {
+    let observed = false;
+    let finished = false;
+    try {
+      const tx = await settled;
+      observed = true;
+      signal.throwIfAborted();
+      if (!this.isSessionCurrent()) return;
+      if (tx.status !== TX_STATUS.SUCCEEDED) { finished = true; return; }
+      const {result,player} = await waitForGeneratorRefresh(this.gameState.guildAPI,tx,signal,()=>this.gameState.currentBlockHeight);
+      signal.throwIfAborted();
+      if (!this.isSessionCurrent()) return;
+      this.keyPlayer.setPlayer(player,this.gameState.currentBlockHeight);
+      const current = this.keyPlayer.structs[this.struct.id];
+      // Do not stamp unrelated older struct fields with a new power boundary.
+      if (current && result.data && (!current.generator_snapshot_meta
+          || BigInt(current.generator_snapshot_meta.height) <= BigInt(result.meta.height))) {
+        current.generator_fuel_p = result.data.fuel_p;
+        current.generator_power_p = result.data.power_p;
+        current.generator_positions_ready = true;
+        current.generator_snapshot_meta = result.meta;
+        current.fuel = (BigInt(result.data.fuel_p)/1000000n).toString();
+        current.generator_power = (BigInt(result.data.power_p)/1000n).toString();
+      }
+      finished = true;
+    } catch (error) {
+      if (!observed) finished = true; // Enqueue refusal; no signed operation was observed.
+      if (!signal.aborted) console.debug('[ConsumeAlpha] operation observer stopped:',error);
+    } finally {
+      // Clearing/replacing the action aborts this exact scope. An old callback
+      // may never clear a newer operation, including a later generator burn.
+      if (finished && !signal.aborted && this.isSessionCurrent()) this.gameState.actionBarLock.clear();
+    }
   }
 
   /**
@@ -122,7 +282,7 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
                   this.projectedSupplyId,
                   'sui-icon-energy',
                   'Project Energy Supply',
-                  this.numberFormatter.format(this.preexistingSupply)
+                  this.preexistingSupply
                 )
               }
             </div>

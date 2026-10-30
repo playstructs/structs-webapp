@@ -934,8 +934,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     if (struct.isOnline()) {
       const icon = struct.fuel < 1 ? 'icon-attention' : 'icon-refine';
       icons.push(`
-        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${struct.fuel}" data-energy="${struct.fuel * structType.generating_rate}">
-          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value">${struct.fuel}</span>
+        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${struct.fuel ?? ''}" data-energy="${struct.generator_power ?? ''}">
+          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value">${struct.fuel ?? ''}</span>
         </a> 
       `);
     }
@@ -1544,7 +1544,6 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         const offcanvas = new ConsumeAlphaOffcanvas(
           this.gameState,
           this.alphaManager,
-          this.grassManager,
           struct,
           structType
         );

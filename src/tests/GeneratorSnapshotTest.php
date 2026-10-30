@@ -38,6 +38,8 @@ class GeneratorSnapshotTest extends ApiManagerTestCase
             $db->executeStatement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
             $db->executeStatement('SET LOCAL search_path=cache,public,structs');
             $db->executeStatement("SELECT pg_advisory_xact_lock(hashtext('structs.api_work_refresh'))");
+            $db->executeStatement("INSERT INTO structs.struct_type(id,power_generation,generating_rate_p) VALUES(20,'smallGenerator',2)
+                ON CONFLICT(id) DO UPDATE SET power_generation=EXCLUDED.power_generation,generating_rate_p=EXCLUDED.generating_rate_p");
             $db->executeStatement("INSERT INTO structs.struct(id,owner,type,location_id,location_type)
                 VALUES('5-990988','1-990988',20,'2-990988','planet'),('5-990989','1-990988',20,'2-990988','planet')");
             $db->executeStatement("INSERT INTO structs.infusion(destination_id,address,destination_type,player_id,owner_id,fuel_p,power_p,ratio_p,commission,generator_disabled)
@@ -70,6 +72,16 @@ class GeneratorSnapshotTest extends ApiManagerTestCase
             $this->assertSame('3', $body['data']['source_ratio_p']);
             $this->assertFalse($body['data']['source_generator_disabled']);
             $this->assertSame('1-990988', $body['data']['source_recorded_owner_id']);
+            foreach ([$manager->getStruct('5-990988'),$manager->getStructsByPlayerId('1-990988')] as $response) {
+                $catalog = json_decode($response->getContent(), true);
+                $this->assertTrue($catalog['meta']['data_ready']);
+                $this->assertSame('3353000', $catalog['meta']['height']);
+                $rows = isset($catalog['data']['id']) ? [$catalog['data']] : $catalog['data'];
+                $row = array_values(array_filter($rows, static fn (array $row): bool => $row['id'] === '5-990988'))[0];
+                $this->assertTrue($row['generator_positions_ready']);
+                $this->assertSame($body['data']['fuel_p'], $row['generator_fuel_p']);
+                $this->assertSame($body['data']['power_p'], $row['generator_power_p']);
+            }
             $disabled = json_decode($manager->getGeneratorSnapshot('5-990988', 'generatordisabled')->getContent(), true);
             $this->assertSame('4000000', $disabled['data']['source_fuel_p']);
             $this->assertSame('0', $disabled['data']['source_power_p']);

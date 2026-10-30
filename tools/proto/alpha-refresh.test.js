@@ -5,7 +5,6 @@ import {AlphaRefreshManager} from '../../src/js/managers/AlphaRefreshManager';
 import {KeyPlayer} from '../../src/js/models/KeyPlayer';
 import {AlphaChangeListener} from '../../src/js/grass_listeners/AlphaChangeListener';
 import {PlayerAlphaListener} from '../../src/js/grass_listeners/PlayerAlphaListener';
-import {ConsumeAlphaChangeListener} from '../../src/js/grass_listeners/ConsumeAlphaChangeListener';
 import {AlphaOwnedComponent} from '../../src/js/view_models/components/AlphaOwnedComponent';
 import {GrassManager} from '../../src/js/framework/GrassManager';
 import {SigningTransactionSettledEvent} from '../../src/js/events/SigningTransactionSettledEvent';
@@ -97,7 +96,7 @@ async function invalidationsAndCoalescing(){
     s.manager.start();
     for(let i=0;i<100;i++)s.listener.handler(notice());
     new PlayerAlphaListener(s.game).handler({subject:'structs.grid.player.1-1.1-1',category:'alpha',value:'9999999999999'});
-    new ConsumeAlphaChangeListener(s.game,'5-1').handler(notice({subject:'structs.inventory.ualpha.infused.0-1.1-1.address',category:'infused',counterparty:'5-1'}));
+    s.listener.handler(notice({subject:'structs.inventory.ualpha.infused.0-1.1-1.address',category:'infused',counterparty:'5-1'}));
     await until(()=>s.reads.length===1&&!s.manager.session.running,'coalesced first read');
     assert.equal(s.key.player.alpha,'2','Retained receipt and legacy delta never change spendability');
     await pause(15);assert.equal(s.reads.length,1);

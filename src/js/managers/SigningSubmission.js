@@ -11,6 +11,7 @@ import {CHAIN} from "../constants/ChainConstants";
 import {FEE} from "../constants/Fee";
 import {exactQueryHeight, protocolAtHeight, validateSigningSnapshot} from "../util/ChainProtocol";
 import {signedSubmission, submissionBytes, transactionHash} from "../util/SignedSubmission";
+import {generatorReceipt} from "../util/GeneratorReceipt";
 import {RpcResponseError} from "../api/OwnedRpcClient";
 
 export class SigningDeferredError extends Error {}
@@ -139,6 +140,8 @@ export class SigningSubmission {
     return {code:result.result.code,transactionHash:tx.submission.hash,chainId:CHAIN.ID,
       height,txIndex:result.index,blockHash:toHex(block.commit.blockId.hash).toUpperCase(),
       blockTime:toRfc3339WithNanoseconds(block.header.time),codespace:result.result.codespace ?? '',rawLog:result.result.log ?? '',stage:'committed',
+      ...(tx.intent?.kind === 'generator_fund' && result.result.code === 0
+        ? {generatorReceipt:generatorReceipt(result.result.events,protocolAtHeight(CHAIN.ID,height))} : {}),
       msgResponses:TxMsgData.decode(result.result.data ?? new Uint8Array()).msgResponses};
   }
 }

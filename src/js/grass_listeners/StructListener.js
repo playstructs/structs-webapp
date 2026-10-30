@@ -265,12 +265,12 @@ export class StructListener extends AbstractGrassListener {
       // status change cancel a targeting mode the player is still in the
       // middle of, which holds no lock until a target is picked.
       if (this.gameState.actionBarLock.isLocked()) {
-        this.gameState.actionBarLock.clear();
+        this.gameState.actionBarLock.clearFromNotification();
       } else if (structDestroyed && this.isActionSourceStruct(messageData.detail.struct_id)) {
         // Nothing holds the lock during target selection, so a destroyed source
         // struct would otherwise leave the player picking a target for a struct
         // that no longer exists and sending an action the chain will reject.
-        this.gameState.actionBarLock.clear();
+        this.gameState.actionBarLock.clearFromNotification();
 
         if (mapId) {
           window.dispatchEvent(new ClearAttackTargetsEvent(mapId));
@@ -421,7 +421,7 @@ export class StructListener extends AbstractGrassListener {
     );
 
     arriveEvent.onAnimationEnd = () => {
-      this.gameState.actionBarLock.clear();
+      this.gameState.actionBarLock.clearFromNotification();
     };
 
     this.gameState.animationEventQueue.enqueue(arriveEvent);
@@ -453,7 +453,7 @@ export class StructListener extends AbstractGrassListener {
         this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.DEFENSE_SET
         && this.gameState.actionBarLock.isLocked()
       ) {
-        this.gameState.actionBarLock.clear();
+        this.gameState.actionBarLock.clearFromNotification();
       }
     });
   }
@@ -484,7 +484,7 @@ export class StructListener extends AbstractGrassListener {
         this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.DEFENSE_CLEAR
         && this.gameState.actionBarLock.isLocked()
       ) {
-        this.gameState.actionBarLock.clear();
+        this.gameState.actionBarLock.clearFromNotification();
       }
     });
   }
@@ -831,7 +831,7 @@ export class StructListener extends AbstractGrassListener {
           || this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON)
         && this.gameState.actionBarLock.isLocked()
       ) {
-        this.gameState.actionBarLock.clear();
+        this.gameState.actionBarLock.clearFromNotification();
       }
     });
   }

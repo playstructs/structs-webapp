@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {toBech32} from '@cosmjs/encoding';
+import {fromHex, toBech32} from '@cosmjs/encoding';
 import {Registry, DirectSecp256k1HdWallet} from '@cosmjs/proto-signing';
 import {SigningStargateClient, defaultRegistryTypes} from '@cosmjs/stargate';
 import {BaseAccount} from 'cosmjs-types/cosmos/auth/v1beta1/auth';
@@ -13,14 +13,17 @@ import {objectType, planetStatus, techPowerGeneration} from '../../src/js/ts/str
 import {msgTypes} from '../../src/js/ts/structs.structs/registry';
 import {SigningSubmission, SigningDeferredError} from '../../src/js/managers/SigningSubmission';
 import {SigningQueueManager} from '../../src/js/managers/SigningQueueManager';
-import {SigningTransaction} from '../../src/js/models/SigningTransaction';
+import {SigningTransaction, TX_STATUS} from '../../src/js/models/SigningTransaction';
+import {AlphaManager} from '../../src/js/managers/AlphaManager';
 import {readGeneratorSnapshot} from '../../src/js/managers/GeneratorSnapshot';
 import {generatorPreview} from '../../src/js/util/GeneratorState';
 import {GuildAPI} from '../../src/js/api/GuildAPI';
 import {generatorIntent} from '../../src/js/util/GeneratorIntent';
+import {generatorCommit} from '../../src/js/util/GeneratorCompletion';
 import {submissionBytes} from '../../src/js/util/SignedSubmission';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {STRUCTS_FREE_GAS} from '../../src/js/constants/Fee';
+import {PLAYER_TYPES} from '../../src/js/constants/PlayerTypes';
 
 const address = n => toBech32('structs',new Uint8Array(20).fill(n));
 const baseIntent = () => ({kind:'generator_fund',version:1,ownerId:'1-1',structId:'5-1',amount:'3000000'});
@@ -39,8 +42,9 @@ function fixture(height=3353000) {
   const manager = {registry,connectionEpoch:1,gameState:{signingAccount:signer,signingClient:{sign:async(...args)=>{
     control.signed++;control.signedHeight=String(control.height);
     const raw=await offline.sign(...args);if(control.lateHeight)control.height=control.lateHeight;return raw;
-  }},guildAPI:{getPlayer:async()=>control.mutateIndexed({id:'1-1',vault_address:address(1),snapshot_meta:meta(),
-    funds_meta:{ready:control.fundsReady,height:String(control.height)}})}}};
+  }},guildAPI:{getPlayer:async()=>control.mutateIndexed({id:'1-1',vault_address:address(1),primary_address:address(2),
+    alpha:'5',spendable_alpha_p:control.funds,snapshot_meta:meta(),
+    funds_meta:{ready:control.fundsReady,height:String(control.height),provisioned:control.provisioned}})}}};
   const encode = (method,codec,data) => codec.encode(codec.fromPartial(control.mutateResponse(method,data))).finish();
   const request = async(service,method,bytes) => {
     control.requests.push([service,method]);
@@ -149,6 +153,71 @@ async function previewTests() {
   await assert.rejects(()=>api.getGeneratorSnapshot('5-1',address(1)));
 }
 
+async function managerPreviewTests() {
+  for (const height of [3352999,3353000]) {
+    const f=fixture(height),state=f.manager.gameState,abort=new AbortController();
+    state.currentBlockHeight=height;state.keyPlayers={[PLAYER_TYPES.PLAYER]:{id:'1-1'}};
+    const alpha=new AlphaManager(state,f.manager);
+    const fetch=async(id,source,options)=>{
+      assert.equal(id,'5-1');assert.equal(source,address(height<3353000?2:1));
+      assert.equal(options.signal,abort.signal);assert.equal(options.timeoutMs,5000);
+      return indexedGenerator(f);
+    };
+    state.guildAPI.getGeneratorSnapshot=fetch;
+    const current=await alpha.getGeneratorState('5-1',abort.signal);
+    assert.equal(current.source,address(height<3353000?2:1));assert.equal(current.maxAlpha,'5');
+    assert.equal(f.control.signed,0);
+    const reads=f.control.requests.length;
+    state.guildAPI.getGeneratorSnapshot=async()=>null;
+    await assert.rejects(()=>alpha.getGeneratorState('5-1',abort.signal),/snapshot unavailable/);
+    assert.equal(f.control.requests.length,reads,'A removed target never falls back to a latest-height native query');
+    state.guildAPI.getGeneratorSnapshot=async(...args)=>{
+      const row=await fetch(...args);state.keyPlayers[PLAYER_TYPES.PLAYER]={id:'1-1'};return row;
+    };
+    await assert.rejects(()=>alpha.getGeneratorState('5-1',abort.signal),/context changed/);
+    state.guildAPI.getGeneratorSnapshot=fetch;
+    f.control.queryError='Struct';
+    await assert.rejects(()=>alpha.getGeneratorState('5-1',abort.signal),/Native query unavailable/);
+    f.control.queryError=null;
+    if(height<3353000) {
+      state.guildAPI.getGeneratorSnapshot=async(...args)=>{
+        const row=await fetch(...args);state.currentBlockHeight=3353000;return row;
+      };
+      await assert.rejects(()=>alpha.getGeneratorState('5-1',abort.signal));
+    }
+    abort.abort();
+    await assert.rejects(()=>alpha.getGeneratorState('5-1',abort.signal),{name:'AbortError'});
+  }
+}
+
+async function receiptTests() {
+  for (const height of [3352999,3353000]) {
+    const f=fixture(height);f.tx.submission=await f.submission.prepare(f.tx);
+    const detail={playerId:'1-1',primaryAddress:address(2),vaultAddress:height<3353000?'':address(1),amount:'3000000'};
+    const event=()=>({type:'structs.structs.EventAlphaInfuse',attributes:[{key:'eventAlphaInfuseDetail',value:JSON.stringify(detail)}]});
+    let events=[event()],code=0;
+    f.manager.chainQuery.cometClient={
+      tx:async()=>({hash:fromHex(f.tx.submission.hash),tx:submissionBytes(f.tx.submission),height,index:0,
+        result:{code,events,data:new Uint8Array()}}),
+      commit:async()=>({commit:{height,blockId:{hash:new Uint8Array(32)}},
+        header:{height,chainId:CHAIN.ID,time:new Date('2026-10-30T00:00:00.123Z')}}),
+    };
+    f.tx.response=await f.submission.find(f.tx);f.tx.status=TX_STATUS.SUCCEEDED;
+    assert.deepEqual(generatorCommit(f.tx),{ownerId:'1-1',structId:'5-1',source:address(height<3353000?2:1),height:String(height)});
+    const restored=SigningTransaction.fromJSON(JSON.parse(JSON.stringify(f.tx.toJSON())));
+    assert.deepEqual(generatorCommit(restored),generatorCommit(f.tx),'The real RPC receipt survives journal serialization');
+    for (const malformed of [[],[event(),event()],[{...event(),attributes:[]}],
+        [{...event(),attributes:[{key:'eventAlphaInfuseDetail',value:'not JSON'}]}]]) {
+      events=malformed;await assert.rejects(()=>f.submission.find(f.tx));
+    }
+    events=[];code=9;
+    const failed=await f.submission.find(f.tx);
+    assert.equal(failed.code,9);assert.equal(failed.generatorReceipt,undefined,'Rejected transactions need no success receipt');
+    code=0;detail.playerId='1-2';events=[event()];f.tx.response=await f.submission.find(f.tx);
+    assert.throws(()=>generatorCommit(f.tx),/funding differs/,'An implicit source/owner change cannot masquerade as the chosen burn');
+  }
+}
+
 async function main() {
   const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
   [signer]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);offline=await SigningStargateClient.offline(wallet,{registry});
@@ -217,6 +286,8 @@ async function main() {
   assert.equal((await crossing.submission.prepare(crossing.tx)).generator.source,address(1));
 
   await previewTests();
+  await managerPreviewTests();
+  await receiptTests();
 
   const saved=new Map();globalThis.localStorage={getItem:key=>saved.get(key)??null,setItem:(key,v)=>saved.set(key,v),get length(){return saved.size;},key:i=>[...saved.keys()][i]};
   globalThis.window=new EventTarget();Object.defineProperty(globalThis.navigator,'locks',{configurable:true,value:{request:async(n,o,run)=>run({})}});
