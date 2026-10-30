@@ -93,6 +93,25 @@ async function main() {
   await api.getGuildFilterList(options);
   await api.transferSearch({search_string:'Recipient'},options);
   assert.equal(requests,6);
+
+  // An hour-old cached count must not survive a completed remote revoke or
+  // an external device change whose notification never reached this browser.
+  let cachedCount=4, currentCount=3, countReads=0, content='';
+  const countAPI=Object.assign(Object.create(GuildAPI.prototype),{
+    apiUrl:'/api',getCachedItem:()=>cachedCount,cacheItem:(key,value)=>{cachedCount=value;},
+    getSingleDataValue:async()=>{countReads++;return currentCount;},
+  });
+  const accountState={signingAccount:{address:'actor'},keyPlayers:{player:{id:'1-1',getTag:()=>'',getUsername:()=>''}}};
+  MenuPage.setPageTemplateContent=value=>{content=value;};
+  MenuPage.router.goto('Account','index');
+  const accountView=new AccountIndexViewModel(accountState,countAPI,{});
+  accountView.initPageCode=()=>{};
+  await accountView.render();
+  assert.match(content,/3 Devices Active/);assert.equal(countReads,1);
+  currentCount=2;
+  await accountView.render();
+  assert.match(content,/2 Devices Active/);assert.equal(countReads,2);
   console.log('Account navigation: five real view renders reject late navigation/session responses; history second-read departure and API cancellation pass.');
+  console.log('Account device counts refresh after local/external changes without relying on notification delivery.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

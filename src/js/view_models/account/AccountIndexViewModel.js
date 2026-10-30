@@ -56,7 +56,8 @@ export class AccountIndexViewModel extends AbstractViewModel {
     const active = () => !signal.aborted
       && this.gameState.signingAccount?.address === account
       && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id === playerId;
-    return this.guildAPI.getPlayerAddressCount(playerId, false, {signal, timeoutMs: 15000}).then((addressCount) => {
+    // Device changes can land elsewhere or without a GRASS notification.
+    return this.guildAPI.getPlayerAddressCount(playerId, true, {signal, timeoutMs: 15000}).then((addressCount) => {
       if (!active()) return;
 
       MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
