@@ -8,6 +8,7 @@ use App\Dto\ApiResponseContentDto;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
 use App\Util\ResponseMetaUtil;
+use App\Util\ConsistentRead;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -237,31 +238,37 @@ class TableReadManager
             ORDER BY {$orderBy}
             {$paging}";
 
-        [$responseContent, $status] = $this->runQuery(
-            $this->entityManager,
-            $this->apiRequestParsingManager,
-            $sql,
-            $params,
-            $required,
-            true
-        );
-
-        if ($status === Response::HTTP_OK && $rowMapper !== null && is_array($responseContent->data)) {
-            $responseContent->data = array_map($rowMapper, $responseContent->data);
-        }
-        if ($status === Response::HTTP_OK && $this->includeTotal) {
-            // runQuery already validated $params, so the bound values can be reused as-is.
-            $countSelect = $countExpression ?? 'count(*)';
-            $responseContent->total = $this->entityManager->getConnection()->fetchOne(
-                "SELECT {$countSelect} FROM {$from} {$where}",
-                array_intersect_key($params, array_flip($required))
-            );
-        }
-        if ($status === Response::HTTP_OK && $this->includeMeta) {
-            ResponseMetaUtil::stampHeight($responseContent, $this->entityManager);
+        $responseContent = new ApiResponseContentDto();
+        $parsedRequest = $this->apiRequestParsingManager->parse($params, $required);
+        $responseContent->errors = $parsedRequest->errors;
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
         }
 
-        return new JsonResponse($responseContent, $status);
+        $db = $this->entityManager->getConnection();
+        $queryParams = $this->getQueryParams($required, $parsedRequest);
+        $read = function () use ($db, $sql, $queryParams, $rowMapper, $countExpression, $from, $where, $responseContent): void {
+            $responseContent->data = $db->fetchAllAssociative($sql, $queryParams);
+            if ($rowMapper !== null) {
+                $responseContent->data = array_map($rowMapper, $responseContent->data);
+            }
+            if ($this->includeTotal) {
+                $countSelect = $countExpression ?? 'count(*)';
+                $responseContent->total = $db->fetchOne("SELECT {$countSelect} FROM {$from} {$where}", $queryParams);
+            }
+            if ($this->includeMeta) {
+                ResponseMetaUtil::stampHeight($responseContent, $this->entityManager);
+            }
+            $responseContent->success = true;
+        };
+        // A later count or height must describe the same snapshot as this page.
+        if ($this->includeTotal || $this->includeMeta) {
+            ConsistentRead::run($db, $read);
+        } else {
+            $read();
+        }
+
+        return new JsonResponse($responseContent);
     }
 
     private function unsupportedListParam(string $param): Response
@@ -624,7 +631,7 @@ class TableReadManager
     public function guildAll(int $page): Response
     {
         return $this->listQuery(
-            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, creator, owner, created_at, updated_at',
+            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, rank_purchase_base_price::text AS rank_purchase_base_price, rank_purchase_step_increase::text AS rank_purchase_step_increase, rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, bank_convert_in_fee::text AS bank_convert_in_fee, bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, updated_at',
             'structs.guild',
             [],
             'updated_at DESC NULLS LAST, id',
@@ -637,7 +644,7 @@ class TableReadManager
     public function guildByPrimaryReactor(string $primary_reactor_id, int $page): Response
     {
         return $this->listQuery(
-            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, creator, owner, created_at, updated_at',
+            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, rank_purchase_base_price::text AS rank_purchase_base_price, rank_purchase_step_increase::text AS rank_purchase_step_increase, rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, bank_convert_in_fee::text AS bank_convert_in_fee, bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, updated_at',
             'structs.guild',
             [
                 'primary_reactor_id = :primary_reactor_id',
@@ -652,7 +659,7 @@ class TableReadManager
     public function guildByEntrySubstation(string $entry_substation_id, int $page): Response
     {
         return $this->listQuery(
-            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, creator, owner, created_at, updated_at',
+            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, rank_purchase_base_price::text AS rank_purchase_base_price, rank_purchase_step_increase::text AS rank_purchase_step_increase, rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, bank_convert_in_fee::text AS bank_convert_in_fee, bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, updated_at',
             'structs.guild',
             [
                 'entry_substation_id = :entry_substation_id',
@@ -667,7 +674,7 @@ class TableReadManager
     public function guildByOwner(string $owner, int $page): Response
     {
         return $this->listQuery(
-            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, creator, owner, created_at, updated_at',
+            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, rank_purchase_base_price::text AS rank_purchase_base_price, rank_purchase_step_increase::text AS rank_purchase_step_increase, rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, bank_convert_in_fee::text AS bank_convert_in_fee, bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, updated_at',
             'structs.guild',
             [
                 'owner = :owner',
@@ -794,10 +801,10 @@ class TableReadManager
     public function ledgerListAll(int $page): Response
     {
         return $this->listQuery(
-            'time, id, address, counterparty, amount, amount_p, block_height, action::text AS action, direction::text AS direction, denom',
+            'time, id::text AS id, address, counterparty, amount, amount_p::text AS amount_p, block_height::text AS block_height, chain_id, tx_index, msg_index, event_index, action::text AS action, direction::text AS direction, denom',
             'structs.ledger',
             [],
-            'time DESC, id DESC',
+            'structs.ledger.time DESC, structs.ledger.id DESC',
             [ApiParameters::PAGE => (string) $page],
             [ApiParameters::PAGE],
             $page,
@@ -808,9 +815,9 @@ class TableReadManager
     public function ledgerListByPlayer(string $player_id, int $page): Response
     {
         return $this->listQuery(
-            'l.time, l.id, l.address, l.counterparty, l.amount, l.amount_p, l.block_height, l.action::text AS action, l.direction::text AS direction, l.denom',
-            'structs.ledger l INNER JOIN structs.player_address pa ON pa.address = l.address AND pa.player_id = :player_id',
-            [],
+            'l.time, l.id::text AS id, l.address, l.counterparty, l.amount, l.amount_p::text AS amount_p, l.block_height::text AS block_height, l.chain_id, l.tx_index, l.msg_index, l.event_index, l.action::text AS action, l.direction::text AS direction, l.denom',
+            'structs.ledger l',
+            ["EXISTS (SELECT 1 FROM structs.asset_owner o WHERE o.address=l.address AND o.owner_type='player' AND o.owner_id=:player_id)"],
             'l.time DESC, l.id DESC',
             [ApiParameters::PLAYER_ID => $player_id, ApiParameters::PAGE => (string) $page],
             [ApiParameters::PLAYER_ID, ApiParameters::PAGE],
@@ -822,12 +829,12 @@ class TableReadManager
     public function ledgerListByAddress(string $address, int $page): Response
     {
         return $this->listQuery(
-            'time, id, address, counterparty, amount, amount_p, block_height, action::text AS action, direction::text AS direction, denom',
+            'time, id::text AS id, address, counterparty, amount, amount_p::text AS amount_p, block_height::text AS block_height, chain_id, tx_index, msg_index, event_index, action::text AS action, direction::text AS direction, denom',
             'structs.ledger',
             [
                 'address = :address',
             ],
-            'time DESC, id DESC',
+            'structs.ledger.time DESC, structs.ledger.id DESC',
             [ApiParameters::ADDRESS => $address, ApiParameters::PAGE => (string) $page],
             [ApiParameters::ADDRESS, ApiParameters::PAGE],
             $page,
@@ -1411,7 +1418,7 @@ class TableReadManager
     public function substationAll(int $page): Response
     {
         return $this->listQuery(
-            'id, owner, creator, name, pfp, created_at, updated_at',
+            'id, owner, creator, name, pfp, deletion_pending, deletion_migration_substation_id, created_at, updated_at',
             'structs.substation',
             [],
             'updated_at DESC NULLS LAST, id',
@@ -1424,7 +1431,7 @@ class TableReadManager
     public function substationByOwner(string $owner, int $page): Response
     {
         return $this->listQuery(
-            'id, owner, creator, name, pfp, created_at, updated_at',
+            'id, owner, creator, name, pfp, deletion_pending, deletion_migration_substation_id, created_at, updated_at',
             'structs.substation',
             [
                 'owner = :owner',
@@ -1647,19 +1654,20 @@ class TableReadManager
               p.provider_cancellation_penalty,
               p.consumer_cancellation_penalty,
               s.owner AS substation_owner,
-              gm.id AS guild_id,
-              CASE
-                WHEN p.rate_denom IN ('ualpha', 'alpha') THEN p.rate_amount
-                ELSE floor(p.rate_amount * COALESCE(gb.ratio, 0))
-              END AS alpha_equivalent_rate_p,
+              COALESCE(owner_guild.id, pl.guild_id) AS guild_id,
+              (CASE
+                WHEN p.rate_denom = 'ualpha' THEN p.rate_amount
+                WHEN gb.supply > 0 AND gb.collateral >= 0
+                  THEN div(p.rate_amount * gb.collateral, gb.supply)
+                ELSE NULL
+              END)::text AS alpha_equivalent_rate_p,
               COALESCE(c.committed_capacity, 0) AS committed_capacity
             FROM structs.provider p
             LEFT JOIN structs.substation s ON s.id = p.substation_id
             LEFT JOIN structs.player pl ON pl.id = p.owner
-            LEFT JOIN structs.guild_meta gm ON gm.id = pl.guild_id
+            LEFT JOIN structs.guild owner_guild ON owner_guild.id = p.owner
             LEFT JOIN structs.api_guild_bank gb
-              ON gb.guild_id = pl.guild_id
-              AND gb.denom = p.rate_denom
+              ON gb.denom = p.rate_denom AND gb.denom = 'uguild.' || gb.guild_id
             LEFT JOIN (
               SELECT provider_id, SUM(capacity) AS committed_capacity
               FROM structs.agreement

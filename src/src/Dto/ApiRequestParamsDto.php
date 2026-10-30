@@ -52,7 +52,8 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ADDRESS)]
     public ?string $delegator_address = null;
 
-    #[Assert\Regex(RegexPattern::SLUG)]
+    #[Assert\Regex(RegexPattern::DENOM)]
+    #[Assert\NotBlank(allowNull: true)]
     public ?string $denom = null;
 
     #[Assert\Regex(RegexPattern::ID)]

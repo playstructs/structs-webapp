@@ -38,7 +38,12 @@ class RegexPattern
     /** Canonical UUID, any version. */
     public const string UUID = '/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/';
 
-    /** Alphanumeric, hyphen, underscore — attribute types, denoms, etc. */
+    /** Cosmos SDK denomination grammar, also used by the two denomination routes. */
+    public const string DENOM_ROUTE = '[a-zA-Z][a-zA-Z0-9/:._-]{2,127}';
+
+    public const string DENOM = '~\A' . self::DENOM_ROUTE . '\z~';
+
+    /** Alphanumeric, hyphen, underscore — attribute types, labels, etc. */
     public const string SLUG = '/^[a-zA-Z0-9_.-]+$/';
 
     /** Onboarding step key: dot-separated lower-case segments, e.g. tutorial.raid.inspect_defenses. */

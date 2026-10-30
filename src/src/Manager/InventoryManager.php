@@ -49,7 +49,7 @@ class InventoryManager
         $sql = "SELECT owner_type::text AS owner_type, owner_id, denom, balance::text AS balance
             FROM structs.api_inventory
             WHERE denom = :denom
-            ORDER BY balance DESC, owner_type, owner_id
+            ORDER BY structs.api_inventory.balance DESC, owner_type, owner_id
             LIMIT {$pageLimit} OFFSET {$offset}";
         $params = [ApiParameters::DENOM => $denom, ApiParameters::PAGE => (string) $page];
         $required = [ApiParameters::DENOM, ApiParameters::PAGE];

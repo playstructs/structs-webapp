@@ -384,7 +384,7 @@ class TableReadManagerTest extends ApiManagerTestCase
 
         $this->manager($connection, [])->ledgerListAll(1);
 
-        $this->assertStringContainsString('ORDER BY time DESC, id DESC', $captured);
+        $this->assertStringContainsString('ORDER BY structs.ledger.time DESC, structs.ledger.id DESC', $captured);
     }
 
     public function testGridHonoursAllowlistedOrder(): void

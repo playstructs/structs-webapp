@@ -41,6 +41,9 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 #enable mod_rewrite
 RUN a2enmod rewrite
 
+# Virtual-host policy must preserve encoded denomination slashes until routing.
+COPY ./docker/apache/structs.conf /etc/apache2/sites-available/000-default.conf
+
 # Copy the source files from the local machine to the container
 COPY ./src /src
 

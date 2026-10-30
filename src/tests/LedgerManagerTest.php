@@ -1,6 +1,7 @@
 <?php
 
 use App\Manager\LedgerManager;
+use App\Manager\TableReadManager;
 use App\Tests\ApiManagerTestCase;
 use App\Util\TransferSourceQuery;
 use Doctrine\DBAL\Connection;
@@ -104,6 +105,18 @@ class LedgerManagerTest extends ApiManagerTestCase
             $db->getConfiguration()->setSQLLogger($logger);
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
             $manager = new LedgerManager($this->entityManager($db), $this->validator());
+            $catalog = (new TableReadManager($this->entityManager($db), $this->validator()))
+                ->applyListQuery(new Request(['include_total' => '1', 'include_meta' => '1']));
+            $allDenoms = $this->body($catalog->ledgerListByPlayer(self::PLAYER, 1));
+            $this->assertCount(7, $allDenoms['data'], 'Vault and approved retained only, without duplicate vault attribution');
+            $this->assertSame('7', (string) $allDenoms['total']);
+            $this->assertSame([$selfReceived, $selfSent], array_slice(array_column($allDenoms['data'], 'id'), 0, 2));
+            $this->assertContains('uguild.0-990986', array_column($allDenoms['data'], 'denom'));
+            $this->assertContains('minted', array_column($allDenoms['data'], 'action'));
+            $this->assertContains('0', array_column($allDenoms['data'], 'amount_p'));
+            $this->assertSame('structstestnet-111', $allDenoms['data'][0]['chain_id']);
+            $this->assertSame('3353000', $allDenoms['data'][0]['block_height']);
+            $this->assertSame(1, $allDenoms['data'][0]['event_index']);
             $body = $this->body($manager->getTransactions(self::PLAYER, 1));
             $this->assertSame([$selfReceived, $selfSent, $retained, $sent], array_column($body['data'], 'id'));
             $this->assertSame('4', (string) $this->body($manager->countTransactions(self::PLAYER))['data']['count']);

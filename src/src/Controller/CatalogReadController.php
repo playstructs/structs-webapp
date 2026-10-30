@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Constant\RegexPattern;
 use App\Manager\TableReadManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -678,7 +679,7 @@ class CatalogReadController extends AbstractController
         return $this->manager($entityManager, $validator, $request)->providerByOwner($owner, $page);
     }
 
-    #[Route('/api/provider/denom/{denom}/page/{page}', name: 'api_provider_by_denom', requirements: ['page' => self::PAGE_REQUIREMENT], methods: ['GET'])]
+    #[Route('/api/provider/denom/{denom}/page/{page}', name: 'api_provider_by_denom', requirements: ['page' => self::PAGE_REQUIREMENT, 'denom' => RegexPattern::DENOM_ROUTE], methods: ['GET'])]
     public function providerByDenom(
         string $denom,
         int $page,
