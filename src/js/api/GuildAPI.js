@@ -299,8 +299,8 @@ export class GuildAPI {
    * @param {string} playerId
    * @return {Promise<Infusion>}
    */
-  async getInfusionByPlayerId(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/infusion/player/${playerId}`);
+  async getInfusionByPlayerId(playerId, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/infusion/player/${playerId}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.infusionFactory.make(response.data, response.meta);
@@ -614,8 +614,8 @@ export class GuildAPI {
    * @param {string} guildId
    * @return {Promise<Guild>}
    */
-  async getGuild(guildId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/${guildId}`);
+  async getGuild(guildId, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/${guildId}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.guildFactory.make(response.data);

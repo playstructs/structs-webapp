@@ -48,10 +48,15 @@ class InfusionManager
     {
         $query = '
             SELECT
-              i.destination_id,
-              i.address,
+              g.primary_reactor_id AS destination_id,
+              p.primary_address AS address,
               i.destination_type,
-              i.player_id,
+              p.id AS player_id,
+              COALESCE(i.fuel_p, 0)::text AS fuel_p,
+              COALESCE(i.power_p, 0)::text AS power_p,
+              COALESCE(i.defusing_p, 0)::text AS defusing_p,
+              COALESCE(i.commission, 0)::text AS position_commission,
+              g.join_infusion_minimum_p::text AS join_infusion_minimum_p,
               floor(COALESCE(i.fuel, 0)) AS fuel,
               floor(COALESCE(i.defusing, 0)) AS defusing,
               floor(COALESCE(i.power, 0)) AS power,
@@ -66,6 +71,7 @@ class InfusionManager
             LEFT JOIN infusion i
               ON g.primary_reactor_id = i.destination_id
               AND p.id = i.player_id
+              AND p.primary_address = i.address
               AND i.destination_type = \'reactor\'
             WHERE p.id = :player_id
             LIMIT 1;

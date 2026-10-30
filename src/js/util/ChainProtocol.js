@@ -15,6 +15,13 @@ export function protocolAtHeight(chainId, height) {
   return BigInt(exactQueryHeight(height)) >= BigInt(CHAIN.UPGRADE_HEIGHT) ? CHAIN.PROTOCOL : CHAIN.LEGACY_PROTOCOL;
 }
 
+/** A delayed block notification cannot make a newer verified snapshot legacy. */
+export function maxQueryHeight(height, other = height) {
+  const first = exactQueryHeight(height);
+  const second = exactQueryHeight(other);
+  return BigInt(first) > BigInt(second) ? first : second;
+}
+
 /**
  * Validate the metadata belonging to the data actually used by an action.
  * A block response alone cannot certify a separate inventory/work response.

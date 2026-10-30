@@ -10,7 +10,7 @@ import {transferAddress} from "../util/TransferIntent";
 import {protocolAtHeight} from "../util/ChainProtocol";
 import {legacyDecimalFromWire} from "../util/MessagePayload";
 
-function validatorAddress(value) {
+export function reactorValidatorAddress(value) {
   const parsed = fromBech32(value);
   if (parsed.prefix !== 'structsvaloper' || parsed.data.length !== 20
       || toBech32(parsed.prefix, parsed.data) !== value) throw new Error('Invalid reactor validator');
@@ -59,7 +59,7 @@ function indexedPositions(indexed, intent, vault, validator, height) {
     || (a.address < b.address ? -1 : a.address > b.address ? 1 : 0));
 }
 
-async function availableStake(staking, address, validator, maxEntries) {
+export async function availableReactorStake(staking, address, validator, maxEntries) {
   const delegations = await stakingRows(staking, 'DelegatorDelegations', 'delegationResponses', address);
   const pairs = new Set();
   let amount = 0n;
@@ -67,7 +67,7 @@ async function availableStake(staking, address, validator, maxEntries) {
     const delegation = row.delegation;
     if (delegation?.delegatorAddress !== address || pairs.has(delegation.validatorAddress)
         || row.balance?.denom !== 'ualpha') throw new Error('Invalid native delegation identity');
-    validatorAddress(delegation.validatorAddress);
+    reactorValidatorAddress(delegation.validatorAddress);
     legacyDecimalFromWire(delegation.shares);
     if (BigInt(delegation.shares) <= 0n) throw new Error('Invalid native delegation shares');
     pairs.add(delegation.validatorAddress);
@@ -83,7 +83,7 @@ async function availableStake(staking, address, validator, maxEntries) {
     if (row.delegatorAddress !== address || pairs.has(row.validatorAddress) || !Array.isArray(row.entries)) {
       throw new Error('Invalid native unbonding identity');
     }
-    validatorAddress(row.validatorAddress);
+    reactorValidatorAddress(row.validatorAddress);
     pairs.add(row.validatorAddress);
     // Zero-balance, held and past-time entries all count until staking removes them.
     if (row.validatorAddress === validator && row.entries.length >= maxEntries) amount = 0n;
@@ -109,7 +109,7 @@ export async function prepareReactor(rpc, tx, indexed) {
       || guild.primaryReactorId !== intent.reactorId || reactor?.id !== intent.reactorId) {
     throw new Error('The selected guild reactor changed');
   }
-  const validator = validatorAddress(reactor.validator);
+  const validator = reactorValidatorAddress(reactor.validator);
   const protocol = protocolAtHeight(rpc.chainId,rpc.height);
   const staking = new StakingQuery(rpc);
   const params = (await staking.Params({})).params;
@@ -148,7 +148,7 @@ export async function prepareReactor(rpc, tx, indexed) {
         if (owner.address !== position.address) throw new Error('Invalid retained address lookup');
         if (owner.playerId !== intent.ownerId) continue;
       }
-      const available = await availableStake(staking,position.address,validator,params.maxEntries);
+      const available = await availableReactorStake(staking,position.address,validator,params.maxEntries);
       const amount = available < remaining ? available : remaining;
       if (amount) {
         legs.push({...position,amount:amount.toString()});

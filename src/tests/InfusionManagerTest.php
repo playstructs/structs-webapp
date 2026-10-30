@@ -118,7 +118,23 @@ class InfusionManagerTest extends ApiManagerTestCase
             $this->assertSame('v0.21.0', $body['meta']['protocol']);
             $this->assertSame('3352999', $body['meta']['height']);
             $this->assertArrayNotHasKey('positions', $body['data']);
-            $this->assertContains($body['data']['fuel'], ['1', '2']);
+            $this->assertSame('2', $body['data']['fuel'], 'Legacy actions still debit only the primary position');
+            $this->assertSame('reactor-api-retained', $body['data']['address']);
+            $this->assertSame('2000000', $body['data']['fuel_p']);
+            $this->assertSame('3', $body['data']['power_p']);
+            $this->assertSame('999', $body['data']['defusing_p']);
+            $this->assertArrayHasKey('join_infusion_minimum_p', $body['data']);
+            $this->assertSame('0.5', $body['data']['position_commission']);
+
+            $db->executeStatement('RESET ROLE');
+            $db->executeStatement("DELETE FROM structs.infusion WHERE address='reactor-api-retained'");
+            $db->executeStatement('SET LOCAL ROLE structs_webapp');
+            $empty = json_decode($manager->getInfusionByPlayerId('1-990987')->getContent(), true);
+            $this->assertSame('0', $empty['data']['fuel_p'], 'Another address cannot stand in for an absent primary infusion');
+            $this->assertSame('0', $empty['data']['power_p']);
+            $this->assertSame('reactor-api-retained', $empty['data']['address']);
+            $this->assertSame('3-990987', $empty['data']['destination_id']);
+            $this->assertSame('1-990987', $empty['data']['player_id']);
         } finally {
             $db->rollBack();
             $db->close();

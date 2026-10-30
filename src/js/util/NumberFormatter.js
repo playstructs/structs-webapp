@@ -35,6 +35,16 @@ export class NumberFormatter {
     return intString.substring(0, remainderDigits) + unit;
   }
 
+  /** Format exact whole units with the same truncating display suffixes. */
+  formatExact(value) {
+    const digits = String(value);
+    if (!/^(0|[1-9][0-9]*)$/.test(digits)) throw new Error('Invalid exact display amount');
+    if (digits.length <= 3) return digits;
+    const leading = (digits.length - 1) % 3 + 1;
+    const unit = this.scale[(digits.length - leading) / 3];
+    return unit ? digits.slice(0, leading) + unit : digits;
+  }
+
   /**
    * @param {number} ms milliseconds
    * @return {string}
