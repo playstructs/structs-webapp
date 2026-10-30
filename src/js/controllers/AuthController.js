@@ -250,7 +250,8 @@ export class AuthController extends AbstractController {
   loginActivateDeviceWaitingForApproval(activationCodeInfoDTO = null) {
     const viewModel = new ActivateDeviceWaitingForApprovalViewModel(
       this.gameState,
-      activationCodeInfoDTO
+      activationCodeInfoDTO,
+      this.authManager
     );
     viewModel.render();
   }

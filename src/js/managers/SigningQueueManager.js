@@ -150,6 +150,19 @@ export class SigningQueueManager {
     return this.#enqueueIntent(generatorIntent(value));
   }
 
+  findRegistration(ownerId, address) {
+    this.loadPersistedState();
+    if (this.recoveryError) throw new Error('Saved signing evidence requires recovery');
+    this.#bindScope();
+    // Adopt another tab's durable result before returning an observer's ID. While
+    // a send is running, its in-memory object remains owned by the send loop.
+    if (!this.working) this.#mergeJournal(new TransactionJournal(this.gameState.signingAccount.address),false);
+    const candidates=[...this.immediateQueue,...this.actionQueue,...this.unresolved.values(),...this.completed.values(),
+      ...(this.inFlight ? [this.inFlight] : [])];
+    return candidates.filter(tx=>tx?.intent?.kind === 'address_register' && tx.intent.ownerId === ownerId && tx.intent.address === address)
+      .sort((a,b)=>Number(a.isTerminal())-Number(b.isTerminal()) || b.createdAt-a.createdAt || b.id.localeCompare(a.id))[0] ?? null;
+  }
+
   enqueueRegistration(value) {
     return this.#enqueueIntent(registrationIntent(value));
   }

@@ -52,6 +52,13 @@ class PlayerAddressController extends AbstractController
         return $manager->getRegistrationProofContext($player_id, $address, $proofManager);
     }
 
+    #[Route('/api/auth/player-address/{address}/player/{player_id}/registration', name: 'api_get_address_registration_status', methods: ['GET'])]
+    public function getAddressRegistrationStatus(string $address, string $player_id, EntityManagerInterface $entityManager,
+        ValidatorInterface $validator, AddressRegistrationProofManager $proofManager): Response
+    {
+        return (new PlayerAddressManager($entityManager, $validator))->getRegistrationStatus($player_id, $address, $proofManager);
+    }
+
     /**
      * @param Request $request
      * @param ValidatorInterface $validator
@@ -151,12 +158,13 @@ class PlayerAddressController extends AbstractController
     )]
     public function deletePlayerAddressActivationCode(
         string $code,
+        Request $request,
         ValidatorInterface $validator,
         EntityManagerInterface $entityManager,
         Security $security
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
-        return $playerAddressManager->deleteActivationCode($code, $security);
+        return $playerAddressManager->deleteActivationCode($code, $request->query->get('activation_id'), $security);
     }
 
     #[Route(
@@ -166,12 +174,13 @@ class PlayerAddressController extends AbstractController
     )]
     public function getPendingAddressByCode(
         string $code,
+        Request $request,
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator,
         Security $security
     ): Response {
         $playerAddressManager = new PlayerAddressManager($entityManager, $validator);
-        return $playerAddressManager->getPendingAddressByCode($code, $security);
+        return $playerAddressManager->getPendingAddressByCode($code, $request->query->get('activation_id'), $security);
     }
 
     /**

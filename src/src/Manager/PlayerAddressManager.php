@@ -97,7 +97,7 @@ class PlayerAddressManager
         AddressRegistrationProofManager $proofManager
     ): Response {
         $parsed = $this->apiRequestParsingManager->parseJsonRequest($request, [
-            ApiParameters::PLAYER_ID, ApiParameters::GUILD_ID, ApiParameters::CODE,
+            ApiParameters::PLAYER_ID, ApiParameters::GUILD_ID, ApiParameters::CODE, ApiParameters::ACTIVATION_ID,
             ApiParameters::ADDRESS, ApiParameters::SIGNATURE, ApiParameters::PUBKEY
         ], [ApiParameters::USER_AGENT]);
         if ($parsed->errors) {
@@ -105,9 +105,9 @@ class PlayerAddressManager
         }
         $params = $parsed->params;
         $db = $this->entityManager->getConnection();
-        $identity = ['code' => $params->code, 'player_id' => $params->player_id, 'guild_id' => $params->guild_id];
+        $identity = ['code' => $params->code, 'activation_id' => $params->activation_id, 'player_id' => $params->player_id, 'guild_id' => $params->guild_id];
         $codeQuery = self::activeActivationCodeSql() . '
-            AND c.player_id = :player_id AND a.guild_id = :guild_id';
+            AND c.player_id = :player_id AND a.guild_id = :guild_id AND c.activation_id = :activation_id';
         if (!$db->fetchAssociative($codeQuery, $identity)) {
             return $this->deviceResponse(null, ['activation_code_unavailable' => 'Activation code is unavailable'], Response::HTTP_CONFLICT);
         }
@@ -132,7 +132,7 @@ class PlayerAddressManager
             }
             $existing = $db->fetchAssociative('SELECT address, signature, pubkey, player_id, guild_id,
                 proof_chain_id, proof_protocol, proof_nonce, proof_timeout_height
-                FROM player_address_pending WHERE code = :code LIMIT 1', ['code' => $params->code]);
+                FROM player_address_pending WHERE activation_id = :activation_id', ['activation_id' => $params->activation_id]);
             if ($existing) {
                 // A lost HTTP response may repeat this exact consent. A code
                 // cannot be used to replace it with a second device or proof.
@@ -144,15 +144,26 @@ class PlayerAddressManager
                     return $this->deviceResponse(null, ['resource_already_exists' => 'Activation code already has a pending device'], Response::HTTP_CONFLICT);
                 }
             } else {
-                $db->insert('player_address_pending', [
-                    'code' => $params->code, 'address' => $params->address, 'signature' => $params->signature,
-                    'pubkey' => $params->pubkey, 'user_agent' => $params->user_agent,
-                    'ip' => $ip,
+                $data = [
+                    'code' => $params->code, 'activation_id' => $params->activation_id,
+                    'address' => $params->address, 'signature' => $params->signature,
+                    'pubkey' => $params->pubkey, 'user_agent' => $params->user_agent, 'ip' => $ip,
                     'player_id' => $params->player_id, 'guild_id' => $params->guild_id,
                     'proof_chain_id' => $context['chain_id'], 'proof_protocol' => $context['protocol'],
                     'proof_nonce' => $context['proof_nonce'], 'proof_height' => $context['source_height'],
                     'proof_timeout_height' => $context['timeout_height'],
-                ]);
+                ];
+                // A legacy orphan may have the same short code/address. Its NULL
+                // instance has no authority; replace it only with verified consent.
+                $columns = implode(',', array_keys($data));
+                $values = implode(',', array_map(static fn ($key) => ':' . $key, array_keys($data)));
+                $updates = implode(',', array_map(static fn ($key) => $key . '=EXCLUDED.' . $key, array_keys($data)));
+                $rows = $db->executeStatement('INSERT INTO player_address_pending (' . $columns . ') VALUES (' . $values . ')
+                    ON CONFLICT (code,address) DO UPDATE SET ' . $updates . ',permissions=NULL,created_at=NOW(),updated_at=NOW()
+                    WHERE player_address_pending.activation_id IS NULL', $data);
+                if ($rows !== 1) {
+                    return $this->deviceResponse(null, ['resource_already_exists' => 'Device consent already belongs to another activation'], Response::HTTP_CONFLICT);
+                }
             }
             return $this->deviceResponse(null, [], Response::HTTP_ACCEPTED);
         });
@@ -172,25 +183,54 @@ class PlayerAddressManager
         }
     }
 
-    public function getPendingAddressByCode(string $code, Security $security): Response
+    public function getRegistrationStatus(string $playerId, string $address, AddressRegistrationProofManager $proofManager): Response
     {
-        $parsed = $this->apiRequestParsingManager->parse([ApiParameters::CODE => $code], [ApiParameters::CODE]);
+        $parsed = $this->apiRequestParsingManager->parse(
+            [ApiParameters::PLAYER_ID => $playerId, ApiParameters::ADDRESS => $address],
+            [ApiParameters::PLAYER_ID, ApiParameters::ADDRESS]);
+        if ($parsed->errors) return $this->deviceResponse(null, $parsed->errors, Response::HTTP_BAD_REQUEST);
+        try {
+            AddressRegistrationProofManager::validateIdentity($playerId, $address);
+        } catch (\UnexpectedValueException $error) {
+            return $this->deviceResponse(null, ['invalid_identity' => 'Invalid registration identity'], Response::HTTP_BAD_REQUEST);
+        }
+        $db = $this->entityManager->getConnection();
+        $content = new ApiResponseContentDto();
+        try {
+            [$row, $meta] = \App\Util\ConsistentRead::run($db, fn () => [
+                $db->fetchAssociative('SELECT address,player_id,guild_id,status FROM player_address WHERE address=:address', ['address' => $address]),
+                \App\Util\ResponseMetaUtil::snapshotMeta($db),
+            ]);
+            $context = $proofManager->readContext($playerId, $address);
+            $content->data = ['indexed' => $row ?: null, 'chain' => $context];
+            $content->meta = $meta;
+            $content->success = true;
+            return new JsonResponse($content, Response::HTTP_OK, ['Cache-Control' => 'no-store']);
+        } catch (\UnexpectedValueException|\JsonException|\Symfony\Contracts\HttpClient\Exception\ExceptionInterface $error) {
+            return $this->deviceResponse(null, ['registration_unavailable' => 'Current registration status is unavailable'], Response::HTTP_SERVICE_UNAVAILABLE);
+        }
+    }
+
+    public function getPendingAddressByCode(string $code, ?string $activationId, Security $security): Response
+    {
+        $parsed = $this->apiRequestParsingManager->parse([ApiParameters::CODE => $code, ApiParameters::ACTIVATION_ID => $activationId],
+            [ApiParameters::CODE, ApiParameters::ACTIVATION_ID]);
         if ($parsed->errors) {
             return $this->deviceResponse(null, $parsed->errors, Response::HTTP_BAD_REQUEST);
         }
         $row = $this->entityManager->getConnection()->fetchAssociative('
             SELECT pending.* FROM player_address_pending pending
             JOIN (' . self::activeActivationCodeSql() . ') active
-              ON pending.code = active.code AND pending.player_id = active.player_id
+              ON pending.activation_id = active.activation_id AND pending.code = active.code AND pending.player_id = active.player_id
               AND pending.guild_id = active.guild_id
-            WHERE active.player_id = :player_id',
-            ['code' => $code, 'player_id' => $security->getUser()->getId()]);
+            WHERE active.player_id = :player_id AND active.activation_id = :activation_id',
+            ['code' => $code, 'activation_id' => $activationId, 'player_id' => $security->getUser()->getId()]);
         return $this->deviceResponse($row ?: null);
     }
 
     private static function activeActivationCodeSql(): string
     {
-        return "SELECT c.code, c.player_id, a.guild_id FROM player_address_activation_code c
+        return "SELECT c.code, c.activation_id, c.player_id, a.guild_id FROM player_address_activation_code c
             JOIN player_address a ON a.address = c.logged_in_address AND a.player_id = c.player_id
                 AND a.status = 'approved'
             JOIN player p ON p.id = c.player_id AND p.guild_id = a.guild_id
@@ -430,7 +470,7 @@ class PlayerAddressManager
             $db->executeStatement('DELETE FROM player_address_activation_code
                 WHERE player_id = :player_id AND logged_in_address = :logged_in_address', $identity);
             $result = $db->fetchAssociative('INSERT INTO player_address_activation_code (player_id, logged_in_address)
-                VALUES (:player_id, :logged_in_address) RETURNING code, created_at', $identity);
+                VALUES (:player_id, :logged_in_address) RETURNING code, created_at, activation_id', $identity);
             return $this->deviceResponse($result, [], Response::HTTP_CREATED);
         });
     }
@@ -442,7 +482,7 @@ class PlayerAddressManager
      */
     public function setPendingAddressPermissions(Request $request, Security $security): Response {
         $parsed = $this->apiRequestParsingManager->parseJsonRequest($request,
-            [ApiParameters::CODE, ApiParameters::ADDRESS, ApiParameters::PERMISSIONS]);
+            [ApiParameters::CODE, ApiParameters::ACTIVATION_ID, ApiParameters::ADDRESS, ApiParameters::PERMISSIONS]);
         if ($parsed->errors) {
             return $this->deviceResponse(null, $parsed->errors, Response::HTTP_BAD_REQUEST);
         }
@@ -455,10 +495,10 @@ class PlayerAddressManager
         }
         $db = $this->entityManager->getConnection();
         return $db->transactional(function () use ($db, $parsed, $permissions, $security): Response {
-            $identity = ['code' => $parsed->params->code, 'player_id' => $security->getUser()->getId()];
-            $code = $db->fetchAssociative(self::activeActivationCodeSql() . ' AND c.player_id = :player_id FOR UPDATE OF c', $identity);
+            $identity = ['code' => $parsed->params->code, 'activation_id' => $parsed->params->activation_id, 'player_id' => $security->getUser()->getId()];
+            $code = $db->fetchAssociative(self::activeActivationCodeSql() . ' AND c.player_id = :player_id AND c.activation_id = :activation_id FOR UPDATE OF c', $identity);
             $rows = $code ? $db->executeStatement('UPDATE player_address_pending SET permissions = :permissions
-                WHERE code = :code AND address = :address AND player_id = :player_id AND guild_id = :guild_id',
+                WHERE code = :code AND activation_id = :activation_id AND address = :address AND player_id = :player_id AND guild_id = :guild_id',
                 $identity + ['address' => $parsed->params->address, 'guild_id' => $code['guild_id'], 'permissions' => $permissions]) : 0;
             return $this->deviceResponse(['rows_affected' => $rows],
                 $rows ? [] : ['not_found' => 'Pending address is unavailable'],
@@ -532,6 +572,7 @@ class PlayerAddressManager
      */
     public function deleteActivationCode(
         string $code,
+        ?string $activationId,
         Security $security
     ): Response
     {
@@ -539,29 +580,23 @@ class PlayerAddressManager
         $player = $security->getUser();
         $player_id = $player->getId();
 
+        $parsed = $this->apiRequestParsingManager->parse([ApiParameters::CODE => $code, ApiParameters::ACTIVATION_ID => $activationId],
+            [ApiParameters::CODE, ApiParameters::ACTIVATION_ID]);
+        if ($parsed->errors) return $this->deviceResponse(null, $parsed->errors, Response::HTTP_BAD_REQUEST);
+
         $query = '
             DELETE 
             FROM player_address_activation_code
             WHERE player_id = :player_id 
-            AND code = :code;
+            AND code = :code AND activation_id = :activation_id;
         ';
 
         $db = $this->entityManager->getConnection();
         $rowsAffected = $db->executeStatement($query, [
             'player_id' => $player_id,
-            'code' => $code
+            'code' => $code, 'activation_id' => $activationId
         ]);
 
-        $responseContent = new ApiResponseContentDto();
-        $responseContent->data = ['rows_affected' => $rowsAffected];
-        $responseContent->success = $rowsAffected > 0;
-        $status = Response::HTTP_OK;
-
-        if (!$responseContent->success) {
-            $responseContent->errors = ['not_found' => 'Activation code not found in DB.'];
-            $status = Response::HTTP_INTERNAL_SERVER_ERROR;
-        }
-
-        return new JsonResponse($responseContent, $status);
+        return $this->deviceResponse(['rows_affected' => $rowsAffected]);
     }
 }

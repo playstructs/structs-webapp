@@ -452,8 +452,8 @@ export class GuildAPI {
    * @param {AddPendingAddressRequestDTO} addPendingAddressRequestDTO
    * @return {Promise<GuildAPIResponse>}
    */
-  async addPendingAddress(addPendingAddressRequestDTO) {
-    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/player-address`, addPendingAddressRequestDTO);
+  async addPendingAddress(addPendingAddressRequestDTO, options = {}) {
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/player-address`, addPendingAddressRequestDTO, {timeoutMs:20000,...options});
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
@@ -462,7 +462,7 @@ export class GuildAPI {
    * @return {Promise<GuildAPIResponse>}
    */
   async setPendingAddressPermissions(setPendingAddressPermissionsRequestDTO) {
-    const jsonResponse = await this.ajax.put(`${this.apiUrl}/player-address/pending/permissions`, setPendingAddressPermissionsRequestDTO);
+    const jsonResponse = await this.ajax.put(`${this.apiUrl}/player-address/pending/permissions`, setPendingAddressPermissionsRequestDTO, {timeoutMs:5000});
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
@@ -470,8 +470,8 @@ export class GuildAPI {
    * @param {string} activationCode
    * @return {Promise<GuildAPIResponse>}
    */
-  async deleteActivationCode(activationCode) {
-    const jsonResponse = await this.ajax.delete(`${this.apiUrl}/player-address/activation-code/${activationCode}`);
+  async deleteActivationCode(activationCode, activationId) {
+    const jsonResponse = await this.ajax.delete(`${this.apiUrl}/player-address/activation-code/${encodeURIComponent(activationCode)}?activation_id=${encodeURIComponent(activationId)}`, undefined, {timeoutMs:5000});
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
@@ -491,9 +491,16 @@ export class GuildAPI {
    * @param {string} address
    * @return {Promise<PlayerAddress>}
    */
-  async getPendingAddressByCode(code) {
+  async getRegistrationStatus(playerId, address, options = {}) {
+    const response=await this.ajax.get(`${this.apiUrl}/auth/player-address/${encodeURIComponent(address)}/player/${encodeURIComponent(playerId)}/registration`,
+      {timeoutMs:16000,...options});
+    if (response.success !== true || !response.meta || !response.data) throw new Error('Registration status is unavailable');
+    return response;
+  }
+
+  async getPendingAddressByCode(code, activationId, options = {}) {
     const response = this.guildAPIResponseFactory.make(await this.ajax.get(
-      `${this.apiUrl}/player-address/code/${encodeURIComponent(code)}`, {timeoutMs:5000}
+      `${this.apiUrl}/player-address/code/${encodeURIComponent(code)}?activation_id=${encodeURIComponent(activationId)}`, {timeoutMs:5000,...options}
     ));
     this.handleResponseFailure(response);
     return response.data;

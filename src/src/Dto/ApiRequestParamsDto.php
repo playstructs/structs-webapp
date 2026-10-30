@@ -8,6 +8,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class ApiRequestParamsDto
 {
+    #[Assert\Uuid]
+    public ?string $activation_id = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $after_id = null;
 

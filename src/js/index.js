@@ -299,7 +299,12 @@ if (tutorialMode) {
 } else if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
   TutorialMode.consumeExited();
   // The opening crawl (Auth/introduction) is shelved for now.
-  MenuPage.router.goto('Auth', 'index');
+  try {
+    if (!await authManager.restoreDeviceActivation()) MenuPage.router.goto('Auth', 'index');
+  } catch (error) {
+    console.debug('[DeviceActivation] saved activation unavailable:',error);
+    MenuPage.router.goto('Auth', 'index');
+  }
 
   MenuPage.hideLoadingScreen();
 } else {

@@ -47,6 +47,15 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
         MenuPage.router.goto('Account', 'activatingDevice', this.playerAddressPending);
       }
     );
+    document.getElementById(this.denyDeviceBtnId).addEventListener('click',async()=>{
+      const signal=MenuPage.router.navigationSignal;
+      try {
+        const response=await this.gameState.guildAPI.deleteActivationCode(this.playerAddressPending.code,this.playerAddressPending.activation_id);
+        if (response.success && !signal.aborted) MenuPage.router.goto('Account','deviceActivationCancelled');
+      } catch (error) {
+        if (!signal.aborted) console.debug('[DeviceActivation] denial could not be confirmed:',error);
+      }
+    });
   }
 
   render() {

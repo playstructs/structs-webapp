@@ -73,12 +73,16 @@ async function ready(base) {
             assert.equal(proof.status, 409, surface + ' registration context is public but validates its identity');
             assert.equal((await proof.json()).errors.proof_unavailable, 'Current registration proof is unavailable');
             assert.equal(proof.headers.get('cache-control').includes('no-store'), true);
-            const pendingRoute = '/api/player-address/code/ZZZQQ';
+            const pendingRoute = '/api/player-address/code/ZZZQQ?activation_id=11111111-1111-4111-8111-111111111111';
             assert.equal((await request(base, pendingRoute, false)).status, 401, surface + ' pending devices require authentication');
             const pending = await request(base, pendingRoute);
             assert.equal(pending.status, 200);
             assert.equal((await pending.json()).data, null);
-            checks += 3;
+            const registration = await request(base, '/api/auth/player-address/invalid/player/1-1/registration', false);
+            assert.equal(registration.status, 400, surface + ' registration association is public but validates its identity');
+            assert.equal(registration.headers.get('cache-control').includes('no-store'), true);
+            assert.equal((await request(base, '/api/player-address/code/ZZZQQ')).status, 400, 'Issued instance is mandatory');
+            checks += 5;
             const guildRoutes = ['guild/this', 'guild/name', 'guild/count', 'guild/directory', 'guild/0-990970',
                 'guild/0-990970/name', 'guild/0-990970/members/count', 'guild/0-990970/power/stats',
                 'guild/0-990970/roster', 'guild/0-990970/planet/complete/count'];

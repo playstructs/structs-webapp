@@ -69,7 +69,7 @@ class AddressRegistrationProofManager
         return "CHAIN{$context['chain_id']}|REGISTERADDRESSPLAYER{$playerId}ADDRESS{$address}NONCE{$nonce}";
     }
 
-    private static function validateIdentity(string $playerId, string $address): void
+    public static function validateIdentity(string $playerId, string $address): void
     {
         if (!preg_match('/\A1-[1-9][0-9]{0,19}\z/', $playerId)
             || !preg_match('/\Astructs1[ac-hj-np-z02-9]{38}\z/', $address)) {

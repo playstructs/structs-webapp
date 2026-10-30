@@ -290,6 +290,7 @@ class AuthManager
         $query = '
             SELECT
               pa.player_id,
+              paac.activation_id,
               gm.tag,
               p.username,
               p.pfp,

@@ -17,6 +17,7 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class PlayerAddressManagerTest extends KernelTestCase
 {
+    private const string ACTIVATION_ID = '11111111-1111-4111-8111-111111111111';
     /**
      * @dataProvider addPendingAddressProvider
      * @param mixed $requestContent
@@ -53,6 +54,7 @@ class PlayerAddressManagerTest extends KernelTestCase
                 ? ($playerAddressPendingExists ? ['address' => 'other-device'] : false) : $code;
         });
         $connection->method('transactional')->willReturnCallback(fn ($callback) => $callback($connection));
+        $connection->method('executeStatement')->willReturn(1);
         $entityManagerStub = $this->createStub(EntityManagerInterface::class);
         $entityManagerStub->method('getConnection')->willReturn($connection);
         $proofManager = $this->createMock(\App\Manager\AddressRegistrationProofManager::class);
@@ -79,6 +81,7 @@ class PlayerAddressManagerTest extends KernelTestCase
             $entityManagerStub,
             $validator
         );
+        if (is_array($requestContent)) $requestContent['activation_id'] = self::ACTIVATION_ID;
         $request = Request::create('/api/player-address', 'POST', [], [], [] ,[], json_encode($requestContent));
         $response = $playerAddressManager->addPendingAddress($request, $signatureValidationManager, $proofManager);
         $responseContent = json_decode($response->getContent(), true);
@@ -254,7 +257,7 @@ class PlayerAddressManagerTest extends KernelTestCase
         $connection->expects($this->exactly($expectedHttpStatusCode === Response::HTTP_BAD_REQUEST ? 0 : 1))
             ->method('fetchAssociative')
             ->with($this->callback(fn ($sql) => str_contains($sql, 'active.player_id = :player_id')),
-                ['code' => $code, 'player_id' => '1-137'])
+                ['code' => $code, 'activation_id' => self::ACTIVATION_ID, 'player_id' => '1-137'])
             ->willReturn($playerAddressPendingExists ? $expectedData : false);
         $entityManagerStub = $this->createStub(EntityManagerInterface::class);
         $entityManagerStub->method('getConnection')->willReturn($connection);
@@ -269,7 +272,7 @@ class PlayerAddressManagerTest extends KernelTestCase
             $entityManagerStub,
             $validator
         );
-        $response = $playerAddressManager->getPendingAddressByCode($code, $security);
+        $response = $playerAddressManager->getPendingAddressByCode($code, self::ACTIVATION_ID, $security);
         $responseContent = json_decode($response->getContent(), true);
 
         $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());

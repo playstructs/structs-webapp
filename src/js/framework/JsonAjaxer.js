@@ -20,16 +20,16 @@ export class JsonAjaxer {
     return this.request('GET', url, undefined, options);
   }
 
-  async post (url, data) {
-    return this.request('POST', url, data);
+  async post (url, data, options = {}) {
+    return this.request('POST', url, data, options);
   }
 
-  async put (url, data) {
-    return this.request('PUT', url, data);
+  async put (url, data, options = {}) {
+    return this.request('PUT', url, data, options);
   }
 
-  async delete (url, data) {
-    return this.request('DELETE', url, data);
+  async delete (url, data, options = {}) {
+    return this.request('DELETE', url, data, options);
   }
 
   /**

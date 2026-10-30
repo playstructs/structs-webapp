@@ -1,3 +1,7 @@
+import {DeviceRegistrationStore} from "./DeviceRegistrationStore";
+import {registrationAssociation, registrationCommit, waitForRegistration} from "../util/RegistrationCompletion";
+import {registrationIntent} from "../util/RegistrationIntent";
+import {abortableDelay} from "../util/AbortableDelay";
 import {pendingRegistrationProof} from "../util/RegistrationProof";
 import {PlayerCreatedListener} from "../grass_listeners/PlayerCreatedListener";
 import {LoginRequestDTO} from "../dtos/LoginRequestDTO";
@@ -11,11 +15,8 @@ import {MenuPage} from "../framework/MenuPage";
 import {PlanetManager} from "./PlanetManager";
 import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {AddPendingAddressRequestDTO} from "../dtos/AddPendingAddressRequestDTO";
-import {PlayerAddressApprovedLoginListener} from "../grass_listeners/PlayerAddressApprovedLoginListener";
-import {PlayerAddressPendingCreatedListener} from "../grass_listeners/PlayerAddressPendingCreatedListener";
 import {PlayerAddressPendingFactory} from "../factories/PlayerAddressPendingFactory";
 import {SetPendingAddressPermissionsRequestDTO} from "../dtos/SetPendingAddressPermissionsRequestDTO";
-import {PlayerAddressApprovedListener} from "../grass_listeners/PlayerAddressApprovedListener";
 import {PlayerAddressRevokedListener} from "../grass_listeners/PlayerAddressRevokedListener";
 import {AlphaChangeListener} from "../grass_listeners/AlphaChangeListener";
 import {PlanetRaidStatusListener} from "../grass_listeners/PlanetRaidStatusListener";
@@ -28,7 +29,6 @@ import {KeyPlayerShieldChangeStatusListener} from "../grass_listeners/KeyPlayerS
 import {LoginCompleteEvent} from "../events/LoginCompleteEvent";
 import {PlanetRaidStatusChangedEvent} from "../events/PlanetRaidStatusChangedEvent";
 import {TX_STATUS} from "../models/SigningTransaction";
-import {RecoverAccountAddressApprovedListener} from "../grass_listeners/RecoverAccountAddressApprovedListener";
 import {TransactionJournal} from "./TransactionJournal";
 import {AlphaRefreshManager} from "./AlphaRefreshManager";
 
@@ -87,11 +87,15 @@ export class AuthManager {
    * @param {string} mnemonic
    * @return {Promise<void>}
    */
-  async initWallet(mnemonic) {
-    this.gameState.wallet = await this.walletManager.createWallet(mnemonic);
-    const accounts = await this.gameState.wallet.getAccountsWithPrivkeys();
-    this.gameState.signingAccount = accounts[0];
-    this.gameState.pubkey = this.walletManager.bytesToHex(this.gameState.signingAccount.pubkey);
+  async initWallet(mnemonic, signal = undefined) {
+    const epoch=this.walletEpoch=(this.walletEpoch ?? 0)+1;
+    const wallet=await this.walletManager.createWallet(mnemonic);
+    const [account]=await wallet.getAccountsWithPrivkeys();
+    signal?.throwIfAborted();
+    if (epoch !== this.walletEpoch) throw new Error('Wallet initialization was superseded');
+    this.gameState.wallet=wallet;
+    this.gameState.signingAccount=account;
+    this.gameState.pubkey=this.walletManager.bytesToHex(account.pubkey);
   }
 
   /**
@@ -197,8 +201,15 @@ export class AuthManager {
    * @param {string} playerId
    * @return {Promise<boolean>}
    */
-  async login(playerId) {
+  async login(playerId, signal = undefined) {
+    const address=this.gameState.signingAccount.address;
+    const assertCurrent=()=>{
+      signal?.throwIfAborted();
+      if (this.gameState.signingAccount.address !== address) throw new Error('Login device changed');
+    };
+    assertCurrent();
     const response = await this.guildAPI.login(await this.buildLoginRequest());
+    assertCurrent();
 
     console.log('Login response status:', response);
 
@@ -232,7 +243,9 @@ export class AuthManager {
       this.grassManager.registerListener(new StructRefineStatusListener(this.gameState));
 
       await this.signingClientManager.initSigningClient();
+      assertCurrent();
       await this.playerAddressManager.addPlayerAddressMeta();
+      assertCurrent();
 
       this.destroyedStructManager.init();
 
@@ -250,6 +263,7 @@ export class AuthManager {
         this.guildAPI.getStructsByPlayerId(playerId)
       ]);
 
+      assertCurrent();
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlayer(player,this.gameState.currentBlockHeight);
       this.gameState.alphaRefresh.start();
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setLastActionBlockHeight(this.gameState.currentBlockHeight, height);
@@ -278,6 +292,7 @@ export class AuthManager {
           this.guildAPI.getActivePlanetRaidByFleetId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.fleet_id)
         ]);
 
+        assertCurrent();
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanet(planet);
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setPlanetShieldInfo(shieldInfo, this.gameState.currentBlockHeight);
         this.gameState.setPlanetPlanetRaidInfo(planetPlanetRaidInfo);
@@ -288,6 +303,7 @@ export class AuthManager {
           this.raidManager.initRaidEnemy(),
         ]);
 
+        assertCurrent();
         this.mapManager.configureAlphaBaseMap();
         this.gameState.alphaBaseMap.render();
 
@@ -302,6 +318,7 @@ export class AuthManager {
 
         // Do this last so block height is available
         await this.taskManager.restoreTasksFromDB();
+        assertCurrent();
 
         window.dispatchEvent(new LoginCompleteEvent());
 
@@ -313,6 +330,7 @@ export class AuthManager {
           this.mapManager
         );
         newPlanetListener.redirectCallback = () => {
+          if (signal?.aborted || this.gameState.signingAccount.address !== address) return;
           window.dispatchEvent(new LoginCompleteEvent());
         };
 
@@ -329,71 +347,57 @@ export class AuthManager {
    * @param {string} mnemonic
    * @return {Promise<boolean>}
    */
-  async loginWithMnemonic(mnemonic) {
-    try {
-      // Used to authorize the on-chain registration of the new device address
-      await this.initWallet(mnemonic);
-      const primaryAddress = this.gameState.signingAccount.address;
-
-      const playerId = await this.guildAPI.getPlayerIdByAddressAndGuild(
-        primaryAddress,
-        this.gameState.thisGuild.id
-      );
-
-      // The recovery key can establish the existing player's API session before
-      // the queued registration needs authenticated readiness reads.
-      if (!await this.reauthenticate()) return false;
-
-      // Create a fresh device identity
-      const newMnemonic = this.walletManager.createMnemonic();
-      const newWallet = await this.walletManager.createWallet(newMnemonic);
-      const newAccounts = await newWallet.getAccountsWithPrivkeys();
-      const newAccount = newAccounts[0];
-      const newPubkey = this.walletManager.bytesToHex(newAccount.pubkey);
-
-      // Proof that the new device consents to being registered to the player.
-      const proofContext = await this.guildAPI.getAddressRegistrationProof(playerId, newAccount.address);
-      const registerMessage = this.guildAPI.buildAddressRegisterMessage(
-        playerId,
-        newAccount.address,
-        proofContext
-      );
-      const proofSignature = await this.walletManager.createSignatureForProxyMessage(
-        registerMessage,
-        newAccount.privkey
-      );
-
-      this.grassManager.registerListener(new RecoverAccountAddressApprovedListener(
-        this.gameState,
-        this,
-        playerId,
-        newAccount.address,
-        newMnemonic
-      ));
-
-      // Register the new address on-chain. The active wallet is still the
-      // primary one initialised above, which already holds the permission to
-      // manage the player's devices; the new device wallet does not take over
-      // until completeMnemonicLogin().
-      await this.signingClientManager.initSigningClient();
-
-      const permissions = this.permissionManager.getDefaultPlayerPermissions()
-          | this.permissionManager.getManageDevicesPermissions();
-
-      const registerTx = await this.signingClientManager.queueMsgAddressRegister(
-        playerId,
-        newAccount.address,
-        newPubkey,
-        proofSignature,
-        permissions,
-        {proofContext}
-      );
-
-      return registerTx.status === TX_STATUS.SUCCEEDED;
-    } catch (error) {
-      console.log(error);
-      return false;
+  async savedDevice(store) {
+    let record=store.read();
+    if (!record) {
+      const mnemonic=this.walletManager.createMnemonic();
+      const wallet=await this.walletManager.createWallet(mnemonic);
+      const [account]=await wallet.getAccountsWithPrivkeys();
+      record=store.write({mnemonic,address:account.address,pubkey:this.walletManager.bytesToHex(account.pubkey)});
     }
+    const wallet=await this.walletManager.createWallet(record.mnemonic);
+    const [account]=await wallet.getAccountsWithPrivkeys();
+    if (account.address !== record.address || this.walletManager.bytesToHex(account.pubkey) !== record.pubkey) {
+      throw new Error('Saved device key does not match its identity');
+    }
+    return {record,account};
+  }
+
+  async loginWithMnemonic(mnemonic, signal = MenuPage.router.navigationSignal) {
+    await this.initWallet(mnemonic,signal);
+    const primaryAddress=this.gameState.signingAccount.address, guildId=this.gameState.thisGuild.id;
+    const playerId=await this.guildAPI.getPlayerIdByAddressAndGuild(primaryAddress,guildId);
+    signal.throwIfAborted();
+    if (!await this.reauthenticate()) return false;
+    await this.signingClientManager.initSigningClient();
+    signal.throwIfAborted();
+    const store=new DeviceRegistrationStore('recovery',guildId,playerId,primaryAddress);
+    const {record,id}=await store.exclusive(async()=>{
+      const {record,account}=await this.savedDevice(store);
+      const existing=this.signingClientManager.queue.findRegistration(playerId,record.address);
+      if (existing && (![TX_STATUS.DROPPED,TX_STATUS.CANCELLED].includes(existing.status))) return {record,id:existing.id};
+      // This method is invoked by an explicit recovery attempt. Only a known
+      // terminal failure permits another consent; uncertainty reuses its queue ID.
+      const proof=await this.guildAPI.getAddressRegistrationProof(playerId,record.address);
+      const signature=await this.walletManager.createSignatureForProxyMessage(
+        this.guildAPI.buildAddressRegisterMessage(playerId,record.address,proof),account.privkey);
+      const permissions=String(this.permissionManager.getDefaultPlayerPermissions() | this.permissionManager.getManageDevicesPermissions());
+      signal.throwIfAborted();
+      if (this.gameState.signingAccount.address !== primaryAddress) throw new Error('Recovery signer changed');
+      const saved=store.write({...record,proof,signature,permissions});
+      const id=this.signingClientManager.queue.enqueueRegistration(registrationIntent({kind:'address_register',version:1,
+        ownerId:playerId,address:record.address,pubkey:record.pubkey,signature,permissions,proof}));
+      return {record:store.write({...saved,txId:id}),id};
+    });
+    const tx=await this.signingClientManager.queue.whenSettled(id,signal);
+    signal.throwIfAborted();
+    if (tx.status !== TX_STATUS.SUCCEEDED) return false;
+    await waitForRegistration(this.guildAPI,{...registrationCommit(tx),guildId},signal);
+    signal.throwIfAborted();
+    if (this.gameState.signingAccount.address !== primaryAddress) throw new Error('Recovery signer changed');
+    const success=await this.completeMnemonicLogin(playerId,record.mnemonic,signal);
+    if (success) store.complete();
+    return success;
   }
 
   /**
@@ -401,10 +405,14 @@ export class AuthManager {
    * @param {string} mnemonic
    * @return {Promise<boolean>}
    */
-  async completeMnemonicLogin(playerId, mnemonic) {
+  async completeMnemonicLogin(playerId, mnemonic, signal = undefined) {
+    signal?.throwIfAborted();
+    await this.initWallet(mnemonic,signal);
     this.gameState.mnemonic = mnemonic;
-    await this.initWallet(mnemonic);
-    return this.login(playerId);
+    signal?.throwIfAborted();
+    const success=await this.login(playerId,signal);
+    if (success) this.gameState.save();
+    return success;
   }
 
   /**
@@ -443,106 +451,155 @@ export class AuthManager {
    * @param {ActivationCodeInfoDTO} activationCodeInfo
    * @return {Promise<boolean>}
    */
-  async addNewDevice(activationCodeInfo) {
-    this.gameState.mnemonic = this.walletManager.createMnemonic();
-
-    await this.initWallet(this.gameState.mnemonic);
-
-    const proofContext = await this.guildAPI.getAddressRegistrationProof(activationCodeInfo.player_id, this.gameState.signingAccount.address);
-    const message = this.guildAPI.buildAddressRegisterMessage(
-      activationCodeInfo.player_id,
-      this.gameState.signingAccount.address,
-      proofContext
-    );
-
-    const signature = await this.walletManager.createSignatureForProxyMessage(
-      message,
-      this.gameState.signingAccount.privkey
-    );
-
-    const request = new AddPendingAddressRequestDTO();
-    request.player_id = activationCodeInfo.player_id;
-    request.guild_id = this.gameState.thisGuild.id;
-    request.code = activationCodeInfo.code;
-    request.address = this.gameState.signingAccount.address;
-    request.signature = signature;
-    request.pubkey = this.gameState.pubkey;
-    request.user_agent = window.navigator.userAgent;
-
-    const playerAddressApprovedLoginListener = new PlayerAddressApprovedLoginListener(
-      this.gameState,
-      activationCodeInfo
-    );
-    this.grassManager.registerListener(playerAddressApprovedLoginListener);
-
-    const response = await this.guildAPI.addPendingAddress(request);
-
-    return response.success;
+  async addNewDevice(info, signal = MenuPage.router.navigationSignal) {
+    const store=new DeviceRegistrationStore('activation',this.gameState.thisGuild.id,info.player_id,info.activation_id);
+    return store.exclusive(async()=>{
+      let {record,account}=await this.savedDevice(store);
+      if (record.info && record.info.code !== info.code) throw new Error('Activation instance changed');
+      await this.initWallet(record.mnemonic,signal);
+      this.gameState.mnemonic=record.mnemonic;
+      if (!record.proof) {
+        const proof=await this.guildAPI.getAddressRegistrationProof(info.player_id,record.address);
+        const signature=await this.walletManager.createSignatureForProxyMessage(
+          this.guildAPI.buildAddressRegisterMessage(info.player_id,record.address,proof),account.privkey);
+        signal.throwIfAborted();
+        record=store.write({...record,proof,signature,info:{...info}});
+      }
+      store.markActive();
+      if (record.accepted) return true;
+      if (record.submitted) {
+        // A lost POST response may be followed by a committed registration and
+        // removal of the pending row. Verify that association before retrying.
+        const response=await this.guildAPI.getRegistrationStatus(info.player_id,record.address,{signal});
+        signal.throwIfAborted();
+        if (registrationAssociation(response,{playerId:info.player_id,address:record.address,guildId:this.gameState.thisGuild.id,proof:record.proof})) {
+          store.write({...record,accepted:true});
+          return true;
+        }
+        // Native registration can lead the indexer. Never replace that consent
+        // or turn lagging SQL into a rejected registration.
+        if (response.data.chain.registered_player_id === info.player_id) return true;
+      }
+      const request=new AddPendingAddressRequestDTO();
+      Object.assign(request,{player_id:info.player_id,guild_id:this.gameState.thisGuild.id,code:info.code,activation_id:info.activation_id,
+        address:record.address,signature:record.signature,pubkey:record.pubkey,user_agent:window.navigator.userAgent});
+      signal.throwIfAborted();
+      record=store.write({...record,submitted:true});
+      const response=await this.guildAPI.addPendingAddress(request,{signal});
+      if (response.success) store.write({...record,accepted:true});
+      return response.success;
+    });
   }
 
-  /**
-   * @param {CreateActivationCodeRequestDTO} request
-   * @return {Promise<string>}
-   */
-  async createActivationCode(request) {
-    const response = await this.guildAPI.createActivationCode(request);
+  async restoreDeviceActivation() {
+    const active=DeviceRegistrationStore.active(this.gameState.thisGuild.id);
+    if (!active || !active.record.proof || !active.record.info) return false;
+    const {record}=await this.savedDevice(active.store);
+    this.gameState.mnemonic=record.mnemonic;
+    await this.initWallet(record.mnemonic);
+    MenuPage.router.goto('Auth','loginActivateDeviceWaitingForApproval',record.info);
+    return true;
+  }
 
-    let code = 'ERROR';
-
-    if (response.success) {
-      code = response.data.code;
-
-      this.grassManager.registerListener(new PlayerAddressPendingCreatedListener(
-        this.playerAddressPendingFactory,
-        code
-      ));
+  async waitForDeviceActivation(info, signal) {
+    const store=new DeviceRegistrationStore('activation',this.gameState.thisGuild.id,info.player_id,info.activation_id);
+    let record=store.read();
+    if (!record?.proof || record.info?.code !== info.code) throw new Error('Saved activation consent is unavailable');
+    if (!record.accepted) {
+      // The previous POST response may have been lost. Reuse the exact saved
+      // consent and key; the endpoint accepts an identical retry atomically.
+      if (!await this.addNewDevice(info,signal)) throw new Error('Device activation consent is unavailable');
+      record=store.read();
     }
+    const {account}=await this.savedDevice(store);
+    if (this.gameState.signingAccount.address !== account.address) throw new Error('Activation device changed');
+    return waitForRegistration(this.guildAPI,{playerId:info.player_id,address:record.address,guildId:this.gameState.thisGuild.id,proof:record.proof},signal);
+  }
 
+  async completeDeviceActivation(info, signal) {
+    await this.waitForDeviceActivation(info,signal);
+    signal.throwIfAborted();
+    const success=await this.login(info.player_id,signal);
+    if (success) {
+      this.gameState.save();
+      new DeviceRegistrationStore('activation',this.gameState.thisGuild.id,info.player_id,info.activation_id).complete();
+    }
+    return success;
+  }
+
+  activationCodeStorageKey() {
+    return `deviceActivationCode:${this.gameState.thisGuild.id}:${this.gameState.signingAccount.address}`;
+  }
+
+  savedActivationCode() {
+    const raw=localStorage.getItem(this.activationCodeStorageKey());
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  async createActivationCode(request) {
+    const response=await this.guildAPI.createActivationCode(request);
+    if (!response.success) return null;
+    const code=response.data;
+    new DeviceRegistrationStore('activation',this.gameState.thisGuild.id,this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,code.activation_id);
+    localStorage.setItem(this.activationCodeStorageKey(),JSON.stringify(code));
     return code;
   }
 
-  /**
-   * @param {PlayerAddressPending} playerAddressPending
-   * @return {Promise<boolean>}
-   */
-  async activateDevice(playerAddressPending) {
-    // GRASS is an invalidation hint: JSON numeric nonces in its payload may
-    // already be rounded. Fetch the scoped row with exact SQL decimal strings.
-    const pending = await this.guildAPI.getPendingAddressByCode(playerAddressPending.code);
-    if (!pending || pending.address !== playerAddressPending.address || pending.pubkey !== playerAddressPending.pubkey
-        || pending.signature !== playerAddressPending.signature) return false;
-    const proofContext = pendingRegistrationProof(pending);
-    const setPermissionsRequest = new SetPendingAddressPermissionsRequestDTO();
-    setPermissionsRequest.code = playerAddressPending.code;
-    setPermissionsRequest.address = playerAddressPending.address;
-    setPermissionsRequest.permissions = playerAddressPending.permissions;
-
-    const response = await this.guildAPI.setPendingAddressPermissions(setPermissionsRequest);
-
-    if (!response.success) {
-      return false;
+  async waitForPendingDevice(activation, signal) {
+    let delay=2000;
+    while (!signal.aborted) {
+      // Approval can already have committed while SQL removed its pending row.
+      // This saved row is only a locator; activateDevice still checks the signed
+      // journal or refetches current server consent before enqueuing anything.
+      if (activation.pending && this.signingClientManager.queue.findRegistration(activation.pending.player_id,activation.pending.address)) {
+        return activation.pending;
+      }
+      try {
+        const row=await this.guildAPI.getPendingAddressByCode(activation.code,activation.activation_id,{signal});
+        signal.throwIfAborted();
+        if (row && row.activation_id === activation.activation_id && row.player_id === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
+          pendingRegistrationProof(row);
+          return row;
+        }
+      } catch (error) {
+        signal.throwIfAborted();
+        console.debug('[DeviceActivation] pending device unavailable:',error);
+      }
+      await abortableDelay(delay,signal);delay=Math.min(delay*2,30000);
     }
+    signal.throwIfAborted();
+  }
 
-    const playerAddressApprovedListener = new PlayerAddressApprovedListener(
-      this.gameState,
-      this.guildAPI,
-      playerAddressPending
-    );
-    this.grassManager.registerListener(playerAddressApprovedListener);
-
-    const registration = await this.signingClientManager.queueMsgAddressRegister(
-      this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
-      playerAddressPending.address,
-      playerAddressPending.pubkey,
-      playerAddressPending.signature,
-      playerAddressPending.permissions,
-      {proofContext}
-    );
-
-    if (registration.status !== TX_STATUS.SUCCEEDED) return false;
-
-    await this.guildAPI.deleteActivationCode(playerAddressPending.code);
-
+  async activateDevice(chosen, signal = MenuPage.router.navigationSignal) {
+    const playerId=this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id, signer=this.gameState.signingAccount.address;
+    let tx=this.signingClientManager.queue.findRegistration(playerId,chosen.address);
+    if (tx && tx.intent.permissions !== String(chosen.permissions)) throw new Error('Existing registration has different permissions');
+    if (!tx) {
+      const pending=await this.guildAPI.getPendingAddressByCode(chosen.code,chosen.activation_id,{signal});
+      if (!pending || pending.address !== chosen.address || pending.pubkey !== chosen.pubkey || pending.signature !== chosen.signature) return false;
+      const proof=pendingRegistrationProof(pending);
+      const request=new SetPendingAddressPermissionsRequestDTO();
+      Object.assign(request,{code:chosen.code,activation_id:chosen.activation_id,address:chosen.address,permissions:chosen.permissions});
+      if (!(await this.guildAPI.setPendingAddressPermissions(request)).success) return false;
+      signal.throwIfAborted();
+      if (this.gameState.signingAccount.address !== signer) throw new Error('Approval signer changed');
+      localStorage.setItem(this.activationCodeStorageKey(),JSON.stringify({code:chosen.code,activation_id:chosen.activation_id,pending:{...pending,permissions:chosen.permissions}}));
+      const id=this.signingClientManager.queue.enqueueRegistration(registrationIntent({kind:'address_register',version:1,ownerId:playerId,
+        address:chosen.address,pubkey:chosen.pubkey,signature:chosen.signature,permissions:String(chosen.permissions),proof}));
+      tx=this.signingClientManager.queue.getTransaction(id);
+    }
+    const settled=await this.signingClientManager.queue.whenSettled(tx.id,signal);
+    signal.throwIfAborted();
+    if (settled.status !== TX_STATUS.SUCCEEDED) return false;
+    await waitForRegistration(this.guildAPI,{...registrationCommit(settled),guildId:this.gameState.thisGuild.id},signal);
+    signal.throwIfAborted();
+    if (this.gameState.signingAccount.address !== signer) throw new Error('Approval signer changed');
+    // Cleanup is idempotent and never turns a committed registration into failure.
+    try { await this.guildAPI.deleteActivationCode(chosen.code,chosen.activation_id); }
+    catch (error) { console.debug('[DeviceActivation] activation cleanup deferred:',error); }
+    const saved=this.savedActivationCode();
+    if (saved?.activation_id === chosen.activation_id) localStorage.removeItem(this.activationCodeStorageKey());
+    this.guildAPI.getPlayerAddressCount(playerId,true).catch(()=>{});
     return true;
   }
 
