@@ -9,6 +9,7 @@ import {prepareTransfer} from "./TransferPreparation";
 import {prepareReactor} from "./ReactorPreparation";
 import {prepareRegistration} from "./RegistrationPreparation";
 import {prepareGenerator} from "./GeneratorPreparation";
+import {prepareGameplay} from "./GameplayPreparation";
 import {CHAIN} from "../constants/ChainConstants";
 import {FEE} from "../constants/Fee";
 import {exactQueryHeight, protocolAtHeight, validateSigningSnapshot} from "../util/ChainProtocol";
@@ -38,13 +39,18 @@ export class SigningSubmission {
     const isEconomic = ['alpha_transfer','reactor_change','generator_fund'].includes(tx.intent?.kind);
     const isReactor = tx.intent?.kind === 'reactor_change';
     const isGenerator = tx.intent?.kind === 'generator_fund';
-    const prepareIntent = {device_change:prepareDeviceChange,address_register:prepareRegistration,alpha_transfer:prepareTransfer,reactor_change:prepareReactor,generator_fund:prepareGenerator}[tx.intent?.kind];
+    const isGameplay = tx.intent?.kind === 'gameplay';
+    const prepareIntent = {gameplay:prepareGameplay,device_change:prepareDeviceChange,address_register:prepareRegistration,alpha_transfer:prepareTransfer,reactor_change:prepareReactor,generator_fund:prepareGenerator}[tx.intent?.kind];
     if (tx.intent && !prepareIntent) throw new Error('Unsupported transaction intent');
     const isWithdrawal = isReactor && tx.intent.direction === 'defuse';
     const data = isEconomic ? await manager.gameState.guildAPI[isWithdrawal ? 'getInfusionByPlayerId' : 'getPlayer'](tx.intent.ownerId) : null;
     const response = data ? {meta:data.snapshot_meta} : await manager.gameState.guildAPI.getBlockSnapshot();
     check();
     const accountSnapshot = await query.readSnapshot(async rpc=>{
+      if (isGameplay) {
+        try { validateSigningSnapshot(response.meta,{chainId:rpc.chainId,height:rpc.height}); }
+        catch (error) { throw new SigningDeferredError(error.message); }
+      }
       if (isEconomic) {
         try { validateSigningSnapshot(response.meta,{chainId:rpc.chainId,height:rpc.height},['inventory']); }
         catch (error) { throw new SigningDeferredError(error.message); }
@@ -100,7 +106,7 @@ export class SigningSubmission {
     check();
     if (protocolAtHeight(current.chainId,current.height)!==context.protocol) throw new SigningDeferredError('Protocol changed while signing');
     return {...submission,connectionEpoch:epoch,...(tx.intent
-      ? (isDeviceChange ? {deviceChange:accountSnapshot.data.prepared.deviceChange} : isRegistration ? {registration:accountSnapshot.data.prepared.registration} : isReactor ? {reactor:accountSnapshot.data.prepared.reactor} : isGenerator
+      ? (isGameplay ? {gameplay:accountSnapshot.data.prepared.gameplay} : isDeviceChange ? {deviceChange:accountSnapshot.data.prepared.deviceChange} : isRegistration ? {registration:accountSnapshot.data.prepared.registration} : isReactor ? {reactor:accountSnapshot.data.prepared.reactor} : isGenerator
         ? {generator:accountSnapshot.data.prepared.generator} : {transfer:accountSnapshot.data.prepared.transfer}) : {})};
   }
 

@@ -373,3 +373,42 @@ pending device-key writes and late wallet derivation respect that boundary.
 Signed submission evidence remains available for reconciliation. These checks
 cover the lifecycle without changing screens; real-browser acceptance remains
 a separate release gate.
+
+### Existing gameplay controls
+
+The 17 message types used by the existing fleet, exploration, account-name,
+struct, combat and proof-completion controls now enqueue `gameplay` intents.
+The queue captures the acting player and an immutable normalized payload while
+retaining each builder's immediate/action lane and caller-supplied charge gate.
+`GameplayPreparation` checks current native address ownership and fixed key
+permissions. Player-name editing has dynamic Update/GuildUGCUpdate authority;
+the native handler decides that path. Other players' objects are not rejected
+solely by owner ID because scoped grants are supported.
+
+The actual signed transaction uses zero ualpha fees and the release's 20M free
+gas cap. It is simulated at the same native height as account/authority reads
+before any broadcast. The native handler checks scoped authority, charge,
+destroyed/other target state, proof anchors and difficulty. Simulation is a
+preflight, not a reservation: only verified inclusion establishes success.
+Failures before sending cannot produce a send; ambiguous broadcasts retain
+their exact durable bytes and are never recreated automatically.
+
+The explicit allowlist in `GameplayIntent` covers these unchanged controls,
+not every generated message or unused low-level builder. Old generic queued
+payloads are not silently stamped v0.22. Clients should use the migrated
+economic/device adapters and reviewed gameplay methods; adding another method
+requires reviewing its funding, authority and state semantics first.
+
+```sh
+STRUCTS_GAMEPLAY_FIXTURE=/tmp/structs-gameplay-tx.json npm --prefix src run test:proto
+node tools/proto/verify-release.cjs /path/to/structsd /tmp/structs-gameplay-tx.json
+node tools/proto/verify-gameplay-release.cjs /path/to/structsd
+```
+
+The gameplay suite drives all 17 real builders and exact signing/simulation,
+including reload, authority changes, protocol crossing, charge ordering and
+uncertain outcomes. The release check uses real signed app transactions and
+native simulation on disposable in-memory chains: build proofs, refinement to
+the vault, stale anchors, destroyed state, charge and dynamic name permissions.
+No running testnet state is changed. Full task recovery, catalog freshness and
+rendered-browser acceptance remain separate gates.

@@ -97,6 +97,13 @@ func main() {
 		panic("offline signature did not verify")
 	}
 	fmt.Println("verified offline signature with release SDK; no broadcast")
+	if f.TimeoutHeight == "0" {
+		if body.TimeoutHeight != 0 {
+			panic("unexpected post-upgrade expiry")
+		}
+		fmt.Println("verified post-upgrade signed body has no legacy timeout")
+		return
+	}
 	if f.TimeoutHeight != "" {
 		if f.TimeoutHeight != "3352999" || body.TimeoutHeight != 3352999 {
 			panic("wrong signed upgrade expiry")

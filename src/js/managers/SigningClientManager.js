@@ -356,7 +356,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgPlanetExplore(playerId, name = '', options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgPlanetExplore',
       {playerId, name},
       0,
@@ -401,7 +401,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgFleetMove(fleetId, destinationLocationId, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgFleetMove',
       {fleetId, destinationLocationId},
       0,
@@ -417,7 +417,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgPlanetRaidComplete(fleetId, proof, nonce, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgPlanetRaidComplete',
       {fleetId, proof, nonce},
       options,
@@ -446,7 +446,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructBuildComplete(structId, proof, nonce, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgStructBuildComplete',
       {structId, proof, nonce},
       options,
@@ -461,7 +461,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructOreMinerComplete(structId, proof, nonce, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgStructOreMinerComplete',
       {structId, proof, nonce},
       options,
@@ -476,7 +476,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructOreRefineryComplete(structId, proof, nonce, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgStructOreRefineryComplete',
       {structId, proof, nonce},
       options,
@@ -1163,7 +1163,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgPlayerUpdateName(playerId, name, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgPlayerUpdateName',
       {playerId, name},
       options,
@@ -1204,7 +1204,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructDeactivate(structId, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructDeactivate',
       {structId},
       0,
@@ -1251,7 +1251,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructBuildCancel(structId, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgStructBuildCancel',
       {structId},
       options,
@@ -1697,7 +1697,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructActivate(structId, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructActivate',
       {structId},
       chargeCost,
@@ -1720,7 +1720,7 @@ export class SigningClientManager {
    */
   async queueMsgStructBuildInitiate(playerId, structTypeId, operatingAmbit, slot, chargeCost, options = {}) {
     const operatingAmbitIndex = AMBIT_ENUM[operatingAmbit.toUpperCase()];
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructBuildInitiate',
       {playerId, structTypeId, operatingAmbit: operatingAmbitIndex, slot},
       chargeCost,
@@ -1740,7 +1740,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructDefenseSet(defenderStructId, protectedStructId, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructDefenseSet',
       {defenderStructId, protectedStructId},
       chargeCost,
@@ -1759,7 +1759,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructDefenseClear(defenderStructId, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructDefenseClear',
       {defenderStructId},
       chargeCost,
@@ -1783,7 +1783,7 @@ export class SigningClientManager {
   async queueMsgStructMove(structId, locationType, ambit, slot, chargeCost, options = {}) {
     const locationTypeIndex = LOCATION_TYPE_INDEX[locationType.toLowerCase()];
     const ambitNumber = AMBIT_ENUM[ambit.toUpperCase()];
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructMove',
       {structId, locationType: locationTypeIndex, ambit: ambitNumber, slot},
       chargeCost,
@@ -1804,7 +1804,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructAttack(operatingStructId, targetStructId, weaponSystem, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructAttack',
       {operatingStructId, targetStructId, weaponSystem},
       chargeCost,
@@ -1823,7 +1823,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructStealthActivate(structId, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructStealthActivate',
       {structId},
       chargeCost,
@@ -1842,7 +1842,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructStealthDeactivate(structId, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructStealthDeactivate',
       {structId},
       chargeCost,

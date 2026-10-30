@@ -12,6 +12,7 @@ import {transferIntent} from "../util/TransferIntent";
 import {reactorIntent} from "../util/ReactorIntent";
 import {registrationIntent} from "../util/RegistrationIntent";
 import {generatorIntent} from "../util/GeneratorIntent";
+import {gameplayIntent} from "../util/GameplayIntent";
 
 /**
  * Validate that a payload is safe to persist as JSON. Rejects anything that
@@ -138,6 +139,20 @@ export class SigningQueueManager {
     return this.#enqueue(typeUrl, payload, false, null, options);
   }
 
+  enqueueGameplayImmediate(typeUrl, payload, options = {}) {
+    return this.#enqueue(typeUrl,payload,false,null,options,this.#gameplayIntent(typeUrl,payload));
+  }
+
+  enqueueGameplayAction(typeUrl, payload, chargeCost, options = {}) {
+    return this.#enqueue(typeUrl,payload,true,chargeCost,options,this.#gameplayIntent(typeUrl,payload));
+  }
+
+  #gameplayIntent(typeUrl, payload) {
+    assertSerializable(payload);
+    return gameplayIntent({kind:'gameplay',version:1,
+      ownerId:this.gameState.keyPlayers?.[PLAYER_TYPES.PLAYER]?.id,typeUrl,payload});
+  }
+
   /** Persist user intent without freezing protocol-specific transaction bytes. */
   enqueueTransfer(value) {
     return this.#enqueueIntent(transferIntent(value));
@@ -211,7 +226,7 @@ export class SigningQueueManager {
    * @param {object} options
    * @return {string}
    */
-  #enqueue(typeUrl, payload, isAction, chargeCost, options) {
+  #enqueue(typeUrl, payload, isAction, chargeCost, options, intent = null) {
     assertSerializable(payload);
     payload = normalizeMessagePayload(typeUrl, payload);
 
@@ -230,6 +245,7 @@ export class SigningQueueManager {
       accountAddress: this.gameState.signingAccount?.address ?? null,
       enqueuedAtBlock: this.gameState.currentBlockHeight,
       intentProtocol: options.intentProtocol ?? null,
+      intent,
     });
 
     this.appendToLane(tx);
