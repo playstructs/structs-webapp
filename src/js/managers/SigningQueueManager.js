@@ -9,6 +9,7 @@ import {TransactionJournal} from "./TransactionJournal";
 import {SigningDeferredError} from "./SigningSubmission";
 import {transferIntent} from "../util/TransferIntent";
 import {reactorIntent} from "../util/ReactorIntent";
+import {generatorIntent} from "../util/GeneratorIntent";
 
 /**
  * Validate that a payload is safe to persist as JSON. Rejects anything that
@@ -142,6 +143,10 @@ export class SigningQueueManager {
 
   enqueueReactor(value) {
     return this.#enqueueIntent(reactorIntent(value));
+  }
+
+  enqueueGenerator(value) {
+    return this.#enqueueIntent(generatorIntent(value));
   }
 
   #enqueueIntent(intent) {

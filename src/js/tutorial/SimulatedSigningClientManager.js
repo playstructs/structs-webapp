@@ -35,6 +35,7 @@ export class SimulatedSigningClientManager extends SigningClientManager {
     this.queue.enqueueImmediate = () => null;
     this.queue.enqueueTransfer = () => null;
     this.queue.enqueueReactor = () => null;
+    this.queue.enqueueGenerator = () => null;
     this.queue.whenSettled = () => {
       this.gameState.actionBarLock.clear();
       return Promise.resolve({status: TX_STATUS.DROPPED});

@@ -315,6 +315,12 @@ export class SigningClientManager {
     return this.queue.whenSettled(id, signal);
   }
 
+  async queueGenerator(intent, signal = undefined) {
+    signal?.throwIfAborted();
+    const id = this.queue.enqueueGenerator(intent);
+    return this.queue.whenSettled(id, signal);
+  }
+
   /**
    * @param {string} fromAddress
    * @param {string} toAddress

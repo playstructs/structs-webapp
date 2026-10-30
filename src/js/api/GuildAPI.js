@@ -843,6 +843,15 @@ export class GuildAPI {
     return this.structFactory.make(response.data);
   }
 
+  /** Exact stored generator output; sourceAddress is a read selector, not authority. */
+  async getGeneratorSnapshot(structId, sourceAddress, options = {}) {
+    const query = new URLSearchParams({address:sourceAddress});
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/${encodeURIComponent(structId)}/generator?${query}`, options);
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return response.data === null ? null : {...response.data,snapshot_meta:response.meta};
+  }
+
   /**
    * @return {Promise<Settings>}
    */

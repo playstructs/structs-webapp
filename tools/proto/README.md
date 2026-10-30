@@ -146,9 +146,10 @@ boundary prevents old unsigned actions from resuming; previously sent records
 remain available for read-only reconciliation after login.
 
 The existing transfer controls now submit protocol-aware intents and observe
-durable settlement, then exact indexed-ledger correlation. Reactor/generator
-flows, proof persistence, multi-message withdrawal and paid/native fees remain
-separate work. No screen, label or generated production asset changed.
+durable settlement, then exact indexed-ledger correlation. Reactor controls use
+atomic groups and committed/indexed completion. Generator control/completion,
+proof persistence and paid/native fees remain separate work. No screen, label
+or generated production asset changed.
 
 `SigningQueueManager.enqueueTransfer` now accepts a versioned user intent:
 `{kind:"alpha_transfer",version:1,ownerId,recipientId,recipientAddress,amount}`.
@@ -320,3 +321,40 @@ session changes, H activation, index lag, native NATS reconnect status, hidden
 page/resume behavior and logout cancellation. This is not a rendered-browser,
 live notification delivery or full post-H rollout test. Run the existing browser
 entries/tests as well when changing shared models or HUD consumers.
+
+Generator preparation and exact preview inputs are included in `test:proto`.
+`SigningClientManager.queueGenerator` accepts
+`{kind:"generator_fund",version:1,ownerId,structId,amount}` with a positive
+whole-Alpha ualpha string within uint64. Preparation checks the signing key's
+own TokenInfuse bit, target state/type/planet and primary (pre-H) or vault
+(post-H) spendability. It encodes the release's existing generator message
+without invented source/owner fields, signs with zero ualpha fee/20M gas, and
+simulates those exact signed bytes. An unprovisioned prefunded vault is valid;
+retained liquid funds never cover a vault shortfall. Unknown signed burns stay
+in the existing journal and are not resent or replaced.
+
+`GET /api/struct/{struct_id}/generator?address={source}` reads exact stored
+fuel/power totals and the selected source position with inventory snapshot
+metadata. `positions_ready` must be true; malformed rows withhold the totals.
+`source_exists:false` with NULL source fields proves indexed absence only when
+the snapshot is ready. The address is a read selector, not spend authority.
+`readGeneratorSnapshot` verifies it against same-height native player/vault
+queries and reads current type rate, target eligibility and native spendability.
+The preview replaces only the selected position's stored power with its new
+fuel times the current rate. Untouched historical/disabled positions keep
+their applied power. Divide raw milliwatts by 1,000 for displayed whole watts.
+The Consume Alpha control and its completion listener are not yet migrated.
+
+```sh
+STRUCTS_GENERATOR_FIXTURE=/tmp/structs-generator-tx.json npm --prefix src run test:proto
+node tools/proto/verify-release.cjs /path/to/structsd /tmp/structs-generator-tx.json
+node tools/proto/verify-generator-release.cjs /path/to/structsd
+```
+
+The last command runs actual signed app/ante/bank tests in an archive of the
+pinned release. It covers secondary-key authority, other-owned targets, vault
+funding/burning, retained-position preservation, disabled/deferred-rate output,
+full-amount rejection and uint64 overflow. It also runs the release's generator
+rollback/migration/export-restart tests. No chain checkout or running testnet is
+modified. Per-request simulation and full browser/rollout acceptance remain
+required; these fixtures do not establish universal gas bounds.
