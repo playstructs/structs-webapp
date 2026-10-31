@@ -24,8 +24,9 @@ import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {STRUCTS_FREE_GAS} from '../../src/js/constants/Fee';
 import {DeviceRegistrationStore} from '../../src/js/managers/DeviceRegistrationStore';
 import {registrationAssociation, registrationCommit, waitForRegistration} from '../../src/js/util/RegistrationCompletion';
+import {TEST_MNEMONIC} from './helpers';
 
-const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+const mnemonic = TEST_MNEMONIC;
 let account, signerAccount, registry, offline;
 async function fixture(height = '3353000', nonce = '9007199254740993') {
   const protocol = BigInt(height) < BigInt(CHAIN.UPGRADE_HEIGHT) ? CHAIN.LEGACY_PROTOCOL : CHAIN.PROTOCOL;

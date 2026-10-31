@@ -10,6 +10,7 @@ import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {exactQueryHeight, protocolAtHeight, validateSigningSnapshot} from '../../src/js/util/ChainProtocol';
 import {legacyDecimalFromWire} from '../../src/js/util/MessagePayload';
 import {QueryClientImpl, QueryVaultResponse, QueryAddressResponse} from '../../src/js/ts/structs.structs/types/structs/structs/query';
+import {TEST_MNEMONIC} from './helpers';
 
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return {promise, resolve}; };
 const status = (height = 3353000) => ({nodeInfo:{network:CHAIN.ID,version:'0.38.19'},syncInfo:{latestBlockHeight:height,catchingUp:false}});
@@ -203,7 +204,7 @@ async function testOwnedConnection() {
     else throw new Error(`Unexpected RPC ${request.method}`);
     socket.send(JSON.stringify({jsonrpc:'2.0',id:request.id,result}));
   }); });
-  const wallet = await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   const state = {wallet,signingClient:null,currentBlockHeight:3353000};
   const manager = new SigningClientManager(state);
   manager.wsUrl = `ws://127.0.0.1:${server.address().port}`;

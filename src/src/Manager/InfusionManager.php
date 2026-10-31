@@ -5,8 +5,9 @@ namespace App\Manager;
 use App\Constant\ApiParameters;
 use App\Dto\ApiResponseContentDto;
 use App\Trait\ApiSqlQueryTrait;
-use App\Util\ConstraintViolationUtil;
+use App\Util\ChainProtocol;
 use App\Util\ConsistentRead;
+use App\Util\ConstraintViolationUtil;
 use App\Util\ResponseMetaUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
@@ -92,7 +93,7 @@ class InfusionManager
         $db = $this->entityManager->getConnection();
         ConsistentRead::run($db, function () use ($db, $query, $params, $responseContent): void {
             $responseContent->meta = ResponseMetaUtil::snapshotMeta($db, 'inventory');
-            if (($responseContent->meta['protocol'] ?? null) === 'v0.21.0') {
+            if (($responseContent->meta['protocol'] ?? null) === ChainProtocol::LEGACY) {
                 $row = $db->fetchAssociative($query, $params);
                 $responseContent->data = $row === false ? null : $row;
             } else {
@@ -104,7 +105,7 @@ class InfusionManager
             $responseContent->success = true;
         });
 
-        if (($responseContent->meta['protocol'] ?? null) === 'v0.22.0') {
+        if (($responseContent->meta['protocol'] ?? null) === ChainProtocol::CURRENT) {
             if (is_array($responseContent->data)) {
                 $this->vaultPositions?->apply($responseContent->data, $responseContent->meta, $db);
             }

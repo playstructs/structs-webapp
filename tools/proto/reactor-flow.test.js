@@ -24,6 +24,7 @@ import {NumberFormatter} from '../../src/js/util/NumberFormatter';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {EVENTS} from '../../src/js/constants/Events';
 import {GuildAPI} from '../../src/js/api/GuildAPI';
+import {TEST_MNEMONIC,memoryStorage} from './helpers';
 
 const address = n=>toBech32('structs',new Uint8Array(20).fill(n));
 const validator = toBech32('structsvaloper',new Uint8Array(20).fill(8));
@@ -176,9 +177,6 @@ async function mathAndNativeSnapshot() {
   assert.throws(()=>alpha.convertAlphaToUAlpha(Number.MAX_SAFE_INTEGER+1),/not exact/);
 }
 
-function storage() {
-  const saved=new Map();return {getItem:key=>saved.get(key)??null,setItem:(key,v)=>saved.set(key,v),removeItem:key=>saved.delete(key),get length(){return saved.size;},key:i=>[...saved.keys()][i]};
-}
 function dom() {
   const elements=new Map();
   const element=id=>{
@@ -195,7 +193,7 @@ function dom() {
   return element;
 }
 async function flow() {
-  globalThis.localStorage=storage();globalThis.window=new EventTarget();
+  globalThis.localStorage=memoryStorage();globalThis.window=new EventTarget();
   Object.defineProperty(globalThis.navigator,'locks',{configurable:true,value:{request:async(n,o,run)=>run({})}});
   const element=dom(),control={sends:0,committed:true,reject:false,reads:0,sets:0,ready:true};
   const state={currentBlockHeight:3353000,signingAccount:signer,signingClient:{},thisGuild:{id:'0-1',reactor_ratio:'1000'},
@@ -257,7 +255,7 @@ async function reactorDisplayRefresh() {
 
 async function main() {
   await postgresVaultSnapshot();
-  const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  const wallet=await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   [signer]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);offline=await SigningStargateClient.offline(wallet,{registry});
   await mathAndNativeSnapshot();
   await reactorDisplayRefresh();

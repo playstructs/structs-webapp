@@ -1,7 +1,37 @@
 # Catalog HTTP regression
 
-Run `node tools/api/catalog-http.cjs` from the webapp worktree after deploying the
-integration Sqitch plan to the disposable `structs-v022-pg` container. It requires
+## Fixture setup
+
+Both runners read from one labelled, disposable structs-pg container and never
+write to it. Create it from a structs-pg image whose pinned Sqitch target
+includes the v0.22 plan, for example:
+
+```bash
+docker run -d --name structs-v022-pg --hostname structs-pg \
+  --label structs.task=v022-integration -e POSTGRES_MEMORY_MB=512 \
+  structs/structs-pg:latest
+```
+
+The image's start script deploys its pinned migration target (`--hostname` lets
+its default `SQITCH_PG_CONNECTION` reach itself). Wait for `docker logs
+structs-v022-pg` to report the deploy, then confirm with `docker exec -u postgres
+structs-v022-pg psql -d structs -Atc "SELECT structs.api_readiness(ARRAY[]::text[]) IS NOT NULL"`.
+The runners refuse a container without the `structs.task=v022-integration`
+label. Set `STRUCTS_INTEGRATION_PG` to use a different container name.
+
+The PHP runner needs any image built from this repository's Dockerfile for its PHP
+runtime; it mounts this checkout over the image source:
+
+```bash
+docker build -t structs-v022-webapp:local .
+STRUCTS_PHP_TEST_IMAGE=structs-v022-webapp:local node tools/api/php-integration.cjs
+```
+
+The default tag is `structs-v022-webapp:ae4457e2`. These setup commands have not
+been run end to end from a clean machine.
+
+Run `node tools/api/catalog-http.cjs` from the webapp worktree once the
+[fixture](#fixture-setup) container is ready. It requires
 Docker, Node 22+, and the existing local `structs/structs-webapp:latest` and
 `structs/structs-control:latest` images. This is a source/config integration check;
 release-image reproducibility remains a separate packaging gate.

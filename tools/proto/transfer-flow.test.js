@@ -18,6 +18,7 @@ import {transferLimit} from '../../src/js/util/TransferLimit';
 import {signedSubmission} from '../../src/js/util/SignedSubmission';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {FEE} from '../../src/js/constants/Fee';
+import {TEST_MNEMONIC,memoryStorage} from './helpers';
 
 const address = n => toBech32('structs', new Uint8Array(20).fill(n));
 const recipient = {id:'1-2',address:address(3),username:'Recipient',tag:'TAG'};
@@ -33,11 +34,6 @@ const player = () => ({id:'1-1',alpha:'100000',spendable_alpha_p:'2999999',
   snapshot_meta:snapshot(),funds_meta:{ready:true,height:'3353000'}});
 let registry, signer, signed;
 
-function storage() {
-  const saved = new Map();
-  return {getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value),removeItem:key=>saved.delete(key),
-    key:i=>[...saved.keys()][i],get length(){return saved.size;}};
-}
 
 function ledger(tx) {
   const source = transferSourceQuery(tx);
@@ -47,7 +43,7 @@ function ledger(tx) {
 }
 
 function flow() {
-  globalThis.localStorage = storage();
+  globalThis.localStorage = memoryStorage();
   globalThis.window = new EventTarget();
   const control = {sends:0,lookups:0,committed:true,reject:false,lookup:null};
   const state = {currentBlockHeight:3353000,signingAccount:signer,signingClient:{},transferAmount:1,
@@ -82,7 +78,7 @@ function flow() {
 
 async function main() {
   // Public fixture wallet only; no RPC or broadcast is used by this suite.
-  const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  const wallet=await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   [signer]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);
   const offline=await SigningStargateClient.offline(wallet,{registry});
   const messages=[{typeUrl:'/structs.structs.MsgVaultSend',value:{creator:signer.address,

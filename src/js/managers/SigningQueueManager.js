@@ -588,7 +588,15 @@ export class SigningQueueManager {
       this.#restoreToLaneHead(tx);
       return;
     }
-    if (tx.createdAt>Date.now() || Date.now()-tx.createdAt>SIGNING_QUEUE.MAX_QUEUE_AGE_MS || TransactionJournal.isSessionClosed(tx)) {
+    let expired;
+    try {
+      expired = tx.createdAt>Date.now() || Date.now()-tx.createdAt>SIGNING_QUEUE.MAX_QUEUE_AGE_MS || TransactionJournal.isSessionClosed(tx);
+    } catch (error) {
+      // The caller already shifted this intent off its lane; keep it there.
+      this.#restoreToLaneHead(tx);
+      throw error;
+    }
+    if (expired) {
       try { this.#finish(tx,null,journal,'Unsent intent expired'); }
       catch (error) { this.#restoreToLaneHead(tx); throw error; }
       return;
@@ -991,14 +999,15 @@ export class SigningQueueManager {
     if (!storageKey || this.recoveryError || (this.storageScope && storageKey!==this.storageScope)) {
       return false;
     }
+    const carried = this.#otherTabsUnsent(storageKey);
     const snapshot = {
       version: SIGNING_QUEUE.STORAGE_VERSION,
       savedAt: Date.now(),
       savedAtBlock: this.gameState.currentBlockHeight,
       scheduleAnchorHeight: this.scheduleAnchorHeight,
       lastBroadcastHeight: this.lastBroadcastHeight,
-      immediateQueue: this.immediateQueue.map((tx) => tx.toJSON()),
-      actionQueue: this.actionQueue.map((tx) => tx.toJSON()),
+      immediateQueue: [...this.immediateQueue.map((tx) => tx.toJSON()), ...carried.immediateQueue],
+      actionQueue: [...this.actionQueue.map((tx) => tx.toJSON()), ...carried.actionQueue],
       inFlight: this.inFlight ? this.inFlight.toJSON() : null,
       unresolved: [...this.unresolved.values()].map(tx=>tx.toJSON()),
     };
@@ -1009,6 +1018,33 @@ export class SigningQueueManager {
       console.error('[SigningQueueManager] persist failed:', err);
       return false;
     }
+  }
+
+  /**
+   * Unsent intents another tab saved for this account that this tab has never
+   * seen. Every tab writes the whole snapshot, so without these a write from
+   * one tab would drop the other's queued actions from storage.
+   *
+   * @param {string} storageKey
+   * @return {{immediateQueue: object[], actionQueue: object[]}}
+   */
+  #otherTabsUnsent(storageKey) {
+    const none = {immediateQueue: [], actionQueue: []};
+    let saved, journaled;
+    try {
+      saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
+      journaled = new Set(new TransactionJournal(this.gameState.signingAccount.address).read().map(record=>record.transaction.id));
+    } catch {
+      return none; // Unreadable state is left to loadPersistedState's recovery.
+    }
+    if (saved?.version !== SIGNING_QUEUE.STORAGE_VERSION || !Array.isArray(saved.immediateQueue) || !Array.isArray(saved.actionQueue)) {
+      return none;
+    }
+    const known = new Set([...this.immediateQueue, ...this.actionQueue, ...this.unresolved.values(), ...this.completed.values(),
+      ...(this.inFlight ? [this.inFlight] : [])].map(tx=>tx.id));
+    const unseen = json => typeof json?.id === 'string' && !known.has(json.id) && !journaled.has(json.id)
+      && Number.isSafeInteger(json.createdAt) && Date.now()-json.createdAt <= SIGNING_QUEUE.MAX_QUEUE_AGE_MS;
+    return {immediateQueue: saved.immediateQueue.filter(unseen), actionQueue: saved.actionQueue.filter(unseen)};
   }
 
   /** Restore unsent work; preserve ambiguous evidence regardless of age/schema. */

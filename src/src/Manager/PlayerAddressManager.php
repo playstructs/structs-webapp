@@ -137,7 +137,12 @@ class PlayerAddressManager
                     'pubkey' => $params->pubkey, 'player_id' => $params->player_id, 'guild_id' => $params->guild_id,
                     'proof_chain_id' => $context['chain_id'], 'proof_protocol' => $context['protocol'],
                     'proof_nonce' => $context['proof_nonce'], 'proof_timeout_height' => $context['timeout_height']];
-                if ($existing !== $expected) {
+                // Compare by field: column order and driver value types are not part of the contract.
+                $repeated = true;
+                foreach ($expected as $field => $value) {
+                    $repeated = $repeated && array_key_exists($field, $existing) && (string) $existing[$field] === (string) $value;
+                }
+                if (!$repeated) {
                     return $this->deviceResponse(null, ['resource_already_exists' => 'Activation code already has a pending device'], Response::HTTP_CONFLICT);
                 }
             } else {
@@ -202,7 +207,15 @@ class PlayerAddressManager
                     : 'SELECT address,player_id,guild_id,status FROM player_address WHERE address=:address', ['address' => $address]),
                 \App\Util\ResponseMetaUtil::snapshotMeta($db),
             ]);
+            // Device state is for the caller's own devices, or addresses no one owns yet.
+            $foreign = fn (?string $owner) => $owner !== null && $owner !== '' && $owner !== $playerId;
+            if ($withPermissions && $foreign($row['player_id'] ?? null)) {
+                return $this->deviceResponse(null, ['address_not_owned' => 'Address belongs to another player'], Response::HTTP_NOT_FOUND);
+            }
             $context = $withPermissions ? $proofManager->readState($playerId, $address) : $proofManager->readContext($playerId, $address);
+            if ($withPermissions && $foreign($context['registered_player_id'] ?? null)) {
+                return $this->deviceResponse(null, ['address_not_owned' => 'Address belongs to another player'], Response::HTTP_NOT_FOUND);
+            }
             $content->data = ['indexed' => $row ?: null, 'chain' => $context];
             $content->meta = $meta;
             $content->success = true;

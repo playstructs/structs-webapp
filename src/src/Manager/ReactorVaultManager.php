@@ -2,6 +2,7 @@
 
 namespace App\Manager;
 
+use App\Util\ChainProtocol;
 use App\Util\ConsistentRead;
 use App\Util\ExactAmount;
 use App\Util\ResponseMetaUtil;
@@ -20,7 +21,7 @@ class ReactorVaultManager
 
     public function apply(array &$reactor, array $meta, Connection $db): void
     {
-        if (($meta['protocol'] ?? null) !== 'v0.22.0' || ($meta['data_ready'] ?? false) !== true
+        if (($meta['protocol'] ?? null) !== ChainProtocol::CURRENT || ($meta['data_ready'] ?? false) !== true
             || ($reactor['positions_meta']['reason'] ?? null) !== 'vault_unindexed') {
             return;
         }

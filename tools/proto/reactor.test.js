@@ -18,6 +18,7 @@ import {reactorIntent} from '../../src/js/util/ReactorIntent';
 import {submissionBytes} from '../../src/js/util/SignedSubmission';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {REACTOR_TRANSACTION} from '../../src/js/constants/ReactorTransactions';
+import {TEST_MNEMONIC} from './helpers';
 
 const address = n => toBech32('structs',new Uint8Array(20).fill(n));
 const validator = toBech32('structsvaloper',new Uint8Array(20).fill(8));
@@ -109,7 +110,7 @@ function fixture(height=3353000) {
 }
 
 async function main() {
-  const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  const wallet=await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   [signer]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);offline=await SigningStargateClient.offline(wallet,{registry});
   for(const patch of [{amount:'0'},{amount:'1'},{amount:1000000},{amount:(1n<<256n).toString()},{direction:'migrate'},
       {ownerId:'0-1'},{reactorId:'3-0'},{guildId:'0-18446744073709551616'},{extra:1}]) assert.throws(()=>reactorIntent({...baseIntent(),...patch}));

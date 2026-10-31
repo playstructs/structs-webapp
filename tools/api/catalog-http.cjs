@@ -6,8 +6,8 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../..');
 const releaseImage = process.env.STRUCTS_WEBAPP_TEST_IMAGE;
-const {createDisposableDatabase} = require('./DisposableDatabase.cjs');
-const database = 'structs-v022-pg';
+const {createDisposableDatabase, FIXTURE_CONTAINER} = require('./DisposableDatabase.cjs');
+const database = FIXTURE_CONTAINER;
 let fixture;
 const suffix = randomBytes(5).toString('hex');
 const network = 'structs-v022-catalog-' + suffix;
@@ -311,8 +311,11 @@ async function ready(base) {
         throw error;
     } finally {
         for (const name of [proxy, apache, trustedApache]) { try { docker(['rm', '-f', name]); } catch (_) {} }
-        if (attached) docker(['network', 'disconnect', network, database]);
-        try { docker(['network', 'rm', network]); } catch (_) {}
-        fixture?.close();
+        try {
+            if (attached) docker(['network', 'disconnect', network, database]);
+            try { docker(['network', 'rm', network]); } catch (_) {}
+        } finally {
+            fixture?.close();
+        }
     }
 })().catch(error => { console.error(error); process.exitCode = 1; });

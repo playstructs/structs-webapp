@@ -15,6 +15,7 @@ import {SigningTransaction} from '../../src/js/models/SigningTransaction';
 import {transferIntent} from '../../src/js/util/TransferIntent';
 import {submissionBytes} from '../../src/js/util/SignedSubmission';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
+import {TEST_MNEMONIC} from './helpers';
 
 const address = n=>toBech32('structs',new Uint8Array(20).fill(n));
 const intent = ()=>({kind:'alpha_transfer',version:1,ownerId:'1-1',recipientId:'1-2',recipientAddress:address(3),amount:'1000000'});
@@ -68,7 +69,7 @@ function fixture(height=3353000) {
 }
 
 async function main() {
-  const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  const wallet=await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   [signer]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);
   offline=await SigningStargateClient.offline(wallet,{registry});
   for(const changed of [{amount:'0'},{amount:'100000000'},{amount:'1000001'},{amount:1000000},{recipientId:'1-0'},{recipientAddress:'invalid'},{extra:'x'}]) {

@@ -18,6 +18,7 @@ import {submissionBytes} from '../../src/js/util/SignedSubmission';
 import {PERMISSIONS} from '../../src/js/constants/Permissions';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {STRUCTS_FREE_GAS} from '../../src/js/constants/Fee';
+import {TEST_MNEMONIC,memoryStorage} from './helpers';
 
 const max='18446744073709551615', prefix='/structs.structs.Msg';
 const cases=[
@@ -40,13 +41,8 @@ const cases=[
   ['StructStealthDeactivate',['5-1',3],true,3],
 ];
 let actor, registry, offline;
-function storage() {
-  const values=new Map();
-  return {get length(){return values.size;},key:i=>[...values.keys()][i]??null,getItem:k=>values.get(k)??null,
-    setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
-}
 function fixture(height='3353000') {
-  globalThis.localStorage=storage();globalThis.window=new EventTarget();
+  globalThis.localStorage=memoryStorage();globalThis.window=new EventTarget();
   Object.defineProperty(globalThis,'navigator',{configurable:true,value:{locks:{request:async(name,options,read)=>read({name})}}});
   const control={height,owner:'1-1',mask:String(PERMISSIONS.ALL),signed:0,simulated:0,sends:0,gas:1000n,ready:true};
   const meta=()=>{
@@ -192,7 +188,7 @@ async function queueRecovery() {
   console.log('Real queue preserves action charge/order, uncertain bytes across reload and the final unreviewed legacy-payload refusal.');
 }
 async function main() {
-  const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  const wallet=await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   [actor]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);
   offline=await SigningStargateClient.offline(wallet,{registry});
   await builders();await refusals();await queueRecovery();

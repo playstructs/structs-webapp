@@ -18,7 +18,7 @@ class TransferSourceQuery
             throw new UnexpectedValueException('Invalid player');
         }
         ExactAmount::unsigned($owner[1], '18446744073709551615');
-        if ($query['chain_id'] !== 'structstestnet-111' || $query['denom'] !== 'ualpha') {
+        if ($query['chain_id'] !== ChainProtocol::CHAIN_ID || $query['denom'] !== 'ualpha') {
             throw new UnexpectedValueException('Unsupported transfer source');
         }
         foreach (['address', 'counterparty'] as $name) {

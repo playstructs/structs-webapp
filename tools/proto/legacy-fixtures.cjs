@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Capture the checked-in pre-migration encoder once; fixtures remain reviewable.
+// With --check, regenerate in memory and fail unless legacy-wire.json matches.
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
@@ -9,6 +10,8 @@ const ts = require('typescript');
 const root = path.resolve(__dirname,'../..');
 const revision = '2d0116c852ee0b9e13ec6deb44ab4beb1b07222e';
 const modules = process.env.STRUCTS_NODE_MODULES || path.join(root,'src/node_modules');
+const check = process.argv.includes('--check');
+const target = path.join(__dirname,'legacy-wire.json');
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(),'structs-legacy-codecs-'));
 try {
   const prefix = 'src/js/ts/structs.structs/types/';
@@ -38,6 +41,12 @@ try {
   ];
   const fixtures = cases.map(([name,payload])=>({typeUrl:`/structs.structs.${name}`,payload,
     wire:Buffer.from(codecs[name].encode(codecs[name].fromPartial(payload)).finish()).toString('base64')}));
-  fs.writeFileSync(path.join(__dirname,'legacy-wire.json'),JSON.stringify({revision,tx_source_sha256:sourceHash,fixtures},null,2)+'\n');
-  console.log(`Captured ${fixtures.length} legacy wire fixtures from ${revision}`);
+  const encoded = JSON.stringify({revision,tx_source_sha256:sourceHash,fixtures},null,2)+'\n';
+  if (check) {
+    if (fs.readFileSync(target,'utf8') !== encoded) throw new Error('legacy-wire.json differs from the captured encoder output');
+    console.log(`legacy-wire.json matches ${fixtures.length} fixtures from ${revision}`);
+  } else {
+    fs.writeFileSync(target,encoded);
+    console.log(`Captured ${fixtures.length} legacy wire fixtures from ${revision}`);
+  }
 } finally { fs.rmSync(temporary,{recursive:true,force:true}); }

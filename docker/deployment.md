@@ -58,3 +58,10 @@ would not see the first one's logins, tokens, budgets or locks. Scaling out need
 shared session, cache and lock storage first (for example Postgres tables that
 structs-pg owns, plus a `postgresql+advisory://` lock DSN), not only a new
 `LOCK_DSN`.
+
+## Database deploy order
+
+Every stamped API read takes its metadata from `structs.api_readiness()` inside
+the same snapshot as its data, and fails if that function is missing. Deploy the
+structs-pg release that provides it before this webapp; an older database makes
+those reads fail rather than report stale data.

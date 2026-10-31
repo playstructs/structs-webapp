@@ -18,12 +18,18 @@ def docker(*args):
     return subprocess.check_output(['docker', *args], text=True, stderr=subprocess.PIPE)
 
 
+def require(condition, message):
+    # Explicit checks, not assert: python -O must not skip the isolation guards.
+    if not condition:
+        raise RuntimeError(message)
+
+
 metadata = json.loads(docker('inspect', node))[0]
-assert metadata['Config']['Labels'].get('structs.task') == 'v022-browser'
-assert 'STRUCTS_BROWSER_FIXTURE=isolated' in metadata['Config']['Env']
+require(metadata['Config']['Labels'].get('structs.task') == 'v022-browser', 'Refusing a container outside the disposable browser fixture')
+require('STRUCTS_BROWSER_FIXTURE=isolated' in metadata['Config']['Env'], 'The node is not marked as an isolated browser fixture')
 networks = metadata['NetworkSettings']['Networks']
-assert len(networks) == 1 and manifest['network'] in networks
-assert json.loads(docker('network', 'inspect', manifest['network']))[0]['Internal']
+require(len(networks) == 1 and manifest['network'] in networks, 'The node must only join the fixture network')
+require(json.loads(docker('network', 'inspect', manifest['network']))[0]['Internal'], 'The fixture network must be internal')
 public = json.loads(docker('exec', node, 'cat', '/fixture/public.json'))
 
 
@@ -40,14 +46,14 @@ def balance(address):
 def send(*args):
     result = cli('tx', 'structs', *args, '--from', 'browser', '--keyring-backend', 'test',
                  '--chain-id', public['chainId'], '--fees', '0ualpha', '--gas', '20000000', '--yes')
-    assert result['code'] == 0, result
+    require(result['code'] == 0, f'Fixture transaction failed: {result}')
     for _ in range(30):
         try:
             committed = cli('query', 'tx', result['txhash'])
         except subprocess.CalledProcessError:
             time.sleep(1)
             continue
-        assert committed['code'] == 0, committed
+        require(committed['code'] == 0, f'Fixture transaction failed: {committed}')
         print(json.dumps({'operation': args[0], 'hash': result['txhash'], 'height': committed['height']}), flush=True)
         return
     raise RuntimeError('Fixture transaction was not confirmed; inspect it before continuing')
@@ -55,13 +61,13 @@ def send(*args):
 
 actor = public['actor']
 vault = cli('query', 'structs', 'vault', '1-1')['address']
-assert balance(actor) >= 50_000_000
+require(balance(actor) >= 50_000_000, 'The fixture actor holds less than 50 Alpha')
 send('reactor-infuse', public['validator'], '50000000ualpha', '--delegator-address', actor)
 for source in [actor, vault]:
     amount = balance(source)
     if amount:
         send('player-send', source, public['recipient'], f'{amount}ualpha')
 send('reactor-defuse', public['validator'], '50000000ualpha', '--delegator-address', actor)
-assert balance(actor) == 0 and balance(vault) == 0
+require(balance(actor) == 0 and balance(vault) == 0, 'Liquid Alpha was not emptied')
 pending = cli('query', 'staking', 'unbonding-delegation', actor, public['validator'])
 print(json.dumps({'status': 'pending', 'actorBalance': '0', 'vaultBalance': '0', 'unbonding': pending}), flush=True)

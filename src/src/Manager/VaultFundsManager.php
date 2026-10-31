@@ -2,6 +2,7 @@
 
 namespace App\Manager;
 
+use App\Util\ChainProtocol;
 use App\Util\ExactAmount;
 use Exception;
 use UnexpectedValueException;
@@ -27,12 +28,12 @@ class VaultFundsManager
         $player['funds_meta'] = ['height' => null, 'ready' => false, 'source' => null,
             'provisioned' => $address === null ? null : true, 'reason' => 'indexed_state_unavailable'];
 
-        if (($meta['protocol'] ?? null) === 'v0.21.0') {
+        if (($meta['protocol'] ?? null) === ChainProtocol::LEGACY) {
             $player['funds_meta']['reason'] = 'legacy_protocol';
             return; // Preserve pre-upgrade display and transaction behavior.
         }
         $player['alpha'] = null;
-        if (($meta['protocol'] ?? null) !== 'v0.22.0' || ($meta['data_ready'] ?? false) !== true) {
+        if (($meta['protocol'] ?? null) !== ChainProtocol::CURRENT || ($meta['data_ready'] ?? false) !== true) {
             $meta['transaction_ready'] = false;
             return;
         }

@@ -18,6 +18,7 @@ import {RpcResponseError,OwnedRpcClient} from '../../src/js/api/OwnedRpcClient';
 import {ChainQueryClient} from '../../src/js/api/ChainQueryClient';
 import {transactionHash,submissionBytes} from '../../src/js/util/SignedSubmission';
 import {protocolAtHeight} from '../../src/js/util/ChainProtocol';
+import {TEST_MNEMONIC} from './helpers';
 
 const deferred=()=>{let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};};
 class Storage {
@@ -559,7 +560,7 @@ async function accountHandoff(){
 }
 
 async function main(){
-  wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  wallet=await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   [account]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);
   await acceptedReload();await failureAndUnknown();await connectionChangedBeforeSend();await quarantineRecovery();await expiredSubmissionRecovery();await consumedSequenceRecovery();await storageAndPrepared();await legacyAndEpoch();await overlappingTabs();
   await malformedWalletAndRetention();await actualDeadlines();await logoutRecovery();await accountHandoff();await liveRecovery();

@@ -4,6 +4,7 @@ import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {NumberFormatter} from "../../util/NumberFormatter";
 import {SystemModal} from "../templates/partials/SystemModal";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
+import {MenuWaitingViewModel} from "../generic/MenuWaitingViewModel";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {TX_STATUS} from "../../models/SigningTransaction";
 import {CHAIN} from "../../constants/ChainConstants";
@@ -176,6 +177,10 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     options.hasDoNotCloseMessage = false;
     options.headerBtnLabel = direction === 'infuse' ? 'Infusing...' : 'Defusing...';
     options.waitingAnimation = direction === 'infuse' ? 'INFUSE' : 'DEFUSE';
+    // Leaving only stops this screen's wait; the queued change carries on.
+    options.waitingMessage = 'The change continues if you leave this screen.';
+    options.headerBtnShowBackIcon = true;
+    options.headerBtnHandler = () => MenuPage.router.goto('Guild','reactor');
     MenuPage.router.goto('Generic','menuWaiting',options,{replace:true});
     const signal = MenuPage.router.navigationSignal;
     const active = () => !signal.aborted && account === this.gameState.signingAccount?.address
@@ -200,7 +205,9 @@ export class ManageAlphaViewModel extends AbstractViewModel {
       if (!currentHeight || BigInt(refreshed.player.snapshot_meta.height) >= BigInt(currentHeight)) keyPlayer.setPlayer(refreshed.player,this.gameState.currentBlockHeight);
       MenuPage.router.goto('Guild','reactor',{}, {replace:true});
     } catch (error) {
-      if (active()) console.warn('[ManageAlpha] committed change needs indexed evidence:',error);
+      if (!active()) return;
+      console.warn('[ManageAlpha] committed change needs indexed evidence:',error);
+      MenuWaitingViewModel.setMessage('Confirmed on chain. The reactor display has not caught up yet; check it again shortly.');
     }
   }
 

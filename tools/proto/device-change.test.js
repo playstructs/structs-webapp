@@ -19,8 +19,9 @@ import {submissionBytes} from '../../src/js/util/SignedSubmission';
 import {PERMISSIONS} from '../../src/js/constants/Permissions';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {STRUCTS_FREE_GAS} from '../../src/js/constants/Fee';
+import {TEST_MNEMONIC} from './helpers';
 
-const mnemonic='abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+const mnemonic=TEST_MNEMONIC;
 let actor,target,registry,offline;
 const meta=(height='3353000')=>{
   const protocol=BigInt(height)<3353000n?CHAIN.LEGACY_PROTOCOL:CHAIN.PROTOCOL;

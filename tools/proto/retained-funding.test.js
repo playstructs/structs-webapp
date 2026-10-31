@@ -23,6 +23,7 @@ import {generatorCommit} from '../../src/js/util/GeneratorCompletion';
 import {readGeneratorSnapshot} from '../../src/js/managers/GeneratorSnapshot';
 import {objectType, planetStatus, techPowerGeneration} from '../../src/js/ts/structs.structs/types/structs/structs/keys';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
+import {TEST_MNEMONIC} from './helpers';
 
 const address = n => toBech32('structs', new Uint8Array(20).fill(n));
 const vault = address(1);
@@ -127,7 +128,7 @@ function committed(tx, submission) {
 
 async function main() {
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
-    'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about', {prefix:'structs'});
+    TEST_MNEMONIC, {prefix:'structs'});
   [signer] = await wallet.getAccounts();
   registry = new Registry([...defaultRegistryTypes,...msgTypes]);
   offline = await SigningStargateClient.offline(wallet,{registry});

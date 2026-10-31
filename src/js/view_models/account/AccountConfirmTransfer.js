@@ -2,6 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {NumberFormatter} from "../../util/NumberFormatter";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
+import {MenuWaitingViewModel} from "../generic/MenuWaitingViewModel";
 import {TX_STATUS} from "../../models/SigningTransaction";
 import {waitForTransferSource} from "../../util/TransferCompletion";
 
@@ -47,6 +48,10 @@ export class AccountConfirmTransfer extends AbstractViewModel {
     options.headerBtnLabel = 'Transferring...';
     options.waitingAnimation = 'ALPHA_TRANSFER';
     options.hasDoNotCloseMessage = false;
+    // Leaving only stops this screen's wait; the queued transfer carries on.
+    options.waitingMessage = 'The transfer continues if you leave this screen.';
+    options.headerBtnShowBackIcon = true;
+    options.headerBtnHandler = () => MenuPage.router.goto('Account', 'transfers');
     MenuPage.router.goto('Generic', 'menuWaiting', options, {replace: true});
     const signal = MenuPage.router.navigationSignal;
     const active = () => !signal.aborted && this.gameState.signingAccount?.address === account;
@@ -80,7 +85,9 @@ export class AccountConfirmTransfer extends AbstractViewModel {
       }, {replace: true});
     } catch (error) {
       // A committed transfer must never return to a screen offering to send it again.
-      if (active()) console.warn('[AccountConfirmTransfer] completion needs matching evidence:', error);
+      if (!active()) return;
+      console.warn('[AccountConfirmTransfer] completion needs matching evidence:', error);
+      MenuWaitingViewModel.setMessage('Confirmed on chain. Your transfer history has not caught up yet; check it again shortly.');
     }
   }
 

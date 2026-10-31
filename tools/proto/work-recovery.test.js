@@ -11,6 +11,7 @@ import {TX_STATUS} from '../../src/js/models/SigningTransaction';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {signedSubmission} from '../../src/js/util/SignedSubmission';
 import {workMessageIdentity, workSubmissionMatches, workSubmissionCommit} from '../../src/js/util/WorkSubmission';
+import {TEST_MNEMONIC} from './helpers';
 
 let actor,registry,offline;
 const factory=new TaskStateFactory(),height=3353000;
@@ -147,7 +148,7 @@ async function removalTests() {
   console.log('Authoritative work removal stops completed candidates without erasing queued or signed records.');
 }
 (async()=>{
-  const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  const wallet=await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   [actor]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);
   offline=await SigningStargateClient.offline(wallet,{registry});
   await identityTests();await recoveryTests();await retryTests();await logoutTests();await removalTests();

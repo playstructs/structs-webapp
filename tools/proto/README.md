@@ -256,11 +256,14 @@ change from the request. The screen completion integration remains next.
 
 ## Verification
 
-Install the existing application lock in `src` before testing. For an already
-installed matching dependency tree elsewhere, `STRUCTS_NODE_MODULES` may point
-to its absolute `node_modules` directory; nothing is installed or changed there.
+Install both locks before testing: the suites are bundled with the application's
+`src` dependencies and type-checked with the TypeScript pinned here. For an
+already installed matching application tree elsewhere, `STRUCTS_NODE_MODULES` may
+point to its absolute `node_modules` directory; nothing is installed or changed there.
 
 ```sh
+npm ci --prefix src
+npm ci --prefix tools/proto --ignore-scripts
 npm --prefix src run test:proto
 STRUCTS_WIRE_FIXTURE=/tmp/structs-v022-wire.json npm --prefix src run test:proto
 node tools/proto/verify-release.cjs /path/to/structsd /tmp/structs-v022-wire.json
@@ -304,7 +307,7 @@ local RPC for read-only result recovery, including the block hash/time; inspect
 `legacy-wire.json` pins eight pre-migration encoder fixtures. Empty new fields
 must preserve these bytes. Its provenance includes the old webapp revision and
 tx source checksum; `legacy-fixtures.cjs` reproduces it from that local Git
-history. The provider-decimal correction is deliberately covered by independent
+history (`--check` compares without writing). The provider-decimal correction is deliberately covered by independent
 Go decoding rather than preservation of the old invalid decimal encoding.
 
 Reactor preparation/atomic signing and unknown-group recovery are also included
@@ -366,8 +369,9 @@ node tools/proto/verify-generator-release.cjs /path/to/structsd
 The last command runs actual signed app/ante/bank tests in an archive of the
 pinned release. It covers secondary-key authority, other-owned targets, vault
 funding/burning, retained-position preservation, disabled/deferred-rate output,
-full-amount rejection and uint64 overflow. It also runs the release's generator
-rollback/migration/export-restart tests. No chain checkout or running testnet is
+full-amount rejection and uint64 overflow. It also runs the release's
+`TestSignedGeneratorVaultBurnAndBatchRollback`. Each `verify-*-release.cjs`
+names its tests in `release.cjs` and fails unless every named test reports PASS. No chain checkout or running testnet is
 modified. Per-request simulation and full browser/rollout acceptance remain
 required; these fixtures do not establish universal gas bounds.
 
@@ -447,7 +451,9 @@ cannot enter the real queue.
 
 The freshness and work-recovery suites exercise these paths with the real API
 parsers, task/queue managers and offline signed transactions. Together with the
-existing checks, `test:proto` runs 22 suites. These are controlled fixtures, not
+existing checks, `test:proto` runs every `*.test.js` file here (25 suites). It
+runs all of them even after a failure, lists the failed suites, and a suite whose
+main promise never settles fails. These are controlled fixtures, not
 live broadcasts or full end-to-end browser acceptance. The legacy `src/js/tests`
 bundle also contains Node-only global mocks; loading that bundle into a native
 browser is not a valid substitute for testing the rendered controls.
@@ -459,7 +465,12 @@ browser is not a valid substitute for testing the rendered controls.
 
 ```sh
 node tools/proto/capture-combat-release.cjs /path/to/structsd tools/proto/combat-v022.json
+node tools/proto/capture-combat-release.cjs /path/to/structsd tools/proto/combat-v022.json --check
 ```
+
+`--check` regenerates in memory and fails unless the checked-in file matches byte
+for byte. `node tools/proto/legacy-fixtures.cjs --check` does the same for
+`legacy-wire.json`.
 
 The script archives the exact release into a temporary directory, instruments
 only its test to capture typed events, runs the existing assertions and refuses
@@ -475,3 +486,21 @@ rebound damage and destruction. Evasion does not prematurely apply later damage.
 Animation events do not replay damage into indexed state; involved structs are
 refetched. The tutorial also supplies its volley total, and its test uses the
 real animation factory to verify the counter's intermediate health.
+
+## Reactor API fixture
+
+`reactor-unprovisioned-api.json` is the restricted-role PHP response for an owner
+without a provisioned vault, consumed by `reactor-flow.test.js`. Regenerate it
+from the disposable integration database (see `tools/api/README.md`):
+
+```sh
+STRUCTS_REACTOR_VAULT_FIXTURE=/tmp/reactor-unprovisioned-api.json \
+  node tools/api/php-integration.cjs --filter testRestrictedSqlAndNativeEvidenceCompleteOneUnprovisionedOwner
+STRUCTS_REACTOR_VAULT_FIXTURE=/tmp/reactor-unprovisioned-api.json npm --prefix src run test:proto
+```
+
+The runner mounts that file's directory into the PHP container. The second command
+runs the reactor flow against the fresh response; copy it over the checked-in file
+after review. There is no automatic drift check for this fixture, and this path
+has not been run end to end.
+

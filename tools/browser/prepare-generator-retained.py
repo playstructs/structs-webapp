@@ -18,11 +18,17 @@ def docker(*args, input=None):
                                    stderr=subprocess.PIPE, timeout=60)
 
 
+def require(condition, message):
+    # Explicit checks, not assert: python -O must not skip the isolation guards.
+    if not condition:
+        raise RuntimeError(message)
+
+
 metadata = json.loads(docker('inspect', node))[0]
-assert metadata['Config']['Labels'].get('structs.task') == 'v022-browser'
-assert 'STRUCTS_BROWSER_FIXTURE=isolated' in metadata['Config']['Env']
-assert list(metadata['NetworkSettings']['Networks']) == [manifest['network']]
-assert json.loads(docker('network', 'inspect', manifest['network']))[0]['Internal']
+require(metadata['Config']['Labels'].get('structs.task') == 'v022-browser', 'Refusing a container outside the disposable browser fixture')
+require('STRUCTS_BROWSER_FIXTURE=isolated' in metadata['Config']['Env'], 'The node is not marked as an isolated browser fixture')
+require(list(metadata['NetworkSettings']['Networks']) == [manifest['network']], 'The node must only join the fixture network')
+require(json.loads(docker('network', 'inspect', manifest['network']))[0]['Internal'], 'The fixture network must be internal')
 public = json.loads(docker('exec', node, 'cat', '/fixture/public.json'))
 
 
@@ -38,9 +44,9 @@ def cli(*args):
 
 actor = 'structs1avgyh77ycn997ja45q5q8ss8y9mr424jymd59f'
 owner = cli('query', 'structs', 'address', actor)
-assert owner['playerId'] == '1-2' and owner['permissions'] == '33554431'
+require(owner['playerId'] == '1-2' and owner['permissions'] == '33554431', 'The fixture actor is not player 1-2 with full permissions')
 generator = cli('query', 'structs', 'struct', '5-2')
-assert generator['Struct']['owner'] == '1-2' and generator['structAttributes']['isOnline']
+require(generator['Struct']['owner'] == '1-2' and generator['structAttributes']['isOnline'], 'Generator 5-2 is not an online fixture generator')
 vault = cli('query', 'structs', 'vault', '1-2')['address']
 sink = cli('query', 'structs', 'vault', '1-1')['address']
 keys = cli('keys', 'list', '--keyring-backend', 'test')
@@ -50,7 +56,7 @@ if key is None:
     mnemonic = 'legal winner thank year wave sausage worth useful legal winner thank yellow'
     added = json.loads(docker('exec', '-i', node, 'structsd', 'keys', 'add', key,
         '--recover', '--keyring-backend', 'test', '--home', '/fixture/chain', '--output', 'json', input=mnemonic + '\n'))
-    assert added['address'] == actor
+    require(added['address'] == actor, 'The recovered fixture key does not match the actor')
 
 
 def balance(address):
@@ -64,7 +70,7 @@ def send(source, destination, amount):
     result = cli('tx', 'structs', 'player-send', '--from', key, '--keyring-backend', 'test',
                  '--chain-id', public['chainId'], '--fees', '0ualpha', '--gas', 'auto',
                  '--gas-adjustment', '1.5', '--yes', '--', source, destination, f'{amount}ualpha')
-    assert result['code'] == 0, result
+    require(result['code'] == 0, f'Fixture transaction failed: {result}')
     print(json.dumps({'acceptedSetupHash': result['txhash']}), flush=True)
     for _ in range(30):
         try:
@@ -72,7 +78,7 @@ def send(source, destination, amount):
         except subprocess.CalledProcessError:
             time.sleep(1)
             continue
-        assert committed['code'] == 0, committed
+        require(committed['code'] == 0, f'Fixture transaction failed: {committed}')
         print(json.dumps({'setupHash': result['txhash'], 'height': committed['height']}), flush=True)
         return
     raise RuntimeError('Setup outcome unknown; inspect the saved hash before continuing')
@@ -84,8 +90,8 @@ if retained < 5_000_000:
 else:
     send(actor, sink, retained - 5_000_000)
 remaining = balance(vault)
-assert remaining >= 2_000_000
+require(remaining >= 2_000_000, 'The fixture vault holds less than 2 Alpha')
 send(vault, sink, remaining - 2_000_000)
-assert balance(actor) == 5_000_000 and balance(vault) == 2_000_000
+require(balance(actor) == 5_000_000 and balance(vault) == 2_000_000, 'Retained and vault balances did not reach the prepared amounts')
 print(json.dumps({'status': 'prepared', 'actor': actor, 'vault': vault,
                   'retainedUalpha': '5000000', 'vaultUalpha': '2000000', 'generatorBefore': generator}), flush=True)

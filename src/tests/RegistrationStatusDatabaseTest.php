@@ -85,6 +85,8 @@ class RegistrationStatusDatabaseTest extends ApiManagerTestCase
             $body = json_decode($manager->getRegistrationStatus('1-990965', self::ADDRESS, $proof)->getContent(), true);
             $this->assertFalse($body['meta']['transaction_ready']);
             $this->assertSame('1-990966', $body['data']['indexed']['player_id'], 'Do not infer the indexed owner from the requested player');
+            $this->assertSame(404, $manager->getRegistrationStatus('1-990965', self::ADDRESS, $stateProof, true)->getStatusCode(),
+                'Device state never reports another player\'s device');
             $this->assertSame('1-990965', $body['data']['chain']['registered_player_id']);
             $unavailable = $this->createStub(AddressRegistrationProofManager::class);
             $unavailable->method('readContext')->willThrowException(new UnexpectedValueException('Unpinned native response'));

@@ -23,6 +23,7 @@ import {generatorReceipt} from '../../src/js/util/GeneratorReceipt';
 import {signedSubmission} from '../../src/js/util/SignedSubmission';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {EVENTS} from '../../src/js/constants/Events';
+import {TEST_MNEMONIC,memoryStorage} from './helpers';
 
 const address = n=>toBech32('structs',new Uint8Array(20).fill(n));
 const clone = value=>JSON.parse(JSON.stringify(value));
@@ -59,9 +60,6 @@ async function signedBurn(change=intent(),height='3353000') {
   return tx;
 }
 
-function storage() {
-  const saved=new Map();return {getItem:key=>saved.get(key)??null,setItem:(key,v)=>saved.set(key,v),removeItem:key=>saved.delete(key),get length(){return saved.size;},key:i=>[...saved.keys()][i]};
-}
 class Element extends EventTarget {
   constructor() {
     super();const classes=new Set();this.value='0';this.max='0';this.min='0';this.disabled=false;this.innerHTML='';this.innerText='';
@@ -86,7 +84,7 @@ async function until(predicate,message) {
 }
 
 async function flow(height='3353000') {
-  globalThis.localStorage=storage();globalThis.window=new EventTarget();
+  globalThis.localStorage=memoryStorage();globalThis.window=new EventTarget();
   Object.defineProperty(globalThis.navigator,'locks',{configurable:true,value:{request:async(n,o,run)=>run({})}});
   const {element,offcanvas}=dom();
   const control={height,sends:0,committed:true,reject:false,ready:true,reads:0,sets:0,previewReads:0,funds:'5000000',readError:null,lateRead:null};
@@ -123,7 +121,7 @@ async function flow(height='3353000') {
 }
 
 async function main() {
-  const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  const wallet=await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   [signer]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);offline=await SigningStargateClient.offline(wallet,{registry});
   for(const height of ['3352999','3353000']) {
     const tx=await signedBurn(intent(),height),committed=generatorCommit(tx);

@@ -2,6 +2,7 @@
 
 namespace App\Manager;
 
+use App\Util\ChainProtocol;
 use App\Util\ExactAmount;
 use Exception;
 use UnexpectedValueException;
@@ -25,7 +26,7 @@ class RetainedFundsManager
             'source_limit' => self::MAX_SOURCES, 'complete' => false,
             'candidate_count' => null, 'reason' => 'retained_evidence_unavailable'];
         $player['available_alpha_p'] = $player['spendable_alpha_p'];
-        if (($player['funds_meta']['ready'] ?? false) !== true || ($meta['protocol'] ?? '') !== 'v0.22.0') {
+        if (($player['funds_meta']['ready'] ?? false) !== true || ($meta['protocol'] ?? '') !== ChainProtocol::CURRENT) {
             return;
         }
         try {

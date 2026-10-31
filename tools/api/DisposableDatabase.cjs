@@ -1,9 +1,13 @@
 const {randomBytes} = require('node:crypto');
 const {execFileSync} = require('node:child_process');
 
+// The source fixture container; it must carry the structs.task=v022-integration label.
+const FIXTURE_CONTAINER = process.env.STRUCTS_INTEGRATION_PG || 'structs-v022-pg';
+exports.FIXTURE_CONTAINER = FIXTURE_CONTAINER;
+
 /** Logical snapshot of the labelled fixture, with no shared-row mutations. */
 exports.createDisposableDatabase = function () {
-  const container = 'structs-v022-pg';
+  const container = FIXTURE_CONTAINER;
   const database = `webapp_test_${randomBytes(8).toString('hex')}`;
   const dump = `/tmp/${database}.dump`;
   const restoreList = `/tmp/${database}.list`;

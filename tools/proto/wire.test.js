@@ -10,6 +10,7 @@ import {normalizeMessagePayload, messagePayloadToWire} from '../../src/js/util/M
 import {SigningTransaction} from '../../src/js/models/SigningTransaction';
 import {SigningClientManager} from '../../src/js/managers/SigningClientManager';
 import {SigningQueueManager} from '../../src/js/managers/SigningQueueManager';
+import {TEST_MNEMONIC} from './helpers';
 
 async function main() {
   const registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
@@ -97,7 +98,7 @@ async function main() {
 
   // Public test mnemonic; sign offline only. Go independently decodes these
   // bytes with the pinned release types, including the actual signed TxBody.
-  const wallet = await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   const [account] = await wallet.getAccounts();
   for (const message of messages) message.value.creator = account.address;
   const client = await SigningStargateClient.offline(wallet,{registry});

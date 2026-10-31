@@ -23,27 +23,15 @@ if (diagnostics.length) {
   fs.rmSync(temporary,{recursive:true,force:true});
 } else {
   console.log('Generated bindings and targeted wire types passed TypeScript checking.');
+  // Every *.test.js here is a suite, bundled as <name>.cjs.
+  const suites = fs.readdirSync(__dirname).filter(file=>file.endsWith('.test.js')).sort()
+    .map(file=>file.slice(0,-'.test.js'.length));
   const config = {mode:'development',target:'node',devtool:false,context:root,
-    entry:{wire:path.join(__dirname,'wire.test.js'),query:path.join(__dirname,'query.test.js'),submission:path.join(__dirname,'submission.test.js'),ledger:path.join(__dirname,'ledger.test.js'),transfer:path.join(__dirname,'transfer.test.js'),transferFlow:path.join(__dirname,'transfer-flow.test.js'),reactor:path.join(__dirname,'reactor.test.js'),reactorFlow:path.join(__dirname,'reactor-flow.test.js'),alphaRefresh:path.join(__dirname,'alpha-refresh.test.js'),generator:path.join(__dirname,'generator.test.js')},
+    entry:Object.fromEntries(suites.map(name=>[name,path.join(__dirname,`${name}.test.js`)])),
     output:{path:temporary,filename:'[name].cjs',chunkFilename:'[name].[contenthash].js'},
     resolve:{extensions:['.js','.ts','.json'],modules:[modules,'node_modules']},
     module:{rules:[{test:/\.ts$/,loader:path.join(modules,'ts-loader'),options:{transpileOnly:true,
       compiler:path.join(__dirname,'node_modules/typescript'),configFile:path.join(root,'src/tsconfig.json')}}]}};
-  config.entry.deviceChange = path.join(__dirname,'device-change.test.js');
-  config.entry.registration = path.join(__dirname,'registration.test.js');
-  config.entry.generatorFlow = path.join(__dirname,'generator-flow.test.js');
-  config.entry.session = path.join(__dirname,'session.test.js');
-  config.entry.work = path.join(__dirname,'work.test.js');
-  config.entry.gameplay = path.join(__dirname,'gameplay.test.js');
-  config.entry.freshness = path.join(__dirname,'freshness.test.js');
-  config.entry.workRecovery = path.join(__dirname,'work-recovery.test.js');
-  config.entry.accountNavigation = path.join(__dirname,'account-navigation.test.js');
-  config.entry.startup = path.join(__dirname,'startup.test.js');
-  config.entry.tutorial = path.join(__dirname,'tutorial.test.js');
-  config.entry.combat = path.join(__dirname,'combat.test.js');
-  config.entry.activity = path.join(__dirname,'activity.test.js');
-  config.entry.actionOutcome = path.join(__dirname,'action-outcome.test.js');
-  config.entry.retainedFunding = path.join(__dirname,'retained-funding.test.js');
   const workerConfig = {mode:'production',target:'webworker',devtool:false,context:root,
     entry:path.join(root,'src/js/workers/TaskWorker.js'),
     output:{path:temporary,filename:'task-worker.js'},
@@ -51,11 +39,18 @@ if (diagnostics.length) {
   webpack([config,workerConfig], (error, stats) => {
     try {
       if (error || stats.hasErrors()) throw error || new Error(stats.toString({all:false,errors:true}));
-      for (const name of ['wire','query','submission','ledger','transfer','transferFlow','reactor','reactorFlow','alphaRefresh','generator','generatorFlow','registration','deviceChange','work','session','gameplay','freshness','workRecovery','accountNavigation','startup','tutorial','combat','activity','actionOutcome','retainedFunding']) {
+      const failed = [];
+      for (const name of suites) {
         const run = spawnSync(process.execPath,['--require',path.join(__dirname,'expect-settled.cjs'),path.join(temporary,`${name}.cjs`)], {cwd:root,stdio:'inherit',
           env:{...process.env,STRUCTS_WORKER_TEST_BUNDLE:path.join(temporary,'task-worker.js')},timeout:60000});
         if (run.error) console.error(run.error);
-        if (run.status !== 0) { process.exitCode = run.status ?? 1; break; }
+        if (run.status !== 0) failed.push(name);
+      }
+      if (failed.length) {
+        console.error(`${failed.length} of ${suites.length} suites failed: ${failed.join(', ')}`);
+        process.exitCode = 1;
+      } else {
+        console.log(`All ${suites.length} suites passed.`);
       }
     } catch (failure) {
       console.error(failure); process.exitCode = 1;

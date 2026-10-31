@@ -24,6 +24,7 @@ import {submissionBytes} from '../../src/js/util/SignedSubmission';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 import {STRUCTS_FREE_GAS} from '../../src/js/constants/Fee';
 import {PLAYER_TYPES} from '../../src/js/constants/PlayerTypes';
+import {TEST_MNEMONIC} from './helpers';
 
 const address = n => toBech32('structs',new Uint8Array(20).fill(n));
 const baseIntent = () => ({kind:'generator_fund',version:1,ownerId:'1-1',structId:'5-1',amount:'3000000'});
@@ -229,7 +230,7 @@ async function receiptTests() {
 }
 
 async function main() {
-  const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
+  const wallet=await DirectSecp256k1HdWallet.fromMnemonic(TEST_MNEMONIC,{prefix:'structs'});
   [signer]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);offline=await SigningStargateClient.offline(wallet,{registry});
   for(const patch of [{amount:'0'},{amount:'1'},{amount:1000000},{amount:'18446744073710000000'},
       {ownerId:'0-1'},{structId:'5-0'},{structId:'5-18446744073709551616'},{source:address(2)},{version:2}]) {
