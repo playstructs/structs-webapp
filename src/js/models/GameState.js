@@ -1,3 +1,7 @@
+import {TransactionJournal} from "../managers/TransactionJournal";
+import {CHAIN} from "../constants/ChainConstants";
+import {maxQueryHeight, validateReadSnapshot} from "../util/ChainProtocol";
+import {workUint64} from "../util/WorkDifficulty";
 import {SignupRequestDTO} from "../dtos/SignupRequestDTO";
 import {ChargeCalculator} from "../util/ChargeCalculator";
 import {EVENTS} from "../constants/Events";
@@ -25,6 +29,7 @@ export class GameState {
 
     /** @type {GuildAPI} */
     this.guildAPI = null;
+    this.alphaRefresh = null;
 
     /* Multistep Request Data */
     this.signupRequest = new SignupRequestDTO();
@@ -37,6 +42,7 @@ export class GameState {
      * @type {boolean}
      */
     this.persistenceEnabled = true;
+    this.sessionBoundary = localStorage.getItem(TransactionJournal.SESSION_CLOSED_KEY);
 
     /* Persistent Data */
     this.mnemonic = null;
@@ -128,8 +134,15 @@ export class GameState {
     window.addEventListener(EVENTS.SAVE_GAME_STATE, this.save.bind(this));
   }
 
+  /**
+   * @return {boolean} false once any tab has logged out since this state loaded
+   */
+  isSessionCurrent() {
+    return this.sessionBoundary === localStorage.getItem(TransactionJournal.SESSION_CLOSED_KEY);
+  }
+
   save() {
-    if (!this.persistenceEnabled) {
+    if (!this.persistenceEnabled || !this.isSessionCurrent()) {
       return;
     }
 
@@ -177,8 +190,14 @@ export class GameState {
 
     if (this.mnemonic) {
       // Properties to re-instantiate
-      this.wallet = await this.walletManager.createWallet(this.mnemonic);
-      const accounts = await this.wallet.getAccountsWithPrivkeys();
+      const wallet = await this.walletManager.createWallet(this.mnemonic);
+      const accounts = await wallet.getAccountsWithPrivkeys();
+      if (!this.persistenceEnabled || !this.isSessionCurrent()) {
+        this.mnemonic = null;
+        this.pubkey = null;
+        return;
+      }
+      this.wallet = wallet;
       this.signingAccount = accounts[0];
     }
   }
@@ -263,9 +282,43 @@ export class GameState {
 
   /**
    * @param {array} types
+   * @return {boolean} false when the catalog is older than the one already held
    */
   setStructTypes(types) {
+    if (this.persistenceEnabled) {
+      if (!this.isSessionCurrent()) {
+        return false;
+      }
+      const meta = types?.snapshot_meta;
+      validateReadSnapshot(meta, {
+        chainId: CHAIN.ID,
+        height: maxQueryHeight(meta?.observed_tip, this.currentBlockHeight || meta?.observed_tip),
+      });
+      const previous = this.structTypes.snapshot_meta;
+      if (previous && BigInt(meta.height) < BigInt(previous.height)) {
+        return false;
+      }
+      if (
+        previous?.height === meta.height
+        && JSON.stringify(types) !== JSON.stringify(this.structTypes.structTypes)
+      ) {
+        return false;
+      }
+    }
+    if (
+      !Array.isArray(types)
+      || !types.length
+      || new Set(types.map(type => type.id)).size !== types.length
+    ) {
+      throw new Error('Invalid struct catalog');
+    }
+    for (const type of types) {
+      for (const field of ['build_difficulty', 'ore_mining_difficulty', 'ore_refining_difficulty']) {
+        workUint64(type[field]);
+      }
+    }
     this.structTypes.setStructTypes(types);
+    return true;
   }
 
   /**

@@ -9,33 +9,45 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "structs.structs";
 
-/** Params defines the parameters for the module. */
 export interface Params {
-  /**
-   * guildCharterDifficultyRange is the block count at which the guild charter
-   * proof-of-work bottoms out at one leading zero. Must be at least 2:
-   * CalculateDifficulty divides by log10(range), so 1 divides by zero and 0
-   * yields negative infinity.
-   */
-  guildCharterDifficultyRange: number;
-  /**
-   * guildCharterReactorAge is how many blocks after creation a reactor becomes
-   * eligible to found one guild without solving the puzzle.
-   */
-  guildCharterReactorAge: number;
+  guildCharterDifficultyRange: string;
+  guildCharterReactorAge: string;
+  reactorStakeCapBps: string;
+  reactorStakeCapMinValidators: string;
+  diversityMaxBonusBps: string;
+  diversityTargetExtraReactors: string;
 }
 
 function createBaseParams(): Params {
-  return { guildCharterDifficultyRange: 0, guildCharterReactorAge: 0 };
+  return {
+    guildCharterDifficultyRange: "0",
+    guildCharterReactorAge: "0",
+    reactorStakeCapBps: "0",
+    reactorStakeCapMinValidators: "0",
+    diversityMaxBonusBps: "0",
+    diversityTargetExtraReactors: "0",
+  };
 }
 
 export const Params: MessageFns<Params> = {
   encode(message: Params, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.guildCharterDifficultyRange !== 0) {
+    if (message.guildCharterDifficultyRange !== "0") {
       writer.uint32(8).uint64(message.guildCharterDifficultyRange);
     }
-    if (message.guildCharterReactorAge !== 0) {
+    if (message.guildCharterReactorAge !== "0") {
       writer.uint32(16).uint64(message.guildCharterReactorAge);
+    }
+    if (message.reactorStakeCapBps !== "0") {
+      writer.uint32(24).uint64(message.reactorStakeCapBps);
+    }
+    if (message.reactorStakeCapMinValidators !== "0") {
+      writer.uint32(32).uint64(message.reactorStakeCapMinValidators);
+    }
+    if (message.diversityMaxBonusBps !== "0") {
+      writer.uint32(40).uint64(message.diversityMaxBonusBps);
+    }
+    if (message.diversityTargetExtraReactors !== "0") {
+      writer.uint32(48).uint64(message.diversityTargetExtraReactors);
     }
     return writer;
   },
@@ -52,7 +64,7 @@ export const Params: MessageFns<Params> = {
             break;
           }
 
-          message.guildCharterDifficultyRange = longToNumber(reader.uint64());
+          message.guildCharterDifficultyRange = reader.uint64().toString();
           continue;
         }
         case 2: {
@@ -60,7 +72,39 @@ export const Params: MessageFns<Params> = {
             break;
           }
 
-          message.guildCharterReactorAge = longToNumber(reader.uint64());
+          message.guildCharterReactorAge = reader.uint64().toString();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.reactorStakeCapBps = reader.uint64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.reactorStakeCapMinValidators = reader.uint64().toString();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.diversityMaxBonusBps = reader.uint64().toString();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.diversityTargetExtraReactors = reader.uint64().toString();
           continue;
         }
       }
@@ -75,21 +119,41 @@ export const Params: MessageFns<Params> = {
   fromJSON(object: any): Params {
     return {
       guildCharterDifficultyRange: isSet(object.guildCharterDifficultyRange)
-        ? globalThis.Number(object.guildCharterDifficultyRange)
-        : 0,
+        ? globalThis.String(object.guildCharterDifficultyRange)
+        : "0",
       guildCharterReactorAge: isSet(object.guildCharterReactorAge)
-        ? globalThis.Number(object.guildCharterReactorAge)
-        : 0,
+        ? globalThis.String(object.guildCharterReactorAge)
+        : "0",
+      reactorStakeCapBps: isSet(object.reactorStakeCapBps) ? globalThis.String(object.reactorStakeCapBps) : "0",
+      reactorStakeCapMinValidators: isSet(object.reactorStakeCapMinValidators)
+        ? globalThis.String(object.reactorStakeCapMinValidators)
+        : "0",
+      diversityMaxBonusBps: isSet(object.diversityMaxBonusBps) ? globalThis.String(object.diversityMaxBonusBps) : "0",
+      diversityTargetExtraReactors: isSet(object.diversityTargetExtraReactors)
+        ? globalThis.String(object.diversityTargetExtraReactors)
+        : "0",
     };
   },
 
   toJSON(message: Params): unknown {
     const obj: any = {};
-    if (message.guildCharterDifficultyRange !== 0) {
-      obj.guildCharterDifficultyRange = Math.round(message.guildCharterDifficultyRange);
+    if (message.guildCharterDifficultyRange !== "0") {
+      obj.guildCharterDifficultyRange = message.guildCharterDifficultyRange;
     }
-    if (message.guildCharterReactorAge !== 0) {
-      obj.guildCharterReactorAge = Math.round(message.guildCharterReactorAge);
+    if (message.guildCharterReactorAge !== "0") {
+      obj.guildCharterReactorAge = message.guildCharterReactorAge;
+    }
+    if (message.reactorStakeCapBps !== "0") {
+      obj.reactorStakeCapBps = message.reactorStakeCapBps;
+    }
+    if (message.reactorStakeCapMinValidators !== "0") {
+      obj.reactorStakeCapMinValidators = message.reactorStakeCapMinValidators;
+    }
+    if (message.diversityMaxBonusBps !== "0") {
+      obj.diversityMaxBonusBps = message.diversityMaxBonusBps;
+    }
+    if (message.diversityTargetExtraReactors !== "0") {
+      obj.diversityTargetExtraReactors = message.diversityTargetExtraReactors;
     }
     return obj;
   },
@@ -99,8 +163,12 @@ export const Params: MessageFns<Params> = {
   },
   fromPartial<I extends Exact<DeepPartial<Params>, I>>(object: I): Params {
     const message = createBaseParams();
-    message.guildCharterDifficultyRange = object.guildCharterDifficultyRange ?? 0;
-    message.guildCharterReactorAge = object.guildCharterReactorAge ?? 0;
+    message.guildCharterDifficultyRange = object.guildCharterDifficultyRange ?? "0";
+    message.guildCharterReactorAge = object.guildCharterReactorAge ?? "0";
+    message.reactorStakeCapBps = object.reactorStakeCapBps ?? "0";
+    message.reactorStakeCapMinValidators = object.reactorStakeCapMinValidators ?? "0";
+    message.diversityMaxBonusBps = object.diversityMaxBonusBps ?? "0";
+    message.diversityTargetExtraReactors = object.diversityTargetExtraReactors ?? "0";
     return message;
   },
 };
@@ -116,17 +184,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

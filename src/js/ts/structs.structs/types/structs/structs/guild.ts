@@ -22,33 +22,30 @@ export const protobufPackage = "structs.structs";
 
 export interface Guild {
   id: string;
-  index: number;
+  index: string;
   endpoint: string;
   creator: string;
   owner: string;
-  joinInfusionMinimum: number;
+  joinInfusionMinimum: string;
   joinInfusionMinimumBypassByRequest: guildJoinBypassLevel;
   joinInfusionMinimumBypassByInvite: guildJoinBypassLevel;
   primaryReactorId: string;
   entrySubstationId: string;
-  entryRank: number;
+  entryRank: string;
   name: string;
   pfp: string;
   bankConvertInFee: string;
   bankConvertOutFee: string;
-  /**
-   * charterSolverId is the player who solved the proof-of-work that founded
-   * this guild, which need not be the owner. Written once at creation and never
-   * mutated, so the credit survives a transfer. Empty on a guild founded
-   * through the reactor entitlement, where nobody solved anything.
-   */
   charterSolverId: string;
+  rankPurchaseBasePrice: string;
+  rankPurchaseStepIncrease: string;
+  rankPurchaseMinimumRank: string;
+  joinByRankPurchaseEnabled: boolean;
 }
 
 export interface GuildMembershipApplication {
   guildId: string;
   playerId: string;
-  /** Invite | Request */
   joinType: guildJoinType;
   registrationStatus: registrationStatus;
   proposer: string;
@@ -58,21 +55,25 @@ export interface GuildMembershipApplication {
 function createBaseGuild(): Guild {
   return {
     id: "",
-    index: 0,
+    index: "0",
     endpoint: "",
     creator: "",
     owner: "",
-    joinInfusionMinimum: 0,
+    joinInfusionMinimum: "0",
     joinInfusionMinimumBypassByRequest: 0,
     joinInfusionMinimumBypassByInvite: 0,
     primaryReactorId: "",
     entrySubstationId: "",
-    entryRank: 0,
+    entryRank: "0",
     name: "",
     pfp: "",
     bankConvertInFee: "",
     bankConvertOutFee: "",
     charterSolverId: "",
+    rankPurchaseBasePrice: "0",
+    rankPurchaseStepIncrease: "0",
+    rankPurchaseMinimumRank: "0",
+    joinByRankPurchaseEnabled: false,
   };
 }
 
@@ -81,7 +82,7 @@ export const Guild: MessageFns<Guild> = {
     if (message.id !== "") {
       writer.uint32(10).string(message.id);
     }
-    if (message.index !== 0) {
+    if (message.index !== "0") {
       writer.uint32(16).uint64(message.index);
     }
     if (message.endpoint !== "") {
@@ -93,7 +94,7 @@ export const Guild: MessageFns<Guild> = {
     if (message.owner !== "") {
       writer.uint32(42).string(message.owner);
     }
-    if (message.joinInfusionMinimum !== 0) {
+    if (message.joinInfusionMinimum !== "0") {
       writer.uint32(48).uint64(message.joinInfusionMinimum);
     }
     if (message.joinInfusionMinimumBypassByRequest !== 0) {
@@ -108,7 +109,7 @@ export const Guild: MessageFns<Guild> = {
     if (message.entrySubstationId !== "") {
       writer.uint32(82).string(message.entrySubstationId);
     }
-    if (message.entryRank !== 0) {
+    if (message.entryRank !== "0") {
       writer.uint32(88).uint64(message.entryRank);
     }
     if (message.name !== "") {
@@ -125,6 +126,18 @@ export const Guild: MessageFns<Guild> = {
     }
     if (message.charterSolverId !== "") {
       writer.uint32(130).string(message.charterSolverId);
+    }
+    if (message.rankPurchaseBasePrice !== "0") {
+      writer.uint32(136).uint64(message.rankPurchaseBasePrice);
+    }
+    if (message.rankPurchaseStepIncrease !== "0") {
+      writer.uint32(144).uint64(message.rankPurchaseStepIncrease);
+    }
+    if (message.rankPurchaseMinimumRank !== "0") {
+      writer.uint32(152).uint64(message.rankPurchaseMinimumRank);
+    }
+    if (message.joinByRankPurchaseEnabled !== false) {
+      writer.uint32(160).bool(message.joinByRankPurchaseEnabled);
     }
     return writer;
   },
@@ -149,7 +162,7 @@ export const Guild: MessageFns<Guild> = {
             break;
           }
 
-          message.index = longToNumber(reader.uint64());
+          message.index = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -181,7 +194,7 @@ export const Guild: MessageFns<Guild> = {
             break;
           }
 
-          message.joinInfusionMinimum = longToNumber(reader.uint64());
+          message.joinInfusionMinimum = reader.uint64().toString();
           continue;
         }
         case 7: {
@@ -221,7 +234,7 @@ export const Guild: MessageFns<Guild> = {
             break;
           }
 
-          message.entryRank = longToNumber(reader.uint64());
+          message.entryRank = reader.uint64().toString();
           continue;
         }
         case 12: {
@@ -264,6 +277,38 @@ export const Guild: MessageFns<Guild> = {
           message.charterSolverId = reader.string();
           continue;
         }
+        case 17: {
+          if (tag !== 136) {
+            break;
+          }
+
+          message.rankPurchaseBasePrice = reader.uint64().toString();
+          continue;
+        }
+        case 18: {
+          if (tag !== 144) {
+            break;
+          }
+
+          message.rankPurchaseStepIncrease = reader.uint64().toString();
+          continue;
+        }
+        case 19: {
+          if (tag !== 152) {
+            break;
+          }
+
+          message.rankPurchaseMinimumRank = reader.uint64().toString();
+          continue;
+        }
+        case 20: {
+          if (tag !== 160) {
+            break;
+          }
+
+          message.joinByRankPurchaseEnabled = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -276,11 +321,11 @@ export const Guild: MessageFns<Guild> = {
   fromJSON(object: any): Guild {
     return {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
-      index: isSet(object.index) ? globalThis.Number(object.index) : 0,
+      index: isSet(object.index) ? globalThis.String(object.index) : "0",
       endpoint: isSet(object.endpoint) ? globalThis.String(object.endpoint) : "",
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
-      joinInfusionMinimum: isSet(object.joinInfusionMinimum) ? globalThis.Number(object.joinInfusionMinimum) : 0,
+      joinInfusionMinimum: isSet(object.joinInfusionMinimum) ? globalThis.String(object.joinInfusionMinimum) : "0",
       joinInfusionMinimumBypassByRequest: isSet(object.joinInfusionMinimumBypassByRequest)
         ? guildJoinBypassLevelFromJSON(object.joinInfusionMinimumBypassByRequest)
         : 0,
@@ -289,12 +334,24 @@ export const Guild: MessageFns<Guild> = {
         : 0,
       primaryReactorId: isSet(object.primaryReactorId) ? globalThis.String(object.primaryReactorId) : "",
       entrySubstationId: isSet(object.entrySubstationId) ? globalThis.String(object.entrySubstationId) : "",
-      entryRank: isSet(object.entryRank) ? globalThis.Number(object.entryRank) : 0,
+      entryRank: isSet(object.entryRank) ? globalThis.String(object.entryRank) : "0",
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       pfp: isSet(object.pfp) ? globalThis.String(object.pfp) : "",
       bankConvertInFee: isSet(object.bankConvertInFee) ? globalThis.String(object.bankConvertInFee) : "",
       bankConvertOutFee: isSet(object.bankConvertOutFee) ? globalThis.String(object.bankConvertOutFee) : "",
       charterSolverId: isSet(object.charterSolverId) ? globalThis.String(object.charterSolverId) : "",
+      rankPurchaseBasePrice: isSet(object.rankPurchaseBasePrice)
+        ? globalThis.String(object.rankPurchaseBasePrice)
+        : "0",
+      rankPurchaseStepIncrease: isSet(object.rankPurchaseStepIncrease)
+        ? globalThis.String(object.rankPurchaseStepIncrease)
+        : "0",
+      rankPurchaseMinimumRank: isSet(object.rankPurchaseMinimumRank)
+        ? globalThis.String(object.rankPurchaseMinimumRank)
+        : "0",
+      joinByRankPurchaseEnabled: isSet(object.joinByRankPurchaseEnabled)
+        ? globalThis.Boolean(object.joinByRankPurchaseEnabled)
+        : false,
     };
   },
 
@@ -303,8 +360,8 @@ export const Guild: MessageFns<Guild> = {
     if (message.id !== "") {
       obj.id = message.id;
     }
-    if (message.index !== 0) {
-      obj.index = Math.round(message.index);
+    if (message.index !== "0") {
+      obj.index = message.index;
     }
     if (message.endpoint !== "") {
       obj.endpoint = message.endpoint;
@@ -315,8 +372,8 @@ export const Guild: MessageFns<Guild> = {
     if (message.owner !== "") {
       obj.owner = message.owner;
     }
-    if (message.joinInfusionMinimum !== 0) {
-      obj.joinInfusionMinimum = Math.round(message.joinInfusionMinimum);
+    if (message.joinInfusionMinimum !== "0") {
+      obj.joinInfusionMinimum = message.joinInfusionMinimum;
     }
     if (message.joinInfusionMinimumBypassByRequest !== 0) {
       obj.joinInfusionMinimumBypassByRequest = guildJoinBypassLevelToJSON(message.joinInfusionMinimumBypassByRequest);
@@ -330,8 +387,8 @@ export const Guild: MessageFns<Guild> = {
     if (message.entrySubstationId !== "") {
       obj.entrySubstationId = message.entrySubstationId;
     }
-    if (message.entryRank !== 0) {
-      obj.entryRank = Math.round(message.entryRank);
+    if (message.entryRank !== "0") {
+      obj.entryRank = message.entryRank;
     }
     if (message.name !== "") {
       obj.name = message.name;
@@ -348,6 +405,18 @@ export const Guild: MessageFns<Guild> = {
     if (message.charterSolverId !== "") {
       obj.charterSolverId = message.charterSolverId;
     }
+    if (message.rankPurchaseBasePrice !== "0") {
+      obj.rankPurchaseBasePrice = message.rankPurchaseBasePrice;
+    }
+    if (message.rankPurchaseStepIncrease !== "0") {
+      obj.rankPurchaseStepIncrease = message.rankPurchaseStepIncrease;
+    }
+    if (message.rankPurchaseMinimumRank !== "0") {
+      obj.rankPurchaseMinimumRank = message.rankPurchaseMinimumRank;
+    }
+    if (message.joinByRankPurchaseEnabled !== false) {
+      obj.joinByRankPurchaseEnabled = message.joinByRankPurchaseEnabled;
+    }
     return obj;
   },
 
@@ -357,21 +426,25 @@ export const Guild: MessageFns<Guild> = {
   fromPartial<I extends Exact<DeepPartial<Guild>, I>>(object: I): Guild {
     const message = createBaseGuild();
     message.id = object.id ?? "";
-    message.index = object.index ?? 0;
+    message.index = object.index ?? "0";
     message.endpoint = object.endpoint ?? "";
     message.creator = object.creator ?? "";
     message.owner = object.owner ?? "";
-    message.joinInfusionMinimum = object.joinInfusionMinimum ?? 0;
+    message.joinInfusionMinimum = object.joinInfusionMinimum ?? "0";
     message.joinInfusionMinimumBypassByRequest = object.joinInfusionMinimumBypassByRequest ?? 0;
     message.joinInfusionMinimumBypassByInvite = object.joinInfusionMinimumBypassByInvite ?? 0;
     message.primaryReactorId = object.primaryReactorId ?? "";
     message.entrySubstationId = object.entrySubstationId ?? "";
-    message.entryRank = object.entryRank ?? 0;
+    message.entryRank = object.entryRank ?? "0";
     message.name = object.name ?? "";
     message.pfp = object.pfp ?? "";
     message.bankConvertInFee = object.bankConvertInFee ?? "";
     message.bankConvertOutFee = object.bankConvertOutFee ?? "";
     message.charterSolverId = object.charterSolverId ?? "";
+    message.rankPurchaseBasePrice = object.rankPurchaseBasePrice ?? "0";
+    message.rankPurchaseStepIncrease = object.rankPurchaseStepIncrease ?? "0";
+    message.rankPurchaseMinimumRank = object.rankPurchaseMinimumRank ?? "0";
+    message.joinByRankPurchaseEnabled = object.joinByRankPurchaseEnabled ?? false;
     return message;
   },
 };
@@ -527,17 +600,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

@@ -77,7 +77,14 @@ export class AccountTransactionViewModel extends AbstractViewModel {
   }
 
   render () {
-    this.guildAPI.getTransaction(this.txId).then((transaction) => {
+    const signal = MenuPage.router.navigationSignal;
+    const account = this.gameState.signingAccount?.address;
+    const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const active = () => !signal.aborted
+      && this.gameState.signingAccount?.address === account
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id === playerId;
+    return this.guildAPI.getTransaction(this.txId, {signal, timeoutMs: 15000}).then((transaction) => {
+      if (!active()) return;
 
       this.transaction = transaction;
 
@@ -144,6 +151,8 @@ export class AccountTransactionViewModel extends AbstractViewModel {
       MenuPage.hideAndClearDialoguePanel();
 
       this.initPageCode();
+    }).catch(error => {
+      if (active()) console.warn('[AccountTransactionViewModel] read failed:', error);
     });
   }
 }

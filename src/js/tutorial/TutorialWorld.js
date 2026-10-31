@@ -56,6 +56,17 @@ const COUNTER_DAMAGE = {
 };
 
 /**
+ * Training displays the real account's power figures, but its scripted combat
+ * has its own power supply. An overloaded account must still be able to train.
+ * Keep this policy on the simulated model so normal players retain their gates.
+ */
+class TutorialPlayer extends Player {
+  isOverloaded() {
+    return false;
+  }
+}
+
+/**
  * In-memory stand-in for the chain and the Guild API during the tutorial.
  *
  * It owns the authoritative copy of every simulated struct, resolves combat
@@ -126,7 +137,7 @@ export class TutorialWorld {
   }
 
   buildPlayers() {
-    this.player = Object.assign(new Player(), {
+    this.player = Object.assign(new TutorialPlayer(), {
       id: TUTORIAL_IDS.PLAYER,
       primary_address: 'structs1tutorial',
       planet_id: TUTORIAL_IDS.PLANET,
@@ -144,7 +155,7 @@ export class TutorialWorld {
       ...TutorialMode.getPlayerEnergy(),
     });
 
-    this.raider = Object.assign(new Player(), {
+    this.raider = Object.assign(new TutorialPlayer(), {
       id: TUTORIAL_IDS.RAIDER,
       primary_address: 'structs1raider',
       planet_id: TUTORIAL_IDS.RAIDER_PLANET,
@@ -288,10 +299,10 @@ export class TutorialWorld {
    */
   getPlayer(playerId) {
     if (playerId === TUTORIAL_IDS.PLAYER) {
-      return Object.assign(new Player(), this.player);
+      return Object.assign(new TutorialPlayer(), this.player);
     }
     if (playerId === TUTORIAL_IDS.RAIDER) {
-      return Object.assign(new Player(), this.raider);
+      return Object.assign(new TutorialPlayer(), this.raider);
     }
     return null;
   }
@@ -390,7 +401,7 @@ export class TutorialWorld {
     this.gameState.setStructTypes(this.structTypes);
 
     keyPlayer.setId(TUTORIAL_IDS.PLAYER);
-    keyPlayer.setPlayer(this.getPlayer(TUTORIAL_IDS.PLAYER));
+    keyPlayer.setPlayer(this.getPlayer(TUTORIAL_IDS.PLAYER),null,{simulated:true});
     keyPlayer.setLastActionBlockHeight(this.blockHeight, 0);
     keyPlayer.setFleet(this.getFleetByPlayerId(TUTORIAL_IDS.PLAYER));
     keyPlayer.setStructs(this.getStructsByPlayerId(TUTORIAL_IDS.PLAYER));
@@ -415,7 +426,7 @@ export class TutorialWorld {
 
     const raider = this.gameState.keyPlayers.planet_raider;
     this.gameState.setPlanetPlanetRaidInfo(this.getPlanetRaid(), false);
-    raider.setPlayer(this.getPlayer(TUTORIAL_IDS.RAIDER));
+    raider.setPlayer(this.getPlayer(TUTORIAL_IDS.RAIDER),null,{simulated:true});
     raider.setLastActionBlockHeight(this.blockHeight, 0);
     raider.setFleet(this.getFleetByPlayerId(TUTORIAL_IDS.RAIDER));
     raider.setStructs(this.getStructsByPlayerId(TUTORIAL_IDS.RAIDER));
@@ -621,6 +632,7 @@ export class TutorialWorld {
       targetStructLocationType: target.location_type,
       targetHealthBefore: target.health,
       targetHealthAfter: target.health,
+      damage: 0,
       targetDestroyed: false,
       targetCountered: false,
       targetCounterWeaponSystem: STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON,
@@ -652,6 +664,7 @@ export class TutorialWorld {
     }
 
     if (this.isAlive(attacker)) {
+      shot.damage = damage;
       // 2. A defender in the target's battleground blocks the shot and takes its DMG.
       const blocker = defenders.find(defender =>
         this.isAlive(defender) && defender.operating_ambit === target.operating_ambit

@@ -13,8 +13,8 @@ export class AlphaOwnedComponent extends AbstractViewModelComponent {
   }
 
   getAlphaOwned() {
-    let alpha = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha : 0;
-    return this.numberFormatter.format(alpha);
+    const alpha = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player?.alpha;
+    return alpha === null || alpha === undefined ? '' : this.numberFormatter.formatExact(alpha);
   }
 
   alphaOwnedHandler(event) {

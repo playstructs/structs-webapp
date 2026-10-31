@@ -41,6 +41,9 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 #enable mod_rewrite
 RUN a2enmod rewrite
 
+# Virtual-host policy must preserve encoded denomination slashes until routing.
+COPY ./docker/apache/structs.conf /etc/apache2/sites-available/000-default.conf
+
 # Copy the source files from the local machine to the container
 COPY ./src /src
 
@@ -63,4 +66,8 @@ WORKDIR /src
 #RUN "composer update"
 
 # Install JS project dependencies
-RUN npm install
+RUN npm ci && npm run build
+
+# Apache must be able to create Symfony cache and log files in a clean image.
+RUN mkdir -p /src/var/cache /src/var/log && \
+    chown -R www-data:www-data /src/var

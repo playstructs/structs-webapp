@@ -384,7 +384,7 @@ class TableReadManagerTest extends ApiManagerTestCase
 
         $this->manager($connection, [])->ledgerListAll(1);
 
-        $this->assertStringContainsString('ORDER BY time DESC, id DESC', $captured);
+        $this->assertStringContainsString('ORDER BY structs.ledger.time DESC, structs.ledger.id DESC', $captured);
     }
 
     public function testGridHonoursAllowlistedOrder(): void
@@ -415,6 +415,58 @@ class TableReadManagerTest extends ApiManagerTestCase
         $this->manager($connection, ['updated_since' => '1700000000'])->structListAll(1);
 
         $this->assertStringContainsString('updated_at > to_timestamp(:updated_since)', $captured);
+    }
+
+    /** All catalog variants and totals exclude retired replay tombstones. */
+    public function testDefusionCatalogUsesCurrentReceiptsAndPreservesExactAmounts(): void
+    {
+        foreach (['defusionAll', 'defusionByValidator', 'defusionByDelegator'] as $method) {
+            $queries = [];
+            $row = [
+                'validator_address' => 'structsvaloper1pa4ch99mktue309avws5xxp70t4rr5egxfmcmp',
+                'delegator_address' => 'structs1q3nx9j4qcqaf4p2qjc9zxqxrccg4renc2fyaw5',
+                'defusion_type' => 'u',
+                'amount_p' => '18446744073709551616',
+                'amount' => '18446744073709.551616',
+                'denom' => 'ualpha',
+                'completed_at' => '2026-05-01 00:00:00+00',
+                'created_at' => '2026-04-01 00:00:00+00',
+                'pending_state' => 'unknown',
+                'reconciled_height' => null,
+            ];
+            $connection = $this->createMock(Connection::class);
+            $connection->expects($this->once())->method('fetchAllAssociative')
+                ->willReturnCallback(function (string $sql) use (&$queries, $row) {
+                    $queries[] = $sql;
+                    return [$row];
+                });
+            $connection->expects($this->once())->method('fetchOne')
+                ->willReturnCallback(function (string $sql) use (&$queries) {
+                    $queries[] = $sql;
+                    return 1;
+                });
+            $manager = $this->manager($connection, ['include_total' => '1']);
+            $args = match ($method) {
+                'defusionByValidator' => [$row['validator_address'], 1],
+                'defusionByDelegator' => [$row['delegator_address'], 1],
+                default => [1],
+            };
+            $response = $manager->{$method}(...$args);
+            $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+            $content = json_decode($response->getContent(), true);
+            $this->assertSame($row, $content['data'][0]);
+            $this->assertSame(1, $content['total']);
+            foreach ($queries as $query) {
+                $this->assertStringContainsString('FROM structs.defusion_current', $query);
+                if ($method === 'defusionByValidator') {
+                    $this->assertStringContainsString('validator_address = :validator_address', $query);
+                } elseif ($method === 'defusionByDelegator') {
+                    $this->assertStringContainsString('delegator_address = :delegator_address', $query);
+                }
+            }
+            $this->assertStringContainsString('amount_p::text AS amount_p', $queries[0]);
+            $this->assertStringContainsString('block_height::text AS block_height', $queries[0]);
+        }
     }
 
     private function manager(Connection $connection, array $query): TableReadManager

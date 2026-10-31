@@ -77,6 +77,17 @@ class StructController extends AbstractController
      * @return Response
      * @throws Exception
      */
+    #[Route('/api/struct/{struct_id}/generator', name: 'api_get_generator_snapshot', methods: ['GET'])]
+    public function getGeneratorSnapshot(
+        string $struct_id,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $structManager = new StructManager($entityManager, $validator);
+        return $structManager->getGeneratorSnapshot($struct_id, $request->query->get('address'));
+    }
+
     #[Route('/api/struct/{struct_id}', name: 'api_get_struct', methods: ['GET'])]
     public function getStruct(
         string $struct_id,

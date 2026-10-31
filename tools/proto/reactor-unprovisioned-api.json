@@ -1,0 +1,105 @@
+{
+    "success": true,
+    "errors": [],
+    "data": {
+        "fuel": "18014398509",
+        "power": "0",
+        "ratio": "1000",
+        "fuel_p": "18014398509481988",
+        "address": null,
+        "power_p": "3",
+        "ratio_p": "1",
+        "defusing": "0",
+        "owner_id": "1-991087",
+        "player_id": "1-991087",
+        "positions": [
+            {
+                "address": "structs1tdd4kk6mtdd4kk6mtdd4kk6mtdd4kk6mmxxfzx",
+                "is_vault": true,
+                "owner_id": "1-991087",
+                "recorded_owner_id": null,
+                "validator": "structsvaloper1t4w46h2at4w46h2at4w46h2at4w46h2aucm8a5",
+                "native_ready": true,
+                "source_height": "3353000",
+                "fuel_p": "9007199254740995",
+                "defusing_p": "9",
+                "unbonding_entries": 2,
+                "power_p": "0",
+                "owner_power_p": "0",
+                "power_ready": true,
+                "stored_fuel_p": null,
+                "stored_defusing_p": null,
+                "ratio_p": null,
+                "commission": null
+            },
+            {
+                "fuel_p": "9007199254740993",
+                "address": "structs1t3w9chzut3w9chzut3w9chzut3w9chzumkpv96",
+                "power_p": "3",
+                "ratio_p": "1",
+                "is_vault": false,
+                "owner_id": "1-991087",
+                "validator": "structsvaloper1t4w46h2at4w46h2at4w46h2at4w46h2aucm8a5",
+                "commission": "0.5",
+                "defusing_p": "7",
+                "power_ready": true,
+                "native_ready": true,
+                "owner_power_p": "1",
+                "source_height": "3353000",
+                "stored_fuel_p": "8000000",
+                "recorded_owner_id": "1-991087",
+                "stored_defusing_p": "999",
+                "unbonding_entries": 1
+            }
+        ],
+        "validator": "structsvaloper1t4w46h2at4w46h2at4w46h2at4w46h2aucm8a5",
+        "commission": "50",
+        "created_at": "2026-10-30T02:23:44.463605+00:00",
+        "defusing_p": "16",
+        "updated_at": "2026-10-30T02:23:44.463605+00:00",
+        "owner_power": "0",
+        "owner_power_p": "1",
+        "vault_address": "structs1tdd4kk6mtdd4kk6mtdd4kk6mtdd4kk6mmxxfzx",
+        "destination_id": "3-991087",
+        "positions_meta": {
+            "height": "3353000",
+            "reason": null,
+            "complete": true,
+            "power_ready": true,
+            "address_limit": 1024,
+            "eligibility_checked": false,
+            "minimum_source_height": "3353000",
+            "vault_provisioned": false,
+            "vault_source": "chain_snapshot"
+        },
+        "destination_type": "reactor",
+        "preview_commission": "0.5",
+        "join_infusion_minimum": null,
+        "join_infusion_minimum_p": null
+    },
+    "meta": {
+        "height": "3353000",
+        "models": {
+            "inventory": {
+                "ready": true,
+                "height": "3353000",
+                "source_time": "2026-10-30T02:00:00+00:00"
+            }
+        },
+        "chain_id": "structstestnet-111",
+        "protocol": "v0.22.0",
+        "data_ready": true,
+        "cache_epoch": "structs-api-v022-1:v0.22.0",
+        "source_time": "2026-10-30T02:00:00+00:00",
+        "api_contract": "structs-api-v022-1",
+        "observed_tip": "3353000",
+        "indexed_height": "3353000",
+        "required_models": [
+            "inventory"
+        ],
+        "activation_height": "3353000",
+        "observed_protocol": "v0.22.0",
+        "transaction_ready": true,
+        "inventory_authority": "current-claims-v1"
+    }
+}

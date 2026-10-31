@@ -8,6 +8,7 @@ use App\Dto\ApiResponseContentDto;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
 use App\Util\ResponseMetaUtil;
+use App\Util\ConsistentRead;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -161,9 +162,11 @@ class LeaderboardManager
             LIMIT {$pageLimit}";
 
         $db = $this->entityManager->getConnection();
-        $responseContent->data = $db->fetchAllAssociative($sql);
-        $responseContent->success = true;
-        ResponseMetaUtil::stampHeight($responseContent, $this->entityManager, $config['model']);
+        ConsistentRead::run($db, function () use ($db, $sql, $responseContent, $config): void {
+            $responseContent->data = $db->fetchAllAssociative($sql);
+            $responseContent->meta = ResponseMetaUtil::snapshotMeta($db, $config['model']);
+            $responseContent->success = true;
+        });
 
         return new JsonResponse($responseContent, Response::HTTP_OK);
     }

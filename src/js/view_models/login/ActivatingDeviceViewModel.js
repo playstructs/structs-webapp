@@ -20,15 +20,14 @@ export class ActivatingDeviceViewModel extends AbstractViewModel {
   }
 
   initPageCode() {
-    this.authManager.login(this.activationCodeInfo.player_id).then(async function (success) {
-      if (success) {
-        MenuPage.router.goto('Auth', 'loginActivateDeviceComplete');
-      } else {
-        MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
+    const signal=MenuPage.router.navigationSignal;
+    this.authManager.completeDeviceActivation(this.activationCodeInfo,signal).then(success=>{
+      if (!signal.aborted) MenuPage.router.goto('Auth',success ? 'loginActivateDeviceComplete' : 'loginActivateDeviceCancelled');
+    }).catch(error=>{
+      if (!signal.aborted) {
+        console.debug('[DeviceActivation] login unavailable:',error);
+        MenuPage.router.goto('Auth','loginActivateDeviceCancelled');
       }
-    }.bind(this)).catch((e) => {
-      console.log(e);
-      MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
     });
   }
 

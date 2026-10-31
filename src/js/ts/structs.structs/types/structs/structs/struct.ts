@@ -45,78 +45,57 @@ import {
 export const protobufPackage = "structs.structs";
 
 export interface Struct {
-  /** What it is */
   id: string;
-  index: number;
-  type: number;
-  /** Who is it */
+  index: string;
+  type: string;
   creator: string;
   owner: string;
-  /** Where it is */
   locationType: objectType;
   locationId: string;
   operatingAmbit: ambit;
-  slot: number;
+  slot: string;
 }
 
 export interface StructType {
-  id: number;
-  /** TODO Deprecating... Will match with Class for now. */
+  id: string;
   type: string;
-  /** New Struct Type Identity Details */
   class: string;
   classAbbreviation: string;
   defaultCosmeticModelNumber: string;
   defaultCosmeticName: string;
-  /** Fundamental attributes */
   category: objectType;
-  /** How many of this Struct Type a player can have */
-  buildLimit: number;
-  /** How much compute is needed to build */
-  buildDifficulty: number;
-  /** How much energy the Struct consumes during building */
-  buildDraw: number;
-  /** How much damage can it take */
-  maxHealth: number;
-  /** How much energy the Struct consumes when active */
-  passiveDraw: number;
-  /**
-   * Details about location and movement
-   * TODO move category to here and make it flag based too
-   * Replicate what was done for ambits flags
-   */
-  possibleAmbit: number;
-  /** Can the Struct change ambit? */
+  buildLimit: string;
+  buildDifficulty: string;
+  buildDraw: string;
+  maxHealth: string;
+  passiveDraw: string;
+  possibleAmbit: string;
   movable: boolean;
-  /** Does the Struct occupy a slot. Trying to find something to help set Command Ships apart */
   slotBound: boolean;
-  /** Primary Weapon Configuration */
   primaryWeapon: techActiveWeaponry;
   primaryWeaponControl: techWeaponControl;
-  primaryWeaponCharge: number;
-  primaryWeaponAmbits: number;
-  primaryWeaponTargets: number;
-  primaryWeaponShots: number;
-  primaryWeaponDamage: number;
+  primaryWeaponCharge: string;
+  primaryWeaponAmbits: string;
+  primaryWeaponTargets: string;
+  primaryWeaponShots: string;
+  primaryWeaponDamage: string;
   primaryWeaponBlockable: boolean;
   primaryWeaponCounterable: boolean;
-  primaryWeaponRecoilDamage: number;
-  primaryWeaponShotSuccessRateNumerator: number;
-  primaryWeaponShotSuccessRateDenominator: number;
-  /** Secondary Weapon Configuration */
+  primaryWeaponRecoilDamage: string;
+  primaryWeaponShotSuccessRateNumerator: string;
+  primaryWeaponShotSuccessRateDenominator: string;
   secondaryWeapon: techActiveWeaponry;
   secondaryWeaponControl: techWeaponControl;
-  secondaryWeaponCharge: number;
-  secondaryWeaponAmbits: number;
-  secondaryWeaponTargets: number;
-  secondaryWeaponShots: number;
-  secondaryWeaponDamage: number;
+  secondaryWeaponCharge: string;
+  secondaryWeaponAmbits: string;
+  secondaryWeaponTargets: string;
+  secondaryWeaponShots: string;
+  secondaryWeaponDamage: string;
   secondaryWeaponBlockable: boolean;
   secondaryWeaponCounterable: boolean;
-  secondaryWeaponRecoilDamage: number;
-  secondaryWeaponShotSuccessRateNumerator: number;
-  secondaryWeaponShotSuccessRateDenominator: number;
-  /** Tech Tree Features */
+  secondaryWeaponRecoilDamage: string;
+  secondaryWeaponShotSuccessRateNumerator: string;
+  secondaryWeaponShotSuccessRateDenominator: string;
   passiveWeaponry: techPassiveWeaponry;
   unitDefenses: techUnitDefenses;
   oreReserveDefenses: techOreReserveDefenses;
@@ -124,43 +103,30 @@ export interface StructType {
   planetaryMining: techPlanetaryMining;
   planetaryRefinery: techPlanetaryRefineries;
   powerGeneration: techPowerGeneration;
-  /** Charge uses */
-  activateCharge: number;
-  buildCharge: number;
-  defendChangeCharge: number;
-  moveCharge: number;
-  stealthActivateCharge: number;
-  /** Tech Tree Attributes */
-  attackReduction: number;
-  /** For Indirect Combat Module */
+  activateCharge: string;
+  buildCharge: string;
+  defendChangeCharge: string;
+  moveCharge: string;
+  stealthActivateCharge: string;
+  attackReduction: string;
   attackCounterable: boolean;
-  /** For Stealth Mode */
   stealthSystems: boolean;
-  /** Counter */
-  counterAttack: number;
-  /** Advanced Counter */
-  counterAttackSameAmbit: number;
-  postDestructionDamage: number;
-  /** Power Generation */
-  generatingRate: number;
-  /** The shield that is added to the Planet */
-  planetaryShieldContribution: number;
-  oreMiningDifficulty: number;
-  oreRefiningDifficulty: number;
-  unguidedDefensiveSuccessRateNumerator: number;
-  unguidedDefensiveSuccessRateDenominator: number;
-  guidedDefensiveSuccessRateNumerator: number;
-  guidedDefensiveSuccessRateDenominator: number;
-  /**
-   * I wish this was higher up in a different area of the definition
-   * but I really don't feel like renumbering this entire thing again.
-   */
+  counterAttack: string;
+  counterAttackSameAmbit: string;
+  postDestructionDamage: string;
+  generatingRate: string;
+  planetaryShieldContribution: string;
+  oreMiningDifficulty: string;
+  oreRefiningDifficulty: string;
+  unguidedDefensiveSuccessRateNumerator: string;
+  unguidedDefensiveSuccessRateDenominator: string;
+  guidedDefensiveSuccessRateNumerator: string;
+  guidedDefensiveSuccessRateDenominator: string;
   triggerRaidDefeatByDestruction: boolean;
-  primaryWeaponGuaranteedShots: number;
-  secondaryWeaponGuaranteedShots: number;
+  primaryWeaponGuaranteedShots: string;
+  secondaryWeaponGuaranteedShots: string;
   primaryWeaponArmourPiercing: boolean;
   secondaryWeaponArmourPiercing: boolean;
-  /** Can this struct register as a defender? (fleet: true, planetary: false) */
   canDefend: boolean;
 }
 
@@ -175,21 +141,17 @@ export interface StructDefenders {
 
 export interface StructAttributeRecord {
   attributeId: string;
-  value: number;
+  value: string;
 }
 
 export interface StructAttributes {
-  health: number;
-  status: number;
-  blockStartBuild: number;
-  /**
-   * Deprecated: ore mine/refine clocks live on PlanetAttributes as of v0.21.0.
-   * These fields remain for wire compatibility and always read 0 after migration.
-   */
-  blockStartOreMine: number;
-  blockStartOreRefine: number;
-  protectedStructIndex: number;
-  typeCount: number;
+  health: string;
+  status: string;
+  blockStartBuild: string;
+  blockStartOreMine: string;
+  blockStartOreRefine: string;
+  protectedStructIndex: string;
+  typeCount: string;
   isMaterialized: boolean;
   isBuilt: boolean;
   isOnline: boolean;
@@ -199,21 +161,21 @@ export interface StructAttributes {
 }
 
 export interface StructDestructionQueueRecord {
-  sweepHeight: number;
+  sweepHeight: string;
   structId: string;
 }
 
 function createBaseStruct(): Struct {
   return {
     id: "",
-    index: 0,
-    type: 0,
+    index: "0",
+    type: "0",
     creator: "",
     owner: "",
     locationType: 0,
     locationId: "",
     operatingAmbit: 0,
-    slot: 0,
+    slot: "0",
   };
 }
 
@@ -222,10 +184,10 @@ export const Struct: MessageFns<Struct> = {
     if (message.id !== "") {
       writer.uint32(10).string(message.id);
     }
-    if (message.index !== 0) {
+    if (message.index !== "0") {
       writer.uint32(16).uint64(message.index);
     }
-    if (message.type !== 0) {
+    if (message.type !== "0") {
       writer.uint32(24).uint64(message.type);
     }
     if (message.creator !== "") {
@@ -243,7 +205,7 @@ export const Struct: MessageFns<Struct> = {
     if (message.operatingAmbit !== 0) {
       writer.uint32(64).int32(message.operatingAmbit);
     }
-    if (message.slot !== 0) {
+    if (message.slot !== "0") {
       writer.uint32(72).uint64(message.slot);
     }
     return writer;
@@ -269,7 +231,7 @@ export const Struct: MessageFns<Struct> = {
             break;
           }
 
-          message.index = longToNumber(reader.uint64());
+          message.index = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -277,7 +239,7 @@ export const Struct: MessageFns<Struct> = {
             break;
           }
 
-          message.type = longToNumber(reader.uint64());
+          message.type = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -325,7 +287,7 @@ export const Struct: MessageFns<Struct> = {
             break;
           }
 
-          message.slot = longToNumber(reader.uint64());
+          message.slot = reader.uint64().toString();
           continue;
         }
       }
@@ -340,14 +302,14 @@ export const Struct: MessageFns<Struct> = {
   fromJSON(object: any): Struct {
     return {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
-      index: isSet(object.index) ? globalThis.Number(object.index) : 0,
-      type: isSet(object.type) ? globalThis.Number(object.type) : 0,
+      index: isSet(object.index) ? globalThis.String(object.index) : "0",
+      type: isSet(object.type) ? globalThis.String(object.type) : "0",
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
       locationType: isSet(object.locationType) ? objectTypeFromJSON(object.locationType) : 0,
       locationId: isSet(object.locationId) ? globalThis.String(object.locationId) : "",
       operatingAmbit: isSet(object.operatingAmbit) ? ambitFromJSON(object.operatingAmbit) : 0,
-      slot: isSet(object.slot) ? globalThis.Number(object.slot) : 0,
+      slot: isSet(object.slot) ? globalThis.String(object.slot) : "0",
     };
   },
 
@@ -356,11 +318,11 @@ export const Struct: MessageFns<Struct> = {
     if (message.id !== "") {
       obj.id = message.id;
     }
-    if (message.index !== 0) {
-      obj.index = Math.round(message.index);
+    if (message.index !== "0") {
+      obj.index = message.index;
     }
-    if (message.type !== 0) {
-      obj.type = Math.round(message.type);
+    if (message.type !== "0") {
+      obj.type = message.type;
     }
     if (message.creator !== "") {
       obj.creator = message.creator;
@@ -377,8 +339,8 @@ export const Struct: MessageFns<Struct> = {
     if (message.operatingAmbit !== 0) {
       obj.operatingAmbit = ambitToJSON(message.operatingAmbit);
     }
-    if (message.slot !== 0) {
-      obj.slot = Math.round(message.slot);
+    if (message.slot !== "0") {
+      obj.slot = message.slot;
     }
     return obj;
   },
@@ -389,59 +351,59 @@ export const Struct: MessageFns<Struct> = {
   fromPartial<I extends Exact<DeepPartial<Struct>, I>>(object: I): Struct {
     const message = createBaseStruct();
     message.id = object.id ?? "";
-    message.index = object.index ?? 0;
-    message.type = object.type ?? 0;
+    message.index = object.index ?? "0";
+    message.type = object.type ?? "0";
     message.creator = object.creator ?? "";
     message.owner = object.owner ?? "";
     message.locationType = object.locationType ?? 0;
     message.locationId = object.locationId ?? "";
     message.operatingAmbit = object.operatingAmbit ?? 0;
-    message.slot = object.slot ?? 0;
+    message.slot = object.slot ?? "0";
     return message;
   },
 };
 
 function createBaseStructType(): StructType {
   return {
-    id: 0,
+    id: "0",
     type: "",
     class: "",
     classAbbreviation: "",
     defaultCosmeticModelNumber: "",
     defaultCosmeticName: "",
     category: 0,
-    buildLimit: 0,
-    buildDifficulty: 0,
-    buildDraw: 0,
-    maxHealth: 0,
-    passiveDraw: 0,
-    possibleAmbit: 0,
+    buildLimit: "0",
+    buildDifficulty: "0",
+    buildDraw: "0",
+    maxHealth: "0",
+    passiveDraw: "0",
+    possibleAmbit: "0",
     movable: false,
     slotBound: false,
     primaryWeapon: 0,
     primaryWeaponControl: 0,
-    primaryWeaponCharge: 0,
-    primaryWeaponAmbits: 0,
-    primaryWeaponTargets: 0,
-    primaryWeaponShots: 0,
-    primaryWeaponDamage: 0,
+    primaryWeaponCharge: "0",
+    primaryWeaponAmbits: "0",
+    primaryWeaponTargets: "0",
+    primaryWeaponShots: "0",
+    primaryWeaponDamage: "0",
     primaryWeaponBlockable: false,
     primaryWeaponCounterable: false,
-    primaryWeaponRecoilDamage: 0,
-    primaryWeaponShotSuccessRateNumerator: 0,
-    primaryWeaponShotSuccessRateDenominator: 0,
+    primaryWeaponRecoilDamage: "0",
+    primaryWeaponShotSuccessRateNumerator: "0",
+    primaryWeaponShotSuccessRateDenominator: "0",
     secondaryWeapon: 0,
     secondaryWeaponControl: 0,
-    secondaryWeaponCharge: 0,
-    secondaryWeaponAmbits: 0,
-    secondaryWeaponTargets: 0,
-    secondaryWeaponShots: 0,
-    secondaryWeaponDamage: 0,
+    secondaryWeaponCharge: "0",
+    secondaryWeaponAmbits: "0",
+    secondaryWeaponTargets: "0",
+    secondaryWeaponShots: "0",
+    secondaryWeaponDamage: "0",
     secondaryWeaponBlockable: false,
     secondaryWeaponCounterable: false,
-    secondaryWeaponRecoilDamage: 0,
-    secondaryWeaponShotSuccessRateNumerator: 0,
-    secondaryWeaponShotSuccessRateDenominator: 0,
+    secondaryWeaponRecoilDamage: "0",
+    secondaryWeaponShotSuccessRateNumerator: "0",
+    secondaryWeaponShotSuccessRateDenominator: "0",
     passiveWeaponry: 0,
     unitDefenses: 0,
     oreReserveDefenses: 0,
@@ -449,28 +411,28 @@ function createBaseStructType(): StructType {
     planetaryMining: 0,
     planetaryRefinery: 0,
     powerGeneration: 0,
-    activateCharge: 0,
-    buildCharge: 0,
-    defendChangeCharge: 0,
-    moveCharge: 0,
-    stealthActivateCharge: 0,
-    attackReduction: 0,
+    activateCharge: "0",
+    buildCharge: "0",
+    defendChangeCharge: "0",
+    moveCharge: "0",
+    stealthActivateCharge: "0",
+    attackReduction: "0",
     attackCounterable: false,
     stealthSystems: false,
-    counterAttack: 0,
-    counterAttackSameAmbit: 0,
-    postDestructionDamage: 0,
-    generatingRate: 0,
-    planetaryShieldContribution: 0,
-    oreMiningDifficulty: 0,
-    oreRefiningDifficulty: 0,
-    unguidedDefensiveSuccessRateNumerator: 0,
-    unguidedDefensiveSuccessRateDenominator: 0,
-    guidedDefensiveSuccessRateNumerator: 0,
-    guidedDefensiveSuccessRateDenominator: 0,
+    counterAttack: "0",
+    counterAttackSameAmbit: "0",
+    postDestructionDamage: "0",
+    generatingRate: "0",
+    planetaryShieldContribution: "0",
+    oreMiningDifficulty: "0",
+    oreRefiningDifficulty: "0",
+    unguidedDefensiveSuccessRateNumerator: "0",
+    unguidedDefensiveSuccessRateDenominator: "0",
+    guidedDefensiveSuccessRateNumerator: "0",
+    guidedDefensiveSuccessRateDenominator: "0",
     triggerRaidDefeatByDestruction: false,
-    primaryWeaponGuaranteedShots: 0,
-    secondaryWeaponGuaranteedShots: 0,
+    primaryWeaponGuaranteedShots: "0",
+    secondaryWeaponGuaranteedShots: "0",
     primaryWeaponArmourPiercing: false,
     secondaryWeaponArmourPiercing: false,
     canDefend: false,
@@ -479,7 +441,7 @@ function createBaseStructType(): StructType {
 
 export const StructType: MessageFns<StructType> = {
   encode(message: StructType, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== 0) {
+    if (message.id !== "0") {
       writer.uint32(8).uint64(message.id);
     }
     if (message.type !== "") {
@@ -500,22 +462,22 @@ export const StructType: MessageFns<StructType> = {
     if (message.category !== 0) {
       writer.uint32(24).int32(message.category);
     }
-    if (message.buildLimit !== 0) {
+    if (message.buildLimit !== "0") {
       writer.uint32(32).uint64(message.buildLimit);
     }
-    if (message.buildDifficulty !== 0) {
+    if (message.buildDifficulty !== "0") {
       writer.uint32(40).uint64(message.buildDifficulty);
     }
-    if (message.buildDraw !== 0) {
+    if (message.buildDraw !== "0") {
       writer.uint32(48).uint64(message.buildDraw);
     }
-    if (message.maxHealth !== 0) {
+    if (message.maxHealth !== "0") {
       writer.uint32(56).uint64(message.maxHealth);
     }
-    if (message.passiveDraw !== 0) {
+    if (message.passiveDraw !== "0") {
       writer.uint32(64).uint64(message.passiveDraw);
     }
-    if (message.possibleAmbit !== 0) {
+    if (message.possibleAmbit !== "0") {
       writer.uint32(72).uint64(message.possibleAmbit);
     }
     if (message.movable !== false) {
@@ -530,19 +492,19 @@ export const StructType: MessageFns<StructType> = {
     if (message.primaryWeaponControl !== 0) {
       writer.uint32(104).int32(message.primaryWeaponControl);
     }
-    if (message.primaryWeaponCharge !== 0) {
+    if (message.primaryWeaponCharge !== "0") {
       writer.uint32(112).uint64(message.primaryWeaponCharge);
     }
-    if (message.primaryWeaponAmbits !== 0) {
+    if (message.primaryWeaponAmbits !== "0") {
       writer.uint32(120).uint64(message.primaryWeaponAmbits);
     }
-    if (message.primaryWeaponTargets !== 0) {
+    if (message.primaryWeaponTargets !== "0") {
       writer.uint32(128).uint64(message.primaryWeaponTargets);
     }
-    if (message.primaryWeaponShots !== 0) {
+    if (message.primaryWeaponShots !== "0") {
       writer.uint32(136).uint64(message.primaryWeaponShots);
     }
-    if (message.primaryWeaponDamage !== 0) {
+    if (message.primaryWeaponDamage !== "0") {
       writer.uint32(144).uint64(message.primaryWeaponDamage);
     }
     if (message.primaryWeaponBlockable !== false) {
@@ -551,13 +513,13 @@ export const StructType: MessageFns<StructType> = {
     if (message.primaryWeaponCounterable !== false) {
       writer.uint32(160).bool(message.primaryWeaponCounterable);
     }
-    if (message.primaryWeaponRecoilDamage !== 0) {
+    if (message.primaryWeaponRecoilDamage !== "0") {
       writer.uint32(168).uint64(message.primaryWeaponRecoilDamage);
     }
-    if (message.primaryWeaponShotSuccessRateNumerator !== 0) {
+    if (message.primaryWeaponShotSuccessRateNumerator !== "0") {
       writer.uint32(176).uint64(message.primaryWeaponShotSuccessRateNumerator);
     }
-    if (message.primaryWeaponShotSuccessRateDenominator !== 0) {
+    if (message.primaryWeaponShotSuccessRateDenominator !== "0") {
       writer.uint32(184).uint64(message.primaryWeaponShotSuccessRateDenominator);
     }
     if (message.secondaryWeapon !== 0) {
@@ -566,19 +528,19 @@ export const StructType: MessageFns<StructType> = {
     if (message.secondaryWeaponControl !== 0) {
       writer.uint32(200).int32(message.secondaryWeaponControl);
     }
-    if (message.secondaryWeaponCharge !== 0) {
+    if (message.secondaryWeaponCharge !== "0") {
       writer.uint32(208).uint64(message.secondaryWeaponCharge);
     }
-    if (message.secondaryWeaponAmbits !== 0) {
+    if (message.secondaryWeaponAmbits !== "0") {
       writer.uint32(216).uint64(message.secondaryWeaponAmbits);
     }
-    if (message.secondaryWeaponTargets !== 0) {
+    if (message.secondaryWeaponTargets !== "0") {
       writer.uint32(224).uint64(message.secondaryWeaponTargets);
     }
-    if (message.secondaryWeaponShots !== 0) {
+    if (message.secondaryWeaponShots !== "0") {
       writer.uint32(232).uint64(message.secondaryWeaponShots);
     }
-    if (message.secondaryWeaponDamage !== 0) {
+    if (message.secondaryWeaponDamage !== "0") {
       writer.uint32(240).uint64(message.secondaryWeaponDamage);
     }
     if (message.secondaryWeaponBlockable !== false) {
@@ -587,13 +549,13 @@ export const StructType: MessageFns<StructType> = {
     if (message.secondaryWeaponCounterable !== false) {
       writer.uint32(256).bool(message.secondaryWeaponCounterable);
     }
-    if (message.secondaryWeaponRecoilDamage !== 0) {
+    if (message.secondaryWeaponRecoilDamage !== "0") {
       writer.uint32(264).uint64(message.secondaryWeaponRecoilDamage);
     }
-    if (message.secondaryWeaponShotSuccessRateNumerator !== 0) {
+    if (message.secondaryWeaponShotSuccessRateNumerator !== "0") {
       writer.uint32(272).uint64(message.secondaryWeaponShotSuccessRateNumerator);
     }
-    if (message.secondaryWeaponShotSuccessRateDenominator !== 0) {
+    if (message.secondaryWeaponShotSuccessRateDenominator !== "0") {
       writer.uint32(280).uint64(message.secondaryWeaponShotSuccessRateDenominator);
     }
     if (message.passiveWeaponry !== 0) {
@@ -617,22 +579,22 @@ export const StructType: MessageFns<StructType> = {
     if (message.powerGeneration !== 0) {
       writer.uint32(336).int32(message.powerGeneration);
     }
-    if (message.activateCharge !== 0) {
+    if (message.activateCharge !== "0") {
       writer.uint32(344).uint64(message.activateCharge);
     }
-    if (message.buildCharge !== 0) {
+    if (message.buildCharge !== "0") {
       writer.uint32(352).uint64(message.buildCharge);
     }
-    if (message.defendChangeCharge !== 0) {
+    if (message.defendChangeCharge !== "0") {
       writer.uint32(360).uint64(message.defendChangeCharge);
     }
-    if (message.moveCharge !== 0) {
+    if (message.moveCharge !== "0") {
       writer.uint32(368).uint64(message.moveCharge);
     }
-    if (message.stealthActivateCharge !== 0) {
+    if (message.stealthActivateCharge !== "0") {
       writer.uint32(376).uint64(message.stealthActivateCharge);
     }
-    if (message.attackReduction !== 0) {
+    if (message.attackReduction !== "0") {
       writer.uint32(384).uint64(message.attackReduction);
     }
     if (message.attackCounterable !== false) {
@@ -641,46 +603,46 @@ export const StructType: MessageFns<StructType> = {
     if (message.stealthSystems !== false) {
       writer.uint32(400).bool(message.stealthSystems);
     }
-    if (message.counterAttack !== 0) {
+    if (message.counterAttack !== "0") {
       writer.uint32(408).uint64(message.counterAttack);
     }
-    if (message.counterAttackSameAmbit !== 0) {
+    if (message.counterAttackSameAmbit !== "0") {
       writer.uint32(416).uint64(message.counterAttackSameAmbit);
     }
-    if (message.postDestructionDamage !== 0) {
+    if (message.postDestructionDamage !== "0") {
       writer.uint32(424).uint64(message.postDestructionDamage);
     }
-    if (message.generatingRate !== 0) {
+    if (message.generatingRate !== "0") {
       writer.uint32(432).uint64(message.generatingRate);
     }
-    if (message.planetaryShieldContribution !== 0) {
+    if (message.planetaryShieldContribution !== "0") {
       writer.uint32(440).uint64(message.planetaryShieldContribution);
     }
-    if (message.oreMiningDifficulty !== 0) {
+    if (message.oreMiningDifficulty !== "0") {
       writer.uint32(448).uint64(message.oreMiningDifficulty);
     }
-    if (message.oreRefiningDifficulty !== 0) {
+    if (message.oreRefiningDifficulty !== "0") {
       writer.uint32(456).uint64(message.oreRefiningDifficulty);
     }
-    if (message.unguidedDefensiveSuccessRateNumerator !== 0) {
+    if (message.unguidedDefensiveSuccessRateNumerator !== "0") {
       writer.uint32(464).uint64(message.unguidedDefensiveSuccessRateNumerator);
     }
-    if (message.unguidedDefensiveSuccessRateDenominator !== 0) {
+    if (message.unguidedDefensiveSuccessRateDenominator !== "0") {
       writer.uint32(472).uint64(message.unguidedDefensiveSuccessRateDenominator);
     }
-    if (message.guidedDefensiveSuccessRateNumerator !== 0) {
+    if (message.guidedDefensiveSuccessRateNumerator !== "0") {
       writer.uint32(480).uint64(message.guidedDefensiveSuccessRateNumerator);
     }
-    if (message.guidedDefensiveSuccessRateDenominator !== 0) {
+    if (message.guidedDefensiveSuccessRateDenominator !== "0") {
       writer.uint32(488).uint64(message.guidedDefensiveSuccessRateDenominator);
     }
     if (message.triggerRaidDefeatByDestruction !== false) {
       writer.uint32(496).bool(message.triggerRaidDefeatByDestruction);
     }
-    if (message.primaryWeaponGuaranteedShots !== 0) {
+    if (message.primaryWeaponGuaranteedShots !== "0") {
       writer.uint32(536).uint64(message.primaryWeaponGuaranteedShots);
     }
-    if (message.secondaryWeaponGuaranteedShots !== 0) {
+    if (message.secondaryWeaponGuaranteedShots !== "0") {
       writer.uint32(544).uint64(message.secondaryWeaponGuaranteedShots);
     }
     if (message.primaryWeaponArmourPiercing !== false) {
@@ -707,7 +669,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.id = longToNumber(reader.uint64());
+          message.id = reader.uint64().toString();
           continue;
         }
         case 2: {
@@ -763,7 +725,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.buildLimit = longToNumber(reader.uint64());
+          message.buildLimit = reader.uint64().toString();
           continue;
         }
         case 5: {
@@ -771,7 +733,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.buildDifficulty = longToNumber(reader.uint64());
+          message.buildDifficulty = reader.uint64().toString();
           continue;
         }
         case 6: {
@@ -779,7 +741,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.buildDraw = longToNumber(reader.uint64());
+          message.buildDraw = reader.uint64().toString();
           continue;
         }
         case 7: {
@@ -787,7 +749,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.maxHealth = longToNumber(reader.uint64());
+          message.maxHealth = reader.uint64().toString();
           continue;
         }
         case 8: {
@@ -795,7 +757,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.passiveDraw = longToNumber(reader.uint64());
+          message.passiveDraw = reader.uint64().toString();
           continue;
         }
         case 9: {
@@ -803,7 +765,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.possibleAmbit = longToNumber(reader.uint64());
+          message.possibleAmbit = reader.uint64().toString();
           continue;
         }
         case 10: {
@@ -843,7 +805,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.primaryWeaponCharge = longToNumber(reader.uint64());
+          message.primaryWeaponCharge = reader.uint64().toString();
           continue;
         }
         case 15: {
@@ -851,7 +813,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.primaryWeaponAmbits = longToNumber(reader.uint64());
+          message.primaryWeaponAmbits = reader.uint64().toString();
           continue;
         }
         case 16: {
@@ -859,7 +821,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.primaryWeaponTargets = longToNumber(reader.uint64());
+          message.primaryWeaponTargets = reader.uint64().toString();
           continue;
         }
         case 17: {
@@ -867,7 +829,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.primaryWeaponShots = longToNumber(reader.uint64());
+          message.primaryWeaponShots = reader.uint64().toString();
           continue;
         }
         case 18: {
@@ -875,7 +837,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.primaryWeaponDamage = longToNumber(reader.uint64());
+          message.primaryWeaponDamage = reader.uint64().toString();
           continue;
         }
         case 19: {
@@ -899,7 +861,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.primaryWeaponRecoilDamage = longToNumber(reader.uint64());
+          message.primaryWeaponRecoilDamage = reader.uint64().toString();
           continue;
         }
         case 22: {
@@ -907,7 +869,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.primaryWeaponShotSuccessRateNumerator = longToNumber(reader.uint64());
+          message.primaryWeaponShotSuccessRateNumerator = reader.uint64().toString();
           continue;
         }
         case 23: {
@@ -915,7 +877,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.primaryWeaponShotSuccessRateDenominator = longToNumber(reader.uint64());
+          message.primaryWeaponShotSuccessRateDenominator = reader.uint64().toString();
           continue;
         }
         case 24: {
@@ -939,7 +901,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.secondaryWeaponCharge = longToNumber(reader.uint64());
+          message.secondaryWeaponCharge = reader.uint64().toString();
           continue;
         }
         case 27: {
@@ -947,7 +909,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.secondaryWeaponAmbits = longToNumber(reader.uint64());
+          message.secondaryWeaponAmbits = reader.uint64().toString();
           continue;
         }
         case 28: {
@@ -955,7 +917,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.secondaryWeaponTargets = longToNumber(reader.uint64());
+          message.secondaryWeaponTargets = reader.uint64().toString();
           continue;
         }
         case 29: {
@@ -963,7 +925,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.secondaryWeaponShots = longToNumber(reader.uint64());
+          message.secondaryWeaponShots = reader.uint64().toString();
           continue;
         }
         case 30: {
@@ -971,7 +933,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.secondaryWeaponDamage = longToNumber(reader.uint64());
+          message.secondaryWeaponDamage = reader.uint64().toString();
           continue;
         }
         case 31: {
@@ -995,7 +957,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.secondaryWeaponRecoilDamage = longToNumber(reader.uint64());
+          message.secondaryWeaponRecoilDamage = reader.uint64().toString();
           continue;
         }
         case 34: {
@@ -1003,7 +965,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.secondaryWeaponShotSuccessRateNumerator = longToNumber(reader.uint64());
+          message.secondaryWeaponShotSuccessRateNumerator = reader.uint64().toString();
           continue;
         }
         case 35: {
@@ -1011,7 +973,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.secondaryWeaponShotSuccessRateDenominator = longToNumber(reader.uint64());
+          message.secondaryWeaponShotSuccessRateDenominator = reader.uint64().toString();
           continue;
         }
         case 36: {
@@ -1075,7 +1037,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.activateCharge = longToNumber(reader.uint64());
+          message.activateCharge = reader.uint64().toString();
           continue;
         }
         case 44: {
@@ -1083,7 +1045,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.buildCharge = longToNumber(reader.uint64());
+          message.buildCharge = reader.uint64().toString();
           continue;
         }
         case 45: {
@@ -1091,7 +1053,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.defendChangeCharge = longToNumber(reader.uint64());
+          message.defendChangeCharge = reader.uint64().toString();
           continue;
         }
         case 46: {
@@ -1099,7 +1061,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.moveCharge = longToNumber(reader.uint64());
+          message.moveCharge = reader.uint64().toString();
           continue;
         }
         case 47: {
@@ -1107,7 +1069,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.stealthActivateCharge = longToNumber(reader.uint64());
+          message.stealthActivateCharge = reader.uint64().toString();
           continue;
         }
         case 48: {
@@ -1115,7 +1077,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.attackReduction = longToNumber(reader.uint64());
+          message.attackReduction = reader.uint64().toString();
           continue;
         }
         case 49: {
@@ -1139,7 +1101,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.counterAttack = longToNumber(reader.uint64());
+          message.counterAttack = reader.uint64().toString();
           continue;
         }
         case 52: {
@@ -1147,7 +1109,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.counterAttackSameAmbit = longToNumber(reader.uint64());
+          message.counterAttackSameAmbit = reader.uint64().toString();
           continue;
         }
         case 53: {
@@ -1155,7 +1117,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.postDestructionDamage = longToNumber(reader.uint64());
+          message.postDestructionDamage = reader.uint64().toString();
           continue;
         }
         case 54: {
@@ -1163,7 +1125,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.generatingRate = longToNumber(reader.uint64());
+          message.generatingRate = reader.uint64().toString();
           continue;
         }
         case 55: {
@@ -1171,7 +1133,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.planetaryShieldContribution = longToNumber(reader.uint64());
+          message.planetaryShieldContribution = reader.uint64().toString();
           continue;
         }
         case 56: {
@@ -1179,7 +1141,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.oreMiningDifficulty = longToNumber(reader.uint64());
+          message.oreMiningDifficulty = reader.uint64().toString();
           continue;
         }
         case 57: {
@@ -1187,7 +1149,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.oreRefiningDifficulty = longToNumber(reader.uint64());
+          message.oreRefiningDifficulty = reader.uint64().toString();
           continue;
         }
         case 58: {
@@ -1195,7 +1157,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.unguidedDefensiveSuccessRateNumerator = longToNumber(reader.uint64());
+          message.unguidedDefensiveSuccessRateNumerator = reader.uint64().toString();
           continue;
         }
         case 59: {
@@ -1203,7 +1165,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.unguidedDefensiveSuccessRateDenominator = longToNumber(reader.uint64());
+          message.unguidedDefensiveSuccessRateDenominator = reader.uint64().toString();
           continue;
         }
         case 60: {
@@ -1211,7 +1173,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.guidedDefensiveSuccessRateNumerator = longToNumber(reader.uint64());
+          message.guidedDefensiveSuccessRateNumerator = reader.uint64().toString();
           continue;
         }
         case 61: {
@@ -1219,7 +1181,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.guidedDefensiveSuccessRateDenominator = longToNumber(reader.uint64());
+          message.guidedDefensiveSuccessRateDenominator = reader.uint64().toString();
           continue;
         }
         case 62: {
@@ -1235,7 +1197,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.primaryWeaponGuaranteedShots = longToNumber(reader.uint64());
+          message.primaryWeaponGuaranteedShots = reader.uint64().toString();
           continue;
         }
         case 68: {
@@ -1243,7 +1205,7 @@ export const StructType: MessageFns<StructType> = {
             break;
           }
 
-          message.secondaryWeaponGuaranteedShots = longToNumber(reader.uint64());
+          message.secondaryWeaponGuaranteedShots = reader.uint64().toString();
           continue;
         }
         case 69: {
@@ -1281,7 +1243,7 @@ export const StructType: MessageFns<StructType> = {
 
   fromJSON(object: any): StructType {
     return {
-      id: isSet(object.id) ? globalThis.Number(object.id) : 0,
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
       type: isSet(object.type) ? globalThis.String(object.type) : "",
       class: isSet(object.class) ? globalThis.String(object.class) : "",
       classAbbreviation: isSet(object.classAbbreviation) ? globalThis.String(object.classAbbreviation) : "",
@@ -1290,23 +1252,23 @@ export const StructType: MessageFns<StructType> = {
         : "",
       defaultCosmeticName: isSet(object.defaultCosmeticName) ? globalThis.String(object.defaultCosmeticName) : "",
       category: isSet(object.category) ? objectTypeFromJSON(object.category) : 0,
-      buildLimit: isSet(object.buildLimit) ? globalThis.Number(object.buildLimit) : 0,
-      buildDifficulty: isSet(object.buildDifficulty) ? globalThis.Number(object.buildDifficulty) : 0,
-      buildDraw: isSet(object.buildDraw) ? globalThis.Number(object.buildDraw) : 0,
-      maxHealth: isSet(object.maxHealth) ? globalThis.Number(object.maxHealth) : 0,
-      passiveDraw: isSet(object.passiveDraw) ? globalThis.Number(object.passiveDraw) : 0,
-      possibleAmbit: isSet(object.possibleAmbit) ? globalThis.Number(object.possibleAmbit) : 0,
+      buildLimit: isSet(object.buildLimit) ? globalThis.String(object.buildLimit) : "0",
+      buildDifficulty: isSet(object.buildDifficulty) ? globalThis.String(object.buildDifficulty) : "0",
+      buildDraw: isSet(object.buildDraw) ? globalThis.String(object.buildDraw) : "0",
+      maxHealth: isSet(object.maxHealth) ? globalThis.String(object.maxHealth) : "0",
+      passiveDraw: isSet(object.passiveDraw) ? globalThis.String(object.passiveDraw) : "0",
+      possibleAmbit: isSet(object.possibleAmbit) ? globalThis.String(object.possibleAmbit) : "0",
       movable: isSet(object.movable) ? globalThis.Boolean(object.movable) : false,
       slotBound: isSet(object.slotBound) ? globalThis.Boolean(object.slotBound) : false,
       primaryWeapon: isSet(object.primaryWeapon) ? techActiveWeaponryFromJSON(object.primaryWeapon) : 0,
       primaryWeaponControl: isSet(object.primaryWeaponControl)
         ? techWeaponControlFromJSON(object.primaryWeaponControl)
         : 0,
-      primaryWeaponCharge: isSet(object.primaryWeaponCharge) ? globalThis.Number(object.primaryWeaponCharge) : 0,
-      primaryWeaponAmbits: isSet(object.primaryWeaponAmbits) ? globalThis.Number(object.primaryWeaponAmbits) : 0,
-      primaryWeaponTargets: isSet(object.primaryWeaponTargets) ? globalThis.Number(object.primaryWeaponTargets) : 0,
-      primaryWeaponShots: isSet(object.primaryWeaponShots) ? globalThis.Number(object.primaryWeaponShots) : 0,
-      primaryWeaponDamage: isSet(object.primaryWeaponDamage) ? globalThis.Number(object.primaryWeaponDamage) : 0,
+      primaryWeaponCharge: isSet(object.primaryWeaponCharge) ? globalThis.String(object.primaryWeaponCharge) : "0",
+      primaryWeaponAmbits: isSet(object.primaryWeaponAmbits) ? globalThis.String(object.primaryWeaponAmbits) : "0",
+      primaryWeaponTargets: isSet(object.primaryWeaponTargets) ? globalThis.String(object.primaryWeaponTargets) : "0",
+      primaryWeaponShots: isSet(object.primaryWeaponShots) ? globalThis.String(object.primaryWeaponShots) : "0",
+      primaryWeaponDamage: isSet(object.primaryWeaponDamage) ? globalThis.String(object.primaryWeaponDamage) : "0",
       primaryWeaponBlockable: isSet(object.primaryWeaponBlockable)
         ? globalThis.Boolean(object.primaryWeaponBlockable)
         : false,
@@ -1314,25 +1276,31 @@ export const StructType: MessageFns<StructType> = {
         ? globalThis.Boolean(object.primaryWeaponCounterable)
         : false,
       primaryWeaponRecoilDamage: isSet(object.primaryWeaponRecoilDamage)
-        ? globalThis.Number(object.primaryWeaponRecoilDamage)
-        : 0,
+        ? globalThis.String(object.primaryWeaponRecoilDamage)
+        : "0",
       primaryWeaponShotSuccessRateNumerator: isSet(object.primaryWeaponShotSuccessRateNumerator)
-        ? globalThis.Number(object.primaryWeaponShotSuccessRateNumerator)
-        : 0,
+        ? globalThis.String(object.primaryWeaponShotSuccessRateNumerator)
+        : "0",
       primaryWeaponShotSuccessRateDenominator: isSet(object.primaryWeaponShotSuccessRateDenominator)
-        ? globalThis.Number(object.primaryWeaponShotSuccessRateDenominator)
-        : 0,
+        ? globalThis.String(object.primaryWeaponShotSuccessRateDenominator)
+        : "0",
       secondaryWeapon: isSet(object.secondaryWeapon) ? techActiveWeaponryFromJSON(object.secondaryWeapon) : 0,
       secondaryWeaponControl: isSet(object.secondaryWeaponControl)
         ? techWeaponControlFromJSON(object.secondaryWeaponControl)
         : 0,
-      secondaryWeaponCharge: isSet(object.secondaryWeaponCharge) ? globalThis.Number(object.secondaryWeaponCharge) : 0,
-      secondaryWeaponAmbits: isSet(object.secondaryWeaponAmbits) ? globalThis.Number(object.secondaryWeaponAmbits) : 0,
+      secondaryWeaponCharge: isSet(object.secondaryWeaponCharge)
+        ? globalThis.String(object.secondaryWeaponCharge)
+        : "0",
+      secondaryWeaponAmbits: isSet(object.secondaryWeaponAmbits)
+        ? globalThis.String(object.secondaryWeaponAmbits)
+        : "0",
       secondaryWeaponTargets: isSet(object.secondaryWeaponTargets)
-        ? globalThis.Number(object.secondaryWeaponTargets)
-        : 0,
-      secondaryWeaponShots: isSet(object.secondaryWeaponShots) ? globalThis.Number(object.secondaryWeaponShots) : 0,
-      secondaryWeaponDamage: isSet(object.secondaryWeaponDamage) ? globalThis.Number(object.secondaryWeaponDamage) : 0,
+        ? globalThis.String(object.secondaryWeaponTargets)
+        : "0",
+      secondaryWeaponShots: isSet(object.secondaryWeaponShots) ? globalThis.String(object.secondaryWeaponShots) : "0",
+      secondaryWeaponDamage: isSet(object.secondaryWeaponDamage)
+        ? globalThis.String(object.secondaryWeaponDamage)
+        : "0",
       secondaryWeaponBlockable: isSet(object.secondaryWeaponBlockable)
         ? globalThis.Boolean(object.secondaryWeaponBlockable)
         : false,
@@ -1340,14 +1308,14 @@ export const StructType: MessageFns<StructType> = {
         ? globalThis.Boolean(object.secondaryWeaponCounterable)
         : false,
       secondaryWeaponRecoilDamage: isSet(object.secondaryWeaponRecoilDamage)
-        ? globalThis.Number(object.secondaryWeaponRecoilDamage)
-        : 0,
+        ? globalThis.String(object.secondaryWeaponRecoilDamage)
+        : "0",
       secondaryWeaponShotSuccessRateNumerator: isSet(object.secondaryWeaponShotSuccessRateNumerator)
-        ? globalThis.Number(object.secondaryWeaponShotSuccessRateNumerator)
-        : 0,
+        ? globalThis.String(object.secondaryWeaponShotSuccessRateNumerator)
+        : "0",
       secondaryWeaponShotSuccessRateDenominator: isSet(object.secondaryWeaponShotSuccessRateDenominator)
-        ? globalThis.Number(object.secondaryWeaponShotSuccessRateDenominator)
-        : 0,
+        ? globalThis.String(object.secondaryWeaponShotSuccessRateDenominator)
+        : "0",
       passiveWeaponry: isSet(object.passiveWeaponry) ? techPassiveWeaponryFromJSON(object.passiveWeaponry) : 0,
       unitDefenses: isSet(object.unitDefenses) ? techUnitDefensesFromJSON(object.unitDefenses) : 0,
       oreReserveDefenses: isSet(object.oreReserveDefenses)
@@ -1359,46 +1327,52 @@ export const StructType: MessageFns<StructType> = {
         ? techPlanetaryRefineriesFromJSON(object.planetaryRefinery)
         : 0,
       powerGeneration: isSet(object.powerGeneration) ? techPowerGenerationFromJSON(object.powerGeneration) : 0,
-      activateCharge: isSet(object.activateCharge) ? globalThis.Number(object.activateCharge) : 0,
-      buildCharge: isSet(object.buildCharge) ? globalThis.Number(object.buildCharge) : 0,
-      defendChangeCharge: isSet(object.defendChangeCharge) ? globalThis.Number(object.defendChangeCharge) : 0,
-      moveCharge: isSet(object.moveCharge) ? globalThis.Number(object.moveCharge) : 0,
-      stealthActivateCharge: isSet(object.stealthActivateCharge) ? globalThis.Number(object.stealthActivateCharge) : 0,
-      attackReduction: isSet(object.attackReduction) ? globalThis.Number(object.attackReduction) : 0,
+      activateCharge: isSet(object.activateCharge) ? globalThis.String(object.activateCharge) : "0",
+      buildCharge: isSet(object.buildCharge) ? globalThis.String(object.buildCharge) : "0",
+      defendChangeCharge: isSet(object.defendChangeCharge) ? globalThis.String(object.defendChangeCharge) : "0",
+      moveCharge: isSet(object.moveCharge) ? globalThis.String(object.moveCharge) : "0",
+      stealthActivateCharge: isSet(object.stealthActivateCharge)
+        ? globalThis.String(object.stealthActivateCharge)
+        : "0",
+      attackReduction: isSet(object.attackReduction) ? globalThis.String(object.attackReduction) : "0",
       attackCounterable: isSet(object.attackCounterable) ? globalThis.Boolean(object.attackCounterable) : false,
       stealthSystems: isSet(object.stealthSystems) ? globalThis.Boolean(object.stealthSystems) : false,
-      counterAttack: isSet(object.counterAttack) ? globalThis.Number(object.counterAttack) : 0,
+      counterAttack: isSet(object.counterAttack) ? globalThis.String(object.counterAttack) : "0",
       counterAttackSameAmbit: isSet(object.counterAttackSameAmbit)
-        ? globalThis.Number(object.counterAttackSameAmbit)
-        : 0,
-      postDestructionDamage: isSet(object.postDestructionDamage) ? globalThis.Number(object.postDestructionDamage) : 0,
-      generatingRate: isSet(object.generatingRate) ? globalThis.Number(object.generatingRate) : 0,
+        ? globalThis.String(object.counterAttackSameAmbit)
+        : "0",
+      postDestructionDamage: isSet(object.postDestructionDamage)
+        ? globalThis.String(object.postDestructionDamage)
+        : "0",
+      generatingRate: isSet(object.generatingRate) ? globalThis.String(object.generatingRate) : "0",
       planetaryShieldContribution: isSet(object.planetaryShieldContribution)
-        ? globalThis.Number(object.planetaryShieldContribution)
-        : 0,
-      oreMiningDifficulty: isSet(object.oreMiningDifficulty) ? globalThis.Number(object.oreMiningDifficulty) : 0,
-      oreRefiningDifficulty: isSet(object.oreRefiningDifficulty) ? globalThis.Number(object.oreRefiningDifficulty) : 0,
+        ? globalThis.String(object.planetaryShieldContribution)
+        : "0",
+      oreMiningDifficulty: isSet(object.oreMiningDifficulty) ? globalThis.String(object.oreMiningDifficulty) : "0",
+      oreRefiningDifficulty: isSet(object.oreRefiningDifficulty)
+        ? globalThis.String(object.oreRefiningDifficulty)
+        : "0",
       unguidedDefensiveSuccessRateNumerator: isSet(object.unguidedDefensiveSuccessRateNumerator)
-        ? globalThis.Number(object.unguidedDefensiveSuccessRateNumerator)
-        : 0,
+        ? globalThis.String(object.unguidedDefensiveSuccessRateNumerator)
+        : "0",
       unguidedDefensiveSuccessRateDenominator: isSet(object.unguidedDefensiveSuccessRateDenominator)
-        ? globalThis.Number(object.unguidedDefensiveSuccessRateDenominator)
-        : 0,
+        ? globalThis.String(object.unguidedDefensiveSuccessRateDenominator)
+        : "0",
       guidedDefensiveSuccessRateNumerator: isSet(object.guidedDefensiveSuccessRateNumerator)
-        ? globalThis.Number(object.guidedDefensiveSuccessRateNumerator)
-        : 0,
+        ? globalThis.String(object.guidedDefensiveSuccessRateNumerator)
+        : "0",
       guidedDefensiveSuccessRateDenominator: isSet(object.guidedDefensiveSuccessRateDenominator)
-        ? globalThis.Number(object.guidedDefensiveSuccessRateDenominator)
-        : 0,
+        ? globalThis.String(object.guidedDefensiveSuccessRateDenominator)
+        : "0",
       triggerRaidDefeatByDestruction: isSet(object.triggerRaidDefeatByDestruction)
         ? globalThis.Boolean(object.triggerRaidDefeatByDestruction)
         : false,
       primaryWeaponGuaranteedShots: isSet(object.primaryWeaponGuaranteedShots)
-        ? globalThis.Number(object.primaryWeaponGuaranteedShots)
-        : 0,
+        ? globalThis.String(object.primaryWeaponGuaranteedShots)
+        : "0",
       secondaryWeaponGuaranteedShots: isSet(object.secondaryWeaponGuaranteedShots)
-        ? globalThis.Number(object.secondaryWeaponGuaranteedShots)
-        : 0,
+        ? globalThis.String(object.secondaryWeaponGuaranteedShots)
+        : "0",
       primaryWeaponArmourPiercing: isSet(object.primaryWeaponArmourPiercing)
         ? globalThis.Boolean(object.primaryWeaponArmourPiercing)
         : false,
@@ -1411,8 +1385,8 @@ export const StructType: MessageFns<StructType> = {
 
   toJSON(message: StructType): unknown {
     const obj: any = {};
-    if (message.id !== 0) {
-      obj.id = Math.round(message.id);
+    if (message.id !== "0") {
+      obj.id = message.id;
     }
     if (message.type !== "") {
       obj.type = message.type;
@@ -1432,23 +1406,23 @@ export const StructType: MessageFns<StructType> = {
     if (message.category !== 0) {
       obj.category = objectTypeToJSON(message.category);
     }
-    if (message.buildLimit !== 0) {
-      obj.buildLimit = Math.round(message.buildLimit);
+    if (message.buildLimit !== "0") {
+      obj.buildLimit = message.buildLimit;
     }
-    if (message.buildDifficulty !== 0) {
-      obj.buildDifficulty = Math.round(message.buildDifficulty);
+    if (message.buildDifficulty !== "0") {
+      obj.buildDifficulty = message.buildDifficulty;
     }
-    if (message.buildDraw !== 0) {
-      obj.buildDraw = Math.round(message.buildDraw);
+    if (message.buildDraw !== "0") {
+      obj.buildDraw = message.buildDraw;
     }
-    if (message.maxHealth !== 0) {
-      obj.maxHealth = Math.round(message.maxHealth);
+    if (message.maxHealth !== "0") {
+      obj.maxHealth = message.maxHealth;
     }
-    if (message.passiveDraw !== 0) {
-      obj.passiveDraw = Math.round(message.passiveDraw);
+    if (message.passiveDraw !== "0") {
+      obj.passiveDraw = message.passiveDraw;
     }
-    if (message.possibleAmbit !== 0) {
-      obj.possibleAmbit = Math.round(message.possibleAmbit);
+    if (message.possibleAmbit !== "0") {
+      obj.possibleAmbit = message.possibleAmbit;
     }
     if (message.movable !== false) {
       obj.movable = message.movable;
@@ -1462,20 +1436,20 @@ export const StructType: MessageFns<StructType> = {
     if (message.primaryWeaponControl !== 0) {
       obj.primaryWeaponControl = techWeaponControlToJSON(message.primaryWeaponControl);
     }
-    if (message.primaryWeaponCharge !== 0) {
-      obj.primaryWeaponCharge = Math.round(message.primaryWeaponCharge);
+    if (message.primaryWeaponCharge !== "0") {
+      obj.primaryWeaponCharge = message.primaryWeaponCharge;
     }
-    if (message.primaryWeaponAmbits !== 0) {
-      obj.primaryWeaponAmbits = Math.round(message.primaryWeaponAmbits);
+    if (message.primaryWeaponAmbits !== "0") {
+      obj.primaryWeaponAmbits = message.primaryWeaponAmbits;
     }
-    if (message.primaryWeaponTargets !== 0) {
-      obj.primaryWeaponTargets = Math.round(message.primaryWeaponTargets);
+    if (message.primaryWeaponTargets !== "0") {
+      obj.primaryWeaponTargets = message.primaryWeaponTargets;
     }
-    if (message.primaryWeaponShots !== 0) {
-      obj.primaryWeaponShots = Math.round(message.primaryWeaponShots);
+    if (message.primaryWeaponShots !== "0") {
+      obj.primaryWeaponShots = message.primaryWeaponShots;
     }
-    if (message.primaryWeaponDamage !== 0) {
-      obj.primaryWeaponDamage = Math.round(message.primaryWeaponDamage);
+    if (message.primaryWeaponDamage !== "0") {
+      obj.primaryWeaponDamage = message.primaryWeaponDamage;
     }
     if (message.primaryWeaponBlockable !== false) {
       obj.primaryWeaponBlockable = message.primaryWeaponBlockable;
@@ -1483,14 +1457,14 @@ export const StructType: MessageFns<StructType> = {
     if (message.primaryWeaponCounterable !== false) {
       obj.primaryWeaponCounterable = message.primaryWeaponCounterable;
     }
-    if (message.primaryWeaponRecoilDamage !== 0) {
-      obj.primaryWeaponRecoilDamage = Math.round(message.primaryWeaponRecoilDamage);
+    if (message.primaryWeaponRecoilDamage !== "0") {
+      obj.primaryWeaponRecoilDamage = message.primaryWeaponRecoilDamage;
     }
-    if (message.primaryWeaponShotSuccessRateNumerator !== 0) {
-      obj.primaryWeaponShotSuccessRateNumerator = Math.round(message.primaryWeaponShotSuccessRateNumerator);
+    if (message.primaryWeaponShotSuccessRateNumerator !== "0") {
+      obj.primaryWeaponShotSuccessRateNumerator = message.primaryWeaponShotSuccessRateNumerator;
     }
-    if (message.primaryWeaponShotSuccessRateDenominator !== 0) {
-      obj.primaryWeaponShotSuccessRateDenominator = Math.round(message.primaryWeaponShotSuccessRateDenominator);
+    if (message.primaryWeaponShotSuccessRateDenominator !== "0") {
+      obj.primaryWeaponShotSuccessRateDenominator = message.primaryWeaponShotSuccessRateDenominator;
     }
     if (message.secondaryWeapon !== 0) {
       obj.secondaryWeapon = techActiveWeaponryToJSON(message.secondaryWeapon);
@@ -1498,20 +1472,20 @@ export const StructType: MessageFns<StructType> = {
     if (message.secondaryWeaponControl !== 0) {
       obj.secondaryWeaponControl = techWeaponControlToJSON(message.secondaryWeaponControl);
     }
-    if (message.secondaryWeaponCharge !== 0) {
-      obj.secondaryWeaponCharge = Math.round(message.secondaryWeaponCharge);
+    if (message.secondaryWeaponCharge !== "0") {
+      obj.secondaryWeaponCharge = message.secondaryWeaponCharge;
     }
-    if (message.secondaryWeaponAmbits !== 0) {
-      obj.secondaryWeaponAmbits = Math.round(message.secondaryWeaponAmbits);
+    if (message.secondaryWeaponAmbits !== "0") {
+      obj.secondaryWeaponAmbits = message.secondaryWeaponAmbits;
     }
-    if (message.secondaryWeaponTargets !== 0) {
-      obj.secondaryWeaponTargets = Math.round(message.secondaryWeaponTargets);
+    if (message.secondaryWeaponTargets !== "0") {
+      obj.secondaryWeaponTargets = message.secondaryWeaponTargets;
     }
-    if (message.secondaryWeaponShots !== 0) {
-      obj.secondaryWeaponShots = Math.round(message.secondaryWeaponShots);
+    if (message.secondaryWeaponShots !== "0") {
+      obj.secondaryWeaponShots = message.secondaryWeaponShots;
     }
-    if (message.secondaryWeaponDamage !== 0) {
-      obj.secondaryWeaponDamage = Math.round(message.secondaryWeaponDamage);
+    if (message.secondaryWeaponDamage !== "0") {
+      obj.secondaryWeaponDamage = message.secondaryWeaponDamage;
     }
     if (message.secondaryWeaponBlockable !== false) {
       obj.secondaryWeaponBlockable = message.secondaryWeaponBlockable;
@@ -1519,14 +1493,14 @@ export const StructType: MessageFns<StructType> = {
     if (message.secondaryWeaponCounterable !== false) {
       obj.secondaryWeaponCounterable = message.secondaryWeaponCounterable;
     }
-    if (message.secondaryWeaponRecoilDamage !== 0) {
-      obj.secondaryWeaponRecoilDamage = Math.round(message.secondaryWeaponRecoilDamage);
+    if (message.secondaryWeaponRecoilDamage !== "0") {
+      obj.secondaryWeaponRecoilDamage = message.secondaryWeaponRecoilDamage;
     }
-    if (message.secondaryWeaponShotSuccessRateNumerator !== 0) {
-      obj.secondaryWeaponShotSuccessRateNumerator = Math.round(message.secondaryWeaponShotSuccessRateNumerator);
+    if (message.secondaryWeaponShotSuccessRateNumerator !== "0") {
+      obj.secondaryWeaponShotSuccessRateNumerator = message.secondaryWeaponShotSuccessRateNumerator;
     }
-    if (message.secondaryWeaponShotSuccessRateDenominator !== 0) {
-      obj.secondaryWeaponShotSuccessRateDenominator = Math.round(message.secondaryWeaponShotSuccessRateDenominator);
+    if (message.secondaryWeaponShotSuccessRateDenominator !== "0") {
+      obj.secondaryWeaponShotSuccessRateDenominator = message.secondaryWeaponShotSuccessRateDenominator;
     }
     if (message.passiveWeaponry !== 0) {
       obj.passiveWeaponry = techPassiveWeaponryToJSON(message.passiveWeaponry);
@@ -1549,23 +1523,23 @@ export const StructType: MessageFns<StructType> = {
     if (message.powerGeneration !== 0) {
       obj.powerGeneration = techPowerGenerationToJSON(message.powerGeneration);
     }
-    if (message.activateCharge !== 0) {
-      obj.activateCharge = Math.round(message.activateCharge);
+    if (message.activateCharge !== "0") {
+      obj.activateCharge = message.activateCharge;
     }
-    if (message.buildCharge !== 0) {
-      obj.buildCharge = Math.round(message.buildCharge);
+    if (message.buildCharge !== "0") {
+      obj.buildCharge = message.buildCharge;
     }
-    if (message.defendChangeCharge !== 0) {
-      obj.defendChangeCharge = Math.round(message.defendChangeCharge);
+    if (message.defendChangeCharge !== "0") {
+      obj.defendChangeCharge = message.defendChangeCharge;
     }
-    if (message.moveCharge !== 0) {
-      obj.moveCharge = Math.round(message.moveCharge);
+    if (message.moveCharge !== "0") {
+      obj.moveCharge = message.moveCharge;
     }
-    if (message.stealthActivateCharge !== 0) {
-      obj.stealthActivateCharge = Math.round(message.stealthActivateCharge);
+    if (message.stealthActivateCharge !== "0") {
+      obj.stealthActivateCharge = message.stealthActivateCharge;
     }
-    if (message.attackReduction !== 0) {
-      obj.attackReduction = Math.round(message.attackReduction);
+    if (message.attackReduction !== "0") {
+      obj.attackReduction = message.attackReduction;
     }
     if (message.attackCounterable !== false) {
       obj.attackCounterable = message.attackCounterable;
@@ -1573,47 +1547,47 @@ export const StructType: MessageFns<StructType> = {
     if (message.stealthSystems !== false) {
       obj.stealthSystems = message.stealthSystems;
     }
-    if (message.counterAttack !== 0) {
-      obj.counterAttack = Math.round(message.counterAttack);
+    if (message.counterAttack !== "0") {
+      obj.counterAttack = message.counterAttack;
     }
-    if (message.counterAttackSameAmbit !== 0) {
-      obj.counterAttackSameAmbit = Math.round(message.counterAttackSameAmbit);
+    if (message.counterAttackSameAmbit !== "0") {
+      obj.counterAttackSameAmbit = message.counterAttackSameAmbit;
     }
-    if (message.postDestructionDamage !== 0) {
-      obj.postDestructionDamage = Math.round(message.postDestructionDamage);
+    if (message.postDestructionDamage !== "0") {
+      obj.postDestructionDamage = message.postDestructionDamage;
     }
-    if (message.generatingRate !== 0) {
-      obj.generatingRate = Math.round(message.generatingRate);
+    if (message.generatingRate !== "0") {
+      obj.generatingRate = message.generatingRate;
     }
-    if (message.planetaryShieldContribution !== 0) {
-      obj.planetaryShieldContribution = Math.round(message.planetaryShieldContribution);
+    if (message.planetaryShieldContribution !== "0") {
+      obj.planetaryShieldContribution = message.planetaryShieldContribution;
     }
-    if (message.oreMiningDifficulty !== 0) {
-      obj.oreMiningDifficulty = Math.round(message.oreMiningDifficulty);
+    if (message.oreMiningDifficulty !== "0") {
+      obj.oreMiningDifficulty = message.oreMiningDifficulty;
     }
-    if (message.oreRefiningDifficulty !== 0) {
-      obj.oreRefiningDifficulty = Math.round(message.oreRefiningDifficulty);
+    if (message.oreRefiningDifficulty !== "0") {
+      obj.oreRefiningDifficulty = message.oreRefiningDifficulty;
     }
-    if (message.unguidedDefensiveSuccessRateNumerator !== 0) {
-      obj.unguidedDefensiveSuccessRateNumerator = Math.round(message.unguidedDefensiveSuccessRateNumerator);
+    if (message.unguidedDefensiveSuccessRateNumerator !== "0") {
+      obj.unguidedDefensiveSuccessRateNumerator = message.unguidedDefensiveSuccessRateNumerator;
     }
-    if (message.unguidedDefensiveSuccessRateDenominator !== 0) {
-      obj.unguidedDefensiveSuccessRateDenominator = Math.round(message.unguidedDefensiveSuccessRateDenominator);
+    if (message.unguidedDefensiveSuccessRateDenominator !== "0") {
+      obj.unguidedDefensiveSuccessRateDenominator = message.unguidedDefensiveSuccessRateDenominator;
     }
-    if (message.guidedDefensiveSuccessRateNumerator !== 0) {
-      obj.guidedDefensiveSuccessRateNumerator = Math.round(message.guidedDefensiveSuccessRateNumerator);
+    if (message.guidedDefensiveSuccessRateNumerator !== "0") {
+      obj.guidedDefensiveSuccessRateNumerator = message.guidedDefensiveSuccessRateNumerator;
     }
-    if (message.guidedDefensiveSuccessRateDenominator !== 0) {
-      obj.guidedDefensiveSuccessRateDenominator = Math.round(message.guidedDefensiveSuccessRateDenominator);
+    if (message.guidedDefensiveSuccessRateDenominator !== "0") {
+      obj.guidedDefensiveSuccessRateDenominator = message.guidedDefensiveSuccessRateDenominator;
     }
     if (message.triggerRaidDefeatByDestruction !== false) {
       obj.triggerRaidDefeatByDestruction = message.triggerRaidDefeatByDestruction;
     }
-    if (message.primaryWeaponGuaranteedShots !== 0) {
-      obj.primaryWeaponGuaranteedShots = Math.round(message.primaryWeaponGuaranteedShots);
+    if (message.primaryWeaponGuaranteedShots !== "0") {
+      obj.primaryWeaponGuaranteedShots = message.primaryWeaponGuaranteedShots;
     }
-    if (message.secondaryWeaponGuaranteedShots !== 0) {
-      obj.secondaryWeaponGuaranteedShots = Math.round(message.secondaryWeaponGuaranteedShots);
+    if (message.secondaryWeaponGuaranteedShots !== "0") {
+      obj.secondaryWeaponGuaranteedShots = message.secondaryWeaponGuaranteedShots;
     }
     if (message.primaryWeaponArmourPiercing !== false) {
       obj.primaryWeaponArmourPiercing = message.primaryWeaponArmourPiercing;
@@ -1632,45 +1606,45 @@ export const StructType: MessageFns<StructType> = {
   },
   fromPartial<I extends Exact<DeepPartial<StructType>, I>>(object: I): StructType {
     const message = createBaseStructType();
-    message.id = object.id ?? 0;
+    message.id = object.id ?? "0";
     message.type = object.type ?? "";
     message.class = object.class ?? "";
     message.classAbbreviation = object.classAbbreviation ?? "";
     message.defaultCosmeticModelNumber = object.defaultCosmeticModelNumber ?? "";
     message.defaultCosmeticName = object.defaultCosmeticName ?? "";
     message.category = object.category ?? 0;
-    message.buildLimit = object.buildLimit ?? 0;
-    message.buildDifficulty = object.buildDifficulty ?? 0;
-    message.buildDraw = object.buildDraw ?? 0;
-    message.maxHealth = object.maxHealth ?? 0;
-    message.passiveDraw = object.passiveDraw ?? 0;
-    message.possibleAmbit = object.possibleAmbit ?? 0;
+    message.buildLimit = object.buildLimit ?? "0";
+    message.buildDifficulty = object.buildDifficulty ?? "0";
+    message.buildDraw = object.buildDraw ?? "0";
+    message.maxHealth = object.maxHealth ?? "0";
+    message.passiveDraw = object.passiveDraw ?? "0";
+    message.possibleAmbit = object.possibleAmbit ?? "0";
     message.movable = object.movable ?? false;
     message.slotBound = object.slotBound ?? false;
     message.primaryWeapon = object.primaryWeapon ?? 0;
     message.primaryWeaponControl = object.primaryWeaponControl ?? 0;
-    message.primaryWeaponCharge = object.primaryWeaponCharge ?? 0;
-    message.primaryWeaponAmbits = object.primaryWeaponAmbits ?? 0;
-    message.primaryWeaponTargets = object.primaryWeaponTargets ?? 0;
-    message.primaryWeaponShots = object.primaryWeaponShots ?? 0;
-    message.primaryWeaponDamage = object.primaryWeaponDamage ?? 0;
+    message.primaryWeaponCharge = object.primaryWeaponCharge ?? "0";
+    message.primaryWeaponAmbits = object.primaryWeaponAmbits ?? "0";
+    message.primaryWeaponTargets = object.primaryWeaponTargets ?? "0";
+    message.primaryWeaponShots = object.primaryWeaponShots ?? "0";
+    message.primaryWeaponDamage = object.primaryWeaponDamage ?? "0";
     message.primaryWeaponBlockable = object.primaryWeaponBlockable ?? false;
     message.primaryWeaponCounterable = object.primaryWeaponCounterable ?? false;
-    message.primaryWeaponRecoilDamage = object.primaryWeaponRecoilDamage ?? 0;
-    message.primaryWeaponShotSuccessRateNumerator = object.primaryWeaponShotSuccessRateNumerator ?? 0;
-    message.primaryWeaponShotSuccessRateDenominator = object.primaryWeaponShotSuccessRateDenominator ?? 0;
+    message.primaryWeaponRecoilDamage = object.primaryWeaponRecoilDamage ?? "0";
+    message.primaryWeaponShotSuccessRateNumerator = object.primaryWeaponShotSuccessRateNumerator ?? "0";
+    message.primaryWeaponShotSuccessRateDenominator = object.primaryWeaponShotSuccessRateDenominator ?? "0";
     message.secondaryWeapon = object.secondaryWeapon ?? 0;
     message.secondaryWeaponControl = object.secondaryWeaponControl ?? 0;
-    message.secondaryWeaponCharge = object.secondaryWeaponCharge ?? 0;
-    message.secondaryWeaponAmbits = object.secondaryWeaponAmbits ?? 0;
-    message.secondaryWeaponTargets = object.secondaryWeaponTargets ?? 0;
-    message.secondaryWeaponShots = object.secondaryWeaponShots ?? 0;
-    message.secondaryWeaponDamage = object.secondaryWeaponDamage ?? 0;
+    message.secondaryWeaponCharge = object.secondaryWeaponCharge ?? "0";
+    message.secondaryWeaponAmbits = object.secondaryWeaponAmbits ?? "0";
+    message.secondaryWeaponTargets = object.secondaryWeaponTargets ?? "0";
+    message.secondaryWeaponShots = object.secondaryWeaponShots ?? "0";
+    message.secondaryWeaponDamage = object.secondaryWeaponDamage ?? "0";
     message.secondaryWeaponBlockable = object.secondaryWeaponBlockable ?? false;
     message.secondaryWeaponCounterable = object.secondaryWeaponCounterable ?? false;
-    message.secondaryWeaponRecoilDamage = object.secondaryWeaponRecoilDamage ?? 0;
-    message.secondaryWeaponShotSuccessRateNumerator = object.secondaryWeaponShotSuccessRateNumerator ?? 0;
-    message.secondaryWeaponShotSuccessRateDenominator = object.secondaryWeaponShotSuccessRateDenominator ?? 0;
+    message.secondaryWeaponRecoilDamage = object.secondaryWeaponRecoilDamage ?? "0";
+    message.secondaryWeaponShotSuccessRateNumerator = object.secondaryWeaponShotSuccessRateNumerator ?? "0";
+    message.secondaryWeaponShotSuccessRateDenominator = object.secondaryWeaponShotSuccessRateDenominator ?? "0";
     message.passiveWeaponry = object.passiveWeaponry ?? 0;
     message.unitDefenses = object.unitDefenses ?? 0;
     message.oreReserveDefenses = object.oreReserveDefenses ?? 0;
@@ -1678,28 +1652,28 @@ export const StructType: MessageFns<StructType> = {
     message.planetaryMining = object.planetaryMining ?? 0;
     message.planetaryRefinery = object.planetaryRefinery ?? 0;
     message.powerGeneration = object.powerGeneration ?? 0;
-    message.activateCharge = object.activateCharge ?? 0;
-    message.buildCharge = object.buildCharge ?? 0;
-    message.defendChangeCharge = object.defendChangeCharge ?? 0;
-    message.moveCharge = object.moveCharge ?? 0;
-    message.stealthActivateCharge = object.stealthActivateCharge ?? 0;
-    message.attackReduction = object.attackReduction ?? 0;
+    message.activateCharge = object.activateCharge ?? "0";
+    message.buildCharge = object.buildCharge ?? "0";
+    message.defendChangeCharge = object.defendChangeCharge ?? "0";
+    message.moveCharge = object.moveCharge ?? "0";
+    message.stealthActivateCharge = object.stealthActivateCharge ?? "0";
+    message.attackReduction = object.attackReduction ?? "0";
     message.attackCounterable = object.attackCounterable ?? false;
     message.stealthSystems = object.stealthSystems ?? false;
-    message.counterAttack = object.counterAttack ?? 0;
-    message.counterAttackSameAmbit = object.counterAttackSameAmbit ?? 0;
-    message.postDestructionDamage = object.postDestructionDamage ?? 0;
-    message.generatingRate = object.generatingRate ?? 0;
-    message.planetaryShieldContribution = object.planetaryShieldContribution ?? 0;
-    message.oreMiningDifficulty = object.oreMiningDifficulty ?? 0;
-    message.oreRefiningDifficulty = object.oreRefiningDifficulty ?? 0;
-    message.unguidedDefensiveSuccessRateNumerator = object.unguidedDefensiveSuccessRateNumerator ?? 0;
-    message.unguidedDefensiveSuccessRateDenominator = object.unguidedDefensiveSuccessRateDenominator ?? 0;
-    message.guidedDefensiveSuccessRateNumerator = object.guidedDefensiveSuccessRateNumerator ?? 0;
-    message.guidedDefensiveSuccessRateDenominator = object.guidedDefensiveSuccessRateDenominator ?? 0;
+    message.counterAttack = object.counterAttack ?? "0";
+    message.counterAttackSameAmbit = object.counterAttackSameAmbit ?? "0";
+    message.postDestructionDamage = object.postDestructionDamage ?? "0";
+    message.generatingRate = object.generatingRate ?? "0";
+    message.planetaryShieldContribution = object.planetaryShieldContribution ?? "0";
+    message.oreMiningDifficulty = object.oreMiningDifficulty ?? "0";
+    message.oreRefiningDifficulty = object.oreRefiningDifficulty ?? "0";
+    message.unguidedDefensiveSuccessRateNumerator = object.unguidedDefensiveSuccessRateNumerator ?? "0";
+    message.unguidedDefensiveSuccessRateDenominator = object.unguidedDefensiveSuccessRateDenominator ?? "0";
+    message.guidedDefensiveSuccessRateNumerator = object.guidedDefensiveSuccessRateNumerator ?? "0";
+    message.guidedDefensiveSuccessRateDenominator = object.guidedDefensiveSuccessRateDenominator ?? "0";
     message.triggerRaidDefeatByDestruction = object.triggerRaidDefeatByDestruction ?? false;
-    message.primaryWeaponGuaranteedShots = object.primaryWeaponGuaranteedShots ?? 0;
-    message.secondaryWeaponGuaranteedShots = object.secondaryWeaponGuaranteedShots ?? 0;
+    message.primaryWeaponGuaranteedShots = object.primaryWeaponGuaranteedShots ?? "0";
+    message.secondaryWeaponGuaranteedShots = object.secondaryWeaponGuaranteedShots ?? "0";
     message.primaryWeaponArmourPiercing = object.primaryWeaponArmourPiercing ?? false;
     message.secondaryWeaponArmourPiercing = object.secondaryWeaponArmourPiercing ?? false;
     message.canDefend = object.canDefend ?? false;
@@ -1846,7 +1820,7 @@ export const StructDefenders: MessageFns<StructDefenders> = {
 };
 
 function createBaseStructAttributeRecord(): StructAttributeRecord {
-  return { attributeId: "", value: 0 };
+  return { attributeId: "", value: "0" };
 }
 
 export const StructAttributeRecord: MessageFns<StructAttributeRecord> = {
@@ -1854,7 +1828,7 @@ export const StructAttributeRecord: MessageFns<StructAttributeRecord> = {
     if (message.attributeId !== "") {
       writer.uint32(10).string(message.attributeId);
     }
-    if (message.value !== 0) {
+    if (message.value !== "0") {
       writer.uint32(16).uint64(message.value);
     }
     return writer;
@@ -1880,7 +1854,7 @@ export const StructAttributeRecord: MessageFns<StructAttributeRecord> = {
             break;
           }
 
-          message.value = longToNumber(reader.uint64());
+          message.value = reader.uint64().toString();
           continue;
         }
       }
@@ -1895,7 +1869,7 @@ export const StructAttributeRecord: MessageFns<StructAttributeRecord> = {
   fromJSON(object: any): StructAttributeRecord {
     return {
       attributeId: isSet(object.attributeId) ? globalThis.String(object.attributeId) : "",
-      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+      value: isSet(object.value) ? globalThis.String(object.value) : "0",
     };
   },
 
@@ -1904,8 +1878,8 @@ export const StructAttributeRecord: MessageFns<StructAttributeRecord> = {
     if (message.attributeId !== "") {
       obj.attributeId = message.attributeId;
     }
-    if (message.value !== 0) {
-      obj.value = Math.round(message.value);
+    if (message.value !== "0") {
+      obj.value = message.value;
     }
     return obj;
   },
@@ -1916,20 +1890,20 @@ export const StructAttributeRecord: MessageFns<StructAttributeRecord> = {
   fromPartial<I extends Exact<DeepPartial<StructAttributeRecord>, I>>(object: I): StructAttributeRecord {
     const message = createBaseStructAttributeRecord();
     message.attributeId = object.attributeId ?? "";
-    message.value = object.value ?? 0;
+    message.value = object.value ?? "0";
     return message;
   },
 };
 
 function createBaseStructAttributes(): StructAttributes {
   return {
-    health: 0,
-    status: 0,
-    blockStartBuild: 0,
-    blockStartOreMine: 0,
-    blockStartOreRefine: 0,
-    protectedStructIndex: 0,
-    typeCount: 0,
+    health: "0",
+    status: "0",
+    blockStartBuild: "0",
+    blockStartOreMine: "0",
+    blockStartOreRefine: "0",
+    protectedStructIndex: "0",
+    typeCount: "0",
     isMaterialized: false,
     isBuilt: false,
     isOnline: false,
@@ -1941,25 +1915,25 @@ function createBaseStructAttributes(): StructAttributes {
 
 export const StructAttributes: MessageFns<StructAttributes> = {
   encode(message: StructAttributes, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.health !== 0) {
+    if (message.health !== "0") {
       writer.uint32(8).uint64(message.health);
     }
-    if (message.status !== 0) {
+    if (message.status !== "0") {
       writer.uint32(16).uint64(message.status);
     }
-    if (message.blockStartBuild !== 0) {
+    if (message.blockStartBuild !== "0") {
       writer.uint32(24).uint64(message.blockStartBuild);
     }
-    if (message.blockStartOreMine !== 0) {
+    if (message.blockStartOreMine !== "0") {
       writer.uint32(32).uint64(message.blockStartOreMine);
     }
-    if (message.blockStartOreRefine !== 0) {
+    if (message.blockStartOreRefine !== "0") {
       writer.uint32(40).uint64(message.blockStartOreRefine);
     }
-    if (message.protectedStructIndex !== 0) {
+    if (message.protectedStructIndex !== "0") {
       writer.uint32(48).uint64(message.protectedStructIndex);
     }
-    if (message.typeCount !== 0) {
+    if (message.typeCount !== "0") {
       writer.uint32(56).uint64(message.typeCount);
     }
     if (message.isMaterialized !== false) {
@@ -1995,7 +1969,7 @@ export const StructAttributes: MessageFns<StructAttributes> = {
             break;
           }
 
-          message.health = longToNumber(reader.uint64());
+          message.health = reader.uint64().toString();
           continue;
         }
         case 2: {
@@ -2003,7 +1977,7 @@ export const StructAttributes: MessageFns<StructAttributes> = {
             break;
           }
 
-          message.status = longToNumber(reader.uint64());
+          message.status = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -2011,7 +1985,7 @@ export const StructAttributes: MessageFns<StructAttributes> = {
             break;
           }
 
-          message.blockStartBuild = longToNumber(reader.uint64());
+          message.blockStartBuild = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -2019,7 +1993,7 @@ export const StructAttributes: MessageFns<StructAttributes> = {
             break;
           }
 
-          message.blockStartOreMine = longToNumber(reader.uint64());
+          message.blockStartOreMine = reader.uint64().toString();
           continue;
         }
         case 5: {
@@ -2027,7 +2001,7 @@ export const StructAttributes: MessageFns<StructAttributes> = {
             break;
           }
 
-          message.blockStartOreRefine = longToNumber(reader.uint64());
+          message.blockStartOreRefine = reader.uint64().toString();
           continue;
         }
         case 6: {
@@ -2035,7 +2009,7 @@ export const StructAttributes: MessageFns<StructAttributes> = {
             break;
           }
 
-          message.protectedStructIndex = longToNumber(reader.uint64());
+          message.protectedStructIndex = reader.uint64().toString();
           continue;
         }
         case 7: {
@@ -2043,7 +2017,7 @@ export const StructAttributes: MessageFns<StructAttributes> = {
             break;
           }
 
-          message.typeCount = longToNumber(reader.uint64());
+          message.typeCount = reader.uint64().toString();
           continue;
         }
         case 8: {
@@ -2105,13 +2079,13 @@ export const StructAttributes: MessageFns<StructAttributes> = {
 
   fromJSON(object: any): StructAttributes {
     return {
-      health: isSet(object.health) ? globalThis.Number(object.health) : 0,
-      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
-      blockStartBuild: isSet(object.blockStartBuild) ? globalThis.Number(object.blockStartBuild) : 0,
-      blockStartOreMine: isSet(object.blockStartOreMine) ? globalThis.Number(object.blockStartOreMine) : 0,
-      blockStartOreRefine: isSet(object.blockStartOreRefine) ? globalThis.Number(object.blockStartOreRefine) : 0,
-      protectedStructIndex: isSet(object.protectedStructIndex) ? globalThis.Number(object.protectedStructIndex) : 0,
-      typeCount: isSet(object.typeCount) ? globalThis.Number(object.typeCount) : 0,
+      health: isSet(object.health) ? globalThis.String(object.health) : "0",
+      status: isSet(object.status) ? globalThis.String(object.status) : "0",
+      blockStartBuild: isSet(object.blockStartBuild) ? globalThis.String(object.blockStartBuild) : "0",
+      blockStartOreMine: isSet(object.blockStartOreMine) ? globalThis.String(object.blockStartOreMine) : "0",
+      blockStartOreRefine: isSet(object.blockStartOreRefine) ? globalThis.String(object.blockStartOreRefine) : "0",
+      protectedStructIndex: isSet(object.protectedStructIndex) ? globalThis.String(object.protectedStructIndex) : "0",
+      typeCount: isSet(object.typeCount) ? globalThis.String(object.typeCount) : "0",
       isMaterialized: isSet(object.isMaterialized) ? globalThis.Boolean(object.isMaterialized) : false,
       isBuilt: isSet(object.isBuilt) ? globalThis.Boolean(object.isBuilt) : false,
       isOnline: isSet(object.isOnline) ? globalThis.Boolean(object.isOnline) : false,
@@ -2123,26 +2097,26 @@ export const StructAttributes: MessageFns<StructAttributes> = {
 
   toJSON(message: StructAttributes): unknown {
     const obj: any = {};
-    if (message.health !== 0) {
-      obj.health = Math.round(message.health);
+    if (message.health !== "0") {
+      obj.health = message.health;
     }
-    if (message.status !== 0) {
-      obj.status = Math.round(message.status);
+    if (message.status !== "0") {
+      obj.status = message.status;
     }
-    if (message.blockStartBuild !== 0) {
-      obj.blockStartBuild = Math.round(message.blockStartBuild);
+    if (message.blockStartBuild !== "0") {
+      obj.blockStartBuild = message.blockStartBuild;
     }
-    if (message.blockStartOreMine !== 0) {
-      obj.blockStartOreMine = Math.round(message.blockStartOreMine);
+    if (message.blockStartOreMine !== "0") {
+      obj.blockStartOreMine = message.blockStartOreMine;
     }
-    if (message.blockStartOreRefine !== 0) {
-      obj.blockStartOreRefine = Math.round(message.blockStartOreRefine);
+    if (message.blockStartOreRefine !== "0") {
+      obj.blockStartOreRefine = message.blockStartOreRefine;
     }
-    if (message.protectedStructIndex !== 0) {
-      obj.protectedStructIndex = Math.round(message.protectedStructIndex);
+    if (message.protectedStructIndex !== "0") {
+      obj.protectedStructIndex = message.protectedStructIndex;
     }
-    if (message.typeCount !== 0) {
-      obj.typeCount = Math.round(message.typeCount);
+    if (message.typeCount !== "0") {
+      obj.typeCount = message.typeCount;
     }
     if (message.isMaterialized !== false) {
       obj.isMaterialized = message.isMaterialized;
@@ -2170,13 +2144,13 @@ export const StructAttributes: MessageFns<StructAttributes> = {
   },
   fromPartial<I extends Exact<DeepPartial<StructAttributes>, I>>(object: I): StructAttributes {
     const message = createBaseStructAttributes();
-    message.health = object.health ?? 0;
-    message.status = object.status ?? 0;
-    message.blockStartBuild = object.blockStartBuild ?? 0;
-    message.blockStartOreMine = object.blockStartOreMine ?? 0;
-    message.blockStartOreRefine = object.blockStartOreRefine ?? 0;
-    message.protectedStructIndex = object.protectedStructIndex ?? 0;
-    message.typeCount = object.typeCount ?? 0;
+    message.health = object.health ?? "0";
+    message.status = object.status ?? "0";
+    message.blockStartBuild = object.blockStartBuild ?? "0";
+    message.blockStartOreMine = object.blockStartOreMine ?? "0";
+    message.blockStartOreRefine = object.blockStartOreRefine ?? "0";
+    message.protectedStructIndex = object.protectedStructIndex ?? "0";
+    message.typeCount = object.typeCount ?? "0";
     message.isMaterialized = object.isMaterialized ?? false;
     message.isBuilt = object.isBuilt ?? false;
     message.isOnline = object.isOnline ?? false;
@@ -2188,12 +2162,12 @@ export const StructAttributes: MessageFns<StructAttributes> = {
 };
 
 function createBaseStructDestructionQueueRecord(): StructDestructionQueueRecord {
-  return { sweepHeight: 0, structId: "" };
+  return { sweepHeight: "0", structId: "" };
 }
 
 export const StructDestructionQueueRecord: MessageFns<StructDestructionQueueRecord> = {
   encode(message: StructDestructionQueueRecord, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.sweepHeight !== 0) {
+    if (message.sweepHeight !== "0") {
       writer.uint32(8).int64(message.sweepHeight);
     }
     if (message.structId !== "") {
@@ -2214,7 +2188,7 @@ export const StructDestructionQueueRecord: MessageFns<StructDestructionQueueReco
             break;
           }
 
-          message.sweepHeight = longToNumber(reader.int64());
+          message.sweepHeight = reader.int64().toString();
           continue;
         }
         case 2: {
@@ -2236,15 +2210,15 @@ export const StructDestructionQueueRecord: MessageFns<StructDestructionQueueReco
 
   fromJSON(object: any): StructDestructionQueueRecord {
     return {
-      sweepHeight: isSet(object.sweepHeight) ? globalThis.Number(object.sweepHeight) : 0,
+      sweepHeight: isSet(object.sweepHeight) ? globalThis.String(object.sweepHeight) : "0",
       structId: isSet(object.structId) ? globalThis.String(object.structId) : "",
     };
   },
 
   toJSON(message: StructDestructionQueueRecord): unknown {
     const obj: any = {};
-    if (message.sweepHeight !== 0) {
-      obj.sweepHeight = Math.round(message.sweepHeight);
+    if (message.sweepHeight !== "0") {
+      obj.sweepHeight = message.sweepHeight;
     }
     if (message.structId !== "") {
       obj.structId = message.structId;
@@ -2257,7 +2231,7 @@ export const StructDestructionQueueRecord: MessageFns<StructDestructionQueueReco
   },
   fromPartial<I extends Exact<DeepPartial<StructDestructionQueueRecord>, I>>(object: I): StructDestructionQueueRecord {
     const message = createBaseStructDestructionQueueRecord();
-    message.sweepHeight = object.sweepHeight ?? 0;
+    message.sweepHeight = object.sweepHeight ?? "0";
     message.structId = object.structId ?? "";
     return message;
   },
@@ -2274,17 +2248,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

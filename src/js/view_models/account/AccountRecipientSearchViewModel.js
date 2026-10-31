@@ -1,3 +1,4 @@
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {SEARCH_STRING_PATTERN} from "../../constants/RegexPattern";
@@ -63,7 +64,14 @@ export class AccountRecipientSearchViewModel extends AbstractViewModel {
   }
 
   render() {
-    this.guildAPI.getGuildFilterList().then(guilds => {
+    const signal = MenuPage.router.navigationSignal;
+    const account = this.gameState.signingAccount?.address;
+    const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const active = () => !signal.aborted
+      && this.gameState.signingAccount?.address === account
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id === playerId;
+    return this.guildAPI.getGuildFilterList({signal, timeoutMs: 15000}).then(guilds => {
+      if (!active()) return;
 
       const guildFilterOptions = guilds.reduce((options, guild) =>
         options + `<option value="${guild.id}">${guild.name ? guild.name : guild.id}</option>`
@@ -115,6 +123,8 @@ export class AccountRecipientSearchViewModel extends AbstractViewModel {
 
       this.initPageCode();
 
+    }).catch(error => {
+      if (active()) console.warn('[AccountRecipientSearchViewModel] read failed:', error);
     });
   }
 }

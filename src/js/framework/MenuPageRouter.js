@@ -20,6 +20,7 @@ export class MenuPageRouter {
      * whether the user has since navigated away.
      */
     this.navigationId = 0;
+    this.navigationController = new AbortController();
 
     /**
      * Called with (controllerName, pageName) on every navigation, before the page renders.
@@ -50,7 +51,13 @@ export class MenuPageRouter {
     this.controllers.set(controller.name, controller);
   }
 
-  goto(controllerName, pageName, options = {}) {
+  get navigationSignal() {
+    return this.navigationController.signal;
+  }
+
+  goto(controllerName, pageName, options = {}, {replace = false} = {}) {
+    this.navigationController.abort();
+    this.navigationController = new AbortController();
     this.navigationId++;
 
     if (this.mode !== MENU_PAGE_ROUTER_MODES.PREVIEW) {
@@ -59,9 +66,11 @@ export class MenuPageRouter {
         && this.currentPage === pageName
         && JSON.stringify(this.currentOptions) === JSON.stringify(options)
       )) {
-        this.lastController = this.currentController;
-        this.lastPage = this.currentPage;
-        this.lastOptions = this.currentOptions;
+        if (!replace) {
+          this.lastController = this.currentController;
+          this.lastPage = this.currentPage;
+          this.lastOptions = this.currentOptions;
+        }
 
         this.currentController = controllerName;
         this.currentPage = pageName;

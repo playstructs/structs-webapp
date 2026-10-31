@@ -8,9 +8,10 @@ export class ActivateDeviceWaitingForApprovalViewModel extends AbstractViewModel
    * @param {GameState} gameState
    * @param {ActivationCodeInfoDTO} activationCodeInfo
    */
-  constructor(gameState, activationCodeInfo) {
+  constructor(gameState, activationCodeInfo, authManager) {
     super();
     this.gameState = gameState;
+    this.authManager = authManager;
     this.activationCodeInfo = activationCodeInfo;
     this.blockies = new Blockies();
     this.blockieWrapperId = 'login-blockie-wrapper';
@@ -18,6 +19,15 @@ export class ActivateDeviceWaitingForApprovalViewModel extends AbstractViewModel
   }
 
   initPageCode() {
+    const signal=MenuPage.router.navigationSignal;
+    this.authManager.waitForDeviceActivation(this.activationCodeInfo,signal).then(()=>{
+      if (!signal.aborted) MenuPage.router.goto('Auth','loginActivatingDevice',this.activationCodeInfo);
+    }).catch(error=>{
+      if (!signal.aborted) {
+        console.debug('[DeviceActivation] association unavailable:',error);
+        MenuPage.router.goto('Auth','loginActivateDeviceCancelled');
+      }
+    });
     document.getElementById(this.blockieWrapperId).append(
       this.blockies.createBlockie(this.gameState.signingAccount.address)
     );

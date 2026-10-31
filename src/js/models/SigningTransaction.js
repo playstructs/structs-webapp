@@ -1,18 +1,23 @@
 import {UuidUtil} from "../util/UuidUtil";
+import {messagePayloadToWire} from "../util/MessagePayload";
+import {transactionIntent} from "../util/TransactionIntent";
+import {REACTOR_TRANSACTION} from "../constants/ReactorTransactions";
+import {MAX_ALPHA_SOURCES} from "../util/AvailableAlpha";
 
 /**
  * Lifecycle states for a queued signing transaction.
  *
- * Retryable failures do NOT get a persistent `failed` status — they return to
- * `queued` (with `attempts` / `error` set) until they either `succeeded` or are
- * `dropped` (no retries left).
+ * Preparing is demonstrably unsent in the current saved format. Legacy
+ * in_flight and unknown records require reconciliation and never auto-retry.
  *
  * @readonly
  * @enum {string}
  */
 export const TX_STATUS = {
   QUEUED: 'queued',
+  PREPARING: 'preparing',
   IN_FLIGHT: 'in_flight',
+  UNKNOWN: 'unknown',
   SUCCEEDED: 'succeeded',
   DROPPED: 'dropped',
   CANCELLED: 'cancelled',
@@ -36,6 +41,7 @@ const TERMINAL_STATUSES = [TX_STATUS.SUCCEEDED, TX_STATUS.DROPPED, TX_STATUS.CAN
 const PERSISTED_FIELDS = [
   'id',
   'message',
+  'messages',
   'accountAddress',
   'isAction',
   'chargeCost',
@@ -47,6 +53,9 @@ const PERSISTED_FIELDS = [
   'retryLimit',
   'response',
   'error',
+  'submission',
+  'intentProtocol',
+  'intent',
 ];
 
 /**
@@ -66,6 +75,8 @@ export class SigningTransaction {
     this.id = fields.id;
     /** @type {{ typeUrl: string, payload: object }} */
     this.message = fields.message;
+    /** @type {Array<{ typeUrl: string, payload: object }>|null} An atomic message group, when set. */
+    this.messages = fields.messages ?? null;
     /** @type {string} Owning signer address; persisted; used as `creator` at broadcast. */
     this.accountAddress = fields.accountAddress;
     /** @type {boolean} True when this tx belongs to the ordered action lane. */
@@ -82,7 +93,7 @@ export class SigningTransaction {
     this.broadcastAtBlock = fields.broadcastAtBlock;
     /** @type {number} */
     this.attempts = fields.attempts;
-    /** @type {number} Per-tx retry policy: -1 infinite, 0 one-shot, n>0 up to 1+n attempts. */
+    /** @type {number} Legacy saved field; signed submissions never auto-retry. */
     this.retryLimit = fields.retryLimit;
     /** @type {object|null} Serializable snapshot of the broadcast response. */
     this.response = fields.response;
@@ -90,6 +101,12 @@ export class SigningTransaction {
     this.error = fields.error;
     /** @type {Array<object>|null} In-memory only; never persisted. */
     this.msgResponses = fields.msgResponses ?? null;
+    /** @type {object|null} The signed bytes and their signing context. */
+    this.submission = fields.submission ?? null;
+    /** @type {string|null} Protocol the messages were prepared for. */
+    this.intentProtocol = fields.intentProtocol ?? null;
+    /** @type {object|null} What the user consented to; messages are prepared from it. */
+    this.intent = fields.intent ?? null;
   }
 
   /**
@@ -105,10 +122,20 @@ export class SigningTransaction {
    * @param {number} args.enqueuedAtBlock
    * @return {SigningTransaction}
    */
-  static create({ typeUrl, payload, isAction, chargeCost, retryLimit, accountAddress, enqueuedAtBlock }) {
+  static create({
+    typeUrl,
+    payload,
+    isAction,
+    chargeCost,
+    retryLimit,
+    accountAddress,
+    enqueuedAtBlock,
+    intentProtocol = null,
+    intent = null,
+  }) {
     return new SigningTransaction({
       id: UuidUtil.generate(),
-      message: { typeUrl, payload },
+      message: intent ? null : { typeUrl, payload },
       accountAddress,
       isAction: !!isAction,
       chargeCost: isAction ? chargeCost : null,
@@ -121,6 +148,8 @@ export class SigningTransaction {
       response: null,
       error: null,
       msgResponses: null,
+      intentProtocol,
+      intent: intent ? transactionIntent(intent) : null,
     });
   }
 
@@ -133,13 +162,65 @@ export class SigningTransaction {
    * @return {{ typeUrl: string, value: object }}
    */
   toCosmosMsg(registry) {
-    const type = registry.lookupType(this.message.typeUrl);
+    if (this.messages) throw new Error('Atomic message groups must be encoded together');
+    return this.encodeMessage(registry, this.message);
+  }
+
+  /**
+   * Encode every message, checking an atomic group has the shape its intent allows.
+   *
+   * @param {Registry} registry
+   * @return {Array<{ typeUrl: string, value: object }>}
+   */
+  toCosmosMsgs(registry) {
+    if (!this.messages) return [this.toCosmosMsg(registry)];
+    if (!Array.isArray(this.messages) || !this.messages.length) {
+      throw new Error('Invalid atomic message group');
+    }
+    if (this.intent?.kind === 'reactor_change' && this.intent.direction === 'defuse') {
+      if (
+        this.messages.length > REACTOR_TRANSACTION.MAX_POSITIONS
+        || this.messages.some(message => message.typeUrl !== '/structs.structs.MsgReactorDefuse')
+      ) {
+        throw new Error('Invalid atomic reactor withdrawal');
+      }
+    } else {
+      let finalType = null;
+      if (this.intent?.kind === 'alpha_transfer') {
+        finalType = this.intent.recipientId === null
+          ? '/structs.structs.MsgPlayerSend'
+          : '/structs.structs.MsgVaultSend';
+      } else if (this.intent?.kind === 'reactor_change' && this.intent.direction === 'infuse') {
+        finalType = '/structs.structs.MsgReactorInfuse';
+      } else if (this.intent?.kind === 'generator_fund') {
+        finalType = '/structs.structs.MsgStructGeneratorInfuse';
+      }
+      const last = this.messages.length - 1;
+      if (
+        !finalType
+        || last > MAX_ALPHA_SOURCES
+        || this.messages[last].typeUrl !== finalType
+        || this.messages.slice(0, last).some(message => message.typeUrl !== '/structs.structs.MsgPlayerSend')
+      ) {
+        throw new Error('Invalid atomic funding group');
+      }
+    }
+    return this.messages.map(message => this.encodeMessage(registry, message));
+  }
+
+  /**
+   * @param {Registry} registry
+   * @param {{ typeUrl: string, payload: object }} message
+   * @return {{ typeUrl: string, value: object }}
+   */
+  encodeMessage(registry, message) {
+    const type = registry.lookupType(message.typeUrl);
     if (!type) {
-      throw new Error(`Unknown typeUrl in registry: ${this.message.typeUrl}`);
+      throw new Error(`Unknown typeUrl in registry: ${message.typeUrl}`);
     }
     return {
-      typeUrl: this.message.typeUrl,
-      value: type.fromPartial({ ...this.message.payload, creator: this.accountAddress }),
+      typeUrl: message.typeUrl,
+      value: type.fromPartial({ ...messagePayloadToWire(message.typeUrl, message.payload), creator: this.accountAddress }),
     };
   }
 
@@ -166,32 +247,49 @@ export class SigningTransaction {
 
   /**
    * Rebuild from a persisted snapshot. Returns null if the object is missing
-   * the structural fields needed to ever broadcast (caller quarantines).
+   * the structural fields needed for recovery (caller preserves the original store).
    *
    * @param {object} obj
    * @return {SigningTransaction|null}
    */
   static fromJSON(obj) {
+    let intent = null;
+    if (obj?.intent !== undefined && obj.intent !== null) {
+      try {
+        intent = transactionIntent(obj.intent);
+      } catch {
+        return null;
+      }
+    }
     if (
       !obj
       || typeof obj !== 'object'
       || typeof obj.id !== 'string'
-      || !obj.message
-      || typeof obj.message.typeUrl !== 'string'
-      || typeof obj.message.payload !== 'object'
-      || obj.message.payload === null
+      || obj.id.length === 0
+      || !Number.isSafeInteger(obj.createdAt)
+      || obj.createdAt < 0
+      || (
+        !intent
+        && (
+          !obj.message
+          || typeof obj.message.typeUrl !== 'string'
+          || typeof obj.message.payload !== 'object'
+          || obj.message.payload === null
+        )
+      )
     ) {
       return null;
     }
 
     return new SigningTransaction({
       id: obj.id,
-      message: { typeUrl: obj.message.typeUrl, payload: obj.message.payload },
+      message: obj.message ? { typeUrl: obj.message.typeUrl, payload: obj.message.payload } : null,
+      messages: obj.messages ?? null,
       accountAddress: typeof obj.accountAddress === 'string' ? obj.accountAddress : null,
       isAction: !!obj.isAction,
       chargeCost: typeof obj.chargeCost === 'number' ? obj.chargeCost : null,
       status: typeof obj.status === 'string' ? obj.status : TX_STATUS.QUEUED,
-      createdAt: typeof obj.createdAt === 'number' ? obj.createdAt : Date.now(),
+      createdAt: obj.createdAt,
       enqueuedAtBlock: typeof obj.enqueuedAtBlock === 'number' ? obj.enqueuedAtBlock : null,
       broadcastAtBlock: typeof obj.broadcastAtBlock === 'number' ? obj.broadcastAtBlock : null,
       attempts: typeof obj.attempts === 'number' ? obj.attempts : 0,
@@ -199,6 +297,9 @@ export class SigningTransaction {
       response: obj.response ?? null,
       error: typeof obj.error === 'string' ? obj.error : null,
       msgResponses: null,
+      submission: obj.submission ?? null,
+      intentProtocol: obj.intentProtocol ?? null,
+      intent,
     });
   }
 }

@@ -653,9 +653,6 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     TargetSelectedIndicator.play(tile, TARGET_SELECTED_VARIANTS.FRIENDLY);
 
-    // Lock the action bar until we hear the grass notification from the struct defend action
-    this.gameState.actionBarLock.lock();
-
     // Clear defend target indicators
     window.dispatchEvent(new ClearDefendTargetsEvent(this.mapId));
 
@@ -663,11 +660,11 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     const defendingStructType = this.gameState.structTypes.getStructTypeById(defendingStruct.type);
 
     // Send defend set message to chain
-    await this.signingClientManager.queueMsgStructDefenseSet(
+    await this.gameState.actionBarLock.run(() => this.signingClientManager.queueMsgStructDefenseSet(
       defendingStruct.id,
       protectedStructId,
       defendingStructType.defend_change_charge
-    );
+    ));
   }
 
   /**
@@ -684,9 +681,6 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
 
     TargetSelectedIndicator.play(tile, TARGET_SELECTED_VARIANTS.ENEMY);
 
-    // Lock the action bar until we hear the grass notification from the struct attack action
-    this.gameState.actionBarLock.lock();
-
     // Clear attack target indicators
     window.dispatchEvent(new ClearAttackTargetsEvent(this.mapId));
 
@@ -701,12 +695,12 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       : attackingStructType.secondary_weapon_charge;
 
     // Send attack message to chain
-    await this.signingClientManager.queueMsgStructAttack(
+    await this.gameState.actionBarLock.run(() => this.signingClientManager.queueMsgStructAttack(
       attackingStruct.id,
       [targetStructId],
       weaponSystem,
       weaponCharge
-    );
+    ));
   }
 
   /**
@@ -717,22 +711,20 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
   async handleMoveTargetClick(tile) {
     TargetSelectedIndicator.play(tile, TARGET_SELECTED_VARIANTS.NEUTRAL);
 
-    // The lock the action bar until we hear the grass notification from the struct move action
-    this.gameState.actionBarLock.lock();
-
     const ambit = tile.getAttribute('data-ambit');
     const slot = parseInt(tile.getAttribute('data-slot'), 10);
     const structBeingMoved = this.gameState.actionBarLock.getActionSourceStruct();
     const structBeingMovedType = this.gameState.structTypes.getStructTypeById(structBeingMoved.type);
 
     // Send move message to chain
-    await this.signingClientManager.queueMsgStructMove(
+    const succeeded = await this.gameState.actionBarLock.run(() => this.signingClientManager.queueMsgStructMove(
       structBeingMoved.id,
       structBeingMoved.location_type,
       ambit,
       slot,
       structBeingMovedType.move_charge
-    );
+    ));
+    if (!succeeded) return;
 
     if (
       HUDViewModel.currentSelectedTile

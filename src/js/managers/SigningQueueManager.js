@@ -1,11 +1,20 @@
-import {TimeoutError} from "@cosmjs/stargate";
+import {deviceChangeIntent} from "../util/DeviceChangeIntent";
 import {EVENTS} from "../constants/Events";
-import {FEE} from "../constants/Fee";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {SIGNING_QUEUE} from "../constants/SigningQueueConstants";
 import {TASK} from "../constants/TaskConstants";
 import {SigningTransaction, TX_STATUS} from "../models/SigningTransaction";
 import {SigningTransactionSettledEvent} from "../events/SigningTransactionSettledEvent";
+import {normalizeMessagePayload} from "../util/MessagePayload";
+import {TransactionJournal} from "./TransactionJournal";
+import {SigningDeferredError} from "./SigningSubmission";
+import {transferIntent} from "../util/TransferIntent";
+import {reactorIntent} from "../util/ReactorIntent";
+import {registrationIntent} from "../util/RegistrationIntent";
+import {generatorIntent} from "../util/GeneratorIntent";
+import {gameplayIntent} from "../util/GameplayIntent";
+import {workSubmissionMatches} from "../util/WorkSubmission";
+import {isHistoricalSubmission} from "../util/SubmissionHistory";
 
 /**
  * Validate that a payload is safe to persist as JSON. Rejects anything that
@@ -78,11 +87,29 @@ export class SigningQueueManager {
    * @param {object} deps
    * @param {import('@cosmjs/proto-signing').Registry} deps.registry
    * @param {string} deps.wsUrl - Endpoint, used to scope the storage key per chain.
+   * @param {SigningSubmission|null} deps.submission - Prepares, sends and finds signed transactions.
    */
-  constructor(gameState, {registry, wsUrl}) {
+  constructor(gameState, {registry, wsUrl, submission = null}) {
     this.gameState = gameState;
     this.registry = registry;
     this.wsUrl = wsUrl;
+    this.submission = submission;
+    /** @type {Map<string, SigningTransaction>} Possibly-sent transactions awaiting an outcome. */
+    this.unresolved = new Map();
+    /** @type {Map<string, {height: number, interval: number}>} Next re-check of each historical outcome. */
+    this.historicalChecks = new Map();
+    /** @type {Map<string, SigningTransaction>} Terminal transactions seen this session. */
+    this.completed = new Map();
+    /** @type {boolean} True while the send loop holds the account lock. */
+    this.working = false;
+    /** @type {Set<function>} Resolved when the send loop next goes idle. */
+    this.idleWaiters = new Set();
+    /** @type {string|null} Why saved state could not be read; blocks signing until recovered. */
+    this.recoveryError = null;
+    /** @type {string|null} Storage key this queue's contents belong to. */
+    this.storageScope = null;
+    /** @type {boolean} Stops all signing, e.g. during logout or an account switch. */
+    this.suspended = false;
 
     /** @type {SigningTransaction[]} Unordered lane; fired ASAP. */
     this.immediateQueue = [];
@@ -94,7 +121,7 @@ export class SigningQueueManager {
     this.lastBroadcastHeight = 0;
     /** @type {number} Bridges GRASS lag between successful charge broadcasts. */
     this.scheduleAnchorHeight = 0;
-    /** @type {Map<string, {resolve: function}>} In-memory only; backs whenSettled. */
+    /** @type {Map<string, Set<function>>} In-memory only; backs whenSettled. */
     this.settlementWaiters = new Map();
     /** @type {number[]} In-memory ring buffer of block timestamps for ETA math. */
     this.blockTimestamps = [];
@@ -126,6 +153,170 @@ export class SigningQueueManager {
   }
 
   /**
+   * A gameplay message on the immediate lane, prepared at send time from its intent.
+   *
+   * @param {string} typeUrl
+   * @param {object} payload - Plain JSON object, no `creator`.
+   * @param {object} [options]
+   * @return {string} transaction id
+   */
+  enqueueGameplayImmediate(typeUrl, payload, options = {}) {
+    return this.#enqueue(typeUrl, payload, false, null, options, this.#gameplayIntent(typeUrl, payload));
+  }
+
+  /**
+   * A gameplay message on the ordered action lane, prepared at send time from its intent.
+   *
+   * @param {string} typeUrl
+   * @param {object} payload - Plain JSON object, no `creator`.
+   * @param {number} chargeCost
+   * @param {object} [options]
+   * @return {string} transaction id
+   */
+  enqueueGameplayAction(typeUrl, payload, chargeCost, options = {}) {
+    return this.#enqueue(typeUrl, payload, true, chargeCost, options, this.#gameplayIntent(typeUrl, payload));
+  }
+
+  /**
+   * @param {string} typeUrl
+   * @param {object} payload
+   * @return {object}
+   */
+  #gameplayIntent(typeUrl, payload) {
+    assertSerializable(payload);
+    return gameplayIntent({
+      kind: 'gameplay',
+      version: 1,
+      ownerId: this.gameState.keyPlayers?.[PLAYER_TYPES.PLAYER]?.id,
+      typeUrl,
+      payload,
+    });
+  }
+
+  /**
+   * Persist user intent without freezing protocol-specific transaction bytes.
+   *
+   * @param {object} value
+   * @return {string} transaction id
+   */
+  enqueueTransfer(value) {
+    return this.#enqueueIntent(transferIntent(value));
+  }
+
+  /**
+   * @param {object} value
+   * @return {string} transaction id
+   */
+  enqueueReactor(value) {
+    return this.#enqueueIntent(reactorIntent(value));
+  }
+
+  /**
+   * @param {object} value
+   * @return {string} transaction id
+   */
+  enqueueGenerator(value) {
+    return this.#enqueueIntent(generatorIntent(value));
+  }
+
+  /**
+   * @param {string} ownerId
+   * @param {string} address
+   * @return {SigningTransaction|null} the newest registration of this address, preferring unsettled ones
+   */
+  findRegistration(ownerId, address) {
+    return this.#findIntent(tx =>
+      tx?.intent?.kind === 'address_register'
+      && tx.intent.ownerId === ownerId
+      && tx.intent.address === address
+    );
+  }
+
+  /**
+   * @param {string} ownerId
+   * @param {string} address
+   * @return {SigningTransaction|null}
+   */
+  findPendingDeviceChange(ownerId, address) {
+    return this.#findIntent(tx =>
+      tx?.intent?.kind === 'device_change'
+      && tx.intent.ownerId === ownerId
+      && tx.intent.address === address
+      && !tx.isTerminal()
+    );
+  }
+
+  /**
+   * @param {object} state
+   * @return {SigningTransaction|null} a submission of this work, preferring one that succeeded
+   */
+  findWorkSubmission(state) {
+    return this.#findIntent(tx => workSubmissionMatches(tx, state, this.registry), true);
+  }
+
+  /**
+   * @param {object} value
+   * @return {string} transaction id
+   */
+  enqueueDeviceChange(value) {
+    return this.#enqueueIntent(deviceChangeIntent(value));
+  }
+
+  /**
+   * @param {function(SigningTransaction): boolean} matches
+   * @param {boolean} successFirst
+   * @return {SigningTransaction|null}
+   */
+  #findIntent(matches, successFirst = false) {
+    this.loadPersistedState();
+    if (this.recoveryError) throw new Error('Saved signing evidence requires recovery');
+    this.#bindScope();
+    // Adopt another tab's durable result before returning an observer's ID. While
+    // a send is running, its in-memory object remains owned by the send loop.
+    if (!this.working) this.#mergeJournal(new TransactionJournal(this.gameState.signingAccount.address), false);
+    const candidates = [
+      ...this.immediateQueue,
+      ...this.actionQueue,
+      ...this.unresolved.values(),
+      ...this.completed.values(),
+      ...(this.inFlight ? [this.inFlight] : []),
+    ];
+    return candidates.filter(matches)
+      .sort((a, b) =>
+        (successFirst ? Number(b.status === TX_STATUS.SUCCEEDED) - Number(a.status === TX_STATUS.SUCCEEDED) : 0)
+        || Number(a.isTerminal()) - Number(b.isTerminal())
+        || b.createdAt - a.createdAt
+        || b.id.localeCompare(a.id)
+      )[0] ?? null;
+  }
+
+  /**
+   * @param {object} value
+   * @return {string} transaction id
+   */
+  enqueueRegistration(value) {
+    return this.#enqueueIntent(registrationIntent(value));
+  }
+
+  /**
+   * @param {object} intent
+   * @return {string} transaction id
+   */
+  #enqueueIntent(intent) {
+    this.#assertCanEnqueue();
+    const tx = SigningTransaction.create({
+      intent,
+      isAction: false,
+      chargeCost: null,
+      retryLimit: 0,
+      accountAddress: this.gameState.signingAccount.address,
+      enqueuedAtBlock: this.gameState.currentBlockHeight,
+    });
+    this.appendToLane(tx);
+    return tx.id;
+  }
+
+  /**
    * Enqueue an ordered action-lane transaction. A `chargeCost` of 0 means the
    * action is free but still broadcast in order; only `chargeCost > 0` items
    * advance the schedule anchor (reset the on-chain charge bar).
@@ -146,13 +337,15 @@ export class SigningQueueManager {
    * @param {boolean} isAction
    * @param {number|null} chargeCost
    * @param {object} options
+   * @param {object|null} intent
    * @return {string}
    */
-  #enqueue(typeUrl, payload, isAction, chargeCost, options) {
+  #enqueue(typeUrl, payload, isAction, chargeCost, options, intent = null) {
     assertSerializable(payload);
+    payload = normalizeMessagePayload(typeUrl, payload);
 
-    // v1: per-tx retryLimit override is accepted but the global default applies
-    // unless explicitly provided. Wiring a caller is a one-liner here later.
+    this.#assertCanEnqueue();
+    // Retained in the saved format; signed submissions are never auto-retried.
     const retryLimit = typeof options.retryLimit === 'number'
       ? options.retryLimit
       : SIGNING_QUEUE.DEFAULT_RETRY_LIMIT;
@@ -165,6 +358,8 @@ export class SigningQueueManager {
       retryLimit,
       accountAddress: this.gameState.signingAccount?.address ?? null,
       enqueuedAtBlock: this.gameState.currentBlockHeight,
+      intentProtocol: options.intentProtocol ?? null,
+      intent,
     });
 
     this.appendToLane(tx);
@@ -172,8 +367,25 @@ export class SigningQueueManager {
   }
 
   /**
-   * Push a transaction onto the tail of its lane and persist. Shared by enqueue
-   * and the failure-retry path — retry is identical to a fresh enqueue at tail.
+   * Refuse new intents while a possible send's outcome is still unknown.
+   */
+  #assertCanEnqueue() {
+    this.#bindScope();
+    if (
+      this.suspended
+      || this.recoveryError
+      || this.hasUnresolvedSubmissions()
+      || new TransactionJournal(this.gameState.signingAccount.address).read().some(record =>
+        ['broadcasting', 'accepted', 'unknown'].includes(record.phase)
+        && !isHistoricalSubmission(record.transaction)
+      )
+    ) {
+      throw new SigningDeferredError('Resolve the existing submission before adding another intent');
+    }
+  }
+
+  /**
+   * Push a demonstrably unsent intent onto its lane and persist.
    *
    * @param {SigningTransaction} tx
    */
@@ -182,7 +394,10 @@ export class SigningQueueManager {
     tx.error = tx.error ?? null;
     const lane = tx.isAction ? this.actionQueue : this.immediateQueue;
     lane.push(tx);
-    this.persist();
+    if (!this.persist()) {
+      lane.pop();
+      throw new Error('Unsent intent could not be persisted');
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -321,286 +536,438 @@ export class SigningQueueManager {
   // ---------------------------------------------------------------------------
 
   /**
-   * Block listener handler. Selects at most one transaction to broadcast this
-   * block: charge head if its lazy gate passes, otherwise the immediate head.
+   * At most one new send per block/account; possible live sends reserve the account.
+   *
+   * @param {boolean} reconcileOnly look up unresolved outcomes without sending anything new
+   * @return {Promise<void>}
    */
-  transactOnBlock() {
-    const H = this.gameState.currentBlockHeight;
-    if (this.inFlight) {
+  async transactOnBlock(reconcileOnly = false) {
+    if (
+      this.suspended
+      || this.working
+      || !this.gameState.signingClient
+      || !this.gameState.signingAccount?.address
+      || !this.submission
+    ) {
       return;
     }
-    if (!this.gameState.signingClient || !this.gameState.signingAccount?.address) {
-      return;
-    }
-    if (this.lastBroadcastHeight >= H) {
-      return;
-    }
-
-    // Hold the entire action lane until the confirmed last-action height is
-    // loaded from the API/GRASS. Until then the charge base is unknown (defaults
-    // to 0 = full charge), so broadcasting could send a charge action the chain
-    // rejects. The immediate lane has no charge dependency and still proceeds.
-    const head = this.actionQueue[0];
-    if (head && this.isConfirmedActionLoaded() && this.projectedChargeAt(H) >= head.chargeCost) {
-      this.actionQueue.shift();
-      this.broadcast(head);
-      return;
-    }
-    // Action head not ready (or empty) → use this block's slot for immediate lane.
-
-    if (this.immediateQueue.length > 0) {
-      const tx = this.immediateQueue.shift();
-      this.broadcast(tx);
+    this.working = true;
+    try {
+      this.#bindScope();
+      const journal = new TransactionJournal(this.gameState.signingAccount.address);
+      await journal.exclusive(async () => {
+        if (this.suspended) return;
+        this.#mergeJournal(journal);
+        const height = this.gameState.currentBlockHeight;
+        if (this.unresolved.size) {
+          // Bounded work on each block. Unknown legacy records never become retries.
+          const pending = [...this.unresolved.values()]
+            .filter(tx => !isHistoricalSubmission(tx) || this.#historicalCheckDue(tx, height))
+            .sort((a, b) => Number(isHistoricalSubmission(a)) - Number(isHistoricalSubmission(b)));
+          for (const tx of pending.slice(0, 4)) {
+            if (isHistoricalSubmission(tx)) this.#deferHistoricalCheck(tx, height);
+            if (!tx.submission) {
+              this.unresolved.delete(tx.id);
+              this.unresolved.set(tx.id, tx);
+              continue;
+            }
+            try {
+              const response = tx.response?.stage === 'committed'
+                || (tx.response?.stage === 'check_tx' && tx.response.code > 0)
+                ? tx.response
+                : await this.#deadline(this.submission.find(tx), SIGNING_QUEUE.RECONCILE_TIMEOUT_MS);
+              if (response) this.#finish(tx, response, journal);
+            } catch (error) {
+              tx.error = String(error);
+            }
+            // Rotate so a temporarily unavailable hash cannot starve other records.
+            if (this.unresolved.has(tx.id)) {
+              this.unresolved.delete(tx.id);
+              this.unresolved.set(tx.id, tx);
+            }
+          }
+          if (this.hasUnresolvedSubmissions()) return;
+        }
+        if (reconcileOnly || this.recoveryError) return;
+        if (this.lastBroadcastHeight >= height) return;
+        const head = this.actionQueue[0];
+        const lane = head && this.isConfirmedActionLoaded() && this.projectedChargeAt(height) >= head.chargeCost
+          ? this.actionQueue
+          : this.immediateQueue;
+        const tx = lane.shift();
+        if (tx) await this.#broadcast(tx, journal);
+      });
+    } catch (error) {
+      console.warn('[SigningQueueManager] signing/recovery unavailable:', error);
+    } finally {
+      this.working = false;
+      for (const resolve of this.idleWaiters) resolve();
+      this.idleWaiters.clear();
     }
   }
 
   /**
-   * Sign and broadcast a single transaction. The only place `inFlight` is set
-   * or cleared. Persists before the first await so a mid-flight refresh can
-   * rehydrate.
+   * Historical outcomes no longer reserve the account, so they are re-checked
+   * on a growing interval of blocks rather than on every block.
    *
    * @param {SigningTransaction} tx
+   * @param {number} height
+   * @return {boolean}
+   */
+  #historicalCheckDue(tx, height) {
+    return (Number(height) || 0) >= (this.historicalChecks.get(tx.id)?.height ?? 0);
+  }
+
+  /**
+   * @param {SigningTransaction} tx
+   * @param {number} height
+   */
+  #deferHistoricalCheck(tx, height) {
+    const interval = this.historicalChecks.get(tx.id)?.interval ?? SIGNING_QUEUE.HISTORICAL_RECHECK_BLOCKS;
+    this.historicalChecks.set(tx.id, {
+      height: (Number(height) || 0) + interval,
+      interval: Math.min(interval * 2, SIGNING_QUEUE.HISTORICAL_RECHECK_MAX_BLOCKS)
+    });
+  }
+
+  /**
+   * Detach an account only after its current send has saved its outcome.
+   *
    * @return {Promise<void>}
    */
-  async broadcast(tx) {
-    tx.status = TX_STATUS.IN_FLIGHT;
-    this.inFlight = tx;
-    tx.broadcastAtBlock = this.gameState.currentBlockHeight;
-    this.lastBroadcastHeight = this.gameState.currentBlockHeight;
-    this.persist();
+  async releaseAccount() {
+    this.suspended = true;
+    if (this.working) await new Promise(resolve => this.idleWaiters.add(resolve));
+    // The caller still owns the old wallet here. Never move its evidence into
+    // another account's queue or erase a malformed snapshot while switching.
+    if (this.storageScope && !this.recoveryError && !this.persist()) {
+      throw new Error('Signing account queue could not be saved');
+    }
+    for (const waiters of this.settlementWaiters.values()) {
+      for (const waiter of [...waiters]) waiter.cancel(new Error('Signing account changed'));
+    }
+    this.settlementWaiters.clear();
+    this.immediateQueue = [];
+    this.actionQueue = [];
+    this.inFlight = null;
+    this.unresolved.clear();
+    this.historicalChecks.clear();
+    this.completed.clear();
+    this.lastBroadcastHeight = 0;
+    this.scheduleAnchorHeight = 0;
+    this.recoveryError = null;
+    this.storageScope = null;
+    this.rehydrated = false;
+  }
 
-    // Multi-account / Review hardening #4: never sign with the wrong key. If the
-    // active signer is not this tx's owner, hold it (restore to its lane head).
-    if (tx.accountAddress && tx.accountAddress !== this.gameState.signingAccount.address) {
-      console.warn(
-        `[SigningQueueManager] Holding tx ${tx.id}: owner ${tx.accountAddress} != active signer ${this.gameState.signingAccount.address}`
-      );
-      this.inFlight = null;
+  /**
+   * Why saved signing state blocks this account, or null when it does not.
+   *
+   * @return {string|null}
+   */
+  savedStateError() {
+    if (!this.gameState.signingAccount?.address) return null;
+    this.loadPersistedState();
+    if (this.recoveryError) return this.recoveryError;
+    const journal = new TransactionJournal(this.gameState.signingAccount.address);
+    try {
+      journal.read();
+      journal.deviceActionReferences();
+      return null;
+    } catch (error) {
+      return String(error);
+    }
+  }
+
+  /**
+   * Explicit player action: moves saved signing records this version cannot
+   * read aside, unchanged, and resumes signing without them. A moved record
+   * may be a submission whose outcome is unknown; the caller says so first.
+   *
+   * @return {Promise<number>} records moved aside
+   */
+  async quarantineSavedState() {
+    const journal = new TransactionJournal(this.gameState.signingAccount.address);
+    const reload = () => {
+      this.immediateQueue = [];
+      this.actionQueue = [];
+      this.unresolved.clear();
+      this.completed.clear();
+      this.recoveryError = null;
+      this.rehydrated = false;
+      this.loadPersistedState();
+    };
+    const moved = await journal.exclusive(() => {
+      let count = journal.quarantine();
+      reload();
+      if (this.recoveryError && this.storageScope && localStorage.getItem(this.storageScope) !== null) {
+        TransactionJournal.quarantineKey(this.gameState.signingAccount.address, this.storageScope);
+        count++;
+        reload();
+      }
+      return count;
+    });
+    if (moved === false) throw new Error('Another tab is using this account\'s signing storage');
+    const remaining = this.savedStateError();
+    if (remaining) throw new Error(remaining);
+    return moved;
+  }
+
+  /**
+   * Existing resume timer may recover results even when GRASS has missed blocks.
+   *
+   * @return {Promise<void>}
+   */
+  reconcilePending() {
+    return this.transactOnBlock(true);
+  }
+
+  /**
+   * Historical unknown outcomes remain saved but do not reserve new signing.
+   *
+   * @return {boolean}
+   */
+  hasUnresolvedSubmissions() {
+    return [...this.unresolved.values()].some(tx => !isHistoricalSubmission(tx));
+  }
+
+  /**
+   * Sign, journal and send one transaction the caller has shifted off its lane.
+   *
+   * @param {SigningTransaction} tx
+   * @param {TransactionJournal} journal
+   * @return {Promise<void>}
+   */
+  async #broadcast(tx, journal) {
+    if (tx.accountAddress !== this.gameState.signingAccount.address) {
       this.#restoreToLaneHead(tx);
       return;
     }
-
-    let msg;
+    let expired;
     try {
-      msg = tx.toCosmosMsg(this.registry);
-    } catch (err) {
-      // Encoding bug — treat as a normal failure (retry/drop per policy).
-      this.inFlight = null;
-      this.#handleBroadcastFailure(tx, err);
+      expired = tx.createdAt > Date.now()
+        || Date.now() - tx.createdAt > SIGNING_QUEUE.MAX_QUEUE_AGE_MS
+        || TransactionJournal.isSessionClosed(tx);
+    } catch (error) {
+      // The caller already shifted this intent off its lane; keep it there.
+      this.#restoreToLaneHead(tx);
+      throw error;
+    }
+    if (expired) {
+      try {
+        this.#finish(tx, null, journal, 'Unsent intent expired');
+      } catch (error) {
+        this.#restoreToLaneHead(tx);
+        throw error;
+      }
       return;
     }
-
-    console.debug('[SigningQueueManager] Broadcasting transaction:', {
-      id: tx.id,
-      typeUrl: tx.message.typeUrl,
-      payload: tx.message.payload,
-      isAction: tx.isAction,
-      chargeCost: tx.chargeCost,
-      attempts: tx.attempts,
-      broadcastAtBlock: tx.broadcastAtBlock,
-      creator: this.gameState.signingAccount.address,
-      msg,
-    });
-
+    tx.status = TX_STATUS.PREPARING;
+    this.inFlight = tx;
+    this.persist();
+    let active = true;
+    let sending = false;
     try {
-      const response = await this.#signAndBroadcastWithTimeout(msg);
-      this.#handleBroadcastResponse(tx, response);
-    } catch (err) {
-      if (err instanceof TimeoutError && err.txId) {
-        // Submitted but not yet included — it frequently lands a block or two
-        // later. Poll before treating as failure to avoid duplicate actions.
-        const found = await this.pollForTx(err.txId);
-        if (found) {
-          this.#handleBroadcastResponse(tx, {
-            code: found.code,
-            transactionHash: found.hash,
-            height: found.height,
-            rawLog: found.rawLog,
-            msgResponses: found.msgResponses,
-            events: found.events,
-          });
-          return;
+      tx.submission = await this.#deadline(this.submission.prepare(tx, () => {
+        if (!active || this.suspended || TransactionJournal.isSessionClosed(tx)) {
+          throw new Error('Signing preparation expired or session closed');
+        }
+      }), SIGNING_QUEUE.BROADCAST_TIMEOUT_MS);
+      // Both writes are synchronous under the account lock. No network call is
+      // reachable until exact bytes/hash and then the send marker are durable.
+      journal.write(tx, 'prepared');
+      this.submission.assertSendable(tx);
+      tx.status = TX_STATUS.UNKNOWN;
+      tx.broadcastAtBlock = this.gameState.currentBlockHeight;
+      journal.write(tx, 'broadcasting');
+      sending = true;
+      this.unresolved.set(tx.id, tx);
+      this.lastBroadcastHeight = this.gameState.currentBlockHeight;
+      this.persist();
+      const response = await this.#deadline(this.submission.send(tx), SIGNING_QUEUE.RECONCILE_TIMEOUT_MS);
+      if (response.code !== 0) {
+        this.#finish(tx, response, journal);
+        return;
+      }
+      // CheckTx acceptance is not a terminal success.
+      tx.response = response;
+      journal.write(tx, 'accepted');
+      const committed = await this.#deadline(this.submission.find(tx), SIGNING_QUEUE.RECONCILE_TIMEOUT_MS);
+      if (committed) this.#finish(tx, committed, journal);
+    } catch (error) {
+      tx.error = String(error);
+      if (sending) {
+        tx.status = TX_STATUS.UNKNOWN;
+        this.unresolved.set(tx.id, tx);
+        // The durable broadcasting/accepted record already protects this intent.
+        // A failed later write must not erase that evidence or settle as failure.
+        try {
+          journal.write(tx, 'unknown');
+        } catch (persistError) {
+          console.warn('[SigningQueueManager] outcome persistence unavailable:', persistError);
+        }
+      } else if (error instanceof SigningDeferredError) {
+        tx.submission = null;
+        this.#restoreToLaneHead(tx);
+      } else {
+        try {
+          this.#finish(tx, null, journal, String(error));
+        } catch {
+          tx.submission = null;
+          this.#restoreToLaneHead(tx);
         }
       }
+    } finally {
+      active = false;
       this.inFlight = null;
-      this.#handleBroadcastFailure(tx, err);
-    }
-  }
-
-  /**
-   * Sign and broadcast against a hard deadline.
-   *
-   * cosmjs bounds the wait for *inclusion* itself and raises a TimeoutError
-   * carrying a txId, which the caller recovers from by polling. That timer only
-   * arms once the transaction has been submitted, so it does nothing for a
-   * transport that dies mid-broadcast: the promise never settles, `inFlight`
-   * stays set, and every later block tick returns early, wedging both lanes
-   * until the page is reloaded. This bounds that case and nothing else.
-   *
-   * @param {object} msg
-   * @return {Promise<object>}
-   */
-  #signAndBroadcastWithTimeout(msg) {
-    const broadcast = this.gameState.signingClient.signAndBroadcast(
-      this.gameState.signingAccount.address,
-      [msg],
-      FEE
-    );
-
-    // Promise.race leaves the loser pending. Should the transport eventually
-    // fail after the deadline has already been reported, absorb it here rather
-    // than let it surface as an unhandled rejection.
-    broadcast.catch(() => {});
-
-    let timer;
-    const deadline = new Promise((resolve, reject) => {
-      timer = setTimeout(
-        () => reject(new Error(`Broadcast exceeded ${SIGNING_QUEUE.BROADCAST_TIMEOUT_MS}ms`)),
-        SIGNING_QUEUE.BROADCAST_TIMEOUT_MS
-      );
-    });
-
-    return Promise.race([broadcast, deadline]).finally(() => clearTimeout(timer));
-  }
-
-  /**
-   * Process a resolved broadcast response (from signAndBroadcast or a successful
-   * post-timeout poll). Mirrors the always-on logging from the old transactQueue.
-   *
-   * @param {SigningTransaction} tx
-   * @param {object} response
-   */
-  #handleBroadcastResponse(tx, response) {
-    tx.response = {
-      code: response.code,
-      transactionHash: response.transactionHash,
-      height: response.height,
-      rawLog: response.rawLog ?? null,
-    };
-
-    if (response.code === 0) {
-      console.debug('Transaction Successful: Code 0');
-    } else {
-      console.warn('Transaction Failed: Code ', response.code);
-    }
-    console.debug('Transaction Hash:', response.transactionHash);
-    console.debug('Height:', response.height);
-    if (Array.isArray(response.msgResponses)) {
-      try {
-        tx.msgResponses = response.msgResponses.map((m) => ({
-          typeUrl: m.typeUrl,
-          value: this.registry.decode(m),
-        }));
-        console.debug('Msg Responses:', tx.msgResponses);
-      } catch (decodeErr) {
-        console.debug('Msg Responses (undecoded):', response.msgResponses, decodeErr);
-      }
-    }
-    if (response.events) {
-      console.debug('Events:', response.events);
-    }
-
-    if (response.code !== 0) {
-      this.inFlight = null;
-      this.#handleBroadcastFailure(tx, new Error(`Broadcast rejected: code ${response.code}`));
-      return;
-    }
-
-    tx.status = TX_STATUS.SUCCEEDED;
-    tx.error = null;
-    if (tx.chargeCost > 0) {
-      // Only charge-consuming actions reset the on-chain bar. Free ordered
-      // actions (chargeCost 0) keep their lane order but never anchor.
-      // Anchor convention: chain inclusion height when present, else
-      // broadcastAtBlock + 1 (matches the old optimistic client convention).
-      const anchor = (typeof response.height === 'number' && response.height > 0)
-        ? response.height
-        : tx.broadcastAtBlock + 1;
-      this.scheduleAnchorHeight = Math.max(this.scheduleAnchorHeight, anchor);
-      this.clampScheduleAnchor();
-    }
-    this.inFlight = null;
-    this.settle(tx);
-    this.persist();
-  }
-
-  /**
-   * Apply the retry policy after a failure: re-queue at tail if attempts remain,
-   * otherwise drop and settle. Never mutates KeyPlayer (grass-only lastAction).
-   *
-   * @param {SigningTransaction} tx
-   * @param {Error} err
-   */
-  #handleBroadcastFailure(tx, err) {
-    console.warn('Sign and Broadcast Error:', err);
-    tx.attempts++;
-    tx.error = String(err);
-    if (this.canRetry(tx)) {
-      this.appendToLane(tx);
-    } else {
-      tx.status = TX_STATUS.DROPPED;
-      this.settle(tx);
       this.persist();
     }
   }
 
   /**
-   * Poll the chain for a tx hash for up to SIGNING_QUEUE.TIMEOUT_POLL_BLOCKS block ticks.
-   * `inFlight` stays set during the poll (still one logical broadcast).
-   *
-   * @param {string} txId
-   * @return {Promise<object|null>} the indexed tx, or null if not found in time
+   * @param {Promise<*>} operation
+   * @param {number} milliseconds
+   * @return {Promise<*>} the operation's result, or a rejection once the time passes
    */
-  async pollForTx(txId) {
-    for (let i = 0; i < SIGNING_QUEUE.TIMEOUT_POLL_BLOCKS; i++) {
+  #deadline(operation, milliseconds) {
+    let timer;
+    const deadline = new Promise((resolve, reject) => {
+      timer = setTimeout(() => reject(new Error('Transaction operation timed out')), milliseconds);
+    });
+    return Promise.race([operation, deadline]).finally(() => clearTimeout(timer));
+  }
+
+  /**
+   * Record a transaction's outcome in the journal, then settle it.
+   *
+   * @param {SigningTransaction} tx
+   * @param {object|null} response
+   * @param {TransactionJournal} journal
+   * @param {string|null} error
+   */
+  #finish(tx, response, journal, error = null) {
+    if (response?.stage === 'sequence_consumed') {
+      const previous = tx.response;
+      tx.response = response;
       try {
-        const found = await this.gameState.signingClient.getTx(txId);
-        if (found) {
-          return found;
-        }
-      } catch (err) {
-        console.debug('[SigningQueueManager] pollForTx error (will retry):', err);
+        if (!isHistoricalSubmission(tx)) throw new Error('Signing sequence proof is unavailable');
+        journal.write(tx, 'historical');
+      } catch (failure) {
+        tx.response = previous;
+        throw failure;
       }
-      await this.#waitForNextBlock();
+      this.persist();
+      return; // Keep the unknown outcome and observers; never report rejection.
+    }
+    const {msgResponses, ...savedResponse} = response ?? {};
+    tx.response = response ? savedResponse : null;
+    tx.status = response?.stage === 'committed' && response.code === 0 ? TX_STATUS.SUCCEEDED : TX_STATUS.DROPPED;
+    tx.error = error;
+    if (!tx.error && tx.status !== TX_STATUS.SUCCEEDED) {
+      tx.error = response?.stage === 'expired'
+        ? 'Transaction expired without execution'
+        : `Transaction rejected: ${response?.code ?? 'not submitted'}`;
     }
     try {
-      return await this.gameState.signingClient.getTx(txId);
-    } catch {
-      return null;
+      journal.write(tx, 'settled');
+    } catch (failure) {
+      tx.status = TX_STATUS.UNKNOWN;
+      throw failure;
     }
+    this.unresolved.delete(tx.id);
+    this.#removeFromLanes(tx.id);
+    this.#rememberCompleted(tx);
+    if (Array.isArray(response?.msgResponses)) {
+      try {
+        tx.msgResponses = response.msgResponses.map(message => ({
+          typeUrl: message.typeUrl,
+          value: this.registry.decode(message),
+        }));
+      } catch (decodeError) {
+        console.debug('[SigningQueueManager] response decoding unavailable:', decodeError);
+      }
+    }
+    this.persist();
+    this.settle(tx);
   }
 
   /**
-   * Resolve on the next BLOCK_HEIGHT_CHANGED (with a time-based safety net so we
-   * never hang if blocks stall).
+   * Keep a terminal transaction, advancing the schedule anchor for a committed charge action.
    *
-   * @return {Promise<void>}
+   * @param {SigningTransaction} tx
    */
-  #waitForNextBlock() {
-    return new Promise((resolve) => {
-      let done = false;
-      const finish = () => {
-        if (done) {
-          return;
-        }
-        done = true;
-        window.removeEventListener(EVENTS.BLOCK_HEIGHT_CHANGED, finish);
-        resolve();
-      };
-      window.addEventListener(EVENTS.BLOCK_HEIGHT_CHANGED, finish);
-      setTimeout(finish, Math.max(TASK.ESTIMATED_BLOCK_TIME, this.getAvgBlockMs()) * 2);
-    });
+  #rememberCompleted(tx) {
+    this.completed.set(tx.id, tx);
+    if (tx.status === TX_STATUS.SUCCEEDED && tx.chargeCost > 0 && tx.response?.stage === 'committed') {
+      const height = Number(tx.response.height);
+      if (Number.isSafeInteger(height) && height > 0) {
+        this.scheduleAnchorHeight = Math.max(this.scheduleAnchorHeight, height);
+      }
+      this.clampScheduleAnchor();
+    }
   }
 
   /**
-   * @param {SigningTransaction} tx
-   * @return {boolean}
+   * @param {string} id
    */
-  canRetry(tx) {
-    if (tx.retryLimit === -1) {
-      return true;
+  #removeFromLanes(id) {
+    this.immediateQueue = this.immediateQueue.filter(tx => tx.id !== id);
+    this.actionQueue = this.actionQueue.filter(tx => tx.id !== id);
+  }
+
+  /**
+   * Adopt the journal's records, which other tabs may have written, over this queue's copies.
+   *
+   * @param {TransactionJournal} journal
+   * @param {boolean} persistLegacy journal unresolved records that predate the journal
+   */
+  #mergeJournal(journal, persistLegacy = true) {
+    const records = journal.read();
+    const ids = new Set();
+    for (const record of records) {
+      const tx = SigningTransaction.fromJSON(record.transaction);
+      if (!tx || tx.accountAddress !== journal.accountAddress) {
+        throw new Error('Invalid journal transaction; recovery required');
+      }
+      ids.add(tx.id);
+      const known = this.getTransaction(tx.id);
+      if (Number.isSafeInteger(tx.broadcastAtBlock)) {
+        this.lastBroadcastHeight = Math.max(this.lastBroadcastHeight, tx.broadcastAtBlock);
+      }
+      this.#removeFromLanes(tx.id);
+      if (record.phase === 'settled') {
+        const notify = known && !known.isTerminal();
+        this.unresolved.delete(tx.id);
+        this.#rememberCompleted(tx);
+        if (notify) this.settle(tx);
+      } else if (record.phase === 'prepared') {
+        // A send always replaces this record with 'broadcasting' before any
+        // network call, so a prepared record was never transmitted. Rebuild
+        // only this demonstrably unsent intent.
+        tx.submission = null;
+        tx.status = TX_STATUS.QUEUED;
+        this.unresolved.delete(tx.id);
+        (tx.isAction ? this.actionQueue : this.immediateQueue).unshift(tx);
+      } else {
+        tx.status = TX_STATUS.UNKNOWN;
+        if (
+          known?.submission?.hash === tx.submission?.hash
+          && (
+            known?.response?.stage === 'committed'
+            || known?.response?.stage === 'sequence_consumed'
+            || (known?.response?.stage === 'check_tx' && known.response.code > 0)
+          )
+        ) {
+          tx.response = known.response;
+        }
+        this.unresolved.set(tx.id, tx);
+      }
     }
-    return tx.attempts < 1 + tx.retryLimit;
+    for (const tx of this.unresolved.values()) {
+      if (persistLegacy && !ids.has(tx.id)) {
+        journal.write(tx, isHistoricalSubmission(tx) ? 'historical' : 'unknown');
+      }
+    }
   }
 
   /**
@@ -614,6 +981,18 @@ export class SigningQueueManager {
     const lane = tx.isAction ? this.actionQueue : this.immediateQueue;
     lane.unshift(tx);
     this.persist();
+  }
+
+  /**
+   * Tie this queue to the current account's storage key; refuse if the account has changed.
+   */
+  #bindScope() {
+    const key = this.getStorageKey();
+    if (!key) throw new Error('Signing account is unavailable');
+    if (this.storageScope && this.storageScope !== key) {
+      throw new Error('Signing account changed; reload its queue before submitting');
+    }
+    this.storageScope = key;
   }
 
   // ---------------------------------------------------------------------------
@@ -630,7 +1009,7 @@ export class SigningQueueManager {
     const waiter = this.settlementWaiters.get(tx.id);
     if (waiter) {
       this.settlementWaiters.delete(tx.id);
-      waiter.resolve(tx);
+      for (const resolve of waiter) resolve(tx);
     }
     window.dispatchEvent(new SigningTransactionSettledEvent(
       tx.id,
@@ -642,26 +1021,39 @@ export class SigningQueueManager {
   }
 
   /**
-   * Promise that resolves (never rejects) with the transaction when it reaches a
+   * Promise that resolves with the transaction when it reaches a
    * terminal state. Callers MUST check `tx.status`. Already-terminal txs resolve
-   * immediately; unknown ids resolve with a synthetic terminal record so callers
-   * never hang.
+   * immediately. Missing/ambiguous evidence never becomes a fabricated failure;
+   * a waiter remains pending until a terminal result is established.
+   * An optional signal rejects only this observer on abort; the transaction continues.
    *
    * @param {string} id
+   * @param {AbortSignal} [signal]
    * @return {Promise<SigningTransaction|object>}
    */
-  whenSettled(id) {
+  whenSettled(id, signal = undefined) {
+    if (signal?.aborted) return Promise.reject(signal.reason);
     const existing = this.getTransaction(id);
     if (existing && existing.isTerminal()) {
       return Promise.resolve(existing);
     }
-    if (!existing) {
-      // No such live tx (e.g. settled before the caller awaited, or rehydrated
-      // without a waiter). Resolve so .then()/await never hangs.
-      return Promise.resolve({id, status: TX_STATUS.DROPPED, response: null, error: 'unknown transaction'});
-    }
-    return new Promise((resolve) => {
-      this.settlementWaiters.set(id, {resolve});
+    return new Promise((resolve, reject) => {
+      const waiters = this.settlementWaiters.get(id) ?? new Set();
+      const settled = tx => {
+        signal?.removeEventListener('abort', abort);
+        resolve(tx);
+      };
+      const cancel = reason => {
+        waiters.delete(settled);
+        if (!waiters.size) this.settlementWaiters.delete(id);
+        signal?.removeEventListener('abort', abort);
+        reject(reason);
+      };
+      const abort = () => cancel(signal.reason);
+      settled.cancel = cancel;
+      waiters.add(settled);
+      this.settlementWaiters.set(id, waiters);
+      signal?.addEventListener('abort', abort, {once: true});
     });
   }
 
@@ -674,23 +1066,30 @@ export class SigningQueueManager {
    * Refuses if the tx is currently in flight.
    *
    * @param {string} id
-   * @return {boolean}
+   * @return {Promise<boolean>}
    */
-  cancelQueueItem(id) {
-    if (this.inFlight && this.inFlight.id === id) {
-      return false;
-    }
-    for (const lane of [this.immediateQueue, this.actionQueue]) {
-      const index = lane.findIndex((tx) => tx.id === id);
-      if (index !== -1) {
-        const [tx] = lane.splice(index, 1);
-        tx.status = TX_STATUS.CANCELLED;
-        this.persist();
-        this.settle(tx);
-        return true;
+  async cancelQueueItem(id) {
+    if (this.working) return false;
+    this.#bindScope();
+    const journal = new TransactionJournal(this.gameState.signingAccount.address);
+    return journal.exclusive(async () => {
+      this.#mergeJournal(journal);
+      if (this.unresolved.has(id) || this.inFlight?.id === id) return false;
+      const tx = this.immediateQueue.find(tx => tx.id === id) ?? this.actionQueue.find(tx => tx.id === id);
+      if (!tx) return false;
+      tx.status = TX_STATUS.CANCELLED;
+      try {
+        journal.write(tx, 'settled');
+      } catch (error) {
+        tx.status = TX_STATUS.QUEUED;
+        throw error;
       }
-    }
-    return false;
+      this.#removeFromLanes(id);
+      this.#rememberCompleted(tx);
+      this.persist();
+      this.settle(tx);
+      return true;
+    });
   }
 
   /**
@@ -760,6 +1159,8 @@ export class SigningQueueManager {
     }
     return this.immediateQueue.find((tx) => tx.id === id)
       ?? this.actionQueue.find((tx) => tx.id === id)
+      ?? this.unresolved.get(id)
+      ?? this.completed.get(id)
       ?? null;
   }
 
@@ -782,154 +1183,211 @@ export class SigningQueueManager {
   }
 
   /**
+   * The old queue could return a timed-out send to queued. Its attempt counter
+   * and broadcast height survive that transition, but its signed bytes do not.
+   * Also recognize these fields after an earlier version-3 import.
+   *
+   * @param {object} json
+   * @return {boolean}
+   */
+  #hasLegacySubmissionEvidence(json) {
+    return !json.intent
+      && !json.submission
+      && ((json.attempts ?? 0) !== 0 || json.broadcastAtBlock != null);
+  }
+
+  /**
+   * Earlier versions moved stale/corrupt snapshots to this `.corrupt` key before
+   * starting an empty queue. Keep the original backup verbatim. Import
+   * identifiable possible sends as observation-only records; malformed backups
+   * cannot become executable work or a permanent reservation of this account's
+   * signing sequence.
+   */
+  #loadLegacyQuarantine() {
+    const raw = localStorage.getItem(`${this.storageScope}.corrupt`);
+    if (raw === null) return;
+    let saved;
+    try {
+      saved = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    if (
+      ![2, SIGNING_QUEUE.STORAGE_VERSION].includes(saved?.version)
+      || !Array.isArray(saved.immediateQueue)
+      || !Array.isArray(saved.actionQueue)
+    ) {
+      return;
+    }
+    const records = [
+      ...(saved.inFlight ? [saved.inFlight] : []),
+      ...(Array.isArray(saved.unresolved) ? saved.unresolved : []),
+      ...saved.immediateQueue,
+      ...saved.actionQueue,
+    ];
+    for (const json of records) {
+      const tx = SigningTransaction.fromJSON(json);
+      if (!tx || tx.accountAddress !== this.gameState.signingAccount.address) {
+        continue;
+      }
+      if (tx.isTerminal()) continue;
+      if (
+        json === saved.inFlight
+        || tx.submission
+        || this.#hasLegacySubmissionEvidence(json)
+        || tx.status !== TX_STATUS.QUEUED
+      ) {
+        tx.status = TX_STATUS.UNKNOWN;
+        this.unresolved.set(tx.id, tx);
+      }
+    }
+  }
+
+  /**
    * Write the full snapshot synchronously (matches the gameState save pattern).
    * No-op until the storage key is resolvable.
    */
   persist() {
     const storageKey = this.getStorageKey();
-    if (!storageKey) {
-      return;
+    if (!storageKey || this.recoveryError || (this.storageScope && storageKey !== this.storageScope)) {
+      return false;
     }
+    const carried = this.#otherTabsUnsent(storageKey);
     const snapshot = {
       version: SIGNING_QUEUE.STORAGE_VERSION,
       savedAt: Date.now(),
       savedAtBlock: this.gameState.currentBlockHeight,
       scheduleAnchorHeight: this.scheduleAnchorHeight,
       lastBroadcastHeight: this.lastBroadcastHeight,
-      immediateQueue: this.immediateQueue.map((tx) => tx.toJSON()),
-      actionQueue: this.actionQueue.map((tx) => tx.toJSON()),
+      immediateQueue: [...this.immediateQueue.map((tx) => tx.toJSON()), ...carried.immediateQueue],
+      actionQueue: [...this.actionQueue.map((tx) => tx.toJSON()), ...carried.actionQueue],
       inFlight: this.inFlight ? this.inFlight.toJSON() : null,
+      unresolved: [...this.unresolved.values()].map(tx => tx.toJSON()),
     };
     try {
       localStorage.setItem(storageKey, JSON.stringify(snapshot));
+      return true;
     } catch (err) {
       console.error('[SigningQueueManager] persist failed:', err);
+      return false;
     }
   }
 
   /**
-   * Rehydrate from localStorage. Called once the signing account is available
-   * (from SigningClientManager.initSigningClient). Defensive: never throws,
-   * worst case starts empty. Stale snapshots are quarantined, not replayed.
+   * Unsent intents another tab saved for this account that this tab has never
+   * seen. Every tab writes the whole snapshot, so without these a write from
+   * one tab would drop the other's queued actions from storage.
+   *
+   * @param {string} storageKey
+   * @return {{immediateQueue: object[], actionQueue: object[]}}
+   */
+  #otherTabsUnsent(storageKey) {
+    const none = {immediateQueue: [], actionQueue: []};
+    let saved;
+    let journaled;
+    try {
+      saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
+      journaled = new Set(
+        new TransactionJournal(this.gameState.signingAccount.address).read().map(record => record.transaction.id)
+      );
+    } catch {
+      return none; // Unreadable state is left to loadPersistedState's recovery.
+    }
+    if (
+      saved?.version !== SIGNING_QUEUE.STORAGE_VERSION
+      || !Array.isArray(saved.immediateQueue)
+      || !Array.isArray(saved.actionQueue)
+    ) {
+      return none;
+    }
+    const known = new Set([
+      ...this.immediateQueue,
+      ...this.actionQueue,
+      ...this.unresolved.values(),
+      ...this.completed.values(),
+      ...(this.inFlight ? [this.inFlight] : []),
+    ].map(tx => tx.id));
+    const unseen = json =>
+      typeof json?.id === 'string'
+      && !known.has(json.id)
+      && !journaled.has(json.id)
+      && Number.isSafeInteger(json.createdAt)
+      && Date.now() - json.createdAt <= SIGNING_QUEUE.MAX_QUEUE_AGE_MS;
+    return {immediateQueue: saved.immediateQueue.filter(unseen), actionQueue: saved.actionQueue.filter(unseen)};
+  }
+
+  /**
+   * Restore unsent work; preserve ambiguous evidence regardless of age/schema.
    */
   loadPersistedState() {
-    if (this.rehydrated) {
-      return;
-    }
-    const storageKey = this.getStorageKey();
-    if (!storageKey) {
-      console.warn('[SigningQueueManager] cannot rehydrate: no signing account/endpoint yet.');
-      return;
-    }
-    this.rehydrated = true;
-
-    let raw;
+    if (this.rehydrated) return;
     try {
-      raw = localStorage.getItem(storageKey);
-    } catch (err) {
-      console.error('[SigningQueueManager] localStorage read failed:', err);
-      return;
-    }
-    if (!raw) {
-      return;
-    }
-
-    let state;
-    try {
-      state = JSON.parse(raw);
-    } catch (err) {
-      console.error('[SigningQueueManager] corrupt persisted queue, quarantining:', err);
-      this.#quarantine(storageKey, raw);
-      return;
-    }
-
-    // Review hardening #2: stale-queue guard (applies before version check).
-    if (typeof state.savedAt === 'number'
-      && Date.now() - state.savedAt > SIGNING_QUEUE.MAX_QUEUE_AGE_MS) {
-      console.warn('[SigningQueueManager] persisted queue is stale; quarantining, starting empty.');
-      this.#quarantine(storageKey, raw);
-      return;
-    }
-
-    if (state.version !== SIGNING_QUEUE.STORAGE_VERSION) {
-      console.warn(
-        `[SigningQueueManager] queue version mismatch (have ${state.version}, want ${SIGNING_QUEUE.STORAGE_VERSION}); starting empty.`
-      );
-      return;
-    }
-
-    try {
-      this.scheduleAnchorHeight = typeof state.scheduleAnchorHeight === 'number' ? state.scheduleAnchorHeight : 0;
-      this.lastBroadcastHeight = typeof state.lastBroadcastHeight === 'number' ? state.lastBroadcastHeight : 0;
-
-      this.immediateQueue = this.#rehydrateLane(state.immediateQueue);
-      this.actionQueue = this.#rehydrateLane(state.actionQueue);
-
-      if (state.inFlight) {
-        const tx = SigningTransaction.fromJSON(state.inFlight);
-        if (tx) {
-          // We cannot know if it landed on-chain before unload. Conservative:
-          // re-queue at tail with attempts++ (same as a failure retry).
-          tx.attempts = (tx.attempts ?? 0) + 1;
-          if (this.canRetry(tx)) {
-            this.appendToLane(tx);
-          } else {
+      this.#bindScope();
+      this.#loadLegacyQuarantine();
+      const raw = localStorage.getItem(this.storageScope);
+      if (raw) {
+        const state = JSON.parse(raw);
+        if (
+          !state
+          || ![2, SIGNING_QUEUE.STORAGE_VERSION].includes(state.version)
+          || !Array.isArray(state.immediateQueue)
+          || !Array.isArray(state.actionQueue)
+        ) {
+          throw new Error('Unrecognized saved queue; recovery required');
+        }
+        this.scheduleAnchorHeight = Number.isSafeInteger(state.scheduleAnchorHeight) ? state.scheduleAnchorHeight : 0;
+        this.lastBroadcastHeight = Number.isSafeInteger(state.lastBroadcastHeight) ? state.lastBroadcastHeight : 0;
+        const seen = new Set();
+        // Ambiguous evidence outranks a duplicate unsigned lane entry.
+        const records = [
+          ...(state.unresolved ?? []),
+          ...(state.inFlight ? [state.inFlight] : []),
+          ...state.immediateQueue,
+          ...state.actionQueue,
+        ];
+        for (const json of records) {
+          const tx = SigningTransaction.fromJSON(json);
+          if (!tx || tx.accountAddress !== this.gameState.signingAccount.address) {
+            throw new Error('Invalid saved intent; recovery required');
+          }
+          if (seen.has(tx.id)) continue;
+          seen.add(tx.id);
+          if (tx.isTerminal()) {
+            this.#rememberCompleted(tx);
+            continue;
+          }
+          // A possible send in the retained backup outranks an unsigned copy.
+          if (this.unresolved.has(tx.id) && !tx.submission) continue;
+          const unknown = tx.submission
+            || this.#hasLegacySubmissionEvidence(json)
+            || [TX_STATUS.IN_FLIGHT, TX_STATUS.UNKNOWN].includes(tx.status)
+            || (json === state.inFlight && !(state.version === 3 && tx.status === TX_STATUS.PREPARING));
+          if (unknown) {
+            tx.status = TX_STATUS.UNKNOWN;
+            this.unresolved.set(tx.id, tx);
+          } else if (![TX_STATUS.QUEUED, TX_STATUS.PREPARING].includes(tx.status)) {
+            throw new Error('Unknown intent state; recovery required');
+          } else if (
+            Date.now() - tx.createdAt > SIGNING_QUEUE.MAX_QUEUE_AGE_MS
+            || (!tx.intent && !this.registry.lookupType(tx.message.typeUrl))
+          ) {
             tx.status = TX_STATUS.DROPPED;
-            this.settle(tx);
+            tx.error = 'Unsent intent is expired or unsupported';
+            this.#rememberCompleted(tx);
+          } else {
+            tx.status = TX_STATUS.QUEUED;
+            (tx.isAction ? this.actionQueue : this.immediateQueue).push(tx);
           }
         }
       }
-      console.info('[SigningQueueManager] queue rehydrated.');
+      this.#mergeJournal(new TransactionJournal(this.gameState.signingAccount.address), false);
+      this.rehydrated = true;
       this.persist();
-    } catch (err) {
-      console.error('[SigningQueueManager] rehydrate failed, starting empty:', err);
-      this.immediateQueue = [];
-      this.actionQueue = [];
-      this.inFlight = null;
-    }
-  }
-
-  /**
-   * Rebuild a lane from persisted JSON, dropping corrupt entries and any whose
-   * typeUrl is no longer in the registry.
-   *
-   * @param {Array<object>} rawLane
-   * @return {SigningTransaction[]}
-   */
-  #rehydrateLane(rawLane) {
-    if (!Array.isArray(rawLane)) {
-      return [];
-    }
-    const lane = [];
-    for (const json of rawLane) {
-      const tx = SigningTransaction.fromJSON(json);
-      if (!tx) {
-        console.warn('[SigningQueueManager] dropping corrupt persisted tx:', json);
-        continue;
-      }
-      if (!this.registry.lookupType(tx.message.typeUrl)) {
-        console.warn('[SigningQueueManager] dropping tx with unknown typeUrl:', tx.message.typeUrl);
-        continue;
-      }
-      // A persisted in_flight in a lane never happened; normalize to queued.
-      if (tx.status === TX_STATUS.IN_FLIGHT) {
-        tx.status = TX_STATUS.QUEUED;
-      }
-      lane.push(tx);
-    }
-    return lane;
-  }
-
-  /**
-   * @param {string} storageKey
-   * @param {string} raw
-   */
-  #quarantine(storageKey, raw) {
-    try {
-      localStorage.setItem(`${storageKey}.corrupt`, raw);
-      localStorage.removeItem(storageKey);
-    } catch (err) {
-      console.error('[SigningQueueManager] quarantine failed:', err);
+    } catch (error) {
+      // Keep the original queue/journal untouched. Starting empty here could
+      // make a previously broadcast payment look safe to replace.
+      this.recoveryError = String(error);
+      console.error('[SigningQueueManager] saved evidence needs recovery:', error);
     }
   }
 }

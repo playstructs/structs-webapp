@@ -1,0 +1,81 @@
+# Catalog HTTP regression
+
+## Fixture setup
+
+Both runners read from one labelled, disposable structs-pg container and never
+write to it. Create it from a structs-pg image whose pinned Sqitch target
+includes the v0.22 plan, for example:
+
+```bash
+docker run -d --name structs-v022-pg --hostname structs-pg \
+  --label structs.task=v022-integration -e POSTGRES_MEMORY_MB=512 \
+  structs/structs-pg:latest
+```
+
+The image's start script deploys its pinned migration target (`--hostname` lets
+its default `SQITCH_PG_CONNECTION` reach itself). Wait for `docker logs
+structs-v022-pg` to report the deploy, then confirm with `docker exec -u postgres
+structs-v022-pg psql -d structs -Atc "SELECT structs.api_readiness(ARRAY[]::text[]) IS NOT NULL"`.
+The runners refuse a container without the `structs.task=v022-integration`
+label. Set `STRUCTS_INTEGRATION_PG` to use a different container name.
+
+The PHP runner needs any image built from this repository's Dockerfile for its PHP
+runtime; it mounts this checkout over the image source:
+
+```bash
+docker build -t structs-v022-webapp:local .
+STRUCTS_PHP_TEST_IMAGE=structs-v022-webapp:local node tools/api/php-integration.cjs
+```
+
+The default tag is `structs-v022-webapp:ae4457e2`. These setup commands have not
+been run end to end from a clean machine.
+
+Run `node tools/api/catalog-http.cjs` from the webapp worktree once the
+[fixture](#fixture-setup) container is ready. It requires
+Docker, Node 22+, and the existing local `structs/structs-webapp:latest` and
+`structs/structs-control:latest` images. This is a source/config integration check;
+release-image reproducibility remains a separate packaging gate.
+
+Set `STRUCTS_WEBAPP_TEST_IMAGE` to a locally built candidate image to run the same
+checks against its packaged source and Apache configuration, without source mounts.
+
+The runner clones that fixture into its own marked test database, starts isolated
+Apache and control dev-proxy containers on random localhost ports, and exercises
+the real authenticator, controllers, and restricted `structs_webapp` SQL role.
+It mounts this worktree read-only and the same virtual-host config copied by the
+Dockerfile. It does not use the live webapp source or database. Fixtures, containers,
+and the temporary network are removed in `finally`. The source fixture is read only;
+concurrent PHP and HTTP runs use different clones.
+
+Checks include encoded IBC/factory slashes and colons, exact numeric balance order
+and pagination, unchanged native/guild denomination paths, required authentication,
+and refusal of invalid/double-encoded denomination parameters. Public signup
+bootstrap and all approved guild reads are checked without a cookie or bearer token,
+including encoded paths, HEAD, cross-origin response headers and protected device writes.
+The public contract is documented in [public-guild-api.md](public-guild-api.md). The proxy uses its
+packaged source, not a live-mounted control checkout. A deployed upstream proxy must
+also preserve the request path; this check does not certify another operator's proxy.
+
+PHP manager and restricted-role catalog/ownership/valuation tests live in
+`src/tests/CatalogEconomyTest.php` and `src/tests/LedgerManagerTest.php` and use
+`INTEGRATION_DATABASE_URL` for the disposable Sqitch database.
+
+## Required PHP integration run
+
+Run `node tools/api/php-integration.cjs` from this worktree. It takes a logical
+snapshot of the labelled, disposable `structs-v022-pg` fixture, restores a uniquely
+named test database with Timescale's restore lifecycle, disables only that clone's
+background jobs, runs the entire PHP suite with `--fail-on-skipped`, and drops its
+own clone in `finally`. The source fixture and live guild database are not changed.
+PHPUnit refuses an `INTEGRATION_DATABASE_URL` unless its actual database name starts
+with `webapp_test_` and its `structs.test_fixture` setting is `disposable-v022`.
+A normal unit-only run still skips database cases; it is not migration acceptance.
+
+Registration proof/status and pending-consent POST requests share an IP token bucket
+(12-request burst, one new request per two seconds) and an application-wide bucket
+(60-request burst, ten per second). Symfony's filesystem cache and flock locks share
+these budgets across this container's PHP workers. A 429 includes `Retry-After` and
+`Cache-Control: no-store`. Configure shared cache/locks and trusted proxies explicitly
+before multi-replica/public deployment; these application limits are not edge DoS
+protection. The HTTP runner checks both Apache and the control proxy, including
+untrusted forwarded-IP headers. No public production origin has been accepted yet.

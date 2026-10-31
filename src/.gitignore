@@ -16,3 +16,12 @@ phpunit.xml
 
 .DS_Store
 /node_modules/
+
+# Unversioned bundles from webpack configs before hashed output. Nothing loads
+# them; the page reads public/js/manifest.json.
+/public/js/index.js
+/public/js/index.js.map
+/public/js/test.js
+/public/js/test.js.map
+/public/js/workers/TaskWorker.js
+/public/js/workers/TaskWorker.js.map

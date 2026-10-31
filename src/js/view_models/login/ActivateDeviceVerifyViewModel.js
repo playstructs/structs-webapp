@@ -18,6 +18,7 @@ export class ActivateDeviceVerifyViewModel extends AbstractViewModel {
     this.authManager = authManager;
     this.activationCodeInfo = activationCodeInfo;
     this.yesBtnId = 'yes-btn';
+    this.submitting = false;
     this.noBtnId = 'no-btn';
   }
 
@@ -26,7 +27,11 @@ export class ActivateDeviceVerifyViewModel extends AbstractViewModel {
       MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
     });
     document.getElementById(this.yesBtnId).addEventListener('click', () => {
-      this.authManager.addNewDevice(this.activationCodeInfo).then(success => {
+      if (this.submitting) return;
+      this.submitting=true;
+      const signal=MenuPage.router.navigationSignal;
+      this.authManager.addNewDevice(this.activationCodeInfo,signal).then(success => {
+        if (signal.aborted) return;
         if (success) {
           MenuPage.router.goto(
             'Auth',
@@ -37,8 +42,8 @@ export class ActivateDeviceVerifyViewModel extends AbstractViewModel {
           MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
         }
       }).catch(() => {
-        MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
-      });
+        if (!signal.aborted) MenuPage.router.goto('Auth', 'loginActivateDeviceCancelled');
+      }).finally(()=>{ this.submitting=false; });
     });
   }
 

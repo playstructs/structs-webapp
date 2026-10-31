@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Manager\PlayerManager;
+use App\Manager\VaultFundsManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -76,9 +77,10 @@ class PlayerController extends AbstractController
     public function getPlayer(
         string $player_id,
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        VaultFundsManager $vaultFunds
     ): Response {
-        $playerManager = new PlayerManager($entityManager, $validator);
+        $playerManager = new PlayerManager($entityManager, $validator, $vaultFunds);
         return $playerManager->getPlayer($player_id);
     }
 

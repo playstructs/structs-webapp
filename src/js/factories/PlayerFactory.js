@@ -12,9 +12,14 @@ export class PlayerFactory {
     return Number(BigInt(numberString) / BigInt(PRECISION_CONVERSION.ENERGY));
   }
 
-  make(obj) {
+  make(obj, meta = null) {
     const player = new Player();
     Object.assign(player, obj);
+    player.snapshot_meta = meta;
+    // Preserve exact base units before legacy display conversion loses precision.
+    for (const field of ['load', 'structs_load', 'capacity', 'connection_capacity', 'ore']) {
+      player[`${field}_p`] = obj[field] == null ? null : String(obj[field]);
+    }
     player.pfp_client_render_attributes = PfpClientRenderAttributes.fromJson(player.pfp_client_render_attributes);
     player.load = this.convertFromPreciseNumber(player.load);
     player.structs_load = this.convertFromPreciseNumber(player.structs_load);

@@ -33,22 +33,11 @@ import { Struct } from "./struct";
 
 export const protobufPackage = "structs.structs";
 
-/** MsgUpdateParams is the Msg/UpdateParams request type. */
 export interface MsgUpdateParams {
-  /** authority is the address that controls the module (defaults to x/gov unless overwritten). */
   authority: string;
-  /**
-   * params defines the module parameters to update.
-   *
-   * NOTE: All parameters must be supplied.
-   */
   params: Params | undefined;
 }
 
-/**
- * MsgUpdateParamsResponse defines the response structure for executing a
- * MsgUpdateParams message.
- */
 export interface MsgUpdateParamsResponse {
 }
 
@@ -58,7 +47,7 @@ export interface MsgAddressRegister {
   address: string;
   proofPubKey: string;
   proofSignature: string;
-  permissions: number;
+  permissions: string;
 }
 
 export interface MsgAddressRegisterResponse {
@@ -77,7 +66,7 @@ export interface MsgAllocationCreate {
   controller: string;
   sourceObjectId: string;
   allocationType: allocationType;
-  power: number;
+  power: string;
 }
 
 export interface MsgAllocationCreateResponse {
@@ -96,7 +85,7 @@ export interface MsgAllocationDeleteResponse {
 export interface MsgAllocationUpdate {
   creator: string;
   allocationId: string;
-  power: number;
+  power: string;
 }
 
 export interface MsgAllocationUpdateResponse {
@@ -125,12 +114,8 @@ export interface MsgFleetMoveResponse {
 
 export interface MsgGuildBankMint {
   creator: string;
-  amountAlpha: number;
-  amountToken: number;
-  /**
-   * Optional; defaults to the signer's own guild. Named explicitly by an owner
-   * who is not a member, which is what a guild transfer produces.
-   */
+  amountAlpha: string;
+  amountToken: string;
   guildId: string;
 }
 
@@ -139,14 +124,8 @@ export interface MsgGuildBankMintResponse {
 
 export interface MsgGuildBankRedeem {
   creator: string;
-  amountToken:
-    | Coin
-    | undefined;
-  /**
-   * Required and nonzero. The transaction fails rather than burning tokens
-   * when fees or the collateral ratio would return less alpha.
-   */
-  minAmountAlpha: number;
+  amountToken: Coin | undefined;
+  minAmountAlpha: string;
 }
 
 export interface MsgGuildBankRedeemResponse {
@@ -155,79 +134,49 @@ export interface MsgGuildBankRedeemResponse {
 export interface MsgGuildBankConfiscateAndBurn {
   creator: string;
   address: string;
-  amountToken: number;
-  /**
-   * Optional; defaults to the signer's own guild. Named explicitly by an owner
-   * who is not a member, which is what a guild transfer produces.
-   */
+  amountToken: string;
   guildId: string;
 }
 
 export interface MsgGuildBankConfiscateAndBurnResponse {
 }
 
-/**
- * MsgGuildBankConvert converts ualpha into a guild's alpha-backed token at the
- * current collateral ratio (ratio-preserving: increases collateral and supply
- * proportionally). The guild's bankConvertInFee is retained in the collateral
- * pool. minAmountToken is required and nonzero; it guards against ratio or fee
- * movement earlier in the block.
- */
 export interface MsgGuildBankConvert {
   creator: string;
   guildId: string;
-  amountAlpha: number;
-  minAmountToken: number;
+  amountAlpha: string;
+  minAmountToken: string;
 }
 
 export interface MsgGuildBankConvertResponse {
 }
 
-/**
- * MsgGuildBankConvertToken converts one guild token into another in a single
- * atomic transaction: source token -> ualpha (source guild bankConvertOutFee)
- * -> target token (target guild bankConvertInFee). Both guilds retain their fee
- * in their own collateral pool. The source guild is identified by the
- * amountToken denom (uguild.{guildId}); guildId names the target. minAmountToken
- * is required and nonzero and guards the final target-token output.
- */
 export interface MsgGuildBankConvertToken {
   creator: string;
   amountToken: Coin | undefined;
   guildId: string;
-  minAmountToken: number;
+  minAmountToken: string;
 }
 
 export interface MsgGuildBankConvertTokenResponse {
 }
 
-/**
- * MsgGuildCreate founds a guild, either by solving the chain-global charter
- * proof-of-work or by spending a reactor's one-time entitlement.
- *
- * The signer is the solver, not necessarily the owner. Work is bound to the
- * (solver, founder) pair so a pool searches disjoint spaces and nobody can be
- * robbed of credit or have the guild redirected. When founderPlayerId names
- * somebody else, the founder's consent is proved by an offline signature over a
- * preimage the chain rebuilds, collected before the grind starts so the solver
- * can broadcast the instant they win.
- */
 export interface MsgGuildCreate {
   creator: string;
   reactorId: string;
   endpoint: string;
   entrySubstationId: string;
+  /** @deprecated */
   proof: string;
+  /** @deprecated */
   nonce: string;
-  /** founderPlayerId is who ends up owning the guild. Empty means the signer. */
+  /** @deprecated */
   founderPlayerId: string;
-  /**
-   * address, proofPubKey and proofSignature carry the founder's consent and are
-   * all empty when the signer is the founder. The names satisfy the ante's
-   * pubKeyMessage interface; see OptionalSignatureMessages.
-   */
+  /** @deprecated */
   address: string;
+  /** @deprecated */
   proofPubKey: string;
+  /** @deprecated */
   proofSignature: string;
 }
 
@@ -253,39 +202,18 @@ export interface MsgGuildUpdateEndpoint {
   endpoint: string;
 }
 
-/**
- * MsgGuildUpdatePrimaryReactor reassigns a guild's primary reactor to a
- * different (delegate-able, non-jailed) validator's reactor. This is the
- * recovery path when the validator backing the current primary reactor has
- * been permanently retired and the guild can no longer accept token mints
- * or honor guild-bank operations tied to that reactor.
- *
- * Permission: PermAdmin on the guild object.
- */
 export interface MsgGuildUpdatePrimaryReactor {
   creator: string;
   guildId: string;
   reactorId: string;
 }
 
-/**
- * MsgGuildUpdateBankConvertInFee sets the fee (LegacyDec, 0.0 inclusive to 1.0
- * exclusive) retained in
- * collateral when converting ualpha into this guild's token. Permission:
- * PermAdmin on the guild object.
- */
 export interface MsgGuildUpdateBankConvertInFee {
   creator: string;
   guildId: string;
   bankConvertInFee: string;
 }
 
-/**
- * MsgGuildUpdateBankConvertOutFee sets the fee (LegacyDec, 0.0 inclusive to 1.0
- * exclusive) retained in
- * collateral when redeeming this guild's token for ualpha. Permission:
- * PermAdmin on the guild object.
- */
 export interface MsgGuildUpdateBankConvertOutFee {
   creator: string;
   guildId: string;
@@ -295,7 +223,7 @@ export interface MsgGuildUpdateBankConvertOutFee {
 export interface MsgGuildUpdateJoinInfusionMinimum {
   creator: string;
   guildId: string;
-  joinInfusionMinimum: number;
+  joinInfusionMinimum: string;
 }
 
 export interface MsgGuildUpdateJoinInfusionMinimumBypassByRequest {
@@ -312,11 +240,7 @@ export interface MsgGuildUpdateJoinInfusionMinimumBypassByInvite {
 
 export interface MsgGuildUpdateEntryRank {
   creator: string;
-  newEntryRank: number;
-  /**
-   * Optional; defaults to the signer's own guild. Named explicitly by an owner
-   * who is not a member, which is what a guild transfer produces.
-   */
+  newEntryRank: string;
   guildId: string;
 }
 
@@ -420,54 +344,54 @@ export interface MsgPermissionGrantOnObject {
   creator: string;
   objectId: string;
   playerId: string;
-  permissions: number;
+  permissions: string;
 }
 
 export interface MsgPermissionGrantOnAddress {
   creator: string;
   address: string;
-  permissions: number;
+  permissions: string;
 }
 
 export interface MsgPermissionRevokeOnObject {
   creator: string;
   objectId: string;
   playerId: string;
-  permissions: number;
+  permissions: string;
 }
 
 export interface MsgPermissionRevokeOnAddress {
   creator: string;
   address: string;
-  permissions: number;
+  permissions: string;
 }
 
 export interface MsgPermissionSetOnObject {
   creator: string;
   objectId: string;
   playerId: string;
-  permissions: number;
+  permissions: string;
 }
 
 export interface MsgPermissionSetOnAddress {
   creator: string;
   address: string;
-  permissions: number;
+  permissions: string;
 }
 
 export interface MsgPermissionGuildRankSet {
   creator: string;
   objectId: string;
   guildId: string;
-  permission: number;
-  rank: number;
+  permission: string;
+  rank: string;
 }
 
 export interface MsgPermissionGuildRankRevoke {
   creator: string;
   objectId: string;
   guildId: string;
-  permission: number;
+  permission: string;
 }
 
 export interface MsgPermissionResponse {
@@ -493,7 +417,7 @@ export interface MsgPlanetRaidComplete {
 export interface MsgPlanetRaidCompleteResponse {
   fleet: Fleet | undefined;
   planet: Planet | undefined;
-  oreStolen: number;
+  oreStolen: string;
 }
 
 export interface MsgPlanetUpdateName {
@@ -524,16 +448,42 @@ export interface MsgPlayerResumeResponse {
 export interface MsgPlayerUpdateGuildRank {
   creator: string;
   playerId: string;
-  guildRank: number;
-  /**
-   * Optional; defaults to the signer's own guild. Named explicitly by an owner
-   * who is not a member, which is what a guild transfer produces. The target
-   * must be a member of the named guild either way.
-   */
+  guildRank: string;
   guildId: string;
 }
 
 export interface MsgPlayerUpdateGuildRankResponse {
+}
+
+export interface MsgGuildUpdateRankPurchase {
+  creator: string;
+  guildId: string;
+  basePrice: string;
+  stepIncrease: string;
+  minimumRank: string;
+  joinByRankPurchaseEnabled: boolean;
+}
+
+export interface MsgGuildRankPurchase {
+  creator: string;
+  guildId: string;
+  targetRank: string;
+  maxPrice: string;
+  expectedRank: string;
+}
+
+export interface MsgGuildMembershipJoinByRankPurchase {
+  creator: string;
+  guildId: string;
+  targetRank: string;
+  maxPrice: string;
+  expectedGuildId: string;
+}
+
+export interface MsgGuildRankPurchaseResponse {
+  price: string;
+  denom: string;
+  rank: string;
 }
 
 export interface MsgPlayerUpdateName {
@@ -557,105 +507,60 @@ export interface MsgPlayerUpdatePfpClientRenderAttributes {
 export interface MsgPlayerUpdateResponse {
 }
 
-/**
- * MsgReactorInfuse defines a SDK message for performing a delegation of coins
- * from a delegator to a validator.
- */
 export interface MsgReactorInfuse {
   creator: string;
   delegatorAddress: string;
   validatorAddress: string;
   amount: Coin | undefined;
+  ownerId: string;
 }
 
-/** MsgReactorInfuseResponse defines the Msg/Delegate response type. */
 export interface MsgReactorInfuseResponse {
 }
 
-/**
- * MsgReactorBeginMigration defines a SDK message for performing a redelegation
- * of coins from a delegator and source validator to a destination validator.
- */
 export interface MsgReactorBeginMigration {
   creator: string;
   delegatorAddress: string;
   validatorSrcAddress: string;
   validatorDstAddress: string;
   amount: Coin | undefined;
+  ownerId: string;
 }
 
-/** MsgBeginMigrationResponse defines the Msg/BeginRedelegate response type. */
 export interface MsgReactorBeginMigrationResponse {
   completionTime: Date | undefined;
 }
 
-/**
- * MsgReactorDefuse defines a SDK message for performing an undelegation from a
- * delegate and a validator.
- */
 export interface MsgReactorDefuse {
   creator: string;
   delegatorAddress: string;
   validatorAddress: string;
   amount: Coin | undefined;
+  ownerId: string;
 }
 
-/** MsgReactorDefuseResponse defines the Msg/Undelegate response type. */
 export interface MsgReactorDefuseResponse {
-  completionTime:
-    | Date
-    | undefined;
-  /**
-   * amount returns the amount of undelegated coins
-   *
-   * Since: cosmos-sdk 0.50
-   */
+  completionTime: Date | undefined;
   amount: Coin | undefined;
 }
 
-/**
- * MsgReactorCancelDefusion defines the SDK message for performing a cancel unbonding delegation for delegator
- *
- * Since: cosmos-sdk 0.46
- */
 export interface MsgReactorCancelDefusion {
   creator: string;
   delegatorAddress: string;
   validatorAddress: string;
-  /** amount is always less than or equal to unbonding delegation entry balance */
-  amount:
-    | Coin
-    | undefined;
-  /** creation_height is the height which the unbonding took place. */
-  creationHeight: number;
+  amount: Coin | undefined;
+  creationHeight: string;
+  ownerId: string;
 }
 
-/**
- * MsgReactorCancelDefusionResponse
- *
- * Since: cosmos-sdk 0.46
- */
 export interface MsgReactorCancelDefusionResponse {
 }
 
-/**
- * MsgReactorRestart reconciles a reactor's infusions against live staking state.
- *
- * Energy is gated to zero while a validator is jailed. A routine unjail restores
- * it automatically when staking rebonds the validator, but an operator who
- * unjails while sitting below the active-set cutoff is never rebonded and so
- * never recovers on its own. This message is that recovery path.
- *
- * Intentionally permissionless: it only ever writes state derived from the
- * staking module, so it cannot grant energy that the validator is not owed. That
- * also makes it usable in the other direction, to force-gate a jailed reactor.
- */
 export interface MsgReactorRestart {
   creator: string;
   validatorAddress: string;
 }
 
-/** MsgReactorRestartResponse */
 export interface MsgReactorRestartResponse {
 }
 
@@ -685,10 +590,9 @@ export interface MsgStructDeactivateBatchResponse {
 export interface MsgStructBuildInitiate {
   creator: string;
   playerId: string;
-  structTypeId: number;
-  /** objectType locationType = 4; */
+  structTypeId: string;
   operatingAmbit: ambit;
-  slot: number;
+  slot: string;
 }
 
 export interface MsgStructBuildComplete {
@@ -715,7 +619,7 @@ export interface MsgStructBuildCompleteAndStash {
   nonce: string;
   storageDestinationId: string;
   storageAmbit: ambit;
-  storageSlot: number;
+  storageSlot: string;
 }
 
 export interface MsgStructDefenseSet {
@@ -734,7 +638,7 @@ export interface MsgStructMove {
   structId: string;
   locationType: objectType;
   ambit: ambit;
-  slot: number;
+  slot: string;
 }
 
 export interface MsgStructAttack {
@@ -793,7 +697,7 @@ export interface MsgStructStorageStash {
   structId: string;
   locationId: string;
   ambit: ambit;
-  slot: number;
+  slot: string;
 }
 
 export interface MsgStructStorageRecall {
@@ -801,7 +705,7 @@ export interface MsgStructStorageRecall {
   structId: string;
   locationId: string;
   ambit: ambit;
-  slot: number;
+  slot: string;
   activate: boolean;
 }
 
@@ -885,8 +789,9 @@ export interface MsgSubstationUpdateResponse {
 export interface MsgAgreementOpen {
   creator: string;
   providerId: string;
-  duration: number;
-  capacity: number;
+  duration: string;
+  capacity: string;
+  ownerId: string;
 }
 
 export interface MsgAgreementClose {
@@ -897,19 +802,19 @@ export interface MsgAgreementClose {
 export interface MsgAgreementCapacityIncrease {
   creator: string;
   agreementId: string;
-  capacityIncrease: number;
+  capacityIncrease: string;
 }
 
 export interface MsgAgreementCapacityDecrease {
   creator: string;
   agreementId: string;
-  capacityDecrease: number;
+  capacityDecrease: string;
 }
 
 export interface MsgAgreementDurationIncrease {
   creator: string;
   agreementId: string;
-  durationIncrease: number;
+  durationIncrease: string;
 }
 
 export interface MsgAgreementResponse {
@@ -922,10 +827,11 @@ export interface MsgProviderCreate {
   accessPolicy: providerAccessPolicy;
   providerCancellationPenalty: string;
   consumerCancellationPenalty: string;
-  capacityMinimum: number;
-  capacityMaximum: number;
-  durationMinimum: number;
-  durationMaximum: number;
+  capacityMinimum: string;
+  capacityMaximum: string;
+  durationMinimum: string;
+  durationMaximum: string;
+  ownerId: string;
 }
 
 export interface MsgProviderWithdrawBalance {
@@ -937,25 +843,25 @@ export interface MsgProviderWithdrawBalance {
 export interface MsgProviderUpdateCapacityMinimum {
   creator: string;
   providerId: string;
-  newMinimumCapacity: number;
+  newMinimumCapacity: string;
 }
 
 export interface MsgProviderUpdateCapacityMaximum {
   creator: string;
   providerId: string;
-  newMaximumCapacity: number;
+  newMaximumCapacity: string;
 }
 
 export interface MsgProviderUpdateDurationMinimum {
   creator: string;
   providerId: string;
-  newMinimumDuration: number;
+  newMinimumDuration: string;
 }
 
 export interface MsgProviderUpdateDurationMaximum {
   creator: string;
   providerId: string;
-  newMaximumDuration: number;
+  newMaximumDuration: string;
 }
 
 export interface MsgProviderUpdateAccessPolicy {
@@ -979,8 +885,17 @@ export interface MsgPlayerSend {
   amount: Coin[];
 }
 
-/** This message has no fields. */
 export interface MsgPlayerSendResponse {
+}
+
+export interface MsgVaultSend {
+  creator: string;
+  ownerId: string;
+  recipientOwnerId: string;
+  amount: Coin[];
+}
+
+export interface MsgVaultSendResponse {
 }
 
 function createBaseMsgUpdateParams(): MsgUpdateParams {
@@ -1105,7 +1020,7 @@ export const MsgUpdateParamsResponse: MessageFns<MsgUpdateParamsResponse> = {
 };
 
 function createBaseMsgAddressRegister(): MsgAddressRegister {
-  return { creator: "", playerId: "", address: "", proofPubKey: "", proofSignature: "", permissions: 0 };
+  return { creator: "", playerId: "", address: "", proofPubKey: "", proofSignature: "", permissions: "0" };
 }
 
 export const MsgAddressRegister: MessageFns<MsgAddressRegister> = {
@@ -1125,7 +1040,7 @@ export const MsgAddressRegister: MessageFns<MsgAddressRegister> = {
     if (message.proofSignature !== "") {
       writer.uint32(42).string(message.proofSignature);
     }
-    if (message.permissions !== 0) {
+    if (message.permissions !== "0") {
       writer.uint32(48).uint64(message.permissions);
     }
     return writer;
@@ -1183,7 +1098,7 @@ export const MsgAddressRegister: MessageFns<MsgAddressRegister> = {
             break;
           }
 
-          message.permissions = longToNumber(reader.uint64());
+          message.permissions = reader.uint64().toString();
           continue;
         }
       }
@@ -1202,7 +1117,7 @@ export const MsgAddressRegister: MessageFns<MsgAddressRegister> = {
       address: isSet(object.address) ? globalThis.String(object.address) : "",
       proofPubKey: isSet(object.proofPubKey) ? globalThis.String(object.proofPubKey) : "",
       proofSignature: isSet(object.proofSignature) ? globalThis.String(object.proofSignature) : "",
-      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
+      permissions: isSet(object.permissions) ? globalThis.String(object.permissions) : "0",
     };
   },
 
@@ -1223,8 +1138,8 @@ export const MsgAddressRegister: MessageFns<MsgAddressRegister> = {
     if (message.proofSignature !== "") {
       obj.proofSignature = message.proofSignature;
     }
-    if (message.permissions !== 0) {
-      obj.permissions = Math.round(message.permissions);
+    if (message.permissions !== "0") {
+      obj.permissions = message.permissions;
     }
     return obj;
   },
@@ -1239,7 +1154,7 @@ export const MsgAddressRegister: MessageFns<MsgAddressRegister> = {
     message.address = object.address ?? "";
     message.proofPubKey = object.proofPubKey ?? "";
     message.proofSignature = object.proofSignature ?? "";
-    message.permissions = object.permissions ?? 0;
+    message.permissions = object.permissions ?? "0";
     return message;
   },
 };
@@ -1407,7 +1322,7 @@ export const MsgAddressRevokeResponse: MessageFns<MsgAddressRevokeResponse> = {
 };
 
 function createBaseMsgAllocationCreate(): MsgAllocationCreate {
-  return { creator: "", controller: "", sourceObjectId: "", allocationType: 0, power: 0 };
+  return { creator: "", controller: "", sourceObjectId: "", allocationType: 0, power: "0" };
 }
 
 export const MsgAllocationCreate: MessageFns<MsgAllocationCreate> = {
@@ -1424,7 +1339,7 @@ export const MsgAllocationCreate: MessageFns<MsgAllocationCreate> = {
     if (message.allocationType !== 0) {
       writer.uint32(32).int32(message.allocationType);
     }
-    if (message.power !== 0) {
+    if (message.power !== "0") {
       writer.uint32(40).uint64(message.power);
     }
     return writer;
@@ -1474,7 +1389,7 @@ export const MsgAllocationCreate: MessageFns<MsgAllocationCreate> = {
             break;
           }
 
-          message.power = longToNumber(reader.uint64());
+          message.power = reader.uint64().toString();
           continue;
         }
       }
@@ -1492,7 +1407,7 @@ export const MsgAllocationCreate: MessageFns<MsgAllocationCreate> = {
       controller: isSet(object.controller) ? globalThis.String(object.controller) : "",
       sourceObjectId: isSet(object.sourceObjectId) ? globalThis.String(object.sourceObjectId) : "",
       allocationType: isSet(object.allocationType) ? allocationTypeFromJSON(object.allocationType) : 0,
-      power: isSet(object.power) ? globalThis.Number(object.power) : 0,
+      power: isSet(object.power) ? globalThis.String(object.power) : "0",
     };
   },
 
@@ -1510,8 +1425,8 @@ export const MsgAllocationCreate: MessageFns<MsgAllocationCreate> = {
     if (message.allocationType !== 0) {
       obj.allocationType = allocationTypeToJSON(message.allocationType);
     }
-    if (message.power !== 0) {
-      obj.power = Math.round(message.power);
+    if (message.power !== "0") {
+      obj.power = message.power;
     }
     return obj;
   },
@@ -1525,7 +1440,7 @@ export const MsgAllocationCreate: MessageFns<MsgAllocationCreate> = {
     message.controller = object.controller ?? "";
     message.sourceObjectId = object.sourceObjectId ?? "";
     message.allocationType = object.allocationType ?? 0;
-    message.power = object.power ?? 0;
+    message.power = object.power ?? "0";
     return message;
   },
 };
@@ -1723,7 +1638,7 @@ export const MsgAllocationDeleteResponse: MessageFns<MsgAllocationDeleteResponse
 };
 
 function createBaseMsgAllocationUpdate(): MsgAllocationUpdate {
-  return { creator: "", allocationId: "", power: 0 };
+  return { creator: "", allocationId: "", power: "0" };
 }
 
 export const MsgAllocationUpdate: MessageFns<MsgAllocationUpdate> = {
@@ -1734,7 +1649,7 @@ export const MsgAllocationUpdate: MessageFns<MsgAllocationUpdate> = {
     if (message.allocationId !== "") {
       writer.uint32(18).string(message.allocationId);
     }
-    if (message.power !== 0) {
+    if (message.power !== "0") {
       writer.uint32(24).uint64(message.power);
     }
     return writer;
@@ -1768,7 +1683,7 @@ export const MsgAllocationUpdate: MessageFns<MsgAllocationUpdate> = {
             break;
           }
 
-          message.power = longToNumber(reader.uint64());
+          message.power = reader.uint64().toString();
           continue;
         }
       }
@@ -1784,7 +1699,7 @@ export const MsgAllocationUpdate: MessageFns<MsgAllocationUpdate> = {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       allocationId: isSet(object.allocationId) ? globalThis.String(object.allocationId) : "",
-      power: isSet(object.power) ? globalThis.Number(object.power) : 0,
+      power: isSet(object.power) ? globalThis.String(object.power) : "0",
     };
   },
 
@@ -1796,8 +1711,8 @@ export const MsgAllocationUpdate: MessageFns<MsgAllocationUpdate> = {
     if (message.allocationId !== "") {
       obj.allocationId = message.allocationId;
     }
-    if (message.power !== 0) {
-      obj.power = Math.round(message.power);
+    if (message.power !== "0") {
+      obj.power = message.power;
     }
     return obj;
   },
@@ -1809,7 +1724,7 @@ export const MsgAllocationUpdate: MessageFns<MsgAllocationUpdate> = {
     const message = createBaseMsgAllocationUpdate();
     message.creator = object.creator ?? "";
     message.allocationId = object.allocationId ?? "";
-    message.power = object.power ?? 0;
+    message.power = object.power ?? "0";
     return message;
   },
 };
@@ -2175,7 +2090,7 @@ export const MsgFleetMoveResponse: MessageFns<MsgFleetMoveResponse> = {
 };
 
 function createBaseMsgGuildBankMint(): MsgGuildBankMint {
-  return { creator: "", amountAlpha: 0, amountToken: 0, guildId: "" };
+  return { creator: "", amountAlpha: "0", amountToken: "0", guildId: "" };
 }
 
 export const MsgGuildBankMint: MessageFns<MsgGuildBankMint> = {
@@ -2183,10 +2098,10 @@ export const MsgGuildBankMint: MessageFns<MsgGuildBankMint> = {
     if (message.creator !== "") {
       writer.uint32(10).string(message.creator);
     }
-    if (message.amountAlpha !== 0) {
+    if (message.amountAlpha !== "0") {
       writer.uint32(16).uint64(message.amountAlpha);
     }
-    if (message.amountToken !== 0) {
+    if (message.amountToken !== "0") {
       writer.uint32(24).uint64(message.amountToken);
     }
     if (message.guildId !== "") {
@@ -2215,7 +2130,7 @@ export const MsgGuildBankMint: MessageFns<MsgGuildBankMint> = {
             break;
           }
 
-          message.amountAlpha = longToNumber(reader.uint64());
+          message.amountAlpha = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -2223,7 +2138,7 @@ export const MsgGuildBankMint: MessageFns<MsgGuildBankMint> = {
             break;
           }
 
-          message.amountToken = longToNumber(reader.uint64());
+          message.amountToken = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -2246,8 +2161,8 @@ export const MsgGuildBankMint: MessageFns<MsgGuildBankMint> = {
   fromJSON(object: any): MsgGuildBankMint {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
-      amountAlpha: isSet(object.amountAlpha) ? globalThis.Number(object.amountAlpha) : 0,
-      amountToken: isSet(object.amountToken) ? globalThis.Number(object.amountToken) : 0,
+      amountAlpha: isSet(object.amountAlpha) ? globalThis.String(object.amountAlpha) : "0",
+      amountToken: isSet(object.amountToken) ? globalThis.String(object.amountToken) : "0",
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
     };
   },
@@ -2257,11 +2172,11 @@ export const MsgGuildBankMint: MessageFns<MsgGuildBankMint> = {
     if (message.creator !== "") {
       obj.creator = message.creator;
     }
-    if (message.amountAlpha !== 0) {
-      obj.amountAlpha = Math.round(message.amountAlpha);
+    if (message.amountAlpha !== "0") {
+      obj.amountAlpha = message.amountAlpha;
     }
-    if (message.amountToken !== 0) {
-      obj.amountToken = Math.round(message.amountToken);
+    if (message.amountToken !== "0") {
+      obj.amountToken = message.amountToken;
     }
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
@@ -2275,8 +2190,8 @@ export const MsgGuildBankMint: MessageFns<MsgGuildBankMint> = {
   fromPartial<I extends Exact<DeepPartial<MsgGuildBankMint>, I>>(object: I): MsgGuildBankMint {
     const message = createBaseMsgGuildBankMint();
     message.creator = object.creator ?? "";
-    message.amountAlpha = object.amountAlpha ?? 0;
-    message.amountToken = object.amountToken ?? 0;
+    message.amountAlpha = object.amountAlpha ?? "0";
+    message.amountToken = object.amountToken ?? "0";
     message.guildId = object.guildId ?? "";
     return message;
   },
@@ -2326,7 +2241,7 @@ export const MsgGuildBankMintResponse: MessageFns<MsgGuildBankMintResponse> = {
 };
 
 function createBaseMsgGuildBankRedeem(): MsgGuildBankRedeem {
-  return { creator: "", amountToken: undefined, minAmountAlpha: 0 };
+  return { creator: "", amountToken: undefined, minAmountAlpha: "0" };
 }
 
 export const MsgGuildBankRedeem: MessageFns<MsgGuildBankRedeem> = {
@@ -2337,7 +2252,7 @@ export const MsgGuildBankRedeem: MessageFns<MsgGuildBankRedeem> = {
     if (message.amountToken !== undefined) {
       Coin.encode(message.amountToken, writer.uint32(18).fork()).join();
     }
-    if (message.minAmountAlpha !== 0) {
+    if (message.minAmountAlpha !== "0") {
       writer.uint32(24).uint64(message.minAmountAlpha);
     }
     return writer;
@@ -2371,7 +2286,7 @@ export const MsgGuildBankRedeem: MessageFns<MsgGuildBankRedeem> = {
             break;
           }
 
-          message.minAmountAlpha = longToNumber(reader.uint64());
+          message.minAmountAlpha = reader.uint64().toString();
           continue;
         }
       }
@@ -2387,7 +2302,7 @@ export const MsgGuildBankRedeem: MessageFns<MsgGuildBankRedeem> = {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       amountToken: isSet(object.amountToken) ? Coin.fromJSON(object.amountToken) : undefined,
-      minAmountAlpha: isSet(object.minAmountAlpha) ? globalThis.Number(object.minAmountAlpha) : 0,
+      minAmountAlpha: isSet(object.minAmountAlpha) ? globalThis.String(object.minAmountAlpha) : "0",
     };
   },
 
@@ -2399,8 +2314,8 @@ export const MsgGuildBankRedeem: MessageFns<MsgGuildBankRedeem> = {
     if (message.amountToken !== undefined) {
       obj.amountToken = Coin.toJSON(message.amountToken);
     }
-    if (message.minAmountAlpha !== 0) {
-      obj.minAmountAlpha = Math.round(message.minAmountAlpha);
+    if (message.minAmountAlpha !== "0") {
+      obj.minAmountAlpha = message.minAmountAlpha;
     }
     return obj;
   },
@@ -2414,7 +2329,7 @@ export const MsgGuildBankRedeem: MessageFns<MsgGuildBankRedeem> = {
     message.amountToken = (object.amountToken !== undefined && object.amountToken !== null)
       ? Coin.fromPartial(object.amountToken)
       : undefined;
-    message.minAmountAlpha = object.minAmountAlpha ?? 0;
+    message.minAmountAlpha = object.minAmountAlpha ?? "0";
     return message;
   },
 };
@@ -2463,7 +2378,7 @@ export const MsgGuildBankRedeemResponse: MessageFns<MsgGuildBankRedeemResponse> 
 };
 
 function createBaseMsgGuildBankConfiscateAndBurn(): MsgGuildBankConfiscateAndBurn {
-  return { creator: "", address: "", amountToken: 0, guildId: "" };
+  return { creator: "", address: "", amountToken: "0", guildId: "" };
 }
 
 export const MsgGuildBankConfiscateAndBurn: MessageFns<MsgGuildBankConfiscateAndBurn> = {
@@ -2474,7 +2389,7 @@ export const MsgGuildBankConfiscateAndBurn: MessageFns<MsgGuildBankConfiscateAnd
     if (message.address !== "") {
       writer.uint32(18).string(message.address);
     }
-    if (message.amountToken !== 0) {
+    if (message.amountToken !== "0") {
       writer.uint32(24).uint64(message.amountToken);
     }
     if (message.guildId !== "") {
@@ -2511,7 +2426,7 @@ export const MsgGuildBankConfiscateAndBurn: MessageFns<MsgGuildBankConfiscateAnd
             break;
           }
 
-          message.amountToken = longToNumber(reader.uint64());
+          message.amountToken = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -2535,7 +2450,7 @@ export const MsgGuildBankConfiscateAndBurn: MessageFns<MsgGuildBankConfiscateAnd
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       address: isSet(object.address) ? globalThis.String(object.address) : "",
-      amountToken: isSet(object.amountToken) ? globalThis.Number(object.amountToken) : 0,
+      amountToken: isSet(object.amountToken) ? globalThis.String(object.amountToken) : "0",
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
     };
   },
@@ -2548,8 +2463,8 @@ export const MsgGuildBankConfiscateAndBurn: MessageFns<MsgGuildBankConfiscateAnd
     if (message.address !== "") {
       obj.address = message.address;
     }
-    if (message.amountToken !== 0) {
-      obj.amountToken = Math.round(message.amountToken);
+    if (message.amountToken !== "0") {
+      obj.amountToken = message.amountToken;
     }
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
@@ -2566,7 +2481,7 @@ export const MsgGuildBankConfiscateAndBurn: MessageFns<MsgGuildBankConfiscateAnd
     const message = createBaseMsgGuildBankConfiscateAndBurn();
     message.creator = object.creator ?? "";
     message.address = object.address ?? "";
-    message.amountToken = object.amountToken ?? 0;
+    message.amountToken = object.amountToken ?? "0";
     message.guildId = object.guildId ?? "";
     return message;
   },
@@ -2620,7 +2535,7 @@ export const MsgGuildBankConfiscateAndBurnResponse: MessageFns<MsgGuildBankConfi
 };
 
 function createBaseMsgGuildBankConvert(): MsgGuildBankConvert {
-  return { creator: "", guildId: "", amountAlpha: 0, minAmountToken: 0 };
+  return { creator: "", guildId: "", amountAlpha: "0", minAmountToken: "0" };
 }
 
 export const MsgGuildBankConvert: MessageFns<MsgGuildBankConvert> = {
@@ -2631,10 +2546,10 @@ export const MsgGuildBankConvert: MessageFns<MsgGuildBankConvert> = {
     if (message.guildId !== "") {
       writer.uint32(18).string(message.guildId);
     }
-    if (message.amountAlpha !== 0) {
+    if (message.amountAlpha !== "0") {
       writer.uint32(24).uint64(message.amountAlpha);
     }
-    if (message.minAmountToken !== 0) {
+    if (message.minAmountToken !== "0") {
       writer.uint32(32).uint64(message.minAmountToken);
     }
     return writer;
@@ -2668,7 +2583,7 @@ export const MsgGuildBankConvert: MessageFns<MsgGuildBankConvert> = {
             break;
           }
 
-          message.amountAlpha = longToNumber(reader.uint64());
+          message.amountAlpha = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -2676,7 +2591,7 @@ export const MsgGuildBankConvert: MessageFns<MsgGuildBankConvert> = {
             break;
           }
 
-          message.minAmountToken = longToNumber(reader.uint64());
+          message.minAmountToken = reader.uint64().toString();
           continue;
         }
       }
@@ -2692,8 +2607,8 @@ export const MsgGuildBankConvert: MessageFns<MsgGuildBankConvert> = {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
-      amountAlpha: isSet(object.amountAlpha) ? globalThis.Number(object.amountAlpha) : 0,
-      minAmountToken: isSet(object.minAmountToken) ? globalThis.Number(object.minAmountToken) : 0,
+      amountAlpha: isSet(object.amountAlpha) ? globalThis.String(object.amountAlpha) : "0",
+      minAmountToken: isSet(object.minAmountToken) ? globalThis.String(object.minAmountToken) : "0",
     };
   },
 
@@ -2705,11 +2620,11 @@ export const MsgGuildBankConvert: MessageFns<MsgGuildBankConvert> = {
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
     }
-    if (message.amountAlpha !== 0) {
-      obj.amountAlpha = Math.round(message.amountAlpha);
+    if (message.amountAlpha !== "0") {
+      obj.amountAlpha = message.amountAlpha;
     }
-    if (message.minAmountToken !== 0) {
-      obj.minAmountToken = Math.round(message.minAmountToken);
+    if (message.minAmountToken !== "0") {
+      obj.minAmountToken = message.minAmountToken;
     }
     return obj;
   },
@@ -2721,8 +2636,8 @@ export const MsgGuildBankConvert: MessageFns<MsgGuildBankConvert> = {
     const message = createBaseMsgGuildBankConvert();
     message.creator = object.creator ?? "";
     message.guildId = object.guildId ?? "";
-    message.amountAlpha = object.amountAlpha ?? 0;
-    message.minAmountToken = object.minAmountToken ?? 0;
+    message.amountAlpha = object.amountAlpha ?? "0";
+    message.minAmountToken = object.minAmountToken ?? "0";
     return message;
   },
 };
@@ -2771,7 +2686,7 @@ export const MsgGuildBankConvertResponse: MessageFns<MsgGuildBankConvertResponse
 };
 
 function createBaseMsgGuildBankConvertToken(): MsgGuildBankConvertToken {
-  return { creator: "", amountToken: undefined, guildId: "", minAmountToken: 0 };
+  return { creator: "", amountToken: undefined, guildId: "", minAmountToken: "0" };
 }
 
 export const MsgGuildBankConvertToken: MessageFns<MsgGuildBankConvertToken> = {
@@ -2785,7 +2700,7 @@ export const MsgGuildBankConvertToken: MessageFns<MsgGuildBankConvertToken> = {
     if (message.guildId !== "") {
       writer.uint32(26).string(message.guildId);
     }
-    if (message.minAmountToken !== 0) {
+    if (message.minAmountToken !== "0") {
       writer.uint32(32).uint64(message.minAmountToken);
     }
     return writer;
@@ -2827,7 +2742,7 @@ export const MsgGuildBankConvertToken: MessageFns<MsgGuildBankConvertToken> = {
             break;
           }
 
-          message.minAmountToken = longToNumber(reader.uint64());
+          message.minAmountToken = reader.uint64().toString();
           continue;
         }
       }
@@ -2844,7 +2759,7 @@ export const MsgGuildBankConvertToken: MessageFns<MsgGuildBankConvertToken> = {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       amountToken: isSet(object.amountToken) ? Coin.fromJSON(object.amountToken) : undefined,
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
-      minAmountToken: isSet(object.minAmountToken) ? globalThis.Number(object.minAmountToken) : 0,
+      minAmountToken: isSet(object.minAmountToken) ? globalThis.String(object.minAmountToken) : "0",
     };
   },
 
@@ -2859,8 +2774,8 @@ export const MsgGuildBankConvertToken: MessageFns<MsgGuildBankConvertToken> = {
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
     }
-    if (message.minAmountToken !== 0) {
-      obj.minAmountToken = Math.round(message.minAmountToken);
+    if (message.minAmountToken !== "0") {
+      obj.minAmountToken = message.minAmountToken;
     }
     return obj;
   },
@@ -2875,7 +2790,7 @@ export const MsgGuildBankConvertToken: MessageFns<MsgGuildBankConvertToken> = {
       ? Coin.fromPartial(object.amountToken)
       : undefined;
     message.guildId = object.guildId ?? "";
-    message.minAmountToken = object.minAmountToken ?? 0;
+    message.minAmountToken = object.minAmountToken ?? "0";
     return message;
   },
 };
@@ -3759,7 +3674,7 @@ export const MsgGuildUpdateBankConvertOutFee: MessageFns<MsgGuildUpdateBankConve
 };
 
 function createBaseMsgGuildUpdateJoinInfusionMinimum(): MsgGuildUpdateJoinInfusionMinimum {
-  return { creator: "", guildId: "", joinInfusionMinimum: 0 };
+  return { creator: "", guildId: "", joinInfusionMinimum: "0" };
 }
 
 export const MsgGuildUpdateJoinInfusionMinimum: MessageFns<MsgGuildUpdateJoinInfusionMinimum> = {
@@ -3770,7 +3685,7 @@ export const MsgGuildUpdateJoinInfusionMinimum: MessageFns<MsgGuildUpdateJoinInf
     if (message.guildId !== "") {
       writer.uint32(18).string(message.guildId);
     }
-    if (message.joinInfusionMinimum !== 0) {
+    if (message.joinInfusionMinimum !== "0") {
       writer.uint32(24).uint64(message.joinInfusionMinimum);
     }
     return writer;
@@ -3804,7 +3719,7 @@ export const MsgGuildUpdateJoinInfusionMinimum: MessageFns<MsgGuildUpdateJoinInf
             break;
           }
 
-          message.joinInfusionMinimum = longToNumber(reader.uint64());
+          message.joinInfusionMinimum = reader.uint64().toString();
           continue;
         }
       }
@@ -3820,7 +3735,7 @@ export const MsgGuildUpdateJoinInfusionMinimum: MessageFns<MsgGuildUpdateJoinInf
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
-      joinInfusionMinimum: isSet(object.joinInfusionMinimum) ? globalThis.Number(object.joinInfusionMinimum) : 0,
+      joinInfusionMinimum: isSet(object.joinInfusionMinimum) ? globalThis.String(object.joinInfusionMinimum) : "0",
     };
   },
 
@@ -3832,8 +3747,8 @@ export const MsgGuildUpdateJoinInfusionMinimum: MessageFns<MsgGuildUpdateJoinInf
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
     }
-    if (message.joinInfusionMinimum !== 0) {
-      obj.joinInfusionMinimum = Math.round(message.joinInfusionMinimum);
+    if (message.joinInfusionMinimum !== "0") {
+      obj.joinInfusionMinimum = message.joinInfusionMinimum;
     }
     return obj;
   },
@@ -3849,7 +3764,7 @@ export const MsgGuildUpdateJoinInfusionMinimum: MessageFns<MsgGuildUpdateJoinInf
     const message = createBaseMsgGuildUpdateJoinInfusionMinimum();
     message.creator = object.creator ?? "";
     message.guildId = object.guildId ?? "";
-    message.joinInfusionMinimum = object.joinInfusionMinimum ?? 0;
+    message.joinInfusionMinimum = object.joinInfusionMinimum ?? "0";
     return message;
   },
 };
@@ -4061,7 +3976,7 @@ export const MsgGuildUpdateJoinInfusionMinimumBypassByInvite: MessageFns<
 };
 
 function createBaseMsgGuildUpdateEntryRank(): MsgGuildUpdateEntryRank {
-  return { creator: "", newEntryRank: 0, guildId: "" };
+  return { creator: "", newEntryRank: "0", guildId: "" };
 }
 
 export const MsgGuildUpdateEntryRank: MessageFns<MsgGuildUpdateEntryRank> = {
@@ -4069,7 +3984,7 @@ export const MsgGuildUpdateEntryRank: MessageFns<MsgGuildUpdateEntryRank> = {
     if (message.creator !== "") {
       writer.uint32(10).string(message.creator);
     }
-    if (message.newEntryRank !== 0) {
+    if (message.newEntryRank !== "0") {
       writer.uint32(16).uint64(message.newEntryRank);
     }
     if (message.guildId !== "") {
@@ -4098,7 +4013,7 @@ export const MsgGuildUpdateEntryRank: MessageFns<MsgGuildUpdateEntryRank> = {
             break;
           }
 
-          message.newEntryRank = longToNumber(reader.uint64());
+          message.newEntryRank = reader.uint64().toString();
           continue;
         }
         case 3: {
@@ -4121,7 +4036,7 @@ export const MsgGuildUpdateEntryRank: MessageFns<MsgGuildUpdateEntryRank> = {
   fromJSON(object: any): MsgGuildUpdateEntryRank {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
-      newEntryRank: isSet(object.newEntryRank) ? globalThis.Number(object.newEntryRank) : 0,
+      newEntryRank: isSet(object.newEntryRank) ? globalThis.String(object.newEntryRank) : "0",
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
     };
   },
@@ -4131,8 +4046,8 @@ export const MsgGuildUpdateEntryRank: MessageFns<MsgGuildUpdateEntryRank> = {
     if (message.creator !== "") {
       obj.creator = message.creator;
     }
-    if (message.newEntryRank !== 0) {
-      obj.newEntryRank = Math.round(message.newEntryRank);
+    if (message.newEntryRank !== "0") {
+      obj.newEntryRank = message.newEntryRank;
     }
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
@@ -4146,7 +4061,7 @@ export const MsgGuildUpdateEntryRank: MessageFns<MsgGuildUpdateEntryRank> = {
   fromPartial<I extends Exact<DeepPartial<MsgGuildUpdateEntryRank>, I>>(object: I): MsgGuildUpdateEntryRank {
     const message = createBaseMsgGuildUpdateEntryRank();
     message.creator = object.creator ?? "";
-    message.newEntryRank = object.newEntryRank ?? 0;
+    message.newEntryRank = object.newEntryRank ?? "0";
     message.guildId = object.guildId ?? "";
     return message;
   },
@@ -5658,7 +5573,7 @@ export const MsgGuildMembershipResponse: MessageFns<MsgGuildMembershipResponse> 
 };
 
 function createBaseMsgPermissionGrantOnObject(): MsgPermissionGrantOnObject {
-  return { creator: "", objectId: "", playerId: "", permissions: 0 };
+  return { creator: "", objectId: "", playerId: "", permissions: "0" };
 }
 
 export const MsgPermissionGrantOnObject: MessageFns<MsgPermissionGrantOnObject> = {
@@ -5672,7 +5587,7 @@ export const MsgPermissionGrantOnObject: MessageFns<MsgPermissionGrantOnObject> 
     if (message.playerId !== "") {
       writer.uint32(26).string(message.playerId);
     }
-    if (message.permissions !== 0) {
+    if (message.permissions !== "0") {
       writer.uint32(32).uint64(message.permissions);
     }
     return writer;
@@ -5714,7 +5629,7 @@ export const MsgPermissionGrantOnObject: MessageFns<MsgPermissionGrantOnObject> 
             break;
           }
 
-          message.permissions = longToNumber(reader.uint64());
+          message.permissions = reader.uint64().toString();
           continue;
         }
       }
@@ -5731,7 +5646,7 @@ export const MsgPermissionGrantOnObject: MessageFns<MsgPermissionGrantOnObject> 
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       objectId: isSet(object.objectId) ? globalThis.String(object.objectId) : "",
       playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
-      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
+      permissions: isSet(object.permissions) ? globalThis.String(object.permissions) : "0",
     };
   },
 
@@ -5746,8 +5661,8 @@ export const MsgPermissionGrantOnObject: MessageFns<MsgPermissionGrantOnObject> 
     if (message.playerId !== "") {
       obj.playerId = message.playerId;
     }
-    if (message.permissions !== 0) {
-      obj.permissions = Math.round(message.permissions);
+    if (message.permissions !== "0") {
+      obj.permissions = message.permissions;
     }
     return obj;
   },
@@ -5760,13 +5675,13 @@ export const MsgPermissionGrantOnObject: MessageFns<MsgPermissionGrantOnObject> 
     message.creator = object.creator ?? "";
     message.objectId = object.objectId ?? "";
     message.playerId = object.playerId ?? "";
-    message.permissions = object.permissions ?? 0;
+    message.permissions = object.permissions ?? "0";
     return message;
   },
 };
 
 function createBaseMsgPermissionGrantOnAddress(): MsgPermissionGrantOnAddress {
-  return { creator: "", address: "", permissions: 0 };
+  return { creator: "", address: "", permissions: "0" };
 }
 
 export const MsgPermissionGrantOnAddress: MessageFns<MsgPermissionGrantOnAddress> = {
@@ -5777,7 +5692,7 @@ export const MsgPermissionGrantOnAddress: MessageFns<MsgPermissionGrantOnAddress
     if (message.address !== "") {
       writer.uint32(18).string(message.address);
     }
-    if (message.permissions !== 0) {
+    if (message.permissions !== "0") {
       writer.uint32(24).uint64(message.permissions);
     }
     return writer;
@@ -5811,7 +5726,7 @@ export const MsgPermissionGrantOnAddress: MessageFns<MsgPermissionGrantOnAddress
             break;
           }
 
-          message.permissions = longToNumber(reader.uint64());
+          message.permissions = reader.uint64().toString();
           continue;
         }
       }
@@ -5827,7 +5742,7 @@ export const MsgPermissionGrantOnAddress: MessageFns<MsgPermissionGrantOnAddress
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       address: isSet(object.address) ? globalThis.String(object.address) : "",
-      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
+      permissions: isSet(object.permissions) ? globalThis.String(object.permissions) : "0",
     };
   },
 
@@ -5839,8 +5754,8 @@ export const MsgPermissionGrantOnAddress: MessageFns<MsgPermissionGrantOnAddress
     if (message.address !== "") {
       obj.address = message.address;
     }
-    if (message.permissions !== 0) {
-      obj.permissions = Math.round(message.permissions);
+    if (message.permissions !== "0") {
+      obj.permissions = message.permissions;
     }
     return obj;
   },
@@ -5852,13 +5767,13 @@ export const MsgPermissionGrantOnAddress: MessageFns<MsgPermissionGrantOnAddress
     const message = createBaseMsgPermissionGrantOnAddress();
     message.creator = object.creator ?? "";
     message.address = object.address ?? "";
-    message.permissions = object.permissions ?? 0;
+    message.permissions = object.permissions ?? "0";
     return message;
   },
 };
 
 function createBaseMsgPermissionRevokeOnObject(): MsgPermissionRevokeOnObject {
-  return { creator: "", objectId: "", playerId: "", permissions: 0 };
+  return { creator: "", objectId: "", playerId: "", permissions: "0" };
 }
 
 export const MsgPermissionRevokeOnObject: MessageFns<MsgPermissionRevokeOnObject> = {
@@ -5872,7 +5787,7 @@ export const MsgPermissionRevokeOnObject: MessageFns<MsgPermissionRevokeOnObject
     if (message.playerId !== "") {
       writer.uint32(26).string(message.playerId);
     }
-    if (message.permissions !== 0) {
+    if (message.permissions !== "0") {
       writer.uint32(32).uint64(message.permissions);
     }
     return writer;
@@ -5914,7 +5829,7 @@ export const MsgPermissionRevokeOnObject: MessageFns<MsgPermissionRevokeOnObject
             break;
           }
 
-          message.permissions = longToNumber(reader.uint64());
+          message.permissions = reader.uint64().toString();
           continue;
         }
       }
@@ -5931,7 +5846,7 @@ export const MsgPermissionRevokeOnObject: MessageFns<MsgPermissionRevokeOnObject
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       objectId: isSet(object.objectId) ? globalThis.String(object.objectId) : "",
       playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
-      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
+      permissions: isSet(object.permissions) ? globalThis.String(object.permissions) : "0",
     };
   },
 
@@ -5946,8 +5861,8 @@ export const MsgPermissionRevokeOnObject: MessageFns<MsgPermissionRevokeOnObject
     if (message.playerId !== "") {
       obj.playerId = message.playerId;
     }
-    if (message.permissions !== 0) {
-      obj.permissions = Math.round(message.permissions);
+    if (message.permissions !== "0") {
+      obj.permissions = message.permissions;
     }
     return obj;
   },
@@ -5960,13 +5875,13 @@ export const MsgPermissionRevokeOnObject: MessageFns<MsgPermissionRevokeOnObject
     message.creator = object.creator ?? "";
     message.objectId = object.objectId ?? "";
     message.playerId = object.playerId ?? "";
-    message.permissions = object.permissions ?? 0;
+    message.permissions = object.permissions ?? "0";
     return message;
   },
 };
 
 function createBaseMsgPermissionRevokeOnAddress(): MsgPermissionRevokeOnAddress {
-  return { creator: "", address: "", permissions: 0 };
+  return { creator: "", address: "", permissions: "0" };
 }
 
 export const MsgPermissionRevokeOnAddress: MessageFns<MsgPermissionRevokeOnAddress> = {
@@ -5977,7 +5892,7 @@ export const MsgPermissionRevokeOnAddress: MessageFns<MsgPermissionRevokeOnAddre
     if (message.address !== "") {
       writer.uint32(18).string(message.address);
     }
-    if (message.permissions !== 0) {
+    if (message.permissions !== "0") {
       writer.uint32(24).uint64(message.permissions);
     }
     return writer;
@@ -6011,7 +5926,7 @@ export const MsgPermissionRevokeOnAddress: MessageFns<MsgPermissionRevokeOnAddre
             break;
           }
 
-          message.permissions = longToNumber(reader.uint64());
+          message.permissions = reader.uint64().toString();
           continue;
         }
       }
@@ -6027,7 +5942,7 @@ export const MsgPermissionRevokeOnAddress: MessageFns<MsgPermissionRevokeOnAddre
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       address: isSet(object.address) ? globalThis.String(object.address) : "",
-      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
+      permissions: isSet(object.permissions) ? globalThis.String(object.permissions) : "0",
     };
   },
 
@@ -6039,8 +5954,8 @@ export const MsgPermissionRevokeOnAddress: MessageFns<MsgPermissionRevokeOnAddre
     if (message.address !== "") {
       obj.address = message.address;
     }
-    if (message.permissions !== 0) {
-      obj.permissions = Math.round(message.permissions);
+    if (message.permissions !== "0") {
+      obj.permissions = message.permissions;
     }
     return obj;
   },
@@ -6052,13 +5967,13 @@ export const MsgPermissionRevokeOnAddress: MessageFns<MsgPermissionRevokeOnAddre
     const message = createBaseMsgPermissionRevokeOnAddress();
     message.creator = object.creator ?? "";
     message.address = object.address ?? "";
-    message.permissions = object.permissions ?? 0;
+    message.permissions = object.permissions ?? "0";
     return message;
   },
 };
 
 function createBaseMsgPermissionSetOnObject(): MsgPermissionSetOnObject {
-  return { creator: "", objectId: "", playerId: "", permissions: 0 };
+  return { creator: "", objectId: "", playerId: "", permissions: "0" };
 }
 
 export const MsgPermissionSetOnObject: MessageFns<MsgPermissionSetOnObject> = {
@@ -6072,7 +5987,7 @@ export const MsgPermissionSetOnObject: MessageFns<MsgPermissionSetOnObject> = {
     if (message.playerId !== "") {
       writer.uint32(26).string(message.playerId);
     }
-    if (message.permissions !== 0) {
+    if (message.permissions !== "0") {
       writer.uint32(32).uint64(message.permissions);
     }
     return writer;
@@ -6114,7 +6029,7 @@ export const MsgPermissionSetOnObject: MessageFns<MsgPermissionSetOnObject> = {
             break;
           }
 
-          message.permissions = longToNumber(reader.uint64());
+          message.permissions = reader.uint64().toString();
           continue;
         }
       }
@@ -6131,7 +6046,7 @@ export const MsgPermissionSetOnObject: MessageFns<MsgPermissionSetOnObject> = {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       objectId: isSet(object.objectId) ? globalThis.String(object.objectId) : "",
       playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
-      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
+      permissions: isSet(object.permissions) ? globalThis.String(object.permissions) : "0",
     };
   },
 
@@ -6146,8 +6061,8 @@ export const MsgPermissionSetOnObject: MessageFns<MsgPermissionSetOnObject> = {
     if (message.playerId !== "") {
       obj.playerId = message.playerId;
     }
-    if (message.permissions !== 0) {
-      obj.permissions = Math.round(message.permissions);
+    if (message.permissions !== "0") {
+      obj.permissions = message.permissions;
     }
     return obj;
   },
@@ -6160,13 +6075,13 @@ export const MsgPermissionSetOnObject: MessageFns<MsgPermissionSetOnObject> = {
     message.creator = object.creator ?? "";
     message.objectId = object.objectId ?? "";
     message.playerId = object.playerId ?? "";
-    message.permissions = object.permissions ?? 0;
+    message.permissions = object.permissions ?? "0";
     return message;
   },
 };
 
 function createBaseMsgPermissionSetOnAddress(): MsgPermissionSetOnAddress {
-  return { creator: "", address: "", permissions: 0 };
+  return { creator: "", address: "", permissions: "0" };
 }
 
 export const MsgPermissionSetOnAddress: MessageFns<MsgPermissionSetOnAddress> = {
@@ -6177,7 +6092,7 @@ export const MsgPermissionSetOnAddress: MessageFns<MsgPermissionSetOnAddress> = 
     if (message.address !== "") {
       writer.uint32(18).string(message.address);
     }
-    if (message.permissions !== 0) {
+    if (message.permissions !== "0") {
       writer.uint32(24).uint64(message.permissions);
     }
     return writer;
@@ -6211,7 +6126,7 @@ export const MsgPermissionSetOnAddress: MessageFns<MsgPermissionSetOnAddress> = 
             break;
           }
 
-          message.permissions = longToNumber(reader.uint64());
+          message.permissions = reader.uint64().toString();
           continue;
         }
       }
@@ -6227,7 +6142,7 @@ export const MsgPermissionSetOnAddress: MessageFns<MsgPermissionSetOnAddress> = 
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       address: isSet(object.address) ? globalThis.String(object.address) : "",
-      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
+      permissions: isSet(object.permissions) ? globalThis.String(object.permissions) : "0",
     };
   },
 
@@ -6239,8 +6154,8 @@ export const MsgPermissionSetOnAddress: MessageFns<MsgPermissionSetOnAddress> = 
     if (message.address !== "") {
       obj.address = message.address;
     }
-    if (message.permissions !== 0) {
-      obj.permissions = Math.round(message.permissions);
+    if (message.permissions !== "0") {
+      obj.permissions = message.permissions;
     }
     return obj;
   },
@@ -6252,13 +6167,13 @@ export const MsgPermissionSetOnAddress: MessageFns<MsgPermissionSetOnAddress> = 
     const message = createBaseMsgPermissionSetOnAddress();
     message.creator = object.creator ?? "";
     message.address = object.address ?? "";
-    message.permissions = object.permissions ?? 0;
+    message.permissions = object.permissions ?? "0";
     return message;
   },
 };
 
 function createBaseMsgPermissionGuildRankSet(): MsgPermissionGuildRankSet {
-  return { creator: "", objectId: "", guildId: "", permission: 0, rank: 0 };
+  return { creator: "", objectId: "", guildId: "", permission: "0", rank: "0" };
 }
 
 export const MsgPermissionGuildRankSet: MessageFns<MsgPermissionGuildRankSet> = {
@@ -6272,10 +6187,10 @@ export const MsgPermissionGuildRankSet: MessageFns<MsgPermissionGuildRankSet> = 
     if (message.guildId !== "") {
       writer.uint32(26).string(message.guildId);
     }
-    if (message.permission !== 0) {
+    if (message.permission !== "0") {
       writer.uint32(32).uint64(message.permission);
     }
-    if (message.rank !== 0) {
+    if (message.rank !== "0") {
       writer.uint32(40).uint64(message.rank);
     }
     return writer;
@@ -6317,7 +6232,7 @@ export const MsgPermissionGuildRankSet: MessageFns<MsgPermissionGuildRankSet> = 
             break;
           }
 
-          message.permission = longToNumber(reader.uint64());
+          message.permission = reader.uint64().toString();
           continue;
         }
         case 5: {
@@ -6325,7 +6240,7 @@ export const MsgPermissionGuildRankSet: MessageFns<MsgPermissionGuildRankSet> = 
             break;
           }
 
-          message.rank = longToNumber(reader.uint64());
+          message.rank = reader.uint64().toString();
           continue;
         }
       }
@@ -6342,8 +6257,8 @@ export const MsgPermissionGuildRankSet: MessageFns<MsgPermissionGuildRankSet> = 
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       objectId: isSet(object.objectId) ? globalThis.String(object.objectId) : "",
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
-      permission: isSet(object.permission) ? globalThis.Number(object.permission) : 0,
-      rank: isSet(object.rank) ? globalThis.Number(object.rank) : 0,
+      permission: isSet(object.permission) ? globalThis.String(object.permission) : "0",
+      rank: isSet(object.rank) ? globalThis.String(object.rank) : "0",
     };
   },
 
@@ -6358,11 +6273,11 @@ export const MsgPermissionGuildRankSet: MessageFns<MsgPermissionGuildRankSet> = 
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
     }
-    if (message.permission !== 0) {
-      obj.permission = Math.round(message.permission);
+    if (message.permission !== "0") {
+      obj.permission = message.permission;
     }
-    if (message.rank !== 0) {
-      obj.rank = Math.round(message.rank);
+    if (message.rank !== "0") {
+      obj.rank = message.rank;
     }
     return obj;
   },
@@ -6375,14 +6290,14 @@ export const MsgPermissionGuildRankSet: MessageFns<MsgPermissionGuildRankSet> = 
     message.creator = object.creator ?? "";
     message.objectId = object.objectId ?? "";
     message.guildId = object.guildId ?? "";
-    message.permission = object.permission ?? 0;
-    message.rank = object.rank ?? 0;
+    message.permission = object.permission ?? "0";
+    message.rank = object.rank ?? "0";
     return message;
   },
 };
 
 function createBaseMsgPermissionGuildRankRevoke(): MsgPermissionGuildRankRevoke {
-  return { creator: "", objectId: "", guildId: "", permission: 0 };
+  return { creator: "", objectId: "", guildId: "", permission: "0" };
 }
 
 export const MsgPermissionGuildRankRevoke: MessageFns<MsgPermissionGuildRankRevoke> = {
@@ -6396,7 +6311,7 @@ export const MsgPermissionGuildRankRevoke: MessageFns<MsgPermissionGuildRankRevo
     if (message.guildId !== "") {
       writer.uint32(26).string(message.guildId);
     }
-    if (message.permission !== 0) {
+    if (message.permission !== "0") {
       writer.uint32(32).uint64(message.permission);
     }
     return writer;
@@ -6438,7 +6353,7 @@ export const MsgPermissionGuildRankRevoke: MessageFns<MsgPermissionGuildRankRevo
             break;
           }
 
-          message.permission = longToNumber(reader.uint64());
+          message.permission = reader.uint64().toString();
           continue;
         }
       }
@@ -6455,7 +6370,7 @@ export const MsgPermissionGuildRankRevoke: MessageFns<MsgPermissionGuildRankRevo
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       objectId: isSet(object.objectId) ? globalThis.String(object.objectId) : "",
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
-      permission: isSet(object.permission) ? globalThis.Number(object.permission) : 0,
+      permission: isSet(object.permission) ? globalThis.String(object.permission) : "0",
     };
   },
 
@@ -6470,8 +6385,8 @@ export const MsgPermissionGuildRankRevoke: MessageFns<MsgPermissionGuildRankRevo
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
     }
-    if (message.permission !== 0) {
-      obj.permission = Math.round(message.permission);
+    if (message.permission !== "0") {
+      obj.permission = message.permission;
     }
     return obj;
   },
@@ -6484,7 +6399,7 @@ export const MsgPermissionGuildRankRevoke: MessageFns<MsgPermissionGuildRankRevo
     message.creator = object.creator ?? "";
     message.objectId = object.objectId ?? "";
     message.guildId = object.guildId ?? "";
-    message.permission = object.permission ?? 0;
+    message.permission = object.permission ?? "0";
     return message;
   },
 };
@@ -6793,7 +6708,7 @@ export const MsgPlanetRaidComplete: MessageFns<MsgPlanetRaidComplete> = {
 };
 
 function createBaseMsgPlanetRaidCompleteResponse(): MsgPlanetRaidCompleteResponse {
-  return { fleet: undefined, planet: undefined, oreStolen: 0 };
+  return { fleet: undefined, planet: undefined, oreStolen: "0" };
 }
 
 export const MsgPlanetRaidCompleteResponse: MessageFns<MsgPlanetRaidCompleteResponse> = {
@@ -6804,7 +6719,7 @@ export const MsgPlanetRaidCompleteResponse: MessageFns<MsgPlanetRaidCompleteResp
     if (message.planet !== undefined) {
       Planet.encode(message.planet, writer.uint32(18).fork()).join();
     }
-    if (message.oreStolen !== 0) {
+    if (message.oreStolen !== "0") {
       writer.uint32(24).uint64(message.oreStolen);
     }
     return writer;
@@ -6838,7 +6753,7 @@ export const MsgPlanetRaidCompleteResponse: MessageFns<MsgPlanetRaidCompleteResp
             break;
           }
 
-          message.oreStolen = longToNumber(reader.uint64());
+          message.oreStolen = reader.uint64().toString();
           continue;
         }
       }
@@ -6854,7 +6769,7 @@ export const MsgPlanetRaidCompleteResponse: MessageFns<MsgPlanetRaidCompleteResp
     return {
       fleet: isSet(object.fleet) ? Fleet.fromJSON(object.fleet) : undefined,
       planet: isSet(object.planet) ? Planet.fromJSON(object.planet) : undefined,
-      oreStolen: isSet(object.oreStolen) ? globalThis.Number(object.oreStolen) : 0,
+      oreStolen: isSet(object.oreStolen) ? globalThis.String(object.oreStolen) : "0",
     };
   },
 
@@ -6866,8 +6781,8 @@ export const MsgPlanetRaidCompleteResponse: MessageFns<MsgPlanetRaidCompleteResp
     if (message.planet !== undefined) {
       obj.planet = Planet.toJSON(message.planet);
     }
-    if (message.oreStolen !== 0) {
-      obj.oreStolen = Math.round(message.oreStolen);
+    if (message.oreStolen !== "0") {
+      obj.oreStolen = message.oreStolen;
     }
     return obj;
   },
@@ -6883,7 +6798,7 @@ export const MsgPlanetRaidCompleteResponse: MessageFns<MsgPlanetRaidCompleteResp
     message.planet = (object.planet !== undefined && object.planet !== null)
       ? Planet.fromPartial(object.planet)
       : undefined;
-    message.oreStolen = object.oreStolen ?? 0;
+    message.oreStolen = object.oreStolen ?? "0";
     return message;
   },
 };
@@ -7268,7 +7183,7 @@ export const MsgPlayerResumeResponse: MessageFns<MsgPlayerResumeResponse> = {
 };
 
 function createBaseMsgPlayerUpdateGuildRank(): MsgPlayerUpdateGuildRank {
-  return { creator: "", playerId: "", guildRank: 0, guildId: "" };
+  return { creator: "", playerId: "", guildRank: "0", guildId: "" };
 }
 
 export const MsgPlayerUpdateGuildRank: MessageFns<MsgPlayerUpdateGuildRank> = {
@@ -7279,7 +7194,7 @@ export const MsgPlayerUpdateGuildRank: MessageFns<MsgPlayerUpdateGuildRank> = {
     if (message.playerId !== "") {
       writer.uint32(18).string(message.playerId);
     }
-    if (message.guildRank !== 0) {
+    if (message.guildRank !== "0") {
       writer.uint32(24).uint64(message.guildRank);
     }
     if (message.guildId !== "") {
@@ -7316,7 +7231,7 @@ export const MsgPlayerUpdateGuildRank: MessageFns<MsgPlayerUpdateGuildRank> = {
             break;
           }
 
-          message.guildRank = longToNumber(reader.uint64());
+          message.guildRank = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -7340,7 +7255,7 @@ export const MsgPlayerUpdateGuildRank: MessageFns<MsgPlayerUpdateGuildRank> = {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
-      guildRank: isSet(object.guildRank) ? globalThis.Number(object.guildRank) : 0,
+      guildRank: isSet(object.guildRank) ? globalThis.String(object.guildRank) : "0",
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
     };
   },
@@ -7353,8 +7268,8 @@ export const MsgPlayerUpdateGuildRank: MessageFns<MsgPlayerUpdateGuildRank> = {
     if (message.playerId !== "") {
       obj.playerId = message.playerId;
     }
-    if (message.guildRank !== 0) {
-      obj.guildRank = Math.round(message.guildRank);
+    if (message.guildRank !== "0") {
+      obj.guildRank = message.guildRank;
     }
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
@@ -7369,7 +7284,7 @@ export const MsgPlayerUpdateGuildRank: MessageFns<MsgPlayerUpdateGuildRank> = {
     const message = createBaseMsgPlayerUpdateGuildRank();
     message.creator = object.creator ?? "";
     message.playerId = object.playerId ?? "";
-    message.guildRank = object.guildRank ?? 0;
+    message.guildRank = object.guildRank ?? "0";
     message.guildId = object.guildId ?? "";
     return message;
   },
@@ -7418,6 +7333,499 @@ export const MsgPlayerUpdateGuildRankResponse: MessageFns<MsgPlayerUpdateGuildRa
     _: I,
   ): MsgPlayerUpdateGuildRankResponse {
     const message = createBaseMsgPlayerUpdateGuildRankResponse();
+    return message;
+  },
+};
+
+function createBaseMsgGuildUpdateRankPurchase(): MsgGuildUpdateRankPurchase {
+  return {
+    creator: "",
+    guildId: "",
+    basePrice: "0",
+    stepIncrease: "0",
+    minimumRank: "0",
+    joinByRankPurchaseEnabled: false,
+  };
+}
+
+export const MsgGuildUpdateRankPurchase: MessageFns<MsgGuildUpdateRankPurchase> = {
+  encode(message: MsgGuildUpdateRankPurchase, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.guildId !== "") {
+      writer.uint32(18).string(message.guildId);
+    }
+    if (message.basePrice !== "0") {
+      writer.uint32(24).uint64(message.basePrice);
+    }
+    if (message.stepIncrease !== "0") {
+      writer.uint32(32).uint64(message.stepIncrease);
+    }
+    if (message.minimumRank !== "0") {
+      writer.uint32(40).uint64(message.minimumRank);
+    }
+    if (message.joinByRankPurchaseEnabled !== false) {
+      writer.uint32(48).bool(message.joinByRankPurchaseEnabled);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgGuildUpdateRankPurchase {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgGuildUpdateRankPurchase();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.basePrice = reader.uint64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.stepIncrease = reader.uint64().toString();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.minimumRank = reader.uint64().toString();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.joinByRankPurchaseEnabled = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgGuildUpdateRankPurchase {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      basePrice: isSet(object.basePrice) ? globalThis.String(object.basePrice) : "0",
+      stepIncrease: isSet(object.stepIncrease) ? globalThis.String(object.stepIncrease) : "0",
+      minimumRank: isSet(object.minimumRank) ? globalThis.String(object.minimumRank) : "0",
+      joinByRankPurchaseEnabled: isSet(object.joinByRankPurchaseEnabled)
+        ? globalThis.Boolean(object.joinByRankPurchaseEnabled)
+        : false,
+    };
+  },
+
+  toJSON(message: MsgGuildUpdateRankPurchase): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.basePrice !== "0") {
+      obj.basePrice = message.basePrice;
+    }
+    if (message.stepIncrease !== "0") {
+      obj.stepIncrease = message.stepIncrease;
+    }
+    if (message.minimumRank !== "0") {
+      obj.minimumRank = message.minimumRank;
+    }
+    if (message.joinByRankPurchaseEnabled !== false) {
+      obj.joinByRankPurchaseEnabled = message.joinByRankPurchaseEnabled;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgGuildUpdateRankPurchase>, I>>(base?: I): MsgGuildUpdateRankPurchase {
+    return MsgGuildUpdateRankPurchase.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgGuildUpdateRankPurchase>, I>>(object: I): MsgGuildUpdateRankPurchase {
+    const message = createBaseMsgGuildUpdateRankPurchase();
+    message.creator = object.creator ?? "";
+    message.guildId = object.guildId ?? "";
+    message.basePrice = object.basePrice ?? "0";
+    message.stepIncrease = object.stepIncrease ?? "0";
+    message.minimumRank = object.minimumRank ?? "0";
+    message.joinByRankPurchaseEnabled = object.joinByRankPurchaseEnabled ?? false;
+    return message;
+  },
+};
+
+function createBaseMsgGuildRankPurchase(): MsgGuildRankPurchase {
+  return { creator: "", guildId: "", targetRank: "0", maxPrice: "0", expectedRank: "0" };
+}
+
+export const MsgGuildRankPurchase: MessageFns<MsgGuildRankPurchase> = {
+  encode(message: MsgGuildRankPurchase, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.guildId !== "") {
+      writer.uint32(18).string(message.guildId);
+    }
+    if (message.targetRank !== "0") {
+      writer.uint32(24).uint64(message.targetRank);
+    }
+    if (message.maxPrice !== "0") {
+      writer.uint32(32).uint64(message.maxPrice);
+    }
+    if (message.expectedRank !== "0") {
+      writer.uint32(40).uint64(message.expectedRank);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgGuildRankPurchase {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgGuildRankPurchase();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.targetRank = reader.uint64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.maxPrice = reader.uint64().toString();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.expectedRank = reader.uint64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgGuildRankPurchase {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      targetRank: isSet(object.targetRank) ? globalThis.String(object.targetRank) : "0",
+      maxPrice: isSet(object.maxPrice) ? globalThis.String(object.maxPrice) : "0",
+      expectedRank: isSet(object.expectedRank) ? globalThis.String(object.expectedRank) : "0",
+    };
+  },
+
+  toJSON(message: MsgGuildRankPurchase): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.targetRank !== "0") {
+      obj.targetRank = message.targetRank;
+    }
+    if (message.maxPrice !== "0") {
+      obj.maxPrice = message.maxPrice;
+    }
+    if (message.expectedRank !== "0") {
+      obj.expectedRank = message.expectedRank;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgGuildRankPurchase>, I>>(base?: I): MsgGuildRankPurchase {
+    return MsgGuildRankPurchase.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgGuildRankPurchase>, I>>(object: I): MsgGuildRankPurchase {
+    const message = createBaseMsgGuildRankPurchase();
+    message.creator = object.creator ?? "";
+    message.guildId = object.guildId ?? "";
+    message.targetRank = object.targetRank ?? "0";
+    message.maxPrice = object.maxPrice ?? "0";
+    message.expectedRank = object.expectedRank ?? "0";
+    return message;
+  },
+};
+
+function createBaseMsgGuildMembershipJoinByRankPurchase(): MsgGuildMembershipJoinByRankPurchase {
+  return { creator: "", guildId: "", targetRank: "0", maxPrice: "0", expectedGuildId: "" };
+}
+
+export const MsgGuildMembershipJoinByRankPurchase: MessageFns<MsgGuildMembershipJoinByRankPurchase> = {
+  encode(message: MsgGuildMembershipJoinByRankPurchase, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.guildId !== "") {
+      writer.uint32(18).string(message.guildId);
+    }
+    if (message.targetRank !== "0") {
+      writer.uint32(24).uint64(message.targetRank);
+    }
+    if (message.maxPrice !== "0") {
+      writer.uint32(32).uint64(message.maxPrice);
+    }
+    if (message.expectedGuildId !== "") {
+      writer.uint32(42).string(message.expectedGuildId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgGuildMembershipJoinByRankPurchase {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgGuildMembershipJoinByRankPurchase();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.targetRank = reader.uint64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.maxPrice = reader.uint64().toString();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.expectedGuildId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgGuildMembershipJoinByRankPurchase {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      targetRank: isSet(object.targetRank) ? globalThis.String(object.targetRank) : "0",
+      maxPrice: isSet(object.maxPrice) ? globalThis.String(object.maxPrice) : "0",
+      expectedGuildId: isSet(object.expectedGuildId) ? globalThis.String(object.expectedGuildId) : "",
+    };
+  },
+
+  toJSON(message: MsgGuildMembershipJoinByRankPurchase): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.targetRank !== "0") {
+      obj.targetRank = message.targetRank;
+    }
+    if (message.maxPrice !== "0") {
+      obj.maxPrice = message.maxPrice;
+    }
+    if (message.expectedGuildId !== "") {
+      obj.expectedGuildId = message.expectedGuildId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgGuildMembershipJoinByRankPurchase>, I>>(
+    base?: I,
+  ): MsgGuildMembershipJoinByRankPurchase {
+    return MsgGuildMembershipJoinByRankPurchase.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgGuildMembershipJoinByRankPurchase>, I>>(
+    object: I,
+  ): MsgGuildMembershipJoinByRankPurchase {
+    const message = createBaseMsgGuildMembershipJoinByRankPurchase();
+    message.creator = object.creator ?? "";
+    message.guildId = object.guildId ?? "";
+    message.targetRank = object.targetRank ?? "0";
+    message.maxPrice = object.maxPrice ?? "0";
+    message.expectedGuildId = object.expectedGuildId ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgGuildRankPurchaseResponse(): MsgGuildRankPurchaseResponse {
+  return { price: "0", denom: "", rank: "0" };
+}
+
+export const MsgGuildRankPurchaseResponse: MessageFns<MsgGuildRankPurchaseResponse> = {
+  encode(message: MsgGuildRankPurchaseResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.price !== "0") {
+      writer.uint32(8).uint64(message.price);
+    }
+    if (message.denom !== "") {
+      writer.uint32(18).string(message.denom);
+    }
+    if (message.rank !== "0") {
+      writer.uint32(24).uint64(message.rank);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgGuildRankPurchaseResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgGuildRankPurchaseResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.price = reader.uint64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.denom = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.rank = reader.uint64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgGuildRankPurchaseResponse {
+    return {
+      price: isSet(object.price) ? globalThis.String(object.price) : "0",
+      denom: isSet(object.denom) ? globalThis.String(object.denom) : "",
+      rank: isSet(object.rank) ? globalThis.String(object.rank) : "0",
+    };
+  },
+
+  toJSON(message: MsgGuildRankPurchaseResponse): unknown {
+    const obj: any = {};
+    if (message.price !== "0") {
+      obj.price = message.price;
+    }
+    if (message.denom !== "") {
+      obj.denom = message.denom;
+    }
+    if (message.rank !== "0") {
+      obj.rank = message.rank;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgGuildRankPurchaseResponse>, I>>(base?: I): MsgGuildRankPurchaseResponse {
+    return MsgGuildRankPurchaseResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgGuildRankPurchaseResponse>, I>>(object: I): MsgGuildRankPurchaseResponse {
+    const message = createBaseMsgGuildRankPurchaseResponse();
+    message.price = object.price ?? "0";
+    message.denom = object.denom ?? "";
+    message.rank = object.rank ?? "0";
     return message;
   },
 };
@@ -7748,7 +8156,7 @@ export const MsgPlayerUpdateResponse: MessageFns<MsgPlayerUpdateResponse> = {
 };
 
 function createBaseMsgReactorInfuse(): MsgReactorInfuse {
-  return { creator: "", delegatorAddress: "", validatorAddress: "", amount: undefined };
+  return { creator: "", delegatorAddress: "", validatorAddress: "", amount: undefined, ownerId: "" };
 }
 
 export const MsgReactorInfuse: MessageFns<MsgReactorInfuse> = {
@@ -7764,6 +8172,9 @@ export const MsgReactorInfuse: MessageFns<MsgReactorInfuse> = {
     }
     if (message.amount !== undefined) {
       Coin.encode(message.amount, writer.uint32(34).fork()).join();
+    }
+    if (message.ownerId !== "") {
+      writer.uint32(42).string(message.ownerId);
     }
     return writer;
   },
@@ -7807,6 +8218,14 @@ export const MsgReactorInfuse: MessageFns<MsgReactorInfuse> = {
           message.amount = Coin.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.ownerId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -7822,6 +8241,7 @@ export const MsgReactorInfuse: MessageFns<MsgReactorInfuse> = {
       delegatorAddress: isSet(object.delegatorAddress) ? globalThis.String(object.delegatorAddress) : "",
       validatorAddress: isSet(object.validatorAddress) ? globalThis.String(object.validatorAddress) : "",
       amount: isSet(object.amount) ? Coin.fromJSON(object.amount) : undefined,
+      ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "",
     };
   },
 
@@ -7839,6 +8259,9 @@ export const MsgReactorInfuse: MessageFns<MsgReactorInfuse> = {
     if (message.amount !== undefined) {
       obj.amount = Coin.toJSON(message.amount);
     }
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
+    }
     return obj;
   },
 
@@ -7853,6 +8276,7 @@ export const MsgReactorInfuse: MessageFns<MsgReactorInfuse> = {
     message.amount = (object.amount !== undefined && object.amount !== null)
       ? Coin.fromPartial(object.amount)
       : undefined;
+    message.ownerId = object.ownerId ?? "";
     return message;
   },
 };
@@ -7901,7 +8325,14 @@ export const MsgReactorInfuseResponse: MessageFns<MsgReactorInfuseResponse> = {
 };
 
 function createBaseMsgReactorBeginMigration(): MsgReactorBeginMigration {
-  return { creator: "", delegatorAddress: "", validatorSrcAddress: "", validatorDstAddress: "", amount: undefined };
+  return {
+    creator: "",
+    delegatorAddress: "",
+    validatorSrcAddress: "",
+    validatorDstAddress: "",
+    amount: undefined,
+    ownerId: "",
+  };
 }
 
 export const MsgReactorBeginMigration: MessageFns<MsgReactorBeginMigration> = {
@@ -7920,6 +8351,9 @@ export const MsgReactorBeginMigration: MessageFns<MsgReactorBeginMigration> = {
     }
     if (message.amount !== undefined) {
       Coin.encode(message.amount, writer.uint32(42).fork()).join();
+    }
+    if (message.ownerId !== "") {
+      writer.uint32(50).string(message.ownerId);
     }
     return writer;
   },
@@ -7971,6 +8405,14 @@ export const MsgReactorBeginMigration: MessageFns<MsgReactorBeginMigration> = {
           message.amount = Coin.decode(reader, reader.uint32());
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.ownerId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -7987,6 +8429,7 @@ export const MsgReactorBeginMigration: MessageFns<MsgReactorBeginMigration> = {
       validatorSrcAddress: isSet(object.validatorSrcAddress) ? globalThis.String(object.validatorSrcAddress) : "",
       validatorDstAddress: isSet(object.validatorDstAddress) ? globalThis.String(object.validatorDstAddress) : "",
       amount: isSet(object.amount) ? Coin.fromJSON(object.amount) : undefined,
+      ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "",
     };
   },
 
@@ -8007,6 +8450,9 @@ export const MsgReactorBeginMigration: MessageFns<MsgReactorBeginMigration> = {
     if (message.amount !== undefined) {
       obj.amount = Coin.toJSON(message.amount);
     }
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
+    }
     return obj;
   },
 
@@ -8022,6 +8468,7 @@ export const MsgReactorBeginMigration: MessageFns<MsgReactorBeginMigration> = {
     message.amount = (object.amount !== undefined && object.amount !== null)
       ? Coin.fromPartial(object.amount)
       : undefined;
+    message.ownerId = object.ownerId ?? "";
     return message;
   },
 };
@@ -8089,7 +8536,7 @@ export const MsgReactorBeginMigrationResponse: MessageFns<MsgReactorBeginMigrati
 };
 
 function createBaseMsgReactorDefuse(): MsgReactorDefuse {
-  return { creator: "", delegatorAddress: "", validatorAddress: "", amount: undefined };
+  return { creator: "", delegatorAddress: "", validatorAddress: "", amount: undefined, ownerId: "" };
 }
 
 export const MsgReactorDefuse: MessageFns<MsgReactorDefuse> = {
@@ -8105,6 +8552,9 @@ export const MsgReactorDefuse: MessageFns<MsgReactorDefuse> = {
     }
     if (message.amount !== undefined) {
       Coin.encode(message.amount, writer.uint32(34).fork()).join();
+    }
+    if (message.ownerId !== "") {
+      writer.uint32(42).string(message.ownerId);
     }
     return writer;
   },
@@ -8148,6 +8598,14 @@ export const MsgReactorDefuse: MessageFns<MsgReactorDefuse> = {
           message.amount = Coin.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.ownerId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -8163,6 +8621,7 @@ export const MsgReactorDefuse: MessageFns<MsgReactorDefuse> = {
       delegatorAddress: isSet(object.delegatorAddress) ? globalThis.String(object.delegatorAddress) : "",
       validatorAddress: isSet(object.validatorAddress) ? globalThis.String(object.validatorAddress) : "",
       amount: isSet(object.amount) ? Coin.fromJSON(object.amount) : undefined,
+      ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "",
     };
   },
 
@@ -8180,6 +8639,9 @@ export const MsgReactorDefuse: MessageFns<MsgReactorDefuse> = {
     if (message.amount !== undefined) {
       obj.amount = Coin.toJSON(message.amount);
     }
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
+    }
     return obj;
   },
 
@@ -8194,6 +8656,7 @@ export const MsgReactorDefuse: MessageFns<MsgReactorDefuse> = {
     message.amount = (object.amount !== undefined && object.amount !== null)
       ? Coin.fromPartial(object.amount)
       : undefined;
+    message.ownerId = object.ownerId ?? "";
     return message;
   },
 };
@@ -8277,7 +8740,14 @@ export const MsgReactorDefuseResponse: MessageFns<MsgReactorDefuseResponse> = {
 };
 
 function createBaseMsgReactorCancelDefusion(): MsgReactorCancelDefusion {
-  return { creator: "", delegatorAddress: "", validatorAddress: "", amount: undefined, creationHeight: 0 };
+  return {
+    creator: "",
+    delegatorAddress: "",
+    validatorAddress: "",
+    amount: undefined,
+    creationHeight: "0",
+    ownerId: "",
+  };
 }
 
 export const MsgReactorCancelDefusion: MessageFns<MsgReactorCancelDefusion> = {
@@ -8294,8 +8764,11 @@ export const MsgReactorCancelDefusion: MessageFns<MsgReactorCancelDefusion> = {
     if (message.amount !== undefined) {
       Coin.encode(message.amount, writer.uint32(34).fork()).join();
     }
-    if (message.creationHeight !== 0) {
+    if (message.creationHeight !== "0") {
       writer.uint32(40).int64(message.creationHeight);
+    }
+    if (message.ownerId !== "") {
+      writer.uint32(50).string(message.ownerId);
     }
     return writer;
   },
@@ -8344,7 +8817,15 @@ export const MsgReactorCancelDefusion: MessageFns<MsgReactorCancelDefusion> = {
             break;
           }
 
-          message.creationHeight = longToNumber(reader.int64());
+          message.creationHeight = reader.int64().toString();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.ownerId = reader.string();
           continue;
         }
       }
@@ -8362,7 +8843,8 @@ export const MsgReactorCancelDefusion: MessageFns<MsgReactorCancelDefusion> = {
       delegatorAddress: isSet(object.delegatorAddress) ? globalThis.String(object.delegatorAddress) : "",
       validatorAddress: isSet(object.validatorAddress) ? globalThis.String(object.validatorAddress) : "",
       amount: isSet(object.amount) ? Coin.fromJSON(object.amount) : undefined,
-      creationHeight: isSet(object.creationHeight) ? globalThis.Number(object.creationHeight) : 0,
+      creationHeight: isSet(object.creationHeight) ? globalThis.String(object.creationHeight) : "0",
+      ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "",
     };
   },
 
@@ -8380,8 +8862,11 @@ export const MsgReactorCancelDefusion: MessageFns<MsgReactorCancelDefusion> = {
     if (message.amount !== undefined) {
       obj.amount = Coin.toJSON(message.amount);
     }
-    if (message.creationHeight !== 0) {
-      obj.creationHeight = Math.round(message.creationHeight);
+    if (message.creationHeight !== "0") {
+      obj.creationHeight = message.creationHeight;
+    }
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
     }
     return obj;
   },
@@ -8397,7 +8882,8 @@ export const MsgReactorCancelDefusion: MessageFns<MsgReactorCancelDefusion> = {
     message.amount = (object.amount !== undefined && object.amount !== null)
       ? Coin.fromPartial(object.amount)
       : undefined;
-    message.creationHeight = object.creationHeight ?? 0;
+    message.creationHeight = object.creationHeight ?? "0";
+    message.ownerId = object.ownerId ?? "";
     return message;
   },
 };
@@ -8921,7 +9407,7 @@ export const MsgStructDeactivateBatchResponse: MessageFns<MsgStructDeactivateBat
 };
 
 function createBaseMsgStructBuildInitiate(): MsgStructBuildInitiate {
-  return { creator: "", playerId: "", structTypeId: 0, operatingAmbit: 0, slot: 0 };
+  return { creator: "", playerId: "", structTypeId: "0", operatingAmbit: 0, slot: "0" };
 }
 
 export const MsgStructBuildInitiate: MessageFns<MsgStructBuildInitiate> = {
@@ -8932,13 +9418,13 @@ export const MsgStructBuildInitiate: MessageFns<MsgStructBuildInitiate> = {
     if (message.playerId !== "") {
       writer.uint32(18).string(message.playerId);
     }
-    if (message.structTypeId !== 0) {
+    if (message.structTypeId !== "0") {
       writer.uint32(24).uint64(message.structTypeId);
     }
     if (message.operatingAmbit !== 0) {
       writer.uint32(32).int32(message.operatingAmbit);
     }
-    if (message.slot !== 0) {
+    if (message.slot !== "0") {
       writer.uint32(40).uint64(message.slot);
     }
     return writer;
@@ -8972,7 +9458,7 @@ export const MsgStructBuildInitiate: MessageFns<MsgStructBuildInitiate> = {
             break;
           }
 
-          message.structTypeId = longToNumber(reader.uint64());
+          message.structTypeId = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -8988,7 +9474,7 @@ export const MsgStructBuildInitiate: MessageFns<MsgStructBuildInitiate> = {
             break;
           }
 
-          message.slot = longToNumber(reader.uint64());
+          message.slot = reader.uint64().toString();
           continue;
         }
       }
@@ -9004,9 +9490,9 @@ export const MsgStructBuildInitiate: MessageFns<MsgStructBuildInitiate> = {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
-      structTypeId: isSet(object.structTypeId) ? globalThis.Number(object.structTypeId) : 0,
+      structTypeId: isSet(object.structTypeId) ? globalThis.String(object.structTypeId) : "0",
       operatingAmbit: isSet(object.operatingAmbit) ? ambitFromJSON(object.operatingAmbit) : 0,
-      slot: isSet(object.slot) ? globalThis.Number(object.slot) : 0,
+      slot: isSet(object.slot) ? globalThis.String(object.slot) : "0",
     };
   },
 
@@ -9018,14 +9504,14 @@ export const MsgStructBuildInitiate: MessageFns<MsgStructBuildInitiate> = {
     if (message.playerId !== "") {
       obj.playerId = message.playerId;
     }
-    if (message.structTypeId !== 0) {
-      obj.structTypeId = Math.round(message.structTypeId);
+    if (message.structTypeId !== "0") {
+      obj.structTypeId = message.structTypeId;
     }
     if (message.operatingAmbit !== 0) {
       obj.operatingAmbit = ambitToJSON(message.operatingAmbit);
     }
-    if (message.slot !== 0) {
-      obj.slot = Math.round(message.slot);
+    if (message.slot !== "0") {
+      obj.slot = message.slot;
     }
     return obj;
   },
@@ -9037,9 +9523,9 @@ export const MsgStructBuildInitiate: MessageFns<MsgStructBuildInitiate> = {
     const message = createBaseMsgStructBuildInitiate();
     message.creator = object.creator ?? "";
     message.playerId = object.playerId ?? "";
-    message.structTypeId = object.structTypeId ?? 0;
+    message.structTypeId = object.structTypeId ?? "0";
     message.operatingAmbit = object.operatingAmbit ?? 0;
-    message.slot = object.slot ?? 0;
+    message.slot = object.slot ?? "0";
     return message;
   },
 };
@@ -9305,7 +9791,15 @@ export const MsgStructTrash: MessageFns<MsgStructTrash> = {
 };
 
 function createBaseMsgStructBuildCompleteAndStash(): MsgStructBuildCompleteAndStash {
-  return { creator: "", structId: "", proof: "", nonce: "", storageDestinationId: "", storageAmbit: 0, storageSlot: 0 };
+  return {
+    creator: "",
+    structId: "",
+    proof: "",
+    nonce: "",
+    storageDestinationId: "",
+    storageAmbit: 0,
+    storageSlot: "0",
+  };
 }
 
 export const MsgStructBuildCompleteAndStash: MessageFns<MsgStructBuildCompleteAndStash> = {
@@ -9328,7 +9822,7 @@ export const MsgStructBuildCompleteAndStash: MessageFns<MsgStructBuildCompleteAn
     if (message.storageAmbit !== 0) {
       writer.uint32(48).int32(message.storageAmbit);
     }
-    if (message.storageSlot !== 0) {
+    if (message.storageSlot !== "0") {
       writer.uint32(56).uint64(message.storageSlot);
     }
     return writer;
@@ -9394,7 +9888,7 @@ export const MsgStructBuildCompleteAndStash: MessageFns<MsgStructBuildCompleteAn
             break;
           }
 
-          message.storageSlot = longToNumber(reader.uint64());
+          message.storageSlot = reader.uint64().toString();
           continue;
         }
       }
@@ -9414,7 +9908,7 @@ export const MsgStructBuildCompleteAndStash: MessageFns<MsgStructBuildCompleteAn
       nonce: isSet(object.nonce) ? globalThis.String(object.nonce) : "",
       storageDestinationId: isSet(object.storageDestinationId) ? globalThis.String(object.storageDestinationId) : "",
       storageAmbit: isSet(object.storageAmbit) ? ambitFromJSON(object.storageAmbit) : 0,
-      storageSlot: isSet(object.storageSlot) ? globalThis.Number(object.storageSlot) : 0,
+      storageSlot: isSet(object.storageSlot) ? globalThis.String(object.storageSlot) : "0",
     };
   },
 
@@ -9438,8 +9932,8 @@ export const MsgStructBuildCompleteAndStash: MessageFns<MsgStructBuildCompleteAn
     if (message.storageAmbit !== 0) {
       obj.storageAmbit = ambitToJSON(message.storageAmbit);
     }
-    if (message.storageSlot !== 0) {
-      obj.storageSlot = Math.round(message.storageSlot);
+    if (message.storageSlot !== "0") {
+      obj.storageSlot = message.storageSlot;
     }
     return obj;
   },
@@ -9457,7 +9951,7 @@ export const MsgStructBuildCompleteAndStash: MessageFns<MsgStructBuildCompleteAn
     message.nonce = object.nonce ?? "";
     message.storageDestinationId = object.storageDestinationId ?? "";
     message.storageAmbit = object.storageAmbit ?? 0;
-    message.storageSlot = object.storageSlot ?? 0;
+    message.storageSlot = object.storageSlot ?? "0";
     return message;
   },
 };
@@ -9631,7 +10125,7 @@ export const MsgStructDefenseClear: MessageFns<MsgStructDefenseClear> = {
 };
 
 function createBaseMsgStructMove(): MsgStructMove {
-  return { creator: "", structId: "", locationType: 0, ambit: 0, slot: 0 };
+  return { creator: "", structId: "", locationType: 0, ambit: 0, slot: "0" };
 }
 
 export const MsgStructMove: MessageFns<MsgStructMove> = {
@@ -9648,7 +10142,7 @@ export const MsgStructMove: MessageFns<MsgStructMove> = {
     if (message.ambit !== 0) {
       writer.uint32(40).int32(message.ambit);
     }
-    if (message.slot !== 0) {
+    if (message.slot !== "0") {
       writer.uint32(48).uint64(message.slot);
     }
     return writer;
@@ -9698,7 +10192,7 @@ export const MsgStructMove: MessageFns<MsgStructMove> = {
             break;
           }
 
-          message.slot = longToNumber(reader.uint64());
+          message.slot = reader.uint64().toString();
           continue;
         }
       }
@@ -9716,7 +10210,7 @@ export const MsgStructMove: MessageFns<MsgStructMove> = {
       structId: isSet(object.structId) ? globalThis.String(object.structId) : "",
       locationType: isSet(object.locationType) ? objectTypeFromJSON(object.locationType) : 0,
       ambit: isSet(object.ambit) ? ambitFromJSON(object.ambit) : 0,
-      slot: isSet(object.slot) ? globalThis.Number(object.slot) : 0,
+      slot: isSet(object.slot) ? globalThis.String(object.slot) : "0",
     };
   },
 
@@ -9734,8 +10228,8 @@ export const MsgStructMove: MessageFns<MsgStructMove> = {
     if (message.ambit !== 0) {
       obj.ambit = ambitToJSON(message.ambit);
     }
-    if (message.slot !== 0) {
-      obj.slot = Math.round(message.slot);
+    if (message.slot !== "0") {
+      obj.slot = message.slot;
     }
     return obj;
   },
@@ -9749,7 +10243,7 @@ export const MsgStructMove: MessageFns<MsgStructMove> = {
     message.structId = object.structId ?? "";
     message.locationType = object.locationType ?? 0;
     message.ambit = object.ambit ?? 0;
-    message.slot = object.slot ?? 0;
+    message.slot = object.slot ?? "0";
     return message;
   },
 };
@@ -10541,7 +11035,7 @@ export const MsgStructOreRefineryStatusResponse: MessageFns<MsgStructOreRefinery
 };
 
 function createBaseMsgStructStorageStash(): MsgStructStorageStash {
-  return { creator: "", structId: "", locationId: "", ambit: 0, slot: 0 };
+  return { creator: "", structId: "", locationId: "", ambit: 0, slot: "0" };
 }
 
 export const MsgStructStorageStash: MessageFns<MsgStructStorageStash> = {
@@ -10558,7 +11052,7 @@ export const MsgStructStorageStash: MessageFns<MsgStructStorageStash> = {
     if (message.ambit !== 0) {
       writer.uint32(32).int32(message.ambit);
     }
-    if (message.slot !== 0) {
+    if (message.slot !== "0") {
       writer.uint32(40).uint64(message.slot);
     }
     return writer;
@@ -10608,7 +11102,7 @@ export const MsgStructStorageStash: MessageFns<MsgStructStorageStash> = {
             break;
           }
 
-          message.slot = longToNumber(reader.uint64());
+          message.slot = reader.uint64().toString();
           continue;
         }
       }
@@ -10626,7 +11120,7 @@ export const MsgStructStorageStash: MessageFns<MsgStructStorageStash> = {
       structId: isSet(object.structId) ? globalThis.String(object.structId) : "",
       locationId: isSet(object.locationId) ? globalThis.String(object.locationId) : "",
       ambit: isSet(object.ambit) ? ambitFromJSON(object.ambit) : 0,
-      slot: isSet(object.slot) ? globalThis.Number(object.slot) : 0,
+      slot: isSet(object.slot) ? globalThis.String(object.slot) : "0",
     };
   },
 
@@ -10644,8 +11138,8 @@ export const MsgStructStorageStash: MessageFns<MsgStructStorageStash> = {
     if (message.ambit !== 0) {
       obj.ambit = ambitToJSON(message.ambit);
     }
-    if (message.slot !== 0) {
-      obj.slot = Math.round(message.slot);
+    if (message.slot !== "0") {
+      obj.slot = message.slot;
     }
     return obj;
   },
@@ -10659,13 +11153,13 @@ export const MsgStructStorageStash: MessageFns<MsgStructStorageStash> = {
     message.structId = object.structId ?? "";
     message.locationId = object.locationId ?? "";
     message.ambit = object.ambit ?? 0;
-    message.slot = object.slot ?? 0;
+    message.slot = object.slot ?? "0";
     return message;
   },
 };
 
 function createBaseMsgStructStorageRecall(): MsgStructStorageRecall {
-  return { creator: "", structId: "", locationId: "", ambit: 0, slot: 0, activate: false };
+  return { creator: "", structId: "", locationId: "", ambit: 0, slot: "0", activate: false };
 }
 
 export const MsgStructStorageRecall: MessageFns<MsgStructStorageRecall> = {
@@ -10682,7 +11176,7 @@ export const MsgStructStorageRecall: MessageFns<MsgStructStorageRecall> = {
     if (message.ambit !== 0) {
       writer.uint32(32).int32(message.ambit);
     }
-    if (message.slot !== 0) {
+    if (message.slot !== "0") {
       writer.uint32(40).uint64(message.slot);
     }
     if (message.activate !== false) {
@@ -10735,7 +11229,7 @@ export const MsgStructStorageRecall: MessageFns<MsgStructStorageRecall> = {
             break;
           }
 
-          message.slot = longToNumber(reader.uint64());
+          message.slot = reader.uint64().toString();
           continue;
         }
         case 6: {
@@ -10761,7 +11255,7 @@ export const MsgStructStorageRecall: MessageFns<MsgStructStorageRecall> = {
       structId: isSet(object.structId) ? globalThis.String(object.structId) : "",
       locationId: isSet(object.locationId) ? globalThis.String(object.locationId) : "",
       ambit: isSet(object.ambit) ? ambitFromJSON(object.ambit) : 0,
-      slot: isSet(object.slot) ? globalThis.Number(object.slot) : 0,
+      slot: isSet(object.slot) ? globalThis.String(object.slot) : "0",
       activate: isSet(object.activate) ? globalThis.Boolean(object.activate) : false,
     };
   },
@@ -10780,8 +11274,8 @@ export const MsgStructStorageRecall: MessageFns<MsgStructStorageRecall> = {
     if (message.ambit !== 0) {
       obj.ambit = ambitToJSON(message.ambit);
     }
-    if (message.slot !== 0) {
-      obj.slot = Math.round(message.slot);
+    if (message.slot !== "0") {
+      obj.slot = message.slot;
     }
     if (message.activate !== false) {
       obj.activate = message.activate;
@@ -10798,7 +11292,7 @@ export const MsgStructStorageRecall: MessageFns<MsgStructStorageRecall> = {
     message.structId = object.structId ?? "";
     message.locationId = object.locationId ?? "";
     message.ambit = object.ambit ?? 0;
-    message.slot = object.slot ?? 0;
+    message.slot = object.slot ?? "0";
     message.activate = object.activate ?? false;
     return message;
   },
@@ -11988,7 +12482,7 @@ export const MsgSubstationUpdateResponse: MessageFns<MsgSubstationUpdateResponse
 };
 
 function createBaseMsgAgreementOpen(): MsgAgreementOpen {
-  return { creator: "", providerId: "", duration: 0, capacity: 0 };
+  return { creator: "", providerId: "", duration: "0", capacity: "0", ownerId: "" };
 }
 
 export const MsgAgreementOpen: MessageFns<MsgAgreementOpen> = {
@@ -11999,11 +12493,14 @@ export const MsgAgreementOpen: MessageFns<MsgAgreementOpen> = {
     if (message.providerId !== "") {
       writer.uint32(18).string(message.providerId);
     }
-    if (message.duration !== 0) {
+    if (message.duration !== "0") {
       writer.uint32(24).uint64(message.duration);
     }
-    if (message.capacity !== 0) {
+    if (message.capacity !== "0") {
       writer.uint32(32).uint64(message.capacity);
+    }
+    if (message.ownerId !== "") {
+      writer.uint32(42).string(message.ownerId);
     }
     return writer;
   },
@@ -12036,7 +12533,7 @@ export const MsgAgreementOpen: MessageFns<MsgAgreementOpen> = {
             break;
           }
 
-          message.duration = longToNumber(reader.uint64());
+          message.duration = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -12044,7 +12541,15 @@ export const MsgAgreementOpen: MessageFns<MsgAgreementOpen> = {
             break;
           }
 
-          message.capacity = longToNumber(reader.uint64());
+          message.capacity = reader.uint64().toString();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.ownerId = reader.string();
           continue;
         }
       }
@@ -12060,8 +12565,9 @@ export const MsgAgreementOpen: MessageFns<MsgAgreementOpen> = {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       providerId: isSet(object.providerId) ? globalThis.String(object.providerId) : "",
-      duration: isSet(object.duration) ? globalThis.Number(object.duration) : 0,
-      capacity: isSet(object.capacity) ? globalThis.Number(object.capacity) : 0,
+      duration: isSet(object.duration) ? globalThis.String(object.duration) : "0",
+      capacity: isSet(object.capacity) ? globalThis.String(object.capacity) : "0",
+      ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "",
     };
   },
 
@@ -12073,11 +12579,14 @@ export const MsgAgreementOpen: MessageFns<MsgAgreementOpen> = {
     if (message.providerId !== "") {
       obj.providerId = message.providerId;
     }
-    if (message.duration !== 0) {
-      obj.duration = Math.round(message.duration);
+    if (message.duration !== "0") {
+      obj.duration = message.duration;
     }
-    if (message.capacity !== 0) {
-      obj.capacity = Math.round(message.capacity);
+    if (message.capacity !== "0") {
+      obj.capacity = message.capacity;
+    }
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
     }
     return obj;
   },
@@ -12089,8 +12598,9 @@ export const MsgAgreementOpen: MessageFns<MsgAgreementOpen> = {
     const message = createBaseMsgAgreementOpen();
     message.creator = object.creator ?? "";
     message.providerId = object.providerId ?? "";
-    message.duration = object.duration ?? 0;
-    message.capacity = object.capacity ?? 0;
+    message.duration = object.duration ?? "0";
+    message.capacity = object.capacity ?? "0";
+    message.ownerId = object.ownerId ?? "";
     return message;
   },
 };
@@ -12172,7 +12682,7 @@ export const MsgAgreementClose: MessageFns<MsgAgreementClose> = {
 };
 
 function createBaseMsgAgreementCapacityIncrease(): MsgAgreementCapacityIncrease {
-  return { creator: "", agreementId: "", capacityIncrease: 0 };
+  return { creator: "", agreementId: "", capacityIncrease: "0" };
 }
 
 export const MsgAgreementCapacityIncrease: MessageFns<MsgAgreementCapacityIncrease> = {
@@ -12183,7 +12693,7 @@ export const MsgAgreementCapacityIncrease: MessageFns<MsgAgreementCapacityIncrea
     if (message.agreementId !== "") {
       writer.uint32(18).string(message.agreementId);
     }
-    if (message.capacityIncrease !== 0) {
+    if (message.capacityIncrease !== "0") {
       writer.uint32(24).uint64(message.capacityIncrease);
     }
     return writer;
@@ -12217,7 +12727,7 @@ export const MsgAgreementCapacityIncrease: MessageFns<MsgAgreementCapacityIncrea
             break;
           }
 
-          message.capacityIncrease = longToNumber(reader.uint64());
+          message.capacityIncrease = reader.uint64().toString();
           continue;
         }
       }
@@ -12233,7 +12743,7 @@ export const MsgAgreementCapacityIncrease: MessageFns<MsgAgreementCapacityIncrea
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       agreementId: isSet(object.agreementId) ? globalThis.String(object.agreementId) : "",
-      capacityIncrease: isSet(object.capacityIncrease) ? globalThis.Number(object.capacityIncrease) : 0,
+      capacityIncrease: isSet(object.capacityIncrease) ? globalThis.String(object.capacityIncrease) : "0",
     };
   },
 
@@ -12245,8 +12755,8 @@ export const MsgAgreementCapacityIncrease: MessageFns<MsgAgreementCapacityIncrea
     if (message.agreementId !== "") {
       obj.agreementId = message.agreementId;
     }
-    if (message.capacityIncrease !== 0) {
-      obj.capacityIncrease = Math.round(message.capacityIncrease);
+    if (message.capacityIncrease !== "0") {
+      obj.capacityIncrease = message.capacityIncrease;
     }
     return obj;
   },
@@ -12258,13 +12768,13 @@ export const MsgAgreementCapacityIncrease: MessageFns<MsgAgreementCapacityIncrea
     const message = createBaseMsgAgreementCapacityIncrease();
     message.creator = object.creator ?? "";
     message.agreementId = object.agreementId ?? "";
-    message.capacityIncrease = object.capacityIncrease ?? 0;
+    message.capacityIncrease = object.capacityIncrease ?? "0";
     return message;
   },
 };
 
 function createBaseMsgAgreementCapacityDecrease(): MsgAgreementCapacityDecrease {
-  return { creator: "", agreementId: "", capacityDecrease: 0 };
+  return { creator: "", agreementId: "", capacityDecrease: "0" };
 }
 
 export const MsgAgreementCapacityDecrease: MessageFns<MsgAgreementCapacityDecrease> = {
@@ -12275,7 +12785,7 @@ export const MsgAgreementCapacityDecrease: MessageFns<MsgAgreementCapacityDecrea
     if (message.agreementId !== "") {
       writer.uint32(18).string(message.agreementId);
     }
-    if (message.capacityDecrease !== 0) {
+    if (message.capacityDecrease !== "0") {
       writer.uint32(24).uint64(message.capacityDecrease);
     }
     return writer;
@@ -12309,7 +12819,7 @@ export const MsgAgreementCapacityDecrease: MessageFns<MsgAgreementCapacityDecrea
             break;
           }
 
-          message.capacityDecrease = longToNumber(reader.uint64());
+          message.capacityDecrease = reader.uint64().toString();
           continue;
         }
       }
@@ -12325,7 +12835,7 @@ export const MsgAgreementCapacityDecrease: MessageFns<MsgAgreementCapacityDecrea
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       agreementId: isSet(object.agreementId) ? globalThis.String(object.agreementId) : "",
-      capacityDecrease: isSet(object.capacityDecrease) ? globalThis.Number(object.capacityDecrease) : 0,
+      capacityDecrease: isSet(object.capacityDecrease) ? globalThis.String(object.capacityDecrease) : "0",
     };
   },
 
@@ -12337,8 +12847,8 @@ export const MsgAgreementCapacityDecrease: MessageFns<MsgAgreementCapacityDecrea
     if (message.agreementId !== "") {
       obj.agreementId = message.agreementId;
     }
-    if (message.capacityDecrease !== 0) {
-      obj.capacityDecrease = Math.round(message.capacityDecrease);
+    if (message.capacityDecrease !== "0") {
+      obj.capacityDecrease = message.capacityDecrease;
     }
     return obj;
   },
@@ -12350,13 +12860,13 @@ export const MsgAgreementCapacityDecrease: MessageFns<MsgAgreementCapacityDecrea
     const message = createBaseMsgAgreementCapacityDecrease();
     message.creator = object.creator ?? "";
     message.agreementId = object.agreementId ?? "";
-    message.capacityDecrease = object.capacityDecrease ?? 0;
+    message.capacityDecrease = object.capacityDecrease ?? "0";
     return message;
   },
 };
 
 function createBaseMsgAgreementDurationIncrease(): MsgAgreementDurationIncrease {
-  return { creator: "", agreementId: "", durationIncrease: 0 };
+  return { creator: "", agreementId: "", durationIncrease: "0" };
 }
 
 export const MsgAgreementDurationIncrease: MessageFns<MsgAgreementDurationIncrease> = {
@@ -12367,7 +12877,7 @@ export const MsgAgreementDurationIncrease: MessageFns<MsgAgreementDurationIncrea
     if (message.agreementId !== "") {
       writer.uint32(18).string(message.agreementId);
     }
-    if (message.durationIncrease !== 0) {
+    if (message.durationIncrease !== "0") {
       writer.uint32(24).uint64(message.durationIncrease);
     }
     return writer;
@@ -12401,7 +12911,7 @@ export const MsgAgreementDurationIncrease: MessageFns<MsgAgreementDurationIncrea
             break;
           }
 
-          message.durationIncrease = longToNumber(reader.uint64());
+          message.durationIncrease = reader.uint64().toString();
           continue;
         }
       }
@@ -12417,7 +12927,7 @@ export const MsgAgreementDurationIncrease: MessageFns<MsgAgreementDurationIncrea
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       agreementId: isSet(object.agreementId) ? globalThis.String(object.agreementId) : "",
-      durationIncrease: isSet(object.durationIncrease) ? globalThis.Number(object.durationIncrease) : 0,
+      durationIncrease: isSet(object.durationIncrease) ? globalThis.String(object.durationIncrease) : "0",
     };
   },
 
@@ -12429,8 +12939,8 @@ export const MsgAgreementDurationIncrease: MessageFns<MsgAgreementDurationIncrea
     if (message.agreementId !== "") {
       obj.agreementId = message.agreementId;
     }
-    if (message.durationIncrease !== 0) {
-      obj.durationIncrease = Math.round(message.durationIncrease);
+    if (message.durationIncrease !== "0") {
+      obj.durationIncrease = message.durationIncrease;
     }
     return obj;
   },
@@ -12442,7 +12952,7 @@ export const MsgAgreementDurationIncrease: MessageFns<MsgAgreementDurationIncrea
     const message = createBaseMsgAgreementDurationIncrease();
     message.creator = object.creator ?? "";
     message.agreementId = object.agreementId ?? "";
-    message.durationIncrease = object.durationIncrease ?? 0;
+    message.durationIncrease = object.durationIncrease ?? "0";
     return message;
   },
 };
@@ -12498,10 +13008,11 @@ function createBaseMsgProviderCreate(): MsgProviderCreate {
     accessPolicy: 0,
     providerCancellationPenalty: "",
     consumerCancellationPenalty: "",
-    capacityMinimum: 0,
-    capacityMaximum: 0,
-    durationMinimum: 0,
-    durationMaximum: 0,
+    capacityMinimum: "0",
+    capacityMaximum: "0",
+    durationMinimum: "0",
+    durationMaximum: "0",
+    ownerId: "",
   };
 }
 
@@ -12525,17 +13036,20 @@ export const MsgProviderCreate: MessageFns<MsgProviderCreate> = {
     if (message.consumerCancellationPenalty !== "") {
       writer.uint32(50).string(message.consumerCancellationPenalty);
     }
-    if (message.capacityMinimum !== 0) {
+    if (message.capacityMinimum !== "0") {
       writer.uint32(56).uint64(message.capacityMinimum);
     }
-    if (message.capacityMaximum !== 0) {
+    if (message.capacityMaximum !== "0") {
       writer.uint32(64).uint64(message.capacityMaximum);
     }
-    if (message.durationMinimum !== 0) {
+    if (message.durationMinimum !== "0") {
       writer.uint32(72).uint64(message.durationMinimum);
     }
-    if (message.durationMaximum !== 0) {
+    if (message.durationMaximum !== "0") {
       writer.uint32(80).uint64(message.durationMaximum);
+    }
+    if (message.ownerId !== "") {
+      writer.uint32(90).string(message.ownerId);
     }
     return writer;
   },
@@ -12600,7 +13114,7 @@ export const MsgProviderCreate: MessageFns<MsgProviderCreate> = {
             break;
           }
 
-          message.capacityMinimum = longToNumber(reader.uint64());
+          message.capacityMinimum = reader.uint64().toString();
           continue;
         }
         case 8: {
@@ -12608,7 +13122,7 @@ export const MsgProviderCreate: MessageFns<MsgProviderCreate> = {
             break;
           }
 
-          message.capacityMaximum = longToNumber(reader.uint64());
+          message.capacityMaximum = reader.uint64().toString();
           continue;
         }
         case 9: {
@@ -12616,7 +13130,7 @@ export const MsgProviderCreate: MessageFns<MsgProviderCreate> = {
             break;
           }
 
-          message.durationMinimum = longToNumber(reader.uint64());
+          message.durationMinimum = reader.uint64().toString();
           continue;
         }
         case 10: {
@@ -12624,7 +13138,15 @@ export const MsgProviderCreate: MessageFns<MsgProviderCreate> = {
             break;
           }
 
-          message.durationMaximum = longToNumber(reader.uint64());
+          message.durationMaximum = reader.uint64().toString();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.ownerId = reader.string();
           continue;
         }
       }
@@ -12648,10 +13170,11 @@ export const MsgProviderCreate: MessageFns<MsgProviderCreate> = {
       consumerCancellationPenalty: isSet(object.consumerCancellationPenalty)
         ? globalThis.String(object.consumerCancellationPenalty)
         : "",
-      capacityMinimum: isSet(object.capacityMinimum) ? globalThis.Number(object.capacityMinimum) : 0,
-      capacityMaximum: isSet(object.capacityMaximum) ? globalThis.Number(object.capacityMaximum) : 0,
-      durationMinimum: isSet(object.durationMinimum) ? globalThis.Number(object.durationMinimum) : 0,
-      durationMaximum: isSet(object.durationMaximum) ? globalThis.Number(object.durationMaximum) : 0,
+      capacityMinimum: isSet(object.capacityMinimum) ? globalThis.String(object.capacityMinimum) : "0",
+      capacityMaximum: isSet(object.capacityMaximum) ? globalThis.String(object.capacityMaximum) : "0",
+      durationMinimum: isSet(object.durationMinimum) ? globalThis.String(object.durationMinimum) : "0",
+      durationMaximum: isSet(object.durationMaximum) ? globalThis.String(object.durationMaximum) : "0",
+      ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "",
     };
   },
 
@@ -12675,17 +13198,20 @@ export const MsgProviderCreate: MessageFns<MsgProviderCreate> = {
     if (message.consumerCancellationPenalty !== "") {
       obj.consumerCancellationPenalty = message.consumerCancellationPenalty;
     }
-    if (message.capacityMinimum !== 0) {
-      obj.capacityMinimum = Math.round(message.capacityMinimum);
+    if (message.capacityMinimum !== "0") {
+      obj.capacityMinimum = message.capacityMinimum;
     }
-    if (message.capacityMaximum !== 0) {
-      obj.capacityMaximum = Math.round(message.capacityMaximum);
+    if (message.capacityMaximum !== "0") {
+      obj.capacityMaximum = message.capacityMaximum;
     }
-    if (message.durationMinimum !== 0) {
-      obj.durationMinimum = Math.round(message.durationMinimum);
+    if (message.durationMinimum !== "0") {
+      obj.durationMinimum = message.durationMinimum;
     }
-    if (message.durationMaximum !== 0) {
-      obj.durationMaximum = Math.round(message.durationMaximum);
+    if (message.durationMaximum !== "0") {
+      obj.durationMaximum = message.durationMaximum;
+    }
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
     }
     return obj;
   },
@@ -12701,10 +13227,11 @@ export const MsgProviderCreate: MessageFns<MsgProviderCreate> = {
     message.accessPolicy = object.accessPolicy ?? 0;
     message.providerCancellationPenalty = object.providerCancellationPenalty ?? "";
     message.consumerCancellationPenalty = object.consumerCancellationPenalty ?? "";
-    message.capacityMinimum = object.capacityMinimum ?? 0;
-    message.capacityMaximum = object.capacityMaximum ?? 0;
-    message.durationMinimum = object.durationMinimum ?? 0;
-    message.durationMaximum = object.durationMaximum ?? 0;
+    message.capacityMinimum = object.capacityMinimum ?? "0";
+    message.capacityMaximum = object.capacityMaximum ?? "0";
+    message.durationMinimum = object.durationMinimum ?? "0";
+    message.durationMaximum = object.durationMaximum ?? "0";
+    message.ownerId = object.ownerId ?? "";
     return message;
   },
 };
@@ -12802,7 +13329,7 @@ export const MsgProviderWithdrawBalance: MessageFns<MsgProviderWithdrawBalance> 
 };
 
 function createBaseMsgProviderUpdateCapacityMinimum(): MsgProviderUpdateCapacityMinimum {
-  return { creator: "", providerId: "", newMinimumCapacity: 0 };
+  return { creator: "", providerId: "", newMinimumCapacity: "0" };
 }
 
 export const MsgProviderUpdateCapacityMinimum: MessageFns<MsgProviderUpdateCapacityMinimum> = {
@@ -12813,7 +13340,7 @@ export const MsgProviderUpdateCapacityMinimum: MessageFns<MsgProviderUpdateCapac
     if (message.providerId !== "") {
       writer.uint32(18).string(message.providerId);
     }
-    if (message.newMinimumCapacity !== 0) {
+    if (message.newMinimumCapacity !== "0") {
       writer.uint32(24).uint64(message.newMinimumCapacity);
     }
     return writer;
@@ -12847,7 +13374,7 @@ export const MsgProviderUpdateCapacityMinimum: MessageFns<MsgProviderUpdateCapac
             break;
           }
 
-          message.newMinimumCapacity = longToNumber(reader.uint64());
+          message.newMinimumCapacity = reader.uint64().toString();
           continue;
         }
       }
@@ -12863,7 +13390,7 @@ export const MsgProviderUpdateCapacityMinimum: MessageFns<MsgProviderUpdateCapac
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       providerId: isSet(object.providerId) ? globalThis.String(object.providerId) : "",
-      newMinimumCapacity: isSet(object.newMinimumCapacity) ? globalThis.Number(object.newMinimumCapacity) : 0,
+      newMinimumCapacity: isSet(object.newMinimumCapacity) ? globalThis.String(object.newMinimumCapacity) : "0",
     };
   },
 
@@ -12875,8 +13402,8 @@ export const MsgProviderUpdateCapacityMinimum: MessageFns<MsgProviderUpdateCapac
     if (message.providerId !== "") {
       obj.providerId = message.providerId;
     }
-    if (message.newMinimumCapacity !== 0) {
-      obj.newMinimumCapacity = Math.round(message.newMinimumCapacity);
+    if (message.newMinimumCapacity !== "0") {
+      obj.newMinimumCapacity = message.newMinimumCapacity;
     }
     return obj;
   },
@@ -12892,13 +13419,13 @@ export const MsgProviderUpdateCapacityMinimum: MessageFns<MsgProviderUpdateCapac
     const message = createBaseMsgProviderUpdateCapacityMinimum();
     message.creator = object.creator ?? "";
     message.providerId = object.providerId ?? "";
-    message.newMinimumCapacity = object.newMinimumCapacity ?? 0;
+    message.newMinimumCapacity = object.newMinimumCapacity ?? "0";
     return message;
   },
 };
 
 function createBaseMsgProviderUpdateCapacityMaximum(): MsgProviderUpdateCapacityMaximum {
-  return { creator: "", providerId: "", newMaximumCapacity: 0 };
+  return { creator: "", providerId: "", newMaximumCapacity: "0" };
 }
 
 export const MsgProviderUpdateCapacityMaximum: MessageFns<MsgProviderUpdateCapacityMaximum> = {
@@ -12909,7 +13436,7 @@ export const MsgProviderUpdateCapacityMaximum: MessageFns<MsgProviderUpdateCapac
     if (message.providerId !== "") {
       writer.uint32(18).string(message.providerId);
     }
-    if (message.newMaximumCapacity !== 0) {
+    if (message.newMaximumCapacity !== "0") {
       writer.uint32(24).uint64(message.newMaximumCapacity);
     }
     return writer;
@@ -12943,7 +13470,7 @@ export const MsgProviderUpdateCapacityMaximum: MessageFns<MsgProviderUpdateCapac
             break;
           }
 
-          message.newMaximumCapacity = longToNumber(reader.uint64());
+          message.newMaximumCapacity = reader.uint64().toString();
           continue;
         }
       }
@@ -12959,7 +13486,7 @@ export const MsgProviderUpdateCapacityMaximum: MessageFns<MsgProviderUpdateCapac
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       providerId: isSet(object.providerId) ? globalThis.String(object.providerId) : "",
-      newMaximumCapacity: isSet(object.newMaximumCapacity) ? globalThis.Number(object.newMaximumCapacity) : 0,
+      newMaximumCapacity: isSet(object.newMaximumCapacity) ? globalThis.String(object.newMaximumCapacity) : "0",
     };
   },
 
@@ -12971,8 +13498,8 @@ export const MsgProviderUpdateCapacityMaximum: MessageFns<MsgProviderUpdateCapac
     if (message.providerId !== "") {
       obj.providerId = message.providerId;
     }
-    if (message.newMaximumCapacity !== 0) {
-      obj.newMaximumCapacity = Math.round(message.newMaximumCapacity);
+    if (message.newMaximumCapacity !== "0") {
+      obj.newMaximumCapacity = message.newMaximumCapacity;
     }
     return obj;
   },
@@ -12988,13 +13515,13 @@ export const MsgProviderUpdateCapacityMaximum: MessageFns<MsgProviderUpdateCapac
     const message = createBaseMsgProviderUpdateCapacityMaximum();
     message.creator = object.creator ?? "";
     message.providerId = object.providerId ?? "";
-    message.newMaximumCapacity = object.newMaximumCapacity ?? 0;
+    message.newMaximumCapacity = object.newMaximumCapacity ?? "0";
     return message;
   },
 };
 
 function createBaseMsgProviderUpdateDurationMinimum(): MsgProviderUpdateDurationMinimum {
-  return { creator: "", providerId: "", newMinimumDuration: 0 };
+  return { creator: "", providerId: "", newMinimumDuration: "0" };
 }
 
 export const MsgProviderUpdateDurationMinimum: MessageFns<MsgProviderUpdateDurationMinimum> = {
@@ -13005,7 +13532,7 @@ export const MsgProviderUpdateDurationMinimum: MessageFns<MsgProviderUpdateDurat
     if (message.providerId !== "") {
       writer.uint32(18).string(message.providerId);
     }
-    if (message.newMinimumDuration !== 0) {
+    if (message.newMinimumDuration !== "0") {
       writer.uint32(24).uint64(message.newMinimumDuration);
     }
     return writer;
@@ -13039,7 +13566,7 @@ export const MsgProviderUpdateDurationMinimum: MessageFns<MsgProviderUpdateDurat
             break;
           }
 
-          message.newMinimumDuration = longToNumber(reader.uint64());
+          message.newMinimumDuration = reader.uint64().toString();
           continue;
         }
       }
@@ -13055,7 +13582,7 @@ export const MsgProviderUpdateDurationMinimum: MessageFns<MsgProviderUpdateDurat
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       providerId: isSet(object.providerId) ? globalThis.String(object.providerId) : "",
-      newMinimumDuration: isSet(object.newMinimumDuration) ? globalThis.Number(object.newMinimumDuration) : 0,
+      newMinimumDuration: isSet(object.newMinimumDuration) ? globalThis.String(object.newMinimumDuration) : "0",
     };
   },
 
@@ -13067,8 +13594,8 @@ export const MsgProviderUpdateDurationMinimum: MessageFns<MsgProviderUpdateDurat
     if (message.providerId !== "") {
       obj.providerId = message.providerId;
     }
-    if (message.newMinimumDuration !== 0) {
-      obj.newMinimumDuration = Math.round(message.newMinimumDuration);
+    if (message.newMinimumDuration !== "0") {
+      obj.newMinimumDuration = message.newMinimumDuration;
     }
     return obj;
   },
@@ -13084,13 +13611,13 @@ export const MsgProviderUpdateDurationMinimum: MessageFns<MsgProviderUpdateDurat
     const message = createBaseMsgProviderUpdateDurationMinimum();
     message.creator = object.creator ?? "";
     message.providerId = object.providerId ?? "";
-    message.newMinimumDuration = object.newMinimumDuration ?? 0;
+    message.newMinimumDuration = object.newMinimumDuration ?? "0";
     return message;
   },
 };
 
 function createBaseMsgProviderUpdateDurationMaximum(): MsgProviderUpdateDurationMaximum {
-  return { creator: "", providerId: "", newMaximumDuration: 0 };
+  return { creator: "", providerId: "", newMaximumDuration: "0" };
 }
 
 export const MsgProviderUpdateDurationMaximum: MessageFns<MsgProviderUpdateDurationMaximum> = {
@@ -13101,7 +13628,7 @@ export const MsgProviderUpdateDurationMaximum: MessageFns<MsgProviderUpdateDurat
     if (message.providerId !== "") {
       writer.uint32(18).string(message.providerId);
     }
-    if (message.newMaximumDuration !== 0) {
+    if (message.newMaximumDuration !== "0") {
       writer.uint32(24).uint64(message.newMaximumDuration);
     }
     return writer;
@@ -13135,7 +13662,7 @@ export const MsgProviderUpdateDurationMaximum: MessageFns<MsgProviderUpdateDurat
             break;
           }
 
-          message.newMaximumDuration = longToNumber(reader.uint64());
+          message.newMaximumDuration = reader.uint64().toString();
           continue;
         }
       }
@@ -13151,7 +13678,7 @@ export const MsgProviderUpdateDurationMaximum: MessageFns<MsgProviderUpdateDurat
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       providerId: isSet(object.providerId) ? globalThis.String(object.providerId) : "",
-      newMaximumDuration: isSet(object.newMaximumDuration) ? globalThis.Number(object.newMaximumDuration) : 0,
+      newMaximumDuration: isSet(object.newMaximumDuration) ? globalThis.String(object.newMaximumDuration) : "0",
     };
   },
 
@@ -13163,8 +13690,8 @@ export const MsgProviderUpdateDurationMaximum: MessageFns<MsgProviderUpdateDurat
     if (message.providerId !== "") {
       obj.providerId = message.providerId;
     }
-    if (message.newMaximumDuration !== 0) {
-      obj.newMaximumDuration = Math.round(message.newMaximumDuration);
+    if (message.newMaximumDuration !== "0") {
+      obj.newMaximumDuration = message.newMaximumDuration;
     }
     return obj;
   },
@@ -13180,7 +13707,7 @@ export const MsgProviderUpdateDurationMaximum: MessageFns<MsgProviderUpdateDurat
     const message = createBaseMsgProviderUpdateDurationMaximum();
     message.creator = object.creator ?? "";
     message.providerId = object.providerId ?? "";
-    message.newMaximumDuration = object.newMaximumDuration ?? 0;
+    message.newMaximumDuration = object.newMaximumDuration ?? "0";
     return message;
   },
 };
@@ -13549,12 +14076,164 @@ export const MsgPlayerSendResponse: MessageFns<MsgPlayerSendResponse> = {
   },
 };
 
-/** Msg defines the Msg service. */
+function createBaseMsgVaultSend(): MsgVaultSend {
+  return { creator: "", ownerId: "", recipientOwnerId: "", amount: [] };
+}
+
+export const MsgVaultSend: MessageFns<MsgVaultSend> = {
+  encode(message: MsgVaultSend, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.creator !== "") {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.ownerId !== "") {
+      writer.uint32(18).string(message.ownerId);
+    }
+    if (message.recipientOwnerId !== "") {
+      writer.uint32(26).string(message.recipientOwnerId);
+    }
+    for (const v of message.amount) {
+      Coin.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgVaultSend {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgVaultSend();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.creator = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.ownerId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.recipientOwnerId = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.amount.push(Coin.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgVaultSend {
+    return {
+      creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
+      ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "",
+      recipientOwnerId: isSet(object.recipientOwnerId) ? globalThis.String(object.recipientOwnerId) : "",
+      amount: globalThis.Array.isArray(object?.amount) ? object.amount.map((e: any) => Coin.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: MsgVaultSend): unknown {
+    const obj: any = {};
+    if (message.creator !== "") {
+      obj.creator = message.creator;
+    }
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
+    }
+    if (message.recipientOwnerId !== "") {
+      obj.recipientOwnerId = message.recipientOwnerId;
+    }
+    if (message.amount?.length) {
+      obj.amount = message.amount.map((e) => Coin.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgVaultSend>, I>>(base?: I): MsgVaultSend {
+    return MsgVaultSend.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgVaultSend>, I>>(object: I): MsgVaultSend {
+    const message = createBaseMsgVaultSend();
+    message.creator = object.creator ?? "";
+    message.ownerId = object.ownerId ?? "";
+    message.recipientOwnerId = object.recipientOwnerId ?? "";
+    message.amount = object.amount?.map((e) => Coin.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseMsgVaultSendResponse(): MsgVaultSendResponse {
+  return {};
+}
+
+export const MsgVaultSendResponse: MessageFns<MsgVaultSendResponse> = {
+  encode(_: MsgVaultSendResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgVaultSendResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgVaultSendResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgVaultSendResponse {
+    return {};
+  },
+
+  toJSON(_: MsgVaultSendResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgVaultSendResponse>, I>>(base?: I): MsgVaultSendResponse {
+    return MsgVaultSendResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgVaultSendResponse>, I>>(_: I): MsgVaultSendResponse {
+    const message = createBaseMsgVaultSendResponse();
+    return message;
+  },
+};
+
 export interface Msg {
-  /**
-   * UpdateParams defines a (governance) operation for updating the module
-   * parameters. The authority defaults to the x/gov module account.
-   */
+  VaultSend(request: MsgVaultSend): Promise<MsgVaultSendResponse>;
+  GuildUpdateRankPurchase(request: MsgGuildUpdateRankPurchase): Promise<MsgGuildUpdateResponse>;
+  GuildRankPurchase(request: MsgGuildRankPurchase): Promise<MsgGuildRankPurchaseResponse>;
+  GuildMembershipJoinByRankPurchase(
+    request: MsgGuildMembershipJoinByRankPurchase,
+  ): Promise<MsgGuildRankPurchaseResponse>;
   UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse>;
   AddressRegister(request: MsgAddressRegister): Promise<MsgAddressRegisterResponse>;
   AddressRevoke(request: MsgAddressRevoke): Promise<MsgAddressRevokeResponse>;
@@ -13669,6 +14348,10 @@ export class MsgClientImpl implements Msg {
   constructor(rpc: Rpc, opts?: { service?: string }) {
     this.service = opts?.service || MsgServiceName;
     this.rpc = rpc;
+    this.VaultSend = this.VaultSend.bind(this);
+    this.GuildUpdateRankPurchase = this.GuildUpdateRankPurchase.bind(this);
+    this.GuildRankPurchase = this.GuildRankPurchase.bind(this);
+    this.GuildMembershipJoinByRankPurchase = this.GuildMembershipJoinByRankPurchase.bind(this);
     this.UpdateParams = this.UpdateParams.bind(this);
     this.AddressRegister = this.AddressRegister.bind(this);
     this.AddressRevoke = this.AddressRevoke.bind(this);
@@ -13767,6 +14450,32 @@ export class MsgClientImpl implements Msg {
     this.SubstationPlayerDisconnect = this.SubstationPlayerDisconnect.bind(this);
     this.SubstationPlayerMigrate = this.SubstationPlayerMigrate.bind(this);
   }
+  VaultSend(request: MsgVaultSend): Promise<MsgVaultSendResponse> {
+    const data = MsgVaultSend.encode(request).finish();
+    const promise = this.rpc.request(this.service, "VaultSend", data);
+    return promise.then((data) => MsgVaultSendResponse.decode(new BinaryReader(data)));
+  }
+
+  GuildUpdateRankPurchase(request: MsgGuildUpdateRankPurchase): Promise<MsgGuildUpdateResponse> {
+    const data = MsgGuildUpdateRankPurchase.encode(request).finish();
+    const promise = this.rpc.request(this.service, "GuildUpdateRankPurchase", data);
+    return promise.then((data) => MsgGuildUpdateResponse.decode(new BinaryReader(data)));
+  }
+
+  GuildRankPurchase(request: MsgGuildRankPurchase): Promise<MsgGuildRankPurchaseResponse> {
+    const data = MsgGuildRankPurchase.encode(request).finish();
+    const promise = this.rpc.request(this.service, "GuildRankPurchase", data);
+    return promise.then((data) => MsgGuildRankPurchaseResponse.decode(new BinaryReader(data)));
+  }
+
+  GuildMembershipJoinByRankPurchase(
+    request: MsgGuildMembershipJoinByRankPurchase,
+  ): Promise<MsgGuildRankPurchaseResponse> {
+    const data = MsgGuildMembershipJoinByRankPurchase.encode(request).finish();
+    const promise = this.rpc.request(this.service, "GuildMembershipJoinByRankPurchase", data);
+    return promise.then((data) => MsgGuildRankPurchaseResponse.decode(new BinaryReader(data)));
+  }
+
   UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse> {
     const data = MsgUpdateParams.encode(request).finish();
     const promise = this.rpc.request(this.service, "UpdateParams", data);
@@ -14377,13 +15086,13 @@ export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function toTimestamp(date: Date): Timestamp {
-  const seconds = Math.trunc(date.getTime() / 1_000);
+  const seconds = Math.trunc(date.getTime() / 1_000).toString();
   const nanos = (date.getTime() % 1_000) * 1_000_000;
   return { seconds, nanos };
 }
 
 function fromTimestamp(t: Timestamp): Date {
-  let millis = (t.seconds || 0) * 1_000;
+  let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
   millis += (t.nanos || 0) / 1_000_000;
   return new globalThis.Date(millis);
 }
@@ -14396,17 +15105,6 @@ function fromJsonTimestamp(o: any): Date {
   } else {
     return fromTimestamp(Timestamp.fromJSON(o));
   }
-}
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
 }
 
 function isSet(value: any): boolean {

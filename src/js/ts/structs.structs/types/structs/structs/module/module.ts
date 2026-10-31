@@ -9,9 +9,7 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "structs.structs.module";
 
-/** Module is the config object for the module. */
 export interface Module {
-  /** authority defines the custom module authority. If not set, defaults to the governance module. */
   authority: string;
 }
 

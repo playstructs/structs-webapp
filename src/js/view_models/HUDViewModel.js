@@ -242,7 +242,8 @@ export class HUDViewModel extends AbstractViewModel {
     // landed on chain. A transaction that never lands produces no such frame, so
     // without this the executing progress bar runs until the player clicks away.
     window.addEventListener(EVENTS.SIGNING_TRANSACTION_SETTLED, (event) => {
-      if (event.status === TX_STATUS.SUCCEEDED || !HUDViewModel.gameState.actionBarLock.isLocked()) {
+      if (event.status === TX_STATUS.SUCCEEDED || !HUDViewModel.gameState.actionBarLock.isLocked()
+          || HUDViewModel.gameState.actionBarLock.completionManaged) {
         return;
       }
 
