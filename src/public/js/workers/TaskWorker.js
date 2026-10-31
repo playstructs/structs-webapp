@@ -1,11 +1,34 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./js/constants/ObjectTypes.js"
+/***/ "./js/constants/ChainConstants.js":
+/*!****************************************!*\
+  !*** ./js/constants/ChainConstants.js ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   CHAIN: () => (/* binding */ CHAIN)
+/* harmony export */ });
+// This deployment targets the scheduled structstestnet-111 upgrade only.
+const CHAIN = Object.freeze({
+  ID: 'structstestnet-111',
+  UPGRADE_HEIGHT: '3353000',
+  LEGACY_PROTOCOL: 'v0.21.0',
+  PROTOCOL: 'v0.22.0',
+  API_CONTRACT: 'structs-api-v022-1',
+});
+
+
+/***/ }),
+
+/***/ "./js/constants/ObjectTypes.js":
 /*!*************************************!*\
   !*** ./js/constants/ObjectTypes.js ***!
   \*************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -29,13 +52,13 @@ const OBJECT_TYPES = {
 
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/TaskConstants.js"
+/***/ "./js/constants/TaskConstants.js":
 /*!***************************************!*\
   !*** ./js/constants/TaskConstants.js ***!
   \***************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -43,7 +66,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   TASK: () => (/* binding */ TASK)
 /* harmony export */ });
 const TASK = {
-  WORKER_PATH: '/js/workers/TaskWorker.js',
+  WORKER_VERSION: 'work-v022-1',
+  WORKER_HANDSHAKE_TIMEOUT: 10000,
+  HASH_BATCH_SIZE: 4096,
   MAX_BLOCKS_WHEN_ESTIMATING: 30000,
   MAX_CONCURRENT_PROCESSES: 5,
   CHECKPOINT_COMMIT: 5000000,
@@ -62,13 +87,13 @@ const TASK = {
 };
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/TaskStatus.js"
+/***/ "./js/constants/TaskStatus.js":
 /*!************************************!*\
   !*** ./js/constants/TaskStatus.js ***!
   \************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -86,13 +111,13 @@ const TASK_STATUS = {
 };
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/constants/TaskTypes.js"
+/***/ "./js/constants/TaskTypes.js":
 /*!***********************************!*\
   !*** ./js/constants/TaskTypes.js ***!
   \***********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -114,13 +139,13 @@ const TASK_TYPES = {
 const ORE_TASK_TYPES = [TASK_TYPES.MINE, TASK_TYPES.REFINE];
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/factories/TaskStateFactory.js"
+/***/ "./js/factories/TaskStateFactory.js":
 /*!******************************************!*\
   !*** ./js/factories/TaskStateFactory.js ***!
   \******************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -132,6 +157,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants/TaskConstants */ "./js/constants/TaskConstants.js");
 /* harmony import */ var _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants/TaskTypes */ "./js/constants/TaskTypes.js");
 /* harmony import */ var _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants/ObjectTypes */ "./js/constants/ObjectTypes.js");
+/* harmony import */ var _util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../util/WorkDifficulty */ "./js/util/WorkDifficulty.js");
+
 
 
 
@@ -167,8 +194,8 @@ class TaskStateFactory extends _framework_AbstractFactory__WEBPACK_IMPORTED_MODU
     task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__.OBJECT_TYPES.FLEET;
     task_state.object_id = fleet_id;
     task_state.target_id = planet_id;
-    task_state.block_start = block_start;
-    task_state.difficulty_target = difficulty_target;
+    task_state.block_start = String((0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_5__.workUint64)(block_start));
+    task_state.difficulty_target = String((0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_5__.workUint64)(difficulty_target));
 
     task_state.prefix = task_state.object_id + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.TARGET_DELIMITER + task_state.target_id + task_state.task_type + task_state.block_start + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.NONCE_PREFIX;
     task_state.postfix = '';
@@ -192,8 +219,8 @@ class TaskStateFactory extends _framework_AbstractFactory__WEBPACK_IMPORTED_MODU
     task_state.task_type = task_type;
     task_state.object_type = _constants_ObjectTypes__WEBPACK_IMPORTED_MODULE_4__.OBJECT_TYPES.STRUCT;
     task_state.object_id = struct_id;
-    task_state.block_start = block_start;
-    task_state.difficulty_target = difficulty_target;
+    task_state.block_start = String((0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_5__.workUint64)(block_start));
+    task_state.difficulty_target = String((0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_5__.workUint64)(difficulty_target));
 
     task_state.prefix = task_state.object_id  + task_state.task_type + task_state.block_start + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_2__.TASK.NONCE_PREFIX;
     task_state.postfix = '';
@@ -206,28 +233,34 @@ class TaskStateFactory extends _framework_AbstractFactory__WEBPACK_IMPORTED_MODU
    * @return {TaskState}
    */
   initTaskFromWork(work) {
+    let task;
     switch(work.category) {
       case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.RAID:
-        return this.initRaidTask(work.object_id, work.target_id, work.block_start, work.difficulty_target);
+        task = this.initRaidTask(work.object_id, work.target_id, work.block_start, work.difficulty_target);
+        break;
       case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.BUILD:
       case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.MINE:
       case _constants_TaskTypes__WEBPACK_IMPORTED_MODULE_3__.TASK_TYPES.REFINE:
-        return this.initStructTask(work.object_id, work.category, work.block_start, work.difficulty_target);
+        task = this.initStructTask(work.object_id, work.category, work.block_start, work.difficulty_target);
+        break;
       default:
         throw new Error(`Unknown task type: ${work.category}`);
     }
+    if (work.snapshot_meta?.height != null) task.rules_height = String((0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_5__.workUint64)(work.snapshot_meta.height));
+    return task;
   }
 
 
 }
 
-/***/ },
 
-/***/ "./js/framework/AbstractFactory.js"
+/***/ }),
+
+/***/ "./js/framework/AbstractFactory.js":
 /*!*****************************************!*\
   !*** ./js/framework/AbstractFactory.js ***!
   \*****************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -248,13 +281,13 @@ class AbstractFactory {
   }
 }
 
-/***/ },
+/***/ }),
 
-/***/ "./js/framework/NotImplementedError.js"
+/***/ "./js/framework/NotImplementedError.js":
 /*!*********************************************!*\
   !*** ./js/framework/NotImplementedError.js ***!
   \*********************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -269,13 +302,13 @@ class NotImplementedError extends Error {
 }
 
 
-/***/ },
+/***/ }),
 
-/***/ "./js/models/TaskState.js"
+/***/ "./js/models/TaskState.js":
 /*!********************************!*\
   !*** ./js/models/TaskState.js ***!
   \********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
@@ -286,6 +319,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants/TaskStatus */ "./js/constants/TaskStatus.js");
 /* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! js-sha256 */ "./node_modules/js-sha256/src/sha256.js");
 /* harmony import */ var js_sha256__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(js_sha256__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../util/WorkDifficulty */ "./js/util/WorkDifficulty.js");
+
 
 
 
@@ -310,6 +345,7 @@ class TaskState {
     this.process_end_time = null;
     this.difficulty_start = null;
     this.difficulty_target = null;
+    this.rules_height = null;
     this.block_start = null;
     this.block_checkpoint = null;
     this.block_checkpoint_time = null;
@@ -357,9 +393,11 @@ class TaskState {
    * @param {number} block
    */
   setBlockCheckpoint(block) {
+    const next = (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.workUint64)(block);
+    if (this.block_checkpoint !== null && next < (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.workUint64)(this.block_checkpoint)) return;
     this.block_checkpoint_time = new Date();
-    this.block_checkpoint = block;
-    this.block_current_estimated = block;
+    this.block_checkpoint = String(next);
+    this.block_current_estimated = Number(next);
   }
 
   /**
@@ -383,7 +421,7 @@ class TaskState {
     this.result_message = message;
     this.result_nonce = nonce + this.postfix;
     this.result_hash = hash;
-    this.result_difficulty = difficulty;
+    this.result_difficulty = (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.hashDifficulty)(hash);
   }
 
   /**
@@ -392,7 +430,7 @@ class TaskState {
   setPreviousResult(difficulty) {
     this.status = _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.COMPLETED;
     this.process_end_time = new Date();
-    this.result_difficulty = difficulty;
+    this.result_difficulty = (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.hashDifficulty)(this.result_hash);
   }
 
   getNextNonce() {
@@ -409,6 +447,25 @@ class TaskState {
    */
   getPID() {
     return this.object_id;
+  }
+
+  /** The proof input changes only when the work identity or original anchor changes. */
+  isSameWork(other) {
+    return this.object_id === other.object_id && this.target_id === other.target_id
+      && this.task_type === other.task_type && String(this.block_start) === String(other.block_start)
+      && this.prefix === other.prefix && this.postfix === other.postfix;
+  }
+
+  /** Keep searched nonces and proof candidates when only the rule or observed height changes. */
+  updateRules(other) {
+    if (!this.isSameWork(other)) throw new Error('Cannot update a different work identity');
+    this.setBlockCheckpoint(other.block_checkpoint);
+    // A delayed catalog response or unversioned notification cannot overwrite
+    // a rule already read from a newer indexed snapshot.
+    if (this.rules_height !== null && (other.rules_height == null
+        || (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.workUint64)(other.rules_height) < (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.workUint64)(this.rules_height))) return;
+    this.difficulty_target = String((0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.workUint64)(other.difficulty_target));
+    this.rules_height = other.rules_height == null ? null : String((0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.workUint64)(other.rules_height));
   }
 
   /**
@@ -511,7 +568,7 @@ class TaskState {
   getCurrentAgeEstimate() {
     const current_time = new Date();
     const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.ESTIMATED_BLOCK_TIME);
-    this.block_current_estimated = Math.floor(this.block_checkpoint + estimated_blocks_past);
+    this.block_current_estimated = Math.floor(Number(this.block_checkpoint) + estimated_blocks_past);
 
     return this.block_current_estimated - this.block_start;
   }
@@ -520,20 +577,11 @@ class TaskState {
    * @return {number}
    */
   getCurrentDifficulty(){
-    const age = this.getCurrentAgeEstimate();
-
-    if (age <= 1) {
-      return 64;
-    }
-
-    // Using logarithmic function to calculate difficulty
-    let difficulty = 64 - Math.floor(Math.log10(age) / Math.log10(this.difficulty_target) * 63);
-
-    return Math.max(1, difficulty)
+    return (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.workDifficultyAtHeight)(this.block_start, this.difficulty_target, this.block_checkpoint);
   }
 
   /**
-   * Calculate difficulty from age
+   * Display-only estimate. Proof eligibility uses getCurrentDifficulty instead.
    *
    * @param {number} age - Current age in blocks
    * @param {number} baseDifficultyRange - Base difficulty range
@@ -555,17 +603,77 @@ class TaskState {
    * Check to see if Hash was built for an acceptable block height
    */
   checkResultHashDifficulty() {
-    return this.result_difficulty >= this.getCurrentDifficulty();
+    if (!this.result_exists || this.result_nonce === null || (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.workUint64)(this.block_start) === 0n
+        || (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.workUint64)(this.block_checkpoint) < (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.workUint64)(this.block_start)) return false;
+    const expected = this.prefix + this.result_nonce;
+    return (0,js_sha256__WEBPACK_IMPORTED_MODULE_2__.sha256)(expected) === this.result_hash && (0,_util_WorkDifficulty__WEBPACK_IMPORTED_MODULE_3__.hashDifficulty)(this.result_hash) >= this.getCurrentDifficulty();
   }
 }
 
-/***/ },
 
-/***/ "./node_modules/js-sha256/src/sha256.js"
+/***/ }),
+
+/***/ "./js/util/WorkDifficulty.js":
+/*!***********************************!*\
+  !*** ./js/util/WorkDifficulty.js ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   hashDifficulty: () => (/* binding */ hashDifficulty),
+/* harmony export */   integerWorkDifficulty: () => (/* binding */ integerWorkDifficulty),
+/* harmony export */   workDifficultyAtHeight: () => (/* binding */ workDifficultyAtHeight),
+/* harmony export */   workUint64: () => (/* binding */ workUint64)
+/* harmony export */ });
+/* harmony import */ var _constants_ChainConstants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/ChainConstants */ "./js/constants/ChainConstants.js");
+
+
+function workUint64(value) {
+  if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) value=String(value);
+  if (typeof value !== 'string' || !/^(0|[1-9][0-9]{0,19})$/.test(value)
+      || BigInt(value)>18446744073709551615n) throw new Error('Work requires an exact uint64');
+  return BigInt(value);
+}
+
+/** structsd v0.22.0 types.CalculateDifficulty, bounded to 63 integer products. */
+function integerWorkDifficulty(age, range) {
+  age=workUint64(age);range=workUint64(range);
+  if (age<=1n || range<=1n) return 64;
+  const ceiling=age**63n;
+  let power=1n, exponent=0;
+  for (let k=1;k<=63;k++) {
+    power*=range;
+    if (power>ceiling) break;
+    exponent=k;
+  }
+  return 64-exponent;
+}
+
+/** Only an observed chain height can make a proof eligible. */
+function workDifficultyAtHeight(start, range, height) {
+  const anchor=workUint64(start), current=workUint64(height), base=workUint64(range);
+  if (anchor===0n || current<anchor) return 64;
+  const age=current-anchor;
+  if (current>=BigInt(_constants_ChainConstants__WEBPACK_IMPORTED_MODULE_0__.CHAIN.UPGRADE_HEIGHT)) return integerWorkDifficulty(String(age),String(base));
+  if (age<=1n || base<=1n) return 64;
+  return Math.max(1,64-Math.floor(Math.log10(Number(age))/Math.log10(Number(base))*63));
+}
+
+function hashDifficulty(hash) {
+  if (typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash)) throw new Error('Invalid work hash');
+  return hash.match(/^0*/)[0].length;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/js-sha256/src/sha256.js":
 /*!**********************************************!*\
   !*** ./node_modules/js-sha256/src/sha256.js ***!
   \**********************************************/
-(module, exports, __webpack_require__) {
+/***/ ((module, exports, __webpack_require__) => {
 
 var __WEBPACK_AMD_DEFINE_RESULT__;/**
  * [js-sha256]{@link https://github.com/emn178/js-sha256}
@@ -1096,54 +1204,48 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/**
 })();
 
 
-/***/ },
+/***/ }),
 
-/***/ "?69d9"
+/***/ "?69d9":
 /*!************************!*\
   !*** buffer (ignored) ***!
   \************************/
-() {
+/***/ (() => {
 
 /* (ignored) */
 
-/***/ },
+/***/ }),
 
-/***/ "?abf2"
+/***/ "?abf2":
 /*!************************!*\
   !*** crypto (ignored) ***!
   \************************/
-() {
+/***/ (() => {
 
 /* (ignored) */
 
-/***/ }
+/***/ })
 
 /******/ 	});
 /************************************************************************/
 /******/ 	// The module cache
-/******/ 	const __webpack_module_cache__ = {};
+/******/ 	var __webpack_module_cache__ = {};
 /******/ 	
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
 /******/ 		// Check if module is in cache
-/******/ 		const cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
 /******/ 		if (cachedModule !== undefined) {
 /******/ 			return cachedModule.exports;
 /******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
-/******/ 		const module = __webpack_module_cache__[moduleId] = {
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
 /******/ 			// no module.id needed
 /******/ 			// no module.loaded needed
 /******/ 			exports: {}
 /******/ 		};
 /******/ 	
 /******/ 		// Execute the module function
-/******/ 		if (!(moduleId in __webpack_modules__)) {
-/******/ 			delete __webpack_module_cache__[moduleId];
-/******/ 			const e = new Error("Cannot find module '" + moduleId + "'");
-/******/ 			e.code = 'MODULE_NOT_FOUND';
-/******/ 			throw e;
-/******/ 		}
 /******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
 /******/ 	
 /******/ 		// Return the exports of the module
@@ -1160,7 +1262,7 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/**
 /******/ 	(() => {
 /******/ 		// getDefaultExport function for compatibility with non-harmony modules
 /******/ 		__webpack_require__.n = (module) => {
-/******/ 			const getter = module && module.__esModule ?
+/******/ 			var getter = module && module.__esModule ?
 /******/ 				() => (module['default']) :
 /******/ 				() => (module);
 /******/ 			__webpack_require__.d(getter, { a: getter });
@@ -1170,26 +1272,11 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/**
 /******/ 	
 /******/ 	/* webpack/runtime/define property getters */
 /******/ 	(() => {
-/******/ 		// define getter/value functions for harmony exports
+/******/ 		// define getter functions for harmony exports
 /******/ 		__webpack_require__.d = (exports, definition) => {
-/******/ 			if(Array.isArray(definition)) {
-/******/ 				var i = 0;
-/******/ 				while(i < definition.length) {
-/******/ 					var key = definition[i++];
-/******/ 					var binding = definition[i++];
-/******/ 					if(!__webpack_require__.o(exports, key)) {
-/******/ 						if(binding === 0) {
-/******/ 							Object.defineProperty(exports, key, { enumerable: true, value: definition[i++] });
-/******/ 						} else {
-/******/ 							Object.defineProperty(exports, key, { enumerable: true, get: binding });
-/******/ 						}
-/******/ 					} else if(binding === 0) { i++; }
-/******/ 				}
-/******/ 			} else {
-/******/ 				for(var key in definition) {
-/******/ 					if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
-/******/ 						Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 					}
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
 /******/ 				}
 /******/ 			}
 /******/ 		};
@@ -1216,7 +1303,7 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/**
 /******/ 	(() => {
 /******/ 		// define __esModule on exports
 /******/ 		__webpack_require__.r = (exports) => {
-/******/ 			if(Symbol.toStringTag) {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
 /******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
 /******/ 			}
 /******/ 			Object.defineProperty(exports, '__esModule', { value: true });
@@ -1224,7 +1311,7 @@ var __WEBPACK_AMD_DEFINE_RESULT__;/**
 /******/ 	})();
 /******/ 	
 /************************************************************************/
-let __webpack_exports__ = {};
+var __webpack_exports__ = {};
 // This entry needs to be wrapped in an IIFE because it needs to be in strict mode.
 (() => {
 "use strict";
@@ -1243,78 +1330,80 @@ __webpack_require__.r(__webpack_exports__);
 
 
 let state = null;
-
+let revision = 0;
+let scheduled = false;
+const batchChannel = new MessageChannel();
+batchChannel.port1.onmessage = work;
+let sessionIterations = 0;
 const taskStateFactory = new _factories_TaskStateFactory__WEBPACK_IMPORTED_MODULE_2__.TaskStateFactory();
 
-onmessage =  async function(process_request) {
-    state = taskStateFactory.make(process_request.data[0]);
-
-    /*
-        If the state is starting, then start the task in a waiting state.
-        Otherwise, if it's been passed as "Running" already, then force it
-        to begin hashing even if difficulty is too high.
-     */
-    if (state.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.STARTING){
-        state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.WAITING);
-        postMessage([state]);
-    }
-    console.log('Start Process Request ' + state.getPID());
-    await work();
+function publish() {
+    postMessage({version: _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.WORKER_VERSION, revision, state});
 }
 
-async function work() {
-    let difficulty = state.getCurrentDifficulty();
-
-    if (state.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.WAITING){
-        while (difficulty > _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START) {
-            console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START);
-            await new Promise(r => setTimeout(r, _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START_SLEEP_DELAY));
-            difficulty = state.getCurrentDifficulty();
-        }
-        state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.RUNNING);
-        postMessage([state]);
+onmessage = function(process_request) {
+    const request = process_request.data;
+    if (request?.version !== _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.WORKER_VERSION || !Number.isSafeInteger(request.revision)
+        || request.revision <= revision) return;
+    if (request.kind === 'start' && state === null) {
+        state = taskStateFactory.make(request.state);
+        if (state.status === _constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.STARTING) state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.WAITING);
+    } else if (request.kind === 'update' && state?.isSameWork(request.state)) {
+        state.updateRules(request.state);
+        // A candidate found under an older rule remains useful, but must pass
+        // the current rule before it can complete this task.
+        if (state.isCompleted() && !state.checkResultHashDifficulty()) state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.WAITING);
+    } else {
+        return;
     }
+    revision = request.revision;
+    publish();
+    schedule();
+};
 
-    let sessionIterations = 1;
-    while (true) {
+function schedule() {
+    if (!scheduled && !state.isCompleted()) {
+        scheduled = true;
+        // A posted task yields for rule updates without nested-timer clamping.
+        batchChannel.port2.postMessage(null);
+    }
+}
+
+function work() {
+    scheduled = false;
+    const difficulty = state.getCurrentDifficulty();
+    if (state.result_exists && state.checkResultHashDifficulty()) {
+        state.setPreviousResult(difficulty);
+        publish();
+        return;
+    }
+    // Only a received chain height/rule update wakes a waiting worker. Wall
+    // time is useful for UI estimates, never for making a proof eligible.
+    if (state.isWaiting()) {
+        if (difficulty > _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_START) return;
+        state.setStatus(_constants_TaskStatus__WEBPACK_IMPORTED_MODULE_1__.TASK_STATUS.RUNNING);
+        publish();
+    }
+    if (!state.isRunning()) return;
+    const difficultyPrefix = '0'.repeat(difficulty);
+
+    // Yield after bounded work so height, rule and cancellation messages can
+    // be processed even while the current difficulty is too high to solve.
+    for (let i = 0; i < _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.HASH_BATCH_SIZE; i++) {
         const nonce = state.getNextNonce();
         const message = state.getMessage(nonce);
         const hash = (0,js_sha256__WEBPACK_IMPORTED_MODULE_3__.sha256)(message);
-
-        if (difficultyCheck(hash, difficulty)){
+        state.iterations_since_last_start = ++sessionIterations;
+        if (hash.startsWith(difficultyPrefix)) {
             state.setResult(nonce, message, hash, difficulty);
-            postMessage([state]);
-            break;
+            publish();
+            return;
         }
-
-        if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.CHECKPOINT_COMMIT === 0) {
-            state.iterations_since_last_start = sessionIterations;
-            postMessage([state]);
-        }
-
-        if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.DIFFICULTY_RECALCULATE === 0) {
-            difficulty = state.getCurrentDifficulty();
-
-            // Check to see if a previous hash result is now relevant again
-            if (state.result_exists && state.result_difficulty >= difficulty) {
-                state.setPreviousResult(difficulty);
-                postMessage([state]);
-                break;
-            }
-        }
-        sessionIterations++;
+        if (state.iterations % _constants_TaskConstants__WEBPACK_IMPORTED_MODULE_0__.TASK.CHECKPOINT_COMMIT === 0) publish();
     }
+    schedule();
 }
 
-function difficultyCheck(hash, difficulty) {
-    //console.log('dif' + difficulty + ' hash ' + hash)
-    for (let position = 1; position <= difficulty; position++) {
-        if (hash[position - 1] !== "0") {
-            return false;
-        }
-    }
-    return true;
-}
 })();
 
 /******/ })()
