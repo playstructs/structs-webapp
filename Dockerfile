@@ -67,3 +67,7 @@ WORKDIR /src
 
 # Install JS project dependencies
 RUN npm ci && npm run build
+
+# Apache must be able to create Symfony cache and log files in a clean image.
+RUN mkdir -p /src/var/cache /src/var/log && \
+    chown -R www-data:www-data /src/var
