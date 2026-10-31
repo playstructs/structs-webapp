@@ -323,7 +323,7 @@ async function main() {
     const message = registry.decode(body.messages[0]);
     assert.equal(message.permissions,'255');assert.equal(message.proofSignature,f.tx.intent.signature);
     assert.equal(message.creator,signerAccount.address);assert.equal(message.nonce,undefined,'Nonce belongs in consent, never an invented message field');
-    assert.equal(body.timeoutHeight,0n);assert.equal(AuthInfo.decode(raw.authInfoBytes).fee.gasLimit,BigInt(STRUCTS_FREE_GAS));
+    assert.equal(body.timeoutHeight,3353060n);assert.equal(AuthInfo.decode(raw.authInfoBytes).fee.gasLimit,BigInt(STRUCTS_FREE_GAS));
     const restored = SigningTransaction.fromJSON(JSON.parse(JSON.stringify(f.tx.toJSON())));
     assert.deepEqual(restored.intent,f.tx.intent);
   }

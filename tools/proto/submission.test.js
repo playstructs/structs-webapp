@@ -47,7 +47,7 @@ async function fixture(storage=new Storage()){
   globalThis.window=new EventTarget();
   globalThis.localStorage=storage;
   Object.defineProperty(globalThis,'navigator',{configurable:true,value:{locks:locks()}});
-  const control={height:3352998,mode:'accept',sends:0,signs:0,results:new Map(),bytes:new Map(),signGate:null,wrongBlock:false};
+  const control={height:3352998,sequence:7,accountNumber:1,mode:'accept',sends:0,signs:0,results:new Map(),bytes:new Map(),signGate:null,wrongBlock:false};
   const offline=await SigningStargateClient.offline(wallet,{registry});
   const originalSign=offline.sign.bind(offline);
   offline.sign=async(...args)=>{control.signs++;if(control.signGate)await control.signGate.promise;return originalSign(...args);};
@@ -58,9 +58,10 @@ async function fixture(storage=new Storage()){
   manager.chainQuery={closed:false,status:async()=>({chainId:CHAIN.ID,height:String(control.height)}),
     readSnapshot:async read=>({chainId:CHAIN.ID,height:String(control.height),observedHeight:String(control.height),data:await read({
       chainId:CHAIN.ID,height:String(control.height),request:async(service,method)=>{
+        if (control.accountError) throw new Error('Account query unavailable');
         assert.equal(service,'cosmos.auth.v1beta1.Query');assert.equal(method,'Account');
         return QueryAccountResponse.encode(QueryAccountResponse.fromPartial({account:{typeUrl:'/cosmos.auth.v1beta1.BaseAccount',
-          value:BaseAccount.encode(BaseAccount.fromPartial({address:account.address,accountNumber:1n,sequence:7n})).finish()}})).finish();
+          value:BaseAccount.encode(BaseAccount.fromPartial({address:account.address,accountNumber:BigInt(control.accountNumber),sequence:BigInt(control.sequence)})).finish()}})).finish();
       },
     })}),
     cometClient:{
@@ -136,12 +137,73 @@ async function failureAndUnknown(){
   const snapshot=JSON.parse(f.storage.getItem(f.queue.getStorageKey()));snapshot.savedAt=1;
   snapshot.unresolved.forEach(tx=>{tx.createdAt=1;});
   f.storage.setItem(f.queue.getStorageKey(),JSON.stringify(snapshot));
-  const reload=f.makeQueue();reload.loadPersistedState();f.control.height=3353000;await f.tick(reload);await f.tick(reload);
+  const reload=f.makeQueue();reload.loadPersistedState();f.control.height=3353000;f.control.sequence=8;await f.tick(reload);await f.tick(reload);
   assert.equal(f.control.sends,1);assert.equal(f.control.signs,1);assert.equal(reload.getTransaction(id).status,TX_STATUS.UNKNOWN);
   f.commit(tx.submission.hash);f.control.wrongBlock=true;await f.tick(reload);
   assert.equal(reload.getTransaction(id).status,TX_STATUS.UNKNOWN);
   f.control.wrongBlock=false;await f.tick(reload);assert.equal(reload.getTransaction(id).status,TX_STATUS.SUCCEEDED);
   console.log('CheckTx rejection, committed rejection, transport loss, old unresolved records and wrong-block refusal passed; retryLimit never resends.');
+}
+
+async function expiredSubmissionRecovery() {
+  const f = await fixture();
+  f.control.height = 3353000;
+  f.state.currentBlockHeight = f.control.height;
+  f.control.mode = 'throw';
+  const enqueue = queue => queue.enqueueImmediate('/structs.structs.MsgPlayerSend', {
+    fromAddress: account.address,
+    toAddress: account.address,
+    amount: [{denom: 'ualpha', amount: '1'}],
+  }, {intentProtocol: CHAIN.PROTOCOL});
+  const id = enqueue(f.queue);
+  await f.tick();
+  const tx = f.queue.getTransaction(id);
+  assert.equal(tx.submission.timeoutHeight, '3353060');
+  assert.equal(TxBody.decode(TxRaw.decode(submissionBytes(tx.submission)).bodyBytes).timeoutHeight, 3353060n);
+
+  const reload = f.makeQueue();
+  reload.loadPersistedState();
+  f.control.height = 3353060;
+  await reload.reconcilePending();
+  assert.equal(reload.getTransaction(id).status, TX_STATUS.UNKNOWN, 'The expiry block still permits inclusion');
+  f.control.height++;
+
+  f.control.accountError = true;
+  await reload.reconcilePending();
+  assert.equal(reload.getTransaction(id).status, TX_STATUS.UNKNOWN, 'Unavailable evidence is not non-execution');
+  f.control.accountError = false;
+  f.control.sequence = 8;
+  await reload.reconcilePending();
+  assert.equal(reload.getTransaction(id).status, TX_STATUS.UNKNOWN, 'An advanced sequence could hide committed execution');
+  f.control.sequence = 7;
+  f.control.accountNumber = 2;
+  await reload.reconcilePending();
+  assert.equal(reload.getTransaction(id).status, TX_STATUS.UNKNOWN, 'A different account lifetime cannot prove absence');
+  f.control.accountNumber = 1;
+  await reload.reconcilePending();
+
+  const result = await reload.whenSettled(id);
+  assert.equal(result.status, TX_STATUS.DROPPED);
+  assert.equal(result.response.stage, 'expired');
+  assert.equal(result.response.verifiedHeight, '3353061');
+  assert.equal(result.submission.hash, tx.submission.hash);
+  assert.equal(result.error, 'Transaction expired without execution');
+  assert.equal(f.control.sends, 1);
+  assert.equal(f.control.signs, 1);
+  assert.ok(enqueue(reload), 'A new explicit intent is permitted after proven non-execution');
+
+  const settled = f.makeQueue();
+  settled.loadPersistedState();
+  assert.equal(settled.getTransaction(id).response.stage, 'expired', 'The expiry proof and original signed identity survive reload');
+
+  const included = await fixture();
+  const includedId = included.enqueue();
+  await included.tick();
+  const includedTx = included.queue.getTransaction(includedId);
+  included.commit(includedTx.submission.hash);
+  await included.queue.reconcilePending();
+  assert.equal(included.queue.getTransaction(includedId).status, TX_STATUS.SUCCEEDED, 'Committed inclusion wins over expiry');
+  console.log('Expired submission recovery passed: signed finite lifetime, expiry boundary, durable proof, missing/conflicting evidence refusal, no resend and new explicit intent.');
 }
 
 async function storageAndPrepared(){
@@ -350,7 +412,7 @@ async function accountHandoff(){
 async function main(){
   wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
   [account]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);
-  await acceptedReload();await failureAndUnknown();await storageAndPrepared();await legacyAndEpoch();await overlappingTabs();
+  await acceptedReload();await failureAndUnknown();await expiredSubmissionRecovery();await storageAndPrepared();await legacyAndEpoch();await overlappingTabs();
   await malformedWalletAndRetention();await actualDeadlines();await logoutRecovery();await accountHandoff();await liveRecovery();
   console.log('Durable signing suite passed. Submission responses are fixtures; optional live recovery is read-only. No transaction broadcast to a chain.');
 }

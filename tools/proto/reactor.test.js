@@ -110,7 +110,7 @@ async function main() {
   assert.deepEqual(signed.reactor.legs.slice(1).map(p=>p.address),[address(2),address(3)].sort());
   assert.equal(signed.reactor.legs.reduce((n,p)=>n+BigInt(p.amount),0n),3000000n);
   const body=TxBody.decode(TxRaw.decode(submissionBytes(signed)).bodyBytes);
-  assert.equal(body.messages.length,signed.reactor.legs.length);assert.equal(body.timeoutHeight,0n);
+  assert.equal(body.messages.length,signed.reactor.legs.length);assert.equal(body.timeoutHeight,3353060n);
   for(let i=0;i<body.messages.length;i++) {
     const message=registry.decode(body.messages[i]);
     assert.equal(message.creator,signer.address);assert.equal(message.validatorAddress,validator);

@@ -5,6 +5,7 @@ import {toRfc3339WithNanoseconds} from "@cosmjs/tendermint-rpc";
 import {QueryClientImpl as AuthQueryClient} from "cosmjs-types/cosmos/auth/v1beta1/query";
 import {TxMsgData} from "cosmjs-types/cosmos/base/abci/v1beta1/abci";
 import {ServiceClientImpl as TxService} from "cosmjs-types/cosmos/tx/v1beta1/service";
+import {AuthInfo, TxBody, TxRaw} from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import {prepareTransfer} from "./TransferPreparation";
 import {prepareReactor} from "./ReactorPreparation";
 import {prepareRegistration} from "./RegistrationPreparation";
@@ -105,6 +106,9 @@ export class SigningSubmission {
     const current = await query.status();
     check();
     if (protocolAtHeight(current.chainId,current.height)!==context.protocol) throw new SigningDeferredError('Protocol changed while signing');
+    if (BigInt(current.height) > BigInt(context.timeoutHeight)) {
+      throw new SigningDeferredError('Transaction expired during preparation');
+    }
     return {...submission,connectionEpoch:epoch,...(tx.intent
       ? (isGameplay ? {gameplay:accountSnapshot.data.prepared.gameplay} : isDeviceChange ? {deviceChange:accountSnapshot.data.prepared.deviceChange} : isRegistration ? {registration:accountSnapshot.data.prepared.registration} : isReactor ? {reactor:accountSnapshot.data.prepared.reactor} : isGenerator
         ? {generator:accountSnapshot.data.prepared.generator} : {transfer:accountSnapshot.data.prepared.transfer}) : {})};
@@ -132,7 +136,9 @@ export class SigningSubmission {
     try { result = await query.cometClient.tx({hash:fromHex(tx.submission.hash),prove:false}); }
     catch (error) {
       if (error instanceof RpcResponseError && error.code===-32603 && typeof error.data==='string'
-          && error.data.toUpperCase()===`TX (${tx.submission.hash}) NOT FOUND`) return null;
+          && error.data.toUpperCase()===`TX (${tx.submission.hash}) NOT FOUND`) {
+        return this.findExpired(tx, query);
+      }
       throw error;
     }
     const height = exactQueryHeight(result.height);
@@ -154,5 +160,65 @@ export class SigningSubmission {
       ...(tx.intent?.kind === 'generator_fund' && result.result.code === 0
         ? {generatorReceipt:generatorReceipt(result.result.events,protocolAtHeight(CHAIN.ID,height))} : {}),
       msgResponses:TxMsgData.decode(result.result.data ?? new Uint8Array()).msgResponses};
+  }
+
+  /**
+   * Prove an expired send cannot have executed. A missing transaction lookup or
+   * a passed timeout alone is insufficient: a node can lose its transaction
+   * index. Successful ante handling consumes the signing account's sequence,
+   * including when later message execution fails. The same account and unchanged
+   * sequence at a height after expiry therefore prove no message execution.
+   *
+   * An advanced sequence, unavailable query or old unbounded transaction stays
+   * unknown. This method never resends, replaces or discards signed evidence.
+   *
+   * @param {SigningTransaction} tx
+   * @param {ChainQueryClient} query
+   * @return {Promise<object|null>}
+   */
+  async findExpired(tx, query) {
+    const submission = tx.submission;
+    const raw = TxRaw.decode(submissionBytes(submission));
+    const body = TxBody.decode(raw.bodyBytes);
+    const auth = AuthInfo.decode(raw.authInfoBytes);
+    if (body.timeoutHeight === 0n) return null;
+    if (body.timeoutHeight.toString() !== submission.timeoutHeight
+        || auth.signerInfos.length !== 1
+        || auth.signerInfos[0].sequence.toString() !== submission.sequence) {
+      throw new Error('Signed expiry context does not match the transaction');
+    }
+
+    const current = await query.status();
+    if (BigInt(current.height) <= body.timeoutHeight) return null;
+
+    const snapshot = await query.readSnapshot(async rpc => {
+      if (BigInt(rpc.height) <= body.timeoutHeight) return null;
+      const response = await new AuthQueryClient(rpc).Account({address: tx.accountAddress});
+      if (!response.account) throw new Error('Signing account unavailable during expiry recovery');
+      const account = accountFromAny(response.account);
+      if (account.address !== tx.accountAddress
+          || !Number.isSafeInteger(account.accountNumber)
+          || !Number.isSafeInteger(account.sequence)) {
+        throw new Error('Unsupported signing account during expiry recovery');
+      }
+      if (String(account.accountNumber) !== submission.accountNumber
+          || String(account.sequence) !== submission.sequence) return null;
+      return true;
+    });
+    if (query !== this.manager.chainQuery || query.closed) {
+      throw new Error('Chain connection changed during expiry recovery');
+    }
+    if (!snapshot.data) return null;
+
+    return {
+      stage: 'expired',
+      code: null,
+      chainId: submission.chainId,
+      transactionHash: submission.hash,
+      timeoutHeight: submission.timeoutHeight,
+      verifiedHeight: snapshot.height,
+      accountNumber: submission.accountNumber,
+      sequence: submission.sequence,
+    };
   }
 }

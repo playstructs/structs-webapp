@@ -574,7 +574,12 @@ export class SigningQueueManager {
     const {msgResponses, ...savedResponse} = response ?? {};
     tx.response = response ? savedResponse : null;
     tx.status = response?.stage==='committed' && response.code===0 ? TX_STATUS.SUCCEEDED : TX_STATUS.DROPPED;
-    tx.error = error ?? (tx.status===TX_STATUS.SUCCEEDED ? null : `Transaction rejected: ${response?.code ?? 'not submitted'}`);
+    tx.error = error;
+    if (!tx.error && tx.status !== TX_STATUS.SUCCEEDED) {
+      tx.error = response?.stage === 'expired'
+        ? 'Transaction expired without execution'
+        : `Transaction rejected: ${response?.code ?? 'not submitted'}`;
+    }
     try { journal.write(tx,'settled'); }
     catch (failure) { tx.status = TX_STATUS.UNKNOWN; throw failure; }
     this.unresolved.delete(tx.id);

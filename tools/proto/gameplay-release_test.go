@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"context"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -11,12 +12,96 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	authsign "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/stretchr/testify/require"
 	"structs/app/ante"
 	keeperlib "structs/x/structs/keeper"
 	"structs/x/structs/types"
 )
+
+// The browser may release an expired send only when the same account's
+// committed sequence has not advanced. Exercise the real ante/message boundary,
+// including accepted CheckTx that is never included and a failed message whose
+// ante changes DO commit. No external node, keyring or transaction is used.
+func TestClientExpirySequenceEvidence(t *testing.T) {
+	for _, scenario := range []string{"expired", "included", "message_failed", "mempool_dropped"} {
+		t.Run(scenario, func(t *testing.T) {
+			bApp, ctx := setupJailGateApp(t)
+			key := secp256k1.GenPrivKey()
+			address := sdk.AccAddress(key.PubKey().Address())
+			player := appendAppPlayer(t, bApp.StructsKeeper, ctx, address)
+			for height := int64(1); height <= 4; height++ {
+				_, err := bApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: height, Time: ctx.BlockTime().Add(time.Duration(height) * time.Second)})
+				require.NoError(t, err)
+				_, err = bApp.Commit()
+				require.NoError(t, err)
+			}
+			current := bApp.NewUncachedContext(false, ctx.BlockHeader()).WithBlockHeight(4)
+			account := bApp.AccountKeeper.GetAccount(current, address)
+			sequence := account.GetSequence()
+			name := "Expiry-Fixture"
+			if scenario == "message_failed" {
+				name = strings.Repeat("X", 256)
+			}
+			message := &types.MsgPlayerUpdateName{Creator: address.String(), PlayerId: player.Id, Name: name}
+			config := authtx.NewTxConfig(bApp.AppCodec(), authtx.DefaultSignModes)
+			tx, err := simtestutil.GenSignedMockTx(rand.New(rand.NewSource(1)), config, []sdk.Msg{message},
+				sdk.Coins{sdk.NewInt64Coin("ualpha", 0)}, ante.DefaultFreeGasCap, jailGateChainID,
+				[]uint64{account.GetAccountNumber()}, []uint64{sequence}, key)
+			require.NoError(t, err)
+			builder, err := config.WrapTxBuilder(tx)
+			require.NoError(t, err)
+			timeoutHeight := uint64(5)
+			if scenario == "expired" {
+				timeoutHeight = 4
+			}
+			builder.SetTimeoutHeight(timeoutHeight)
+			signBytes, err := authsign.GetSignBytesAdapter(context.Background(), config.SignModeHandler(), signing.SignMode_SIGN_MODE_DIRECT,
+				authsign.SignerData{Address: address.String(), ChainID: jailGateChainID, AccountNumber: account.GetAccountNumber(), Sequence: sequence, PubKey: key.PubKey()}, builder.GetTx())
+			require.NoError(t, err)
+			signature, err := key.Sign(signBytes)
+			require.NoError(t, err)
+			require.NoError(t, builder.SetSignatures(signing.SignatureV2{PubKey: key.PubKey(), Sequence: sequence,
+				Data: &signing.SingleSignatureData{SignMode: signing.SignMode_SIGN_MODE_DIRECT, Signature: signature}}))
+			wire, err := config.TxEncoder()(builder.GetTx())
+			require.NoError(t, err)
+			if scenario == "mempool_dropped" {
+				checked, err := bApp.CheckTx(&abci.RequestCheckTx{Tx: wire})
+				require.NoError(t, err)
+				require.Zero(t, checked.Code, checked.Log)
+				_, err = bApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 5, Time: ctx.BlockTime().Add(5 * time.Second)})
+				require.NoError(t, err)
+				_, err = bApp.Commit()
+				require.NoError(t, err)
+			}
+			height := int64(5)
+			if scenario == "mempool_dropped" {
+				height = 6
+			}
+			block, err := bApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: height, Time: ctx.BlockTime().Add(time.Duration(height) * time.Second), Txs: [][]byte{wire}})
+			require.NoError(t, err)
+			require.Len(t, block.TxResults, 1)
+			_, err = bApp.Commit()
+			require.NoError(t, err)
+			final := bApp.NewUncachedContext(false, ctx.BlockHeader()).WithBlockHeight(height)
+			after := bApp.AccountKeeper.GetAccount(final, address)
+			require.Equal(t, account.GetAccountNumber(), after.GetAccountNumber())
+			if scenario == "included" || scenario == "message_failed" {
+				require.Equal(t, sequence+1, after.GetSequence(), "message execution consumes committed sequence even when the message fails")
+			} else {
+				require.Equal(t, sequence, after.GetSequence(), "CheckTx and expiry cannot consume committed sequence")
+				require.Contains(t, strings.ToLower(block.TxResults[0].Log), "timeout")
+			}
+			if scenario == "included" {
+				require.Zero(t, block.TxResults[0].Code, block.TxResults[0].Log)
+			} else {
+				require.NotZero(t, block.TxResults[0].Code)
+			}
+		})
+	}
+}
 
 // The browser delegates dynamic state/proof checks to this native simulation.
 // Exercise real signed bytes, ante and handlers, then inclusion of the same

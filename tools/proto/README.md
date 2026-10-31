@@ -129,12 +129,23 @@ events fire. `whenSettled` can resolve a saved result after reload and callers
 must check its status. `cancelQueueItem` now returns `Promise<boolean>` and
 cancels only known unsent work.
 
+Post-upgrade transactions carry a signed 60-block validity window from their
+verified signing context; pre-upgrade transactions retain the H−1 deadline.
+Preparation that runs past its deadline must revalidate before any send.
+After a missing transaction lookup, recovery can settle a finite transaction as
+expired only when a height-pinned native query after its deadline shows the same
+account number and unchanged signed sequence. The signed body/authority must
+match the saved expiry context. An advanced sequence, unavailable evidence or
+zero timeout remains unknown. Committed inclusion takes precedence over expiry.
+The real release-app tests exercise CheckTx without inclusion, timeout rejection,
+successful inclusion, and failed message execution that still consumes sequence.
+
 No automatic resend or replacement occurs after a lost response, timeout,
-reload or height expiry. Unknown records never age out, including legacy
-in-flight entries without a hash or a currently supported codec. Corrupt or
-unknown storage versions are preserved and block new sends. Account sequence
-alone does not identify an old intent. Keep that evidence for operator recovery;
-clearing it is not a recovery procedure.
+reload or height expiry. Proven expiry preserves the original bytes, hash and
+evidence, and permits a new explicit action. Legacy in-flight entries without
+signed identity cannot gain an expiry retroactively; account sequence alone
+does not identify them. Corrupt/unknown storage versions also remain preserved.
+Do not clear uncertain evidence to make an old intent appear safe to replace.
 
 Same-origin tabs serialize signing and reconciliation with Web Locks scoped to
 chain and signer. Without Web Locks, signing refuses to proceed. Verify support

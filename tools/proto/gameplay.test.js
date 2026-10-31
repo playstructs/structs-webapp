@@ -105,7 +105,7 @@ async function builders() {
     assert.deepEqual(restored.intent,tx.intent);
     const result=await f.submission.prepare(restored),raw=TxRaw.decode(submissionBytes(result)),body=TxBody.decode(raw.bodyBytes);
     assert.equal(body.messages.length,1);assert.equal(body.messages[0].typeUrl,tx.intent.typeUrl);
-    assert.equal(body.timeoutHeight,height==='3352999'?3352999n:0n);
+    assert.equal(body.timeoutHeight,height==='3352999'?3352999n:BigInt(height)+60n);
     assert.equal(AuthInfo.decode(raw.authInfoBytes).fee.gasLimit,BigInt(STRUCTS_FREE_GAS));
     assert.equal(result.gameplay.ownerId,'1-1');assert.equal(result.transfer,undefined);
     assert.equal(f.control.signed,1);assert.equal(f.control.simulated,1);assert.equal(f.control.sends,0);

@@ -1,5 +1,9 @@
 import {CHAIN} from "../constants/ChainConstants";
 
+// Allow time for signing, simulation and inclusion, while bounding a lost send.
+// This is a client validity window, not a chain permission or cooldown setting.
+export const TRANSACTION_VALIDITY_BLOCKS = 60n;
+
 /** The installed Comet API uses Number for heights. Refuse lossy conversion. */
 export function exactQueryHeight(value) {
   if (typeof value === 'number' && Number.isSafeInteger(value)) value = String(value);
@@ -62,6 +66,8 @@ function validateIndexedSnapshot(meta, observed, requiredModels, signing) {
   }
   return Object.freeze({
     chainId: observed.chainId, protocol, indexedHeight: indexed, observedHeight,
-    timeoutHeight: protocol === CHAIN.LEGACY_PROTOCOL ? (BigInt(CHAIN.UPGRADE_HEIGHT) - 1n).toString() : '0',
+    timeoutHeight: protocol === CHAIN.LEGACY_PROTOCOL
+      ? (BigInt(CHAIN.UPGRADE_HEIGHT) - 1n).toString()
+      : (BigInt(observedHeight) + TRANSACTION_VALIDITY_BLOCKS).toString(),
   });
 }

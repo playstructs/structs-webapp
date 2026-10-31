@@ -104,7 +104,7 @@ function testProtocol() {
   assert.throws(()=>protocolAtHeight('wrong','3353000'));
   for (const height of ['3352999','3353000']) {
     const context = validateSigningSnapshot(metadata(height),{chainId:CHAIN.ID,height},['inventory']);
-    assert.equal(context.timeoutHeight,height==='3352999'?'3352999':'0');
+    assert.equal(context.timeoutHeight,height==='3352999'?'3352999':(BigInt(height)+60n).toString());
   }
   const observed = {chainId:CHAIN.ID,height:'3353000'};
   for (const patch of [{chain_id:'wrong'},{protocol:CHAIN.LEGACY_PROTOCOL},{observed_protocol:CHAIN.LEGACY_PROTOCOL},

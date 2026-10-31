@@ -77,7 +77,7 @@ async function main() {
   for(const height of [3352999,3353000]) {
     const f=fixture(height);const signed=await f.submission.prepare(f.tx);
     const body=TxBody.decode(TxRaw.decode(submissionBytes(signed)).bodyBytes);
-    assert.equal(body.timeoutHeight,height<3353000?3352999n:0n);
+    assert.equal(body.timeoutHeight,height<3353000?3352999n:BigInt(height)+60n);
     assert.equal(body.messages[0].typeUrl,height<3353000?'/structs.structs.MsgPlayerSend':'/structs.structs.MsgVaultSend');
     assert.equal(signed.transfer.source,height<3353000?address(2):address(1));
     assert.equal(signed.transfer.destination,height<3353000?address(3):address(4));

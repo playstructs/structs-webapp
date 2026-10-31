@@ -231,7 +231,7 @@ async function main() {
   assert.equal(signed.generator.source,address(1));assert.equal(signed.generator.amount,'3000000');
   assert.deepEqual(submissionBytes(signed),f.control.simulationBytes,'Simulate the exact signed transaction before any broadcast');
   const raw=TxRaw.decode(submissionBytes(signed)),body=TxBody.decode(raw.bodyBytes),auth=AuthInfo.decode(raw.authInfoBytes);
-  assert.equal(body.messages.length,1);assert.equal(body.timeoutHeight,0n);
+  assert.equal(body.messages.length,1);assert.equal(body.timeoutHeight,3353060n);
   assert.deepEqual(auth.fee.amount,[{denom:'ualpha',amount:'0'}]);assert.equal(auth.fee.gasLimit,BigInt(STRUCTS_FREE_GAS));
   const expected={creator:signer.address,structId:'5-1',infuseAmount:'3000000ualpha'};
   assert.deepEqual(registry.decode(body.messages[0]),expected,'The release schema has no source/owner selector');
