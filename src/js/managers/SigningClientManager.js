@@ -1730,7 +1730,9 @@ export class SigningClientManager {
    * @param {number} chargeCost
    * @param {object} [options]
    */
-  async queueMsgStructBuildInitiate(playerId, structTypeId, operatingAmbit, slot, chargeCost, options = {}) {
+  // Enqueue is synchronous: the build control must not show a pending slot if
+  // persistence or submission recovery refuses it. Settlement remains a Promise.
+  queueMsgStructBuildInitiate(playerId, structTypeId, operatingAmbit, slot, chargeCost, options = {}) {
     const operatingAmbitIndex = AMBIT_ENUM[operatingAmbit.toUpperCase()];
     const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructBuildInitiate',

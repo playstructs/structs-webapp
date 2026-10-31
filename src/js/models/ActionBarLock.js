@@ -1,5 +1,6 @@
 import {HUDViewModel} from "../view_models/HUDViewModel";
 import {Struct} from "./Struct";
+import {TX_STATUS} from "./SigningTransaction";
 
 export class ActionBarLock {
 
@@ -44,6 +45,36 @@ export class ActionBarLock {
     // Refresh the action bar to show the executing progress bar
     HUDViewModel.refreshActionBar();
     return this.operationController.signal;
+  }
+
+  /**
+   * Hold the existing action control through enqueue and settlement. A refused
+   * enqueue has no transaction event, so its caller must release this lock.
+   * A late failure must never clear a different action selected in the meantime.
+   *
+   * @param {function(): Promise<SigningTransaction|object>} operation
+   * @param {function(object): void} [onSuccess]
+   * @return {Promise<boolean>}
+   */
+  async run(operation, onSuccess = () => {}) {
+    const signal = this.lock({completionManaged: true});
+    try {
+      const transaction = await operation();
+      if (signal.aborted) return false;
+      if (transaction?.status !== TX_STATUS.SUCCEEDED) {
+        this.clear();
+        return false;
+      }
+      onSuccess(transaction);
+      if (!signal.aborted) this.clear();
+      return true;
+    } catch (error) {
+      if (!signal.aborted) {
+        console.warn('[ActionBarLock] action was not completed:', error);
+        this.clear();
+      }
+      return false;
+    }
   }
 
   /**
