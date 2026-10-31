@@ -839,6 +839,44 @@ export class SigningQueueManager {
   }
 
   /**
+   * The old queue could return a timed-out send to queued. Its attempt counter
+   * and broadcast height survive that transition, but its signed bytes do not.
+   * Also recognize these fields after an earlier version-3 import.
+   */
+  #hasLegacySubmissionEvidence(json) {
+    return !json.intent && !json.submission
+      && ((json.attempts ?? 0) !== 0 || json.broadcastAtBlock != null);
+  }
+
+  /**
+   * Main moved stale/corrupt snapshots here before starting an empty queue.
+   * Preserve that evidence. Only a valid snapshot containing no possible sends
+   * can be ignored; even then, abandoned unsigned work must not be replayed.
+   */
+  #checkLegacyQuarantine() {
+    const raw = localStorage.getItem(`${this.storageScope}.corrupt`);
+    if (raw === null) return;
+    const saved = JSON.parse(raw);
+    if (saved?.version !== 2 || !Array.isArray(saved.immediateQueue)
+        || !Array.isArray(saved.actionQueue)) {
+      throw new Error('Unrecognized legacy queue quarantine; recovery required');
+    }
+    const records = [...(saved.inFlight ? [saved.inFlight] : []),
+      ...saved.immediateQueue, ...saved.actionQueue];
+    for (const json of records) {
+      const tx = SigningTransaction.fromJSON(json);
+      if (!tx || tx.accountAddress !== this.gameState.signingAccount.address) {
+        throw new Error('Invalid legacy queue quarantine; recovery required');
+      }
+      if (tx.isTerminal()) continue;
+      if (json === saved.inFlight || tx.submission || this.#hasLegacySubmissionEvidence(json)
+          || tx.status !== TX_STATUS.QUEUED) {
+        throw new Error('Legacy quarantined submission requires recovery');
+      }
+    }
+  }
+
+  /**
    * Write the full snapshot synchronously (matches the gameState save pattern).
    * No-op until the storage key is resolvable.
    */
@@ -872,6 +910,7 @@ export class SigningQueueManager {
     if (this.rehydrated) return;
     try {
       this.#bindScope();
+      this.#checkLegacyQuarantine();
       const raw = localStorage.getItem(this.storageScope);
       if (raw) {
         const state = JSON.parse(raw);
@@ -890,7 +929,8 @@ export class SigningQueueManager {
           if (seen.has(tx.id)) continue;
           seen.add(tx.id);
           if (tx.isTerminal()) { this.#rememberCompleted(tx); continue; }
-          const unknown = tx.submission || [TX_STATUS.IN_FLIGHT,TX_STATUS.UNKNOWN].includes(tx.status)
+          const unknown = tx.submission || this.#hasLegacySubmissionEvidence(json)
+            || [TX_STATUS.IN_FLIGHT,TX_STATUS.UNKNOWN].includes(tx.status)
             || (json===state.inFlight && !(state.version===3 && tx.status===TX_STATUS.PREPARING));
           if (unknown) {
             tx.status = TX_STATUS.UNKNOWN;

@@ -236,6 +236,70 @@ async function storageAndPrepared(){
 }
 
 async function legacyAndEpoch(){
+  // Main could save a timed-out send back into a lane, or quarantine its entire
+  // stale snapshot. Neither label proves that the network never received it.
+  for (const version of [2, 3]) {
+    for (const evidence of [{attempts: 1}, {broadcastAtBlock: 3352998}]) {
+      const f = await fixture();
+      const id = f.enqueue();
+      const saved = JSON.parse(f.storage.getItem(f.queue.getStorageKey()));
+      saved.version = version;
+      Object.assign(saved.immediateQueue[0], evidence, {createdAt: 1});
+      f.storage.setItem(f.queue.getStorageKey(), JSON.stringify(saved));
+      const reload = f.makeQueue();
+      reload.loadPersistedState();
+      await f.tick(reload);
+      assert.equal(reload.getTransaction(id).status, TX_STATUS.UNKNOWN,
+        'A legacy retry must not become an expired unsigned intent');
+      assert.equal(f.control.sends, 0);
+      assert.equal(f.control.signs, 0);
+      assert.throws(() => f.enqueue(reload), /existing submission/);
+      assert.equal(f.journal.read()[0].phase, 'unknown');
+    }
+  }
+  for (const kind of ['in-flight', 'retry', 'malformed']) {
+    const f = await fixture();
+    f.enqueue();
+    const key = f.queue.getStorageKey();
+    const saved = JSON.parse(f.storage.getItem(key));
+    saved.version = 2;
+    if (kind === 'in-flight') {
+      saved.inFlight = saved.immediateQueue.shift();
+      saved.inFlight.status = 'in_flight';
+    } else {
+      saved.immediateQueue[0].attempts = 1;
+    }
+    const raw = kind === 'malformed' ? '{broken' : JSON.stringify(saved);
+    f.storage.setItem(key + '.corrupt', raw);
+    f.storage.removeItem(key);
+    const reload = f.makeQueue();
+    reload.loadPersistedState();
+    await f.tick(reload);
+    assert.ok(reload.recoveryError, 'Ambiguous quarantine must block signing');
+    assert.equal(f.storage.getItem(key + '.corrupt'), raw);
+    assert.equal(f.storage.getItem(key), null, 'Do not overwrite the absent active snapshot');
+    assert.equal(f.control.sends, 0);
+    assert.equal(f.control.signs, 0);
+    assert.throws(() => f.enqueue(reload), /existing submission/);
+  }
+  {
+    const f = await fixture();
+    f.enqueue();
+    const key = f.queue.getStorageKey();
+    const saved = JSON.parse(f.storage.getItem(key));
+    saved.version = 2;
+    saved.immediateQueue[0].createdAt = 1;
+    const raw = JSON.stringify(saved);
+    f.storage.setItem(key + '.corrupt', raw);
+    f.storage.removeItem(key);
+    const reload = f.makeQueue();
+    reload.loadPersistedState();
+    assert.equal(reload.recoveryError, null, 'An old unsent quarantine is not a broadcast');
+    assert.equal(reload.immediateQueue.length, 0, 'Do not replay abandoned unsigned work');
+    assert.equal(f.storage.getItem(key + '.corrupt'), raw);
+    assert.equal(f.control.sends, 0);
+    assert.equal(f.control.signs, 0);
+  }
   {
     const f=await fixture();const id=f.enqueue();const saved=JSON.parse(f.storage.getItem(f.queue.getStorageKey()));
     saved.version=2;saved.savedAt=1;saved.inFlight=JSON.parse(JSON.stringify(saved.immediateQueue[0]));saved.inFlight.status='in_flight';
