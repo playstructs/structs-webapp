@@ -8,6 +8,12 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Symfony\Component\Security\Core\User\InMemoryUserProvider;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Doctrine\ORM\EntityManagerInterface;
 
 class ReactorVaultManagerTest extends ApiManagerTestCase
 {
@@ -59,7 +65,7 @@ class ReactorVaultManagerTest extends ApiManagerTestCase
             'balance' => ['denom' => 'ualpha', 'amount' => '9007199254740995']]], 'pagination' => ['next_key' => '']];
     }
 
-    private function fixture(array $changes = []): array
+    private function fixture(array $changes = [], bool $throughHttp = false): array
     {
         $active = false;
         $meta = $changes['meta'] ?? self::meta();
@@ -96,9 +102,47 @@ class ReactorVaultManagerTest extends ApiManagerTestCase
             return new MockResponse(json_encode($data), ['http_code' => $changes['status'] ?? 200,
                 'response_headers' => $changes['headers'] ?? ['x-cosmos-block-height: 3353000']]);
         });
-        $manager = new InfusionManager($this->entityManager($db), $this->validator(), new ReactorVaultManager(new ChainSnapshotManager($http)));
-        $body = json_decode($manager->getInfusionByPlayerId('1-101')->getContent(), true);
-        return [$body, $requests];
+        if ($throughHttp) {
+            self::bootKernel(['environment' => 'test']);
+            $container = self::getContainer();
+            $container->set(EntityManagerInterface::class, $this->entityManager($db));
+            $container->set(HttpClientInterface::class, $http);
+            $container->set('security.user.provider.concrete.app_user_provider',
+                new InMemoryUserProvider(['1-101' => ['roles' => ['ROLE_USER']]]));
+            $request = Request::create('/api/infusion/player/1-101');
+            $session = new Session(new MockArraySessionStorage());
+            $session->set('player_id', '1-101');
+            $request->setSession($session);
+            $response = self::$kernel->handle($request);
+            $this->assertSame(200, $response->getStatusCode(), $response->getContent());
+        } else {
+            $manager = new InfusionManager($this->entityManager($db), $this->validator(), new ReactorVaultManager(new ChainSnapshotManager($http)));
+            $response = $manager->getInfusionByPlayerId('1-101');
+        }
+        return [json_decode($response->getContent(), true), $requests];
+    }
+
+    public function testHttpRouteCompletesUnprovisionedVaultThroughInjectedNativeReader(): void
+    {
+        [$body, $requests] = $this->fixture([], true);
+        $this->assertTrue($body['meta']['transaction_ready']);
+        $this->assertTrue($body['data']['positions_meta']['complete']);
+        $this->assertFalse($body['data']['positions_meta']['vault_provisioned']);
+        $this->assertSame(self::VAULT, $body['data']['positions'][0]['address']);
+        $this->assertSame('18014398509481988', $body['data']['fuel_p']);
+        $this->assertSame('16', $body['data']['defusing_p']);
+        $this->assertCount(4, $requests);
+    }
+
+    public function testHttpRouteKeepsUnavailableVaultEvidenceUnknown(): void
+    {
+        [$body, $requests] = $this->fixture(['status' => 503], true);
+        $this->assertFalse($body['meta']['transaction_ready']);
+        $this->assertFalse($body['data']['positions_meta']['complete']);
+        $this->assertSame('vault_evidence_unavailable', $body['data']['positions_meta']['reason']);
+        $this->assertNull($body['data']['fuel_p']);
+        $this->assertNull($body['data']['power_p']);
+        $this->assertCount(1, $requests);
     }
 
     public function testCompleteNativeAndStoredEvidenceEnablesExistingAggregate(): void
