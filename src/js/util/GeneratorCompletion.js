@@ -64,7 +64,7 @@ export async function waitForGeneratorRefresh(guildAPI, tx, signal, observedHeig
   while (!signal.aborted) {
     try {
       const result = await guildAPI.getGeneratorSnapshotResult(committed.structId,committed.source,{signal,timeoutMs:5000});
-      const player = await guildAPI.getPlayer(committed.ownerId,{signal,timeoutMs:5000});
+      const player = await guildAPI.getPlayer(committed.ownerId,{signal,timeoutMs:16000});
       signal.throwIfAborted();
       if (generatorRefreshReady(result,player,committed,observedHeight())) return {result,player};
     } catch (error) {

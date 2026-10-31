@@ -203,7 +203,7 @@ async function flow() {
   const api={getInfusionByPlayerId:async(owner,options)=>{
     assert.equal(owner,'1-1');assert.equal(options.timeoutMs,5000);control.reads++;
     const data=indexed();data.positions_meta.complete=control.ready;return data;
-  },getPlayer:async(owner,options)=>{assert.equal(owner,'1-1');assert.equal(options.timeoutMs,5000);return player();}};
+  },getPlayer:async(owner,options)=>{assert.equal(owner,'1-1');assert.equal(options.timeoutMs,16000);return player();}};
   const submit={prepare:async tx=>(await signedChange(tx.intent)).submission,
     send:async tx=>{control.sends++;return {stage:'check_tx',code:control.reject?9:0,transactionHash:tx.submission.hash};},
     find:async tx=>control.committed?{stage:'committed',code:0,chainId:CHAIN.ID,height:'3353000',txIndex:1,blockHash:'A'.repeat(64),transactionHash:tx.submission.hash}:null};

@@ -2,6 +2,7 @@ import {UuidUtil} from "../util/UuidUtil";
 import {messagePayloadToWire} from "../util/MessagePayload";
 import {transactionIntent} from "../util/TransactionIntent";
 import {REACTOR_TRANSACTION} from "../constants/ReactorTransactions";
+import {MAX_ALPHA_SOURCES} from "../util/AvailableAlpha";
 
 /**
  * Lifecycle states for a queued signing transaction.
@@ -153,9 +154,27 @@ export class SigningTransaction {
 
   toCosmosMsgs(registry) {
     if (!this.messages) return [this.toCosmosMsg(registry)];
-    if (this.intent?.kind !== 'reactor_change' || !Array.isArray(this.messages)
-        || !this.messages.length || this.messages.length > REACTOR_TRANSACTION.MAX_POSITIONS) {
-      throw new Error('Invalid atomic reactor message group');
+    if (!Array.isArray(this.messages) || !this.messages.length) {
+      throw new Error('Invalid atomic message group');
+    }
+    if (this.intent?.kind === 'reactor_change' && this.intent.direction === 'defuse') {
+      if (this.messages.length > REACTOR_TRANSACTION.MAX_POSITIONS
+          || this.messages.some(message => message.typeUrl !== '/structs.structs.MsgReactorDefuse')) {
+        throw new Error('Invalid atomic reactor withdrawal');
+      }
+    } else {
+      let finalType = null;
+      if (this.intent?.kind === 'alpha_transfer') {
+        finalType = this.intent.recipientId === null
+          ? '/structs.structs.MsgPlayerSend' : '/structs.structs.MsgVaultSend';
+      } else if (this.intent?.kind === 'reactor_change' && this.intent.direction === 'infuse') {
+        finalType = '/structs.structs.MsgReactorInfuse';
+      }
+      const last = this.messages.length - 1;
+      if (!finalType || last > MAX_ALPHA_SOURCES || this.messages[last].typeUrl !== finalType
+          || this.messages.slice(0, last).some(message => message.typeUrl !== '/structs.structs.MsgPlayerSend')) {
+        throw new Error('Invalid atomic funding group');
+      }
     }
     return this.messages.map(message => this.encodeMessage(registry, message));
   }

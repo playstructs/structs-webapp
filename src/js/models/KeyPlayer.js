@@ -125,7 +125,7 @@ export class KeyPlayer {
   applyFunds() {
     if (!this.player) return;
     const snapshot = this.alphaSnapshot;
-    for (const field of ['alpha','vault_address','spendable_alpha_p','funds_meta']) {
+    for (const field of ['alpha','vault_address','spendable_alpha_p','available_alpha_p','retained_alpha_p','retained_sources','retained_funds_meta','funds_meta']) {
       this.player[field] = snapshot ? structuredClone(snapshot[field]) : null;
     }
     // Funds refresh independently of profile/grid fields. Never stamp an old

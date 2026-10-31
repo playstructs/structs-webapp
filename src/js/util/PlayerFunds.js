@@ -1,6 +1,6 @@
+import {availableAlpha} from "./AvailableAlpha";
 import {CHAIN} from "../constants/ChainConstants";
 import {maxQueryHeight, validateSigningSnapshot} from "./ChainProtocol";
-import {exactAlphaAmount} from "./ReactorIntent";
 import {transferAddress} from "./TransferIntent";
 
 /** A display snapshot is exact, but never substitutes for native spend preflight. */
@@ -15,7 +15,7 @@ export function playerFunds(player, observedHeight = null) {
     if (player.funds_meta?.ready !== true || player.funds_meta.height !== meta.height
         || typeof player.funds_meta.provisioned !== 'boolean') throw new Error('Vault funds unavailable');
     transferAddress(player.vault_address);
-    alpha = (exactAlphaAmount(player.spendable_alpha_p)/1000000n).toString();
+    alpha = (availableAlpha(player)/1000000n).toString();
   } else {
     // Legacy inventory returns decimal display units. Floor the text itself,
     // preserving exact large values instead of converting through Number.
@@ -26,6 +26,10 @@ export function playerFunds(player, observedHeight = null) {
   }
   return Object.freeze({ownerId:player.id,height:meta.height,protocol:signing.protocol,
     alpha,vault_address:player.vault_address ?? null,spendable_alpha_p:player.spendable_alpha_p ?? null,
+    available_alpha_p:player.available_alpha_p,
+    retained_alpha_p:player.retained_alpha_p,
+    retained_sources:player.retained_sources ? structuredClone(player.retained_sources) : undefined,
+    retained_funds_meta:player.retained_funds_meta ? structuredClone(player.retained_funds_meta) : undefined,
     funds_meta:player.funds_meta ? structuredClone(player.funds_meta) : null,
     snapshot_meta:structuredClone(meta)});
 }

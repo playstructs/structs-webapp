@@ -1,3 +1,4 @@
+import {availableAlpha} from "./AvailableAlpha";
 import {CHAIN} from "../constants/ChainConstants";
 import {exactQueryHeight, validateSigningSnapshot} from "./ChainProtocol";
 
@@ -15,7 +16,7 @@ export function transferLimit(player, ownerId, observedHeight) {
     if (player.funds_meta?.ready !== true || player.funds_meta.height !== meta.height
         || typeof funds !== 'string' || !/^(0|[1-9][0-9]{0,77})$/.test(funds)
         || BigInt(funds) >= (1n << 256n)) throw new Error('Vault spendability is unavailable');
-    whole = BigInt(funds) / 1000000n;
+    whole = availableAlpha(player) / 1000000n;
   } else {
     // Preserve the legacy display balance only before the activation height.
     const alpha = Number.isSafeInteger(player.alpha) ? String(player.alpha) : player.alpha;

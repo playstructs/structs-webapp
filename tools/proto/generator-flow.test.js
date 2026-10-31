@@ -97,7 +97,7 @@ async function flow(height='3353000') {
     assert.equal(id,'5-1');assert.equal(options.timeoutMs,5000);control.reads++;
     if(control.lateRead)await control.lateRead;
     const response=result(control.height,source);response.data.positions_ready=control.ready;return response;
-  },getPlayer:async(owner,options)=>{assert.equal(owner,'1-1');assert.equal(options.timeoutMs,5000);return player(control.height);}};
+  },getPlayer:async(owner,options)=>{assert.equal(owner,'1-1');assert.equal(options.timeoutMs,16000);return player(control.height);}};
   state.guildAPI=api;
   const submit={prepare:async tx=>(await signedBurn(tx.intent,control.height)).submission,
     send:async tx=>{control.sends++;return {stage:'check_tx',code:control.reject?9:0,transactionHash:tx.submission.hash};},

@@ -71,8 +71,11 @@ export class AlphaManager {
     const ownerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
     const guildId = this.gameState.thisGuild.id;
     if (!query || query.closed) throw new Error('Reactor query connection unavailable');
+    const funding = indexed.snapshot_meta?.protocol === CHAIN.PROTOCOL
+      ? await this.gameState.guildAPI.getPlayer(ownerId, {signal,timeoutMs:16000}) : null;
+    signal.throwIfAborted();
     const snapshot = await query.readSnapshot(rpc=>readReactorSnapshot(rpc,indexed,ownerId,guildId,
-      this.gameState.thisGuild.reactor_ratio), {height:indexed.snapshot_meta?.height});
+      this.gameState.thisGuild.reactor_ratio,funding,account), {height:indexed.snapshot_meta?.height});
     signal.throwIfAborted();
     if (query !== manager.chainQuery || account !== this.gameState.signingAccount?.address
         || ownerId !== this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id || guildId !== this.gameState.thisGuild.id) {
@@ -102,7 +105,7 @@ export class AlphaManager {
     const account = this.gameState.signingAccount?.address;
     if (!query || query.closed) throw new Error('Generator query connection unavailable');
     const options = {signal,timeoutMs:5000};
-    const player = await this.gameState.guildAPI.getPlayer(ownerId,options);
+    const player = await this.gameState.guildAPI.getPlayer(ownerId,{signal});
     const funds = playerFunds(player,this.gameState.currentBlockHeight);
     if (funds.ownerId !== ownerId) throw new Error('Generator funds owner changed');
     const source = funds.protocol === CHAIN.PROTOCOL ? player.vault_address : player.primary_address;

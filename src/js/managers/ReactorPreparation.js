@@ -8,6 +8,7 @@ import {REACTOR_TRANSACTION} from "../constants/ReactorTransactions";
 import {reactorIntent, exactAlphaAmount} from "../util/ReactorIntent";
 import {transferAddress} from "../util/TransferIntent";
 import {protocolAtHeight} from "../util/ChainProtocol";
+import {readVaultFunding, collectVaultFunding} from "./VaultFunding";
 import {legacyDecimalFromWire} from "../util/MessagePayload";
 
 export function reactorValidatorAddress(value) {
@@ -124,14 +125,20 @@ export async function prepareReactor(rpc, tx, indexed) {
   }
   const requested = exactAlphaAmount(intent.amount);
   const legs = [];
+  let collection = null;
   if (intent.direction === 'infuse') {
     if (indexed.id !== intent.ownerId || (protocol === CHAIN.PROTOCOL && (indexed.vault_address !== source
         || indexed.funds_meta?.ready !== true || indexed.funds_meta.height !== rpc.height))) {
       throw new Error('Indexed reactor funding is unavailable');
     }
-    const balance = (await new BankQuery(rpc).SpendableBalanceByDenom({address:source,denom:'ualpha'})).balance;
-    if (balance?.denom !== 'ualpha' || exactAlphaAmount(balance.amount) < requested) {
-      throw new Error('Insufficient spendable vault Alpha');
+    if (protocol === CHAIN.PROTOCOL) {
+      const funds = await readVaultFunding(rpc, intent.ownerId, source, actor, indexed, requested);
+      collection = collectVaultFunding(funds, source, requested);
+    } else {
+      const balance = (await new BankQuery(rpc).SpendableBalanceByDenom({address:source,denom:'ualpha'})).balance;
+      if (balance?.denom !== 'ualpha' || exactAlphaAmount(balance.amount) < requested) {
+        throw new Error('Insufficient spendable Alpha');
+      }
     }
     legs.push({address:source,isVault:protocol === CHAIN.PROTOCOL,amount:intent.amount});
   } else {
@@ -157,10 +164,11 @@ export async function prepareReactor(rpc, tx, indexed) {
     if (remaining) throw new Error('Eligible reactor positions cannot cover the complete withdrawal');
   }
   const typeUrl = intent.direction === 'infuse' ? '/structs.structs.MsgReactorInfuse' : '/structs.structs.MsgReactorDefuse';
-  return {protocol, messages:legs.map(leg => ({typeUrl,payload:{
+  return {protocol, messages:[...(collection?.messages ?? []), ...legs.map(leg => ({typeUrl,payload:{
     ownerId:leg.isVault ? intent.ownerId : '',delegatorAddress:leg.isVault ? '' : leg.address,
     validatorAddress:validator,amount:{denom:'ualpha',amount:leg.amount}
-  }})), fee:{amount:[{denom:'ualpha',amount:'0'}],gas:REACTOR_TRANSACTION.GAS},
+  }}))], fee:{amount:[{denom:'ualpha',amount:'0'}],gas:REACTOR_TRANSACTION.GAS},
     reactor:{ownerId:intent.ownerId,guildId:intent.guildId,reactorId:intent.reactorId,validator,
-      direction:intent.direction,amount:intent.amount,height:rpc.height,legs}};
+      direction:intent.direction,amount:intent.amount,height:rpc.height,legs,
+      ...(collection ? {funding:collection.funding} : {})}};
 }

@@ -65,6 +65,19 @@ class PlayerManager
               v.address AS _vault_address,
               v.account_created AS _vault_account_created,
               COALESCE(vi.balance, 0)::text AS _vault_balance_p,
+              COALESCE((
+                SELECT jsonb_agg(candidate)
+                FROM (
+                  SELECT a.address, count(*) OVER ()::text AS candidate_count
+                  FROM structs.player_address a
+                  JOIN structs.api_inventory funds ON funds.owner_type = \'address\'
+                    AND funds.owner_id = a.address AND funds.denom = \'ualpha\'
+                  WHERE a.player_id = p.id AND a.status = \'approved\'
+                    AND a.address IS DISTINCT FROM v.address AND funds.balance > 0
+                  ORDER BY funds.balance DESC, a.address COLLATE "C"
+                  LIMIT 16
+                ) candidate
+              ), \'[]\'::jsonb) AS _retained_funding_sources,
               p.guild_id,
               p.substation_id,
               p.planet_id,

@@ -38,7 +38,7 @@ function notice(patch={}){return {subject:'structs.inventory.ualpha.0-9.1-1.reta
   owner_id:'1-1',owner_type:'player',amount:'9999999999999999999999999999',block_height_exact:'3353000',...patch};}
 function session(options={}){
   environment();const game=state(),reads=[],control={read:async()=>player()};
-  const api={getPlayer:async(id,opts)=>{assert.equal(id,game.keyPlayers.player.id);assert.equal(opts.timeoutMs,5000);
+  const api={getPlayer:async(id,opts)=>{assert.equal(id,game.keyPlayers.player.id);assert.equal(opts.timeoutMs,16000);
     reads.push({id,signal:opts.signal});return control.read();}};
   const manager=new AlphaRefreshManager(game,api,{coalesceMs:2,retryMs:20,maxRetryMs:40,pollMs:100000,...options});
   game.alphaRefresh=manager;

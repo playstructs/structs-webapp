@@ -3,6 +3,8 @@ import {QueryClientImpl as BankQuery} from "cosmjs-types/cosmos/bank/v1beta1/que
 import {CHAIN} from "../constants/ChainConstants";
 import {PERMISSIONS} from "../constants/Permissions";
 import {transferAddress, transferIntent} from "../util/TransferIntent";
+import {readVaultFunding, collectVaultFunding} from "./VaultFunding";
+import {FEE, STRUCTS_FREE_GAS} from "../constants/Fee";
 import {protocolAtHeight} from "../util/ChainProtocol";
 
 /** Reads only within the caller's pinned snapshot; never provisions a vault. */
@@ -43,12 +45,24 @@ export async function prepareTransfer(rpc, tx, indexedPlayer) {
       if (recipient.address!==destination || recipient.playerId!==intent.recipientId) throw new Error('Selected recipient address changed owner');
     }
   }
-  const coin = (await new BankQuery(rpc).SpendableBalanceByDenom({address:source,denom:'ualpha'})).balance;
-  if (coin?.denom!=='ualpha' || typeof coin.amount!=='string' || !/^(0|[1-9][0-9]{0,77})$/.test(coin.amount)
-      || BigInt(coin.amount)>((1n<<256n)-1n) || BigInt(coin.amount)<BigInt(intent.amount)) {
-    throw new Error('Insufficient spendable Alpha for the requested transfer');
+  let collection = null;
+  if (protocol === CHAIN.PROTOCOL) {
+    const funds = await readVaultFunding(rpc, intent.ownerId, source, actor, indexedPlayer, BigInt(intent.amount));
+    collection = collectVaultFunding(funds, source, BigInt(intent.amount));
+  } else {
+    const coin = (await new BankQuery(rpc).SpendableBalanceByDenom({address:source,denom:'ualpha'})).balance;
+    if (coin?.denom !== 'ualpha' || typeof coin.amount !== 'string' || !/^(0|[1-9][0-9]{0,77})$/.test(coin.amount)
+        || BigInt(coin.amount) >= (1n << 256n) || BigInt(coin.amount) < BigInt(intent.amount)) {
+      throw new Error('Insufficient spendable Alpha for the requested transfer');
+    }
   }
-  return {protocol,message:message ?? {typeUrl:'/structs.structs.MsgPlayerSend',payload:{fromAddress:source,toAddress:destination,
-    amount:[{denom:'ualpha',amount:intent.amount}]}},
-    transfer:{ownerId:intent.ownerId,source,destination,denom:'ualpha',amount:intent.amount,height:rpc.height}};
+  const spend = message ?? {typeUrl:'/structs.structs.MsgPlayerSend',payload:{fromAddress:source,toAddress:destination,
+    amount:[{denom:'ualpha',amount:intent.amount}]}};
+  const collects = collection?.messages.length > 0;
+  return {
+    protocol,
+    ...(collects ? {messages:[...collection.messages, spend], fee:{...FEE,gas:STRUCTS_FREE_GAS}} : {message:spend}),
+    transfer:{ownerId:intent.ownerId,source,destination,denom:'ualpha',amount:intent.amount,height:rpc.height,
+      ...(collection ? {funding:collection.funding} : {})},
+  };
 }

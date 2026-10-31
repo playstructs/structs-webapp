@@ -275,7 +275,7 @@ export class GuildAPI {
    * @return {Promise<Player>}
    */
   async getPlayer(playerId, options = {}) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}`, options);
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}`, {timeoutMs:16000,...options});
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.playerFactory.make(response.data, response.meta);

@@ -92,7 +92,7 @@ export class AlphaRefreshManager {
     const revision = session.revision;
     let delay = this.coalesceMs;
     try {
-      const player = await this.guildAPI.getPlayer(session.ownerId,{signal:session.controller.signal,timeoutMs:5000});
+      const player = await this.guildAPI.getPlayer(session.ownerId,{signal:session.controller.signal,timeoutMs:16000});
       if (!this.current(session)) return;
       const height = exactQueryHeight(player.snapshot_meta?.height);
       if (session.height && BigInt(height) < BigInt(session.height)) throw new Error('Funds have not reached the requested block');

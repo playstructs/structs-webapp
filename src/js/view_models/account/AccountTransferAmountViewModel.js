@@ -78,7 +78,7 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
     let delay = 2000;
     while (!signal.aborted) {
       try {
-        const player = await this.guildAPI.getPlayer(ownerId, {signal, timeoutMs: 5000});
+        const player = await this.guildAPI.getPlayer(ownerId, {signal, timeoutMs: 16000});
         signal.throwIfAborted();
         return transferLimit(player, ownerId, this.gameState.currentBlockHeight);
       } catch (error) {

@@ -18,7 +18,8 @@ class VaultFundsManager
         $address = $player['_vault_address'] ?? null;
         $created = $player['_vault_account_created'] ?? null;
         $balance = $player['_vault_balance_p'] ?? null;
-        unset($player['_vault_address'], $player['_vault_account_created'], $player['_vault_balance_p']);
+        $retained = $player['_retained_funding_sources'] ?? [];
+        unset($player['_vault_address'], $player['_vault_account_created'], $player['_vault_balance_p'], $player['_retained_funding_sources']);
         $player['vault_address'] = $address;
         $player['spendable_alpha_p'] = null;
         $player['funds_meta'] = ['height' => null, 'ready' => false, 'source' => null,
@@ -35,6 +36,7 @@ class VaultFundsManager
         }
 
         try {
+            $deadline = hrtime(true) / 1e9 + 15.0;
             $height = ExactAmount::unsigned($meta['height'] ?? null, '9223372036854775807');
             if ($height === '0' || $height !== ($meta['indexed_height'] ?? null)) {
                 throw new UnexpectedValueException('Funds require the indexed snapshot boundary');
@@ -50,8 +52,8 @@ class VaultFundsManager
                     throw new UnexpectedValueException('Funds need verified vault evidence');
                 }
                 ExactAmount::unsigned($owner[1], '18446744073709551615');
-                $this->chain->verifyChain($meta['chain_id'] ?? '');
-                $vault = $this->chain->get('/structs/vault/' . rawurlencode($player['id']), $height);
+                $this->chain->verifyChain($meta['chain_id'] ?? '', $deadline);
+                $vault = $this->chain->get('/structs/vault/' . rawurlencode($player['id']), $height, $deadline);
                 if (($vault['ownerId'] ?? null) !== $player['id'] || !is_bool($vault['provisioned'] ?? null)
                     || !is_string($vault['address'] ?? null)
                     || !preg_match('/^structs1[02-9ac-hj-np-z]{38}$/D', $vault['address'])) {
@@ -64,7 +66,7 @@ class VaultFundsManager
                 }
                 $address = $vault['address'];
                 $coin = $this->chain->get('/cosmos/bank/v1beta1/spendable_balances/'
-                    . rawurlencode($address) . '/by_denom?denom=ualpha', $height)['balance'] ?? null;
+                    . rawurlencode($address) . '/by_denom?denom=ualpha', $height, $deadline)['balance'] ?? null;
                 if (!is_array($coin) || ($coin['denom'] ?? null) !== 'ualpha') {
                     throw new UnexpectedValueException('Spendable coin is absent');
                 }
@@ -76,6 +78,7 @@ class VaultFundsManager
             $player['alpha'] = ExactAmount::alphaDisplay($spendable);
             $player['funds_meta'] = ['height' => $height, 'ready' => true, 'source' => $source,
                 'provisioned' => $provisioned, 'reason' => null];
+            (new RetainedFundsManager($this->chain))->apply($player, $meta, $retained, $deadline);
         } catch (Exception $error) {
             // A failed/pruned/mismatched query is unknown, never a zero balance
             // or permission to spend a retained address instead.

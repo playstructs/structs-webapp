@@ -8,9 +8,10 @@ import {transferAddress} from "../util/TransferIntent";
 import {legacyDecimalFromWire} from "../util/MessagePayload";
 import {reactorState} from "../util/ReactorState";
 import {availableReactorStake, reactorValidatorAddress} from "./ReactorPreparation";
+import {readVaultFunding} from "./VaultFunding";
 
 /** Read-only preview context; submission independently rechecks the chosen intent. */
-export async function readReactorSnapshot(rpc, indexed, ownerId, guildId, legacyRatio) {
+export async function readReactorSnapshot(rpc, indexed, ownerId, guildId, legacyRatio, fundingPlayer = null, accountAddress = null) {
   const signing = validateSigningSnapshot(indexed.snapshot_meta, {chainId:rpc.chainId,height:rpc.height}, ['inventory']);
   const query = new StructsQuery(rpc);
   const staking = new StakingQuery(rpc);
@@ -33,8 +34,21 @@ export async function readReactorSnapshot(rpc, indexed, ownerId, guildId, legacy
     if (vault.ownerId !== ownerId || typeof vault.provisioned !== 'boolean') throw new Error('Invalid reactor vault');
     source = transferAddress(vault.address);
   }
-  const funds = (await new BankQuery(rpc).SpendableBalanceByDenom({address:source,denom:'ualpha'})).balance;
-  if (funds?.denom !== 'ualpha') throw new Error('Reactor funding is unavailable');
+  let funds;
+  if (signing.protocol === CHAIN.PROTOCOL && fundingPlayer !== null) {
+    if (fundingPlayer.id !== ownerId) throw new Error('Reactor funding owner changed');
+    const actor = await query.Address({address:accountAddress});
+    if (actor.address !== accountAddress || actor.playerId !== ownerId
+        || typeof actor.permissions !== 'string' || !/^(0|[1-9][0-9]{0,19})$/.test(actor.permissions)
+        || BigInt(actor.permissions) > 18446744073709551615n) throw new Error('Reactor funding authority is unavailable');
+    // The indexed list only locates candidates. All spendable values and owners
+    // are reread at this reactor snapshot's height, including on a limited key.
+    funds = (await readVaultFunding(rpc, ownerId, source, actor, fundingPlayer)).total.toString();
+  } else {
+    const coin = (await new BankQuery(rpc).SpendableBalanceByDenom({address:source,denom:'ualpha'})).balance;
+    if (coin?.denom !== 'ualpha') throw new Error('Reactor funding is unavailable');
+    funds = coin.amount;
+  }
   let ratio = 1n;
   let legacyAvailable = null;
   if (signing.protocol !== CHAIN.PROTOCOL) {
@@ -45,6 +59,6 @@ export async function readReactorSnapshot(rpc, indexed, ownerId, guildId, legacy
   }
   if (validator.jailed || validator.status !== BondStatus.BOND_STATUS_BONDED) ratio = 0n;
   return reactorState(indexed, {ownerId,guildId,reactorId:reactor.id,validator:validatorAddress,
-    protocol:signing.protocol,height:rpc.height,source,funds:funds.amount,minimum:guild.joinInfusionMinimum,
+    protocol:signing.protocol,height:rpc.height,source,funds,minimum:guild.joinInfusionMinimum,
     commission:legacyDecimalFromWire(reactor.defaultCommission),ratio,maxEntries:params.maxEntries,legacyAvailable});
 }

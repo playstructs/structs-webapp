@@ -7,6 +7,7 @@ import {reactorIntent, exactAlphaAmount} from "./ReactorIntent";
 import {transferAddress} from "./TransferIntent";
 import {exactQueryHeight, protocolAtHeight, validateSigningSnapshot} from "./ChainProtocol";
 import {submissionBytes} from "./SignedSubmission";
+import {verifyVaultFunding} from "./VaultFundingCompletion";
 import {abortableDelay} from "./AbortableDelay";
 
 /** Bind all legs to one verified committed transaction, including after reload. */
@@ -29,23 +30,25 @@ export function reactorCommit(tx) {
     throw new Error('Reactor inclusion does not match its preparation');
   }
   const body = TxBody.decode(TxRaw.decode(submissionBytes(submission)).bodyBytes);
-  if (body.messages.length !== prepared.legs.length || (intent.direction === 'infuse' && body.messages.length !== 1)) {
+  const prefix = verifyVaultFunding(body.messages, tx, prepared.funding, prepared.legs[0].address, BigInt(intent.amount));
+  if (prefix && (intent.direction !== 'infuse' || protocol !== CHAIN.PROTOCOL)) throw new Error('Only vault infusion may collect funds');
+  if (body.messages.length !== prefix + prepared.legs.length || (intent.direction === 'infuse' && prepared.legs.length !== 1)) {
     throw new Error('Reactor message group changed');
   }
   const type = intent.direction === 'infuse' ? MsgReactorInfuse : MsgReactorDefuse;
   const typeUrl = intent.direction === 'infuse' ? '/structs.structs.MsgReactorInfuse' : '/structs.structs.MsgReactorDefuse';
   const seen = new Set();
   let amount = 0n;
-  for (let i=0;i<body.messages.length;i++) {
+  for (let i=0;i<prepared.legs.length;i++) {
     const leg = prepared.legs[i];
     transferAddress(leg.address);
     const value = exactAlphaAmount(leg.amount);
     if (!value || typeof leg.isVault !== 'boolean' || seen.has(leg.address)
-        || (leg.isVault && (i !== 0 || protocol !== CHAIN.PROTOCOL)) || body.messages[i].typeUrl !== typeUrl) {
+        || (leg.isVault && (i !== 0 || protocol !== CHAIN.PROTOCOL)) || body.messages[prefix + i].typeUrl !== typeUrl) {
       throw new Error('Invalid reactor completion leg');
     }
     seen.add(leg.address);amount += value;
-    const message = type.decode(body.messages[i].value);
+    const message = type.decode(body.messages[prefix + i].value);
     if (message.creator !== tx.accountAddress || message.validatorAddress !== prepared.validator
         || message.ownerId !== (leg.isVault ? intent.ownerId : '') || message.delegatorAddress !== (leg.isVault ? '' : leg.address)
         || message.amount?.denom !== 'ualpha' || message.amount.amount !== leg.amount) throw new Error('Signed reactor leg changed');
@@ -85,7 +88,7 @@ export async function waitForReactorRefresh(guildAPI, tx, signal, observedHeight
   while (!signal.aborted) {
     try {
       const infusion = await guildAPI.getInfusionByPlayerId(committed.ownerId,{signal,timeoutMs:5000});
-      const player = await guildAPI.getPlayer(committed.ownerId,{signal,timeoutMs:5000});
+      const player = await guildAPI.getPlayer(committed.ownerId,{signal,timeoutMs:16000});
       signal.throwIfAborted();
       if (reactorRefreshReady(infusion,player,committed,observedHeight())) return {infusion,player};
     } catch (error) {

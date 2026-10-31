@@ -5,6 +5,7 @@ import {CHAIN} from "../constants/ChainConstants";
 import {exactQueryHeight, protocolAtHeight} from "./ChainProtocol";
 import {submissionBytes} from "./SignedSubmission";
 import {transferAddress, transferIntent} from "./TransferIntent";
+import {verifyVaultFunding} from "./VaultFundingCompletion";
 import {abortableDelay} from "./AbortableDelay";
 
 /** Bind indexed completion to the signed intent and its verified committed result. */
@@ -29,8 +30,10 @@ export function transferSourceQuery(tx) {
   transferAddress(transfer.source);
   transferAddress(transfer.destination);
   const body = TxBody.decode(TxRaw.decode(submissionBytes(submission)).bodyBytes);
-  if (body.messages.length !== 1) throw new Error('Expected one transfer message');
-  const wire = body.messages[0];
+  const prefix = verifyVaultFunding(body.messages, tx, transfer.funding, transfer.source, BigInt(intent.amount));
+  if (body.messages.length !== prefix + 1) throw new Error('Expected one final transfer message');
+  if (prefix && protocol !== CHAIN.PROTOCOL) throw new Error('Legacy transfer cannot collect vault funds');
+  const wire = body.messages[prefix];
   let message;
   if (protocol === CHAIN.PROTOCOL && intent.recipientId !== null) {
     if (wire.typeUrl !== '/structs.structs.MsgVaultSend') throw new Error('Expected a vault transfer');

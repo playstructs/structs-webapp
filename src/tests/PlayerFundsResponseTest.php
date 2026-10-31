@@ -96,6 +96,31 @@ class PlayerFundsResponseTest extends ApiManagerTestCase
             $this->assertSame('funds-player-vault', $search['data'][0]['vault_address']);
             $this->assertSame('3353000', $search['meta']['height']);
 
+            // The real restricted SQL locates retained funds; native evidence
+            // then excludes the locked portion rather than using indexed wealth.
+            $retained = 'structs1qgpqyqszqgpqyqszqgpqyqszqgpqyqsz8kgukz';
+            $db->executeStatement('RESET ROLE');
+            $db->executeStatement("UPDATE structs.api_inventory SET balance=0 WHERE owner_id='funds-retained-primary'");
+            $db->executeStatement("INSERT INTO structs.player_address(address,player_id,status)
+                VALUES(?, '1-990988', 'approved')", [$retained]);
+            $db->executeStatement("INSERT INTO structs.api_inventory(owner_type,owner_id,denom,balance)
+                VALUES('address', ?, 'ualpha', 50000000)", [$retained]);
+            $db->executeStatement('SET LOCAL ROLE structs_webapp');
+            $fundingChain = $this->createMock(ChainSnapshotManager::class);
+            $fundingChain->expects($this->once())->method('verifyChain');
+            $fundingChain->expects($this->exactly(2))->method('get')->willReturnOnConsecutiveCalls(
+                ['address' => $retained, 'playerId' => '1-990988'],
+                ['balance' => ['denom' => 'ualpha', 'amount' => '10000000']]
+            );
+            $fundingManager = new PlayerManager($this->entityManager($db), $this->validator(), new VaultFundsManager($fundingChain));
+            $funded = json_decode($fundingManager->getPlayer('1-990988')->getContent(), true)['data'];
+            $this->assertSame('10000000', $funded['retained_alpha_p']);
+            $this->assertTrue($funded['retained_funds_meta']['complete']);
+            $this->assertSame('1', $funded['retained_funds_meta']['candidate_count']);
+            $this->assertSame('9007199264740993', $funded['available_alpha_p']);
+            $this->assertSame([['address' => $retained, 'spendable_alpha_p' => '10000000']], $funded['retained_sources']);
+            $this->assertArrayNotHasKey('_retained_funding_sources', $funded);
+
             $db->executeStatement('RESET ROLE');
             $db->executeStatement("UPDATE structs.vault SET account_created=false WHERE owner_id='1-990988'");
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
