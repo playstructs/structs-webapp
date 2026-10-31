@@ -6,6 +6,9 @@ Docker, Node 22+, and the existing local `structs/structs-webapp:latest` and
 `structs/structs-control:latest` images. This is a source/config integration check;
 release-image reproducibility remains a separate packaging gate.
 
+Set `STRUCTS_WEBAPP_TEST_IMAGE` to a locally built candidate image to run the same
+checks against its packaged source and Apache configuration, without source mounts.
+
 The runner clones that fixture into its own marked test database, starts isolated
 Apache and control dev-proxy containers on random localhost ports, and exercises
 the real authenticator, controllers, and restricted `structs_webapp` SQL role.

@@ -5,6 +5,7 @@ const {createHmac, randomBytes} = require('node:crypto');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../..');
+const releaseImage = process.env.STRUCTS_WEBAPP_TEST_IMAGE;
 const {createDisposableDatabase} = require('./DisposableDatabase.cjs');
 const database = 'structs-v022-pg';
 let fixture;
@@ -55,9 +56,10 @@ async function ready(base) {
         docker(['run', '-d', '--name', apache, '--platform', 'linux/amd64', '--network', network, '--network-alias', 'structs-webapp',
             '-p', '127.0.0.1::80', '-e', 'APP_ENV=prod', '-e', 'APP_DEBUG=0', '-e', 'APP_SECRET=' + secret,
             '-e', 'DATABASE_URL=postgresql://structs_webapp@' + database + ':5432/' + fixture.name + '?serverVersion=18',
-            '-v', root + '/src:/src:ro', '--tmpfs', '/src/var:rw,mode=1777',
-            '-v', root + '/docker/apache/structs.conf:/etc/apache2/sites-available/000-default.conf:ro',
-            'structs/structs-webapp:latest']);
+            '--tmpfs', '/src/var:rw,mode=1777',
+            ...(releaseImage ? [] : ['-v', root + '/src:/src:ro',
+                '-v', root + '/docker/apache/structs.conf:/etc/apache2/sites-available/000-default.conf:ro']),
+            releaseImage || 'structs/structs-webapp:latest']);
         const direct = 'http://127.0.0.1:' + port(apache);
         await ready(direct);
         docker(['run', '-d', '--name', proxy, '--platform', 'linux/amd64', '--network', network,
@@ -280,7 +282,8 @@ async function ready(base) {
             checks++;
             console.log(JSON.stringify({surface, status: 'passed', denominations: denoms, checks}));
         }
-        console.log(JSON.stringify({status: 'passed', checks, authenticated: true, database, liveStackChanged: false}));
+        console.log(JSON.stringify({status: 'passed', checks, authenticated: true, database,
+            image:releaseImage || 'structs/structs-webapp:latest',sourceMounted:!releaseImage,liveStackChanged:false}));
     } catch (error) {
         for (const name of [apache, proxy]) {
             try { console.error(docker(['logs', '--tail', '12', name])); } catch (_) {}

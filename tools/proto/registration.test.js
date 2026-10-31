@@ -395,6 +395,10 @@ async function main() {
   const crossed=await fixture('3352999');crossed.control.height='3353000';
   await assert.rejects(()=>crossed.submission.prepare(crossed.tx));assert.equal(crossed.control.signed,0);
   const base=(await fixture()).tx.intent;
+  // Literal release preimage for the public test wallet. Do not derive the
+  // expected value with the formatter that the signature fixture exercises.
+  assert.equal(registrationProofMessage(base.proof),
+    'CHAINstructstestnet-111|REGISTERADDRESSPLAYER1-1ADDRESSstructs19rl4cm2hmr8afy4kldpxz3fka4jguq0acpz60aNONCE9007199254740993');
   for (const patch of [{proof_nonce:9007199254740992},{proof_nonce:'01'},{proof_nonce:'18446744073709551616'},
       {chain_id:'wrong-chain'},{timeout_height:'3353000'},{registered_player_id:'1-1'},{source_height:3353000}]) {
     assert.throws(()=>registrationProofContext({...base.proof,...patch}));
