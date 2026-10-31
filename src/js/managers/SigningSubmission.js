@@ -69,6 +69,17 @@ export class SigningSubmission {
       return {account,prepared};
     }, isReactor || isGenerator ? {height:response.meta?.height} : {});
     check();
+    if (isReactor || isGenerator) {
+      // The pinned read signs with the indexed height's sequence. If the signer
+      // has committed since then, wait for the index instead of signing stale.
+      const latest = await query.readSnapshot(async rpc=>{
+        const authResponse = await new AuthQueryClient(rpc).Account({address:tx.accountAddress});
+        if (!authResponse.account) throw new Error('Signing account unavailable');
+        return accountFromAny(authResponse.account).sequence;
+      });
+      check();
+      if (latest.data!==accountSnapshot.data.account.sequence) throw new SigningDeferredError('Indexed snapshot predates the signing account sequence');
+    }
     let context;
     try {
       context = validateSigningSnapshot(response.meta,{chainId:accountSnapshot.chainId,height:accountSnapshot.observedHeight},isEconomic ? ['inventory'] : []);

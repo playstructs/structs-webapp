@@ -1,6 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {UserAgent} from "../../models/UserAgent";
+import {escapeHtml} from "../../util/HtmlEscape";
 import {PERMISSIONS} from "../../constants/Permissions";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {selectedDevicePermissions} from "../../util/DeviceChangeIntent";
@@ -171,7 +172,7 @@ export class AccountDeviceViewModel extends AbstractViewModel {
                   <div class="sui-text-header sui-text-primary">${location}</div>
                   <div class="device-index-row-info-list">
                     <div>${userAgent.getBrowser()} Browser</div>
-                    <div>${userAgent.getDeviceTypeAndOS()}</div>
+                    <div>${escapeHtml(userAgent.getDeviceTypeAndOS())}</div>
                   </div>
                 </div>
               </div>

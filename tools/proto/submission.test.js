@@ -139,10 +139,13 @@ async function failureAndUnknown(){
   f.storage.setItem(f.queue.getStorageKey(),JSON.stringify(snapshot));
   const reload=f.makeQueue();reload.loadPersistedState();f.control.height=3353000;f.control.sequence=8;await f.tick(reload);await f.tick(reload);
   assert.equal(f.control.sends,1);assert.equal(f.control.signs,1);assert.equal(reload.getTransaction(id).status,TX_STATUS.UNKNOWN);
-  f.commit(tx.submission.hash);f.control.wrongBlock=true;await f.tick(reload);
+  // Historical records are re-checked on a backoff, not every block.
+  const recheck=async()=>{f.state.currentBlockHeight+=SIGNING_QUEUE.HISTORICAL_RECHECK_MAX_BLOCKS;await f.tick(reload);};
+  f.commit(tx.submission.hash);await f.tick(reload);assert.equal(reload.getTransaction(id).status,TX_STATUS.UNKNOWN);
+  f.control.wrongBlock=true;await recheck();
   assert.equal(reload.getTransaction(id).status,TX_STATUS.UNKNOWN);
-  f.control.wrongBlock=false;await f.tick(reload);assert.equal(reload.getTransaction(id).status,TX_STATUS.SUCCEEDED);
-  console.log('CheckTx rejection, committed rejection, transport loss, old unresolved records and wrong-block refusal passed; retryLimit never resends.');
+  f.control.wrongBlock=false;await recheck();assert.equal(reload.getTransaction(id).status,TX_STATUS.SUCCEEDED);
+  console.log('CheckTx rejection, committed rejection, transport loss, old unresolved records, historical re-check backoff and wrong-block refusal passed; retryLimit never resends.');
 }
 
 async function expiredSubmissionRecovery() {

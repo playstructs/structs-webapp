@@ -91,7 +91,7 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
     }
     window.addEventListener(EVENTS.BLOCK_HEIGHT_CHANGED,()=>{
       if (!this.isSessionCurrent()) return retire();
-      if (this.state && protocolAtHeight(CHAIN.ID,maxQueryHeight(this.state.height,this.gameState.currentBlockHeight)) !== this.state.protocol) this.invalidate();
+      if (this.state && protocolAtHeight(CHAIN.ID,maxQueryHeight(this.state.height,this.gameState.currentBlockHeight)) !== this.state.protocol) this.invalidate(true);
     },options);
     this.updateControls();
     if (this.sessionSignal.aborted) retire();
@@ -133,11 +133,19 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
     this.supply.innerText = power;
   }
 
-  invalidate() {
+  /**
+   * Re-reads the generator state. The current state stays usable meanwhile so
+   * routine refreshes do not disable the input; submit always re-reads first.
+   *
+   * @param {boolean} discard true when the current state can no longer be used
+   */
+  invalidate(discard = false) {
     if (!this.isCurrent()) return;
     this.refreshVersion++;
-    this.state = null;
-    this.updateControls();
+    if (discard) {
+      this.state = null;
+      this.updateControls();
+    }
     clearTimeout(this.timer);
     if (!this.busy && !this.refreshPromise) this.timer = setTimeout(()=>this.refresh(),100);
   }

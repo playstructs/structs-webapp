@@ -2,6 +2,7 @@ import {selectedDevicePermissions} from "../../util/DeviceChangeIntent";
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {UserAgent} from "../../models/UserAgent";
+import {escapeHtml} from "../../util/HtmlEscape";
 import {PlayerAddressPending} from "../../models/PlayerAddressPending";
 import {Blockies} from "../../vendor/Blockies";
 
@@ -73,7 +74,7 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
               <div class="device-index-row-info-list">
                 <div>${location}</div>
                 <div>${userAgent.getBrowser()} Browser</div>
-                <div>${userAgent.getDeviceTypeAndOS()}</div>
+                <div>${escapeHtml(userAgent.getDeviceTypeAndOS())}</div>
               </div>
             </div>
             <div class="account-manage-device-info-icon-group">

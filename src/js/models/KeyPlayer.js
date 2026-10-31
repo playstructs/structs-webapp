@@ -23,6 +23,27 @@ import {playerFunds} from "../util/PlayerFunds";
 import {exactQueryHeight, maxQueryHeight, protocolAtHeight} from "../util/ChainProtocol";
 import {CHAIN} from "../constants/ChainConstants";
 
+const FUNDS_FIELDS = ['alpha','vault_address','spendable_alpha_p','available_alpha_p','retained_alpha_p','retained_sources','retained_funds_meta','funds_meta'];
+
+/**
+ * Identifies the funds a snapshot shows, ignoring read heights, which advance
+ * on every poll even when the balances are unchanged.
+ *
+ * @param {object} snapshot
+ * @return {string}
+ */
+function fundsKey(snapshot) {
+  const withoutHeight = meta => meta ? {...meta, height: undefined} : meta;
+  return JSON.stringify({
+    ...Object.fromEntries(FUNDS_FIELDS.map(field => [field, snapshot[field]])),
+    funds_meta: withoutHeight(snapshot.funds_meta),
+    retained_funds_meta: withoutHeight(snapshot.retained_funds_meta),
+    protocol: snapshot.protocol,
+    data_ready: snapshot.snapshot_meta?.data_ready,
+    transaction_ready: snapshot.snapshot_meta?.transaction_ready
+  });
+}
+
 export class KeyPlayer {
 
   /**
@@ -116,16 +137,19 @@ export class KeyPlayer {
     if (this.alphaSnapshot?.height === snapshot.height && (['alpha','vault_address','spendable_alpha_p','protocol'].some(
       field=>this.alphaSnapshot[field] !== snapshot[field]) || this.alphaSnapshot.funds_meta?.provisioned !== snapshot.funds_meta?.provisioned)) return false;
     this.expireFunds(maxQueryHeight(snapshot.snapshot_meta.observed_tip,observedHeight || snapshot.snapshot_meta.observed_tip));
+    // A newer height with the same funds is not a change; listeners rebuild
+    // their own state on this event.
+    const changed = !this.alphaSnapshot || fundsKey(this.alphaSnapshot) !== fundsKey(snapshot);
     this.alphaSnapshot = snapshot;
     this.applyFunds();
-    window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
+    if (changed) window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
     return true;
   }
 
   applyFunds() {
     if (!this.player) return;
     const snapshot = this.alphaSnapshot;
-    for (const field of ['alpha','vault_address','spendable_alpha_p','available_alpha_p','retained_alpha_p','retained_sources','retained_funds_meta','funds_meta']) {
+    for (const field of FUNDS_FIELDS) {
       this.player[field] = snapshot ? structuredClone(snapshot[field]) : null;
     }
     // Funds refresh independently of profile/grid fields. Never stamp an old

@@ -8,4 +8,6 @@ export const SIGNING_QUEUE = {
   // shorter owned-RPC deadlines; a local deadline never proves non-inclusion.
   BROADCAST_TIMEOUT_MS: 90 * 1000,
   RECONCILE_TIMEOUT_MS: 15 * 1000,
+  HISTORICAL_RECHECK_BLOCKS: 10,       // First re-check interval for an unknown outcome that no longer reserves the account
+  HISTORICAL_RECHECK_MAX_BLOCKS: 600,  // Doubling interval cap
 };

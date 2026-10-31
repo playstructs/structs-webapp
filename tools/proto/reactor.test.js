@@ -87,6 +87,16 @@ function fixture(height=3353000) {
   };
   manager.chainQuery={closed:false,status:async()=>({chainId:CHAIN.ID,height:String(control.height)}),readSnapshot:async(read,options={})=>{
     const h=options.height;
+    if(h===undefined) {
+      // Only the signer's latest sequence is read unpinned.
+      const latestRequest=async(service,...args)=>{
+        assert.equal(service,'cosmos.auth.v1beta1.Query');
+        return control.latestSequence===undefined?request(service,...args):QueryAccountResponse.encode({account:{typeUrl:'/cosmos.auth.v1beta1.BaseAccount',
+          value:BaseAccount.encode(BaseAccount.fromPartial({address:signer.address,accountNumber:1n,sequence:control.latestSequence})).finish()}}).finish();
+      };
+      return {chainId:CHAIN.ID,height:String(control.height),observedHeight:String(control.height),
+        data:await read({chainId:CHAIN.ID,height:String(control.height),request:latestRequest})};
+    }
     const pinnedRequest=(service,...args)=>{
       assert.equal(h,service==='cosmos.tx.v1beta1.Service'?control.signedHeight:String(control.height),
         'Native preparation and simulation use the selected boundary');
@@ -103,6 +113,9 @@ async function main() {
   [signer]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);offline=await SigningStargateClient.offline(wallet,{registry});
   for(const patch of [{amount:'0'},{amount:'1'},{amount:1000000},{amount:(1n<<256n).toString()},{direction:'migrate'},
       {ownerId:'0-1'},{reactorId:'3-0'},{guildId:'0-18446744073709551616'},{extra:1}]) assert.throws(()=>reactorIntent({...baseIntent(),...patch}));
+  const lagging=fixture();lagging.control.latestSequence=3n; // Signer committed after the indexed height.
+  await assert.rejects(lagging.submission.prepare(lagging.tx),/predates the signing account sequence/);
+  assert.equal(lagging.control.signed,0);
   const f=fixture();f.control.candidates.push(address(2)); // Duplicate cannot mint another position.
   const signed=await f.submission.prepare(f.tx);
   assert.equal(f.control.signed,1);assert.equal(f.control.simulated,1);

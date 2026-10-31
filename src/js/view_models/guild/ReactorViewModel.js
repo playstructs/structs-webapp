@@ -89,8 +89,9 @@ export class ReactorViewModel extends AbstractViewModel {
         await this.fetchPageData(signal);
         if (!this.current(signal)) return;
         this.updateValues();
-        retry=retryMs;
-        if (!this.canManage()) { dirty=true;delay=retry; }
+        // Readable but not yet signable: keep checking, with the same backoff as a failed read.
+        if (this.canManage()) retry=retryMs;
+        else { dirty=true;delay=retry;retry=Math.min(retry*2,maxRetryMs); }
       } catch(error) {
         if (!this.current(signal)) return;
         this.refreshReady=false;

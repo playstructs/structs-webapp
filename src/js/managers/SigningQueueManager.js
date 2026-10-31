@@ -94,6 +94,7 @@ export class SigningQueueManager {
     this.wsUrl = wsUrl;
     this.submission = submission;
     this.unresolved = new Map();
+    this.historicalChecks = new Map();
     this.completed = new Map();
     this.working = false;
     this.idleWaiters = new Set();
@@ -430,11 +431,14 @@ export class SigningQueueManager {
       await journal.exclusive(async () => {
         if (this.suspended) return;
         this.#mergeJournal(journal);
+        const height = this.gameState.currentBlockHeight;
         if (this.unresolved.size) {
           // Bounded work on each block. Unknown legacy records never become retries.
-          const pending = [...this.unresolved.values()].sort((a, b) =>
-            Number(isHistoricalSubmission(a)) - Number(isHistoricalSubmission(b)));
+          const pending = [...this.unresolved.values()]
+            .filter(tx => !isHistoricalSubmission(tx) || this.#historicalCheckDue(tx, height))
+            .sort((a, b) => Number(isHistoricalSubmission(a)) - Number(isHistoricalSubmission(b)));
           for (const tx of pending.slice(0, 4)) {
+            if (isHistoricalSubmission(tx)) this.#deferHistoricalCheck(tx, height);
             if (!tx.submission) {
               this.unresolved.delete(tx.id); this.unresolved.set(tx.id,tx);
               continue;
@@ -450,7 +454,6 @@ export class SigningQueueManager {
           if (this.hasUnresolvedSubmissions()) return;
         }
         if (reconcileOnly || this.recoveryError) return;
-        const height = this.gameState.currentBlockHeight;
         if (this.lastBroadcastHeight >= height) return;
         const head = this.actionQueue[0];
         const lane = head && this.isConfirmedActionLoaded() && this.projectedChargeAt(height)>=head.chargeCost
@@ -465,6 +468,30 @@ export class SigningQueueManager {
       for (const resolve of this.idleWaiters) resolve();
       this.idleWaiters.clear();
     }
+  }
+
+  /**
+   * Historical outcomes no longer reserve the account, so they are re-checked
+   * on a growing interval of blocks rather than on every block.
+   *
+   * @param {SigningTransaction} tx
+   * @param {number} height
+   * @return {boolean}
+   */
+  #historicalCheckDue(tx, height) {
+    return (Number(height) || 0) >= (this.historicalChecks.get(tx.id)?.height ?? 0);
+  }
+
+  /**
+   * @param {SigningTransaction} tx
+   * @param {number} height
+   */
+  #deferHistoricalCheck(tx, height) {
+    const interval = this.historicalChecks.get(tx.id)?.interval ?? SIGNING_QUEUE.HISTORICAL_RECHECK_BLOCKS;
+    this.historicalChecks.set(tx.id, {
+      height: (Number(height) || 0) + interval,
+      interval: Math.min(interval * 2, SIGNING_QUEUE.HISTORICAL_RECHECK_MAX_BLOCKS)
+    });
   }
 
   /** Detach an account only after its current send has saved its outcome. */
@@ -484,6 +511,7 @@ export class SigningQueueManager {
     this.actionQueue = [];
     this.inFlight = null;
     this.unresolved.clear();
+    this.historicalChecks.clear();
     this.completed.clear();
     this.lastBroadcastHeight = 0;
     this.scheduleAnchorHeight = 0;

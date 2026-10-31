@@ -2,6 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {Blockies} from "../../vendor/Blockies";
 import {UserAgent} from "../../models/UserAgent";
+import {escapeHtml} from "../../util/HtmlEscape";
 import {PlayerAddress} from "../../models/PlayerAddress";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
@@ -84,7 +85,7 @@ export class AccountDevicesViewModel extends AbstractViewModel {
       deviceInfoList.push('This Device');
     } else {
       deviceInfoList.push(`${userAgent.getBrowser()} Browser`);
-      deviceInfoList.push(`${userAgent.getDeviceTypeAndOS()}`);
+      deviceInfoList.push(`${escapeHtml(userAgent.getDeviceTypeAndOS())}`);
       deviceInfoList.push(`Last Activity: ${lastActivity}`);
     }
 

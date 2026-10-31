@@ -74,6 +74,11 @@ async function valuesAndCache(){
   assert.equal(key.setFunds(malformed),false);assert.equal(key.player.alpha,'5');
   const displayed=new AlphaOwnedComponent(game,'balance');assert.equal(displayed.getAlphaOwned(),'5');
   key.setFunds(player('3353005','9007199254740993000001'));assert.equal(displayed.getAlphaOwned(),'9P');
+  let alphaEvents=0;const countAlpha=()=>alphaEvents++;window.addEventListener(EVENTS.ALPHA_COUNT_CHANGED,countAlpha);
+  assert.equal(key.setFunds(player('3353006','9007199254740993000001')),true);
+  assert.equal(key.player.funds_snapshot_meta.height,'3353006');assert.equal(alphaEvents,0,'A newer read of the same funds is not a change');
+  assert.equal(key.setFunds(player('3353007','9007199254740994000001')),true);assert.equal(alphaEvents,1);
+  window.removeEventListener(EVENTS.ALPHA_COUNT_CHANGED,countAlpha);
   key.setId('1-2');assert.equal(key.player,null);assert.equal(key.alphaSnapshot,null);assert.equal(displayed.getAlphaOwned(),'');
 
   key.setId('1-1');key.setPlayer(legacy);assert.equal(key.player.alpha,'9007199254740993');
