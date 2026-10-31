@@ -7,6 +7,7 @@ const webpack=require(path.join(modules,'webpack')),config=require(path.join(roo
 Object.assign(config,{context:path.join(root,'src'),mode:'development'});
 config.entry.bootstrap=path.join(__dirname,'session-bootstrap.js');
 config.entry['worker-check']=path.join(__dirname,'worker-check.js');
+config.entry['legacy-history']=path.join(__dirname,'legacy-history.js');
 config.output.path=output;config.resolve.modules=[modules,'node_modules'];config.resolveLoader={modules:[modules,'node_modules']};
 config.module.rules[0].options.compiler=path.join(root,'tools/proto/node_modules/typescript');
 config.plugins.push(new webpack.NormalModuleReplacementPlugin(/^\.\/managers\/SigningClientManager$/,resource=>{
@@ -20,5 +21,6 @@ webpack(config,(error,stats)=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(output,'manifest.json'),'utf8'));
   fs.writeFileSync(path.join(output,'bootstrap.html'),`<!doctype html><title>Isolated Structs fixture</title><script src="/${manifest['js/bootstrap.js']}"></script>`);
   fs.writeFileSync(path.join(output,'worker-check.html'),`<!doctype html><title>Structs worker acceptance</title><h1>Isolated worker acceptance</h1><p id="status">Checking fingerprinted worker...</p><script src="/${manifest['js/worker-check.js']}"></script>`);
+  fs.writeFileSync(path.join(output,'legacy-history.html'),`<!doctype html><title>Isolated legacy recovery acceptance</title><h1>Legacy history fixture</h1><button>Seed a legacy backup</button><a href="/">Return to game</a><pre></pre><script src="/${manifest['js/legacy-history.js']}"></script>`);
   console.log('Isolated-stack application and session bootstrap built at '+output);
 });

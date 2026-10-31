@@ -34,6 +34,14 @@ Save screenshots and console evidence. These browser checks supplement the
 authenticated Apache/proxy tests and real release-app/native simulation tests;
 they do not prove the live deployment or end-to-end wallet authentication.
 
+The real-stack build also emits `legacy-history.html`. On the disposable origin,
+its button saves a synthetic version-2 in-flight backup without signed identity,
+refusing to overwrite an existing backup. Return to the normal game and submit
+a new explicit action, then revisit the page: the legacy record must remain
+`unknown` in the `historical` journal phase, with no signed bytes. The native
+player name must not become `ShouldNeverReplay`. This fixture never reads wallet
+material and is not a production entry point.
+
 For an uncertain send, reload the same case and press the transfer control
 again. The queue must retain its original ID with `signed=1` and `sends=1`.
 Switching `outcome` to `success` lets that same transaction reconcile. This

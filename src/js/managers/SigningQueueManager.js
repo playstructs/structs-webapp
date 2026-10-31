@@ -14,6 +14,7 @@ import {registrationIntent} from "../util/RegistrationIntent";
 import {generatorIntent} from "../util/GeneratorIntent";
 import {gameplayIntent} from "../util/GameplayIntent";
 import {workSubmissionMatches} from "../util/WorkSubmission";
+import {isHistoricalSubmission} from "../util/SubmissionHistory";
 
 /**
  * Validate that a payload is safe to persist as JSON. Rejects anything that
@@ -261,8 +262,9 @@ export class SigningQueueManager {
 
   #assertCanEnqueue() {
     this.#bindScope();
-    if (this.suspended || this.recoveryError || this.unresolved.size || new TransactionJournal(this.gameState.signingAccount.address)
-        .read().some(record=>['broadcasting','accepted','unknown'].includes(record.phase))) {
+    if (this.suspended || this.recoveryError || this.hasUnresolvedSubmissions() || new TransactionJournal(this.gameState.signingAccount.address)
+        .read().some(record => ['broadcasting','accepted','unknown'].includes(record.phase)
+          && !isHistoricalSubmission(record.transaction))) {
       throw new SigningDeferredError('Resolve the existing submission before adding another intent');
     }
   }
@@ -418,7 +420,7 @@ export class SigningQueueManager {
   // Broadcast loop
   // ---------------------------------------------------------------------------
 
-  /** At most one new send per block/account; unresolved work only reconciles. */
+  /** At most one new send per block/account; possible live sends reserve the account. */
   async transactOnBlock(reconcileOnly = false) {
     if (this.suspended || this.working || !this.gameState.signingClient || !this.gameState.signingAccount?.address || !this.submission) return;
     this.working = true;
@@ -430,7 +432,8 @@ export class SigningQueueManager {
         this.#mergeJournal(journal);
         if (this.unresolved.size) {
           // Bounded work on each block. Unknown legacy records never become retries.
-          const pending = [...this.unresolved.values()];
+          const pending = [...this.unresolved.values()].sort((a, b) =>
+            Number(isHistoricalSubmission(a)) - Number(isHistoricalSubmission(b)));
           for (const tx of pending.slice(0, 4)) {
             if (!tx.submission) {
               this.unresolved.delete(tx.id); this.unresolved.set(tx.id,tx);
@@ -444,7 +447,7 @@ export class SigningQueueManager {
             // Rotate so a temporarily unavailable hash cannot starve other records.
             if (this.unresolved.has(tx.id)) { this.unresolved.delete(tx.id); this.unresolved.set(tx.id,tx); }
           }
-          return;
+          if (this.hasUnresolvedSubmissions()) return;
         }
         if (reconcileOnly || this.recoveryError) return;
         const height = this.gameState.currentBlockHeight;
@@ -494,8 +497,9 @@ export class SigningQueueManager {
     return this.transactOnBlock(true);
   }
 
+  /** Historical unknown outcomes remain saved but do not reserve new signing. */
   hasUnresolvedSubmissions() {
-    return this.unresolved.size>0;
+    return [...this.unresolved.values()].some(tx => !isHistoricalSubmission(tx));
   }
 
   async #broadcast(tx, journal) {
@@ -571,6 +575,19 @@ export class SigningQueueManager {
   }
 
   #finish(tx, response, journal, error = null) {
+    if (response?.stage === 'sequence_consumed') {
+      const previous = tx.response;
+      tx.response = response;
+      try {
+        if (!isHistoricalSubmission(tx)) throw new Error('Signing sequence proof is unavailable');
+        journal.write(tx, 'historical');
+      } catch (failure) {
+        tx.response = previous;
+        throw failure;
+      }
+      this.persist();
+      return; // Keep the unknown outcome and observers; never report rejection.
+    }
     const {msgResponses, ...savedResponse} = response ?? {};
     tx.response = response ? savedResponse : null;
     tx.status = response?.stage==='committed' && response.code===0 ? TX_STATUS.SUCCEEDED : TX_STATUS.DROPPED;
@@ -632,12 +649,15 @@ export class SigningQueueManager {
       } else {
         tx.status = TX_STATUS.UNKNOWN;
         if (known?.submission?.hash===tx.submission?.hash && (known?.response?.stage==='committed'
+            || known?.response?.stage === 'sequence_consumed'
             || (known?.response?.stage==='check_tx' && known.response.code>0))) tx.response = known.response;
         this.unresolved.set(tx.id,tx);
       }
     }
     for (const tx of this.unresolved.values()) {
-      if (persistLegacy && !ids.has(tx.id)) journal.write(tx,'unknown');
+      if (persistLegacy && !ids.has(tx.id)) {
+        journal.write(tx, isHistoricalSubmission(tx) ? 'historical' : 'unknown');
+      }
     }
   }
 
@@ -850,28 +870,32 @@ export class SigningQueueManager {
 
   /**
    * Main moved stale/corrupt snapshots here before starting an empty queue.
-   * Preserve that evidence. Only a valid snapshot containing no possible sends
-   * can be ignored; even then, abandoned unsigned work must not be replayed.
+   * Keep the original backup verbatim. Import identifiable possible sends as
+   * observation-only records; malformed backups cannot become executable work
+   * or a permanent reservation of this account's signing sequence.
    */
-  #checkLegacyQuarantine() {
+  #loadLegacyQuarantine() {
     const raw = localStorage.getItem(`${this.storageScope}.corrupt`);
     if (raw === null) return;
-    const saved = JSON.parse(raw);
-    if (saved?.version !== 2 || !Array.isArray(saved.immediateQueue)
+    let saved;
+    try { saved = JSON.parse(raw); } catch { return; }
+    if (![2, SIGNING_QUEUE.STORAGE_VERSION].includes(saved?.version) || !Array.isArray(saved.immediateQueue)
         || !Array.isArray(saved.actionQueue)) {
-      throw new Error('Unrecognized legacy queue quarantine; recovery required');
+      return;
     }
     const records = [...(saved.inFlight ? [saved.inFlight] : []),
+      ...(Array.isArray(saved.unresolved) ? saved.unresolved : []),
       ...saved.immediateQueue, ...saved.actionQueue];
     for (const json of records) {
       const tx = SigningTransaction.fromJSON(json);
       if (!tx || tx.accountAddress !== this.gameState.signingAccount.address) {
-        throw new Error('Invalid legacy queue quarantine; recovery required');
+        continue;
       }
       if (tx.isTerminal()) continue;
       if (json === saved.inFlight || tx.submission || this.#hasLegacySubmissionEvidence(json)
           || tx.status !== TX_STATUS.QUEUED) {
-        throw new Error('Legacy quarantined submission requires recovery');
+        tx.status = TX_STATUS.UNKNOWN;
+        this.unresolved.set(tx.id, tx);
       }
     }
   }
@@ -910,7 +934,7 @@ export class SigningQueueManager {
     if (this.rehydrated) return;
     try {
       this.#bindScope();
-      this.#checkLegacyQuarantine();
+      this.#loadLegacyQuarantine();
       const raw = localStorage.getItem(this.storageScope);
       if (raw) {
         const state = JSON.parse(raw);
@@ -929,6 +953,8 @@ export class SigningQueueManager {
           if (seen.has(tx.id)) continue;
           seen.add(tx.id);
           if (tx.isTerminal()) { this.#rememberCompleted(tx); continue; }
+          // A possible send in the retained backup outranks an unsigned copy.
+          if (this.unresolved.has(tx.id) && !tx.submission) continue;
           const unknown = tx.submission || this.#hasLegacySubmissionEvidence(json)
             || [TX_STATUS.IN_FLIGHT,TX_STATUS.UNKNOWN].includes(tx.status)
             || (json===state.inFlight && !(state.version===3 && tx.status===TX_STATUS.PREPARING));

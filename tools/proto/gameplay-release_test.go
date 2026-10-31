@@ -21,8 +21,8 @@ import (
 	"structs/x/structs/types"
 )
 
-// The browser may release an expired send only when the same account's
-// committed sequence has not advanced. Exercise the real ante/message boundary,
+// The browser may report non-execution only when an expired send's account
+// sequence has not advanced. A consumed sequence instead leaves outcome unknown. Exercise the real ante/message boundary,
 // including accepted CheckTx that is never included and a failed message whose
 // ante changes DO commit. No external node, keyring or transaction is used.
 func TestClientExpirySequenceEvidence(t *testing.T) {
@@ -254,6 +254,63 @@ func TestClientGameplaySimulation(t *testing.T) {
 				}
 			}
 			t.Logf("bytes=%d simulation gas=%d inclusion gas=%d code=%d", len(wire), gas.GasUsed, result.GasUsed, result.Code)
+		})
+	}
+}
+
+// Same-sequence transactions conflict even when the old bytes have no expiry.
+// A later explicit action with a fresh sequence may execute too; sequence does
+// not establish whether the earlier action succeeded or make repeating it safe.
+func TestClientSequenceConflict(t *testing.T) {
+	for _, oldFirst := range []bool{true, false} {
+		t.Run(strconv.FormatBool(oldFirst), func(t *testing.T) {
+			chain, ctx := setupJailGateApp(t)
+			key := secp256k1.GenPrivKey()
+			address := sdk.AccAddress(key.PubKey().Address())
+			player := appendAppPlayer(t, chain.StructsKeeper, ctx, address)
+			config := authtx.NewTxConfig(chain.AppCodec(), authtx.DefaultSignModes)
+			account := chain.AccountKeeper.GetAccount(ctx, address)
+			initialSequence := account.GetSequence()
+			sign := func(name string, sequence uint64) []byte {
+				tx, err := simtestutil.GenSignedMockTx(rand.New(rand.NewSource(1)), config,
+					[]sdk.Msg{&types.MsgPlayerUpdateName{Creator: address.String(), PlayerId: player.Id, Name: name}},
+					sdk.Coins{sdk.NewInt64Coin("ualpha", 0)}, ante.DefaultFreeGasCap, jailGateChainID,
+					[]uint64{account.GetAccountNumber()}, []uint64{sequence}, key)
+				require.NoError(t, err)
+				timed, ok := tx.(interface{ GetTimeoutHeight() uint64 })
+				require.True(t, ok)
+				require.Zero(t, timed.GetTimeoutHeight(), "Exercise an unbounded historical send")
+				wire, err := config.TxEncoder()(tx)
+				require.NoError(t, err)
+				return wire
+			}
+			oldWire := sign("Earlier-Action", initialSequence)
+			newWire := sign("Explicit-Action", initialSequence)
+			ordered := [][]byte{oldWire, newWire}
+			if !oldFirst {
+				ordered = [][]byte{newWire, oldWire}
+			}
+			for i, wire := range ordered {
+				block, err := chain.FinalizeBlock(&abci.RequestFinalizeBlock{Height: int64(i + 1),
+					Time: ctx.BlockTime().Add(time.Duration(i+1) * time.Second), Txs: [][]byte{wire}})
+				require.NoError(t, err)
+				require.Len(t, block.TxResults, 1)
+				if i == 0 {
+					require.Zero(t, block.TxResults[0].Code, block.TxResults[0].Log)
+				} else {
+					require.NotZero(t, block.TxResults[0].Code)
+					require.Contains(t, block.TxResults[0].Log, "account sequence mismatch")
+				}
+				_, err = chain.Commit()
+				require.NoError(t, err)
+			}
+			current := chain.NewUncachedContext(false, ctx.BlockHeader()).WithBlockHeight(2)
+			require.Equal(t, initialSequence+1, chain.AccountKeeper.GetAccount(current, address).GetSequence())
+			fresh := sign("Another-Action", initialSequence+1)
+			block, err := chain.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 3,
+				Time: ctx.BlockTime().Add(3 * time.Second), Txs: [][]byte{fresh}})
+			require.NoError(t, err)
+			require.Zero(t, block.TxResults[0].Code, block.TxResults[0].Log)
 		})
 	}
 }

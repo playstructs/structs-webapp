@@ -1,5 +1,6 @@
 import {CHAIN} from "../constants/ChainConstants";
 import {SIGNING_QUEUE} from "../constants/SigningQueueConstants";
+import {isHistoricalSubmission} from "../util/SubmissionHistory";
 
 /** One record per intent: a queue snapshot can never erase a signed submission. */
 export class TransactionJournal {
@@ -51,9 +52,10 @@ export class TransactionJournal {
           || record.chainId !== CHAIN.ID || typeof record.transaction?.id !== 'string'
           || record.transaction.accountAddress !== this.accountAddress
           || key !== this.prefix + record.transaction.id
-          || !['prepared','broadcasting','accepted','unknown','settled'].includes(record.phase)
+          || !['prepared','broadcasting','accepted','unknown','historical','settled'].includes(record.phase)
           || (record.phase==='prepared' && (record.transaction.status!=='preparing' || !record.transaction.submission))
           || (['broadcasting','accepted','unknown'].includes(record.phase) && record.transaction.status!=='unknown')
+          || (record.phase === 'historical' && !isHistoricalSubmission(record.transaction))
           || (record.phase==='settled' && !['succeeded','dropped','cancelled'].includes(record.transaction.status))) {
         throw new Error('Unrecognized transaction journal; recovery required');
       }

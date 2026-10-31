@@ -169,8 +169,9 @@ export class SigningSubmission {
    * including when later message execution fails. The same account and unchanged
    * sequence at a height after expiry therefore prove no message execution.
    *
-   * An advanced sequence, unavailable query or old unbounded transaction stays
-   * unknown. This method never resends, replaces or discards signed evidence.
+   * An advanced sequence proves this signed transaction cannot execute again,
+   * but leaves its historical outcome unknown. Release the signing reservation
+   * without reporting a failure. Unavailable or conflicting evidence stays held.
    *
    * @param {SigningTransaction} tx
    * @param {ChainQueryClient} query
@@ -181,7 +182,6 @@ export class SigningSubmission {
     const raw = TxRaw.decode(submissionBytes(submission));
     const body = TxBody.decode(raw.bodyBytes);
     const auth = AuthInfo.decode(raw.authInfoBytes);
-    if (body.timeoutHeight === 0n) return null;
     if (body.timeoutHeight.toString() !== submission.timeoutHeight
         || auth.signerInfos.length !== 1
         || auth.signerInfos[0].sequence.toString() !== submission.sequence) {
@@ -189,10 +189,10 @@ export class SigningSubmission {
     }
 
     const current = await query.status();
-    if (BigInt(current.height) <= body.timeoutHeight) return null;
+    if (BigInt(current.height) < BigInt(submission.observedHeight)) return null;
 
     const snapshot = await query.readSnapshot(async rpc => {
-      if (BigInt(rpc.height) <= body.timeoutHeight) return null;
+      if (BigInt(rpc.height) < BigInt(submission.observedHeight)) return null;
       const response = await new AuthQueryClient(rpc).Account({address: tx.accountAddress});
       if (!response.account) throw new Error('Signing account unavailable during expiry recovery');
       const account = accountFromAny(response.account);
@@ -201,9 +201,16 @@ export class SigningSubmission {
           || !Number.isSafeInteger(account.sequence)) {
         throw new Error('Unsupported signing account during expiry recovery');
       }
-      if (String(account.accountNumber) !== submission.accountNumber
-          || String(account.sequence) !== submission.sequence) return null;
-      return true;
+      if (String(account.accountNumber) !== submission.accountNumber) return null;
+      if (tx.response?.stage === 'sequence_consumed'
+          && (BigInt(rpc.height) < BigInt(tx.response.verifiedHeight)
+            || BigInt(account.sequence) < BigInt(tx.response.currentSequence))) return null;
+      if (BigInt(account.sequence) > BigInt(submission.sequence)) {
+        return {stage:'sequence_consumed', currentSequence:String(account.sequence)};
+      }
+      if (String(account.sequence) !== submission.sequence || body.timeoutHeight === 0n
+          || BigInt(rpc.height) <= body.timeoutHeight) return null;
+      return {stage:'expired'};
     });
     if (query !== this.manager.chainQuery || query.closed) {
       throw new Error('Chain connection changed during expiry recovery');
@@ -211,7 +218,7 @@ export class SigningSubmission {
     if (!snapshot.data) return null;
 
     return {
-      stage: 'expired',
+      ...snapshot.data,
       code: null,
       chainId: submission.chainId,
       transactionHash: submission.hash,

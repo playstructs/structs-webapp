@@ -12,5 +12,5 @@ try {
   execFileSync('tar', ['-xf','-','-C',temporary], {input:archive});
   fs.copyFileSync(path.join(__dirname,'gameplay-release_test.go'),path.join(temporary,'app/client_gameplay_test.go'));
   console.log(`Testing native signed simulation against release ${release}; temporary in-memory chains only.`);
-  execFileSync('go', ['test','-count=1','-p','1','-run','^TestClient(GameplaySimulation|ExpirySequenceEvidence)$','-v','./app'], {cwd:temporary,stdio:'inherit'});
+  execFileSync('go', ['test','-count=1','-p','1','-run','^TestClient(GameplaySimulation|ExpirySequenceEvidence|SequenceConflict)$','-v','./app'], {cwd:temporary,stdio:'inherit'});
 } finally { fs.rmSync(temporary,{recursive:true,force:true}); }

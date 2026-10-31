@@ -172,10 +172,6 @@ async function expiredSubmissionRecovery() {
   await reload.reconcilePending();
   assert.equal(reload.getTransaction(id).status, TX_STATUS.UNKNOWN, 'Unavailable evidence is not non-execution');
   f.control.accountError = false;
-  f.control.sequence = 8;
-  await reload.reconcilePending();
-  assert.equal(reload.getTransaction(id).status, TX_STATUS.UNKNOWN, 'An advanced sequence could hide committed execution');
-  f.control.sequence = 7;
   f.control.accountNumber = 2;
   await reload.reconcilePending();
   assert.equal(reload.getTransaction(id).status, TX_STATUS.UNKNOWN, 'A different account lifetime cannot prove absence');
@@ -204,6 +200,54 @@ async function expiredSubmissionRecovery() {
   await included.queue.reconcilePending();
   assert.equal(included.queue.getTransaction(includedId).status, TX_STATUS.SUCCEEDED, 'Committed inclusion wins over expiry');
   console.log('Expired submission recovery passed: signed finite lifetime, expiry boundary, durable proof, missing/conflicting evidence refusal, no resend and new explicit intent.');
+}
+
+async function consumedSequenceRecovery() {
+  for (const offset of [1, 61]) {
+    const f = await fixture();
+    f.control.height = 3353000;
+    f.state.currentBlockHeight = f.control.height;
+    f.control.mode = 'throw';
+    const enqueue = queue => queue.enqueueImmediate('/structs.structs.MsgPlayerSend', {
+      fromAddress:account.address, toAddress:account.address, amount:[{denom:'ualpha', amount:'1'}],
+    }, {intentProtocol:CHAIN.PROTOCOL});
+    const id = enqueue(f.queue);
+    await f.tick();
+    const oldHash = f.queue.getTransaction(id).submission.hash;
+    f.control.height = 3353000 + offset;
+    f.control.sequence = 8;
+    f.control.accountNumber = 2;
+    await f.queue.reconcilePending();
+    assert.equal(f.queue.hasUnresolvedSubmissions(), true, 'A different account lifetime cannot release the hold');
+    f.control.accountNumber = 1;
+    f.storage.fail = (key, value) => key.startsWith('signingJournal:')
+      && JSON.parse(value).phase === 'historical';
+    await f.queue.reconcilePending();
+    assert.equal(f.queue.hasUnresolvedSubmissions(), true, 'The proof must be durable before releasing the hold');
+    assert.notEqual(f.queue.getTransaction(id).response?.stage, 'sequence_consumed');
+    f.storage.fail = () => false;
+    await f.queue.reconcilePending();
+    assert.equal(f.queue.getTransaction(id).status, TX_STATUS.UNKNOWN);
+    assert.equal(f.queue.getTransaction(id).response.stage, 'sequence_consumed');
+    assert.equal(f.queue.hasUnresolvedSubmissions(), false);
+    assert.equal(f.control.sends, 1);
+    const reloaded = f.makeQueue();
+    reloaded.loadPersistedState();
+    assert.equal(reloaded.hasUnresolvedSubmissions(), false, 'Native proof survives reload');
+    assert.equal(reloaded.getTransaction(id).submission.hash, oldHash);
+    f.control.sequence = 7;
+    f.control.height = 3353062;
+    await reloaded.reconcilePending();
+    assert.equal(reloaded.getTransaction(id).status, TX_STATUS.UNKNOWN, 'Regressed evidence cannot invent non-execution');
+    assert.equal(reloaded.getTransaction(id).response.stage, 'sequence_consumed');
+    f.control.sequence = 8;
+    const fresh = enqueue(reloaded);
+    await f.tick(reloaded);
+    assert.equal(f.control.sends, 2, 'Only the fresh user intent is sent');
+    assert.equal(reloaded.getTransaction(fresh).submission.sequence, '8');
+    assert.notEqual(reloaded.getTransaction(fresh).submission.hash, oldHash);
+    assert.equal(reloaded.getTransaction(id).status, TX_STATUS.UNKNOWN, 'Historical outcome never becomes invented failure');
+  }
 }
 
 async function storageAndPrepared(){
@@ -253,8 +297,13 @@ async function legacyAndEpoch(){
         'A legacy retry must not become an expired unsigned intent');
       assert.equal(f.control.sends, 0);
       assert.equal(f.control.signs, 0);
-      assert.throws(() => f.enqueue(reload), /existing submission/);
-      assert.equal(f.journal.read()[0].phase, 'unknown');
+      assert.equal(reload.hasUnresolvedSubmissions(), false);
+      assert.equal(f.journal.read()[0].phase, 'historical');
+      const fresh = f.enqueue(reload);
+      await f.tick(reload);
+      assert.equal(f.control.sends, 1, 'Only the new explicit intent is sent');
+      assert.notEqual(fresh, id);
+      assert.equal(reload.getTransaction(id).status, TX_STATUS.UNKNOWN);
     }
   }
   for (const kind of ['in-flight', 'retry', 'malformed']) {
@@ -275,12 +324,15 @@ async function legacyAndEpoch(){
     const reload = f.makeQueue();
     reload.loadPersistedState();
     await f.tick(reload);
-    assert.ok(reload.recoveryError, 'Ambiguous quarantine must block signing');
+    assert.equal(reload.recoveryError, null, 'Historical quarantine does not reserve future signing');
     assert.equal(f.storage.getItem(key + '.corrupt'), raw);
-    assert.equal(f.storage.getItem(key), null, 'Do not overwrite the absent active snapshot');
+    assert.equal(reload.immediateQueue.length, 0, 'Quarantine records never become executable work');
     assert.equal(f.control.sends, 0);
     assert.equal(f.control.signs, 0);
-    assert.throws(() => f.enqueue(reload), /existing submission/);
+    assert.ok(f.enqueue(reload));
+    await f.tick(reload);
+    assert.equal(f.control.sends, 1, 'Only the new explicit intent is sent');
+    assert.equal(f.storage.getItem(key + '.corrupt'), raw);
   }
   {
     const f = await fixture();
@@ -307,7 +359,7 @@ async function legacyAndEpoch(){
     f.storage.setItem(f.queue.getStorageKey(),JSON.stringify(saved));
     const reload=f.makeQueue();reload.loadPersistedState();await f.tick(reload);
     assert.equal(reload.getTransaction(id).status,TX_STATUS.UNKNOWN);assert.equal(f.control.sends,0);assert.equal(f.control.signs,0);
-    assert.equal(f.journal.read()[0].phase,'unknown');assert.throws(()=>f.enqueue(reload),/existing submission/);
+    assert.equal(f.journal.read()[0].phase,'historical');assert.ok(f.enqueue(reload));
   }
   for(const raw of ['{broken',JSON.stringify({version:999,immediateQueue:[],actionQueue:[]})]){
     const f=await fixture();f.storage.setItem(f.queue.getStorageKey(),raw);
@@ -476,7 +528,7 @@ async function accountHandoff(){
 async function main(){
   wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
   [account]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);
-  await acceptedReload();await failureAndUnknown();await expiredSubmissionRecovery();await storageAndPrepared();await legacyAndEpoch();await overlappingTabs();
+  await acceptedReload();await failureAndUnknown();await expiredSubmissionRecovery();await consumedSequenceRecovery();await storageAndPrepared();await legacyAndEpoch();await overlappingTabs();
   await malformedWalletAndRetention();await actualDeadlines();await logoutRecovery();await accountHandoff();await liveRecovery();
   console.log('Durable signing suite passed. Submission responses are fixtures; optional live recovery is read-only. No transaction broadcast to a chain.');
 }
