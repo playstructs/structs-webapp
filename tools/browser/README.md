@@ -119,3 +119,24 @@ device metadata and cross-tab logout. Save browser screenshots alongside
 native transaction, ledger and readiness evidence. Other browser scenarios
 still need their own acceptance; a successful transfer is not full release
 approval.
+
+### Generator funding from retained Alpha
+
+For the existing real-stack fixture after generator/device acceptance, player
+`1-2` owns online generator `5-2` and has the public BIP39 vector beginning
+`legal winner` registered with all permissions. `prepare-generator-retained.py
+MANIFEST.json` checks these prerequisites and the internal Docker network before
+setting that fixture's balances to 2 Alpha in the Player Account and 5 Alpha on
+the retained signing address. It moves excess fixture funds to player `1-1`'s
+vault. It is not a fresh-genesis initializer and must never target a live node.
+If setup reports an unknown outcome, inspect its printed hash before rerunning.
+
+Rebuild with `build-stack.cjs`, open `/js/bootstrap.html?identity=owner2`, then use
+the normal generator's **Consume Alpha** control. The input should allow 7 Alpha;
+request 3. Verify one committed transaction with a 1 Alpha `MsgPlayerSend` into
+the Player Account followed by a 3 Alpha `MsgStructGeneratorInfuse`. Native
+balances should become 4 retained / 0 vault, supply should decrease by 3, and
+generator fuel should increase by 3. The indexed ledger/infusion and the reopened
+control should agree: 4 available, with the updated generator power. Save native
+before/after heights, the transaction and screenshots. No fixture UI ships in
+the production bundle.
