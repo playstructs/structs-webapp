@@ -85,14 +85,17 @@ class InfusionManager
         $responseContent = new ApiResponseContentDto();
         $parsedRequest = $this->apiRequestParsingManager->parse($requestParams, $requiredFields);
         $responseContent->errors = $parsedRequest->errors;
+
         if (count($responseContent->errors) > 0) {
             return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
         }
 
         $params = $this->getQueryParams($requiredFields, $parsedRequest);
         $db = $this->entityManager->getConnection();
+
         ConsistentRead::run($db, function () use ($db, $query, $params, $responseContent): void {
             $responseContent->meta = ResponseMetaUtil::snapshotMeta($db, 'inventory');
+
             if (($responseContent->meta['protocol'] ?? null) === ChainProtocol::LEGACY) {
                 $row = $db->fetchAssociative($query, $params);
                 $responseContent->data = $row === false ? null : $row;
@@ -102,6 +105,7 @@ class InfusionManager
                     ? json_decode($row, true, 512, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING)
                     : null;
             }
+
             $responseContent->success = true;
         });
 
@@ -109,18 +113,27 @@ class InfusionManager
             if (is_array($responseContent->data)) {
                 $this->vaultPositions?->apply($responseContent->data, $responseContent->meta, $db);
             }
+
             $positionsMeta = $responseContent->data['positions_meta'] ?? [];
-            if (in_array($positionsMeta['reason'] ?? null, ['vault_unindexed', 'vault_evidence_unavailable'], true)) {
-                // The retained rows alone cannot certify total applied power at
-                // an as-yet-unresolved canonical vault address.
+
+            if (in_array(
+                $positionsMeta['reason'] ?? null,
+                ['vault_unindexed', 'vault_evidence_unavailable'],
+                true
+            )) {
+                // Without the vault address's own position, the indexed rows
+                // cannot give the reactor's total applied power.
                 $positionsMeta['power_ready'] = false;
                 $responseContent->data['positions_meta'] = $positionsMeta;
+
                 foreach (['power_p', 'owner_power_p', 'power', 'owner_power'] as $field) {
                     $responseContent->data[$field] = null;
                 }
             }
+
             $responseContent->meta['transaction_ready'] = ($responseContent->meta['transaction_ready'] ?? false)
-                && ($positionsMeta['complete'] ?? false) && ($positionsMeta['power_ready'] ?? false);
+                && ($positionsMeta['complete'] ?? false)
+                && ($positionsMeta['power_ready'] ?? false);
         }
 
         return new JsonResponse($responseContent);

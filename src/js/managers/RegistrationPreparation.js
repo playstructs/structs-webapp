@@ -5,7 +5,8 @@ import {CHAIN} from "../constants/ChainConstants";
 import {STRUCTS_FREE_GAS} from "../constants/Fee";
 import {protocolAtHeight} from "../util/ChainProtocol";
 import {registrationIntent} from "../util/RegistrationIntent";
-import {registrationProofMessage, registrationUint64} from "../util/RegistrationProof";
+import {registrationProofMessage} from "../util/RegistrationProof";
+import {uint64} from "../util/ExactInteger";
 
 export async function prepareRegistration(rpc, tx) {
   const intent = registrationIntent(tx.intent);
@@ -15,9 +16,9 @@ export async function prepareRegistration(rpc, tx) {
   }
   const query = new StructsQuery(rpc);
   const actor = await query.Address({address:tx.accountAddress});
-  const permissions = registrationUint64(intent.permissions);
+  const permissions = uint64(intent.permissions);
   if (actor.address !== tx.accountAddress || actor.playerId !== intent.ownerId
-      || (registrationUint64(actor.permissions) & permissions) !== permissions) {
+      || (uint64(actor.permissions) & permissions) !== permissions) {
     throw new Error('Signing address cannot grant the requested device permissions');
   }
   if ((await query.Player({id:intent.ownerId})).Player?.id !== intent.ownerId) throw new Error('Registration player is unavailable');

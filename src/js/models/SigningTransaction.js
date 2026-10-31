@@ -75,6 +75,7 @@ export class SigningTransaction {
     this.id = fields.id;
     /** @type {{ typeUrl: string, payload: object }} */
     this.message = fields.message;
+    /** @type {Array<{ typeUrl: string, payload: object }>|null} An atomic message group, when set. */
     this.messages = fields.messages ?? null;
     /** @type {string} Owning signer address; persisted; used as `creator` at broadcast. */
     this.accountAddress = fields.accountAddress;
@@ -100,8 +101,11 @@ export class SigningTransaction {
     this.error = fields.error;
     /** @type {Array<object>|null} In-memory only; never persisted. */
     this.msgResponses = fields.msgResponses ?? null;
+    /** @type {object|null} The signed bytes and their signing context. */
     this.submission = fields.submission ?? null;
+    /** @type {string|null} Protocol the messages were prepared for. */
     this.intentProtocol = fields.intentProtocol ?? null;
+    /** @type {object|null} What the user consented to; messages are prepared from it. */
     this.intent = fields.intent ?? null;
   }
 
@@ -118,7 +122,17 @@ export class SigningTransaction {
    * @param {number} args.enqueuedAtBlock
    * @return {SigningTransaction}
    */
-  static create({ typeUrl, payload, isAction, chargeCost, retryLimit, accountAddress, enqueuedAtBlock, intentProtocol = null, intent = null }) {
+  static create({
+    typeUrl,
+    payload,
+    isAction,
+    chargeCost,
+    retryLimit,
+    accountAddress,
+    enqueuedAtBlock,
+    intentProtocol = null,
+    intent = null,
+  }) {
     return new SigningTransaction({
       id: UuidUtil.generate(),
       message: intent ? null : { typeUrl, payload },
@@ -152,35 +166,53 @@ export class SigningTransaction {
     return this.encodeMessage(registry, this.message);
   }
 
+  /**
+   * Encode every message, checking an atomic group has the shape its intent allows.
+   *
+   * @param {Registry} registry
+   * @return {Array<{ typeUrl: string, value: object }>}
+   */
   toCosmosMsgs(registry) {
     if (!this.messages) return [this.toCosmosMsg(registry)];
     if (!Array.isArray(this.messages) || !this.messages.length) {
       throw new Error('Invalid atomic message group');
     }
     if (this.intent?.kind === 'reactor_change' && this.intent.direction === 'defuse') {
-      if (this.messages.length > REACTOR_TRANSACTION.MAX_POSITIONS
-          || this.messages.some(message => message.typeUrl !== '/structs.structs.MsgReactorDefuse')) {
+      if (
+        this.messages.length > REACTOR_TRANSACTION.MAX_POSITIONS
+        || this.messages.some(message => message.typeUrl !== '/structs.structs.MsgReactorDefuse')
+      ) {
         throw new Error('Invalid atomic reactor withdrawal');
       }
     } else {
       let finalType = null;
       if (this.intent?.kind === 'alpha_transfer') {
         finalType = this.intent.recipientId === null
-          ? '/structs.structs.MsgPlayerSend' : '/structs.structs.MsgVaultSend';
+          ? '/structs.structs.MsgPlayerSend'
+          : '/structs.structs.MsgVaultSend';
       } else if (this.intent?.kind === 'reactor_change' && this.intent.direction === 'infuse') {
         finalType = '/structs.structs.MsgReactorInfuse';
       } else if (this.intent?.kind === 'generator_fund') {
         finalType = '/structs.structs.MsgStructGeneratorInfuse';
       }
       const last = this.messages.length - 1;
-      if (!finalType || last > MAX_ALPHA_SOURCES || this.messages[last].typeUrl !== finalType
-          || this.messages.slice(0, last).some(message => message.typeUrl !== '/structs.structs.MsgPlayerSend')) {
+      if (
+        !finalType
+        || last > MAX_ALPHA_SOURCES
+        || this.messages[last].typeUrl !== finalType
+        || this.messages.slice(0, last).some(message => message.typeUrl !== '/structs.structs.MsgPlayerSend')
+      ) {
         throw new Error('Invalid atomic funding group');
       }
     }
     return this.messages.map(message => this.encodeMessage(registry, message));
   }
 
+  /**
+   * @param {Registry} registry
+   * @param {{ typeUrl: string, payload: object }} message
+   * @return {{ typeUrl: string, value: object }}
+   */
   encodeMessage(registry, message) {
     const type = registry.lookupType(message.typeUrl);
     if (!type) {
@@ -222,17 +254,29 @@ export class SigningTransaction {
    */
   static fromJSON(obj) {
     let intent = null;
-    if (obj?.intent!==undefined && obj.intent!==null) {
-      try { intent = transactionIntent(obj.intent); } catch { return null; }
+    if (obj?.intent !== undefined && obj.intent !== null) {
+      try {
+        intent = transactionIntent(obj.intent);
+      } catch {
+        return null;
+      }
     }
     if (
       !obj
       || typeof obj !== 'object'
       || typeof obj.id !== 'string'
       || obj.id.length === 0
-      || !Number.isSafeInteger(obj.createdAt) || obj.createdAt < 0
-      || (!intent && (!obj.message || typeof obj.message.typeUrl !== 'string'
-        || typeof obj.message.payload !== 'object' || obj.message.payload === null))
+      || !Number.isSafeInteger(obj.createdAt)
+      || obj.createdAt < 0
+      || (
+        !intent
+        && (
+          !obj.message
+          || typeof obj.message.typeUrl !== 'string'
+          || typeof obj.message.payload !== 'object'
+          || obj.message.payload === null
+        )
+      )
     ) {
       return null;
     }

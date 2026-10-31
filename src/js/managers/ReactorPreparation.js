@@ -10,6 +10,7 @@ import {transferAddress} from "../util/TransferIntent";
 import {protocolAtHeight} from "../util/ChainProtocol";
 import {readVaultFunding, collectVaultFunding} from "./VaultFunding";
 import {legacyDecimalFromWire} from "../util/MessagePayload";
+import {isUint64} from "../util/ExactInteger";
 
 export function reactorValidatorAddress(value) {
   const parsed = fromBech32(value);
@@ -99,8 +100,7 @@ export async function prepareReactor(rpc, tx, indexed) {
   const permission = intent.direction === 'infuse' ? PERMISSIONS.TOKEN_INFUSE : PERMISSIONS.TOKEN_DEFUSE;
   const actor = await query.Address({address:tx.accountAddress});
   if (actor.address !== tx.accountAddress || actor.playerId !== intent.ownerId
-      || typeof actor.permissions !== 'string' || !/^(0|[1-9][0-9]{0,19})$/.test(actor.permissions)
-      || BigInt(actor.permissions) > 18446744073709551615n || (BigInt(actor.permissions) & BigInt(permission)) === 0n) {
+      || !isUint64(actor.permissions) || (BigInt(actor.permissions) & BigInt(permission)) === 0n) {
     throw new Error('Signing address cannot perform this reactor change');
   }
   const player = (await query.Player({id:intent.ownerId})).Player;

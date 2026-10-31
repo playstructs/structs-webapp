@@ -15,23 +15,40 @@ class RegistrationRateLimitTest extends TestCase
         Request::setTrustedProxies([], 0);
     }
 
+    /**
+     * Builds the subscriber with per-client and global token buckets sharing one store.
+     */
     private function subscriber(int $client, int $global): RegistrationRateLimitSubscriber
     {
         $storage = new InMemoryStorage();
         $factory = fn (string $id, int $limit) => new RateLimiterFactory([
-            'id' => $id, 'policy' => 'token_bucket', 'limit' => $limit,
+            'id' => $id,
+            'policy' => 'token_bucket',
+            'limit' => $limit,
             'rate' => ['interval' => '1 hour', 'amount' => 1],
         ], $storage);
         return new RegistrationRateLimitSubscriber($factory('client', $client), $factory('global', $global));
     }
 
-    private function request(RegistrationRateLimitSubscriber $subscriber, string $route, string $ip = '127.0.0.1'): RequestEvent
+    /**
+     * Dispatches one request for the route from the given IP, with a random
+     * untrusted X-Forwarded-For header.
+     */
+    private function request(
+        RegistrationRateLimitSubscriber $subscriber,
+        string $route,
+        string $ip = '127.0.0.1'
+    ): RequestEvent
     {
         $request = Request::create('/');
         $request->attributes->set('_route', $route);
         $request->server->set('REMOTE_ADDR', $ip);
         $request->headers->set('X-Forwarded-For', '192.0.2.' . random_int(1, 254));
-        $event = new RequestEvent($this->createMock(HttpKernelInterface::class), $request, HttpKernelInterface::MAIN_REQUEST);
+        $event = new RequestEvent(
+            $this->createMock(HttpKernelInterface::class),
+            $request,
+            HttpKernelInterface::MAIN_REQUEST
+        );
         $subscriber->onKernelRequest($event);
         return $event;
     }
@@ -51,9 +68,18 @@ class RegistrationRateLimitTest extends TestCase
     public function testRotatingClientsStillUsesTheGlobalBudget(): void
     {
         $subscriber = $this->subscriber(10, 2);
-        $this->assertFalse($this->request($subscriber, 'api_get_address_registration_proof', '192.0.2.1')->hasResponse());
-        $this->assertFalse($this->request($subscriber, 'api_get_address_registration_status', '192.0.2.2')->hasResponse());
-        $this->assertSame(429, $this->request($subscriber, 'api_get_address_registration_proof', '192.0.2.3')->getResponse()->getStatusCode());
+        $this->assertFalse(
+            $this->request($subscriber, 'api_get_address_registration_proof', '192.0.2.1')->hasResponse()
+        );
+        $this->assertFalse(
+            $this->request($subscriber, 'api_get_address_registration_status', '192.0.2.2')->hasResponse()
+        );
+        $this->assertSame(
+            429,
+            $this->request($subscriber, 'api_get_address_registration_proof', '192.0.2.3')
+                ->getResponse()
+                ->getStatusCode()
+        );
     }
 
     public function testExplicitTrustedProxySeparatesRealClientsAndIgnoresForgedEarlierHops(): void
@@ -64,21 +90,40 @@ class RegistrationRateLimitTest extends TestCase
             $request = Request::create('/', server: ['REMOTE_ADDR' => '192.0.2.10']);
             $request->attributes->set('_route', 'api_get_address_registration_proof');
             $request->headers->set('X-Forwarded-For', $forwarded);
-            $event = new RequestEvent($this->createMock(HttpKernelInterface::class), $request, HttpKernelInterface::MAIN_REQUEST);
+            $event = new RequestEvent(
+                $this->createMock(HttpKernelInterface::class),
+                $request,
+                HttpKernelInterface::MAIN_REQUEST
+            );
             $subscriber->onKernelRequest($event);
             return $event;
         };
         $this->assertFalse($run('198.51.100.1')->hasResponse());
-        $this->assertFalse($run('198.51.100.2')->hasResponse(), 'Two clients behind the proxy have independent budgets');
-        $this->assertSame(429, $run('203.0.113.8, 198.51.100.1')->getResponse()->getStatusCode(),
-            'A client-supplied earlier hop cannot rotate the nearest untrusted client identity');
+        $this->assertFalse(
+            $run('198.51.100.2')->hasResponse(),
+            'Two clients behind the proxy have independent budgets'
+        );
+        $this->assertSame(
+            429,
+            $run('203.0.113.8, 198.51.100.1')->getResponse()->getStatusCode(),
+            'A client-supplied earlier hop cannot rotate the nearest untrusted client identity'
+        );
     }
 
     public function testIpv6ClientsCannotRotateWithinTheirSlash64(): void
     {
         $subscriber = $this->subscriber(1, 10);
-        $this->assertFalse($this->request($subscriber, 'api_get_address_registration_proof', '2001:db8:5::1')->hasResponse());
-        $this->assertSame(429, $this->request($subscriber, 'api_get_address_registration_proof', '2001:db8:5::2')->getResponse()->getStatusCode());
-        $this->assertFalse($this->request($subscriber, 'api_get_address_registration_proof', '2001:db8:6::1')->hasResponse());
+        $this->assertFalse(
+            $this->request($subscriber, 'api_get_address_registration_proof', '2001:db8:5::1')->hasResponse()
+        );
+        $this->assertSame(
+            429,
+            $this->request($subscriber, 'api_get_address_registration_proof', '2001:db8:5::2')
+                ->getResponse()
+                ->getStatusCode()
+        );
+        $this->assertFalse(
+            $this->request($subscriber, 'api_get_address_registration_proof', '2001:db8:6::1')->hasResponse()
+        );
     }
 }

@@ -6,12 +6,15 @@ use App\Util\ExactAmount;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use UnexpectedValueException;
 
-/** Narrow LCD reads; every state response must prove the requested height. */
+/**
+ * Makes a small set of read-only LCD queries. Every state response must
+ * confirm it was read at the requested height.
+ */
 class ChainSnapshotManager
 {
     private const int MAX_RESPONSE_BYTES = 1048576;
 
-    /** @var array<string, true> networks already verified during this request */
+    /** @var array<string, true> Chain ids already verified during this request */
     private array $verified = [];
 
     public function __construct(
@@ -21,26 +24,53 @@ class ChainSnapshotManager
     ) {
     }
 
-    /** Keep cached evidence separate when the configured native source changes. */
+    /**
+     * Identifies the configured node so cached evidence from a different node is not reused.
+     *
+     * @return string
+     */
     public function cacheScope(): string
     {
         return hash('sha256', $this->baseUrl);
     }
 
+    /**
+     * @param string $chainId
+     * @param float|null $deadline
+     * @return void
+     * @throws UnexpectedValueException
+     */
     public function verifyChain(string $chainId, ?float $deadline = null): void
     {
         if (isset($this->verified[$chainId])) {
             return;
         }
-        if ($chainId === '' || ($this->read('/cosmos/base/tendermint/v1beta1/node_info', null, $deadline)['default_node_info']['network'] ?? null) !== $chainId) {
+
+        if (
+            $chainId === ''
+            || ($this->read(
+                '/cosmos/base/tendermint/v1beta1/node_info',
+                null,
+                $deadline
+            )['default_node_info']['network'] ?? null) !== $chainId
+        ) {
             throw new UnexpectedValueException('Chain snapshot network mismatch');
         }
+
         $this->verified[$chainId] = true;
     }
 
+    /**
+     * @param string $path
+     * @param string $height
+     * @param float|null $deadline
+     * @return array
+     * @throws UnexpectedValueException
+     */
     public function get(string $path, string $height, ?float $deadline = null): array
     {
         ExactAmount::unsigned($height, '9223372036854775807');
+
         if ($height === '0') {
             throw new UnexpectedValueException('Chain snapshot height must be positive');
         }
@@ -48,21 +78,41 @@ class ChainSnapshotManager
         return $this->read($path, $height, $deadline);
     }
 
+    /**
+     * @param string $chainId
+     * @param float|null $deadline
+     * @return array
+     * @throws UnexpectedValueException
+     */
     public function head(string $chainId, ?float $deadline = null): array
     {
-        if (($this->read('/cosmos/base/tendermint/v1beta1/syncing', null, $deadline)['syncing'] ?? null) !== false) {
+        if (
+            ($this->read(
+                '/cosmos/base/tendermint/v1beta1/syncing',
+                null,
+                $deadline
+            )['syncing'] ?? null) !== false
+        ) {
             throw new UnexpectedValueException('Chain snapshot node is not synchronized');
         }
+
         $block = $this->read('/cosmos/base/tendermint/v1beta1/blocks/latest', null, $deadline);
         $header = $block['sdk_block']['header'] ?? $block['block']['header'] ?? null;
         $height = ExactAmount::unsigned($header['height'] ?? null, '9007199254740991');
+
         if ($height === '0' || $chainId === '' || ($header['chain_id'] ?? null) !== $chainId) {
             throw new UnexpectedValueException('Chain snapshot head identity mismatch');
         }
+
         // SDK responses can include both old and new block envelopes.
         foreach (['block', 'sdk_block'] as $key) {
-            if (isset($block[$key]) && (($block[$key]['header']['height'] ?? null) !== $height
-                || ($block[$key]['header']['chain_id'] ?? null) !== $chainId)) {
+            if (
+                isset($block[$key])
+                && (
+                    ($block[$key]['header']['height'] ?? null) !== $height
+                    || ($block[$key]['header']['chain_id'] ?? null) !== $chainId
+                )
+            ) {
                 throw new UnexpectedValueException('Chain snapshot block envelopes disagree');
             }
         }
@@ -70,15 +120,25 @@ class ChainSnapshotManager
         return ['chain_id' => $chainId, 'height' => $height];
     }
 
+    /**
+     * @param string $path
+     * @param string|null $height
+     * @param float|null $deadline
+     * @return array
+     * @throws UnexpectedValueException
+     */
     private function read(string $path, ?string $height = null, ?float $deadline = null): array
     {
         if (!str_starts_with($path, '/') || str_starts_with($path, '//')) {
             throw new UnexpectedValueException('Chain snapshot path must be local');
         }
+
         $remaining = $deadline === null ? 3.0 : min(3.0, $deadline - hrtime(true) / 1e9);
+
         if ($remaining <= 0) {
             throw new UnexpectedValueException('Chain snapshot deadline exceeded');
         }
+
         $this->budget?->consume();
         $response = $this->httpClient->request('GET', rtrim($this->baseUrl, '/') . $path, [
             'headers' => $height === null ? [] : ['x-cosmos-block-height' => $height],
@@ -91,33 +151,43 @@ class ChainSnapshotManager
                 }
             },
         ]);
+
         try {
             if ($response->getStatusCode() !== 200) {
                 throw new UnexpectedValueException('Chain snapshot query failed');
             }
+
             if ($height !== null) {
                 $headers = $response->getHeaders(false);
                 $found = false;
+
                 foreach (['x-cosmos-block-height', 'grpc-metadata-x-cosmos-block-height'] as $name) {
                     foreach ($headers[$name] ?? [] as $actual) {
                         $found = true;
+
                         if ($actual !== $height) {
                             throw new UnexpectedValueException('Chain snapshot response height mismatch');
                         }
                     }
                 }
+
                 if (!$found) {
                     throw new UnexpectedValueException('Chain snapshot response height is absent');
                 }
             }
+
             $body = $response->getContent(false);
+
             if ($deadline !== null && hrtime(true) / 1e9 >= $deadline) {
                 throw new UnexpectedValueException('Chain snapshot deadline exceeded');
             }
+
             if (strlen($body) > self::MAX_RESPONSE_BYTES) {
                 throw new UnexpectedValueException('Chain snapshot response is too large');
             }
+
             $result = json_decode($body, true, 64, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
+
             if (!is_array($result) || !str_starts_with(ltrim($body), '{')) {
                 throw new UnexpectedValueException('Chain snapshot envelope is invalid');
             }

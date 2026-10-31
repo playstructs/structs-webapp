@@ -2,14 +2,14 @@ import {availableAlpha} from "./AvailableAlpha";
 import {CHAIN} from "../constants/ChainConstants";
 import {maxQueryHeight, validateSigningSnapshot} from "./ChainProtocol";
 import {transferAddress} from "./TransferIntent";
+import {isObjectId} from "./ExactInteger";
 
 /** A display snapshot is exact, but never substitutes for native spend preflight. */
 export function playerFunds(player, observedHeight = null) {
   const meta = player?.snapshot_meta;
   const observed = maxQueryHeight(meta?.observed_tip, observedHeight || meta?.observed_tip);
   const signing = validateSigningSnapshot(meta,{chainId:CHAIN.ID,height:observed},['inventory']);
-  if (typeof player.id !== 'string' || !/^1-[1-9][0-9]{0,19}$/.test(player.id)
-      || BigInt(player.id.slice(2)) > 18446744073709551615n) throw new Error('Invalid funds owner');
+  if (!isObjectId(player?.id,1)) throw new Error('Invalid funds owner');
   let alpha;
   if (signing.protocol === CHAIN.PROTOCOL) {
     if (player.funds_meta?.ready !== true || player.funds_meta.height !== meta.height

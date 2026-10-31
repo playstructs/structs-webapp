@@ -134,6 +134,9 @@ export class GameState {
     window.addEventListener(EVENTS.SAVE_GAME_STATE, this.save.bind(this));
   }
 
+  /**
+   * @return {boolean} false once any tab has logged out since this state loaded
+   */
   isSessionCurrent() {
     return this.sessionBoundary === localStorage.getItem(TransactionJournal.SESSION_CLOSED_KEY);
   }
@@ -279,19 +282,40 @@ export class GameState {
 
   /**
    * @param {array} types
+   * @return {boolean} false when the catalog is older than the one already held
    */
   setStructTypes(types) {
     if (this.persistenceEnabled) {
-      if (!this.isSessionCurrent()) return false;
-      const meta=types?.snapshot_meta;
-      validateReadSnapshot(meta,{chainId:CHAIN.ID,height:maxQueryHeight(meta?.observed_tip,this.currentBlockHeight || meta?.observed_tip)});
-      const previous=this.structTypes.snapshot_meta;
-      if (previous && BigInt(meta.height)<BigInt(previous.height)) return false;
-      if (previous?.height === meta.height && JSON.stringify(types)!==JSON.stringify(this.structTypes.structTypes)) return false;
+      if (!this.isSessionCurrent()) {
+        return false;
+      }
+      const meta = types?.snapshot_meta;
+      validateReadSnapshot(meta, {
+        chainId: CHAIN.ID,
+        height: maxQueryHeight(meta?.observed_tip, this.currentBlockHeight || meta?.observed_tip),
+      });
+      const previous = this.structTypes.snapshot_meta;
+      if (previous && BigInt(meta.height) < BigInt(previous.height)) {
+        return false;
+      }
+      if (
+        previous?.height === meta.height
+        && JSON.stringify(types) !== JSON.stringify(this.structTypes.structTypes)
+      ) {
+        return false;
+      }
     }
-    if (!Array.isArray(types) || !types.length || new Set(types.map(type=>type.id)).size !== types.length) throw new Error('Invalid struct catalog');
+    if (
+      !Array.isArray(types)
+      || !types.length
+      || new Set(types.map(type => type.id)).size !== types.length
+    ) {
+      throw new Error('Invalid struct catalog');
+    }
     for (const type of types) {
-      for (const field of ['build_difficulty','ore_mining_difficulty','ore_refining_difficulty']) workUint64(type[field]);
+      for (const field of ['build_difficulty', 'ore_mining_difficulty', 'ore_refining_difficulty']) {
+        workUint64(type[field]);
+      }
     }
     this.structTypes.setStructTypes(types);
     return true;

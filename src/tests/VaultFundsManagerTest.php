@@ -11,24 +11,40 @@ class VaultFundsManagerTest extends TestCase
 {
     private const string VAULT = 'structs13nwzm5dfd26ue74jr6sc39gyn3qze0rjr9l9fz';
 
+    /**
+     * A player row as returned by the player query, with indexed vault columns.
+     */
     private function player(?bool $created = true, ?string $address = self::VAULT): array
     {
-        return ['id' => '1-101', 'primary_address' => 'retained-signing-key', 'alpha' => '9999',
-            '_vault_address' => $address, '_vault_account_created' => $created,
-            '_vault_balance_p' => '18446744073709551616'];
+        return [
+            'id' => '1-101',
+            'primary_address' => 'retained-signing-key',
+            'alpha' => '9999',
+            '_vault_address' => $address,
+            '_vault_account_created' => $created,
+            '_vault_balance_p' => '18446744073709551616',
+        ];
     }
 
     private function meta(): array
     {
-        return ['chain_id' => 'structstestnet-111', 'height' => '3353000', 'indexed_height' => '3353000',
-            'protocol' => 'v0.22.0', 'data_ready' => true, 'transaction_ready' => true];
+        return [
+            'chain_id' => 'structstestnet-111',
+            'height' => '3353000',
+            'indexed_height' => '3353000',
+            'protocol' => 'v0.22.0',
+            'data_ready' => true,
+            'transaction_ready' => true,
+        ];
     }
 
     public function testNewBaseVaultUsesIndexedFundsWithoutHttp(): void
     {
         $chain = $this->createMock(ChainSnapshotManager::class);
-        $chain->expects($this->never())->method('verifyChain');
-        $chain->expects($this->never())->method('get');
+        $chain->expects($this->never())
+            ->method('verifyChain');
+        $chain->expects($this->never())
+            ->method('get');
         $player = $this->player();
         $meta = $this->meta();
         (new VaultFundsManager($chain))->apply($player, $meta);
@@ -43,7 +59,12 @@ class VaultFundsManagerTest extends TestCase
     }
 
     /** @dataProvider adoptedProvider */
-    public function testAdoptedOrUnprovisionedFundsUseVerifiedSpendableCoin(?bool $created, ?string $indexedAddress, bool $provisioned, string $amount): void
+    public function testAdoptedOrUnprovisionedFundsUseVerifiedSpendableCoin(
+        ?bool $created,
+        ?string $indexedAddress,
+        bool $provisioned,
+        string $amount
+    ): void
     {
         $client = $this->gateway($provisioned, $amount);
         $player = $this->player($created, $indexedAddress);
@@ -74,7 +95,10 @@ class VaultFundsManagerTest extends TestCase
     public function testIncompleteEvidenceNeverFallsBackToWealthOrZero(array $changes): void
     {
         $client = $this->gateway($changes['provisioned'] ?? true, $changes['amount'] ?? '1000000', $changes);
-        $player = $this->player(false, array_key_exists('indexed_address', $changes) ? $changes['indexed_address'] : self::VAULT);
+        $player = $this->player(
+            false,
+            array_key_exists('indexed_address', $changes) ? $changes['indexed_address'] : self::VAULT
+        );
         $meta = $this->meta();
         (new VaultFundsManager(new ChainSnapshotManager($client)))->apply($player, $meta);
 
@@ -91,7 +115,12 @@ class VaultFundsManagerTest extends TestCase
             'wrong chain' => [['chain' => 'wrong']],
             'missing height' => [['headers' => []]],
             'wrong height' => [['headers' => ['x-cosmos-block-height: 3353001']]],
-            'conflicting headers' => [['headers' => ['x-cosmos-block-height: 3353000', 'grpc-metadata-x-cosmos-block-height: 3353001']]],
+            'conflicting headers' => [[
+                'headers' => [
+                    'x-cosmos-block-height: 3353000',
+                    'grpc-metadata-x-cosmos-block-height: 3353001',
+                ],
+            ]],
             'pruned' => [['status' => 500]],
             'wrong owner' => [['owner' => '1-102']],
             'wrong address' => [['address' => 'structs1' . str_repeat('q', 38)]],
@@ -101,7 +130,9 @@ class VaultFundsManagerTest extends TestCase
             'wrong denomination' => [['coin' => ['denom' => 'uguild.0-1', 'amount' => '1']]],
             'number instead of string' => [['coin' => ['denom' => 'ualpha', 'amount' => 9007199254740993]]],
             'negative amount' => [['amount' => '-1']],
-            'overflow' => [['amount' => '115792089237316195423570985008687907853269984665640564039457584007913129639936']],
+            'overflow' => [[
+                'amount' => '115792089237316195423570985008687907853269984665640564039457584007913129639936',
+            ]],
             'partial envelope' => [['body' => '{}']],
             'invalid JSON' => [['body' => '{']],
             'oversized response' => [['body' => str_repeat(' ', 1048577)]],
@@ -111,7 +142,8 @@ class VaultFundsManagerTest extends TestCase
     public function testLaggingIndexCannotBorrowLatestFunds(): void
     {
         $chain = $this->createMock(ChainSnapshotManager::class);
-        $chain->expects($this->never())->method('verifyChain');
+        $chain->expects($this->never())
+            ->method('verifyChain');
         $player = $this->player(false);
         $meta = $this->meta();
         $meta['data_ready'] = false;
@@ -124,7 +156,8 @@ class VaultFundsManagerTest extends TestCase
     public function testLegacyProtocolKeepsExistingDisplayWithoutNewQueries(): void
     {
         $chain = $this->createMock(ChainSnapshotManager::class);
-        $chain->expects($this->never())->method('verifyChain');
+        $chain->expects($this->never())
+            ->method('verifyChain');
         $player = $this->player(false);
         $meta = $this->meta();
         $meta['protocol'] = 'v0.21.0';
@@ -134,6 +167,10 @@ class VaultFundsManagerTest extends TestCase
         $this->assertTrue($meta['transaction_ready']);
     }
 
+    /**
+     * Native gateway mock: node_info, the vault record, and the spendable
+     * balance, each overridable through $changes.
+     */
     private function gateway(bool $provisioned, string $amount, array $changes = []): MockHttpClient
     {
         return new MockHttpClient(function (string $method, string $url, array $options) use ($provisioned, $amount, $changes) {
@@ -141,16 +178,28 @@ class VaultFundsManagerTest extends TestCase
             $this->assertSame(0, $options['max_redirects']);
             $this->assertLessThanOrEqual(3, $options['max_duration']);
             if (str_ends_with($url, '/node_info')) {
-                return new MockResponse(json_encode(['default_node_info' => ['network' => $changes['chain'] ?? 'structstestnet-111']]));
+                return new MockResponse(json_encode([
+                    'default_node_info' => ['network' => $changes['chain'] ?? 'structstestnet-111'],
+                ]));
             }
             $this->assertContains('x-cosmos-block-height: 3353000', $options['headers']);
             $headers = $changes['headers'] ?? ['grpc-metadata-x-cosmos-block-height: 3353000'];
             $data = str_contains($url, '/structs/vault/')
-                ? ['ownerId' => $changes['owner'] ?? '1-101', 'address' => $changes['address'] ?? self::VAULT, 'provisioned' => $provisioned]
-                : ['balance' => array_key_exists('coin', $changes) ? $changes['coin'] : ['denom' => 'ualpha', 'amount' => $amount]];
+                ? [
+                    'ownerId' => $changes['owner'] ?? '1-101',
+                    'address' => $changes['address'] ?? self::VAULT,
+                    'provisioned' => $provisioned,
+                ]
+                : [
+                    'balance' => array_key_exists('coin', $changes)
+                        ? $changes['coin']
+                        : ['denom' => 'ualpha', 'amount' => $amount],
+                ];
 
-            return new MockResponse($changes['body'] ?? json_encode($data),
-                ['http_code' => $changes['status'] ?? 200, 'response_headers' => $headers]);
+            return new MockResponse($changes['body'] ?? json_encode($data), [
+                'http_code' => $changes['status'] ?? 200,
+                'response_headers' => $headers,
+            ]);
         });
     }
 }

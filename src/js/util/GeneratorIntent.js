@@ -1,14 +1,8 @@
 import {exactAlphaAmount} from "./ReactorIntent";
-
-export function generatorUint64(value) {
-  const amount = exactAlphaAmount(value);
-  if (amount > 18446744073709551615n) throw new Error('Generator value exceeds uint64');
-  return amount;
-}
+import {isObjectId, uint64} from "./ExactInteger";
 
 export function generatorObjectId(value, prefix) {
-  if (typeof value !== 'string' || !new RegExp(`^${prefix}-[1-9][0-9]{0,19}$`).test(value)
-      || BigInt(value.slice(2)) > 18446744073709551615n) throw new Error('Invalid generator identity');
+  if (!isObjectId(value,prefix)) throw new Error('Invalid generator identity');
   return value;
 }
 
@@ -21,7 +15,7 @@ export function generatorIntent(value) {
   }
   generatorObjectId(value.ownerId,'1');
   generatorObjectId(value.structId,'5');
-  const amount = generatorUint64(value.amount);
+  const amount = uint64(value.amount);
   if (!amount || amount % 1000000n) throw new Error('Generator funding requires positive whole Alpha');
   return Object.freeze({...value});
 }

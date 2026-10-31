@@ -1,10 +1,11 @@
+import {isObjectId} from "./ExactInteger";
 /** PostgreSQL NOTIFY sends only the event key when its payload exceeds 8 KB. */
 export async function resolvePlanetActivityNotification(message, gameState) {
   if (message.stub !== true && message.stub !== 'true') return message;
   if (!message.subject?.startsWith('structs.planet.')) return message;
   const {planet_id:planet, player_id:player, time, category} = message;
   const seq = String(message.seq);
-  if (!/^2-[1-9][0-9]{0,19}$/.test(planet) || !/^1-[1-9][0-9]{0,19}$/.test(player)
+  if (!isObjectId(planet,2) || !isObjectId(player,1)
       || message.subject !== `structs.planet.${planet}.${player}`
       || !/^(0|[1-9][0-9]{0,9})$/.test(seq) || BigInt(seq) > 2147483647n
       || typeof time !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/.test(time)

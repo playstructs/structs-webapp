@@ -1,5 +1,5 @@
 import {DTest, DTestSuite} from "../framework/DTestFramework";
-import {TaskManager} from "../managers/TaskManager";
+import {SimulatedTaskManager} from "../tutorial/SimulatedTaskManager";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
 import {TASK_TYPES} from "../constants/TaskTypes";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
@@ -41,7 +41,7 @@ export class TaskManagerOreTest extends DTestSuite {
       }
     };
 
-    const taskManager = new TaskManager(gameState, {simulated:true}, {}, new TaskStateFactory());
+    const taskManager = new SimulatedTaskManager(gameState, {simulated:true}, {}, new TaskStateFactory());
 
     taskManager.spawned = [];
     taskManager.terminated = [];

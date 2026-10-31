@@ -23,7 +23,16 @@ import {playerFunds} from "../util/PlayerFunds";
 import {exactQueryHeight, maxQueryHeight, protocolAtHeight} from "../util/ChainProtocol";
 import {CHAIN} from "../constants/ChainConstants";
 
-const FUNDS_FIELDS = ['alpha','vault_address','spendable_alpha_p','available_alpha_p','retained_alpha_p','retained_sources','retained_funds_meta','funds_meta'];
+const FUNDS_FIELDS = [
+  'alpha',
+  'vault_address',
+  'spendable_alpha_p',
+  'available_alpha_p',
+  'retained_alpha_p',
+  'retained_sources',
+  'retained_funds_meta',
+  'funds_meta',
+];
 
 /**
  * Identifies the funds a snapshot shows, ignoring read heights, which advance
@@ -71,7 +80,9 @@ export class KeyPlayer {
 
     /** @type {Player} */
     this.player = null;
+    /** @type {object|null} The newest validated funds snapshot. */
     this.alphaSnapshot = null;
+    /** @type {string|null} The highest chain height seen, used to expire old-protocol funds. */
     this.fundsObservedHeight = null;
 
     /** @type {number} UI/display value; may be optimistically drained on enqueue. */
@@ -115,6 +126,13 @@ export class KeyPlayer {
 
   }
 
+  /**
+   * Apply a funds snapshot unless it is older than, or conflicts with, the one held.
+   *
+   * @param {Player} player
+   * @param {string|null} observedHeight
+   * @return {boolean} whether the snapshot was applied
+   */
   setFunds(player, observedHeight = null) {
     if (!this.player || this.player.id !== this.id || player?.id !== this.id) return false;
     // Clearing an expired balance may mutate this.player. Stage the incoming
@@ -124,19 +142,41 @@ export class KeyPlayer {
     try {
       // A known activation boundary invalidates legacy funds even while the
       // new inventory projection or individual vault evidence is unavailable.
-      if (meta?.chain_id === CHAIN.ID && meta.api_contract === CHAIN.API_CONTRACT
-          && meta.observed_protocol === protocolAtHeight(CHAIN.ID,meta.observed_tip)) this.expireFunds(meta.observed_tip);
-    } catch { return false; }
+      if (
+        meta?.chain_id === CHAIN.ID
+        && meta.api_contract === CHAIN.API_CONTRACT
+        && meta.observed_protocol === protocolAtHeight(CHAIN.ID, meta.observed_tip)
+      ) {
+        this.expireFunds(meta.observed_tip);
+      }
+    } catch {
+      return false;
+    }
     let snapshot;
     try {
       const observed = this.fundsObservedHeight && observedHeight
-        ? maxQueryHeight(this.fundsObservedHeight,observedHeight) : this.fundsObservedHeight || observedHeight;
-      snapshot = playerFunds(player,observed);
-    } catch { return false; }
+        ? maxQueryHeight(this.fundsObservedHeight, observedHeight)
+        : this.fundsObservedHeight || observedHeight;
+      snapshot = playerFunds(player, observed);
+    } catch {
+      return false;
+    }
     if (this.alphaSnapshot && BigInt(snapshot.height) < BigInt(this.alphaSnapshot.height)) return false;
-    if (this.alphaSnapshot?.height === snapshot.height && (['alpha','vault_address','spendable_alpha_p','protocol'].some(
-      field=>this.alphaSnapshot[field] !== snapshot[field]) || this.alphaSnapshot.funds_meta?.provisioned !== snapshot.funds_meta?.provisioned)) return false;
-    this.expireFunds(maxQueryHeight(snapshot.snapshot_meta.observed_tip,observedHeight || snapshot.snapshot_meta.observed_tip));
+    if (
+      this.alphaSnapshot?.height === snapshot.height
+      && (
+        ['alpha', 'vault_address', 'spendable_alpha_p', 'protocol'].some(field =>
+          this.alphaSnapshot[field] !== snapshot[field]
+        )
+        || this.alphaSnapshot.funds_meta?.provisioned !== snapshot.funds_meta?.provisioned
+      )
+    ) {
+      return false;
+    }
+    this.expireFunds(maxQueryHeight(
+      snapshot.snapshot_meta.observed_tip,
+      observedHeight || snapshot.snapshot_meta.observed_tip
+    ));
     // A newer height with the same funds is not a change; listeners rebuild
     // their own state on this event.
     const changed = !this.alphaSnapshot || fundsKey(this.alphaSnapshot) !== fundsKey(snapshot);
@@ -146,6 +186,9 @@ export class KeyPlayer {
     return true;
   }
 
+  /**
+   * Copy the held funds snapshot onto the player row.
+   */
   applyFunds() {
     if (!this.player) return;
     const snapshot = this.alphaSnapshot;
@@ -157,16 +200,31 @@ export class KeyPlayer {
     this.player.funds_snapshot_meta = snapshot ? structuredClone(snapshot.snapshot_meta) : null;
   }
 
+  /**
+   * Forget the funds snapshot and tell listeners the balance changed.
+   */
   clearFunds() {
     this.alphaSnapshot = null;
     this.applyFunds();
     window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
   }
 
+  /**
+   * Record a chain height, clearing funds read under a protocol that height has left.
+   *
+   * @param {string} height
+   */
   expireFunds(height) {
-    try { this.fundsObservedHeight = this.fundsObservedHeight ? maxQueryHeight(this.fundsObservedHeight,height) : exactQueryHeight(height); }
-    catch { return; }
-    if (this.alphaSnapshot && protocolAtHeight(CHAIN.ID,this.fundsObservedHeight) !== this.alphaSnapshot.protocol) this.clearFunds();
+    try {
+      this.fundsObservedHeight = this.fundsObservedHeight
+        ? maxQueryHeight(this.fundsObservedHeight, height)
+        : exactQueryHeight(height);
+    } catch {
+      return;
+    }
+    if (this.alphaSnapshot && protocolAtHeight(CHAIN.ID, this.fundsObservedHeight) !== this.alphaSnapshot.protocol) {
+      this.clearFunds();
+    }
   }
 
   /**
@@ -315,19 +373,29 @@ export class KeyPlayer {
 
   /**
    * @param {Player} player
+   * @param {string|null} observedHeight
+   * @param {{simulated: boolean}} options
+   * @return {boolean} false when the row is for another player or older than the one held
    */
   setPlayer(player, observedHeight = null, {simulated = false} = {}) {
     if (player?.id !== this.id) return false;
     if (this.player?.snapshot_meta) {
       try {
-        if (BigInt(exactQueryHeight(player.snapshot_meta?.height)) < BigInt(exactQueryHeight(this.player.snapshot_meta.height))) return false;
-      } catch { return false; }
+        if (
+          BigInt(exactQueryHeight(player.snapshot_meta?.height))
+          < BigInt(exactQueryHeight(this.player.snapshot_meta.height))
+        ) {
+          return false;
+        }
+      } catch {
+        return false;
+      }
     }
     if (observedHeight) this.expireFunds(observedHeight);
     this.player = player;
     let fundsApplied = false;
     if (!simulated || player.snapshot_meta || this.alphaSnapshot) {
-      fundsApplied = this.setFunds(player,observedHeight);
+      fundsApplied = this.setFunds(player, observedHeight);
       if (!fundsApplied) this.applyFunds();
     }
 

@@ -718,19 +718,25 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     if (this.isActionAvailable(struct, 0, true, false)) {
       // Turn off: deactivate the struct
       this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEACTIVATE);
-      this.gameState.actionBarLock.run(() => this.signingClientManager.queueMsgStructDeactivate(struct.id), () => {
-        struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
-        this.showStructActionBar(struct);
-        window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
-      });
+      this.gameState.actionBarLock.run(
+        () => this.signingClientManager.queueMsgStructDeactivate(struct.id),
+        () => {
+          struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
+          this.showStructActionBar(struct);
+          window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
+        }
+      );
     } else if (this.isActionAvailable(struct, structType.activate_charge, false, false)){
       // Turn on: activate the struct
       this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ACTIVATE);
-      this.gameState.actionBarLock.run(() => this.signingClientManager.queueMsgStructActivate(struct.id, structType.activate_charge), () => {
-        struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
-        this.showStructActionBar(struct);
-        window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
-      });
+      this.gameState.actionBarLock.run(
+        () => this.signingClientManager.queueMsgStructActivate(struct.id, structType.activate_charge),
+        () => {
+          struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
+          this.showStructActionBar(struct);
+          window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
+        }
+      );
     }
   }
 
@@ -1309,23 +1315,29 @@ export class ActionBarComponent extends AbstractViewModelComponent {
           if (struct.isHidden()) {
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_DEACTIVATE);
             // Deactivate stealth mode
-            this.gameState.actionBarLock.run(() => this.signingClientManager.queueMsgStructStealthDeactivate(struct.id, structType.stealth_activate_charge), () => {
-              struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
-              // Update button to default state
-              btn.setAttribute('data-active-defense', '0');
-              btn.classList.remove('sui-mod-active-defense');
-              btn.classList.add('sui-mod-default');
-            });
+            this.gameState.actionBarLock.run(
+              () => this.signingClientManager.queueMsgStructStealthDeactivate(struct.id, structType.stealth_activate_charge),
+              () => {
+                struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
+                // Update button to default state
+                btn.setAttribute('data-active-defense', '0');
+                btn.classList.remove('sui-mod-active-defense');
+                btn.classList.add('sui-mod-default');
+              }
+            );
           } else {
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_ACTIVATE);
             // Activate stealth mode
-            this.gameState.actionBarLock.run(() => this.signingClientManager.queueMsgStructStealthActivate(struct.id, structType.stealth_activate_charge), () => {
-              struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
-              // Update button to active state
-              btn.setAttribute('data-active-defense', '1');
-              btn.classList.remove('sui-mod-default');
-              btn.classList.add('sui-mod-active-defense');
-            });
+            this.gameState.actionBarLock.run(
+              () => this.signingClientManager.queueMsgStructStealthActivate(struct.id, structType.stealth_activate_charge),
+              () => {
+                struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
+                // Update button to active state
+                btn.setAttribute('data-active-defense', '1');
+                btn.classList.remove('sui-mod-default');
+                btn.classList.add('sui-mod-active-defense');
+              }
+            );
           }
         });
       }

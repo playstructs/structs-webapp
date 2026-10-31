@@ -61,6 +61,8 @@ export class RaidManager {
   }
 
   /**
+   * @param {function(): void} assertCurrent throws once the startup session is stale
+   * @param {boolean} retry false when the caller retries the load itself
    * @return {Promise<boolean>}
    */
   async initRaidEnemy(assertCurrent = () => {}, retry = true) {
@@ -82,13 +84,17 @@ export class RaidManager {
       PLAYER_TYPES.RAID_ENEMY
     ));
 
-    const load=()=>this.loadRaidEnemyData(assertCurrent);
-    // Startup owns its retry loop and must see authentication/cancellation errors.
-    if (!retry) { await load(); return true; }
+    const load = () => this.loadRaidEnemyData(assertCurrent);
+    // Startup runs its own retry loop and needs authentication and cancellation errors to reach it.
+    if (!retry) {
+      await load();
+      return true;
+    }
     return this.loadWithRetry(load, 'raid enemy load');
   }
 
   /**
+   * @param {function(): void} assertCurrent throws once the startup session is stale
    * @return {Promise<void>}
    */
   async loadRaidEnemyData(assertCurrent = () => {}) {
@@ -102,13 +108,13 @@ export class RaidManager {
       playerFleet, // Needs updating as fleet would be away now
       structs,
     ] = await startupReads([
-      ()=>this.guildAPI.getPlayer(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id),
-      ()=>this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id),
-      ()=>this.guildAPI.getPlanet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id),
-      ()=>this.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id),
-      ()=>this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id),
-      ()=>this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id),
-      ()=>this.guildAPI.getStructsByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id)
+      () => this.guildAPI.getPlayer(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id),
+      () => this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id),
+      () => this.guildAPI.getPlanet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id),
+      () => this.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id),
+      () => this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id),
+      () => this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id),
+      () => this.guildAPI.getStructsByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].id)
     ]);
 
     assertCurrent();
@@ -122,6 +128,8 @@ export class RaidManager {
   }
 
   /**
+   * @param {function(): void} assertCurrent throws once the startup session is stale
+   * @param {boolean} retry false when the caller retries the load itself
    * @return {Promise<boolean>}
    */
   async initPlanetRaider(assertCurrent = () => {}, retry = true) {
@@ -132,13 +140,17 @@ export class RaidManager {
 
     this.grassManager.registerListener(new KeyPlayerLastActionListener(this.gameState, PLAYER_TYPES.PLANET_RAIDER));
 
-    const load=()=>this.loadPlanetRaiderData(assertCurrent);
-    // Startup owns its retry loop and must see authentication/cancellation errors.
-    if (!retry) { await load(); return true; }
+    const load = () => this.loadPlanetRaiderData(assertCurrent);
+    // Startup runs its own retry loop and needs authentication and cancellation errors to reach it.
+    if (!retry) {
+      await load();
+      return true;
+    }
     return this.loadWithRetry(load, 'planet raider load');
   }
 
   /**
+   * @param {function(): void} assertCurrent throws once the startup session is stale
    * @return {Promise<void>}
    */
   async loadPlanetRaiderData(assertCurrent = () => {}) {
@@ -150,11 +162,11 @@ export class RaidManager {
       structs,
       shieldInfo
     ] = await startupReads([
-      ()=>this.guildAPI.getPlayer(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
-      ()=>this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
-      ()=>this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
-      ()=>this.guildAPI.getStructsByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
-      ()=>this.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo.planet_id),
+      () => this.guildAPI.getPlayer(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
+      () => this.guildAPI.getPlayerLastActionBlockHeight(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
+      () => this.guildAPI.getFleetByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
+      () => this.guildAPI.getStructsByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].id),
+      () => this.guildAPI.getPlanetaryShieldInfo(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planetRaidInfo.planet_id),
     ]);
 
     assertCurrent();

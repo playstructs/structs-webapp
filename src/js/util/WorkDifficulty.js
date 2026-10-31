@@ -1,10 +1,9 @@
 import {CHAIN} from "../constants/ChainConstants";
+import {uint64} from "./ExactInteger";
 
+/** Work rows may carry small values as JSON numbers; those are exact when safe. */
 export function workUint64(value) {
-  if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) value=String(value);
-  if (typeof value !== 'string' || !/^(0|[1-9][0-9]{0,19})$/.test(value)
-      || BigInt(value)>18446744073709551615n) throw new Error('Work requires an exact uint64');
-  return BigInt(value);
+  return uint64(typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? String(value) : value);
 }
 
 /** structsd v0.22.0 types.CalculateDifficulty, bounded to 63 integer products. */

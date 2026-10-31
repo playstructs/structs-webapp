@@ -1,6 +1,6 @@
 import {PERMISSIONS} from "../constants/Permissions";
 import {normalizeMessagePayload} from "./MessagePayload";
-import {registrationUint64} from "./RegistrationProof";
+import {isObjectId} from "./ExactInteger";
 
 // Reviewed against v0.22's handlers and ante maps. Adding a builder here requires
 // reviewing its semantics; the presence of a generated codec is not sufficient.
@@ -31,11 +31,10 @@ export function gameplayIntent(value) {
   const fields=['kind','version','ownerId','typeUrl','payload'];
   if (!value || typeof value !== 'object' || Array.isArray(value)
       || Object.keys(value).length !== fields.length || Object.keys(value).some(key=>!fields.includes(key))
-      || value.kind !== 'gameplay' || value.version !== 1 || typeof value.ownerId !== 'string'
-      || !/^1-[1-9][0-9]{0,19}$/.test(value.ownerId) || !Object.hasOwn(GAMEPLAY_PERMISSIONS,value.typeUrl)) {
+      || value.kind !== 'gameplay' || value.version !== 1
+      || !isObjectId(value.ownerId,1) || !Object.hasOwn(GAMEPLAY_PERMISSIONS,value.typeUrl)) {
     throw new Error('Invalid gameplay intent');
   }
-  registrationUint64(value.ownerId.slice(2));
   const payload=normalizeMessagePayload(value.typeUrl,value.payload);
   if (Object.hasOwn(payload,'creator')) throw new Error('Gameplay signer is selected by the queue');
   for (const item of Object.values(payload)) if (Array.isArray(item)) Object.freeze(item);

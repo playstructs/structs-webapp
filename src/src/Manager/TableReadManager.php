@@ -6,16 +6,17 @@ use App\Constant\ApiParameters;
 use App\Constant\PaginationLimits;
 use App\Dto\ApiResponseContentDto;
 use App\Trait\ApiSqlQueryTrait;
-use App\Util\ConstraintViolationUtil;
-use App\Util\ResponseMetaUtil;
 use App\Util\ConsistentRead;
+use App\Util\ConstraintViolationUtil;
 use App\Util\PlanetActivityQuery;
+use App\Util\ResponseMetaUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use UnexpectedValueException;
 
 /**
  * Paged / single-row reads for structs catalog tables (additive API).
@@ -242,27 +243,45 @@ class TableReadManager
         $responseContent = new ApiResponseContentDto();
         $parsedRequest = $this->apiRequestParsingManager->parse($params, $required);
         $responseContent->errors = $parsedRequest->errors;
+
         if (count($responseContent->errors) > 0) {
             return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
         }
 
         $db = $this->entityManager->getConnection();
         $queryParams = $this->getQueryParams($required, $parsedRequest);
-        $read = function () use ($db, $sql, $queryParams, $rowMapper, $countExpression, $from, $where, $responseContent): void {
+        $read = function () use (
+            $db,
+            $sql,
+            $queryParams,
+            $rowMapper,
+            $countExpression,
+            $from,
+            $where,
+            $responseContent
+        ): void {
             $responseContent->data = $db->fetchAllAssociative($sql, $queryParams);
+
             if ($rowMapper !== null) {
                 $responseContent->data = array_map($rowMapper, $responseContent->data);
             }
+
             if ($this->includeTotal) {
                 $countSelect = $countExpression ?? 'count(*)';
-                $responseContent->total = $db->fetchOne("SELECT {$countSelect} FROM {$from} {$where}", $queryParams);
+                $responseContent->total = $db->fetchOne(
+                    "SELECT {$countSelect} FROM {$from} {$where}",
+                    $queryParams
+                );
             }
+
             if ($this->includeMeta) {
                 ResponseMetaUtil::stampHeight($responseContent, $this->entityManager);
             }
+
             $responseContent->success = true;
         };
-        // A later count or height must describe the same snapshot as this page.
+
+        // A total or snapshot height must describe the same snapshot as this page.
         if ($this->includeTotal || $this->includeMeta) {
             ConsistentRead::run($db, $read);
         } else {
@@ -632,7 +651,15 @@ class TableReadManager
     public function guildAll(int $page): Response
     {
         return $this->listQuery(
-            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, rank_purchase_base_price::text AS rank_purchase_base_price, rank_purchase_step_increase::text AS rank_purchase_step_increase, rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, bank_convert_in_fee::text AS bank_convert_in_fee, bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, updated_at',
+            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, '
+                . 'join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, '
+                . 'primary_reactor_id, entry_substation_id, entry_rank, '
+                . 'rank_purchase_base_price::text AS rank_purchase_base_price, '
+                . 'rank_purchase_step_increase::text AS rank_purchase_step_increase, '
+                . 'rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, '
+                . 'bank_convert_in_fee::text AS bank_convert_in_fee, '
+                . 'bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, '
+                . 'updated_at',
             'structs.guild',
             [],
             'updated_at DESC NULLS LAST, id',
@@ -645,7 +672,15 @@ class TableReadManager
     public function guildByPrimaryReactor(string $primary_reactor_id, int $page): Response
     {
         return $this->listQuery(
-            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, rank_purchase_base_price::text AS rank_purchase_base_price, rank_purchase_step_increase::text AS rank_purchase_step_increase, rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, bank_convert_in_fee::text AS bank_convert_in_fee, bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, updated_at',
+            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, '
+                . 'join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, '
+                . 'primary_reactor_id, entry_substation_id, entry_rank, '
+                . 'rank_purchase_base_price::text AS rank_purchase_base_price, '
+                . 'rank_purchase_step_increase::text AS rank_purchase_step_increase, '
+                . 'rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, '
+                . 'bank_convert_in_fee::text AS bank_convert_in_fee, '
+                . 'bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, '
+                . 'updated_at',
             'structs.guild',
             [
                 'primary_reactor_id = :primary_reactor_id',
@@ -660,7 +695,15 @@ class TableReadManager
     public function guildByEntrySubstation(string $entry_substation_id, int $page): Response
     {
         return $this->listQuery(
-            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, rank_purchase_base_price::text AS rank_purchase_base_price, rank_purchase_step_increase::text AS rank_purchase_step_increase, rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, bank_convert_in_fee::text AS bank_convert_in_fee, bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, updated_at',
+            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, '
+                . 'join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, '
+                . 'primary_reactor_id, entry_substation_id, entry_rank, '
+                . 'rank_purchase_base_price::text AS rank_purchase_base_price, '
+                . 'rank_purchase_step_increase::text AS rank_purchase_step_increase, '
+                . 'rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, '
+                . 'bank_convert_in_fee::text AS bank_convert_in_fee, '
+                . 'bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, '
+                . 'updated_at',
             'structs.guild',
             [
                 'entry_substation_id = :entry_substation_id',
@@ -675,7 +718,15 @@ class TableReadManager
     public function guildByOwner(string $owner, int $page): Response
     {
         return $this->listQuery(
-            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, primary_reactor_id, entry_substation_id, entry_rank, rank_purchase_base_price::text AS rank_purchase_base_price, rank_purchase_step_increase::text AS rank_purchase_step_increase, rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, bank_convert_in_fee::text AS bank_convert_in_fee, bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, updated_at',
+            'id, index, endpoint, join_infusion_minimum, join_infusion_minimum_p, '
+                . 'join_infusion_minimum_bypass_by_request, join_infusion_minimum_bypass_by_invite, '
+                . 'primary_reactor_id, entry_substation_id, entry_rank, '
+                . 'rank_purchase_base_price::text AS rank_purchase_base_price, '
+                . 'rank_purchase_step_increase::text AS rank_purchase_step_increase, '
+                . 'rank_purchase_minimum_rank::text AS rank_purchase_minimum_rank, join_by_rank_purchase_enabled, '
+                . 'bank_convert_in_fee::text AS bank_convert_in_fee, '
+                . 'bank_convert_out_fee::text AS bank_convert_out_fee, charter_solver_id, creator, owner, created_at, '
+                . 'updated_at',
             'structs.guild',
             [
                 'owner = :owner',
@@ -802,7 +853,9 @@ class TableReadManager
     public function ledgerListAll(int $page): Response
     {
         return $this->listQuery(
-            'time, id::text AS id, address, counterparty, amount, amount_p::text AS amount_p, block_height::text AS block_height, chain_id, tx_index, msg_index, event_index, action::text AS action, direction::text AS direction, denom',
+            'time, id::text AS id, address, counterparty, amount, amount_p::text AS amount_p, '
+                . 'block_height::text AS block_height, chain_id, tx_index, msg_index, event_index, '
+                . 'action::text AS action, direction::text AS direction, denom',
             'structs.ledger',
             [],
             'structs.ledger.time DESC, structs.ledger.id DESC',
@@ -816,9 +869,14 @@ class TableReadManager
     public function ledgerListByPlayer(string $player_id, int $page): Response
     {
         return $this->listQuery(
-            'l.time, l.id::text AS id, l.address, l.counterparty, l.amount, l.amount_p::text AS amount_p, l.block_height::text AS block_height, l.chain_id, l.tx_index, l.msg_index, l.event_index, l.action::text AS action, l.direction::text AS direction, l.denom',
+            'l.time, l.id::text AS id, l.address, l.counterparty, l.amount, l.amount_p::text AS amount_p, '
+                . 'l.block_height::text AS block_height, l.chain_id, l.tx_index, l.msg_index, l.event_index, '
+                . 'l.action::text AS action, l.direction::text AS direction, l.denom',
             'structs.ledger l',
-            ["EXISTS (SELECT 1 FROM structs.asset_owner o WHERE o.address=l.address AND o.owner_type='player' AND o.owner_id=:player_id)"],
+            [
+                "EXISTS (SELECT 1 FROM structs.asset_owner o WHERE o.address=l.address"
+                    . " AND o.owner_type='player' AND o.owner_id=:player_id)"
+            ],
             'l.time DESC, l.id DESC',
             [ApiParameters::PLAYER_ID => $player_id, ApiParameters::PAGE => (string) $page],
             [ApiParameters::PLAYER_ID, ApiParameters::PAGE],
@@ -830,7 +888,9 @@ class TableReadManager
     public function ledgerListByAddress(string $address, int $page): Response
     {
         return $this->listQuery(
-            'time, id::text AS id, address, counterparty, amount, amount_p::text AS amount_p, block_height::text AS block_height, chain_id, tx_index, msg_index, event_index, action::text AS action, direction::text AS direction, denom',
+            'time, id::text AS id, address, counterparty, amount, amount_p::text AS amount_p, '
+                . 'block_height::text AS block_height, chain_id, tx_index, msg_index, event_index, '
+                . 'action::text AS action, direction::text AS direction, denom',
             'structs.ledger',
             [
                 'address = :address',
@@ -968,29 +1028,57 @@ class TableReadManager
 
     // --- planet_activity (hypertable; ordered by time DESC) ---
 
+    /**
+     * @param string $planetId
+     * @param string $seq
+     * @param array $query
+     * @return Response
+     * @throws Exception
+     */
     public function planetActivityEvent(string $planetId, string $seq, array $query): Response
     {
         $response = new ApiResponseContentDto();
+
         try {
             $params = PlanetActivityQuery::parse($planetId, $seq, $query);
-        } catch (\UnexpectedValueException $error) {
+        } catch (UnexpectedValueException $error) {
             $response->errors['activity_key_invalid'] = $error->getMessage();
+
             return new JsonResponse($response, Response::HTTP_BAD_REQUEST);
         }
-        // Equality on time prunes Timescale chunks and uses the unique event-key
-        // index. Echo the equivalent requested timestamp without losing its precision.
+
+        // Matching time exactly lets Timescale prune chunks and use the unique
+        // event-key index. The requested timestamp is echoed back as text so its
+        // precision is preserved.
         $row = $this->entityManager->getConnection()->fetchAssociative(
-            'SELECT CAST(:time AS text) AS time, seq::text AS seq, planet_id,
-                    category::text AS category, detail::text AS detail, block_height::text AS block_height
-             FROM structs.planet_activity
-             WHERE time = CAST(:time AS timestamptz) AND planet_id = :planet_id AND seq = CAST(:seq AS integer)',
+            '
+            SELECT
+              CAST(:time AS text) AS time,
+              seq::text AS seq,
+              planet_id,
+              category::text AS category,
+              detail::text AS detail,
+              block_height::text AS block_height
+            FROM structs.planet_activity
+            WHERE time = CAST(:time AS timestamptz)
+              AND planet_id = :planet_id
+              AND seq = CAST(:seq AS integer)
+            ',
             $params
         );
+
         if ($row !== false) {
-            $row['detail'] = json_decode($row['detail'], true, 512, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
+            $row['detail'] = json_decode(
+                $row['detail'],
+                true,
+                512,
+                JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING
+            );
             $response->data = $row;
         }
+
         $response->success = true;
+
         return new JsonResponse($response);
     }
 

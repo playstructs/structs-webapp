@@ -83,7 +83,8 @@ export class SigningClientManager {
     this.queue.suspended = false;
     this.readyForResume = true;
     console.info("Signing client initialized.");
-    this.queue.reconcilePending().catch(error=>console.warn('[SigningClientManager] reconciliation unavailable:',error));
+    this.queue.reconcilePending()
+      .catch(error => console.warn('[SigningClientManager] reconciliation unavailable:', error));
   }
 
   /**
@@ -143,6 +144,9 @@ export class SigningClientManager {
     }
   }
 
+  /**
+   * Stop signing and close the connection; the queue stays suspended until the next init.
+   */
   stopForLogout() {
     this.readyForResume = false;
     this.sessionController.abort();
@@ -150,6 +154,9 @@ export class SigningClientManager {
     this.disconnect();
   }
 
+  /**
+   * @return {AbortSignal} aborted when the signing session is reinitialised or logged out
+   */
   get sessionSignal() {
     return this.sessionController.signal;
   }
@@ -178,7 +185,13 @@ export class SigningClientManager {
     }
   }
 
-  /** Validate the exact API response used by an action against a fresh node read. */
+  /**
+   * Validate the exact API response used by an action against a fresh node read.
+   *
+   * @param {object} meta
+   * @param {string[]} requiredModels
+   * @return {Promise<object>}
+   */
   async getSigningContext(meta, requiredModels = []) {
     const query = this.chainQuery;
     const client = this.gameState.signingClient;
@@ -229,8 +242,13 @@ export class SigningClientManager {
       return false;
     }
 
-    if (!force && this.gameState.signingClient && this.chainQuery && !this.chainQuery.closed
-        && Date.now() - this.lastProbeAt < PROBE_INTERVAL_MS) {
+    if (
+      !force
+      && this.gameState.signingClient
+      && this.chainQuery
+      && !this.chainQuery.closed
+      && Date.now() - this.lastProbeAt < PROBE_INTERVAL_MS
+    ) {
       return true;
     }
 
@@ -318,19 +336,35 @@ export class SigningClientManager {
   // Immediate-lane messages (no charge drain)
   // ---------------------------------------------------------------------------
 
-  /** The observer may leave the screen; that never cancels or replaces the intent. */
+  /**
+   * The observer may leave the screen; that never cancels or replaces the intent.
+   *
+   * @param {object} intent
+   * @param {AbortSignal} [signal] stops waiting, not the transaction
+   * @return {Promise<SigningTransaction>}
+   */
   async queueTransfer(intent, signal = undefined) {
     signal?.throwIfAborted();
     const id = this.queue.enqueueTransfer(intent);
     return this.queue.whenSettled(id, signal);
   }
 
+  /**
+   * @param {object} intent
+   * @param {AbortSignal} [signal] stops waiting, not the transaction
+   * @return {Promise<SigningTransaction>}
+   */
   async queueReactor(intent, signal = undefined) {
     signal?.throwIfAborted();
     const id = this.queue.enqueueReactor(intent);
     return this.queue.whenSettled(id, signal);
   }
 
+  /**
+   * @param {object} intent
+   * @param {AbortSignal} [signal] stops waiting, not the transaction
+   * @return {Promise<SigningTransaction>}
+   */
   async queueGenerator(intent, signal = undefined) {
     signal?.throwIfAborted();
     const id = this.queue.enqueueGenerator(intent);
@@ -352,7 +386,14 @@ export class SigningClientManager {
     return this.queue.whenSettled(id);
   }
 
-  /** Owner-to-owner transfer; protocol and spendability are checked before enqueue. */
+  /**
+   * Owner-to-owner transfer; protocol and spendability are checked before enqueue.
+   *
+   * @param {string} ownerId
+   * @param {string} recipientOwnerId
+   * @param {{denom: string, amount: string}} amount
+   * @param {object} [options]
+   */
   async queueMsgVaultSend(ownerId, recipientOwnerId, amount, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgVaultSend',
@@ -389,8 +430,16 @@ export class SigningClientManager {
     if (typeof permissions === 'number' && (!Number.isSafeInteger(permissions) || permissions < 0)) {
       throw new Error('Invalid registration permissions');
     }
-    const id = this.queue.enqueueRegistration({kind:'address_register',version:1,ownerId:playerId,address:addressToRegister,
-      pubkey:proofPubKey,signature:proofSignature,permissions:String(permissions),proof:options.proofContext});
+    const id = this.queue.enqueueRegistration({
+      kind: 'address_register',
+      version: 1,
+      ownerId: playerId,
+      address: addressToRegister,
+      pubkey: proofPubKey,
+      signature: proofSignature,
+      permissions: String(permissions),
+      proof: options.proofContext,
+    });
     return this.queue.whenSettled(id);
   }
 
@@ -1723,6 +1772,9 @@ export class SigningClientManager {
   }
 
   /**
+   * Enqueue is synchronous: the build control must not show a pending slot if
+   * persistence or submission recovery refuses it. Settlement remains a Promise.
+   *
    * @param {string} playerId
    * @param {string|number} structTypeId
    * @param {string} operatingAmbit
@@ -1730,8 +1782,6 @@ export class SigningClientManager {
    * @param {number} chargeCost
    * @param {object} [options]
    */
-  // Enqueue is synchronous: the build control must not show a pending slot if
-  // persistence or submission recovery refuses it. Settlement remains a Promise.
   queueMsgStructBuildInitiate(playerId, structTypeId, operatingAmbit, slot, chargeCost, options = {}) {
     const operatingAmbitIndex = AMBIT_ENUM[operatingAmbit.toUpperCase()];
     const id = this.queue.enqueueGameplayAction(

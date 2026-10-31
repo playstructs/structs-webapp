@@ -55,10 +55,12 @@ export class AccountDeviceViewModel extends AbstractViewModel {
         'click',
         () => {
           if (this.saving) return;
-          const expected=this.playerAddressDetails.permissions;
-          const permissions=selectedDevicePermissions(expected,
+          const expected = this.playerAddressDetails.permissions;
+          const permissions = selectedDevicePermissions(
+            expected,
             document.getElementById(this.manageDevicesCheckboxId).checked,
-            document.getElementById(this.transferAssetsCheckboxId).checked);
+            document.getElementById(this.transferAssetsCheckboxId).checked
+          );
           this.saving = true;
 
           const options = new MenuWaitingOptions();
@@ -67,13 +69,20 @@ export class AccountDeviceViewModel extends AbstractViewModel {
 
           MenuPage.router.goto('Generic', 'menuWaiting', options);
 
-          const signal=MenuPage.router.navigationSignal;
-          this.authManager.setDevicePermissions(this.playerAddressDetails.address,permissions,expected,signal).then(success=>{
-            if (!signal.aborted) MenuPage.router.goto('Account',success ? 'devices' : 'manageDevice',this.deviceAddress);
-          }).catch(error=>{
+          const signal = MenuPage.router.navigationSignal;
+          this.authManager.setDevicePermissions(
+            this.playerAddressDetails.address,
+            permissions,
+            expected,
+            signal
+          ).then(success => {
             if (!signal.aborted) {
-              console.debug('[DevicePermissions] change unavailable:',error);
-              MenuPage.router.goto('Account','manageDevice',this.deviceAddress);
+              MenuPage.router.goto('Account', success ? 'devices' : 'manageDevice', this.deviceAddress);
+            }
+          }).catch(error => {
+            if (!signal.aborted) {
+              console.debug('[DevicePermissions] change unavailable:', error);
+              MenuPage.router.goto('Account', 'manageDevice', this.deviceAddress);
             }
           });
         }
@@ -87,7 +96,11 @@ export class AccountDeviceViewModel extends AbstractViewModel {
         () => {
           if (this.isCurrentDevice && !this.canRevokeCurrentDevice) {
             MenuPage.router.goto('Auth', 'logout');
-          } else if (!this.isPrimaryDevice && this.playerAddressDetails.alpha && BigInt(this.playerAddressDetails.alpha) > 0n) {
+          } else if (
+            !this.isPrimaryDevice
+            && this.playerAddressDetails.alpha
+            && BigInt(this.playerAddressDetails.alpha) > 0n
+          ) {
             MenuPage.router.goto('Auth', 'logoutAssetsWarning', this.playerAddressDetails);
           } else if (this.playerAddressDetails.isOnlyManagingDevice) {
             MenuPage.router.goto('Auth', 'logoutPermissionsWarning', this.playerAddressDetails);
@@ -101,17 +114,19 @@ export class AccountDeviceViewModel extends AbstractViewModel {
   }
 
   render() {
-    const signal=MenuPage.router.navigationSignal;
-    const fetchTargetDevice = this.guildAPI.getPlayerAddress(this.deviceAddress.address,{signal});
+    const signal = MenuPage.router.navigationSignal;
+    const fetchTargetDevice = this.guildAPI.getPlayerAddress(this.deviceAddress.address, {signal});
     const fetchCurrentDevice = this.isCurrentDevice
       ? fetchTargetDevice
-      : this.guildAPI.getPlayerAddress(this.gameState.signingAccount.address,{signal});
+      : this.guildAPI.getPlayerAddress(this.gameState.signingAccount.address, {signal});
 
     Promise.all([fetchTargetDevice, fetchCurrentDevice]).then(([playerAddress, currentDevicePlayerAddress]) => {
       if (signal.aborted) return;
-      if (playerAddress?.address !== this.deviceAddress.address
-          || currentDevicePlayerAddress?.address !== this.gameState.signingAccount.address) {
-        MenuPage.router.goto('Account','devices');
+      if (
+        playerAddress?.address !== this.deviceAddress.address
+        || currentDevicePlayerAddress?.address !== this.gameState.signingAccount.address
+      ) {
+        MenuPage.router.goto('Account', 'devices');
         return;
       }
       this.playerAddressDetails = playerAddress;
@@ -120,7 +135,8 @@ export class AccountDeviceViewModel extends AbstractViewModel {
       const currentDevicePermissions = BigInt(currentDevicePlayerAddress.permissions);
       this.canRevokeCurrentDevice = (currentDevicePermissions & BigInt(PERMISSIONS.DELETE)) !== 0n;
       this.canEditPermissions =
-        (currentDevicePermissions & BigInt(this.permissionManager.getManageDevicesPermissions())) === BigInt(this.permissionManager.getManageDevicesPermissions());
+        (currentDevicePermissions & BigInt(this.permissionManager.getManageDevicesPermissions()))
+        === BigInt(this.permissionManager.getManageDevicesPermissions());
 
       const userAgent = new UserAgent(playerAddress.user_agent);
 
@@ -147,8 +163,11 @@ export class AccountDeviceViewModel extends AbstractViewModel {
         `;
       }
 
-      const isCheckedManageDevices = (BigInt(playerAddress.permissions) & BigInt(this.permissionManager.getManageDevicesPermissions())) === BigInt(this.permissionManager.getManageDevicesPermissions());
-      const isCheckedTransferAssets = (BigInt(playerAddress.permissions) & BigInt(PERMISSIONS.ASSETS_ALL)) === BigInt(PERMISSIONS.ASSETS_ALL);
+      const isCheckedManageDevices =
+        (BigInt(playerAddress.permissions) & BigInt(this.permissionManager.getManageDevicesPermissions()))
+        === BigInt(this.permissionManager.getManageDevicesPermissions());
+      const isCheckedTransferAssets =
+        (BigInt(playerAddress.permissions) & BigInt(PERMISSIONS.ASSETS_ALL)) === BigInt(PERMISSIONS.ASSETS_ALL);
       const checkboxDisabledAttr = this.canEditPermissions ? '' : 'disabled';
 
       MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
@@ -249,10 +268,10 @@ export class AccountDeviceViewModel extends AbstractViewModel {
       MenuPage.hideAndClearDialoguePanel();
 
       this.initPageCode();
-    }).catch(error=>{
+    }).catch(error => {
       if (!signal.aborted) {
-        console.debug('[DevicePermissions] device unavailable:',error);
-        MenuPage.router.goto('Account','devices');
+        console.debug('[DevicePermissions] device unavailable:', error);
+        MenuPage.router.goto('Account', 'devices');
       }
     });
   }

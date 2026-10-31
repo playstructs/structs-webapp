@@ -2,7 +2,7 @@ import {QueryClientImpl as StructsQuery} from "../ts/structs.structs/types/struc
 import {STRUCTS_FREE_GAS} from "../constants/Fee";
 import {protocolAtHeight} from "../util/ChainProtocol";
 import {GAMEPLAY_PERMISSIONS, gameplayIntent} from "../util/GameplayIntent";
-import {registrationUint64} from "../util/RegistrationProof";
+import {uint64} from "../util/ExactInteger";
 
 export async function prepareGameplay(rpc, tx) {
   const intent=gameplayIntent(tx.intent), protocol=protocolAtHeight(rpc.chainId,rpc.height);
@@ -10,7 +10,7 @@ export async function prepareGameplay(rpc, tx) {
   if (actor.address !== tx.accountAddress || actor.playerId !== intent.ownerId) {
     throw new Error('Gameplay signing authority changed');
   }
-  const mask=registrationUint64(actor.permissions), required=GAMEPLAY_PERMISSIONS[intent.typeUrl];
+  const mask=uint64(actor.permissions), required=GAMEPLAY_PERMISSIONS[intent.typeUrl];
   if (required !== null && (mask & BigInt(required)) !== BigInt(required)) {
     throw new Error('Signing key lacks the gameplay permission');
   }

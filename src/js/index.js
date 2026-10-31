@@ -39,6 +39,7 @@ import {TutorialMode} from "./tutorial/TutorialMode";
 import {TutorialWorld} from "./tutorial/TutorialWorld";
 import {SimulatedGuildAPI} from "./tutorial/SimulatedGuildAPI";
 import {SimulatedSigningClientManager} from "./tutorial/SimulatedSigningClientManager";
+import {SimulatedTaskManager} from "./tutorial/SimulatedTaskManager";
 import {TutorialController} from "./controllers/TutorialController";
 import {onboardingTelemetry} from "./telemetry/OnboardingTelemetry";
 import {StartupRecovery, startupReads} from "./managers/StartupRecovery";
@@ -104,7 +105,9 @@ const raidManager = new RaidManager(gameState, guildAPI, grassManager, mapManage
 
 const taskStateFactory = new TaskStateFactory();
 
-const taskManager = new TaskManager(gameState, guildAPI, signingClientManager, taskStateFactory);
+const taskManager = tutorialMode
+  ? new SimulatedTaskManager(gameState, guildAPI, signingClientManager, taskStateFactory)
+  : new TaskManager(gameState, guildAPI, signingClientManager, taskStateFactory);
 global.taskManager = taskManager;
 
 const destroyedStructManager = new DestroyedStructManager(gameState, structManager);
@@ -265,19 +268,22 @@ if (!tutorialMode) {
 }
 
 const hudContainer = document.getElementById(HUDViewModel.containerId);
-const startupRecovery=tutorialMode ? null : new StartupRecovery(
-  ()=>gameState.persistenceEnabled && gameState.isSessionCurrent()
+const startupRecovery = tutorialMode ? null : new StartupRecovery(
+  () => gameState.persistenceEnabled && gameState.isSessionCurrent()
 );
 
+/**
+ * Load the saved session and guild configuration, then open the first page.
+ */
 async function startApplication() {
   if (!tutorialMode) {
     await gameState.load();
     DeviceRegistrationStore.expireRecovery()
-      .catch(error=>console.debug('[DeviceRecovery] expired keys could not be removed:',error));
+      .catch(error => console.debug('[DeviceRecovery] expired keys could not be removed:', error));
   }
-  const loadConfiguration=()=>startupReads([()=>guildAPI.getSettings(),()=>guildAPI.getThisGuild()]);
-  [gameState.settings,gameState.thisGuild] = startupRecovery
-    ? await startupRecovery.run(loadConfiguration,{retryAuthentication:true})
+  const loadConfiguration = () => startupReads([() => guildAPI.getSettings(), () => guildAPI.getThisGuild()]);
+  [gameState.settings, gameState.thisGuild] = startupRecovery
+    ? await startupRecovery.run(loadConfiguration, {retryAuthentication: true})
     : await loadConfiguration();
 
   HUDViewModel.init(gameState, signingClientManager, structManager, taskManager, alphaManager, grassManager);
@@ -313,7 +319,7 @@ async function startApplication() {
     try {
       if (!await authManager.restoreDeviceActivation()) MenuPage.router.goto('Auth', 'index');
     } catch (error) {
-      console.debug('[DeviceActivation] saved activation unavailable:',error);
+      console.debug('[DeviceActivation] saved activation unavailable:', error);
       MenuPage.router.goto('Auth', 'index');
     }
 
@@ -321,14 +327,18 @@ async function startApplication() {
   } else {
     const tutorialExit = TutorialMode.consumeExited();
     const returningFromTutorial = tutorialExit !== null;
-    const savedAddress=gameState.signingAccount?.address;
-    const savedPlayerId=gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
-    const current=startupRecovery.current;
-    startupRecovery.current=()=>current() && gameState.signingAccount?.address===savedAddress
-      && gameState.keyPlayers[PLAYER_TYPES.PLAYER].id===savedPlayerId;
+    const savedAddress = gameState.signingAccount?.address;
+    const savedPlayerId = gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const current = startupRecovery.current;
+    startupRecovery.current = () => current()
+      && gameState.signingAccount?.address === savedAddress
+      && gameState.keyPlayers[PLAYER_TYPES.PLAYER].id === savedPlayerId;
 
-    const loggedIn=await authManager.login(savedPlayerId,
-      startupRecovery.signal,operation=>startupRecovery.run(operation));
+    const loggedIn = await authManager.login(
+      savedPlayerId,
+      startupRecovery.signal,
+      operation => startupRecovery.run(operation)
+    );
     if (!loggedIn) throw new AuthenticationError('Saved session was rejected',401);
     startupRecovery.assertCurrent();
     MenuPage.close();
@@ -351,9 +361,9 @@ async function startApplication() {
   }
 }
 
-startApplication().catch(error=>{
-  if(startupRecovery?.signal.aborted || (!tutorialMode && !gameState.isSessionCurrent())) return;
-  console.warn('[Startup] session could not be restored:',error);
+startApplication().catch(error => {
+  if (startupRecovery?.signal.aborted || (!tutorialMode && !gameState.isSessionCurrent())) return;
+  console.warn('[Startup] session could not be restored:', error);
   // Stop partial runtime work, retaining the saved key and signed journal. A
   // rejected API login is not authoritative evidence of native revocation.
   signingClientManager.stopForLogout?.();
@@ -361,7 +371,7 @@ startApplication().catch(error=>{
   authManager.workRefresh?.stop();
   gameState.alphaRefresh?.stop();
   taskManager.closeSession?.();
-  MenuPage.router.goto('Auth','index');
+  MenuPage.router.goto('Auth', 'index');
   MenuPage.open();
   MenuPage.hideLoadingScreen();
-}).finally(()=>startupRecovery?.finish());
+}).finally(() => startupRecovery?.finish());

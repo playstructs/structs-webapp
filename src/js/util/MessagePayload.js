@@ -1,6 +1,6 @@
 import schemas from "../ts/structs.structs/message-schemas.json";
+import {UINT64_MAX} from "./ExactInteger";
 
-const UINT64_MAX = 18446744073709551615n;
 const INT64_MAX = 9223372036854775807n;
 const INT64_MIN = -9223372036854775808n;
 

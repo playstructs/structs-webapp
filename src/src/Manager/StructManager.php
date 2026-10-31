@@ -14,8 +14,13 @@ class StructManager
 {
     use ApiSqlQueryTrait;
 
+    /**
+     * Lateral subquery that totals a struct's generator infusions. positions_ready
+     * is false when any infusion row is incomplete or outside exact integer range.
+     */
     private const string GENERATOR_TOTALS = '
-              SELECT COALESCE(sum(i.fuel_p), 0) AS fuel_p,
+              SELECT
+                COALESCE(sum(i.fuel_p), 0) AS fuel_p,
                 COALESCE(sum(i.power_p), 0) AS power_p,
                 COALESCE(bool_and(
                   i.destination_type IS NOT NULL AND i.destination_type = \'struct\'
@@ -236,15 +241,21 @@ class StructManager
     }
 
     /**
-     * Exact applied output and one funding position in the same indexed snapshot.
-     * The address is a read selector; callers must resolve spend authority on chain.
+     * Returns a generator's exact applied totals and one funding address's position,
+     * both from the same indexed snapshot. The address only selects which position
+     * to read; callers must still check on chain that it may spend.
      *
+     * @param string $struct_id
+     * @param string|null $address
+     * @return Response
      * @throws Exception
      */
     public function getGeneratorSnapshot(string $struct_id, ?string $address): Response
     {
         $query = '
-            SELECT s.id AS struct_id, :address::text AS source_address,
+            SELECT
+              s.id AS struct_id,
+              :address::text AS source_address,
               CASE WHEN totals.positions_ready THEN totals.fuel_p::text END AS fuel_p,
               CASE WHEN totals.positions_ready THEN totals.power_p::text END AS power_p,
               totals.positions_ready,
@@ -267,8 +278,14 @@ class StructManager
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
-            [ApiParameters::STRUCT_ID => $struct_id, ApiParameters::ADDRESS => $address],
-            [ApiParameters::STRUCT_ID, ApiParameters::ADDRESS],
+            [
+                ApiParameters::STRUCT_ID => $struct_id,
+                ApiParameters::ADDRESS => $address
+            ],
+            [
+                ApiParameters::STRUCT_ID,
+                ApiParameters::ADDRESS
+            ],
             'inventory'
         );
     }

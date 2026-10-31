@@ -6,7 +6,7 @@ import {exactQueryHeight, protocolAtHeight} from "./ChainProtocol";
 import {submissionBytes} from "./SignedSubmission";
 import {transferAddress, transferIntent} from "./TransferIntent";
 import {verifyVaultFunding} from "./VaultFundingCompletion";
-import {abortableDelay} from "./AbortableDelay";
+import {pollUntil} from "./PollUntil";
 
 /** Bind indexed completion to the signed intent and its verified committed result. */
 export function transferSourceQuery(tx) {
@@ -85,19 +85,8 @@ export function transferSourceRow(response, source) {
 /** Only read retries: the queue alone reconciles signed transactions. */
 export async function waitForTransferSource(guildAPI, tx, signal) {
   const source = transferSourceQuery(tx);
-  let delay = 2000;
-  while (!signal.aborted) {
-    try {
-      const response = await guildAPI.getTransferSource(tx.intent.ownerId, source, {signal, timeoutMs: 5000});
-      signal.throwIfAborted();
-      const row = transferSourceRow(response, source);
-      if (row) return row;
-    } catch (error) {
-      signal.throwIfAborted();
-      console.debug('[TransferCompletion] indexed source unavailable:', error);
-    }
-    await abortableDelay(delay, signal);
-    delay = Math.min(delay * 2, 30000);
-  }
-  signal.throwIfAborted();
+  return pollUntil(async () => {
+    const response = await guildAPI.getTransferSource(tx.intent.ownerId, source, {signal, timeoutMs: 5000});
+    return transferSourceRow(response, source) ?? undefined;
+  }, signal, {label: '[TransferCompletion] indexed source unavailable:'});
 }

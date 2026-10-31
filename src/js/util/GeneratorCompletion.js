@@ -8,7 +8,7 @@ import {transferAddress} from "./TransferIntent";
 import {exactQueryHeight, maxQueryHeight, protocolAtHeight, validateSigningSnapshot} from "./ChainProtocol";
 import {submissionBytes} from "./SignedSubmission";
 import {playerFunds} from "./PlayerFunds";
-import {abortableDelay} from "./AbortableDelay";
+import {pollUntil} from "./PollUntil";
 import {verifyVaultFunding} from "./VaultFundingCompletion";
 
 /** A changed fuel total or a notification never identifies a committed burn. */
@@ -62,19 +62,10 @@ export function generatorRefreshReady(result, player, committed, observedHeight 
 /** Read retries only; the signing queue alone owns transaction reconciliation. */
 export async function waitForGeneratorRefresh(guildAPI, tx, signal, observedHeight = () => null) {
   const committed = generatorCommit(tx);
-  let delay = 2000;
-  while (!signal.aborted) {
-    try {
-      const result = await guildAPI.getGeneratorSnapshotResult(committed.structId,committed.source,{signal,timeoutMs:5000});
-      const player = await guildAPI.getPlayer(committed.ownerId,{signal,timeoutMs:16000});
-      signal.throwIfAborted();
-      if (generatorRefreshReady(result,player,committed,observedHeight())) return {result,player};
-    } catch (error) {
-      signal.throwIfAborted();
-      console.debug('[GeneratorCompletion] indexed state unavailable:',error);
-    }
-    await abortableDelay(delay,signal);
-    delay = Math.min(delay*2,30000);
-  }
-  signal.throwIfAborted();
+  return pollUntil(async () => {
+    const result = await guildAPI.getGeneratorSnapshotResult(committed.structId,committed.source,{signal,timeoutMs:5000});
+    const player = await guildAPI.getPlayer(committed.ownerId,{signal,timeoutMs:16000});
+    signal.throwIfAborted();
+    if (generatorRefreshReady(result,player,committed,observedHeight())) return {result,player};
+  }, signal, {label: '[GeneratorCompletion] indexed state unavailable:'});
 }

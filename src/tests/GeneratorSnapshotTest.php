@@ -2,6 +2,8 @@
 
 use App\Manager\StructManager;
 use App\Tests\ApiManagerTestCase;
+use App\Tests\ReadinessFixture;
+use App\Util\ResponseMetaUtil;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Symfony\Component\HttpFoundation\Request;
@@ -11,8 +13,10 @@ class GeneratorSnapshotTest extends ApiManagerTestCase
     public function testInvalidSelectorsDoNotReadTheDatabase(): void
     {
         $db = $this->createMock(Connection::class);
-        $db->expects($this->never())->method('beginTransaction');
-        $db->expects($this->never())->method('fetchAssociative');
+        $db->expects($this->never())
+            ->method('beginTransaction');
+        $db->expects($this->never())
+            ->method('fetchAssociative');
         $manager = new StructManager($this->entityManager($db), $this->validator());
         $this->assertSame(400, $manager->getGeneratorSnapshot('5-1!', 'source')->getStatusCode());
         $this->assertSame(400, $manager->getGeneratorSnapshot('5-1', null)->getStatusCode());
@@ -38,28 +42,50 @@ class GeneratorSnapshotTest extends ApiManagerTestCase
             $db->executeStatement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
             $db->executeStatement('SET LOCAL search_path=cache,public,structs');
             $db->executeStatement("SELECT pg_advisory_xact_lock(hashtext('structs.api_work_refresh'))");
-            $db->executeStatement("INSERT INTO structs.struct_type(id,power_generation,generating_rate_p) VALUES(20,'smallGenerator',2)
-                ON CONFLICT(id) DO UPDATE SET power_generation=EXCLUDED.power_generation,generating_rate_p=EXCLUDED.generating_rate_p");
-            $db->executeStatement("INSERT INTO structs.struct(id,owner,type,location_id,location_type)
-                VALUES('5-990988','1-990988',20,'2-990988','planet'),('5-990989','1-990988',20,'2-990988','planet')");
-            $db->executeStatement("INSERT INTO structs.infusion(destination_id,address,destination_type,player_id,owner_id,fuel_p,power_p,ratio_p,commission,generator_disabled)
+
+            // Fixtures: two generator structs; 5-990988 has vault, retained,
+            // disabled and other-player infusions, 5-990989 has none.
+            $db->executeStatement(
+                "INSERT INTO structs.struct_type(id,power_generation,generating_rate_p) VALUES(20,'smallGenerator',2)
+                ON CONFLICT(id) DO UPDATE
+                SET power_generation=EXCLUDED.power_generation,generating_rate_p=EXCLUDED.generating_rate_p"
+            );
+            $db->executeStatement(
+                "INSERT INTO structs.struct(id,owner,type,location_id,location_type)
+                VALUES('5-990988','1-990988',20,'2-990988','planet'),('5-990989','1-990988',20,'2-990988','planet')"
+            );
+            $db->executeStatement(
+                "INSERT INTO structs.infusion(destination_id,address,destination_type,player_id,owner_id,fuel_p,power_p,ratio_p,commission,generator_disabled)
                 VALUES('5-990988','generatorvault','struct','1-990988','1-990988',2000000,6000000,3,0,FALSE),
                 ('5-990988','generatorretained','struct','1-990988',NULL,7000000,14000000,2,0,FALSE),
                 ('5-990988','generatordisabled','struct','1-990988',NULL,4000000,0,9,0,TRUE),
                 ('5-990988','generatorother','struct','1-990987','1-990987',9007199254740993,9007199254740993,1,0,FALSE),
-                ('5-990987','generatorvault','struct','1-990988','1-990988',123,246,2,0,FALSE)");
+                ('5-990987','generatorvault','struct','1-990988','1-990988',123,246,2,0,FALSE)"
+            );
+
+            // Chain boundary at height 3353000.
             $db->executeStatement('DELETE FROM structs.current_block');
             $db->executeStatement('DELETE FROM sync_state.sync_cursor');
             $db->executeStatement('DELETE FROM structs.api_refresh_state');
-            $db->executeStatement("INSERT INTO sync_state.sync_cursor(chain_id,last_height,last_block_time,tip_height,status)
-                VALUES('structstestnet-111',3353000,'2026-10-30T00:00:00Z',3353000,'current')");
-            $db->executeStatement("INSERT INTO structs.current_block(chain,height,tip_height,status) VALUES('structstestnet-111',3353000,3353000,'current')");
-            $db->executeStatement("INSERT INTO structs.api_refresh_state(model,source_height,source_time,inventory_authority)
-                VALUES('inventory',3353000,'2026-10-30T00:00:00Z','current-claims-v1')");
-            $this->assertFalse(\App\Util\ResponseMetaUtil::snapshotMeta($db, 'inventory')['data_ready'],
-                'A refreshed projection alone does not certify complete v0.22 source events');
-            \App\Tests\ReadinessFixture::economyCoverage($db);
+            $db->executeStatement(
+                "INSERT INTO sync_state.sync_cursor(chain_id,last_height,last_block_time,tip_height,status)
+                VALUES('structstestnet-111',3353000,'2026-10-30T00:00:00Z',3353000,'current')"
+            );
+            $db->executeStatement(
+                "INSERT INTO structs.current_block(chain,height,tip_height,status)
+                VALUES('structstestnet-111',3353000,3353000,'current')"
+            );
+            $db->executeStatement(
+                "INSERT INTO structs.api_refresh_state(model,source_height,source_time,inventory_authority)
+                VALUES('inventory',3353000,'2026-10-30T00:00:00Z','current-claims-v1')"
+            );
+            $this->assertFalse(
+                ResponseMetaUtil::snapshotMeta($db, 'inventory')['data_ready'],
+                'A refreshed projection alone does not certify complete v0.22 source events'
+            );
+            ReadinessFixture::economyCoverage($db);
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
+
             $manager = new StructManager($this->entityManager($db), $this->validator());
             $body = json_decode($manager->getGeneratorSnapshot('5-990988', 'generatorvault')->getContent(), true);
             $this->assertTrue($body['success']);
@@ -67,7 +93,11 @@ class GeneratorSnapshotTest extends ApiManagerTestCase
             $this->assertSame('3353000', $body['meta']['height']);
             $this->assertTrue($body['data']['positions_ready']);
             $this->assertSame('9007199267740993', $body['data']['fuel_p']);
-            $this->assertSame('9007199274740993', $body['data']['power_p'], 'Sum applied power, without re-pricing retained or disabled fuel');
+            $this->assertSame(
+                '9007199274740993',
+                $body['data']['power_p'],
+                'Sum applied power, without re-pricing retained or disabled fuel'
+            );
             $this->assertTrue($body['data']['source_exists']);
             $this->assertSame('generatorvault', $body['data']['source_address']);
             $this->assertSame('2000000', $body['data']['source_fuel_p']);
@@ -75,22 +105,36 @@ class GeneratorSnapshotTest extends ApiManagerTestCase
             $this->assertSame('3', $body['data']['source_ratio_p']);
             $this->assertFalse($body['data']['source_generator_disabled']);
             $this->assertSame('1-990988', $body['data']['source_recorded_owner_id']);
-            foreach ([$manager->getStruct('5-990988'),$manager->getStructsByPlayerId('1-990988')] as $response) {
+
+            // Struct catalog reads report the same generator totals.
+            foreach ([$manager->getStruct('5-990988'), $manager->getStructsByPlayerId('1-990988')] as $response) {
                 $catalog = json_decode($response->getContent(), true);
                 $this->assertTrue($catalog['meta']['data_ready']);
                 $this->assertSame('3353000', $catalog['meta']['height']);
                 $rows = isset($catalog['data']['id']) ? [$catalog['data']] : $catalog['data'];
-                $row = array_values(array_filter($rows, static fn (array $row): bool => $row['id'] === '5-990988'))[0];
+                $row = array_values(array_filter(
+                    $rows,
+                    static fn (array $row): bool => $row['id'] === '5-990988'
+                ))[0];
                 $this->assertTrue($row['generator_positions_ready']);
                 $this->assertSame($body['data']['fuel_p'], $row['generator_fuel_p']);
                 $this->assertSame($body['data']['power_p'], $row['generator_power_p']);
             }
-            $disabled = json_decode($manager->getGeneratorSnapshot('5-990988', 'generatordisabled')->getContent(), true);
+
+            $disabled = json_decode(
+                $manager->getGeneratorSnapshot('5-990988', 'generatordisabled')->getContent(),
+                true
+            );
             $this->assertSame('4000000', $disabled['data']['source_fuel_p']);
             $this->assertSame('0', $disabled['data']['source_power_p']);
             $this->assertTrue($disabled['data']['source_generator_disabled']);
             $this->assertSame('1-990988', $disabled['data']['source_recorded_owner_id']);
-            $absent = json_decode($manager->getGeneratorSnapshot('5-990988', 'prefundedunprovisioned')->getContent(), true);
+
+            // A source with no position is explicitly absent, not unknown.
+            $absent = json_decode(
+                $manager->getGeneratorSnapshot('5-990988', 'prefundedunprovisioned')->getContent(),
+                true
+            );
             $this->assertTrue($absent['data']['positions_ready']);
             $this->assertFalse($absent['data']['source_exists']);
             $this->assertNull($absent['data']['source_fuel_p']);
@@ -102,18 +146,36 @@ class GeneratorSnapshotTest extends ApiManagerTestCase
             $missing = json_decode($manager->getGeneratorSnapshot('5-990986', 'generatorvault')->getContent(), true);
             $this->assertNull($missing['data'], 'An absent struct cannot become a known empty generator');
 
+            // A NULL power row makes the total unknown.
             $db->executeStatement('RESET ROLE');
             $db->executeStatement("UPDATE structs.infusion SET power_p=NULL WHERE address='generatorother'");
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
-            $incomplete = json_decode($manager->getGeneratorSnapshot('5-990988', 'generatorvault')->getContent(), true);
-            $this->assertFalse($incomplete['data']['positions_ready'], 'NULL cannot silently disappear from a complete power total');
+            $incomplete = json_decode(
+                $manager->getGeneratorSnapshot('5-990988', 'generatorvault')->getContent(),
+                true
+            );
+            $this->assertFalse(
+                $incomplete['data']['positions_ready'],
+                'NULL cannot silently disappear from a complete power total'
+            );
             $this->assertNull($incomplete['data']['power_p']);
             $this->assertNull($incomplete['data']['fuel_p']);
+
+            // A row with the wrong destination type makes the total unknown.
             $db->executeStatement('RESET ROLE');
-            $db->executeStatement("UPDATE structs.infusion SET power_p=9007199254740993,destination_type='reactor' WHERE address='generatorother'");
+            $db->executeStatement(
+                "UPDATE structs.infusion
+                SET power_p=9007199254740993,destination_type='reactor'
+                WHERE address='generatorother'"
+            );
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
             $invalid = json_decode($manager->getGeneratorSnapshot('5-990988', 'generatorvault')->getContent(), true);
-            $this->assertFalse($invalid['data']['positions_ready'], 'A wrong-type row cannot silently disappear from the selected destination');
+            $this->assertFalse(
+                $invalid['data']['positions_ready'],
+                'A wrong-type row cannot silently disappear from the selected destination'
+            );
+
+            // A lagging projection is not data-ready.
             $db->executeStatement('RESET ROLE');
             $db->executeStatement("UPDATE structs.infusion SET destination_type='struct' WHERE address='generatorother'");
             $db->executeStatement('UPDATE structs.api_refresh_state SET source_height=3352999');
@@ -121,11 +183,16 @@ class GeneratorSnapshotTest extends ApiManagerTestCase
             $lag = json_decode($manager->getGeneratorSnapshot('5-990988', 'generatorvault')->getContent(), true);
             $this->assertFalse($lag['meta']['data_ready']);
             $this->assertFalse($lag['meta']['transaction_ready']);
+
+            // Below the v0.22 boundary the legacy protocol applies.
             $db->executeStatement('RESET ROLE');
             $db->executeStatement('UPDATE sync_state.sync_cursor SET last_height=3352999,tip_height=3352999');
             $db->executeStatement('UPDATE structs.current_block SET height=3352999,tip_height=3352999');
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
-            $legacy = json_decode($manager->getGeneratorSnapshot('5-990988', 'generatorretained')->getContent(), true);
+            $legacy = json_decode(
+                $manager->getGeneratorSnapshot('5-990988', 'generatorretained')->getContent(),
+                true
+            );
             $this->assertSame('v0.21.0', $legacy['meta']['protocol']);
             $this->assertTrue($legacy['meta']['transaction_ready']);
             $this->assertSame('7000000', $legacy['data']['source_fuel_p']);

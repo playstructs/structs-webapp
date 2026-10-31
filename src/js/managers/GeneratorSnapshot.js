@@ -3,11 +3,11 @@ import {QueryClientImpl as BankQuery} from "cosmjs-types/cosmos/bank/v1beta1/que
 import {CHAIN} from "../constants/ChainConstants";
 import {PERMISSIONS} from "../constants/Permissions";
 import {generatorTarget} from "./GeneratorPreparation";
-import {generatorUint64} from "../util/GeneratorIntent";
 import {generatorState} from "../util/GeneratorState";
 import {transferAddress} from "../util/TransferIntent";
 import {validateSigningSnapshot} from "../util/ChainProtocol";
 import {readVaultFunding} from "./VaultFunding";
+import {uint64} from "../util/ExactInteger";
 
 /** Same-height native facts and indexed positions; submission checks again. */
 export async function readGeneratorSnapshot(rpc, indexed, ownerId, structId, accountAddress, indexedPlayer = null) {
@@ -15,7 +15,7 @@ export async function readGeneratorSnapshot(rpc, indexed, ownerId, structId, acc
   const query = new StructsQuery(rpc);
   const actor = await query.Address({address:accountAddress});
   if (actor.address !== accountAddress || actor.playerId !== ownerId
-      || (generatorUint64(actor.permissions) & BigInt(PERMISSIONS.TOKEN_INFUSE)) === 0n) throw new Error('Signing address cannot fund a generator');
+      || (uint64(actor.permissions) & BigInt(PERMISSIONS.TOKEN_INFUSE)) === 0n) throw new Error('Signing address cannot fund a generator');
   const player = (await query.Player({id:ownerId})).Player;
   if (player?.id !== ownerId) throw new Error('Generator funding owner changed');
   const {type,planetId} = await generatorTarget(query,structId,player);

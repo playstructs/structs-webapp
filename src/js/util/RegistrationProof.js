@@ -1,18 +1,12 @@
 import {CHAIN} from "../constants/ChainConstants";
 import {protocolAtHeight} from "./ChainProtocol";
 import {transferAddress} from "./TransferIntent";
-
-export function registrationUint64(value) {
-  if (typeof value !== 'string' || !/^(0|[1-9][0-9]{0,19})$/.test(value)
-      || BigInt(value) > 18446744073709551615n) throw new Error('Invalid registration integer');
-  return BigInt(value);
-}
+import {isObjectId, uint64} from "./ExactInteger";
 
 export function registrationProofContext(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)
-      || typeof value.source_height !== 'string' || typeof value.player_id !== 'string'
-      || !/^1-[1-9][0-9]{0,19}$/.test(value.player_id)) throw new Error('Invalid registration proof context');
-  registrationUint64(value.player_id.slice(2));
+      || typeof value.source_height !== 'string'
+      || !isObjectId(value.player_id,1)) throw new Error('Invalid registration proof context');
   transferAddress(value.address);
   const protocol = protocolAtHeight(value.chain_id,value.source_height);
   if (value.protocol !== protocol || value.registered_player_id !== '') throw new Error('Registration proof is stale or already associated');
@@ -21,7 +15,7 @@ export function registrationProofContext(value) {
       throw new Error('Legacy registration requires pre-upgrade expiry');
     }
   } else {
-    registrationUint64(value.proof_nonce);
+    uint64(value.proof_nonce);
     if (value.timeout_height !== '0') throw new Error('Unexpected registration proof expiry');
   }
   return Object.freeze({chain_id:value.chain_id,protocol,source_height:value.source_height,player_id:value.player_id,

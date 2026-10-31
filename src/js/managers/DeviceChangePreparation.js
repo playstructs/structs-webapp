@@ -4,7 +4,7 @@ import {PERMISSIONS} from "../constants/Permissions";
 import {STRUCTS_FREE_GAS} from "../constants/Fee";
 import {protocolAtHeight} from "../util/ChainProtocol";
 import {deviceChangeContext, deviceChangeIntent} from "../util/DeviceChangeIntent";
-import {registrationUint64} from "../util/RegistrationProof";
+import {uint64} from "../util/ExactInteger";
 
 /** Capture the address lifetime when the user chooses the operation. */
 export async function readDeviceContext(rpc, ownerId, address) {
@@ -19,7 +19,7 @@ export async function readDeviceAuthority(rpc, address) {
   protocolAtHeight(rpc.chainId,rpc.height);
   const target=await new StructsQuery(rpc).Address({address});
   if (target.address !== address) throw new Error('Device identity changed');
-  registrationUint64(target.permissions);
+  uint64(target.permissions);
   return target;
 }
 
@@ -38,10 +38,10 @@ export async function prepareDeviceChange(rpc, tx) {
   }
   const player=(await query.Player({id:intent.ownerId})).Player;
   if (player?.id !== intent.ownerId || !player.primaryAddress) throw new Error('Device owner is unavailable');
-  const actorMask=registrationUint64(actor.permissions), targetMask=registrationUint64(target.permissions);
+  const actorMask=uint64(actor.permissions), targetMask=uint64(target.permissions);
   let message;
   if (intent.operation === 'permissions') {
-    const desired=registrationUint64(intent.permissions);
+    const desired=uint64(intent.permissions);
     if (target.permissions !== intent.expectedPermissions) throw new Error('Device permissions changed since they were displayed');
     const required=targetMask | desired;
     if ((actorMask & required) !== required) throw new Error('Signing key must hold both existing and replacement permissions');

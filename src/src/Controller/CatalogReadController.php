@@ -546,7 +546,11 @@ class CatalogReadController extends AbstractController
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
     ): Response {
-        return (new TableReadManager($entityManager, $validator))->planetActivityEvent($planet_id, $seq, $request->query->all());
+        return (new TableReadManager($entityManager, $validator))->planetActivityEvent(
+            $planet_id,
+            $seq,
+            $request->query->all()
+        );
     }
 
     #[Route('/api/planet-activity/stats', name: 'api_planet_activity_stats', methods: ['GET'])]

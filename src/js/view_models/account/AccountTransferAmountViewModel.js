@@ -2,7 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {transferLimit} from "../../util/TransferLimit";
-import {abortableDelay} from "../../util/AbortableDelay";
+import {pollUntil} from "../../util/PollUntil";
 
 export class AccountTransferAmountViewModel extends AbstractViewModel {
 
@@ -75,20 +75,11 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
   }
 
   async loadLimit(ownerId, signal) {
-    let delay = 2000;
-    while (!signal.aborted) {
-      try {
-        const player = await this.guildAPI.getPlayer(ownerId, {signal, timeoutMs: 16000});
-        signal.throwIfAborted();
-        return transferLimit(player, ownerId, this.gameState.currentBlockHeight);
-      } catch (error) {
-        signal.throwIfAborted();
-        console.debug('[AccountTransferAmount] funds unavailable:', error);
-      }
-      await abortableDelay(delay, signal);
-      delay = Math.min(delay * 2, 30000);
-    }
-    signal.throwIfAborted();
+    return pollUntil(async () => {
+      const player = await this.guildAPI.getPlayer(ownerId, {signal, timeoutMs: 16000});
+      signal.throwIfAborted();
+      return transferLimit(player, ownerId, this.gameState.currentBlockHeight);
+    }, signal, {label: '[AccountTransferAmount] funds unavailable:'});
   }
 
   render () {

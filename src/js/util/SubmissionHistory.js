@@ -1,4 +1,5 @@
 import {submissionBytes} from "./SignedSubmission";
+import {isUint64} from "./ExactInteger";
 
 /**
  * An unknown outcome can outlive the need to reserve its signing account.
@@ -16,8 +17,7 @@ export function isHistoricalSubmission(tx) {
       || proof.transactionHash !== tx.submission.hash
       || proof.accountNumber !== tx.submission.accountNumber
       || proof.sequence !== tx.submission.sequence
-      || typeof proof.currentSequence !== 'string'
-      || !/^(0|[1-9][0-9]{0,19})$/.test(proof.currentSequence)
+      || !isUint64(proof.currentSequence)
       || typeof proof.verifiedHeight !== 'string'
       || !/^[1-9][0-9]{0,15}$/.test(proof.verifiedHeight)) {
     throw new Error('Invalid historical submission proof');

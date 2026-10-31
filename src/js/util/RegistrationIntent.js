@@ -1,4 +1,5 @@
-import {registrationProofContext, registrationUint64} from "./RegistrationProof";
+import {registrationProofContext} from "./RegistrationProof";
+import {uint64} from "./ExactInteger";
 
 /** Consent is immutable: refreshing a burned nonce requires the new device to sign again. */
 export function registrationIntent(value) {
@@ -13,6 +14,6 @@ export function registrationIntent(value) {
       || typeof value.signature !== 'string' || !/^[0-9a-f]{128}([0-9a-f]{2})?$/.test(value.signature)) {
     throw new Error('Invalid registration consent');
   }
-  registrationUint64(value.permissions);
+  uint64(value.permissions);
   return Object.freeze({...value,proof});
 }

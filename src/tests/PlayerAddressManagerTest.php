@@ -1,10 +1,14 @@
 <?php
 
+use App\Entity\Player;
 use App\Entity\PlayerAddressPending;
+use App\Manager\AddressRegistrationProofManager;
 use App\Manager\PlayerAddressManager;
 use App\Manager\SignatureValidationManager;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,6 +22,7 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 class PlayerAddressManagerTest extends KernelTestCase
 {
     private const string ACTIVATION_ID = '11111111-1111-4111-8111-111111111111';
+
     /**
      * @dataProvider addPendingAddressProvider
      * @param mixed $requestContent
@@ -47,23 +52,41 @@ class PlayerAddressManagerTest extends KernelTestCase
         // (2) use static::getContainer() to access the service container
         $container = static::getContainer();
 
-        $connection = $this->createMock(\Doctrine\DBAL\Connection::class);
-        $code = ['code' => 'BN3QQ', 'player_id' => '1-137', 'guild_id' => '0-1'];
-        $connection->method('fetchAssociative')->willReturnCallback(function ($sql) use ($code, $playerAddressPendingExists) {
-            return str_contains($sql, 'FROM player_address_pending')
-                ? ($playerAddressPendingExists ? ['address' => 'other-device'] : false) : $code;
-        });
-        $connection->method('transactional')->willReturnCallback(fn ($callback) => $callback($connection));
-        $connection->method('executeStatement')->willReturn(1);
+        // Pending-address lookups hit player_address_pending; every other
+        // fetch returns the activation code row.
+        $connection = $this->createMock(Connection::class);
+        $code = [
+            'code' => 'BN3QQ',
+            'player_id' => '1-137',
+            'guild_id' => '0-1',
+        ];
+        $connection->method('fetchAssociative')
+            ->willReturnCallback(function ($sql) use ($code, $playerAddressPendingExists) {
+                return str_contains($sql, 'FROM player_address_pending')
+                    ? ($playerAddressPendingExists ? ['address' => 'other-device'] : false)
+                    : $code;
+            });
+        $connection->method('transactional')
+            ->willReturnCallback(fn ($callback) => $callback($connection));
+        $connection->method('executeStatement')
+            ->willReturn(1);
+
         $entityManagerStub = $this->createStub(EntityManagerInterface::class);
-        $entityManagerStub->method('getConnection')->willReturn($connection);
-        $proofManager = $this->createMock(\App\Manager\AddressRegistrationProofManager::class);
-        $proofManager->method('readContext')->willReturn([
-            'chain_id' => 'structstestnet-111', 'protocol' => 'v0.22.0', 'source_height' => '3353001',
-            'player_id' => '1-137', 'address' => 'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
-            'proof_nonce' => '9007199254740993', 'registered_player_id' => $playerAddressExists ? '1-137' : '',
-            'timeout_height' => '0',
-        ]);
+        $entityManagerStub->method('getConnection')
+            ->willReturn($connection);
+
+        $proofManager = $this->createMock(AddressRegistrationProofManager::class);
+        $proofManager->method('readContext')
+            ->willReturn([
+                'chain_id' => 'structstestnet-111',
+                'protocol' => 'v0.22.0',
+                'source_height' => '3353001',
+                'player_id' => '1-137',
+                'address' => 'structs15mjft6pe6vlplh70fulqmqprmjdjgn8k3l7fpn',
+                'proof_nonce' => '9007199254740993',
+                'registered_player_id' => $playerAddressExists ? '1-137' : '',
+                'timeout_height' => '0',
+            ]);
 
         $validator = $container->get(ValidatorInterface::class);
         $validateSignatureResponseBody = json_encode([
@@ -81,7 +104,9 @@ class PlayerAddressManagerTest extends KernelTestCase
             $entityManagerStub,
             $validator
         );
-        if (is_array($requestContent)) $requestContent['activation_id'] = self::ACTIVATION_ID;
+        if (is_array($requestContent)) {
+            $requestContent['activation_id'] = self::ACTIVATION_ID;
+        }
         $request = Request::create('/api/player-address', 'POST', [], [], [] ,[], json_encode($requestContent));
         $response = $playerAddressManager->addPendingAddress($request, $signatureValidationManager, $proofManager);
         $responseContent = json_decode($response->getContent(), true);
@@ -253,18 +278,31 @@ class PlayerAddressManagerTest extends KernelTestCase
         $playerAddressPending->setIp('127.0.0.1');
         $playerAddressPending->setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0');
 
-        $connection = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $connection = $this->createMock(Connection::class);
         $connection->expects($this->exactly($expectedHttpStatusCode === Response::HTTP_BAD_REQUEST ? 0 : 1))
             ->method('fetchAssociative')
-            ->with($this->callback(fn ($sql) => str_contains($sql, 'active.player_id = :player_id')),
-                ['code' => $code, 'activation_id' => self::ACTIVATION_ID, 'player_id' => '1-137'])
-            ->willReturn($playerAddressPendingExists ? $expectedData : false);
+            ->with(
+                $this->callback(fn ($sql) => str_contains($sql, 'active.player_id = :player_id')),
+                [
+                    'code' => $code,
+                    'activation_id' => self::ACTIVATION_ID,
+                    'player_id' => '1-137',
+                ]
+            )
+            ->willReturn($playerAddressPendingExists
+                ? $expectedData
+                : false
+            );
+
         $entityManagerStub = $this->createStub(EntityManagerInterface::class);
-        $entityManagerStub->method('getConnection')->willReturn($connection);
-        $player = new \App\Entity\Player();
+        $entityManagerStub->method('getConnection')
+            ->willReturn($connection);
+
+        $player = new Player();
         $player->setId('1-137');
-        $security = $this->createStub(\Symfony\Bundle\SecurityBundle\Security::class);
-        $security->method('getUser')->willReturn($player);
+        $security = $this->createStub(Security::class);
+        $security->method('getUser')
+            ->willReturn($player);
 
         $validator = $container->get(ValidatorInterface::class);
 

@@ -25,37 +25,39 @@ export class AccountNewDeviceCodeViewModel extends AbstractViewModel {
   }
 
   initPageCode() {
-    const signal=MenuPage.router.navigationSignal;
-    const display=activation=>{
+    const signal = MenuPage.router.navigationSignal;
+    const display = activation => {
       if (!activation || signal.aborted) return;
-      document.getElementById(this.activationCodeDisplay).textContent=activation.code;
+      document.getElementById(this.activationCodeDisplay).textContent = activation.code;
       document.getElementById(this.generateActivationCode).classList.add('hidden');
       document.getElementById(this.activationCodeWrapper).classList.remove('hidden');
       this.observer?.abort();
-      const observer=this.observer=new AbortController();
-      const cancel=()=>observer.abort();
-      signal.addEventListener('abort',cancel,{once:true});
-      this.authManager.waitForPendingDevice(activation,observer.signal).then(row=>{
+      const observer = this.observer = new AbortController();
+      const cancel = () => observer.abort();
+      signal.addEventListener('abort', cancel, {once: true});
+      this.authManager.waitForPendingDevice(activation, observer.signal).then(row => {
         if (signal.aborted || observer.signal.aborted) return;
-        const existing=this.authManager.signingClientManager.queue.findRegistration(row.player_id,row.address);
-        MenuPage.router.goto('Account',existing ? 'activatingDevice' : 'approveNewDevice',row);
-      }).catch(error=>{
-        if (!observer.signal.aborted) console.debug('[DeviceActivation] pending read unavailable:',error);
-      }).finally(()=>signal.removeEventListener('abort',cancel));
+        const existing = this.authManager.signingClientManager.queue.findRegistration(row.player_id, row.address);
+        MenuPage.router.goto('Account', existing ? 'activatingDevice' : 'approveNewDevice', row);
+      }).catch(error => {
+        if (!observer.signal.aborted) console.debug('[DeviceActivation] pending read unavailable:', error);
+      }).finally(() => signal.removeEventListener('abort', cancel));
     };
-    let generating=false;
-    const generate=async()=>{
+    let generating = false;
+    const generate = async () => {
       if (generating) return;
-      generating=true;
+      generating = true;
       try {
-        const request=new CreateActivationCodeRequestDTO();
-        request.logged_in_address=this.gameState.signingAccount.address;
-        request.guild_id=this.gameState.thisGuild.id;
+        const request = new CreateActivationCodeRequestDTO();
+        request.logged_in_address = this.gameState.signingAccount.address;
+        request.guild_id = this.gameState.thisGuild.id;
         display(await this.authManager.createActivationCode(request));
-      } finally { generating=false; }
+      } finally {
+        generating = false;
+      }
     };
-    document.getElementById(this.generateActivationCode).addEventListener('click',()=>generate().catch(console.warn));
-    document.getElementById(this.generateNewCode).addEventListener('click',()=>generate().catch(console.warn));
+    document.getElementById(this.generateActivationCode).addEventListener('click', () => generate().catch(console.warn));
+    document.getElementById(this.generateNewCode).addEventListener('click', () => generate().catch(console.warn));
     display(this.authManager.savedActivationCode());
   }
 
