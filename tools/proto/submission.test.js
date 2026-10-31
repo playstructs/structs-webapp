@@ -148,6 +148,34 @@ async function failureAndUnknown(){
   console.log('CheckTx rejection, committed rejection, transport loss, old unresolved records, historical re-check backoff and wrong-block refusal passed; retryLimit never resends.');
 }
 
+async function connectionChangedBeforeSend(){
+  const f=await fixture();const id=f.enqueue();const sign=f.state.signingClient.sign;
+  f.state.signingClient.sign=async(...args)=>{const raw=await sign(...args);f.manager.connectionEpoch++;return raw;};
+  await f.tick();
+  assert.equal(f.control.sends,0);assert.notEqual(f.queue.getTransaction(id).status,TX_STATUS.UNKNOWN);
+  assert.equal(f.queue.hasUnresolvedSubmissions(),false,'A refused send must not reserve the account');
+  f.state.signingClient.sign=sign;await f.tick();
+  assert.equal(f.control.sends,1);assert.equal(f.control.signs,2);
+  console.log('A connection change after signing re-prepares the intent instead of holding the account as unknown.');
+}
+
+async function quarantineRecovery(){
+  const f=await fixture();const prefix=new TransactionJournal(account.address).prefix;
+  f.storage.setItem(prefix+'unreadable','{');
+  assert.match(f.queue.savedStateError(),/JSON|journal/);assert.throws(()=>f.enqueue());
+  assert.equal(await f.queue.quarantineSavedState(),1);assert.equal(f.queue.savedStateError(),null);
+  assert.equal(f.storage.getItem(prefix+'unreadable'),null);
+  const aside=Array.from({length:f.storage.length},(_,i)=>f.storage.key(i)).filter(key=>key.startsWith('signingJournal:quarantine:'));
+  assert.equal(aside.length,1);assert.equal(f.storage.getItem(aside[0]),'{');
+  TransactionJournal.clearSession();assert.equal(f.storage.getItem(aside[0]),'{','Logout keeps set-aside evidence');
+  const g=await fixture(new Storage());g.storage.setItem(g.queue.getStorageKey(),JSON.stringify({version:99}));
+  const reload=g.makeQueue();assert.match(reload.savedStateError(),/saved queue/);
+  assert.equal(await reload.quarantineSavedState(),1);assert.equal(reload.savedStateError(),null);
+  reload.enqueueImmediate('/structs.structs.MsgPlayerSend',{fromAddress:account.address,toAddress:account.address,amount:[{denom:'ualpha',amount:'1'}]},{retryLimit:0});
+  await g.tick(reload);assert.equal(g.control.sends,1,'Signing resumes after an explicit set-aside');
+  console.log('Unreadable journal records and saved queues are set aside unchanged on request, survive logout and release signing.');
+}
+
 async function expiredSubmissionRecovery() {
   const f = await fixture();
   f.control.height = 3353000;
@@ -370,8 +398,10 @@ async function legacyAndEpoch(){
     assert.ok(reload.recoveryError);assert.equal(f.storage.getItem(f.queue.getStorageKey()),raw);assert.equal(f.control.sends,0);
   }
   {
+    // A pre-H generic payload is refused for good at H rather than held at the lane head.
     const f=await fixture();const id=f.enqueue();f.control.height=3353000;await f.tick();
-    assert.equal(f.queue.getTransaction(id).status,TX_STATUS.QUEUED);assert.equal(f.control.signs,0);assert.equal(f.control.sends,0);
+    assert.equal(f.queue.getTransaction(id).status,TX_STATUS.DROPPED);assert.match(f.queue.getTransaction(id).error,/current-protocol/);
+    assert.equal(f.control.signs,0);assert.equal(f.control.sends,0);
   }
   {
     const f=await fixture();const id=f.enqueue();f.control.mode='throw';await f.tick();
@@ -531,8 +561,8 @@ async function accountHandoff(){
 async function main(){
   wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
   [account]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);
-  await acceptedReload();await failureAndUnknown();await expiredSubmissionRecovery();await consumedSequenceRecovery();await storageAndPrepared();await legacyAndEpoch();await overlappingTabs();
+  await acceptedReload();await failureAndUnknown();await connectionChangedBeforeSend();await quarantineRecovery();await expiredSubmissionRecovery();await consumedSequenceRecovery();await storageAndPrepared();await legacyAndEpoch();await overlappingTabs();
   await malformedWalletAndRetention();await actualDeadlines();await logoutRecovery();await accountHandoff();await liveRecovery();
   console.log('Durable signing suite passed. Submission responses are fixtures; optional live recovery is read-only. No transaction broadcast to a chain.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

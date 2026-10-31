@@ -39,7 +39,7 @@ function fixture() {
     const raw=await offline.sign(actor.address,messages,fee,'',{chainId:CHAIN.ID,accountNumber:1,sequence:control.signed});
     return signedSubmission(raw,{messages,registry,fee,accountAddress:actor.address,accountNumber:1,sequence:control.signed,
       context:{chainId:CHAIN.ID,protocol:CHAIN.PROTOCOL,observedHeight:String(game.currentBlockHeight),timeoutHeight:'0'}});
-  },send:async tx=>{
+  },assertSendable:()=>{},send:async tx=>{
     control.sent++;if(control.lost)throw new Error('Reply lost');
     return {stage:'check_tx',code:control.code,transactionHash:tx.submission.hash,chainId:CHAIN.ID,height:String(game.currentBlockHeight)};
   },find:async tx=>control.found ? {stage:'committed',code:control.code,chainId:CHAIN.ID,
@@ -151,4 +151,4 @@ async function removalTests() {
   [actor]=await wallet.getAccounts();registry=new Registry([...defaultRegistryTypes,...msgTypes]);
   offline=await SigningStargateClient.offline(wallet,{registry});
   await identityTests();await recoveryTests();await retryTests();await logoutTests();await removalTests();
-})().catch(error=>{console.error(error);process.exitCode=1;});
+})().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

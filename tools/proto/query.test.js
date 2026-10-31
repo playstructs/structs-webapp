@@ -272,4 +272,4 @@ async function testLiveQuery() {
 }
 
 async function main() { testProtocol(); await testSnapshots(); await testRpcLifecycle(); await testOwnedConnection(); await testLiveQuery(); }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

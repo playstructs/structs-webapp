@@ -24,6 +24,30 @@ export class AccountIndexViewModel extends AbstractViewModel {
     this.devicesBtnId = 'account-menu-devices-btn';
     this.combatTutorialBtnId = 'account-menu-combat-tutorial-btn';
     this.logoutBtnId = 'account-menu-logout-btn';
+    this.signingRecoveryBtnId = 'account-menu-signing-recovery-btn';
+  }
+
+  /**
+   * @return {string|null} why saved signing state blocks new transactions
+   */
+  signingRecoveryReason() {
+    try {
+      return this.authManager.signingClientManager?.queue?.savedStateError() ?? null;
+    } catch (error) {
+      return String(error);
+    }
+  }
+
+  async recoverSigning(button) {
+    button.disabled = true;
+    try {
+      const moved = await this.authManager.signingClientManager.queue.quarantineSavedState();
+      console.info(`[AccountIndexViewModel] set aside ${moved} unreadable signing record(s)`);
+      this.render();
+    } catch (error) {
+      console.warn('[AccountIndexViewModel] signing recovery failed:', error);
+      button.disabled = false;
+    }
   }
 
   initPageCode() {
@@ -47,6 +71,10 @@ export class AccountIndexViewModel extends AbstractViewModel {
     document.getElementById(this.combatTutorialBtnId).addEventListener('click', () => {
       MenuPage.router.goto('Account', 'startTutorial');
     });
+    const recoveryBtn = document.getElementById(this.signingRecoveryBtnId);
+    if (recoveryBtn) {
+      recoveryBtn.addEventListener('click', () => this.recoverSigning(recoveryBtn));
+    }
   }
 
   render () {
@@ -59,6 +87,23 @@ export class AccountIndexViewModel extends AbstractViewModel {
     // Device changes can land elsewhere or without a GRASS notification.
     return this.guildAPI.getPlayerAddressCount(playerId, true, {signal, timeoutMs: 15000}).then((addressCount) => {
       if (!active()) return;
+
+      const signingRecoveryReason = this.signingRecoveryReason();
+      if (signingRecoveryReason) console.warn('[AccountIndexViewModel] signing is blocked:', signingRecoveryReason);
+      const signingRecoveryHtml = signingRecoveryReason ? `
+          <div class="menu-index-btn">
+            <i class="sui-icon sui-icon-lg icon-unknown sui-text-primary"></i>
+            <div class="menu-index-btn-labels-container">
+              <div class="sui-text-header">Signing Paused</div>
+              <div class="sui-text-secondary">
+                This browser has saved transaction records it cannot read, so new transactions are paused.
+                Setting them aside keeps a copy and resumes signing. A set-aside transaction may already
+                have been sent, so check your balances before repeating an action.
+              </div>
+              <button id="${this.signingRecoveryBtnId}" class="sui-screen-btn sui-mod-destructive">Set Aside and Continue</button>
+            </div>
+          </div>
+      ` : '';
 
       MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
@@ -83,7 +128,7 @@ export class AccountIndexViewModel extends AbstractViewModel {
               <button id="${this.logoutBtnId}" class="sui-screen-btn sui-mod-destructive">Log Out</button>
             </div>
           </div>
-          
+          ${signingRecoveryHtml}
           <a id="${this.profileBtnId}" class="menu-index-btn" href="javascript: void(0)">
             <i class="sui-icon sui-icon-lg icon-member sui-text-primary"></i>
             <div class="menu-index-btn-labels-container">

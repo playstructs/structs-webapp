@@ -124,4 +124,4 @@ async function main() {
   client.disconnect();
   console.log(`Passed ${checked} unsigned integer vectors, signed/decimal boundaries, ${legacy.fixtures.length} legacy byte fixtures, queue persistence/reload, registry coverage, ${messages.length} builder wire cases and offline signing.`);
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

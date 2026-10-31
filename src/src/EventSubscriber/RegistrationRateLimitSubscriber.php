@@ -2,6 +2,7 @@
 
 namespace App\EventSubscriber;
 
+use App\Util\ClientKey;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -41,7 +42,7 @@ class RegistrationRateLimitSubscriber implements EventSubscriberInterface
 
         // HttpFoundation ignores forwarded IP headers unless the operator has
         // explicitly configured that proxy as trusted.
-        $client = $request->getClientIp() ?? 'unavailable';
+        $client = ClientKey::fromRequest($request);
         $limit = $this->registrationClientLimiter->create($client)->consume();
         if ($limit->isAccepted()) {
             $limit = $this->registrationGlobalLimiter->create('all')->consume();

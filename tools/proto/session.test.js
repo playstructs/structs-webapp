@@ -142,4 +142,4 @@ async function revokedWorkTests(){
     window.removeEventListener(EVENTS.TASK_WORKER_CHANGED,listener);globalThis.Worker=originalWorker;
   }
 }
-(async()=>{await authorityTests();await localSessionTests();await revokedWorkTests();console.log('Session ownership, lost notifications, stale responses, private-key erasure and revoked-worker shutdown passed.');})().catch(error=>{console.error(error);process.exitCode=1;});
+(async()=>{await authorityTests();await localSessionTests();await revokedWorkTests();console.log('Session ownership, lost notifications, stale responses, private-key erasure and revoked-worker shutdown passed.');})().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

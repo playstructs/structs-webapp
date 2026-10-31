@@ -107,7 +107,8 @@ validation to fresh block metadata and obtains the signing account at a verified
 query height. It signs with explicit chain/account/sequence and H-1 expiry, then
 checks the wallet's body, fee, public key and signature before saving any send.
 It checks the protocol again after signing. Post-H intents without the current
-`intentProtocol` remain unsent. That marker is a compatibility gate, not evidence
+`intentProtocol` are refused unsent; the refusal is final, so it cannot hold the
+lane. That marker is a compatibility gate, not evidence
 of live permissions, spendability or proof freshness: protocol-aware action
 preparation and the exact action-data snapshot checks still need integration.
 

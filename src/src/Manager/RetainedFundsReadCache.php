@@ -2,6 +2,7 @@
 
 namespace App\Manager;
 
+use App\Util\ClientKey;
 use Psr\Cache\CacheItemPoolInterface;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -44,7 +45,7 @@ class RetainedFundsReadCache
             if (is_array($cached) && ($cached['identity'] ?? null) === $identity) {
                 return $cached['data'];
             }
-            $client = $this->requestStack->getMainRequest()?->getClientIp() ?? 'unavailable';
+            $client = ClientKey::fromRequest($this->requestStack->getMainRequest());
             if (!$this->retainedFundsClientLimiter->create($client)->consume($cost)->isAccepted()
                 || !$this->retainedFundsGlobalLimiter->create('all')->consume($cost)->isAccepted()) {
                 throw new RuntimeException('Retained-funds native query budget is unavailable');

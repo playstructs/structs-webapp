@@ -114,4 +114,4 @@ async function main() {
   console.log('Action outcomes passed: refused enqueue, rejected build/move, pending unknown send, success and late-operation isolation.');
 }
 
-main().catch(error => { console.error(error); process.exitCode = 1; });
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

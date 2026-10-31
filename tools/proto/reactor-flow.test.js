@@ -205,7 +205,7 @@ async function flow() {
     const data=indexed();data.positions_meta.complete=control.ready;return data;
   },getPlayer:async(owner,options)=>{assert.equal(owner,'1-1');assert.equal(options.timeoutMs,16000);return player();}};
   const submit={prepare:async tx=>(await signedChange(tx.intent)).submission,
-    send:async tx=>{control.sends++;return {stage:'check_tx',code:control.reject?9:0,transactionHash:tx.submission.hash};},
+    assertSendable:()=>{},send:async tx=>{control.sends++;return {stage:'check_tx',code:control.reject?9:0,transactionHash:tx.submission.hash};},
     find:async tx=>control.committed?{stage:'committed',code:0,chainId:CHAIN.ID,height:'3353000',txIndex:1,blockHash:'A'.repeat(64),transactionHash:tx.submission.hash}:null};
   const queue=new SigningQueueManager(state,{registry,wsUrl:'reactor-flow-fixture',submission:submit});
   const manager=Object.assign(Object.create(SigningClientManager.prototype),{queue});
@@ -332,4 +332,4 @@ async function main() {
   display.infusion.power_p=null;assert.equal(display.rawDisplay('power_p',1000n),'');
   console.log('Reactor controls passed: exact native preview context, per-position rounding/health, vault limits, real Alpha/queue/view signing flow, whole-group committed correlation, rejection, unknown/reload, missed notifications, delayed indexing and navigation cleanup. No chain broadcast.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

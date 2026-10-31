@@ -95,4 +95,13 @@ class PlayerAuthenticatorPathTest extends KernelTestCase
             $this->assertFalse($response->headers->has('Access-Control-Allow-Origin'));
         }
     }
+
+    public function testApiAccessControlBackstopsTheAuthenticator(): void
+    {
+        self::bootKernel(['environment' => 'test']);
+        [$attributes] = static::getContainer()->get('security.access_map')->getPatterns(Request::create('/api/player/1-1'));
+        $this->assertSame(['IS_AUTHENTICATED'], $attributes);
+        [$public] = static::getContainer()->get('security.access_map')->getPatterns(Request::create('/'));
+        $this->assertNull($public);
+    }
 }

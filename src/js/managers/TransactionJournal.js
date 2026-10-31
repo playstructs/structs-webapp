@@ -47,21 +47,58 @@ export class TransactionJournal {
       if (!key?.startsWith(this.prefix)) continue;
       const raw = localStorage.getItem(key);
       if (raw===null) continue; // Another tab may have pruned terminal history.
-      const record = JSON.parse(raw);
-      if (record?.version !== 1 || record.accountAddress !== this.accountAddress
-          || record.chainId !== CHAIN.ID || typeof record.transaction?.id !== 'string'
-          || record.transaction.accountAddress !== this.accountAddress
-          || key !== this.prefix + record.transaction.id
-          || !['prepared','broadcasting','accepted','unknown','historical','settled'].includes(record.phase)
-          || (record.phase==='prepared' && (record.transaction.status!=='preparing' || !record.transaction.submission))
-          || (['broadcasting','accepted','unknown'].includes(record.phase) && record.transaction.status!=='unknown')
-          || (record.phase === 'historical' && !isHistoricalSubmission(record.transaction))
-          || (record.phase==='settled' && !['succeeded','dropped','cancelled'].includes(record.transaction.status))) {
-        throw new Error('Unrecognized transaction journal; recovery required');
-      }
-      records.push(record);
+      records.push(this.#parse(key,raw));
     }
     return records;
+  }
+
+  #parse(key, raw) {
+    const record = JSON.parse(raw);
+    if (record?.version !== 1 || record.accountAddress !== this.accountAddress
+        || record.chainId !== CHAIN.ID || typeof record.transaction?.id !== 'string'
+        || record.transaction.accountAddress !== this.accountAddress
+        || key !== this.prefix + record.transaction.id
+        || !['prepared','broadcasting','accepted','unknown','historical','settled'].includes(record.phase)
+        || (record.phase==='prepared' && (record.transaction.status!=='preparing' || !record.transaction.submission))
+        || (['broadcasting','accepted','unknown'].includes(record.phase) && record.transaction.status!=='unknown')
+        || (record.phase === 'historical' && !isHistoricalSubmission(record.transaction))
+        || (record.phase==='settled' && !['succeeded','dropped','cancelled'].includes(record.transaction.status))) {
+      throw new Error('Unrecognized transaction journal; recovery required');
+    }
+    return record;
+  }
+
+  /**
+   * Moves aside, unchanged, every journal and device-action record this
+   * version cannot read. Signing then resumes without them.
+   *
+   * @return {number} records moved
+   */
+  quarantine() {
+    let moved = 0;
+    const devicePrefix = `deviceChange:${CHAIN.ID}:${this.accountAddress}:`;
+    const keys = Array.from({length:localStorage.length},(_,i)=>localStorage.key(i));
+    for (const key of keys) {
+      const raw = key === null ? null : localStorage.getItem(key);
+      if (raw === null || (!key.startsWith(this.prefix) && !key.startsWith(devicePrefix))) continue;
+      try {
+        if (key.startsWith(this.prefix)) this.#parse(key,raw);
+        else if (typeof JSON.parse(raw)?.id !== 'string') throw new Error('Invalid saved device action');
+        continue;
+      } catch { /* Unreadable: set aside below. */ }
+      TransactionJournal.quarantineKey(this.accountAddress,key);
+      moved++;
+    }
+    return moved;
+  }
+
+  /** Quarantined records keep the journal prefix, so logout preserves them as evidence. */
+  static quarantineKey(accountAddress, key) {
+    const raw = localStorage.getItem(key);
+    const target = `signingJournal:quarantine:${CHAIN.ID}:${accountAddress}:${Date.now()}:${key}`;
+    localStorage.setItem(target,raw);
+    if (localStorage.getItem(target) !== raw) throw new Error('Saved signing record could not be set aside');
+    localStorage.removeItem(key);
   }
 
   write(tx, phase) {

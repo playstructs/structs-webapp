@@ -194,4 +194,4 @@ async function workAPI() {
   assert.equal(factory.initTaskFromWork(work[0]).difficulty_target,'18446744073709551615');
   console.log('Work API preserves snapshot metadata for empty lists and exact uint64 inputs.');
 }
-workAPI().catch(error=>{console.error(error);process.exitCode=1;});
+workAPI().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

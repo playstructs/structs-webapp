@@ -178,15 +178,18 @@ async function queueRecovery() {
   assert.equal(f.control.signed,1);assert.equal(f.control.sends,1);assert.equal(restored.getTransaction(first.id).status,TX_STATUS.UNKNOWN);
   assert.throws(()=>restored.enqueueGameplayImmediate(prefix+'StructBuildCancel',{structId:'5-1'}),/existing submission/);
   const blocked=fixture(),id=blocked.manager.queue.enqueueImmediate(prefix+'StructActivate',{structId:'5-1'});
-  await blocked.manager.queue.transactOnBlock();assert.equal(blocked.manager.queue.getTransaction(id).status,TX_STATUS.QUEUED);
+  const behind=blocked.manager.queue.enqueueImmediate(prefix+'StructActivate',{structId:'5-2'});
+  await blocked.manager.queue.transactOnBlock();assert.equal(blocked.manager.queue.getTransaction(id).status,TX_STATUS.DROPPED);
   assert.equal(blocked.control.signed,0,'An old generic payload is not silently promoted to reviewed intent');
+  blocked.manager.gameState.currentBlockHeight++;await blocked.manager.queue.transactOnBlock();
+  assert.equal(blocked.manager.queue.getTransaction(behind).status,TX_STATUS.DROPPED,'The refusal does not hold the lane');
   const prepared=fixture(),preparedTx=await build(prepared,cases[7]);
   preparedTx.submission=await prepared.submission.prepare(preparedTx);preparedTx.status=TX_STATUS.PREPARING;
   new TransactionJournal(actor.address).write(preparedTx,'prepared');
   prepared.control.mask='0';const reload=prepared.makeQueue();reload.loadPersistedState();
   await reload.transactOnBlock();assert.equal(reload.getTransaction(preparedTx.id).status,TX_STATUS.DROPPED);
   assert.equal(prepared.control.signed,1);assert.equal(prepared.control.sends,0,'Unsent recovered proof must recheck current authority');
-  console.log('Real queue preserves action charge/order, uncertain bytes across reload and the unreviewed legacy-payload hold.');
+  console.log('Real queue preserves action charge/order, uncertain bytes across reload and the final unreviewed legacy-payload refusal.');
 }
 async function main() {
   const wallet=await DirectSecp256k1HdWallet.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',{prefix:'structs'});
@@ -194,4 +197,4 @@ async function main() {
   offline=await SigningStargateClient.offline(wallet,{registry});
   await builders();await refusals();await queueRecovery();
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

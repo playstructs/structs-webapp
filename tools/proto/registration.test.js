@@ -289,6 +289,10 @@ async function deviceRecoveryTests(base,memory) {
   committed(tx);new TransactionJournal(signerAccount.address).write(tx,'settled');
   assert.equal(await second.loginWithMnemonic('recovery fixture',signal),true);
   assert.equal(proofReads,1);assert.equal(recoveryStore.read(),null);
+  // An abandoned recovery's key is removed after an hour; a recent one is kept.
+  const saved=recoveryStore.write({mnemonic,address:base.address,pubkey:base.pubkey});
+  await DeviceRegistrationStore.expireRecovery(saved.createdAt+1000);assert.equal(recoveryStore.read().address,base.address);
+  await DeviceRegistrationStore.expireRecovery(saved.createdAt+60*60*1000+1);assert.equal(recoveryStore.read(),null);
 }
 
 async function navigationTests() {
@@ -430,4 +434,4 @@ async function main() {
   await navigationTests();
   console.log('Registration proofs, exact nonces, permission ceiling, protocol expiry, real signatures/simulation, committed association, instance binding and reload recovery passed.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

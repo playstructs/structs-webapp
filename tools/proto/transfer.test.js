@@ -119,4 +119,4 @@ async function main() {
   assert.deepEqual(reload.getTransaction(id).intent,intent());assert.equal(reload.getTransaction(id).message,null);
   console.log('Transfer preparation passed: persisted intent, exact live authority/spendability, secondary signer, selected/literal/self routing, unprovisioned vaults, signed simulation, gas bound and unsent H rebuild. No broadcast.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

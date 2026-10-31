@@ -211,4 +211,4 @@ async function main(){
   await valuesAndCache();await invalidationsAndCoalescing();await boundariesAndLifecycle();
   console.log('Shared Alpha refresh passed: exact vault/legacy values, monotonic per-field evidence, owner/session/H isolation, coalesced notifications, retained receipts, no deltas, index catch-up, committed outcomes, native reconnect/resume/poll recovery and cancellation. No chain broadcast.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

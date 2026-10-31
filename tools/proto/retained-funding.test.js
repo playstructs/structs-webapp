@@ -226,4 +226,4 @@ async function main() {
   console.log('Retained funding passed: existing balance/limits, vault first, exact shortfall, native authority/spendability, atomic signed groups, simulation cap and completion after reload. No broadcast.');
 }
 
-main().catch(error => { console.error(error); process.exitCode = 1; });
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

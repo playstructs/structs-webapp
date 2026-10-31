@@ -93,7 +93,9 @@ export class SigningSubmission {
       tx.intentProtocol = context.protocol;
     } else if ((tx.intentProtocol && tx.intentProtocol!==context.protocol)
         || (context.protocol===CHAIN.PROTOCOL && tx.intentProtocol!==CHAIN.PROTOCOL)) {
-      throw new SigningDeferredError('Queued intent requires current-protocol preparation');
+      // Final, not deferred: a deferred refusal returns to the head of its lane
+      // and would block every later transaction there until it expires.
+      throw new Error('Queued intent requires current-protocol preparation');
     }
     const account = accountSnapshot.data.account;
     if (account.address!==tx.accountAddress || !Number.isSafeInteger(account.accountNumber)
@@ -125,11 +127,17 @@ export class SigningSubmission {
         ? {generator:accountSnapshot.data.prepared.generator} : {transfer:accountSnapshot.data.prepared.transfer}) : {})};
   }
 
-  async send(tx) {
-    const bytes = submissionBytes(tx.submission);
+  /** Called before the send marker is written, so a refused send stays provably unsent. */
+  assertSendable(tx) {
     const query = this.manager.chainQuery;
     if (!query || query.closed || tx.submission.connectionEpoch!==this.manager.connectionEpoch
-        || tx.accountAddress!==this.manager.gameState.signingAccount?.address) throw new Error('Signing connection changed before send');
+        || tx.accountAddress!==this.manager.gameState.signingAccount?.address) throw new SigningDeferredError('Signing connection changed before send');
+  }
+
+  async send(tx) {
+    const bytes = submissionBytes(tx.submission);
+    this.assertSendable(tx);
+    const query = this.manager.chainQuery;
     const result = await query.cometClient.broadcastTxSync({tx:bytes});
     if (toHex(result.hash).toUpperCase()!==tx.submission.hash || !Number.isInteger(result.code) || result.code<0) {
       throw new Error('Broadcast response identity is invalid');

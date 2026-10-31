@@ -161,4 +161,4 @@ async function timeoutTests(){
   } finally {globalThis.fetch=originalFetch;}
   console.log('Hung catalog/work requests abort and release subsequent refreshes.');
 }
-(async()=>{await catalogTests();await workTests();await refreshTests();await tutorialTests();await timeoutTests();})().catch(error=>{console.error(error);process.exitCode=1;});
+(async()=>{await catalogTests();await workTests();await refreshTests();await tutorialTests();await timeoutTests();})().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

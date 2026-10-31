@@ -73,4 +73,12 @@ class RegistrationRateLimitTest extends TestCase
         $this->assertSame(429, $run('203.0.113.8, 198.51.100.1')->getResponse()->getStatusCode(),
             'A client-supplied earlier hop cannot rotate the nearest untrusted client identity');
     }
+
+    public function testIpv6ClientsCannotRotateWithinTheirSlash64(): void
+    {
+        $subscriber = $this->subscriber(1, 10);
+        $this->assertFalse($this->request($subscriber, 'api_get_address_registration_proof', '2001:db8:5::1')->hasResponse());
+        $this->assertSame(429, $this->request($subscriber, 'api_get_address_registration_proof', '2001:db8:5::2')->getResponse()->getStatusCode());
+        $this->assertFalse($this->request($subscriber, 'api_get_address_registration_proof', '2001:db8:6::1')->hasResponse());
+    }
 }

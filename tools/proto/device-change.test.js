@@ -286,4 +286,4 @@ async function main(){
   await flowTests(memory);
   console.log('Device changes passed: exact native authority, old/new grant ceiling, primary protection, retained bits, H expiry, signed simulation, durable uncertainty and nonce-preserving revocation. No chain broadcast.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

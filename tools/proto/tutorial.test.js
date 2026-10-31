@@ -66,3 +66,4 @@ for (const energy of [
   assert.equal(counter.options.healthAfter,shot.targetHealthAfter);
 }
 console.log('Tutorial keeps displayed power, restores charge and permits simulated combat for overloaded accounts without weakening real power or lock checks.');
+process.exitCode=0;

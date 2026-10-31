@@ -71,7 +71,7 @@ signing.queue=new SigningQueueManager(state,{registry,wsUrl:'browser-acceptance'
     console.info('[acceptance-signing]',JSON.stringify({typeUrl:messages[0].typeUrl,value:messages[0].value,hash:signed.hash}));
     return {...signed,transfer:{ownerId:'1-1',source,destination:selected?recipientVault:intent.recipientAddress,
       denom:'ualpha',amount:intent.amount,height:String(state.currentBlockHeight)}};
-  },send:async tx=>{
+  },assertSendable:()=>{},send:async tx=>{
     count('sends');const current=await control();
     if(current.outcome==='unknown')throw new Error('Fixture lost send reply');
     return {stage:'check_tx',code:current.outcome==='reject'?7:0,transactionHash:tx.submission.hash};

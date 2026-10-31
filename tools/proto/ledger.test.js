@@ -33,4 +33,4 @@ async function main() {
   await assert.rejects(()=>api.getTransferSource('1-1',query));
   console.log('Ledger API adapter passed: exact source values and timestamps, ready/ambiguous metadata, empty history and authentication failure preservation.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

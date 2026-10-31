@@ -266,7 +266,7 @@ export class GuildAPI {
   }
 
   async logout(options = {}) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/auth/logout`, options);
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/logout`, {}, options);
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 

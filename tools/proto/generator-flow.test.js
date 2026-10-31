@@ -100,7 +100,7 @@ async function flow(height='3353000') {
   },getPlayer:async(owner,options)=>{assert.equal(owner,'1-1');assert.equal(options.timeoutMs,16000);return player(control.height);}};
   state.guildAPI=api;
   const submit={prepare:async tx=>(await signedBurn(tx.intent,control.height)).submission,
-    send:async tx=>{control.sends++;return {stage:'check_tx',code:control.reject?9:0,transactionHash:tx.submission.hash};},
+    assertSendable:()=>{},send:async tx=>{control.sends++;return {stage:'check_tx',code:control.reject?9:0,transactionHash:tx.submission.hash};},
     find:async tx=>control.committed?{stage:'committed',code:0,chainId:CHAIN.ID,height:control.height,txIndex:1,blockHash:'A'.repeat(64),
       transactionHash:tx.submission.hash,generatorReceipt:receipt(control.height,tx.intent.amount)}:null};
   const queue=new SigningQueueManager(state,{registry,wsUrl:'generator-flow-fixture',submission:submit});
@@ -247,4 +247,4 @@ async function main() {
   assert.equal(await api.getGeneratorSnapshot('5-1',address(1)),null);
   console.log('Generator control/completion passed: exact unchanged preview/HUD values, fresh full-amount recheck, stale targets, managed action lifetime, signed identity, index delay, unrelated events, late navigation, H transition, logout and unknown/reload recovery. Controlled responses; no chain broadcast.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

@@ -43,6 +43,7 @@ import {TutorialController} from "./controllers/TutorialController";
 import {onboardingTelemetry} from "./telemetry/OnboardingTelemetry";
 import {StartupRecovery, startupReads} from "./managers/StartupRecovery";
 import {AuthenticationError} from "./errors/AuthenticationError";
+import {DeviceRegistrationStore} from "./managers/DeviceRegistrationStore";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -271,6 +272,8 @@ const startupRecovery=tutorialMode ? null : new StartupRecovery(
 async function startApplication() {
   if (!tutorialMode) {
     await gameState.load();
+    DeviceRegistrationStore.expireRecovery()
+      .catch(error=>console.debug('[DeviceRecovery] expired keys could not be removed:',error));
   }
   const loadConfiguration=()=>startupReads([()=>guildAPI.getSettings(),()=>guildAPI.getThisGuild()]);
   [gameState.settings,gameState.thisGuild] = startupRecovery

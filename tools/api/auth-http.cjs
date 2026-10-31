@@ -24,12 +24,13 @@ const request=(route,options={})=>fetch(base+route,{...options,signal:AbortSigna
   const protectedRead=headers=>request('/api/player/1-1',{headers});
   assert.equal((await protectedRead({Cookie:cookie})).status,200);
   assert.equal((await protectedRead({Cookie:cookie,Authorization:'Bearer invalid'})).status,401);
-  const logout=await request('/api/auth/logout',{headers:{Cookie:cookie}});
+  const logout=await request('/api/auth/logout',{method:'POST',headers:{Cookie:cookie}});
   assert.equal(logout.status,200);
   const loggedOut=await logout.json();assert.equal(loggedOut.success,true);
   assert.deepEqual(loggedOut.errors,[],'Logout must finish without a swallowed session error');
   assert.equal((await protectedRead({Cookie:cookie})).status,401,'The exact old cookie must lose access');
-  assert.equal((await request('/api/auth/logout',{headers:{Cookie:cookie}})).status,200);
+  assert.equal((await request('/api/auth/logout',{method:'GET',headers:{Cookie:cookie}})).status,405,'Logout is POST only');
+  assert.equal((await request('/api/auth/logout',{method:'POST',headers:{Cookie:cookie}})).status,200);
   for(const route of ['/api/auth/login','/api/auth/token']){
     assert.equal((await login(route,1200)).status,401,'Future-dated signatures cannot extend the login window');
     assert.equal((await login(route,-1200)).status,401);
@@ -38,7 +39,7 @@ const request=(route,options={})=>fetch(base+route,{...options,signal:AbortSigna
   assert.equal(issued.data.token_type,'Bearer');assert.equal(issued.data.expires_in,86400);
   const authorization='Bearer '+issued.data.access_token;
   assert.equal((await protectedRead({Authorization:authorization})).status,200);
-  assert.equal((await request('/api/auth/logout',{headers:{Authorization:authorization}})).status,200);
+  assert.equal((await request('/api/auth/logout',{method:'POST',headers:{Authorization:authorization}})).status,200);
   assert.equal((await protectedRead({Authorization:authorization})).status,401);
   assert.equal((await request('/api/guild/0-1/power/stats')).status,200,'Approved guild reads remain public');
   console.log('Auth HTTP: real signed session and bearer login; old cookie invalidated; bearer revoked; invalid bearer refuses cookie fallback; bounded timestamps; public guild reads preserved.');

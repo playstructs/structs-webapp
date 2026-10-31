@@ -39,4 +39,4 @@ async function main() {
   state.keyPlayers.player.getPlanetId=()=> '2-2';release(row);assert.equal(await moved,null,'planet changes discard old replay');
   console.log('Planet activity: all 14 release payloads hydrate exactly, including >8 KB combat; keys and late-session/map guards pass.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

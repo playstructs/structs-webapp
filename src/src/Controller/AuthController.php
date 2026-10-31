@@ -105,8 +105,10 @@ class AuthController extends AbstractController
 
     /**
      * Ends the session, and revokes the bearer token if the request carries one.
+     * POST only: with SameSite=Lax session cookies, a cross-site page cannot log
+     * the player out with an image or link.
      */
-    #[Route('/api/auth/logout', name: 'api_logout', methods: ['GET'])]
+    #[Route('/api/auth/logout', name: 'api_logout', methods: ['POST'])]
     public function logout(
         TokenStorageInterface $tokenStorage,
         Request $request,

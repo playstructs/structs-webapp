@@ -138,4 +138,4 @@ async function connectionTests() {
 }
 
 (async()=>{await recoveryTests();await transportTests();await loginTests();await raidTests();await connectionTests();console.log('Startup: bounded retries, no overlapping reads/connections or recursive login, session cancellation, preserved keys and single submission passed.');})()
-  .catch(error=>{console.error(error);process.exitCode=1;});
+  .then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

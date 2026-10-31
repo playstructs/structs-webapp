@@ -23,7 +23,7 @@ class LogoutTest extends TestCase
         $tokens = new BearerTokenManager('fixture', new ArrayAdapter());
         $current = $tokens->issue('1-1', '0-1')['access_token'];
         $other = $tokens->issue('1-1', '0-1')['access_token'];
-        $request = Request::create('/api/auth/logout');
+        $request = Request::create('/api/auth/logout', 'POST');
         $request->setSession($session);
         $request->headers->set('Authorization', 'Bearer ' . $current);
 

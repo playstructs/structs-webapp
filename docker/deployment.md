@@ -49,6 +49,12 @@ either budget. If verification cannot run, retained evidence is unavailable and
 the independently verified vault remains usable. Signing still rechecks native
 ownership and spendability; cached API evidence never authorizes a transaction.
 
-Cache and limiter state are shared by PHP workers within one container. Multiple
-replicas require shared cache/lock storage or equivalent limits at their common
-edge; these defaults do not claim a cluster-wide budget.
+## Single replica
+
+Run one webapp container. Sessions (native file handler), bearer tokens and
+onboarding limits (`cache.app`), the rate limiters, the retained-funds cache and
+the `flock` lock store all live in that container's `var/`. A second replica
+would not see the first one's logins, tokens, budgets or locks. Scaling out needs
+shared session, cache and lock storage first (for example Postgres tables that
+structs-pg owns, plus a `postgresql+advisory://` lock DSN), not only a new
+`LOCK_DSN`.

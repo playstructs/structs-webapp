@@ -520,6 +520,59 @@ export class SigningQueueManager {
     this.rehydrated = false;
   }
 
+  /**
+   * Why saved signing state blocks this account, or null when it does not.
+   *
+   * @return {string|null}
+   */
+  savedStateError() {
+    if (!this.gameState.signingAccount?.address) return null;
+    this.loadPersistedState();
+    if (this.recoveryError) return this.recoveryError;
+    const journal = new TransactionJournal(this.gameState.signingAccount.address);
+    try {
+      journal.read();
+      journal.deviceActionReferences();
+      return null;
+    } catch (error) {
+      return String(error);
+    }
+  }
+
+  /**
+   * Explicit player action: moves saved signing records this version cannot
+   * read aside, unchanged, and resumes signing without them. A moved record
+   * may be a submission whose outcome is unknown; the caller says so first.
+   *
+   * @return {Promise<number>} records moved aside
+   */
+  async quarantineSavedState() {
+    const journal = new TransactionJournal(this.gameState.signingAccount.address);
+    const reload = () => {
+      this.immediateQueue = [];
+      this.actionQueue = [];
+      this.unresolved.clear();
+      this.completed.clear();
+      this.recoveryError = null;
+      this.rehydrated = false;
+      this.loadPersistedState();
+    };
+    const moved = await journal.exclusive(() => {
+      let count = journal.quarantine();
+      reload();
+      if (this.recoveryError && this.storageScope && localStorage.getItem(this.storageScope) !== null) {
+        TransactionJournal.quarantineKey(this.gameState.signingAccount.address, this.storageScope);
+        count++;
+        reload();
+      }
+      return count;
+    });
+    if (moved === false) throw new Error('Another tab is using this account\'s signing storage');
+    const remaining = this.savedStateError();
+    if (remaining) throw new Error(remaining);
+    return moved;
+  }
+
   /** Existing resume timer may recover results even when GRASS has missed blocks. */
   reconcilePending() {
     return this.transactOnBlock(true);
@@ -552,6 +605,7 @@ export class SigningQueueManager {
       // Both writes are synchronous under the account lock. No network call is
       // reachable until exact bytes/hash and then the send marker are durable.
       journal.write(tx,'prepared');
+      this.submission.assertSendable(tx);
       tx.status = TX_STATUS.UNKNOWN;
       tx.broadcastAtBlock = this.gameState.currentBlockHeight;
       journal.write(tx,'broadcasting');

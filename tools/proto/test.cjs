@@ -52,7 +52,7 @@ if (diagnostics.length) {
     try {
       if (error || stats.hasErrors()) throw error || new Error(stats.toString({all:false,errors:true}));
       for (const name of ['wire','query','submission','ledger','transfer','transferFlow','reactor','reactorFlow','alphaRefresh','generator','generatorFlow','registration','deviceChange','work','session','gameplay','freshness','workRecovery','accountNavigation','startup','tutorial','combat','activity','actionOutcome','retainedFunding']) {
-        const run = spawnSync(process.execPath,[path.join(temporary,`${name}.cjs`)], {cwd:root,stdio:'inherit',
+        const run = spawnSync(process.execPath,['--require',path.join(__dirname,'expect-settled.cjs'),path.join(temporary,`${name}.cjs`)], {cwd:root,stdio:'inherit',
           env:{...process.env,STRUCTS_WORKER_TEST_BUNDLE:path.join(temporary,'task-worker.js')},timeout:60000});
         if (run.error) console.error(run.error);
         if (run.status !== 0) { process.exitCode = run.status ?? 1; break; }

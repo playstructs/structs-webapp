@@ -66,4 +66,4 @@ async function main() {
   }
   console.log('Combat: 14 captured release scenarios preserve counters, evasion, observed health, rebound ordering and one destruction per struct.');
 }
-main().catch(error => {console.error(error); process.exitCode = 1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

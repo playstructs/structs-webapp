@@ -20,3 +20,13 @@ framework:
             policy: token_bucket
             limit: 264
             rate: { interval: '1 second', amount: 32 }
+        # Every native chain read made for an API client, whichever route asked.
+        # A player read costs about 3, a reactor read up to 10, device state 5.
+        native_read_client:
+            policy: token_bucket
+            limit: 120
+            rate: { interval: '1 second', amount: 12 }
+        native_read_global:
+            policy: token_bucket
+            limit: 480
+            rate: { interval: '1 second', amount: 48 }

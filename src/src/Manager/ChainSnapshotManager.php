@@ -11,9 +11,13 @@ class ChainSnapshotManager
 {
     private const int MAX_RESPONSE_BYTES = 1048576;
 
+    /** @var array<string, true> networks already verified during this request */
+    private array $verified = [];
+
     public function __construct(
         private HttpClientInterface $httpClient,
-        private string $baseUrl = 'http://structsd:1317'
+        private string $baseUrl = 'http://structsd:1317',
+        private ?NativeReadBudget $budget = null,
     ) {
     }
 
@@ -25,9 +29,13 @@ class ChainSnapshotManager
 
     public function verifyChain(string $chainId, ?float $deadline = null): void
     {
+        if (isset($this->verified[$chainId])) {
+            return;
+        }
         if ($chainId === '' || ($this->read('/cosmos/base/tendermint/v1beta1/node_info', null, $deadline)['default_node_info']['network'] ?? null) !== $chainId) {
             throw new UnexpectedValueException('Chain snapshot network mismatch');
         }
+        $this->verified[$chainId] = true;
     }
 
     public function get(string $path, string $height, ?float $deadline = null): array
@@ -71,6 +79,7 @@ class ChainSnapshotManager
         if ($remaining <= 0) {
             throw new UnexpectedValueException('Chain snapshot deadline exceeded');
         }
+        $this->budget?->consume();
         $response = $this->httpClient->request('GET', rtrim($this->baseUrl, '/') . $path, [
             'headers' => $height === null ? [] : ['x-cosmos-block-height' => $height],
             'timeout' => min(2.0, $remaining),

@@ -87,4 +87,17 @@ class ApiRoutingTest extends KernelTestCase
         $this->expectException(MethodNotAllowedException::class);
         $router->match('/api/onboarding/events');
     }
+
+    /** A cross-site image or link must not be able to end a session. */
+    public function testLogoutIsPostOnly(): void
+    {
+        $router = $this->router();
+        $router->getContext()->setMethod('POST');
+
+        $this->assertSame('api_logout', $router->match('/api/auth/logout')['_route']);
+
+        $router->getContext()->setMethod('GET');
+        $this->expectException(MethodNotAllowedException::class);
+        $router->match('/api/auth/logout');
+    }
 }

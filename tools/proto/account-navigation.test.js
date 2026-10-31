@@ -114,4 +114,4 @@ async function main() {
   console.log('Account navigation: five real view renders reject late navigation/session responses; history second-read departure and API cancellation pass.');
   console.log('Account device counts refresh after local/external changes without relying on notification delivery.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

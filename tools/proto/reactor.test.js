@@ -217,7 +217,7 @@ async function main() {
   const saved=new Map();globalThis.localStorage={getItem:key=>saved.get(key)??null,setItem:(key,v)=>saved.set(key,v),get length(){return saved.size;},key:i=>[...saved.keys()][i]};
   globalThis.window=new EventTarget();Object.defineProperty(globalThis.navigator,'locks',{configurable:true,value:{request:async(n,o,run)=>run({})}});
   const durable=fixture();let sends=0;
-  const submit={prepare:tx=>durable.submission.prepare(tx),send:async tx=>{sends++;return {stage:'check_tx',code:0,transactionHash:tx.submission.hash};},find:async()=>null};
+  const submit={prepare:tx=>durable.submission.prepare(tx),assertSendable:()=>{},send:async tx=>{sends++;return {stage:'check_tx',code:0,transactionHash:tx.submission.hash};},find:async()=>null};
   const state={...durable.manager.gameState,currentBlockHeight:3353000};
   const queue=new SigningQueueManager(state,{registry,wsUrl:'reactor-fixture',submission:submit});
   const id=queue.enqueueReactor(baseIntent());await queue.transactOnBlock();assert.equal(sends,1);
@@ -228,4 +228,4 @@ async function main() {
   assert.throws(()=>reload.enqueueReactor(baseIntent()),/existing submission/);
   console.log('Reactor intent suite passed: actual generated queries/offline atomic signing, vault-first/deterministic retained legs, own-key permissions, native queue eligibility, complete pages, exact amounts, gas bound, pre-H routes and unknown group recovery. No chain broadcast.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});

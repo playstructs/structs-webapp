@@ -56,7 +56,7 @@ function flow() {
     height:'3353000',txIndex:7,blockHash:'A'.repeat(64),blockTime:'2026-10-29T22:38:04.286225999Z'};
   const queue = new SigningQueueManager(state,{registry,wsUrl:'fixture',submission:{
     prepare:async()=>signed,
-    send:async()=>{control.sends++;return {stage:'check_tx',code:control.reject?7:0,transactionHash:signed.hash};},
+    assertSendable:()=>{},send:async()=>{control.sends++;return {stage:'check_tx',code:control.reject?7:0,transactionHash:signed.hash};},
     find:async()=>control.committed?committed:null,
   }});
   const manager = Object.assign(Object.create(SigningClientManager.prototype),{queue});
@@ -241,4 +241,4 @@ async function main() {
   assert.equal(calls,2,'A hung shared login does not extend the read deadline');
   console.log('Transfer flow passed: real Alpha/queue/view integration, exact committed lookup, rejection preservation/back navigation, duplicate/unknown/reload safety, abort cleanup, indexed catch-up, ready exact bounds and read deadlines. No live broadcast.');
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().then(()=>{process.exitCode=0;},error=>{console.error(error);process.exitCode=1;});
