@@ -5,7 +5,9 @@ const {createHmac, randomBytes} = require('node:crypto');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../..');
+const {createDisposableDatabase} = require('./DisposableDatabase.cjs');
 const database = 'structs-v022-pg';
+let fixture;
 const suffix = randomBytes(5).toString('hex');
 const network = 'structs-v022-catalog-' + suffix;
 const apache = network + '-apache';
@@ -17,7 +19,7 @@ const balance = '1000000000000000000000000000000000000000000000000000000000000';
 const activityTime = '2026-10-30T12:34:56.123456Z';
 const activityDetail = JSON.parse(require('../proto/combat-v022.json').fixtures[4].event.attributes[0].value);
 const docker = (args, input) => execFileSync('docker', args, {encoding: 'utf8', input, timeout: 60000, stdio: ['pipe', 'pipe', 'pipe']}).trim();
-const sql = query => docker(['exec', '-i', '--user', 'structs', database, 'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-d', 'structs', '-At'], query);
+const sql = query => fixture.sql(query);
 const port = name => docker(['port', name, '80/tcp']).split(':').pop();
 const payload = Buffer.from(JSON.stringify({p: '1-990970', g: '0-990970', exp: Math.floor(Date.now()/1000)+600, jti: randomBytes(12).toString('hex')})).toString('base64url');
 const token = payload + '.' + createHmac('sha256', secret).update('guild-bearer.' + payload).digest('base64url');
@@ -34,10 +36,10 @@ async function ready(base) {
     throw new Error('HTTP service did not reach the existing authentication boundary: ' + base);
 }
 (async () => {
-    let seeded = false;
     let attached = false;
     try {
         assert.equal(docker(['inspect', '--format', '{{index .Config.Labels \"structs.task\"}}', database]), 'v022-integration');
+        fixture = createDisposableDatabase();
         sql("BEGIN; INSERT INTO structs.guild(id,name,primary_reactor_id) VALUES ('0-990970','Public guild fixture','3-990970');\n" +
             "INSERT INTO structs.reactor(id,validator,guild_id) VALUES('3-990970','publicguildvalidator','0-990970');\n" +
             "INSERT INTO structs.guild_meta(id,this_infrastructure) VALUES('0-990970',false);\n" +
@@ -45,7 +47,6 @@ async function ready(base) {
             `INSERT INTO structs.player_address(address,player_id,guild_id,status) VALUES('${recoveryAddress}','1-990970','0-990970','approved');\n` +
             denoms.map((denom, i) => `INSERT INTO structs.provider(id,owner,rate_amount,rate_denom) VALUES('9-${990970+i}','0-990970',1,'${denom}');\n` +
                 `INSERT INTO structs.api_inventory(owner_type,owner_id,denom,balance) VALUES ('address','cataloghttpfirst','${denom}',${balance}),('address','cataloghttpsecond','${denom}',${balance}-1);`).join('\n') + '\nCOMMIT;');
-        seeded = true;
         sql(`INSERT INTO structs.planet_activity(time,planet_id,seq,category,detail,block_height)
             VALUES('${activityTime}','2-990976',0,'struct_attack','${JSON.stringify(activityDetail).replace(/'/g,"''")}'::jsonb,3353001);`);
         docker(['network', 'create', network]);
@@ -53,7 +54,7 @@ async function ready(base) {
         attached = true;
         docker(['run', '-d', '--name', apache, '--platform', 'linux/amd64', '--network', network, '--network-alias', 'structs-webapp',
             '-p', '127.0.0.1::80', '-e', 'APP_ENV=prod', '-e', 'APP_DEBUG=0', '-e', 'APP_SECRET=' + secret,
-            '-e', 'DATABASE_URL=postgresql://structs_webapp@' + database + ':5432/structs?serverVersion=18',
+            '-e', 'DATABASE_URL=postgresql://structs_webapp@' + database + ':5432/' + fixture.name + '?serverVersion=18',
             '-v', root + '/src:/src:ro', '--tmpfs', '/src/var:rw,mode=1777',
             '-v', root + '/docker/apache/structs.conf:/etc/apache2/sites-available/000-default.conf:ro',
             'structs/structs-webapp:latest']);
@@ -258,6 +259,25 @@ async function ready(base) {
                 assert.equal(response.status, 404, surface + ' rejects invalid or double-encoded denomination');
                 checks++;
             }
+            // The same shared limiter protects both public native-read routes.
+            // Invalid fixture identities stop before the node; a burst must reach
+            // 429 even if the sender rotates an untrusted forwarded-IP header.
+            let limited = 0;
+            for (let i = 0; i < 24; i++) {
+                const route = i % 2 ? 'registration' : 'proof';
+                const response = await fetch(`${base}/api/auth/player-address/invalid/player/1-1/${route}`, {
+                    headers: {'X-Forwarded-For': `192.0.2.${i + 1}`}, signal: AbortSignal.timeout(10000)
+                });
+                assert.ok([400, 409, 429].includes(response.status), `${surface} registration limiter returned ${response.status}`);
+                if (response.status === 429) {
+                    limited++;
+                    assert.ok(Number(response.headers.get('retry-after')) > 0);
+                    assert.match(response.headers.get('cache-control'), /no-store/);
+                    assert.equal((await response.json()).success, false);
+                }
+            }
+            assert.ok(limited > 0, `${surface} registration burst must be limited`);
+            checks++;
             console.log(JSON.stringify({surface, status: 'passed', denominations: denoms, checks}));
         }
         console.log(JSON.stringify({status: 'passed', checks, authenticated: true, database, liveStackChanged: false}));
@@ -270,12 +290,6 @@ async function ready(base) {
         for (const name of [proxy, apache]) { try { docker(['rm', '-f', name]); } catch (_) {} }
         if (attached) docker(['network', 'disconnect', network, database]);
         try { docker(['network', 'rm', network]); } catch (_) {}
-        if (seeded) sql("BEGIN; DELETE FROM structs.player_address_meta WHERE address='cataloghttpprimary';\n" +
-            `DELETE FROM structs.planet_activity WHERE time='${activityTime}' AND planet_id='2-990976' AND seq=0;\n` +
-            "DELETE FROM structs.player_address WHERE address='cataloghttpprimary';\n" +
-            "DELETE FROM structs.api_inventory WHERE owner_type='address' AND owner_id IN ('cataloghttpfirst','cataloghttpsecond');\n" +
-            "DELETE FROM structs.provider WHERE id IN ('9-990970','9-990971','9-990972','9-990973');\n" +
-            "DELETE FROM structs.player_address WHERE player_id='1-990970'; DELETE FROM structs.player WHERE id='1-990970'; " +
-            "DELETE FROM structs.guild_meta WHERE id='0-990970'; DELETE FROM structs.reactor WHERE id='3-990970'; DELETE FROM structs.guild WHERE id='0-990970'; COMMIT;");
+        fixture?.close();
     }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -1,0 +1,12 @@
+framework:
+    rate_limiter:
+        # Shared across proof, status and pending-consent requests. Polling backs
+        # off; rotating an address or route must not create a new client budget.
+        registration_client:
+            policy: token_bucket
+            limit: 12
+            rate: { interval: '2 seconds', amount: 1 }
+        registration_global:
+            policy: token_bucket
+            limit: 60
+            rate: { interval: '1 second', amount: 10 }
