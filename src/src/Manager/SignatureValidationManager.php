@@ -58,6 +58,7 @@ class SignatureValidationManager
     }
 
     public function isMessageTimeValid(string $messageTimestamp): bool {
-        return (time() - intval($messageTimestamp)) < self::MSG_EXPIRY_TIME;
+        return preg_match('/^(0|[1-9][0-9]{0,18})$/D', $messageTimestamp) === 1
+            && abs(time() - intval($messageTimestamp)) < self::MSG_EXPIRY_TIME;
     }
 }
