@@ -103,7 +103,64 @@ function authFixture(base) {
     buildAddressRegisterMessage:(_player,_address,proof)=>registrationProofMessage(proof),getRegistrationStatus:async()=>association(base)};
   return manager;
 }
+async function grassWakeTests(base) {
+  const listeners = new Map();
+  const grass = {
+    registerListener(listener) { listeners.set(listener.name, listener); },
+    unregisterListener(name) { listeners.delete(name); },
+    emit(message) { for (const listener of listeners.values()) listener.handler(message); }
+  };
+  const expected = {playerId:base.ownerId,address:base.address,guildId:'0-1',proof:base.proof};
+  const notification = {category:'player_address',address:base.address,
+    subject:`structs.player.0-1.${base.ownerId}`,status:'approved'};
+  const abort = new AbortController();
+  let reads = 0;
+  let complete = false;
+  const api = {getRegistrationStatus:async () => {
+    reads++;
+    const result = association(base);
+    if (reads < 3) result.data.indexed.status = 'pending';
+    return result;
+  }};
+  const waiting = waitForRegistration(api, expected, abort.signal, grass).then(value => {
+    complete = true;
+    return value;
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  for (let i = 0; i < 20; i++) grass.emit(notification);
+  await new Promise(resolve => setTimeout(resolve, 1100));
+  assert.equal(reads, 2, 'A notification burst prompts one authoritative recheck');
+  assert.equal(complete, false, 'An approval notification cannot establish the association');
+  grass.emit({...notification,address:'another-address'});
+  await new Promise(resolve => setTimeout(resolve, 1100));
+  assert.equal(reads, 2, 'Another address cannot wake this observer');
+  grass.emit(notification);
+  await waiting;
+  assert.equal(reads, 3);
+  assert.equal(listeners.size, 0, 'Completion releases the GRASS listener');
+
+  const stopped = new AbortController();
+  const pending = waitForRegistration({getRegistrationStatus:async () => ({})}, expected, stopped.signal, grass);
+  await new Promise(resolve => setImmediate(resolve));
+  stopped.abort();
+  await assert.rejects(pending, error => error.name === 'AbortError');
+  assert.equal(listeners.size, 0, 'Navigation releases the observer and its timer');
+
+  const manager = authFixture(base);
+  manager.grassManager = grass;
+  let pendingReads = 0;
+  manager.guildAPI.getPendingAddressByCode = async () => ++pendingReads === 1 ? null : pendingRow(base);
+  const row = pendingRow(base);
+  const result = manager.waitForPendingDevice(row, new AbortController().signal);
+  await new Promise(resolve => setImmediate(resolve));
+  grass.emit({category:'player_address_pending',subject:`structs.address.register.${row.code}`,activation_id:row.activation_id});
+  assert.equal((await result).address, base.address);
+  assert.equal(pendingReads, 2);
+  assert.equal(listeners.size, 0);
+}
+
 async function activationTests(base, memory) {
+  await grassWakeTests(base);
   const row=pendingRow(base),signal=new AbortController().signal;
   for (const status of [TX_STATUS.DROPPED,TX_STATUS.CANCELLED,TX_STATUS.SUCCEEDED]) {
     memory.clear();

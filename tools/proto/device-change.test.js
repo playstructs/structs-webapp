@@ -116,6 +116,22 @@ async function flowTests(memory) {
   await assert.rejects(()=>again.changeDevice(target.address,'permissions','0',f.tx.intent.expectedPermissions,signal),/existing device action/);
   // Inclusion arriving in another tab is adopted, even with the old observer gone.
   f.tx.status=TX_STATUS.SUCCEEDED;new TransactionJournal(actor.address).write(f.tx,'settled');
+  // Pruning must preserve a completed action still referenced by an interrupted view.
+  const journal = new TransactionJournal(actor.address);
+  const record = JSON.parse(localStorage.getItem(journal.prefix + f.tx.id));
+  record.updatedAt = 1;
+  localStorage.setItem(journal.prefix + f.tx.id, JSON.stringify(record));
+  for (let i = 0; i < 105; i++) {
+    const historical = structuredClone(record);
+    historical.updatedAt = i + 2;
+    historical.transaction.id = `completed-${i}`;
+    localStorage.setItem(journal.prefix + historical.transaction.id, JSON.stringify(historical));
+  }
+  const unrelated = (await fixture()).tx;
+  unrelated.status = TX_STATUS.DROPPED;
+  journal.write(unrelated, 'settled');
+  assert.ok(localStorage.getItem(journal.prefix + f.tx.id), 'Referenced terminal evidence survives pruning');
+  assert.equal(localStorage.getItem(journal.prefix + 'completed-0'), null, 'Unreferenced old history is still bounded');
   assert.equal(await again.changeDevice(target.address,'permissions',f.tx.intent.permissions,f.tx.intent.expectedPermissions,signal),true);
   assert.equal(f.control.signed,1);
   // A definitively failed action permits a fresh explicit retry, retaining its selected grant.

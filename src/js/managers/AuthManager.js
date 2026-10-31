@@ -8,7 +8,6 @@ import {deviceChangeCommit, waitForDeviceChange} from "../util/DeviceChangeCompl
 import {DeviceRegistrationStore} from "./DeviceRegistrationStore";
 import {registrationAssociation, registrationCommit, waitForRegistration} from "../util/RegistrationCompletion";
 import {registrationIntent} from "../util/RegistrationIntent";
-import {abortableDelay} from "../util/AbortableDelay";
 import {pendingRegistrationProof} from "../util/RegistrationProof";
 import {PlayerCreatedListener} from "../grass_listeners/PlayerCreatedListener";
 import {LoginRequestDTO} from "../dtos/LoginRequestDTO";
@@ -24,6 +23,7 @@ import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {AddPendingAddressRequestDTO} from "../dtos/AddPendingAddressRequestDTO";
 import {PlayerAddressPendingFactory} from "../factories/PlayerAddressPendingFactory";
 import {SetPendingAddressPermissionsRequestDTO} from "../dtos/SetPendingAddressPermissionsRequestDTO";
+import {RegistrationRefreshListener} from "../grass_listeners/RegistrationRefreshListener";
 import {PlayerAddressRevokedListener} from "../grass_listeners/PlayerAddressRevokedListener";
 import {AlphaChangeListener} from "../grass_listeners/AlphaChangeListener";
 import {PlanetRaidStatusListener} from "../grass_listeners/PlanetRaidStatusListener";
@@ -425,7 +425,7 @@ export class AuthManager {
     const tx=await this.signingClientManager.queue.whenSettled(id,signal);
     signal.throwIfAborted();
     if (tx.status !== TX_STATUS.SUCCEEDED) return false;
-    await waitForRegistration(this.guildAPI,{...registrationCommit(tx),guildId},signal);
+    await waitForRegistration(this.guildAPI,{...registrationCommit(tx),guildId},signal,this.grassManager);
     signal.throwIfAborted();
     if (this.gameState.signingAccount.address !== primaryAddress) throw new Error('Recovery signer changed');
     const success=await this.completeMnemonicLogin(playerId,record.mnemonic,signal);
@@ -638,7 +638,7 @@ export class AuthManager {
     }
     const {account}=await this.savedDevice(store);
     if (this.gameState.signingAccount.address !== account.address) throw new Error('Activation device changed');
-    return waitForRegistration(this.guildAPI,{playerId:info.player_id,address:record.address,guildId:this.gameState.thisGuild.id,proof:record.proof},signal);
+    return waitForRegistration(this.guildAPI,{playerId:info.player_id,address:record.address,guildId:this.gameState.thisGuild.id,proof:record.proof},signal,this.grassManager);
   }
 
   async completeDeviceActivation(info, signal) {
@@ -671,28 +671,36 @@ export class AuthManager {
   }
 
   async waitForPendingDevice(activation, signal) {
-    let delay=2000;
-    while (!signal.aborted) {
-      // Approval can already have committed while SQL removed its pending row.
-      // This saved row is only a locator; activateDevice still checks the signed
-      // journal or refetches current server consent before enqueuing anything.
-      if (activation.pending && this.signingClientManager.queue.findRegistration(activation.pending.player_id,activation.pending.address)) {
-        return activation.pending;
-      }
-      try {
-        const row=await this.guildAPI.getPendingAddressByCode(activation.code,activation.activation_id,{signal});
-        signal.throwIfAborted();
-        if (row && row.activation_id === activation.activation_id && row.player_id === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
-          pendingRegistrationProof(row);
-          return row;
+    const refresh = new RegistrationRefreshListener(this.grassManager, message =>
+      message.category === 'player_address_pending'
+      && message.subject === `structs.address.register.${activation.code}`
+      && message.activation_id === activation.activation_id);
+    try {
+      let delay=2000;
+      while (!signal.aborted) {
+        // Approval can already have committed while SQL removed its pending row.
+        // This saved row is only a locator; activateDevice still checks the signed
+        // journal or refetches current server consent before enqueuing anything.
+        if (activation.pending && this.signingClientManager.queue.findRegistration(activation.pending.player_id,activation.pending.address)) {
+          return activation.pending;
         }
-      } catch (error) {
-        signal.throwIfAborted();
-        console.debug('[DeviceActivation] pending device unavailable:',error);
+        try {
+          const row=await this.guildAPI.getPendingAddressByCode(activation.code,activation.activation_id,{signal});
+          signal.throwIfAborted();
+          if (row && row.activation_id === activation.activation_id && row.player_id === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
+            pendingRegistrationProof(row);
+            return row;
+          }
+        } catch (error) {
+          signal.throwIfAborted();
+          console.debug('[DeviceActivation] pending device unavailable:',error);
+        }
+        await refresh.wait(delay,signal);delay=Math.min(delay*2,30000);
       }
-      await abortableDelay(delay,signal);delay=Math.min(delay*2,30000);
+      signal.throwIfAborted();
+    } finally {
+      refresh.close();
     }
-    signal.throwIfAborted();
   }
 
   async activateDevice(chosen, signal = MenuPage.router.navigationSignal) {
@@ -716,7 +724,7 @@ export class AuthManager {
     const settled=await this.signingClientManager.queue.whenSettled(tx.id,signal);
     signal.throwIfAborted();
     if (settled.status !== TX_STATUS.SUCCEEDED) return false;
-    await waitForRegistration(this.guildAPI,{...registrationCommit(settled),guildId:this.gameState.thisGuild.id},signal);
+    await waitForRegistration(this.guildAPI,{...registrationCommit(settled),guildId:this.gameState.thisGuild.id},signal,this.grassManager);
     signal.throwIfAborted();
     if (this.gameState.signingAccount.address !== signer) throw new Error('Approval signer changed');
     // Cleanup is idempotent and never turns a committed registration into failure.

@@ -64,13 +64,16 @@ export class TransactionJournal {
 
   write(tx, phase) {
     if (tx.accountAddress !== this.accountAddress) throw new Error('Transaction journal signer mismatch');
+    const referenced = this.deviceActionReferences();
     // Only terminal history is bounded. Unresolved records never expire.
     const completed = this.read().filter(record=>record.phase==='settled' && record.transaction.id!==tx.id)
       .sort((a,b)=>b.updatedAt-a.updatedAt);
     for (const record of completed.slice(99)) {
       // An old tab can still hold an unsigned queue entry. Retain its terminal
       // tombstone for at least as long as that intent is permitted to run.
-      if (Date.now()-record.updatedAt>SIGNING_QUEUE.MAX_QUEUE_AGE_MS) localStorage.removeItem(this.prefix+record.transaction.id);
+      if (!referenced.has(record.transaction.id) && Date.now()-record.updatedAt>SIGNING_QUEUE.MAX_QUEUE_AGE_MS) {
+        localStorage.removeItem(this.prefix+record.transaction.id);
+      }
     }
     const record = {version:1,chainId:CHAIN.ID,accountAddress:this.accountAddress,
       phase,updatedAt:Date.now(),transaction:tx.toJSON()};
@@ -78,6 +81,22 @@ export class TransactionJournal {
     const key = this.prefix+tx.id;
     localStorage.setItem(key,encoded);
     if (localStorage.getItem(key)!==encoded) throw new Error('Signed transaction could not be persisted');
+  }
+
+  /** A device observer may resume after terminal history would normally expire. */
+  deviceActionReferences() {
+    const prefix = `deviceChange:${CHAIN.ID}:${this.accountAddress}:`;
+    const referenced = new Set();
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith(prefix)) continue;
+      const value = localStorage.getItem(key);
+      if (value === null) continue;
+      const saved = JSON.parse(value);
+      if (typeof saved?.id !== 'string') throw new Error('Invalid saved device action');
+      referenced.add(saved.id);
+    }
+    return referenced;
   }
 
   async exclusive(run) {

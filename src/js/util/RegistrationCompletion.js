@@ -6,7 +6,7 @@ import {registrationIntent} from "./RegistrationIntent";
 import {registrationProofContext, registrationUint64} from "./RegistrationProof";
 import {exactQueryHeight, protocolAtHeight, validateSigningSnapshot} from "./ChainProtocol";
 import {submissionBytes} from "./SignedSubmission";
-import {abortableDelay} from "./AbortableDelay";
+import {RegistrationRefreshListener} from "../grass_listeners/RegistrationRefreshListener";
 
 export function registrationCommit(tx) {
   const intent=registrationIntent(tx.intent), {submission,response}=tx;
@@ -61,21 +61,28 @@ function consentWasConsumed(response, expected) {
   } catch { return false; }
 }
 
-export async function waitForRegistration(guildAPI, expected, signal) {
-  let delay=2000;
-  while (!signal.aborted) {
-    try {
-      const response=await guildAPI.getRegistrationStatus(expected.playerId,expected.address,{signal,timeoutMs:16000});
-      signal.throwIfAborted();
-      if (registrationAssociation(response,expected)) return response;
-      if (consentWasConsumed(response,expected)) throw new RegistrationConsentUnavailable('Device registration consent is no longer usable');
-    } catch (error) {
-      signal.throwIfAborted();
-      if (error instanceof RegistrationConsentUnavailable) throw error;
-      console.debug('[RegistrationCompletion] current association unavailable:',error);
+export async function waitForRegistration(guildAPI, expected, signal, grassManager) {
+  const refresh = new RegistrationRefreshListener(grassManager, message =>
+    message.category === 'player_address' && message.address === expected.address
+    && message.subject === `structs.player.${expected.guildId}.${expected.playerId}`);
+  try {
+    let delay=2000;
+    while (!signal.aborted) {
+      try {
+        const response=await guildAPI.getRegistrationStatus(expected.playerId,expected.address,{signal,timeoutMs:16000});
+        signal.throwIfAborted();
+        if (registrationAssociation(response,expected)) return response;
+        if (consentWasConsumed(response,expected)) throw new RegistrationConsentUnavailable('Device registration consent is no longer usable');
+      } catch (error) {
+        signal.throwIfAborted();
+        if (error instanceof RegistrationConsentUnavailable) throw error;
+        console.debug('[RegistrationCompletion] current association unavailable:',error);
+      }
+      await refresh.wait(delay,signal);
+      delay=Math.min(delay*2,30000);
     }
-    await abortableDelay(delay,signal);
-    delay=Math.min(delay*2,30000);
+    signal.throwIfAborted();
+  } finally {
+    refresh.close();
   }
-  signal.throwIfAborted();
 }
