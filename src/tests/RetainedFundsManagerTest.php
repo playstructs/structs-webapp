@@ -2,6 +2,7 @@
 
 use App\Manager\ChainSnapshotManager;
 use App\Manager\RetainedFundsManager;
+use App\Manager\RetainedFundsReadCache;
 use PHPUnit\Framework\TestCase;
 
 class RetainedFundsManagerTest extends TestCase
@@ -67,6 +68,54 @@ class RetainedFundsManagerTest extends TestCase
             'duplicate' => [[['address' => self::SOURCE], ['address' => self::SOURCE]]],
             'too many' => [array_fill(0, 17, ['address' => self::SOURCE])],
         ];
+    }
+
+    public function testCacheIdentityIncludesEveryNativeEvidenceBoundary(): void
+    {
+        $chain = $this->createMock(ChainSnapshotManager::class);
+        $scope = 'native-source-A';
+        $chain->method('cacheScope')->willReturnCallback(function () use (&$scope) { return $scope; });
+        $cache = $this->createMock(RetainedFundsReadCache::class);
+        $identities = [];
+        $cache->expects($this->exactly(7))->method('read')
+            ->willReturnCallback(function (string $owner, string $identity, int $cost) use (&$identities): array {
+                $this->assertMatchesRegularExpression('/^1-[0-9]+$/', $owner);
+                $this->assertSame(3, $cost, 'One chain check and two native reads per candidate');
+                $identities[] = $identity;
+                return ['sources' => [], 'total' => '0'];
+            });
+        $chain->expects($this->never())->method('get');
+        $manager = new RetainedFundsManager($chain, $cache);
+        $player = $this->player();
+        $rows = [['address' => self::SOURCE]];
+        $manager->apply($player, $this->meta(), $rows);
+        $manager->apply($player, $this->meta(), $rows);
+        $player['funds_meta']['height'] = '3353011';
+        $manager->apply($player, $this->meta(), $rows);
+        $player['id'] = '1-2';
+        $manager->apply($player, $this->meta(), $rows);
+        $player['vault_address'] .= '-changed';
+        $manager->apply($player, $this->meta(), $rows);
+        $rows[0]['candidate_count'] = '17';
+        $manager->apply($player, $this->meta(), $rows);
+        $scope = 'native-source-B';
+        $manager->apply($player, $this->meta(), $rows);
+        $this->assertSame($identities[0], $identities[1]);
+        $this->assertCount(6, array_unique($identities));
+    }
+
+    public function testNativeReadBudgetExhaustionLeavesVerifiedVaultUsable(): void
+    {
+        $chain = $this->createMock(ChainSnapshotManager::class);
+        $chain->expects($this->never())->method('get');
+        $chain->expects($this->never())->method('verifyChain');
+        $cache = $this->createMock(RetainedFundsReadCache::class);
+        $cache->method('read')->willThrowException(new RuntimeException('Native budget unavailable'));
+        $player = $this->player();
+        (new RetainedFundsManager($chain, $cache))->apply($player, $this->meta(), [['address' => self::SOURCE]]);
+        $this->assertSame('2000000', $player['available_alpha_p']);
+        $this->assertNull($player['retained_alpha_p']);
+        $this->assertFalse($player['retained_funds_meta']['ready']);
     }
 
     private function player(): array

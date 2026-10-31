@@ -13,6 +13,7 @@ const suffix = randomBytes(5).toString('hex');
 const network = 'structs-v022-catalog-' + suffix;
 const apache = network + '-apache';
 const proxy = network + '-proxy';
+const trustedApache = network + '-trusted-apache';
 const secret = randomBytes(32).toString('hex');
 const denoms = ['ualpha', 'uguild.0-990970', 'ibc/' + 'A'.repeat(64), 'factory/structs1issuer/token:one'];
 const recoveryAddress = 'structs1avgyh77ycn997ja45q5q8ss8y9mr424jymd59f';
@@ -53,13 +54,16 @@ async function ready(base) {
         docker(['network', 'create', network]);
         docker(['network', 'connect', network, database]);
         attached = true;
-        docker(['run', '-d', '--name', apache, '--platform', 'linux/amd64', '--network', network, '--network-alias', 'structs-webapp',
+        const startApache = (name, extraEnv = []) => docker(['run', '-d', '--name', name, '--platform', 'linux/amd64', '--network', network,
+            ...(name === apache ? ['--network-alias', 'structs-webapp'] : []),
             '-p', '127.0.0.1::80', '-e', 'APP_ENV=prod', '-e', 'APP_DEBUG=0', '-e', 'APP_SECRET=' + secret,
             '-e', 'DATABASE_URL=postgresql://structs_webapp@' + database + ':5432/' + fixture.name + '?serverVersion=18',
+            ...extraEnv.flatMap(value => ['-e', value]),
             '--tmpfs', '/src/var:rw,mode=1777',
             ...(releaseImage ? [] : ['-v', root + '/src:/src:ro',
                 '-v', root + '/docker/apache/structs.conf:/etc/apache2/sites-available/000-default.conf:ro']),
             releaseImage || 'structs/structs-webapp:latest']);
+        startApache(apache);
         const direct = 'http://127.0.0.1:' + port(apache);
         await ready(direct);
         docker(['run', '-d', '--name', proxy, '--platform', 'linux/amd64', '--network', network,
@@ -282,15 +286,31 @@ async function ready(base) {
             checks++;
             console.log(JSON.stringify({surface, status: 'passed', denominations: denoms, checks}));
         }
+        // Exercise the framework's deployed environment settings, not a test-only
+        // Request::setTrustedProxies call. The host acts as this fixture's proxy.
+        const gateway = docker(['network', 'inspect', '--format', '{{(index .IPAM.Config 0).Gateway}}', network]);
+        startApache(trustedApache, ['SYMFONY_TRUSTED_PROXIES=' + gateway,
+            'SYMFONY_TRUSTED_HEADERS=x-forwarded-for']);
+        const trustedBase = 'http://127.0.0.1:' + port(trustedApache);
+        await ready(trustedBase);
+        const proofFor = client => fetch(trustedBase + '/api/auth/player-address/invalid/player/1-1/proof', {
+            headers: {'X-Forwarded-For': client}, signal: AbortSignal.timeout(10000),
+        });
+        for (let i = 0; i < 12; i++) assert.equal((await proofFor('198.51.100.1')).status, 409);
+        assert.equal((await proofFor('198.51.100.1')).status, 429);
+        assert.equal((await proofFor('198.51.100.2')).status, 409, 'Independent client behind the same trusted proxy');
+        assert.equal((await proofFor('203.0.113.9, 198.51.100.1')).status, 429, 'Forged earlier hop cannot reset the client budget');
+        checks += 15;
+        console.log(JSON.stringify({surface: 'configured-trusted-proxy', status: 'passed', checks}));
         console.log(JSON.stringify({status: 'passed', checks, authenticated: true, database,
             image:releaseImage || 'structs/structs-webapp:latest',sourceMounted:!releaseImage,liveStackChanged:false}));
     } catch (error) {
-        for (const name of [apache, proxy]) {
+        for (const name of [apache, proxy, trustedApache]) {
             try { console.error(docker(['logs', '--tail', '12', name])); } catch (_) {}
         }
         throw error;
     } finally {
-        for (const name of [proxy, apache]) { try { docker(['rm', '-f', name]); } catch (_) {} }
+        for (const name of [proxy, apache, trustedApache]) { try { docker(['rm', '-f', name]); } catch (_) {} }
         if (attached) docker(['network', 'disconnect', network, database]);
         try { docker(['network', 'rm', network]); } catch (_) {}
         fixture?.close();

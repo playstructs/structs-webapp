@@ -9,8 +9,10 @@ use UnexpectedValueException;
 /** Adapt one ready indexed player snapshot; never changes account identity. */
 class VaultFundsManager
 {
-    public function __construct(private ?ChainSnapshotManager $chain = null)
-    {
+    public function __construct(
+        private ?ChainSnapshotManager $chain = null,
+        private ?RetainedFundsManager $retainedFunds = null,
+    ) {
     }
 
     public function apply(array &$player, array &$meta): void
@@ -78,7 +80,7 @@ class VaultFundsManager
             $player['alpha'] = ExactAmount::alphaDisplay($spendable);
             $player['funds_meta'] = ['height' => $height, 'ready' => true, 'source' => $source,
                 'provisioned' => $provisioned, 'reason' => null];
-            (new RetainedFundsManager($this->chain))->apply($player, $meta, $retained, $deadline);
+            ($this->retainedFunds ?? new RetainedFundsManager($this->chain))->apply($player, $meta, $retained, $deadline);
         } catch (Exception $error) {
             // A failed/pruned/mismatched query is unknown, never a zero balance
             // or permission to spend a retained address instead.

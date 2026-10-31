@@ -11,8 +11,10 @@ class RetainedFundsManager
 {
     public const int MAX_SOURCES = 16;
 
-    public function __construct(private ?ChainSnapshotManager $chain)
-    {
+    public function __construct(
+        private ?ChainSnapshotManager $chain,
+        private ?RetainedFundsReadCache $readCache = null,
+    ) {
     }
 
     public function apply(array &$player, array $meta, mixed $candidates, ?float $deadline = null): void
@@ -46,26 +48,15 @@ class RetainedFundsManager
                 }
                 $seen[$address] = true;
             }
-            if ($rows !== []) {
-                if ($this->chain === null) throw new UnexpectedValueException('Retained funding needs native evidence');
-                $this->chain->verifyChain($meta['chain_id'], $deadline);
-            }
-            $sources = [];
-            $total = '0';
-            foreach ($rows as $row) {
-                $address = $row['address'];
-                $owner = $this->chain->get('/structs/address/' . rawurlencode($address), $height, $deadline);
-                if (($owner['address'] ?? null) !== $address) throw new UnexpectedValueException('Funding address mismatch');
-                if (($owner['playerId'] ?? null) !== $player['id']) continue;
-                $coin = $this->chain->get('/cosmos/bank/v1beta1/spendable_balances/'
-                    . rawurlencode($address) . '/by_denom?denom=ualpha', $height, $deadline)['balance'] ?? null;
-                if (($coin['denom'] ?? null) !== 'ualpha') throw new UnexpectedValueException('Missing spendable coin');
-                $amount = ExactAmount::unsigned($coin['amount'] ?? null);
-                if ($amount === '0') continue;
-                $sources[] = ['address' => $address, 'spendable_alpha_p' => $amount];
-                $total = ExactAmount::unsigned(bcadd($total, $amount, 0));
-            }
-            usort($sources, fn (array $a, array $b) => strcmp($a['address'], $b['address']));
+            $fetch = fn () => $this->readSources($player['id'], $meta['chain_id'], $height, $rows, $deadline);
+            $identity = hash('sha256', json_encode([
+                $this->chain?->cacheScope(), $meta['chain_id'], $height, $player['id'],
+                $player['vault_address'], $rows,
+            ], JSON_THROW_ON_ERROR));
+            $evidence = $rows !== [] && $this->readCache !== null
+                ? $this->readCache->read($player['id'], $identity, 1 + 2 * count($rows), $fetch)
+                : $fetch();
+            ['sources' => $sources, 'total' => $total] = $evidence;
             $player['available_alpha_p'] = ExactAmount::unsigned(bcadd($player['spendable_alpha_p'], $total, 0));
             $player['alpha'] = ExactAmount::alphaDisplay($player['available_alpha_p']);
             $player['retained_alpha_p'] = $total;
@@ -77,5 +68,32 @@ class RetainedFundsManager
             // The verified vault remains usable. Unknown retained funds are not
             // included in available Alpha, and the API reports that distinction.
         }
+    }
+
+    /** A cache entry is complete native evidence at one height, never a partial read. */
+    private function readSources(string $ownerId, string $chainId, string $height, array $rows, float $deadline): array
+    {
+        if ($rows !== []) {
+            if ($this->chain === null) throw new UnexpectedValueException('Retained funding needs native evidence');
+            $this->chain->verifyChain($chainId, $deadline);
+        }
+        $sources = [];
+        $total = '0';
+        foreach ($rows as $row) {
+            $address = $row['address'];
+            $owner = $this->chain->get('/structs/address/' . rawurlencode($address), $height, $deadline);
+            if (($owner['address'] ?? null) !== $address) throw new UnexpectedValueException('Funding address mismatch');
+            if (($owner['playerId'] ?? null) !== $ownerId) continue;
+            $coin = $this->chain->get('/cosmos/bank/v1beta1/spendable_balances/'
+                . rawurlencode($address) . '/by_denom?denom=ualpha', $height, $deadline)['balance'] ?? null;
+            if (($coin['denom'] ?? null) !== 'ualpha') throw new UnexpectedValueException('Missing spendable coin');
+            $amount = ExactAmount::unsigned($coin['amount'] ?? null);
+            if ($amount === '0') continue;
+            $sources[] = ['address' => $address, 'spendable_alpha_p' => $amount];
+            $total = ExactAmount::unsigned(bcadd($total, $amount, 0));
+        }
+        usort($sources, fn (array $a, array $b) => strcmp($a['address'], $b['address']));
+
+        return ['sources' => $sources, 'total' => $total];
     }
 }

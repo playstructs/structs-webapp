@@ -10,6 +10,11 @@ use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class RegistrationRateLimitTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        Request::setTrustedProxies([], 0);
+    }
+
     private function subscriber(int $client, int $global): RegistrationRateLimitSubscriber
     {
         $storage = new InMemoryStorage();
@@ -49,5 +54,23 @@ class RegistrationRateLimitTest extends TestCase
         $this->assertFalse($this->request($subscriber, 'api_get_address_registration_proof', '192.0.2.1')->hasResponse());
         $this->assertFalse($this->request($subscriber, 'api_get_address_registration_status', '192.0.2.2')->hasResponse());
         $this->assertSame(429, $this->request($subscriber, 'api_get_address_registration_proof', '192.0.2.3')->getResponse()->getStatusCode());
+    }
+
+    public function testExplicitTrustedProxySeparatesRealClientsAndIgnoresForgedEarlierHops(): void
+    {
+        Request::setTrustedProxies(['192.0.2.10'], Request::HEADER_X_FORWARDED_FOR);
+        $subscriber = $this->subscriber(1, 10);
+        $run = function (string $forwarded) use ($subscriber): RequestEvent {
+            $request = Request::create('/', server: ['REMOTE_ADDR' => '192.0.2.10']);
+            $request->attributes->set('_route', 'api_get_address_registration_proof');
+            $request->headers->set('X-Forwarded-For', $forwarded);
+            $event = new RequestEvent($this->createMock(HttpKernelInterface::class), $request, HttpKernelInterface::MAIN_REQUEST);
+            $subscriber->onKernelRequest($event);
+            return $event;
+        };
+        $this->assertFalse($run('198.51.100.1')->hasResponse());
+        $this->assertFalse($run('198.51.100.2')->hasResponse(), 'Two clients behind the proxy have independent budgets');
+        $this->assertSame(429, $run('203.0.113.8, 198.51.100.1')->getResponse()->getStatusCode(),
+            'A client-supplied earlier hop cannot rotate the nearest untrusted client identity');
     }
 }

@@ -17,6 +17,12 @@ class ChainSnapshotManager
     ) {
     }
 
+    /** Keep cached evidence separate when the configured native source changes. */
+    public function cacheScope(): string
+    {
+        return hash('sha256', $this->baseUrl);
+    }
+
     public function verifyChain(string $chainId, ?float $deadline = null): void
     {
         if ($chainId === '' || ($this->read('/cosmos/base/tendermint/v1beta1/node_info', null, $deadline)['default_node_info']['network'] ?? null) !== $chainId) {

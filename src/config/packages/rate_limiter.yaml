@@ -10,3 +10,13 @@ framework:
             policy: token_bucket
             limit: 60
             rate: { interval: '1 second', amount: 10 }
+        # Charge the maximum native reads before each uncached funding window.
+        # Cache hits spend no tokens; rotating target players shares these limits.
+        retained_funds_client:
+            policy: token_bucket
+            limit: 66
+            rate: { interval: '1 second', amount: 8 }
+        retained_funds_global:
+            policy: token_bucket
+            limit: 264
+            rate: { interval: '1 second', amount: 32 }
