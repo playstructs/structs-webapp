@@ -51,7 +51,7 @@ assert.equal(state.checkResultHashDifficulty(),false,'an invented zero hash is n
 state.setBlockCheckpoint('3353001');
 assert.equal(state.block_checkpoint,'3353025','late blocks cannot move observation backwards');
 
-// Run the actual production worker bundle with deterministic timers. A batch
+// Run the actual production worker bundle with a deterministic message queue. A batch
 // returns control to this host before the next message; an infinite loop fails.
 const source=fs.readFileSync(process.env.STRUCTS_WORKER_TEST_BUNDLE,'utf8');
 function workerHarness() {
@@ -60,6 +60,12 @@ function workerHarness() {
     postMessage(value){messages.push(structuredClone(value));},
     setTimeout(fn){timers.set(++timerId,fn);return timerId;},
     clearTimeout(id){timers.delete(id);}};
+  context.MessageChannel = class {
+    constructor() {
+      this.port1 = {onmessage:null};
+      this.port2 = {postMessage:() => timers.set(++timerId, () => this.port1.onmessage({data:null}))};
+    }
+  };
   context.self=context;
   vm.createContext(context);
   vm.runInContext(source,context,{timeout:1000});

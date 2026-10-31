@@ -5,7 +5,9 @@ import {sha256} from "js-sha256";
 
 let state = null;
 let revision = 0;
-let timer = null;
+let scheduled = false;
+const batchChannel = new MessageChannel();
+batchChannel.port1.onmessage = work;
 let sessionIterations = 0;
 const taskStateFactory = new TaskStateFactory();
 
@@ -34,11 +36,15 @@ onmessage = function(process_request) {
 };
 
 function schedule() {
-    if (timer === null && !state.isCompleted()) timer = setTimeout(work, 0);
+    if (!scheduled && !state.isCompleted()) {
+        scheduled = true;
+        // A posted task yields for rule updates without nested-timer clamping.
+        batchChannel.port2.postMessage(null);
+    }
 }
 
 function work() {
-    timer = null;
+    scheduled = false;
     const difficulty = state.getCurrentDifficulty();
     if (state.result_exists && state.checkResultHashDifficulty()) {
         state.setPreviousResult(difficulty);
