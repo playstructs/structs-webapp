@@ -11,6 +11,8 @@ globalThis.window = new EventTarget();
 globalThis.document = new EventTarget();
 const {TutorialWorld, TUTORIAL_IDS} = require('../../src/js/tutorial/TutorialWorld');
 const {TutorialMode} = require('../../src/js/tutorial/TutorialMode');
+const {StructListener} = require('../../src/js/grass_listeners/StructListener');
+const {ANIMATION} = require('../../src/js/constants/AnimationConstants');
 
 for (const energy of [
   {load:25,structs_load:0,capacity:0,connection_capacity:0},
@@ -42,5 +44,25 @@ for (const energy of [
   state.actionBarLock.clear();
   keyPlayer.player = realPlayer;
   assert.equal(actionBar.isActionAvailable(tank,tankType.defend_change_charge),!realPlayer.isOverloaded(),'Normal player power checks remain enforced');
+}
+// The simulation must supply the same volley total used by the real listener
+// to keep counter-attack animation health separate from final indexed health.
+{
+  const messages=[], animations=[], world=new TutorialWorld(), state=new GameState();
+  state.persistenceEnabled=false;
+  world.attach(state,{handler:message=>messages.push(message)});
+  world.loadPlayerIntoGameState();
+  world.structs[TUTORIAL_IDS.TANK_A].health=5;
+  world.structs[TUTORIAL_IDS.ENEMY_TANK].health=5;
+  world.attack(TUTORIAL_IDS.TANK_A,TUTORIAL_IDS.ENEMY_TANK);
+  const message=messages.find(message=>message.category==='struct_attack');
+  const shot=message.detail.eventAttackShotDetail[0];
+  assert.equal(shot.targetCountered,true);
+  assert.equal(shot.damage,world.getStructTypeById(world.structs[TUTORIAL_IDS.TANK_A].type).primary_weapon_damage);
+  state.animationEventQueue={enqueue:event=>animations.push(event)};
+  const listener=new StructListener(state,{}, {refreshStruct:async()=>{}});
+  listener.handleStructAttack(message.subject,message);
+  const counter=animations.find(event=>event.structId===TUTORIAL_IDS.ENEMY_TANK && event.options.badge===ANIMATION.BADGES.COUNTER_ATTACK);
+  assert.equal(counter.options.healthAfter,shot.targetHealthAfter);
 }
 console.log('Tutorial keeps displayed power, restores charge and permits simulated combat for overloaded accounts without weakening real power or lock checks.');

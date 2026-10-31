@@ -632,6 +632,7 @@ export class TutorialWorld {
       targetStructLocationType: target.location_type,
       targetHealthBefore: target.health,
       targetHealthAfter: target.health,
+      damage: 0,
       targetDestroyed: false,
       targetCountered: false,
       targetCounterWeaponSystem: STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON,
@@ -663,6 +664,7 @@ export class TutorialWorld {
     }
 
     if (this.isAlive(attacker)) {
+      shot.damage = damage;
       // 2. A defender in the target's battleground blocks the shot and takes its DMG.
       const blocker = defenders.find(defender =>
         this.isAlive(defender) && defender.operating_ambit === target.operating_ambit

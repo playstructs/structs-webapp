@@ -435,7 +435,31 @@ cannot enter the real queue.
 
 The freshness and work-recovery suites exercise these paths with the real API
 parsers, task/queue managers and offline signed transactions. Together with the
-existing checks, `test:proto` runs 18 suites. These are controlled fixtures, not
+existing checks, `test:proto` runs 22 suites. These are controlled fixtures, not
 live broadcasts or full end-to-end browser acceptance. The legacy `src/js/tests`
 bundle also contains Node-only global mocks; loading that bundle into a native
 browser is not a valid substitute for testing the rendered controls.
+
+## Combat event fixtures
+
+`combat-v022.json` is generated from all 14 scenarios in the pinned release's
+`x/structs/keeper/attack_event_health_test.go`. Re-capture it with:
+
+```sh
+node tools/proto/capture-combat-release.cjs /path/to/structsd tools/proto/combat-v022.json
+```
+
+The script archives the exact release into a temporary directory, instruments
+only its test to capture typed events, runs the existing assertions and refuses
+a partial scenario set. It does not alter the chain checkout or send a network
+transaction. These are real keeper-handler emissions using the release test
+keeper, not a full-app broadcast or a live staking/consensus test. Do not edit
+the generated events by hand.
+
+The actual StructListener consumes those payloads in the combat suite. A reported
+target counter plays even when final target health is zero: net volley damage
+determines health at the counter, then the observed final health determines any
+rebound damage and destruction. Evasion does not prematurely apply later damage.
+Animation events do not replay damage into indexed state; involved structs are
+refetched. The tutorial also supplies its volley total, and its test uses the
+real animation factory to verify the counter's intermediate health.
