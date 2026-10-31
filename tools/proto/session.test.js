@@ -103,4 +103,43 @@ async function localSessionTests(){
   listener.handler({category:'player_address',subject:'structs.player.0-1.1-1',status:'revoked',address:'fixture-address',block_height:'3353002'});
   assert.equal(requested,1);assert.equal(fresh.signingAccount.address,'fixture-address');
 }
-(async()=>{await authorityTests();await localSessionTests();console.log('Session ownership, lost notifications, stale responses and cross-tab private-key erasure passed.');})().catch(error=>{console.error(error);process.exitCode=1;});
+async function revokedWorkTests(){
+  const {AuthManager}=require('../../src/js/managers/AuthManager');
+  const {TaskManager}=require('../../src/js/managers/TaskManager');
+  const {TaskProcess}=require('../../src/js/models/TaskProcess');
+  const {TaskStateFactory}=require('../../src/js/factories/TaskStateFactory');
+  const {MenuPage}=require('../../src/js/framework/MenuPage');
+  const f=fixture(),factory=new TaskStateFactory(),server=pending();
+  let terminated=0,reloaded=0,stopped=0,workerReplies=0;
+  const originalWorker=globalThis.Worker,intervals=[],originalInterval=globalThis.setInterval;
+  globalThis.Worker=class {postMessage(){} terminate(){terminated++;}};
+  globalThis.setInterval=(...args)=>{const id=originalInterval(...args);intervals.push(id);return id;};
+  const tasks=new TaskManager(f.state,{},f.signer,factory);
+  globalThis.setInterval=originalInterval;
+  const task=factory.initStructTask('5-1','BUILD',3353000,'1000000');
+  const process=new TaskProcess(task);tasks.processes[task.getPID()]=process;
+  const signal=tasks.proofController.signal;
+  const listener=()=>{workerReplies++;};window.addEventListener(EVENTS.TASK_WORKER_CHANGED,listener);
+  try {
+    process.start();const worker=process.worker,lateReply=worker.onmessage;
+    const auth=Object.create(AuthManager.prototype);auth.gameState=f.state;
+    f.state.keyPlayers[PLAYER_TYPES.PLAYER].clearFunds=()=>{};f.state.alphaRefresh={stop(){}};
+    auth.signingClientManager={stopForLogout(){stopped++;}};auth.taskManager=tasks;
+    auth.guildAPI={logout:()=>server.promise};auth.sessionAuthority=f.manager;
+    MenuPage.router={goto(){}};MenuPage.open=()=>{};window.location.reload=()=>{reloaded++;};
+    localStorage.setItem('gameState','private');localStorage.setItem('signingJournal:pending','public evidence');
+    f.manager.onRevoked=()=>auth.logout();f.manager.start();await f.manager.request();
+    f.control.owner='';const reading=f.manager.request();await tick();
+    assert.equal(terminated,1,'native revocation terminates the active worker before HTTP logout settles');
+    assert.equal(process.worker,null);assert.equal(signal.aborted,true);
+    assert.deepEqual(tasks.processes,{});assert.deepEqual(tasks.running_queue,[]);assert.deepEqual(tasks.waiting_queue,[]);
+    assert.equal(stopped,1);assert.equal(f.state.signingAccount,null);
+    assert.equal(localStorage.getItem('gameState'),null);assert.equal(localStorage.getItem('signingJournal:pending'),'public evidence');
+    lateReply({data:{}});assert.equal(workerReplies,0,'a terminated worker cannot deliver a late proof');
+    assert.equal(reloaded,0);server.resolve();await reading;assert.equal(reloaded,1);
+  } finally {
+    f.manager.stop();tasks.closeSession();for(const id of intervals)clearInterval(id);
+    window.removeEventListener(EVENTS.TASK_WORKER_CHANGED,listener);globalThis.Worker=originalWorker;
+  }
+}
+(async()=>{await authorityTests();await localSessionTests();await revokedWorkTests();console.log('Session ownership, lost notifications, stale responses, private-key erasure and revoked-worker shutdown passed.');})().catch(error=>{console.error(error);process.exitCode=1;});
