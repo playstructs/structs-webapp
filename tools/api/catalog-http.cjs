@@ -14,6 +14,8 @@ const secret = randomBytes(32).toString('hex');
 const denoms = ['ualpha', 'uguild.0-990970', 'ibc/' + 'A'.repeat(64), 'factory/structs1issuer/token:one'];
 const recoveryAddress = 'structs1avgyh77ycn997ja45q5q8ss8y9mr424jymd59f';
 const balance = '1000000000000000000000000000000000000000000000000000000000000';
+const activityTime = '2026-10-30T12:34:56.123456Z';
+const activityDetail = JSON.parse(require('../proto/combat-v022.json').fixtures[4].event.attributes[0].value);
 const docker = (args, input) => execFileSync('docker', args, {encoding: 'utf8', input, timeout: 60000, stdio: ['pipe', 'pipe', 'pipe']}).trim();
 const sql = query => docker(['exec', '-i', '--user', 'structs', database, 'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-d', 'structs', '-At'], query);
 const port = name => docker(['port', name, '80/tcp']).split(':').pop();
@@ -44,6 +46,8 @@ async function ready(base) {
             denoms.map((denom, i) => `INSERT INTO structs.provider(id,owner,rate_amount,rate_denom) VALUES('9-${990970+i}','0-990970',1,'${denom}');\n` +
                 `INSERT INTO structs.api_inventory(owner_type,owner_id,denom,balance) VALUES ('address','cataloghttpfirst','${denom}',${balance}),('address','cataloghttpsecond','${denom}',${balance}-1);`).join('\n') + '\nCOMMIT;');
         seeded = true;
+        sql(`INSERT INTO structs.planet_activity(time,planet_id,seq,category,detail,block_height)
+            VALUES('${activityTime}','2-990976',0,'struct_attack','${JSON.stringify(activityDetail).replace(/'/g,"''")}'::jsonb,3353001);`);
         docker(['network', 'create', network]);
         docker(['network', 'connect', network, database]);
         attached = true;
@@ -62,6 +66,14 @@ async function ready(base) {
         await ready(proxied);
         let checks = 0;
         for (const [surface, base] of [['apache', direct], ['control-dev-proxy', proxied]]) {
+            const eventPath = `/api/planet-activity/planet/2-990976/event/0?time=${encodeURIComponent(activityTime)}`;
+            assert.equal((await request(base,eventPath,false)).status,401,surface+' exact activity remains authenticated');
+            const activity = await request(base,eventPath);
+            assert.equal(activity.status,200);assert.deepEqual((await activity.json()).data.detail,activityDetail);
+            assert.equal((await request(base,'/api/planet-activity/planet/2-990976/event/0')).status,400);
+            const missing = await request(base,eventPath.replace('123456','123457'));
+            assert.equal(missing.status,200);assert.equal((await missing.json()).data,null);
+            checks += 4;
             for (const [route, models] of [['/api/struct/type', []], ['/api/work/player/1-990970', ['work']]]) {
                 assert.equal((await request(base, route, false)).status, 401);
                 const response = await request(base, route);
@@ -259,6 +271,7 @@ async function ready(base) {
         if (attached) docker(['network', 'disconnect', network, database]);
         try { docker(['network', 'rm', network]); } catch (_) {}
         if (seeded) sql("BEGIN; DELETE FROM structs.player_address_meta WHERE address='cataloghttpprimary';\n" +
+            `DELETE FROM structs.planet_activity WHERE time='${activityTime}' AND planet_id='2-990976' AND seq=0;\n` +
             "DELETE FROM structs.player_address WHERE address='cataloghttpprimary';\n" +
             "DELETE FROM structs.api_inventory WHERE owner_type='address' AND owner_id IN ('cataloghttpfirst','cataloghttpsecond');\n" +
             "DELETE FROM structs.provider WHERE id IN ('9-990970','9-990971','9-990972','9-990973');\n" +

@@ -402,6 +402,15 @@ export class GuildAPI {
     return this.planetFactory.make(response.data);
   }
 
+  async getPlanetActivityEvent(planetId, seq, time, options = {}) {
+    const query = new URLSearchParams({time});
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/planet-activity/planet/${encodeURIComponent(planetId)}/event/${encodeURIComponent(seq)}?${query}`,
+      {timeoutMs:5000,...options});
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return response.data;
+  }
+
   /**
    * @param {string} playerId
    * @return {Promise<PlayerAddress[]>}

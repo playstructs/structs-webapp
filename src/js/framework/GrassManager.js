@@ -1,6 +1,7 @@
 import * as natsCore from "@nats-io/nats-core";
 import {LOG_LEVEL, STALE_BLOCK_MS} from "../constants/GrassConstants";
 import {EVENTS} from "../constants/Events";
+import {resolvePlanetActivityNotification} from "../util/PlanetActivityNotification";
 
 /**
  * Guild Rapid Alert System Stream
@@ -185,6 +186,7 @@ export class GrassManager {
         console.info('[GrassManager] connected:', this.subject);
 
         this.subscription = this.nc.subscribe(this.subject);
+        const connection = this.nc;
         window.dispatchEvent(new Event(EVENTS.GRASS_CONNECTED));
         this.observeStatus(this.nc).catch(error=>console.debug('[GrassManager] status stream ended:',error));
 
@@ -199,6 +201,16 @@ export class GrassManager {
           this.logMessageData(messageData);
 
           if (this.shouldIgnoreMessage(messageData)) continue;
+
+          try {
+            // Await within this stream so a later attack cannot overtake a stub's
+            // detail read. Consensus has its own independent subscription.
+            messageData = await resolvePlanetActivityNotification(messageData,this.gameState);
+            if (!messageData || this.nc !== connection || connection.isClosed()) continue;
+          } catch (error) {
+            console.warn('[GrassManager] activity detail unavailable:', error);
+            continue;
+          }
 
           this.listeners.forEach((listener) => {
             try {

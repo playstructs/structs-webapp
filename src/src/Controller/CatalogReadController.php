@@ -538,6 +538,17 @@ class CatalogReadController extends AbstractController
 
     // --- planet_activity ---
 
+    #[Route('/api/planet-activity/planet/{planet_id}/event/{seq}', name: 'api_planet_activity_event', methods: ['GET'])]
+    public function planetActivityEvent(
+        string $planet_id,
+        string $seq,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return (new TableReadManager($entityManager, $validator))->planetActivityEvent($planet_id, $seq, $request->query->all());
+    }
+
     #[Route('/api/planet-activity/stats', name: 'api_planet_activity_stats', methods: ['GET'])]
     public function planetActivityStats(
         Request $request,

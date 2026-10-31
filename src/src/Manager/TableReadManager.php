@@ -9,6 +9,7 @@ use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
 use App\Util\ResponseMetaUtil;
 use App\Util\ConsistentRead;
+use App\Util\PlanetActivityQuery;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -966,6 +967,32 @@ class TableReadManager
     }
 
     // --- planet_activity (hypertable; ordered by time DESC) ---
+
+    public function planetActivityEvent(string $planetId, string $seq, array $query): Response
+    {
+        $response = new ApiResponseContentDto();
+        try {
+            $params = PlanetActivityQuery::parse($planetId, $seq, $query);
+        } catch (\UnexpectedValueException $error) {
+            $response->errors['activity_key_invalid'] = $error->getMessage();
+            return new JsonResponse($response, Response::HTTP_BAD_REQUEST);
+        }
+        // Equality on time prunes Timescale chunks and uses the unique event-key
+        // index. Echo the equivalent requested timestamp without losing its precision.
+        $row = $this->entityManager->getConnection()->fetchAssociative(
+            'SELECT CAST(:time AS text) AS time, seq::text AS seq, planet_id,
+                    category::text AS category, detail::text AS detail, block_height::text AS block_height
+             FROM structs.planet_activity
+             WHERE time = CAST(:time AS timestamptz) AND planet_id = :planet_id AND seq = CAST(:seq AS integer)',
+            $params
+        );
+        if ($row !== false) {
+            $row['detail'] = json_decode($row['detail'], true, 512, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
+            $response->data = $row;
+        }
+        $response->success = true;
+        return new JsonResponse($response);
+    }
 
     public function planetActivityAll(int $page): Response
     {
