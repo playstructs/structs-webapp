@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -175,5 +176,91 @@ func TestClientGeneratorFunding(t *testing.T) {
 				require.Equal(t, actor.Id, vaultOwner)
 			}
 		})
+	}
+}
+
+// The client collects only the vault shortfall, then burns it in one signed tx.
+// A rejected final burn must roll back all retained-address collections.
+func TestClientGeneratorRetainedFunding(t *testing.T) {
+	for _, count := range []int{1, 16} {
+		for _, scenario := range []string{"success", "missing_transfer", "reassigned", "offline_final"} {
+			t.Run(fmt.Sprintf("%d_sources_%s", count, scenario), func(t *testing.T) {
+				chain, ctx := setupJailGateApp(t)
+				key := secp256k1.GenPrivKey()
+				signer := sdk.AccAddress(key.PubKey().Address())
+				player := appendAppPlayer(t, chain.StructsKeeper, ctx, signer)
+				other := appendAppPlayer(t, chain.StructsKeeper, ctx, sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address()))
+				permissions := types.PermTokenTransfer | types.PermTokenInfuse
+				if scenario == "missing_transfer" {
+					permissions = types.PermTokenInfuse
+				}
+				chain.StructsKeeper.SetPermissionsByBytes(ctx, keeperlib.GetAddressPermissionIDBytes(signer.String()), permissions)
+				vault, err := types.VaultAddress(player.Id)
+				require.NoError(t, err)
+				fundRedelegationAccount(t, chain, ctx, vault, sdk.NewCoins(sdk.NewInt64Coin("ualpha", 1_000_000)))
+				var messages []sdk.Msg
+				var sources []sdk.AccAddress
+				for i := 0; i < count; i++ {
+					source := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+					owner := player.Index
+					if scenario == "reassigned" && i == count-1 {
+						owner = other.Index
+					}
+					require.NoError(t, chain.StructsKeeper.SetPlayerIndexForAddress(ctx, source.String(), owner))
+					fundRedelegationAccount(t, chain, ctx, source, sdk.NewCoins(sdk.NewInt64Coin("ualpha", 3_000_000)))
+					sources = append(sources, source)
+					messages = append(messages, &types.MsgPlayerSend{Creator: signer.String(), FromAddress: source.String(),
+						ToAddress: vault.String(), Amount: sdk.NewCoins(sdk.NewInt64Coin("ualpha", 2_000_000))})
+				}
+				planet := types.Planet{Id: "2-991", Owner: player.Id, Creator: signer.String()}
+				chain.StructsKeeper.SetPlanet(ctx, planet)
+				generator := types.Struct{Id: "5-991", Owner: player.Id, Creator: signer.String(), Type: 20,
+					LocationId: planet.Id, LocationType: types.ObjectType_planet}
+				chain.StructsKeeper.SetStruct(ctx, generator)
+				status := types.StructStateMaterialized | types.StructStateBuilt | types.StructStateOnline
+				if scenario == "offline_final" {
+					status = types.StructStateMaterialized | types.StructStateBuilt
+				}
+				chain.StructsKeeper.SetStructAttribute(ctx, keeperlib.GetStructAttributeIDByObjectId(types.StructAttributeType_status, generator.Id), uint64(status))
+				amount := int64(1_000_000 + count*2_000_000)
+				messages = append(messages, &types.MsgStructGeneratorInfuse{Creator: signer.String(), StructId: generator.Id,
+					InfuseAmount: fmt.Sprintf("%dualpha", amount)})
+				supplyBefore := chain.BankKeeper.GetSupply(ctx, "ualpha").Amount
+				account := chain.AccountKeeper.GetAccount(ctx, signer)
+				config := authtx.NewTxConfig(chain.AppCodec(), authtx.DefaultSignModes)
+				tx, err := simtestutil.GenSignedMockTx(rand.New(rand.NewSource(1)), config, messages,
+					sdk.Coins{sdk.NewInt64Coin("ualpha", 0)}, ante.DefaultFreeGasCap, jailGateChainID,
+					[]uint64{account.GetAccountNumber()}, []uint64{account.GetSequence()}, key)
+				require.NoError(t, err)
+				wire, err := config.TxEncoder()(tx)
+				require.NoError(t, err)
+				block, err := chain.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 1, Time: ctx.BlockTime(), Txs: [][]byte{wire}})
+				require.NoError(t, err)
+				require.Len(t, block.TxResults, 1)
+				result := block.TxResults[0]
+				t.Logf("bytes=%d gas=%d code=%d", len(wire), result.GasUsed, result.Code)
+				final := chain.NewContext(false).WithBlockTime(ctx.BlockTime())
+				position, found := chain.StructsKeeper.GetInfusion(final, generator.Id, vault.String())
+				if scenario == "success" {
+					require.Zero(t, result.Code, result.Log)
+					require.True(t, found)
+					require.Equal(t, uint64(amount), position.Fuel)
+					require.Equal(t, uint64(amount*2), position.Power)
+					require.Zero(t, chain.BankKeeper.GetBalance(final, vault, "ualpha").Amount.Int64())
+					require.Equal(t, amount, supplyBefore.Sub(chain.BankKeeper.GetSupply(final, "ualpha").Amount).Int64())
+					for _, source := range sources {
+						require.Equal(t, int64(1_000_000), chain.BankKeeper.GetBalance(final, source, "ualpha").Amount.Int64())
+					}
+				} else {
+					require.NotZero(t, result.Code, scenario)
+					require.False(t, found)
+					require.Equal(t, int64(1_000_000), chain.BankKeeper.GetBalance(final, vault, "ualpha").Amount.Int64())
+					require.Equal(t, supplyBefore, chain.BankKeeper.GetSupply(final, "ualpha").Amount)
+					for _, source := range sources {
+						require.Equal(t, int64(3_000_000), chain.BankKeeper.GetBalance(final, source, "ualpha").Amount.Int64())
+					}
+				}
+			})
+		}
 	}
 }

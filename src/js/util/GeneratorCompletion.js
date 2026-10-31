@@ -9,6 +9,7 @@ import {exactQueryHeight, maxQueryHeight, protocolAtHeight, validateSigningSnaps
 import {submissionBytes} from "./SignedSubmission";
 import {playerFunds} from "./PlayerFunds";
 import {abortableDelay} from "./AbortableDelay";
+import {verifyVaultFunding} from "./VaultFundingCompletion";
 
 /** A changed fuel total or a notification never identifies a committed burn. */
 export function generatorCommit(tx) {
@@ -31,10 +32,11 @@ export function generatorCommit(tx) {
   }
   transferAddress(receipt.primaryAddress);
   const body = TxBody.decode(TxRaw.decode(submissionBytes(submission)).bodyBytes);
-  if (body.messages.length !== 1 || body.messages[0].typeUrl !== '/structs.structs.MsgStructGeneratorInfuse') {
+  const offset = verifyVaultFunding(body.messages, tx, prepared.funding, source, exactAlphaAmount(intent.amount));
+  if (body.messages.length !== offset + 1 || body.messages[offset].typeUrl !== '/structs.structs.MsgStructGeneratorInfuse') {
     throw new Error('Generator signed message changed');
   }
-  const message = MsgStructGeneratorInfuse.decode(body.messages[0].value);
+  const message = MsgStructGeneratorInfuse.decode(body.messages[offset].value);
   if (message.creator !== tx.accountAddress || message.structId !== intent.structId
       || message.infuseAmount !== `${intent.amount}ualpha`) throw new Error('Generator signed intent changed');
   return Object.freeze({ownerId:intent.ownerId,structId:intent.structId,source,height});

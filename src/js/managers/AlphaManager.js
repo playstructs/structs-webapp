@@ -112,7 +112,7 @@ export class AlphaManager {
     const indexed = await this.gameState.guildAPI.getGeneratorSnapshot(structId,source,options);
     signal.throwIfAborted();
     if (!indexed) throw new Error('Generator snapshot unavailable');
-    const snapshot = await query.readSnapshot(rpc=>readGeneratorSnapshot(rpc,indexed,ownerId,structId,account),
+    const snapshot = await query.readSnapshot(rpc=>readGeneratorSnapshot(rpc,indexed,ownerId,structId,account,player),
       {height:indexed.snapshot_meta?.height});
     signal.throwIfAborted();
     if (query !== manager.chainQuery || account !== this.gameState.signingAccount?.address

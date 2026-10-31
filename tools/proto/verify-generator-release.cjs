@@ -12,5 +12,5 @@ try {
   execFileSync('tar', ['-xf','-','-C',temporary], {input:archive});
   fs.copyFileSync(path.join(__dirname,'generator-release_test.go'),path.join(temporary,'app/client_generator_funding_test.go'));
   console.log(`Testing real app/ante/bank against release ${release}; temporary in-memory chains only.`);
-  execFileSync('go', ['test','-count=1','-p','1','-run','^(TestClientGeneratorFunding|TestSignedGeneratorVaultBurnAndBatchRollback)$','-v','./app'], {cwd:temporary,stdio:'inherit'});
+  execFileSync('go', ['test','-count=1','-p','1','-run','^(TestClientGeneratorFunding|TestClientGeneratorRetainedFunding|TestSignedGeneratorVaultBurnAndBatchRollback)$','-v','./app'], {cwd:temporary,stdio:'inherit'});
 } finally { fs.rmSync(temporary,{recursive:true,force:true}); }

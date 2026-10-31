@@ -19,6 +19,9 @@ import {transferLimit} from '../../src/js/util/TransferLimit';
 import {playerFunds} from '../../src/js/util/PlayerFunds';
 import {transferSourceQuery} from '../../src/js/util/TransferCompletion';
 import {reactorCommit} from '../../src/js/util/ReactorCompletion';
+import {generatorCommit} from '../../src/js/util/GeneratorCompletion';
+import {readGeneratorSnapshot} from '../../src/js/managers/GeneratorSnapshot';
+import {objectType, planetStatus, techPowerGeneration} from '../../src/js/ts/structs.structs/types/structs/structs/keys';
 import {CHAIN} from '../../src/js/constants/ChainConstants';
 
 const address = n => toBech32('structs', new Uint8Array(20).fill(n));
@@ -63,6 +66,22 @@ function fixture(kind = 'alpha_transfer') {
       }
       if (method === 'Guild') return Query.QueryGetGuildResponse.encode(Query.QueryGetGuildResponse.fromPartial({Guild:{id:'0-1',primaryReactorId:'3-1'}})).finish();
       if (method === 'Reactor') return Query.QueryGetReactorResponse.encode(Query.QueryGetReactorResponse.fromPartial({Reactor:{id:'3-1',validator}})).finish();
+      if (method === 'Struct') {
+        return Query.QueryGetStructResponse.encode(Query.QueryGetStructResponse.fromPartial({
+          Struct:{id:'5-1', owner:'1-1', type:'20', locationId:'2-1', locationType:objectType.planet},
+          structAttributes:{isOnline:true, isDestroyed:false}
+        })).finish();
+      }
+      if (method === 'StructType') {
+        return Query.QueryGetStructTypeResponse.encode(Query.QueryGetStructTypeResponse.fromPartial({
+          StructType:{id:'20', powerGeneration:techPowerGeneration.smallGenerator, generatingRate:'2'}
+        })).finish();
+      }
+      if (method === 'Planet') {
+        return Query.QueryGetPlanetResponse.encode(Query.QueryGetPlanetResponse.fromPartial({
+          Planet:{id:'2-1', status:planetStatus.active}
+        })).finish();
+      }
     }
     if (service === 'cosmos.bank.v1beta1.Query') {
       const {address:a} = QuerySpendableBalanceByDenomRequest.decode(bytes);
@@ -84,11 +103,14 @@ function fixture(kind = 'alpha_transfer') {
   manager.chainQuery = {closed:false,status:async () => ({chainId:CHAIN.ID,height}),
     readSnapshot:async read => ({chainId:CHAIN.ID,height,observedHeight:height,
       data:await read({chainId:CHAIN.ID,height,request})})};
-  const intent = kind === 'alpha_transfer'
-    ? {kind,version:1,ownerId:'1-1',recipientId:'1-2',recipientAddress:address(4),amount:'10000000'}
-    : {kind,version:1,ownerId:'1-1',guildId:'0-1',reactorId:'3-1',direction:'infuse',amount:'10000000'};
+  const intents = {
+    alpha_transfer:{recipientId:'1-2', recipientAddress:address(4)},
+    reactor_change:{guildId:'0-1', reactorId:'3-1', direction:'infuse'},
+    generator_fund:{structId:'5-1'},
+  };
+  const intent = {kind, version:1, ownerId:'1-1', amount:'10000000', ...intents[kind]};
   const tx = SigningTransaction.create({intent,isAction:false,retryLimit:0,accountAddress:signer.address,enqueuedAtBlock:Number(height)});
-  return {state,tx,submission:new SigningSubmission(manager)};
+  return {state, tx, manager, submission:new SigningSubmission(manager)};
 }
 
 function committed(tx, submission) {
@@ -96,6 +118,10 @@ function committed(tx, submission) {
   tx.status = TX_STATUS.SUCCEEDED;
   tx.response = {stage:'committed',code:0,chainId:CHAIN.ID,transactionHash:submission.hash,
     blockHash:'A'.repeat(64),txIndex:0,blockTime:'2026-10-31T00:00:00Z',height};
+  if (tx.intent.kind === 'generator_fund') {
+    tx.response.generatorReceipt = {ownerId:'1-1', source:vault,
+      primaryAddress:retained[0], amount:tx.intent.amount};
+  }
   return SigningTransaction.fromJSON(JSON.parse(JSON.stringify(tx.toJSON())));
 }
 
@@ -114,7 +140,7 @@ async function main() {
   assert.throws(() => availableAlpha({...display,retained_sources:[...display.retained_sources,display.retained_sources[0]]}),/source/);
   assert.equal(availableAlpha({...display,retained_funds_meta:{ready:false},available_alpha_p:'2000000'}),2000000n);
 
-  for (const kind of ['alpha_transfer','reactor_change']) {
+  for (const kind of ['alpha_transfer','reactor_change','generator_fund']) {
     const f = fixture(kind);
     const signed = await f.submission.prepare(f.tx);
     const body = TxBody.decode(TxRaw.decode(submissionBytes(signed)).bodyBytes);
@@ -128,15 +154,17 @@ async function main() {
     assert.deepEqual(f.state.simulatedBytes,submissionBytes(signed),'the whole signed group is simulated');
     assert.equal(f.state.simulated,1);
     const restored = committed(f.tx,signed);
-    const verify = kind === 'alpha_transfer' ? transferSourceQuery : reactorCommit;
+    const verify = {alpha_transfer:transferSourceQuery, reactor_change:reactorCommit,
+      generator_fund:generatorCommit}[kind];
     verify(restored);
-    const context = kind === 'alpha_transfer' ? restored.submission.transfer : restored.submission.reactor;
+    const context = restored.submission[{alpha_transfer:'transfer', reactor_change:'reactor',
+      generator_fund:'generator'}[kind]];
     context.funding.sources[0].amount = '9000000';
     assert.throws(() => verify(restored),/collection/);
 
     const enough = fixture(kind);
     enough.state.balances.set(vault,'10000000');
-    if (kind === 'reactor_change') enough.state.permissions = '32';
+    if (kind !== 'alpha_transfer') enough.state.permissions = '32';
     const vaultOnly = await enough.submission.prepare(enough.tx);
     assert.equal(TxBody.decode(TxRaw.decode(submissionBytes(vaultOnly)).bodyBytes).messages.length,1);
     assert.equal(enough.state.reads.filter(([,method]) => method === 'Address').length,1,'vault funds avoid retained reads');
@@ -152,6 +180,20 @@ async function main() {
       assert.equal(bad.state.signed,0,`${problem} must fail before signing`);
     }
   }
+  const generator = fixture('generator_fund');
+  const indexedGenerator = {struct_id:'5-1', source_address:vault,
+    snapshot_meta:generator.state.player.snapshot_meta, positions_ready:true,
+    fuel_p:'0', power_p:'0', source_exists:false, source_fuel_p:null, source_power_p:null,
+    source_ratio_p:null, source_commission:null, source_generator_disabled:null,
+    source_recorded_owner_id:null};
+  const preview = () => generator.manager.chainQuery.readSnapshot(rpc =>
+    readGeneratorSnapshot(rpc, indexedGenerator, '1-1', '5-1', signer.address, generator.state.player));
+  assert.equal((await preview()).data.maxAlpha, '52', 'Consume Alpha includes eligible retained funds');
+  generator.state.permissions = '32';
+  assert.equal((await preview()).data.maxAlpha, '2', 'An infusion-only key cannot collect retained funds');
+  generator.state.permissions = '48';
+  retained.forEach(a => generator.state.reassigned.add(a));
+  assert.equal((await preview()).data.maxAlpha, '2', 'Reassigned funds do not increase generator capacity');
   const multiple = fixture();
   multiple.state.balances.set(retained[0],'3000000');
   const signed = await multiple.submission.prepare(multiple.tx);

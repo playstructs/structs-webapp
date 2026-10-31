@@ -169,6 +169,8 @@ export class SigningTransaction {
           ? '/structs.structs.MsgPlayerSend' : '/structs.structs.MsgVaultSend';
       } else if (this.intent?.kind === 'reactor_change' && this.intent.direction === 'infuse') {
         finalType = '/structs.structs.MsgReactorInfuse';
+      } else if (this.intent?.kind === 'generator_fund') {
+        finalType = '/structs.structs.MsgStructGeneratorInfuse';
       }
       const last = this.messages.length - 1;
       if (!finalType || last > MAX_ALPHA_SOURCES || this.messages[last].typeUrl !== finalType

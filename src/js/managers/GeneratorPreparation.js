@@ -8,6 +8,7 @@ import {generatorIntent, generatorObjectId, generatorUint64} from "../util/Gener
 import {exactAlphaAmount} from "../util/ReactorIntent";
 import {transferAddress} from "../util/TransferIntent";
 import {protocolAtHeight} from "../util/ChainProtocol";
+import {collectVaultFunding, readVaultFunding} from "./VaultFunding";
 
 /** Mirror the release's target/planet checks without confusing target ownership with spend authority. */
 export async function generatorTarget(query, structId, knownPlayer = null) {
@@ -64,11 +65,20 @@ export async function prepareGenerator(rpc, tx, indexedPlayer) {
   }
   const requested = generatorUint64(intent.amount);
   if (requested * generatorUint64(type.generatingRate) > 18446744073709551615n) throw new Error('Generator power would overflow');
-  const coin = (await new BankQuery(rpc).SpendableBalanceByDenom({address:source,denom:'ualpha'})).balance;
-  if (coin?.denom !== 'ualpha' || exactAlphaAmount(coin.amount) < requested) throw new Error('Insufficient spendable generator funds');
+  let collection = null;
+  if (protocol === CHAIN.PROTOCOL) {
+    const funds = await readVaultFunding(rpc, intent.ownerId, source, actor, indexedPlayer, requested);
+    collection = collectVaultFunding(funds, source, requested);
+  } else {
+    const coin = (await new BankQuery(rpc).SpendableBalanceByDenom({address:source,denom:'ualpha'})).balance;
+    if (coin?.denom !== 'ualpha' || exactAlphaAmount(coin.amount) < requested) throw new Error('Insufficient spendable generator funds');
+  }
   // Existing position fuel/power and deferred generator state are checked by
   // the release handler during simulation. Missing rows are never guessed here.
-  return {protocol,message:{typeUrl:'/structs.structs.MsgStructGeneratorInfuse',payload:{structId:intent.structId,infuseAmount:`${intent.amount}ualpha`}},
+  const message = {typeUrl:'/structs.structs.MsgStructGeneratorInfuse',
+    payload:{structId:intent.structId,infuseAmount:`${intent.amount}ualpha`}};
+  return {protocol, messages:[...(collection?.messages ?? []), message],
     fee:{amount:[{denom:'ualpha',amount:'0'}],gas:STRUCTS_FREE_GAS},
-    generator:{ownerId:intent.ownerId,structId:target.Struct.id,typeId:type.id,planetId,source,amount:intent.amount,height:rpc.height}};
+    generator:{ownerId:intent.ownerId,structId:target.Struct.id,typeId:type.id,planetId,source,amount:intent.amount,height:rpc.height,
+      ...(collection ? {funding:collection.funding} : {})}};
 }

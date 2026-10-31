@@ -7,9 +7,10 @@ import {generatorUint64} from "../util/GeneratorIntent";
 import {generatorState} from "../util/GeneratorState";
 import {transferAddress} from "../util/TransferIntent";
 import {validateSigningSnapshot} from "../util/ChainProtocol";
+import {readVaultFunding} from "./VaultFunding";
 
 /** Same-height native facts and indexed positions; submission checks again. */
-export async function readGeneratorSnapshot(rpc, indexed, ownerId, structId, accountAddress) {
+export async function readGeneratorSnapshot(rpc, indexed, ownerId, structId, accountAddress, indexedPlayer = null) {
   const signing = validateSigningSnapshot(indexed?.snapshot_meta,{chainId:rpc.chainId,height:rpc.height},['inventory']);
   const query = new StructsQuery(rpc);
   const actor = await query.Address({address:accountAddress});
@@ -24,8 +25,18 @@ export async function readGeneratorSnapshot(rpc, indexed, ownerId, structId, acc
     if (vault.ownerId !== ownerId || typeof vault.provisioned !== 'boolean') throw new Error('Generator vault unavailable');
     source = transferAddress(vault.address);
   }
-  const coin = (await new BankQuery(rpc).SpendableBalanceByDenom({address:source,denom:'ualpha'})).balance;
-  if (coin?.denom !== 'ualpha') throw new Error('Generator spendability unavailable');
+  let funds;
+  if (signing.protocol === CHAIN.PROTOCOL && indexedPlayer) {
+    validateSigningSnapshot(indexedPlayer.snapshot_meta, {chainId:rpc.chainId, height:rpc.height}, ['inventory']);
+    if (indexedPlayer.id !== ownerId || indexedPlayer.vault_address !== source) {
+      throw new Error('Generator funding owner changed');
+    }
+    funds = (await readVaultFunding(rpc, ownerId, source, actor, indexedPlayer)).total.toString();
+  } else {
+    const coin = (await new BankQuery(rpc).SpendableBalanceByDenom({address:source,denom:'ualpha'})).balance;
+    if (coin?.denom !== 'ualpha') throw new Error('Generator spendability unavailable');
+    funds = coin.amount;
+  }
   return generatorState(indexed,{ownerId,structId,planetId,source,protocol:signing.protocol,height:rpc.height,
-    rate:type.generatingRate,funds:coin.amount});
+    rate:type.generatingRate,funds});
 }
