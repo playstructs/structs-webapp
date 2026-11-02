@@ -9,23 +9,11 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "cosmos.base.v1beta1";
 
-/**
- * Coin defines a token with a denomination and an amount.
- *
- * NOTE: The amount field is an Int which implements the custom method
- * signatures required by gogoproto.
- */
 export interface Coin {
   denom: string;
   amount: string;
 }
 
-/**
- * DecCoin defines a token with a denomination and a decimal amount.
- *
- * NOTE: The amount field is an Dec which implements the custom method
- * signatures required by gogoproto.
- */
 export interface DecCoin {
   denom: string;
   amount: string;

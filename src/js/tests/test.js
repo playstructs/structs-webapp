@@ -1,3 +1,4 @@
+import {APIReadinessTest} from "./APIReadinessTest";
 import {NumberFormatterTest} from './NumberFormatterTest';
 import {PermissionManagerTest} from "./PermissionManagerTest";
 import {TaskManagerOreTest} from "./TaskManagerOreTest";
@@ -23,3 +24,5 @@ import {ManageAlphaInfusedTest} from "./ManageAlphaInfusedTest";
 (new DeployCheatsheetTest()).run();
 (new InvalidTargetClickTest()).run();
 (new ManageAlphaInfusedTest()).run();
+
+(new APIReadinessTest()).run();

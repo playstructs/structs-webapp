@@ -131,7 +131,8 @@ export class AccountController extends AbstractController {
       this.gameState,
       this.guildAPI,
       this.permissionManager,
-      deviceAddress
+      deviceAddress,
+      this.authManager
     );
     viewModel.render();
   }
@@ -179,7 +180,7 @@ export class AccountController extends AbstractController {
   }
 
   transferAmount() {
-    const viewModel = new AccountTransferAmountViewModel(this.gameState);
+    const viewModel = new AccountTransferAmountViewModel(this.gameState, this.guildAPI);
     viewModel.render();
   }
 
@@ -212,7 +213,6 @@ export class AccountController extends AbstractController {
       this.gameState,
       this.guildAPI,
       this.alphaManager,
-      this.grassManager,
       options
     );
     viewModel.render();

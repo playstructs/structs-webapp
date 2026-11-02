@@ -258,11 +258,8 @@ export function allocationTypeToJSON(object: allocationType): string {
 }
 
 export enum guildJoinBypassLevel {
-  /** closed - Feature off */
   closed = 0,
-  /** permissioned - Only those with permissions can do it */
   permissioned = 1,
-  /** member - All members of the guild can contribute */
   member = 2,
   UNRECOGNIZED = -1,
 }
@@ -650,12 +647,6 @@ export enum planetAttributeType {
   orbitalJammingStationQuantity = 8,
   advancedOrbitalJammingStationQuantity = 9,
   blockStartRaid = 10,
-  /**
-   * blockRaiderArrived - planetBlockStartOreMine/Refine are uniquely named because protobuf
-   * enums share a package-level namespace with structAttributeType's
-   * blockStartOreMine/Refine. PlanetAttributes message fields and the
-   * PlanetAttributeType_enum string keys still use blockStartOreMine.
-   */
   blockRaiderArrived = 11,
   planetBlockStartOreMine = 12,
   planetBlockStartOreRefine = 13,
@@ -1064,13 +1055,6 @@ export function techOreReserveDefensesToJSON(object: techOreReserveDefenses): st
 export enum techPlanetaryDefenses {
   noPlanetaryDefense = 0,
   defensiveCannon = 1,
-  /**
-   * lowOrbitBallisticInterceptorNetwork - advancedLowOrbitBallisticInterceptorNetwork  = 3;
-   * repairNetwork                                = 4;
-   * coordinatedGlobalShieldNetwork               = 5;
-   * orbitalJammingStation                        = 6;
-   * advancedOrbitalJammingStation                = 7;
-   */
   lowOrbitBallisticInterceptorNetwork = 2,
   UNRECOGNIZED = -1,
 }

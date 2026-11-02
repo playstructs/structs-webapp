@@ -33,7 +33,9 @@ class PlayerAuthenticator extends AbstractAuthenticator
      */
     public function supports(Request $request): ?bool
     {
-        return str_starts_with($request->getRequestUri(), '/api/');
+        // Match the once-decoded path used by Symfony's router and firewall.
+        // A raw URI check would skip authentication for an encoded API slash.
+        return str_starts_with(rawurldecode($request->getPathInfo()), '/api/');
     }
 
     public function authenticate(Request $request): Passport

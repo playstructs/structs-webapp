@@ -25,13 +25,13 @@ export class LogoutAssetsWarningViewModel extends AbstractViewModel {
     view.messageHeaderIconClass = 'icon-alert';
     view.messageHeaderText = 'IMPORTANT';
     view.messageBody1HTML = `
-      The following assets are associated with this device. If this device is logged out, these assets will be migrated to your 
+      The following assets are associated with this device. If this device is logged out, these assets will be swept to your
       <a 
         id="recovery-key-hint" 
         class="sui-mod-secondary"
         href="javascript: void(0)" 
-        data-sui-tooltip="The Primary Account Address is the master address associated with your account, rather than a specific device."
-      >Primary Account Address.</a>
+        data-sui-tooltip="The Player Account holds your funds independently of any signing device."
+      >Player Account.</a>
     `;
     view.messageBody2HTML = `
       <a
@@ -59,7 +59,7 @@ export class LogoutAssetsWarningViewModel extends AbstractViewModel {
       });
       document.getElementById(view.confirmBtn2Id).addEventListener('click', () => {
         if (this.playerAddress.isOnlyManagingDevice) {
-          MenuPage.router.goto('Auth', 'logoutPermissionsWarning');
+          MenuPage.router.goto('Auth', 'logoutPermissionsWarning', this.playerAddress);
         } else if (this.isPrimaryDevice) {
           MenuPage.router.goto('Auth', 'logout');
         } else {

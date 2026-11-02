@@ -718,21 +718,25 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     if (this.isActionAvailable(struct, 0, true, false)) {
       // Turn off: deactivate the struct
       this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEACTIVATE);
-      this.gameState.actionBarLock.lock();
-      this.signingClientManager.queueMsgStructDeactivate(struct.id).then(() => {
-        struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
-        this.showStructActionBar(struct);
-        window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
-      });
+      this.gameState.actionBarLock.run(
+        () => this.signingClientManager.queueMsgStructDeactivate(struct.id),
+        () => {
+          struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
+          this.showStructActionBar(struct);
+          window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
+        }
+      );
     } else if (this.isActionAvailable(struct, structType.activate_charge, false, false)){
       // Turn on: activate the struct
       this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ACTIVATE);
-      this.gameState.actionBarLock.lock();
-      this.signingClientManager.queueMsgStructActivate(struct.id, structType.activate_charge).then(() => {
-        struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
-        this.showStructActionBar(struct);
-        window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
-      });
+      this.gameState.actionBarLock.run(
+        () => this.signingClientManager.queueMsgStructActivate(struct.id, structType.activate_charge),
+        () => {
+          struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
+          this.showStructActionBar(struct);
+          window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
+        }
+      );
     }
   }
 
@@ -934,8 +938,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     if (struct.isOnline()) {
       const icon = struct.fuel < 1 ? 'icon-attention' : 'icon-refine';
       icons.push(`
-        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${struct.fuel}" data-energy="${struct.fuel * structType.generating_rate}">
-          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value">${struct.fuel}</span>
+        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${struct.fuel ?? ''}" data-energy="${struct.generator_power ?? ''}">
+          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value">${struct.fuel ?? ''}</span>
         </a> 
       `);
     }
@@ -1310,28 +1314,30 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
           if (struct.isHidden()) {
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_DEACTIVATE);
-            this.gameState.actionBarLock.lock();
-
             // Deactivate stealth mode
-            this.signingClientManager.queueMsgStructStealthDeactivate(struct.id, structType.stealth_activate_charge).then(() => {
-              struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
-              // Update button to default state
-              btn.setAttribute('data-active-defense', '0');
-              btn.classList.remove('sui-mod-active-defense');
-              btn.classList.add('sui-mod-default');
-            });
+            this.gameState.actionBarLock.run(
+              () => this.signingClientManager.queueMsgStructStealthDeactivate(struct.id, structType.stealth_activate_charge),
+              () => {
+                struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
+                // Update button to default state
+                btn.setAttribute('data-active-defense', '0');
+                btn.classList.remove('sui-mod-active-defense');
+                btn.classList.add('sui-mod-default');
+              }
+            );
           } else {
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_ACTIVATE);
-            this.gameState.actionBarLock.lock();
-
             // Activate stealth mode
-            this.signingClientManager.queueMsgStructStealthActivate(struct.id, structType.stealth_activate_charge).then(() => {
-              struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
-              // Update button to active state
-              btn.setAttribute('data-active-defense', '1');
-              btn.classList.remove('sui-mod-default');
-              btn.classList.add('sui-mod-active-defense');
-            });
+            this.gameState.actionBarLock.run(
+              () => this.signingClientManager.queueMsgStructStealthActivate(struct.id, structType.stealth_activate_charge),
+              () => {
+                struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
+                // Update button to active state
+                btn.setAttribute('data-active-defense', '1');
+                btn.classList.remove('sui-mod-default');
+                btn.classList.add('sui-mod-active-defense');
+              }
+            );
           }
         });
       }
@@ -1459,15 +1465,15 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             // Struct is currently defending another struct - clicking clears the defense
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEFENSE_CLEAR);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
-            this.gameState.actionBarLock.lock();
-
-            // Update button to default state while processing
-            btn.setAttribute('data-active-defense', '0');
-            btn.classList.remove('sui-mod-active-defense');
-            btn.classList.add('sui-mod-default');
-
             // Send defense clear message to chain
-            await this.signingClientManager.queueMsgStructDefenseClear(struct.id, structType.defend_change_charge);
+            await this.gameState.actionBarLock.run(
+              () => this.signingClientManager.queueMsgStructDefenseClear(struct.id, structType.defend_change_charge),
+              () => {
+                btn.setAttribute('data-active-defense', '0');
+                btn.classList.remove('sui-mod-active-defense');
+                btn.classList.add('sui-mod-default');
+              }
+            );
 
           } else if (currentAction === STRUCT_ACTIONS.DEFENSE_SET) {
             // Already in defense selection mode - cancel it
@@ -1544,7 +1550,6 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         const offcanvas = new ConsumeAlphaOffcanvas(
           this.gameState,
           this.alphaManager,
-          this.grassManager,
           struct,
           structType
         );

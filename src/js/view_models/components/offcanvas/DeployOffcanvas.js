@@ -8,6 +8,9 @@ import {PendingBuildAddedEvent} from "../../../events/PendingBuildAddedEvent";
 import {SUICheatsheet} from "../../../sui/SUICheatsheet";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {EVENTS} from "../../../constants/Events";
+import {TX_STATUS} from "../../../models/SigningTransaction";
+import {ClearStructTileEvent} from "../../../events/ClearStructTileEvent";
+import {RefreshActionBarEvent} from "../../../events/RefreshActionBarEvent";
 
 export class DeployOffcanvas extends AbstractViewModelComponent {
 
@@ -112,13 +115,19 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
 
       const tileType = this.getTileTypeByStructType(structType);
 
-      this.signingClientManager.queueMsgStructBuildInitiate(
-        this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
-        structType.id,
-        this.ambit,
-        this.slot,
-        structType.build_charge
-      ).then();
+      let completion;
+      try {
+        completion = this.signingClientManager.queueMsgStructBuildInitiate(
+          this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
+          structType.id,
+          this.ambit,
+          this.slot,
+          structType.build_charge
+        );
+      } catch (error) {
+        console.warn('[DeployOffcanvas] build was not queued:', error);
+        return;
+      }
 
       MenuPage.sui.offcanvas.close();
 
@@ -130,6 +139,21 @@ export class DeployOffcanvas extends AbstractViewModelComponent {
         this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id,
         structType
       );
+      const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+      const mapId = this.gameState.alphaBaseMap.mapId;
+      const pending = this.gameState.getPendingBuild(tileType, this.ambit, this.slot, playerId);
+      const clearPending = () => {
+        if (this.gameState.getPendingBuild(tileType, this.ambit, this.slot, playerId) !== pending) return;
+        this.gameState.removePendingBuild(tileType, this.ambit, this.slot, playerId);
+        window.dispatchEvent(new ClearStructTileEvent(mapId, tileType, this.ambit, this.slot, playerId));
+        window.dispatchEvent(new RefreshActionBarEvent());
+      };
+      completion.then(transaction => {
+        if (transaction.status !== TX_STATUS.SUCCEEDED) clearPending();
+      }).catch(error => {
+        console.warn('[DeployOffcanvas] build observation stopped:', error);
+        // An interrupted observer does not establish transaction failure.
+      });
 
       // Dispatch event to render deployment indicator on struct layer
       window.dispatchEvent(new RenderDeploymentIndicatorEvent(

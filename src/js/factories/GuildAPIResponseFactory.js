@@ -14,7 +14,9 @@ export class GuildAPIResponseFactory {
     return new GuildAPIResponse(
       jsonResponse.success,
       jsonResponse.errors,
-      jsonResponse.data
+      jsonResponse.data,
+      jsonResponse.meta ?? null,
+      jsonResponse.total ?? null
     );
   }
 }

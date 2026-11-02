@@ -16,20 +16,20 @@ export class JsonAjaxer {
     this.onUnauthorized = null;
   }
 
-  async get (url) {
-    return this.request('GET', url);
+  async get (url, options = {}) {
+    return this.request('GET', url, undefined, options);
   }
 
-  async post (url, data) {
-    return this.request('POST', url, data);
+  async post (url, data, options = {}) {
+    return this.request('POST', url, data, options);
   }
 
-  async put (url, data) {
-    return this.request('PUT', url, data);
+  async put (url, data, options = {}) {
+    return this.request('PUT', url, data, options);
   }
 
-  async delete (url, data) {
-    return this.request('DELETE', url, data);
+  async delete (url, data, options = {}) {
+    return this.request('DELETE', url, data, options);
   }
 
   /**
@@ -38,23 +38,50 @@ export class JsonAjaxer {
    * @param {object} [data]
    * @return {Promise<object>}
    */
-  async request (method, url, data = undefined) {
-    let response = await this.send(method, url, data);
+  async request (method, url, data = undefined, {signal, timeoutMs=15000, reauthenticate=true} = {}) {
+    const controller = new AbortController();
+    const abort = () => controller.abort(signal.reason);
+    if (signal?.aborted) abort();
+    else signal?.addEventListener('abort', abort, {once: true});
+    const timer = timeoutMs ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    try {
+      let response = await this.send(method, url, data, controller.signal);
 
-    if (this.isAuthFailure(response) && this.onUnauthorized) {
-      if (await this.onUnauthorized()) {
-        response = await this.send(method, url, data);
+      if (this.isAuthFailure(response) && this.onUnauthorized && reauthenticate) {
+        controller.signal.throwIfAborted();
+        if (await this.waitForAuthorization(controller.signal)) {
+          response = await this.send(method, url, data, controller.signal);
+        }
       }
-    }
 
-    if (this.isAuthFailure(response)) {
-      throw new AuthenticationError(
-        `${method} ${url} requires an authenticated session.`,
-        response.status
-      );
-    }
+      controller.signal.throwIfAborted();
+      if (this.isAuthFailure(response)) {
+        throw new AuthenticationError(
+          `${method} ${url} requires an authenticated session.`,
+          response.status
+        );
+      }
 
-    return this.parse(response, method, url);
+      return await this.parse(response, method, url);
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', abort);
+    }
+  }
+
+  /** A shared login may continue, but a departed/timed-out read must release its observer. */
+  async waitForAuthorization(signal) {
+    signal.throwIfAborted();
+    let abort;
+    const cancelled = new Promise((resolve, reject) => {
+      abort = () => reject(signal.reason);
+      signal.addEventListener('abort', abort, {once: true});
+    });
+    try {
+      return await Promise.race([this.onUnauthorized(), cancelled]);
+    } finally {
+      signal.removeEventListener('abort', abort);
+    }
   }
 
   /**
@@ -63,13 +90,15 @@ export class JsonAjaxer {
    * @param {object} [data]
    * @return {Promise<Response>}
    */
-  async send (method, url, data = undefined) {
+  async send (method, url, data = undefined, signal = undefined) {
+    signal?.throwIfAborted();
     const options = {
       method: method,
       headers: {
         'Content-Type': 'application/json'
       },
-      redirect: 'follow'
+      redirect: 'follow',
+      signal
     };
 
     if (data !== undefined) {
@@ -94,6 +123,9 @@ export class JsonAjaxer {
    * @return {Promise<object>}
    */
   async parse (response, method, url) {
+    if (response.status >= 500) {
+      throw new HttpError(`${method} ${url} failed with status ${response.status}.`,response.status);
+    }
     try {
       return await response.json();
     } catch (error) {

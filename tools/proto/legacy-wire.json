@@ -1,0 +1,107 @@
+{
+  "revision": "2d0116c852ee0b9e13ec6deb44ab4beb1b07222e",
+  "tx_source_sha256": "a9676acc5365fcca402827bf7e4d604319c80470b2d1c401e5618165c6e38a2e",
+  "fixtures": [
+    {
+      "typeUrl": "/structs.structs.MsgPlayerSend",
+      "payload": {
+        "creator": "signer",
+        "fromAddress": "source",
+        "toAddress": "dest",
+        "amount": [
+          {
+            "denom": "ualpha",
+            "amount": "9007199254740993"
+          }
+        ]
+      },
+      "wire": "CgZzaWduZXISBnNvdXJjZRoEZGVzdCIaCgZ1YWxwaGESEDkwMDcxOTkyNTQ3NDA5OTM="
+    },
+    {
+      "typeUrl": "/structs.structs.MsgAddressRegister",
+      "payload": {
+        "creator": "signer",
+        "playerId": "1-1",
+        "address": "device",
+        "proofPubKey": "key",
+        "proofSignature": "proof",
+        "permissions": 255
+      },
+      "wire": "CgZzaWduZXISAzEtMRoGZGV2aWNlIgNrZXkqBXByb29mMP8B"
+    },
+    {
+      "typeUrl": "/structs.structs.MsgReactorInfuse",
+      "payload": {
+        "creator": "signer",
+        "delegatorAddress": "source",
+        "validatorAddress": "validator",
+        "amount": {
+          "denom": "ualpha",
+          "amount": "9007199254740993"
+        }
+      },
+      "wire": "CgZzaWduZXISBnNvdXJjZRoJdmFsaWRhdG9yIhoKBnVhbHBoYRIQOTAwNzE5OTI1NDc0MDk5Mw=="
+    },
+    {
+      "typeUrl": "/structs.structs.MsgReactorDefuse",
+      "payload": {
+        "creator": "signer",
+        "delegatorAddress": "source",
+        "validatorAddress": "validator",
+        "amount": {
+          "denom": "ualpha",
+          "amount": "9007199254740993"
+        }
+      },
+      "wire": "CgZzaWduZXISBnNvdXJjZRoJdmFsaWRhdG9yIhoKBnVhbHBoYRIQOTAwNzE5OTI1NDc0MDk5Mw=="
+    },
+    {
+      "typeUrl": "/structs.structs.MsgReactorCancelDefusion",
+      "payload": {
+        "creator": "signer",
+        "delegatorAddress": "source",
+        "validatorAddress": "validator",
+        "amount": {
+          "denom": "ualpha",
+          "amount": "9007199254740993"
+        },
+        "creationHeight": 3352999
+      },
+      "wire": "CgZzaWduZXISBnNvdXJjZRoJdmFsaWRhdG9yIhoKBnVhbHBoYRIQOTAwNzE5OTI1NDc0MDk5Myin08wB"
+    },
+    {
+      "typeUrl": "/structs.structs.MsgAgreementOpen",
+      "payload": {
+        "creator": "signer",
+        "providerId": "5-1",
+        "duration": 10,
+        "capacity": 20
+      },
+      "wire": "CgZzaWduZXISAzUtMRgKIBQ="
+    },
+    {
+      "typeUrl": "/structs.structs.MsgGuildCreate",
+      "payload": {
+        "creator": "signer",
+        "reactorId": "3-1",
+        "endpoint": "endpoint",
+        "entrySubstationId": "4-1",
+        "proof": "",
+        "nonce": ""
+      },
+      "wire": "CgZzaWduZXISAzMtMRoIZW5kcG9pbnQiAzQtMQ=="
+    },
+    {
+      "typeUrl": "/structs.structs.MsgStructAttack",
+      "payload": {
+        "creator": "signer",
+        "operatingStructId": "5-1",
+        "targetStructId": [
+          "5-2"
+        ],
+        "weaponSystem": "primary"
+      },
+      "wire": "CgZzaWduZXISAzUtMRoDNS0yIgdwcmltYXJ5"
+    }
+  ]
+}

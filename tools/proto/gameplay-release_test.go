@@ -1,0 +1,316 @@
+package app_test
+
+import (
+	"context"
+	"math/rand"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	authsign "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	"github.com/stretchr/testify/require"
+	"structs/app/ante"
+	keeperlib "structs/x/structs/keeper"
+	"structs/x/structs/types"
+)
+
+// The browser may report non-execution only when an expired send's account
+// sequence has not advanced. A consumed sequence instead leaves outcome unknown. Exercise the real ante/message boundary,
+// including accepted CheckTx that is never included and a failed message whose
+// ante changes DO commit. No external node, keyring or transaction is used.
+func TestClientExpirySequenceEvidence(t *testing.T) {
+	for _, scenario := range []string{"expired", "included", "message_failed", "mempool_dropped"} {
+		t.Run(scenario, func(t *testing.T) {
+			bApp, ctx := setupJailGateApp(t)
+			key := secp256k1.GenPrivKey()
+			address := sdk.AccAddress(key.PubKey().Address())
+			player := appendAppPlayer(t, bApp.StructsKeeper, ctx, address)
+			for height := int64(1); height <= 4; height++ {
+				_, err := bApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: height, Time: ctx.BlockTime().Add(time.Duration(height) * time.Second)})
+				require.NoError(t, err)
+				_, err = bApp.Commit()
+				require.NoError(t, err)
+			}
+			current := bApp.NewUncachedContext(false, ctx.BlockHeader()).WithBlockHeight(4)
+			account := bApp.AccountKeeper.GetAccount(current, address)
+			sequence := account.GetSequence()
+			name := "Expiry-Fixture"
+			if scenario == "message_failed" {
+				name = strings.Repeat("X", 256)
+			}
+			message := &types.MsgPlayerUpdateName{Creator: address.String(), PlayerId: player.Id, Name: name}
+			config := authtx.NewTxConfig(bApp.AppCodec(), authtx.DefaultSignModes)
+			tx, err := simtestutil.GenSignedMockTx(rand.New(rand.NewSource(1)), config, []sdk.Msg{message},
+				sdk.Coins{sdk.NewInt64Coin("ualpha", 0)}, ante.DefaultFreeGasCap, jailGateChainID,
+				[]uint64{account.GetAccountNumber()}, []uint64{sequence}, key)
+			require.NoError(t, err)
+			builder, err := config.WrapTxBuilder(tx)
+			require.NoError(t, err)
+			timeoutHeight := uint64(5)
+			if scenario == "expired" {
+				timeoutHeight = 4
+			}
+			builder.SetTimeoutHeight(timeoutHeight)
+			signBytes, err := authsign.GetSignBytesAdapter(context.Background(), config.SignModeHandler(), signing.SignMode_SIGN_MODE_DIRECT,
+				authsign.SignerData{Address: address.String(), ChainID: jailGateChainID, AccountNumber: account.GetAccountNumber(), Sequence: sequence, PubKey: key.PubKey()}, builder.GetTx())
+			require.NoError(t, err)
+			signature, err := key.Sign(signBytes)
+			require.NoError(t, err)
+			require.NoError(t, builder.SetSignatures(signing.SignatureV2{PubKey: key.PubKey(), Sequence: sequence,
+				Data: &signing.SingleSignatureData{SignMode: signing.SignMode_SIGN_MODE_DIRECT, Signature: signature}}))
+			wire, err := config.TxEncoder()(builder.GetTx())
+			require.NoError(t, err)
+			if scenario == "mempool_dropped" {
+				checked, err := bApp.CheckTx(&abci.RequestCheckTx{Tx: wire})
+				require.NoError(t, err)
+				require.Zero(t, checked.Code, checked.Log)
+				_, err = bApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 5, Time: ctx.BlockTime().Add(5 * time.Second)})
+				require.NoError(t, err)
+				_, err = bApp.Commit()
+				require.NoError(t, err)
+			}
+			height := int64(5)
+			if scenario == "mempool_dropped" {
+				height = 6
+			}
+			block, err := bApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: height, Time: ctx.BlockTime().Add(time.Duration(height) * time.Second), Txs: [][]byte{wire}})
+			require.NoError(t, err)
+			require.Len(t, block.TxResults, 1)
+			_, err = bApp.Commit()
+			require.NoError(t, err)
+			final := bApp.NewUncachedContext(false, ctx.BlockHeader()).WithBlockHeight(height)
+			after := bApp.AccountKeeper.GetAccount(final, address)
+			require.Equal(t, account.GetAccountNumber(), after.GetAccountNumber())
+			if scenario == "included" || scenario == "message_failed" {
+				require.Equal(t, sequence+1, after.GetSequence(), "message execution consumes committed sequence even when the message fails")
+			} else {
+				require.Equal(t, sequence, after.GetSequence(), "CheckTx and expiry cannot consume committed sequence")
+				require.Contains(t, strings.ToLower(block.TxResults[0].Log), "timeout")
+			}
+			if scenario == "included" {
+				require.Zero(t, block.TxResults[0].Code, block.TxResults[0].Log)
+			} else {
+				require.NotZero(t, block.TxResults[0].Code)
+			}
+		})
+	}
+}
+
+// The browser delegates dynamic state/proof checks to this native simulation.
+// Exercise real signed bytes, ante and handlers, then inclusion of the same
+// bytes. Simulate must discard its writes and cannot consume the account/slot.
+func TestClientGameplaySimulation(t *testing.T) {
+	for _, scenario := range []struct{ name, operation, failure string }{
+		{"build", "build", ""},
+		{"stale_build_anchor", "build", "work"},
+		{"wrong_hash_permission", "build", "permission"},
+		{"destroyed_build", "build", "destroyed"},
+		{"refine_to_vault", "refine", ""},
+		{"stale_refine_anchor", "refine", "work"},
+		{"wrong_refine_permission", "refine", "permission"},
+		{"activate", "activate", ""},
+		{"destroyed_activation", "activate", "destroyed"},
+		{"insufficient_charge", "activate", "charge"},
+		{"rename", "name", ""},
+		{"invalid_name", "name", "name"},
+		{"wrong_name_permission", "name", "permission"},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			bApp, ctx := setupJailGateApp(t)
+			key := secp256k1.GenPrivKey()
+			address := sdk.AccAddress(key.PubKey().Address())
+			player := appendAppPlayer(t, bApp.StructsKeeper, ctx, address)
+			planet := types.Planet{Id: "2-991", Owner: player.Id, Creator: address.String()}
+			player.PlanetId = planet.Id
+			bApp.StructsKeeper.SetPlayer(ctx, player)
+			bApp.StructsKeeper.SetPlanet(ctx, planet)
+			bApp.StructsKeeper.SetGridAttribute(ctx, keeperlib.GetGridAttributeIDByObjectId(types.GridAttributeType_capacity, player.Id), 1000000)
+			bApp.StructsKeeper.SetGridAttribute(ctx, keeperlib.GetGridAttributeIDByObjectId(types.GridAttributeType_structsLoad, player.Id), types.PlayerPassiveDraw+1)
+			structType := types.StructType{Id: 991, Type: "Client Fixture", Category: types.ObjectType_planet,
+				BuildDraw: 1, PassiveDraw: 1, MaxHealth: 1, BuildDifficulty: 2, ActivateCharge: 1}
+			if scenario.operation == "refine" {
+				structType.PlanetaryRefinery = types.TechPlanetaryRefineries_oreRefinery
+				structType.OreRefiningDifficulty = 2
+				bApp.StructsKeeper.SetGridAttribute(ctx, keeperlib.GetGridAttributeIDByObjectId(types.GridAttributeType_ore, player.Id), 1)
+				bApp.StructsKeeper.SetPlanetAttribute(ctx, keeperlib.GetPlanetAttributeIDByObjectId(types.PlanetAttributeType_oreRefiningActiveQuantity, planet.Id), 1)
+				refineAnchor := uint64(1)
+				if scenario.name == "stale_refine_anchor" {
+					refineAnchor = 2
+				}
+				bApp.StructsKeeper.SetPlanetAttribute(ctx, keeperlib.GetPlanetAttributeIDByObjectId(types.PlanetAttributeType_planetBlockStartOreRefine, planet.Id), refineAnchor)
+			}
+			if scenario.name == "insufficient_charge" {
+				structType.ActivateCharge = 100
+			}
+			bApp.StructsKeeper.SetStructType(ctx, structType)
+			structure := types.Struct{Id: "5-991", Owner: player.Id, Creator: address.String(), Type: structType.Id,
+				LocationId: planet.Id, LocationType: types.ObjectType_planet, OperatingAmbit: types.Ambit_land}
+			bApp.StructsKeeper.SetStruct(ctx, structure)
+			status := uint64(types.StructStateMaterialized)
+			if scenario.operation == "activate" {
+				status |= uint64(types.StructStateBuilt)
+			}
+			if scenario.operation == "refine" {
+				status |= uint64(types.StructStateBuilt | types.StructStateOnline)
+			}
+			if strings.HasPrefix(scenario.name, "destroyed_") {
+				status |= uint64(types.StructStateDestroyed)
+			}
+			statusID := keeperlib.GetStructAttributeIDByObjectId(types.StructAttributeType_status, structure.Id)
+			bApp.StructsKeeper.SetStructAttribute(ctx, statusID, status)
+			anchor := uint64(1)
+			if scenario.name == "stale_build_anchor" {
+				anchor = 2
+			}
+			bApp.StructsKeeper.SetStructAttribute(ctx, keeperlib.GetStructAttributeIDByObjectId(types.StructAttributeType_blockStartBuild, structure.Id), anchor)
+			permission := types.PermPlay
+			switch scenario.operation {
+			case "build":
+				permission = types.PermHashBuild
+			case "refine":
+				permission = types.PermHashRefine
+			case "name":
+				permission = types.PermUpdate
+			}
+			if strings.HasPrefix(scenario.name, "wrong_") {
+				permission = types.PermAdmin
+			}
+			bApp.StructsKeeper.SetPermissionsByBytes(ctx, keeperlib.GetAddressPermissionIDBytes(address.String()), permission)
+			// Commit the prepared fixture, so Simulate reads the same committed
+			// state a height-pinned public query would observe.
+			for height := int64(1); height <= 4; height++ {
+				_, err := bApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: height, Time: ctx.BlockTime().Add(time.Duration(height) * time.Second)})
+				require.NoError(t, err)
+				_, err = bApp.Commit()
+				require.NoError(t, err)
+			}
+			current := bApp.NewUncachedContext(false, ctx.BlockHeader()).WithBlockHeight(4)
+			var message sdk.Msg
+			switch scenario.operation {
+			case "build", "refine":
+				var nonce, proof string
+				for i := 0; i < 10000; i++ {
+					nonce = strconv.Itoa(i)
+					proof = types.HashBuild(structure.Id + strings.ToUpper(scenario.operation) + "1NONCE" + nonce)
+					if strings.HasPrefix(proof, "0") {
+						break
+					}
+				}
+				require.True(t, strings.HasPrefix(proof, "0"))
+				if scenario.operation == "build" {
+					message = &types.MsgStructBuildComplete{Creator: address.String(), StructId: structure.Id, Nonce: nonce, Proof: proof}
+				} else {
+					message = &types.MsgStructOreRefineryComplete{Creator: address.String(), StructId: structure.Id, Nonce: nonce, Proof: proof}
+				}
+			case "activate":
+				message = &types.MsgStructActivate{Creator: address.String(), StructId: structure.Id}
+			case "name":
+				name := "Explorer"
+				if scenario.name == "invalid_name" {
+					name = strings.Repeat("X", 256)
+				}
+				message = &types.MsgPlayerUpdateName{Creator: address.String(), PlayerId: player.Id, Name: name}
+			}
+			account := bApp.AccountKeeper.GetAccount(current, address)
+			config := authtx.NewTxConfig(bApp.AppCodec(), authtx.DefaultSignModes)
+			tx, err := simtestutil.GenSignedMockTx(rand.New(rand.NewSource(1)), config, []sdk.Msg{message},
+				sdk.Coins{sdk.NewInt64Coin("ualpha", 0)}, ante.DefaultFreeGasCap, jailGateChainID,
+				[]uint64{account.GetAccountNumber()}, []uint64{account.GetSequence()}, key)
+			require.NoError(t, err)
+			wire, err := config.TxEncoder()(tx)
+			require.NoError(t, err)
+			before := applicationAssetStateRows(bApp, current)
+			gas, _, simulationErr := bApp.Simulate(wire)
+			require.Equal(t, before, applicationAssetStateRows(bApp, current), "simulation must discard all writes")
+			require.Equal(t, account.GetSequence(), bApp.AccountKeeper.GetAccount(current, address).GetSequence())
+			if scenario.failure != "" {
+				require.ErrorContains(t, simulationErr, scenario.failure)
+			} else {
+				require.NoError(t, simulationErr)
+				require.Positive(t, gas.GasUsed)
+				require.LessOrEqual(t, gas.GasUsed, ante.DefaultFreeGasCap)
+			}
+			block, err := bApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 5, Time: ctx.BlockTime().Add(5 * time.Second), Txs: [][]byte{wire}})
+			require.NoError(t, err)
+			require.Len(t, block.TxResults, 1)
+			result := block.TxResults[0]
+			if scenario.failure != "" {
+				require.NotZero(t, result.Code)
+			} else {
+				require.Zero(t, result.Code, result.Log)
+				if scenario.operation == "refine" {
+					vault, err := types.VaultAddress(player.Id)
+					require.NoError(t, err)
+					final := bApp.NewContext(false)
+					require.Equal(t, "1000000", bApp.BankKeeper.GetBalance(final, vault, "ualpha").Amount.String())
+					require.True(t, bApp.BankKeeper.GetBalance(final, address, "ualpha").IsZero())
+				}
+			}
+			t.Logf("bytes=%d simulation gas=%d inclusion gas=%d code=%d", len(wire), gas.GasUsed, result.GasUsed, result.Code)
+		})
+	}
+}
+
+// Same-sequence transactions conflict even when the old bytes have no expiry.
+// A later explicit action with a fresh sequence may execute too; sequence does
+// not establish whether the earlier action succeeded or make repeating it safe.
+func TestClientSequenceConflict(t *testing.T) {
+	for _, oldFirst := range []bool{true, false} {
+		t.Run(strconv.FormatBool(oldFirst), func(t *testing.T) {
+			chain, ctx := setupJailGateApp(t)
+			key := secp256k1.GenPrivKey()
+			address := sdk.AccAddress(key.PubKey().Address())
+			player := appendAppPlayer(t, chain.StructsKeeper, ctx, address)
+			config := authtx.NewTxConfig(chain.AppCodec(), authtx.DefaultSignModes)
+			account := chain.AccountKeeper.GetAccount(ctx, address)
+			initialSequence := account.GetSequence()
+			sign := func(name string, sequence uint64) []byte {
+				tx, err := simtestutil.GenSignedMockTx(rand.New(rand.NewSource(1)), config,
+					[]sdk.Msg{&types.MsgPlayerUpdateName{Creator: address.String(), PlayerId: player.Id, Name: name}},
+					sdk.Coins{sdk.NewInt64Coin("ualpha", 0)}, ante.DefaultFreeGasCap, jailGateChainID,
+					[]uint64{account.GetAccountNumber()}, []uint64{sequence}, key)
+				require.NoError(t, err)
+				timed, ok := tx.(interface{ GetTimeoutHeight() uint64 })
+				require.True(t, ok)
+				require.Zero(t, timed.GetTimeoutHeight(), "Exercise an unbounded historical send")
+				wire, err := config.TxEncoder()(tx)
+				require.NoError(t, err)
+				return wire
+			}
+			oldWire := sign("Earlier-Action", initialSequence)
+			newWire := sign("Explicit-Action", initialSequence)
+			ordered := [][]byte{oldWire, newWire}
+			if !oldFirst {
+				ordered = [][]byte{newWire, oldWire}
+			}
+			for i, wire := range ordered {
+				block, err := chain.FinalizeBlock(&abci.RequestFinalizeBlock{Height: int64(i + 1),
+					Time: ctx.BlockTime().Add(time.Duration(i+1) * time.Second), Txs: [][]byte{wire}})
+				require.NoError(t, err)
+				require.Len(t, block.TxResults, 1)
+				if i == 0 {
+					require.Zero(t, block.TxResults[0].Code, block.TxResults[0].Log)
+				} else {
+					require.NotZero(t, block.TxResults[0].Code)
+					require.Contains(t, block.TxResults[0].Log, "account sequence mismatch")
+				}
+				_, err = chain.Commit()
+				require.NoError(t, err)
+			}
+			current := chain.NewUncachedContext(false, ctx.BlockHeader()).WithBlockHeight(2)
+			require.Equal(t, initialSequence+1, chain.AccountKeeper.GetAccount(current, address).GetSequence())
+			fresh := sign("Another-Action", initialSequence+1)
+			block, err := chain.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 3,
+				Time: ctx.BlockTime().Add(3 * time.Second), Txs: [][]byte{fresh}})
+			require.NoError(t, err)
+			require.Zero(t, block.TxResults[0].Code, block.TxResults[0].Log)
+		})
+	}
+}

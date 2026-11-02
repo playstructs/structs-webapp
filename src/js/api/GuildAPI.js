@@ -1,3 +1,6 @@
+import {registrationProofContext, registrationProofMessage} from "../util/RegistrationProof";
+import {CHAIN} from "../constants/ChainConstants";
+import {validateReadSnapshot} from "../util/ChainProtocol";
 import {JsonAjaxer} from "../framework/JsonAjaxer";
 import {GuildFactory} from "../factories/GuildFactory";
 import {PlayerFactory} from "../factories/PlayerFactory";
@@ -132,10 +135,33 @@ export class GuildAPI {
   /**
    * @param {string} playerId
    * @param {string} address
+   * @param {object} context the registration proof context from getAddressRegistrationProof()
    * @return {string}
    */
-  buildAddressRegisterMessage(playerId, address) {
-    return `PLAYER${playerId}ADDRESS${address}`;
+  buildAddressRegisterMessage(playerId, address, context) {
+    const proof = registrationProofContext(context);
+    if (proof.player_id !== playerId || proof.address !== address) {
+      throw new Error('Registration proof identity mismatch');
+    }
+    return registrationProofMessage(proof);
+  }
+
+  /**
+   * @param {string} playerId
+   * @param {string} address
+   * @return {Promise<object>} the registration proof context for this player and address
+   */
+  async getAddressRegistrationProof(playerId, address) {
+    const response = this.guildAPIResponseFactory.make(await this.ajax.get(
+      `${this.apiUrl}/auth/player-address/${encodeURIComponent(address)}/player/${encodeURIComponent(playerId)}/proof`,
+      {timeoutMs: 16000}
+    ));
+    this.handleResponseFailure(response);
+    const proof = registrationProofContext(response.data);
+    if (proof.player_id !== playerId || proof.address !== address) {
+      throw new Error('Registration proof identity mismatch');
+    }
+    return proof;
   }
 
   /**
@@ -173,8 +199,8 @@ export class GuildAPI {
    * @param {string} dataProperty
    * @return {Promise<*>}
    */
-  async getSingleDataValue(requestUrl, dataProperty) {
-    const jsonResponse = await this.ajax.get(requestUrl);
+  async getSingleDataValue(requestUrl, dataProperty, options = {}) {
+    const jsonResponse = await this.ajax.get(requestUrl, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
 
@@ -224,6 +250,20 @@ export class GuildAPI {
   }
 
   /**
+   * Read the indexed block and protocol context. Always fetched fresh, so a
+   * cached block response never selects the signing rules.
+   *
+   * @return {Promise<object>}
+   */
+  async getBlockSnapshot() {
+    const response = await this.ajax.get(`${this.apiUrl}/block`);
+    if (response.success !== true || !response.data || !response.meta) {
+      throw new Error('Indexed protocol state unavailable');
+    }
+    return response;
+  }
+
+  /**
    * @param {SignupRequestDTO} signupRequestDTO
    * @return {Promise<GuildAPIResponse>}
    */
@@ -236,13 +276,14 @@ export class GuildAPI {
    * @param {LoginRequestDTO} loginRequestDTO
    * @return {GuildAPIResponse}
    */
-  async login(loginRequestDTO) {
-    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/login`, loginRequestDTO);
+  async login(loginRequestDTO, options = {}) {
+    // Login cannot recover itself through the protected-read recovery hook.
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/login`, loginRequestDTO, {...options, reauthenticate: false});
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
-  async logout() {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/auth/logout`);
+  async logout(options = {}) {
+    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/logout`, {}, options);
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
@@ -250,11 +291,11 @@ export class GuildAPI {
    * @param {string} playerId
    * @return {Promise<Player>}
    */
-  async getPlayer(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}`);
+  async getPlayer(playerId, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/${playerId}`, {timeoutMs: 16000, ...options});
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.playerFactory.make(response.data);
+    return this.playerFactory.make(response.data, response.meta);
   }
 
   /**
@@ -279,10 +320,10 @@ export class GuildAPI {
    * @param {boolean} forceRefresh
    * @return {Promise<number>}
    */
-  async getPlayerAddressCount(playerId, forceRefresh = false) {
+  async getPlayerAddressCount(playerId, forceRefresh = false, options = {}) {
     let count = this.getCachedItem(this.getPlayerAddressCountCacheKey(playerId));
     if (count === null || forceRefresh) {
-      count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count');
+      count = await this.getSingleDataValue(`${this.apiUrl}/player-address/count/player/${playerId}`, 'count', options);
       this.cacheItem(this.getPlayerAddressCountCacheKey(playerId), count);
     }
     return parseInt(count);
@@ -292,11 +333,11 @@ export class GuildAPI {
    * @param {string} playerId
    * @return {Promise<Infusion>}
    */
-  async getInfusionByPlayerId(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/infusion/player/${playerId}`);
+  async getInfusionByPlayerId(playerId, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/infusion/player/${playerId}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.infusionFactory.make(response.data);
+    return this.infusionFactory.make(response.data, response.meta);
   }
 
   /**
@@ -379,11 +420,29 @@ export class GuildAPI {
   }
 
   /**
+   * @param {string} planetId
+   * @param {string|number} seq
+   * @param {string} time
+   * @param {object} [options]
+   * @return {Promise<object>}
+   */
+  async getPlanetActivityEvent(planetId, seq, time, options = {}) {
+    const query = new URLSearchParams({time});
+    const jsonResponse = await this.ajax.get(
+      `${this.apiUrl}/planet-activity/planet/${encodeURIComponent(planetId)}/event/${encodeURIComponent(seq)}?${query}`,
+      {timeoutMs: 5000, ...options}
+    );
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    return response.data;
+  }
+
+  /**
    * @param {string} playerId
    * @return {Promise<PlayerAddress[]>}
    */
-  async getPlayerAddressList(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/player/${playerId}`);
+  async getPlayerAddressList(playerId, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/player/${playerId}`, {timeoutMs: 16000, ...options});
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.playerAddressFactory.parseList(response.data);
@@ -431,8 +490,12 @@ export class GuildAPI {
    * @param {AddPendingAddressRequestDTO} addPendingAddressRequestDTO
    * @return {Promise<GuildAPIResponse>}
    */
-  async addPendingAddress(addPendingAddressRequestDTO) {
-    const jsonResponse = await this.ajax.post(`${this.apiUrl}/auth/player-address`, addPendingAddressRequestDTO);
+  async addPendingAddress(addPendingAddressRequestDTO, options = {}) {
+    const jsonResponse = await this.ajax.post(
+      `${this.apiUrl}/auth/player-address`,
+      addPendingAddressRequestDTO,
+      {timeoutMs: 20000, ...options}
+    );
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
@@ -441,16 +504,25 @@ export class GuildAPI {
    * @return {Promise<GuildAPIResponse>}
    */
   async setPendingAddressPermissions(setPendingAddressPermissionsRequestDTO) {
-    const jsonResponse = await this.ajax.put(`${this.apiUrl}/player-address/pending/permissions`, setPendingAddressPermissionsRequestDTO);
+    const jsonResponse = await this.ajax.put(
+      `${this.apiUrl}/player-address/pending/permissions`,
+      setPendingAddressPermissionsRequestDTO,
+      {timeoutMs: 5000}
+    );
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
   /**
    * @param {string} activationCode
+   * @param {string} activationId
    * @return {Promise<GuildAPIResponse>}
    */
-  async deleteActivationCode(activationCode) {
-    const jsonResponse = await this.ajax.delete(`${this.apiUrl}/player-address/activation-code/${activationCode}`);
+  async deleteActivationCode(activationCode, activationId) {
+    const jsonResponse = await this.ajax.delete(
+      `${this.apiUrl}/player-address/activation-code/${encodeURIComponent(activationCode)}?activation_id=${encodeURIComponent(activationId)}`,
+      undefined,
+      {timeoutMs: 5000}
+    );
     return this.guildAPIResponseFactory.make(jsonResponse);
   }
 
@@ -468,13 +540,62 @@ export class GuildAPI {
 
   /**
    * @param {string} address
-   * @return {Promise<PlayerAddress>}
+   * @param {object} [options]
+   * @return {Promise<object>} the raw response, with data and snapshot meta
    */
-  async getPlayerAddress(address) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/${address}`);
+  async getDeviceState(address, options = {}) {
+    const response = await this.ajax.get(
+      `${this.apiUrl}/player-address/${encodeURIComponent(address)}/state`,
+      {timeoutMs: 16000, ...options}
+    );
+    if (response.success !== true || !response.meta || !response.data) {
+      throw new Error('Device state is unavailable');
+    }
+    return response;
+  }
+
+  /**
+   * @param {string} playerId
+   * @param {string} address
+   * @param {object} [options]
+   * @return {Promise<object>} the raw response, with data and snapshot meta
+   */
+  async getRegistrationStatus(playerId, address, options = {}) {
+    const response = await this.ajax.get(
+      `${this.apiUrl}/auth/player-address/${encodeURIComponent(address)}/player/${encodeURIComponent(playerId)}/registration`,
+      {timeoutMs: 16000, ...options}
+    );
+    if (response.success !== true || !response.meta || !response.data) {
+      throw new Error('Registration status is unavailable');
+    }
+    return response;
+  }
+
+  /**
+   * @param {string} code
+   * @param {string} activationId
+   * @param {object} [options]
+   * @return {Promise<object>}
+   */
+  async getPendingAddressByCode(code, activationId, options = {}) {
+    const response = this.guildAPIResponseFactory.make(await this.ajax.get(
+      `${this.apiUrl}/player-address/code/${encodeURIComponent(code)}?activation_id=${encodeURIComponent(activationId)}`,
+      {timeoutMs: 5000, ...options}
+    ));
+    this.handleResponseFailure(response);
+    return response.data;
+  }
+
+  /**
+   * @param {string} address
+   * @param {object} [options]
+   * @return {Promise<PlayerAddress|null>}
+   */
+  async getPlayerAddress(address, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player-address/${address}`, {timeoutMs: 16000, ...options});
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.playerAddressFactory.make(response.data);
+    return response.data === null ? null : this.playerAddressFactory.make(response.data);
   }
 
   /**
@@ -491,19 +612,24 @@ export class GuildAPI {
    * @param {number} page
    * @return {Promise<Transaction[]>}
    */
-  async getTransactions(playerId, page) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/player/${playerId}/page/${page}`);
+  async getTransactions(playerId, page, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/player/${playerId}/page/${page}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.transactionFactory.parseList(response.data);
+    const transactions = this.transactionFactory.parseList(response.data);
+    transactions.snapshot_meta = response.meta;
+    for (const transaction of transactions) {
+      transaction.snapshot_meta = response.meta;
+    }
+    return transactions;
   }
 
   /**
    * @param {string} playerId
    * @return {Promise<number>}
    */
-  async countTransactions(playerId) {
-    const count = await this.getSingleDataValue(`${this.apiUrl}/ledger/player/${playerId}/count`, 'count');
+  async countTransactions(playerId, options = {}) {
+    const count = await this.getSingleDataValue(`${this.apiUrl}/ledger/player/${playerId}/count`, 'count', options);
     return parseInt(count);
   }
 
@@ -511,18 +637,44 @@ export class GuildAPI {
    * @param {number} txId
    * @return {Promise<Transaction>}
    */
-  async getTransaction(txId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/${txId}`);
+  async getTransaction(txId, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/ledger/${txId}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.transactionFactory.make(response.data);
+    const transaction = this.transactionFactory.make(response.data);
+    transaction.snapshot_meta = response.meta;
+    return transaction;
+  }
+
+  /**
+   * Find the ledger entry for a committed transfer. The source fields come from
+   * the verified committed result and the exact transfer intent.
+   *
+   * @param {string} playerId
+   * @param {object} source
+   * @param {object} [options]
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async getTransferSource(playerId, source, options = {}) {
+    const query = new URLSearchParams(source);
+    const jsonResponse = await this.ajax.get(
+      `${this.apiUrl}/ledger/player/${encodeURIComponent(playerId)}/transfer-source?${query}`,
+      options
+    );
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    if (response.data) {
+      response.data = this.transactionFactory.make(response.data);
+      response.data.snapshot_meta = response.meta;
+    }
+    return response;
   }
 
   /**
    * @return {Promise<Guild[]>}
    */
-  async getGuildFilterList() {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/name`);
+  async getGuildFilterList(options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/name`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.guildFactory.parseList(response.data);
@@ -532,13 +684,17 @@ export class GuildAPI {
    * @param transferSearchRequestDTO
    * @return {Promise<PlayerSearchResultDTO[]>}
    */
-  async transferSearch(transferSearchRequestDTO) {
+  async transferSearch(transferSearchRequestDTO, options = {}) {
     const searchStringParam = `search_string=${transferSearchRequestDTO.search_string}`;
     const guildIdParam = transferSearchRequestDTO.guild_id ? `&guild_id=${transferSearchRequestDTO.guild_id}` : '';
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/transfer/search?${searchStringParam}${guildIdParam}`);
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/transfer/search?${searchStringParam}${guildIdParam}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.playerSearchResultDTOFactory.parseList(response.data);
+    const players = this.playerSearchResultDTOFactory.parseList(response.data);
+    for (const player of players) {
+      player.snapshot_meta = response.meta;
+    }
+    return players;
   }
 
   /**
@@ -585,8 +741,8 @@ export class GuildAPI {
    * @param {string} guildId
    * @return {Promise<Guild>}
    */
-  async getGuild(guildId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/${guildId}`);
+  async getGuild(guildId, options = {}) {
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/guild/${guildId}`, options);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.guildFactory.make(response.data);
@@ -751,19 +907,27 @@ export class GuildAPI {
   }
 
   /**
-   * @param {boolean} forceRefresh
    * @return {Promise<StructType[]>}
    */
-  async getStructTypes(forceRefresh = false) {
-    let structTypeResponseData = this.getCachedItem(this.getStructTypesCacheKey(), 1000 * 60 * 60 * 24);
-    if (structTypeResponseData === null || forceRefresh) {
-      const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/type`);
-      const response = this.guildAPIResponseFactory.make(jsonResponse);
-      this.handleResponseFailure(response);
-      structTypeResponseData = response.data;
-      this.cacheItem(this.getStructTypesCacheKey(), structTypeResponseData);
+  async getStructTypes() {
+    // The catalog is not cached: a cached copy would have no source height or
+    // protocol identity, and a fresh one is small. Only concurrent reads share
+    // one network request.
+    if (!this.structTypesRequest) {
+      this.structTypesRequest = this.ajax.get(`${this.apiUrl}/struct/type`, {timeoutMs: 15000})
+        .then(jsonResponse => {
+          const response = this.guildAPIResponseFactory.make(jsonResponse);
+          this.handleResponseFailure(response);
+          validateReadSnapshot(response.meta, {chainId: CHAIN.ID, height: response.meta?.observed_tip});
+          const types = this.structTypeFactory.parseList(response.data);
+          types.snapshot_meta = response.meta;
+          return types;
+        })
+        .finally(() => {
+          this.structTypesRequest = null;
+        });
     }
-    return this.structTypeFactory.parseList(structTypeResponseData);
+    return this.structTypesRequest;
   }
 
   /**
@@ -774,7 +938,7 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/player/${playerId}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.structFactory.parseList(response.data);
+    return response.data.map(row => this.structFactory.make(row, response.meta));
   }
 
   /**
@@ -793,10 +957,24 @@ export class GuildAPI {
    * @return {Promise<Work[]>}
    */
   async getWorkByPlayerId(playerId) {
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/work/player/${playerId}`);
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/work/player/${playerId}`, {timeoutMs: 15000});
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.workFactory.parseList(response.data);
+    validateReadSnapshot(response.meta, {chainId: CHAIN.ID, height: response.meta?.observed_tip}, ['work']);
+    const work = this.workFactory.parseList(response.data);
+    const identities = new Set();
+    for (const item of work) {
+      if (item.player_id !== playerId || identities.has(item.object_id)) {
+        throw new Error('Work owner or identity is invalid');
+      }
+      identities.add(item.object_id);
+    }
+    // An empty but complete snapshot still carries authority, e.g. to stop work.
+    work.snapshot_meta = response.meta;
+    for (const item of work) {
+      item.snapshot_meta = response.meta;
+    }
+    return work;
   }
 
   /**
@@ -807,7 +985,44 @@ export class GuildAPI {
     const jsonResponse = await this.ajax.get(`${this.apiUrl}/struct/${structId}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
-    return this.structFactory.make(response.data);
+    return this.structFactory.make(response.data, response.meta);
+  }
+
+  /**
+   * The exact stored generator output. sourceAddress only selects what to
+   * read; it grants no authority.
+   *
+   * @param {string} structId
+   * @param {string} sourceAddress
+   * @param {object} [options]
+   * @return {Promise<object|null>}
+   */
+  async getGeneratorSnapshot(structId, sourceAddress, options = {}) {
+    const response = await this.getGeneratorSnapshotResult(structId, sourceAddress, options);
+    return response.data;
+  }
+
+  /**
+   * Like getGeneratorSnapshot(), but returns the whole response so the
+   * snapshot metadata is kept even when the struct has since been removed.
+   *
+   * @param {string} structId
+   * @param {string} sourceAddress
+   * @param {object} [options]
+   * @return {Promise<GuildAPIResponse>}
+   */
+  async getGeneratorSnapshotResult(structId, sourceAddress, options = {}) {
+    const query = new URLSearchParams({address: sourceAddress});
+    const jsonResponse = await this.ajax.get(
+      `${this.apiUrl}/struct/${encodeURIComponent(structId)}/generator?${query}`,
+      options
+    );
+    const response = this.guildAPIResponseFactory.make(jsonResponse);
+    this.handleResponseFailure(response);
+    if (response.data !== null) {
+      response.data = {...response.data, snapshot_meta: response.meta};
+    }
+    return response;
   }
 
   /**

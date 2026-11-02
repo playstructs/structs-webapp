@@ -23,24 +23,22 @@ export interface Fleet {
   locationType: objectType;
   locationId: string;
   status: fleetStatus;
-  /** Towards Planet */
   locationListForward: string;
-  /** Towards End of List */
   locationListBackward: string;
   space: string[];
   air: string[];
   land: string[];
   water: string[];
-  spaceSlots: number;
-  airSlots: number;
-  landSlots: number;
-  waterSlots: number;
+  spaceSlots: string;
+  airSlots: string;
+  landSlots: string;
+  waterSlots: string;
   commandStruct: string;
 }
 
 export interface FleetAttributeRecord {
   attributeId: string;
-  value: number;
+  value: string;
 }
 
 function createBaseFleet(): Fleet {
@@ -56,10 +54,10 @@ function createBaseFleet(): Fleet {
     air: [],
     land: [],
     water: [],
-    spaceSlots: 0,
-    airSlots: 0,
-    landSlots: 0,
-    waterSlots: 0,
+    spaceSlots: "0",
+    airSlots: "0",
+    landSlots: "0",
+    waterSlots: "0",
     commandStruct: "",
   };
 }
@@ -99,16 +97,16 @@ export const Fleet: MessageFns<Fleet> = {
     for (const v of message.water) {
       writer.uint32(90).string(v!);
     }
-    if (message.spaceSlots !== 0) {
+    if (message.spaceSlots !== "0") {
       writer.uint32(96).uint64(message.spaceSlots);
     }
-    if (message.airSlots !== 0) {
+    if (message.airSlots !== "0") {
       writer.uint32(104).uint64(message.airSlots);
     }
-    if (message.landSlots !== 0) {
+    if (message.landSlots !== "0") {
       writer.uint32(112).uint64(message.landSlots);
     }
-    if (message.waterSlots !== 0) {
+    if (message.waterSlots !== "0") {
       writer.uint32(120).uint64(message.waterSlots);
     }
     if (message.commandStruct !== "") {
@@ -217,7 +215,7 @@ export const Fleet: MessageFns<Fleet> = {
             break;
           }
 
-          message.spaceSlots = longToNumber(reader.uint64());
+          message.spaceSlots = reader.uint64().toString();
           continue;
         }
         case 13: {
@@ -225,7 +223,7 @@ export const Fleet: MessageFns<Fleet> = {
             break;
           }
 
-          message.airSlots = longToNumber(reader.uint64());
+          message.airSlots = reader.uint64().toString();
           continue;
         }
         case 14: {
@@ -233,7 +231,7 @@ export const Fleet: MessageFns<Fleet> = {
             break;
           }
 
-          message.landSlots = longToNumber(reader.uint64());
+          message.landSlots = reader.uint64().toString();
           continue;
         }
         case 15: {
@@ -241,7 +239,7 @@ export const Fleet: MessageFns<Fleet> = {
             break;
           }
 
-          message.waterSlots = longToNumber(reader.uint64());
+          message.waterSlots = reader.uint64().toString();
           continue;
         }
         case 16: {
@@ -274,10 +272,10 @@ export const Fleet: MessageFns<Fleet> = {
       air: globalThis.Array.isArray(object?.air) ? object.air.map((e: any) => globalThis.String(e)) : [],
       land: globalThis.Array.isArray(object?.land) ? object.land.map((e: any) => globalThis.String(e)) : [],
       water: globalThis.Array.isArray(object?.water) ? object.water.map((e: any) => globalThis.String(e)) : [],
-      spaceSlots: isSet(object.spaceSlots) ? globalThis.Number(object.spaceSlots) : 0,
-      airSlots: isSet(object.airSlots) ? globalThis.Number(object.airSlots) : 0,
-      landSlots: isSet(object.landSlots) ? globalThis.Number(object.landSlots) : 0,
-      waterSlots: isSet(object.waterSlots) ? globalThis.Number(object.waterSlots) : 0,
+      spaceSlots: isSet(object.spaceSlots) ? globalThis.String(object.spaceSlots) : "0",
+      airSlots: isSet(object.airSlots) ? globalThis.String(object.airSlots) : "0",
+      landSlots: isSet(object.landSlots) ? globalThis.String(object.landSlots) : "0",
+      waterSlots: isSet(object.waterSlots) ? globalThis.String(object.waterSlots) : "0",
       commandStruct: isSet(object.commandStruct) ? globalThis.String(object.commandStruct) : "",
     };
   },
@@ -317,17 +315,17 @@ export const Fleet: MessageFns<Fleet> = {
     if (message.water?.length) {
       obj.water = message.water;
     }
-    if (message.spaceSlots !== 0) {
-      obj.spaceSlots = Math.round(message.spaceSlots);
+    if (message.spaceSlots !== "0") {
+      obj.spaceSlots = message.spaceSlots;
     }
-    if (message.airSlots !== 0) {
-      obj.airSlots = Math.round(message.airSlots);
+    if (message.airSlots !== "0") {
+      obj.airSlots = message.airSlots;
     }
-    if (message.landSlots !== 0) {
-      obj.landSlots = Math.round(message.landSlots);
+    if (message.landSlots !== "0") {
+      obj.landSlots = message.landSlots;
     }
-    if (message.waterSlots !== 0) {
-      obj.waterSlots = Math.round(message.waterSlots);
+    if (message.waterSlots !== "0") {
+      obj.waterSlots = message.waterSlots;
     }
     if (message.commandStruct !== "") {
       obj.commandStruct = message.commandStruct;
@@ -351,17 +349,17 @@ export const Fleet: MessageFns<Fleet> = {
     message.air = object.air?.map((e) => e) || [];
     message.land = object.land?.map((e) => e) || [];
     message.water = object.water?.map((e) => e) || [];
-    message.spaceSlots = object.spaceSlots ?? 0;
-    message.airSlots = object.airSlots ?? 0;
-    message.landSlots = object.landSlots ?? 0;
-    message.waterSlots = object.waterSlots ?? 0;
+    message.spaceSlots = object.spaceSlots ?? "0";
+    message.airSlots = object.airSlots ?? "0";
+    message.landSlots = object.landSlots ?? "0";
+    message.waterSlots = object.waterSlots ?? "0";
     message.commandStruct = object.commandStruct ?? "";
     return message;
   },
 };
 
 function createBaseFleetAttributeRecord(): FleetAttributeRecord {
-  return { attributeId: "", value: 0 };
+  return { attributeId: "", value: "0" };
 }
 
 export const FleetAttributeRecord: MessageFns<FleetAttributeRecord> = {
@@ -369,7 +367,7 @@ export const FleetAttributeRecord: MessageFns<FleetAttributeRecord> = {
     if (message.attributeId !== "") {
       writer.uint32(10).string(message.attributeId);
     }
-    if (message.value !== 0) {
+    if (message.value !== "0") {
       writer.uint32(16).uint64(message.value);
     }
     return writer;
@@ -395,7 +393,7 @@ export const FleetAttributeRecord: MessageFns<FleetAttributeRecord> = {
             break;
           }
 
-          message.value = longToNumber(reader.uint64());
+          message.value = reader.uint64().toString();
           continue;
         }
       }
@@ -410,7 +408,7 @@ export const FleetAttributeRecord: MessageFns<FleetAttributeRecord> = {
   fromJSON(object: any): FleetAttributeRecord {
     return {
       attributeId: isSet(object.attributeId) ? globalThis.String(object.attributeId) : "",
-      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+      value: isSet(object.value) ? globalThis.String(object.value) : "0",
     };
   },
 
@@ -419,8 +417,8 @@ export const FleetAttributeRecord: MessageFns<FleetAttributeRecord> = {
     if (message.attributeId !== "") {
       obj.attributeId = message.attributeId;
     }
-    if (message.value !== 0) {
-      obj.value = Math.round(message.value);
+    if (message.value !== "0") {
+      obj.value = message.value;
     }
     return obj;
   },
@@ -431,7 +429,7 @@ export const FleetAttributeRecord: MessageFns<FleetAttributeRecord> = {
   fromPartial<I extends Exact<DeepPartial<FleetAttributeRecord>, I>>(object: I): FleetAttributeRecord {
     const message = createBaseFleetAttributeRecord();
     message.attributeId = object.attributeId ?? "";
-    message.value = object.value ?? 0;
+    message.value = object.value ?? "0";
     return message;
   },
 };
@@ -447,17 +445,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

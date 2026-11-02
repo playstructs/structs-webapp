@@ -319,11 +319,9 @@ export class StructManager {
     }
 
     this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.BUILD_CANCEL);
-    this.gameState.actionBarLock.lock();
-
-    this.signingClientManager.queueMsgStructBuildCancel(
-      struct.id
-    ).then();
+    return this.gameState.actionBarLock.run(() =>
+      this.signingClientManager.queueMsgStructBuildCancel(struct.id)
+    );
   }
 
   /**

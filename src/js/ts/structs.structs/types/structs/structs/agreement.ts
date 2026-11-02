@@ -13,15 +13,24 @@ export interface Agreement {
   id: string;
   providerId: string;
   allocationId: string;
-  capacity: number;
-  startBlock: number;
-  endBlock: number;
+  capacity: string;
+  startBlock: string;
+  endBlock: string;
   creator: string;
   owner: string;
 }
 
 function createBaseAgreement(): Agreement {
-  return { id: "", providerId: "", allocationId: "", capacity: 0, startBlock: 0, endBlock: 0, creator: "", owner: "" };
+  return {
+    id: "",
+    providerId: "",
+    allocationId: "",
+    capacity: "0",
+    startBlock: "0",
+    endBlock: "0",
+    creator: "",
+    owner: "",
+  };
 }
 
 export const Agreement: MessageFns<Agreement> = {
@@ -35,13 +44,13 @@ export const Agreement: MessageFns<Agreement> = {
     if (message.allocationId !== "") {
       writer.uint32(26).string(message.allocationId);
     }
-    if (message.capacity !== 0) {
+    if (message.capacity !== "0") {
       writer.uint32(32).uint64(message.capacity);
     }
-    if (message.startBlock !== 0) {
+    if (message.startBlock !== "0") {
       writer.uint32(40).uint64(message.startBlock);
     }
-    if (message.endBlock !== 0) {
+    if (message.endBlock !== "0") {
       writer.uint32(48).uint64(message.endBlock);
     }
     if (message.creator !== "") {
@@ -89,7 +98,7 @@ export const Agreement: MessageFns<Agreement> = {
             break;
           }
 
-          message.capacity = longToNumber(reader.uint64());
+          message.capacity = reader.uint64().toString();
           continue;
         }
         case 5: {
@@ -97,7 +106,7 @@ export const Agreement: MessageFns<Agreement> = {
             break;
           }
 
-          message.startBlock = longToNumber(reader.uint64());
+          message.startBlock = reader.uint64().toString();
           continue;
         }
         case 6: {
@@ -105,7 +114,7 @@ export const Agreement: MessageFns<Agreement> = {
             break;
           }
 
-          message.endBlock = longToNumber(reader.uint64());
+          message.endBlock = reader.uint64().toString();
           continue;
         }
         case 7: {
@@ -138,9 +147,9 @@ export const Agreement: MessageFns<Agreement> = {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
       providerId: isSet(object.providerId) ? globalThis.String(object.providerId) : "",
       allocationId: isSet(object.allocationId) ? globalThis.String(object.allocationId) : "",
-      capacity: isSet(object.capacity) ? globalThis.Number(object.capacity) : 0,
-      startBlock: isSet(object.startBlock) ? globalThis.Number(object.startBlock) : 0,
-      endBlock: isSet(object.endBlock) ? globalThis.Number(object.endBlock) : 0,
+      capacity: isSet(object.capacity) ? globalThis.String(object.capacity) : "0",
+      startBlock: isSet(object.startBlock) ? globalThis.String(object.startBlock) : "0",
+      endBlock: isSet(object.endBlock) ? globalThis.String(object.endBlock) : "0",
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
     };
@@ -157,14 +166,14 @@ export const Agreement: MessageFns<Agreement> = {
     if (message.allocationId !== "") {
       obj.allocationId = message.allocationId;
     }
-    if (message.capacity !== 0) {
-      obj.capacity = Math.round(message.capacity);
+    if (message.capacity !== "0") {
+      obj.capacity = message.capacity;
     }
-    if (message.startBlock !== 0) {
-      obj.startBlock = Math.round(message.startBlock);
+    if (message.startBlock !== "0") {
+      obj.startBlock = message.startBlock;
     }
-    if (message.endBlock !== 0) {
-      obj.endBlock = Math.round(message.endBlock);
+    if (message.endBlock !== "0") {
+      obj.endBlock = message.endBlock;
     }
     if (message.creator !== "") {
       obj.creator = message.creator;
@@ -183,9 +192,9 @@ export const Agreement: MessageFns<Agreement> = {
     message.id = object.id ?? "";
     message.providerId = object.providerId ?? "";
     message.allocationId = object.allocationId ?? "";
-    message.capacity = object.capacity ?? 0;
-    message.startBlock = object.startBlock ?? 0;
-    message.endBlock = object.endBlock ?? 0;
+    message.capacity = object.capacity ?? "0";
+    message.startBlock = object.startBlock ?? "0";
+    message.endBlock = object.endBlock ?? "0";
     message.creator = object.creator ?? "";
     message.owner = object.owner ?? "";
     return message;
@@ -203,17 +212,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

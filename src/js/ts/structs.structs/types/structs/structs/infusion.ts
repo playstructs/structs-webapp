@@ -13,26 +13,30 @@ export const protobufPackage = "structs.structs";
 export interface Infusion {
   destinationType: objectType;
   destinationId: string;
-  fuel: number;
-  power: number;
+  fuel: string;
+  power: string;
   commission: string;
   playerId: string;
   address: string;
-  ratio: number;
-  defusing: number;
+  ratio: string;
+  defusing: string;
+  ownerId: string;
+  generatorDisabled: boolean;
 }
 
 function createBaseInfusion(): Infusion {
   return {
     destinationType: 0,
     destinationId: "",
-    fuel: 0,
-    power: 0,
+    fuel: "0",
+    power: "0",
     commission: "",
     playerId: "",
     address: "",
-    ratio: 0,
-    defusing: 0,
+    ratio: "0",
+    defusing: "0",
+    ownerId: "",
+    generatorDisabled: false,
   };
 }
 
@@ -44,10 +48,10 @@ export const Infusion: MessageFns<Infusion> = {
     if (message.destinationId !== "") {
       writer.uint32(18).string(message.destinationId);
     }
-    if (message.fuel !== 0) {
+    if (message.fuel !== "0") {
       writer.uint32(24).uint64(message.fuel);
     }
-    if (message.power !== 0) {
+    if (message.power !== "0") {
       writer.uint32(32).uint64(message.power);
     }
     if (message.commission !== "") {
@@ -59,11 +63,17 @@ export const Infusion: MessageFns<Infusion> = {
     if (message.address !== "") {
       writer.uint32(58).string(message.address);
     }
-    if (message.ratio !== 0) {
+    if (message.ratio !== "0") {
       writer.uint32(64).uint64(message.ratio);
     }
-    if (message.defusing !== 0) {
+    if (message.defusing !== "0") {
       writer.uint32(72).uint64(message.defusing);
+    }
+    if (message.ownerId !== "") {
+      writer.uint32(90).string(message.ownerId);
+    }
+    if (message.generatorDisabled !== false) {
+      writer.uint32(96).bool(message.generatorDisabled);
     }
     return writer;
   },
@@ -96,7 +106,7 @@ export const Infusion: MessageFns<Infusion> = {
             break;
           }
 
-          message.fuel = longToNumber(reader.uint64());
+          message.fuel = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -104,7 +114,7 @@ export const Infusion: MessageFns<Infusion> = {
             break;
           }
 
-          message.power = longToNumber(reader.uint64());
+          message.power = reader.uint64().toString();
           continue;
         }
         case 5: {
@@ -136,7 +146,7 @@ export const Infusion: MessageFns<Infusion> = {
             break;
           }
 
-          message.ratio = longToNumber(reader.uint64());
+          message.ratio = reader.uint64().toString();
           continue;
         }
         case 9: {
@@ -144,7 +154,23 @@ export const Infusion: MessageFns<Infusion> = {
             break;
           }
 
-          message.defusing = longToNumber(reader.uint64());
+          message.defusing = reader.uint64().toString();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.ownerId = reader.string();
+          continue;
+        }
+        case 12: {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.generatorDisabled = reader.bool();
           continue;
         }
       }
@@ -160,13 +186,15 @@ export const Infusion: MessageFns<Infusion> = {
     return {
       destinationType: isSet(object.destinationType) ? objectTypeFromJSON(object.destinationType) : 0,
       destinationId: isSet(object.destinationId) ? globalThis.String(object.destinationId) : "",
-      fuel: isSet(object.fuel) ? globalThis.Number(object.fuel) : 0,
-      power: isSet(object.power) ? globalThis.Number(object.power) : 0,
+      fuel: isSet(object.fuel) ? globalThis.String(object.fuel) : "0",
+      power: isSet(object.power) ? globalThis.String(object.power) : "0",
       commission: isSet(object.commission) ? globalThis.String(object.commission) : "",
       playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
       address: isSet(object.address) ? globalThis.String(object.address) : "",
-      ratio: isSet(object.ratio) ? globalThis.Number(object.ratio) : 0,
-      defusing: isSet(object.defusing) ? globalThis.Number(object.defusing) : 0,
+      ratio: isSet(object.ratio) ? globalThis.String(object.ratio) : "0",
+      defusing: isSet(object.defusing) ? globalThis.String(object.defusing) : "0",
+      ownerId: isSet(object.ownerId) ? globalThis.String(object.ownerId) : "",
+      generatorDisabled: isSet(object.generatorDisabled) ? globalThis.Boolean(object.generatorDisabled) : false,
     };
   },
 
@@ -178,11 +206,11 @@ export const Infusion: MessageFns<Infusion> = {
     if (message.destinationId !== "") {
       obj.destinationId = message.destinationId;
     }
-    if (message.fuel !== 0) {
-      obj.fuel = Math.round(message.fuel);
+    if (message.fuel !== "0") {
+      obj.fuel = message.fuel;
     }
-    if (message.power !== 0) {
-      obj.power = Math.round(message.power);
+    if (message.power !== "0") {
+      obj.power = message.power;
     }
     if (message.commission !== "") {
       obj.commission = message.commission;
@@ -193,11 +221,17 @@ export const Infusion: MessageFns<Infusion> = {
     if (message.address !== "") {
       obj.address = message.address;
     }
-    if (message.ratio !== 0) {
-      obj.ratio = Math.round(message.ratio);
+    if (message.ratio !== "0") {
+      obj.ratio = message.ratio;
     }
-    if (message.defusing !== 0) {
-      obj.defusing = Math.round(message.defusing);
+    if (message.defusing !== "0") {
+      obj.defusing = message.defusing;
+    }
+    if (message.ownerId !== "") {
+      obj.ownerId = message.ownerId;
+    }
+    if (message.generatorDisabled !== false) {
+      obj.generatorDisabled = message.generatorDisabled;
     }
     return obj;
   },
@@ -209,13 +243,15 @@ export const Infusion: MessageFns<Infusion> = {
     const message = createBaseInfusion();
     message.destinationType = object.destinationType ?? 0;
     message.destinationId = object.destinationId ?? "";
-    message.fuel = object.fuel ?? 0;
-    message.power = object.power ?? 0;
+    message.fuel = object.fuel ?? "0";
+    message.power = object.power ?? "0";
     message.commission = object.commission ?? "";
     message.playerId = object.playerId ?? "";
     message.address = object.address ?? "";
-    message.ratio = object.ratio ?? 0;
-    message.defusing = object.defusing ?? 0;
+    message.ratio = object.ratio ?? "0";
+    message.defusing = object.defusing ?? "0";
+    message.ownerId = object.ownerId ?? "";
+    message.generatorDisabled = object.generatorDisabled ?? false;
     return message;
   },
 };
@@ -231,17 +267,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

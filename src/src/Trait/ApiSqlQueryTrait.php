@@ -6,6 +6,7 @@ use App\Dto\ApiParsedRequestDto;
 use App\Dto\ApiResponseContentDto;
 use App\Manager\ApiRequestParsingManager;
 use App\Util\ResponseMetaUtil;
+use App\Util\ConsistentRead;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -95,7 +96,7 @@ trait ApiSqlQueryTrait
         string $sqlQuery,
         array $apiRequestParams,
         array $apiRequiredParams,
-        ?string $apiModel = null
+        string|array|null $apiModel = null
     ): Response {
         return $this->stampedQuery(
             $entityManager,
@@ -119,7 +120,7 @@ trait ApiSqlQueryTrait
         string $sqlQuery,
         array $apiRequestParams,
         array $apiRequiredParams,
-        ?string $apiModel = null
+        string|array|null $apiModel = null
     ): Response {
         return $this->stampedQuery(
             $entityManager,
@@ -142,7 +143,7 @@ trait ApiSqlQueryTrait
         array $apiRequestParams,
         array $apiRequiredParams,
         bool $fetchAll,
-        ?string $apiModel
+        string|array|null $apiModel
     ): Response {
         [$responseContent, $status] = $this->runQuery(
             $entityManager,
@@ -150,12 +151,10 @@ trait ApiSqlQueryTrait
             $sqlQuery,
             $apiRequestParams,
             $apiRequiredParams,
-            $fetchAll
+            $fetchAll,
+            $apiModel,
+            true
         );
-
-        if ($responseContent->success) {
-            ResponseMetaUtil::stampHeight($responseContent, $entityManager, $apiModel);
-        }
 
         return new JsonResponse($responseContent, $status);
     }
@@ -170,7 +169,9 @@ trait ApiSqlQueryTrait
         string $sqlQuery,
         array $apiRequestParams,
         array $apiRequiredParams,
-        bool $fetchAll
+        bool $fetchAll,
+        string|array|null $apiModel = null,
+        bool $stamped = false
     ): array {
         $responseContent = new ApiResponseContentDto();
 
@@ -189,14 +190,23 @@ trait ApiSqlQueryTrait
 
         $db = $entityManager->getConnection();
 
-        if ($fetchAll) {
-            $responseContent->data = $db->fetchAllAssociative($sqlQuery, $queryParams);
+        $read = function () use ($db, $fetchAll, $sqlQuery, $queryParams, $responseContent, $apiModel, $stamped): void {
+            if ($fetchAll) {
+                $responseContent->data = $db->fetchAllAssociative($sqlQuery, $queryParams);
+            } else {
+                $result = $db->fetchAssociative($sqlQuery, $queryParams);
+                $responseContent->data = $result === false ? null : $result;
+            }
+            if ($stamped) {
+                $responseContent->meta = ResponseMetaUtil::snapshotMeta($db, $apiModel);
+            }
+            $responseContent->success = true;
+        };
+        if ($stamped) {
+            ConsistentRead::run($db, $read);
         } else {
-            $result = $db->fetchAssociative($sqlQuery, $queryParams);
-            $responseContent->data = $result === false ? null : $result;
+            $read();
         }
-
-        $responseContent->success = true;
 
         return [$responseContent, Response::HTTP_OK];
     }

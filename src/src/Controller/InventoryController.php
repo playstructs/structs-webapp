@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Constant\RegexPattern;
 use App\Manager\InventoryManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,7 +27,7 @@ class InventoryController extends AbstractController
     #[Route(
         '/api/inventory/denom/{denom}/page/{page}',
         name: 'api_inventory_by_denom',
-        requirements: ['page' => self::PAGE_REQUIREMENT],
+        requirements: ['page' => self::PAGE_REQUIREMENT, 'denom' => RegexPattern::DENOM_ROUTE],
         methods: ['GET']
     )]
     public function inventoryByDenom(

@@ -16,8 +16,8 @@ security:
         api_auth:
             pattern: ^/api/auth/
             security: false
-        api_get_this_guild:
-            pattern: ^/api/guild/this
+        api_guild_reads:
+            request_matcher: App\Security\PublicGuildReadMatcher
             security: false
         api_timestamp:
             pattern: ^/api/timestamp
@@ -46,8 +46,10 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        # Backstop for the api firewall: if PlayerAuthenticator ever skips a
+        # request, it is still refused. The security: false firewalls above
+        # never reach access control, so their public routes are unaffected.
+        - { path: ^/api/, roles: IS_AUTHENTICATED }
 
 when@test:
     security:

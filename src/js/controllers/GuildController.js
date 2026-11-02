@@ -64,7 +64,6 @@ export class GuildController extends AbstractController {
     const viewModel = new ManageAlphaViewModel(
       this.gameState,
       this.guildAPI,
-      this.grassManager,
       this.alphaManager,
       options
     );
