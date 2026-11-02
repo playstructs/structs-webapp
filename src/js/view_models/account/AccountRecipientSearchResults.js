@@ -1,3 +1,4 @@
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {NumberFormatter} from "../../util/NumberFormatter";
@@ -138,7 +139,14 @@ export class AccountRecipientSearchResults extends AbstractViewModel {
   }
 
   render () {
-    this.guildAPI.transferSearch(this.transferSearchRequest).then((players) => {
+    const signal = MenuPage.router.navigationSignal;
+    const account = this.gameState.signingAccount?.address;
+    const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const active = () => !signal.aborted
+      && this.gameState.signingAccount?.address === account
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id === playerId;
+    return this.guildAPI.transferSearch(this.transferSearchRequest, {signal, timeoutMs: 15000}).then((players) => {
+      if (!active()) return;
 
       this.players = players;
 
@@ -178,6 +186,8 @@ export class AccountRecipientSearchResults extends AbstractViewModel {
       MenuPage.hideAndClearDialoguePanel();
 
       this.initPageCode();
+    }).catch(error => {
+      if (active()) console.warn('[AccountRecipientSearchResults] read failed:', error);
     });
   }
 }

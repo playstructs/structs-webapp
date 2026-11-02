@@ -17,6 +17,13 @@ In the distant future the species of the galaxy are embroiled in a race for Alph
 
 ### 3. Run the container
 
+The image builds its JavaScript and asset manifest. The development Compose
+configuration mounts `./src` over the image, so that mounted directory also
+needs `npm ci` and `npm run build` (from `src/`) before serving it. Use
+`npm run dev` for subsequent local development. For an existing deployment,
+prepare the complete release before switching the served directory; see
+[asset deployment](tools/assets/README.md).
+
 `docker compose up -d`
 
 To run the full stack (including Structs Consensus Engine), use `docker compose -f docker-compose-full-stack.yml up -d` or `docker compose -f docker-compose-full-stack-arm64.yml up -d` depending on your architecture. 
@@ -31,6 +38,34 @@ To run the full stack (including Structs Consensus Engine), use `docker compose 
 ### 2. Bash
 
 `docker exec -it structs-webapp-app-1 bash`
+
+## Local development with a running container
+
+Run the build from the `src` directory that Docker actually mounts. For this
+repository's Compose file, that is `src/` in the checkout where Compose was
+started. The guild stack instead uses its configured `WEBAPP_SOURCE` directory.
+A second Git worktree has its own files: building there does not update a
+container mounted to the original checkout.
+
+```bash
+cd /path/to/structs-webapp/src
+npm run dev
+```
+
+Leave this command running to rebuild after source edits, then refresh the browser.
+For a single production build, run `npm run build` in the same directory instead.
+Neither requires rebuilding or restarting the running container. This is webpack
+watch mode, not browser hot reload; an already-open page keeps its loaded code
+until refreshed.
+
+Both commands write hashed bundles and `public/js/manifest.json`. The page reads
+the manifest on its next request; updating only the legacy `public/js/index.js`
+does not update the active entry. If a change does not appear, confirm the mounted
+source directory before clearing caches or rebuilding Docker:
+
+```bash
+docker inspect <webapp-container> --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{println}}{{end}}'
+```
 
 
 ## Learn more

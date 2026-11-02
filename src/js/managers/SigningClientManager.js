@@ -1,5 +1,6 @@
 import {Registry} from "@cosmjs/proto-signing";
 import {defaultRegistryTypes, SigningStargateClient} from "@cosmjs/stargate";
+import {Comet38Client} from "@cosmjs/tendermint-rpc";
 // noinspection ES6PreferShortImport
 import {msgTypes} from "../ts/structs.structs/registry";
 import {AMBIT_ENUM} from "../constants/Ambits";
@@ -7,9 +8,10 @@ import {LOCATION_TYPE_INDEX} from "../constants/LocationTypes";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {STALE_BLOCK_MS} from "../constants/GrassConstants";
 import {SigningQueueManager} from "./SigningQueueManager";
-
-/** How long a liveness probe may take before the transport is presumed dead. */
-const PROBE_TIMEOUT_MS = 5000;
+import {ChainQueryClient} from "../api/ChainQueryClient";
+import {OwnedRpcClient} from "../api/OwnedRpcClient";
+import {validateSigningSnapshot} from "../util/ChainProtocol";
+import {SigningSubmission} from "./SigningSubmission";
 
 /** Floor between unforced probes, so an idle player barely touches the node. */
 const PROBE_INTERVAL_MS = 5 * 60 * 1000;
@@ -30,8 +32,9 @@ export class SigningClientManager {
   /**
    * @param {GameState} gameState
    * @param {boolean} publicEndpoint
+   * @param {string|null} wsUrl Explicit transport endpoint for an isolated client instance.
    */
-  constructor(gameState, publicEndpoint = false) {
+  constructor(gameState, publicEndpoint = false, wsUrl = null) {
     console.info('Initiating Signing Client Manager');
     this.gameState = gameState;
 
@@ -39,9 +42,9 @@ export class SigningClientManager {
     // Possibly a database setting or env, provided via server
     //this.wsUrl = `ws://${window.location.hostname}:26657`;
     this.publicEndpoint = publicEndpoint;
-    this.wsUrl = this.publicEndpoint
+    this.wsUrl = wsUrl ?? (this.publicEndpoint
         ? `wss://public.testnet.structs.network:26657`
-        : `ws://${window.location.hostname}:26657`;
+        : `ws://${window.location.hostname}:26657`);
     console.info('[SigningClientManager] Endpoint ' + this.wsUrl);
 
     this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
@@ -51,10 +54,17 @@ export class SigningClientManager {
 
     /** @type {?Promise<boolean>} The single in-flight connection check, if any. */
     this.connectionCheck = null;
+    this.readyForResume = false;
+
+    this.connectionEpoch = 0;
+    this.sessionController = new AbortController();
+    this.chainQuery = null;
+    this.pendingRpc = null;
 
     this.queue = new SigningQueueManager(this.gameState, {
       registry: this.registry,
       wsUrl: this.wsUrl,
+      submission: new SigningSubmission(this),
     });
   }
 
@@ -63,12 +73,18 @@ export class SigningClientManager {
    */
   async initSigningClient() {
     console.debug("Initializing signing client...");
-    await this.connect();
-    console.info("Signing client initialized.");
-
-    // The signing account is now known — safe to rehydrate the per-account queue
-    // (Review hardening #1: storage key needs the address).
+    this.readyForResume = false;
+    this.sessionController.abort();
+    this.sessionController = new AbortController();
+    // Wallet/account initialization precedes this call. Load evidence even if
+    // the node is temporarily unreachable; a failed connect cannot hide it.
     this.queue.loadPersistedState();
+    await this.connect();
+    this.queue.suspended = false;
+    this.readyForResume = true;
+    console.info("Signing client initialized.");
+    this.queue.reconcilePending()
+      .catch(error => console.warn('[SigningClientManager] reconciliation unavailable:', error));
   }
 
   /**
@@ -78,15 +94,29 @@ export class SigningClientManager {
    */
   async connect() {
     this.disconnect();
-
-    this.gameState.signingClient = await SigningStargateClient.connectWithSigner(
-      this.wsUrl,
-      this.gameState.wallet,
-      {
-        registry: this.registry,
-      },
-    );
-    this.lastProbeAt = Date.now();
+    const epoch = this.connectionEpoch;
+    const wallet = this.gameState.wallet;
+    // Own the socket before the first await, including failed/overlapping connects.
+    const rpc = new OwnedRpcClient(this.wsUrl);
+    this.pendingRpc = rpc;
+    try {
+      const comet = await Comet38Client.create(rpc);
+      if (epoch !== this.connectionEpoch) throw new Error('Signing connection superseded');
+      const query = new ChainQueryClient(comet);
+      this.chainQuery = query;
+      this.pendingRpc = null;
+      await query.status();
+      const client = await SigningStargateClient.createWithSigner(comet, wallet, {registry: this.registry});
+      if (epoch !== this.connectionEpoch || wallet !== this.gameState.wallet) {
+        throw new Error('Signing connection superseded');
+      }
+      this.gameState.signingClient = client;
+      this.lastProbeAt = Date.now();
+    } catch (error) {
+      if (epoch === this.connectionEpoch) this.disconnect();
+      else rpc.disconnect();
+      throw error;
+    }
   }
 
   /**
@@ -96,18 +126,39 @@ export class SigningClientManager {
    */
   disconnect() {
     const client = this.gameState.signingClient;
-
-    if (!client) {
-      return;
-    }
-
+    const query = this.chainQuery;
+    const pendingRpc = this.pendingRpc;
+    this.connectionEpoch++;
     this.gameState.signingClient = null;
+    this.chainQuery = null;
+    this.pendingRpc = null;
+    this.lastProbeAt = 0;
 
     try {
-      client.disconnect();
+      // Query and signer share one socket. Close its owner only once.
+      if (query) query.disconnect();
+      else if (pendingRpc) pendingRpc.disconnect();
+      else if (client) client.disconnect();
     } catch (error) {
       console.warn('[SigningClientManager] error closing previous client:', error);
     }
+  }
+
+  /**
+   * Stop signing and close the connection; the queue stays suspended until the next init.
+   */
+  stopForLogout() {
+    this.readyForResume = false;
+    this.sessionController.abort();
+    this.queue.suspended = true;
+    this.disconnect();
+  }
+
+  /**
+   * @return {AbortSignal} aborted when the signing session is reinitialised or logged out
+   */
+  get sessionSignal() {
+    return this.sessionController.signal;
   }
 
   /**
@@ -118,31 +169,38 @@ export class SigningClientManager {
    */
   async isAlive() {
     const client = this.gameState.signingClient;
-
-    if (!client) {
+    const query = this.chainQuery;
+    if (!client || !query) {
       return false;
     }
-
-    // getHeight always reaches the node. getChainId would not: it memoises after
-    // the first call and answers from memory over a dead socket.
-    const height = client.getHeight();
-    height.catch(() => {});
-
-    let timer;
-    const deadline = new Promise((resolve, reject) => {
-      timer = setTimeout(() => reject(new Error('liveness probe timed out')), PROBE_TIMEOUT_MS);
-    });
-
     try {
-      await Promise.race([height, deadline]);
+      // A fresh, bounded status call checks chain identity as well as liveness.
+      await query.status();
+      if (query !== this.chainQuery || client !== this.gameState.signingClient) return false;
       this.lastProbeAt = Date.now();
       return true;
     } catch (error) {
       console.warn('[SigningClientManager] liveness probe failed:', error);
       return false;
-    } finally {
-      clearTimeout(timer);
     }
+  }
+
+  /**
+   * Validate the exact API response used by an action against a fresh node read.
+   *
+   * @param {object} meta
+   * @param {string[]} requiredModels
+   * @return {Promise<object>}
+   */
+  async getSigningContext(meta, requiredModels = []) {
+    const query = this.chainQuery;
+    const client = this.gameState.signingClient;
+    if (!query || !client) throw new Error('Signing connection unavailable');
+    const observed = await query.status();
+    if (query !== this.chainQuery || client !== this.gameState.signingClient) {
+      throw new Error('Signing connection superseded');
+    }
+    return validateSigningSnapshot(meta, observed, requiredModels);
   }
 
   /**
@@ -153,8 +211,15 @@ export class SigningClientManager {
    * @return {Promise<boolean>} whether a usable client is in place
    */
   resumeCheck(force = false) {
+    // Startup owns the first connection. Resume probes must not supersede its
+    // in-flight socket or restart signing after a rejected/closed session.
+    if (!this.readyForResume || this.queue.suspended) return Promise.resolve(false);
     if (!this.connectionCheck) {
       this.connectionCheck = this.checkConnection(force)
+        .then(async alive => {
+          if (alive) await this.queue.reconcilePending();
+          return alive;
+        })
         .catch((error) => {
           console.warn('[SigningClientManager] connection check failed:', error);
           return false;
@@ -172,15 +237,24 @@ export class SigningClientManager {
    * @return {Promise<boolean>}
    */
   async checkConnection(force) {
+    const epoch = this.connectionEpoch;
     if (!this.gameState.wallet) {
       return false;
     }
 
-    if (!force && Date.now() - this.lastProbeAt < PROBE_INTERVAL_MS) {
+    if (
+      !force
+      && this.gameState.signingClient
+      && this.chainQuery
+      && !this.chainQuery.closed
+      && Date.now() - this.lastProbeAt < PROBE_INTERVAL_MS
+    ) {
       return true;
     }
 
-    if (await this.isAlive()) {
+    const alive = await this.isAlive();
+    if (epoch !== this.connectionEpoch || !this.readyForResume || this.queue.suspended) return false;
+    if (alive) {
       return true;
     }
 
@@ -188,7 +262,7 @@ export class SigningClientManager {
     // us over a different service, so their arrival is what proves the network
     // is fine and isolates the fault to this transport. Rebuilding during a
     // wider outage would just churn sockets.
-    if (this.gameState.msSinceLastBlock() >= STALE_BLOCK_MS) {
+    if (this.gameState.msSinceLastBlock() >= STALE_BLOCK_MS && !this.queue.hasUnresolvedSubmissions()) {
       return false;
     }
 
@@ -212,7 +286,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} id
-   * @return {boolean}
+   * @return {Promise<boolean>}
    */
   cancelQueueItem(id) {
     return this.queue.cancelQueueItem(id);
@@ -263,6 +337,41 @@ export class SigningClientManager {
   // ---------------------------------------------------------------------------
 
   /**
+   * The observer may leave the screen; that never cancels or replaces the intent.
+   *
+   * @param {object} intent
+   * @param {AbortSignal} [signal] stops waiting, not the transaction
+   * @return {Promise<SigningTransaction>}
+   */
+  async queueTransfer(intent, signal = undefined) {
+    signal?.throwIfAborted();
+    const id = this.queue.enqueueTransfer(intent);
+    return this.queue.whenSettled(id, signal);
+  }
+
+  /**
+   * @param {object} intent
+   * @param {AbortSignal} [signal] stops waiting, not the transaction
+   * @return {Promise<SigningTransaction>}
+   */
+  async queueReactor(intent, signal = undefined) {
+    signal?.throwIfAborted();
+    const id = this.queue.enqueueReactor(intent);
+    return this.queue.whenSettled(id, signal);
+  }
+
+  /**
+   * @param {object} intent
+   * @param {AbortSignal} [signal] stops waiting, not the transaction
+   * @return {Promise<SigningTransaction>}
+   */
+  async queueGenerator(intent, signal = undefined) {
+    signal?.throwIfAborted();
+    const id = this.queue.enqueueGenerator(intent);
+    return this.queue.whenSettled(id, signal);
+  }
+
+  /**
    * @param {string} fromAddress
    * @param {string} toAddress
    * @param {Array<{denom: string, amount: string}>} amount
@@ -278,12 +387,29 @@ export class SigningClientManager {
   }
 
   /**
+   * Owner-to-owner transfer; protocol and spendability are checked before enqueue.
+   *
+   * @param {string} ownerId
+   * @param {string} recipientOwnerId
+   * @param {{denom: string, amount: string}} amount
+   * @param {object} [options]
+   */
+  async queueMsgVaultSend(ownerId, recipientOwnerId, amount, options = {}) {
+    const id = this.queue.enqueueImmediate(
+      '/structs.structs.MsgVaultSend',
+      {ownerId, recipientOwnerId, amount},
+      options,
+    );
+    return this.queue.whenSettled(id);
+  }
+
+  /**
    * @param {string} playerId
    * @param {string} [name='']
    * @param {object} [options]
    */
   async queueMsgPlanetExplore(playerId, name = '', options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgPlanetExplore',
       {playerId, name},
       0,
@@ -297,15 +423,23 @@ export class SigningClientManager {
    * @param {string} addressToRegister
    * @param {string} proofPubKey
    * @param {string} proofSignature
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgAddressRegister(playerId, addressToRegister, proofPubKey, proofSignature, permissions, options = {}) {
-    const id = this.queue.enqueueImmediate(
-      '/structs.structs.MsgAddressRegister',
-      {playerId, address: addressToRegister, proofPubKey, proofSignature, permissions},
-      options,
-    );
+    if (typeof permissions === 'number' && (!Number.isSafeInteger(permissions) || permissions < 0)) {
+      throw new Error('Invalid registration permissions');
+    }
+    const id = this.queue.enqueueRegistration({
+      kind: 'address_register',
+      version: 1,
+      ownerId: playerId,
+      address: addressToRegister,
+      pubkey: proofPubKey,
+      signature: proofSignature,
+      permissions: String(permissions),
+      proof: options.proofContext,
+    });
     return this.queue.whenSettled(id);
   }
 
@@ -328,7 +462,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgFleetMove(fleetId, destinationLocationId, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgFleetMove',
       {fleetId, destinationLocationId},
       0,
@@ -344,7 +478,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgPlanetRaidComplete(fleetId, proof, nonce, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgPlanetRaidComplete',
       {fleetId, proof, nonce},
       options,
@@ -373,7 +507,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructBuildComplete(structId, proof, nonce, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgStructBuildComplete',
       {structId, proof, nonce},
       options,
@@ -388,7 +522,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructOreMinerComplete(structId, proof, nonce, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgStructOreMinerComplete',
       {structId, proof, nonce},
       options,
@@ -403,7 +537,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructOreRefineryComplete(structId, proof, nonce, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgStructOreRefineryComplete',
       {structId, proof, nonce},
       options,
@@ -415,7 +549,7 @@ export class SigningClientManager {
    * @param {string} controller
    * @param {string} sourceObjectId
    * @param {string} allocationType
-   * @param {number} power
+   * @param {string|number} power
    * @param {object} [options]
    */
   async queueMsgAllocationCreate(controller, sourceObjectId, allocationType, power, options = {}) {
@@ -442,7 +576,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} allocationId
-   * @param {number} power
+   * @param {string|number} power
    * @param {object} [options]
    */
   async queueMsgAllocationUpdate(allocationId, power, options = {}) {
@@ -469,8 +603,8 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {number} amountAlpha
-   * @param {number} amountToken
+   * @param {string|number} amountAlpha
+   * @param {string|number} amountToken
    * @param {string} [guildId] Defaults to the signer's own guild.
    * @param {object} [options]
    */
@@ -485,7 +619,7 @@ export class SigningClientManager {
 
   /**
    * @param {{denom: string, amount: string}} amountToken
-   * @param {number} minAmountAlpha Required and nonzero; the transaction fails
+   * @param {string|number} minAmountAlpha Required and nonzero; the transaction fails
    *   rather than burning tokens when fees or the collateral ratio would return
    *   less alpha.
    * @param {object} [options]
@@ -501,7 +635,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} address
-   * @param {number} amountToken
+   * @param {string|number} amountToken
    * @param {string} [guildId] Defaults to the signer's own guild.
    * @param {object} [options]
    */
@@ -519,8 +653,8 @@ export class SigningClientManager {
    * ratio. The guild's bankConvertInFee is retained in the collateral pool.
    *
    * @param {string} guildId
-   * @param {number} amountAlpha
-   * @param {number} minAmountToken Required and nonzero; guards against ratio or
+   * @param {string|number} amountAlpha
+   * @param {string|number} minAmountToken Required and nonzero; guards against ratio or
    *   fee movement earlier in the block.
    * @param {object} [options]
    */
@@ -540,7 +674,7 @@ export class SigningClientManager {
    *
    * @param {{denom: string, amount: string}} amountToken
    * @param {string} guildId The target guild.
-   * @param {number} minAmountToken Required and nonzero; guards the final
+   * @param {string|number} minAmountToken Required and nonzero; guards the final
    *   target-token output.
    * @param {object} [options]
    */
@@ -721,7 +855,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} guildId
-   * @param {number} joinInfusionMinimum
+   * @param {string|number} joinInfusionMinimum
    * @param {object} [options]
    */
   async queueMsgGuildUpdateJoinInfusionMinimum(guildId, joinInfusionMinimum, options = {}) {
@@ -762,7 +896,7 @@ export class SigningClientManager {
   }
 
   /**
-   * @param {number} newEntryRank
+   * @param {string|number} newEntryRank
    * @param {object} [options]
    */
   async queueMsgGuildUpdateEntryRank(newEntryRank, options = {}) {
@@ -942,7 +1076,7 @@ export class SigningClientManager {
   /**
    * @param {string} objectId
    * @param {string} playerId
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionGrantOnObject(objectId, playerId, permissions, options = {}) {
@@ -956,7 +1090,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} address
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionGrantOnAddress(address, permissions, options = {}) {
@@ -971,7 +1105,7 @@ export class SigningClientManager {
   /**
    * @param {string} objectId
    * @param {string} playerId
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionRevokeOnObject(objectId, playerId, permissions, options = {}) {
@@ -985,7 +1119,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} address
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionRevokeOnAddress(address, permissions, options = {}) {
@@ -1000,7 +1134,7 @@ export class SigningClientManager {
   /**
    * @param {string} objectId
    * @param {string} playerId
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionSetOnObject(objectId, playerId, permissions, options = {}) {
@@ -1014,7 +1148,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} address
-   * @param {number} permissions
+   * @param {string|number} permissions
    * @param {object} [options]
    */
   async queueMsgPermissionSetOnAddress(address, permissions, options = {}) {
@@ -1029,8 +1163,8 @@ export class SigningClientManager {
   /**
    * @param {string} objectId
    * @param {string} guildId
-   * @param {number} permission
-   * @param {number} rank
+   * @param {string|number} permission
+   * @param {string|number} rank
    * @param {object} [options]
    */
   async queueMsgPermissionGuildRankSet(objectId, guildId, permission, rank, options = {}) {
@@ -1045,7 +1179,7 @@ export class SigningClientManager {
   /**
    * @param {string} objectId
    * @param {string} guildId
-   * @param {number} permission
+   * @param {string|number} permission
    * @param {object} [options]
    */
   async queueMsgPermissionGuildRankRevoke(objectId, guildId, permission, options = {}) {
@@ -1072,7 +1206,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} playerId
-   * @param {number} guildRank
+   * @param {string|number} guildRank
    * @param {object} [options]
    */
   async queueMsgPlayerUpdateGuildRank(playerId, guildRank, options = {}) {
@@ -1090,7 +1224,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgPlayerUpdateName(playerId, name, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgPlayerUpdateName',
       {playerId, name},
       options,
@@ -1131,7 +1265,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructDeactivate(structId, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructDeactivate',
       {structId},
       0,
@@ -1178,7 +1312,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructBuildCancel(structId, options = {}) {
-    const id = this.queue.enqueueImmediate(
+    const id = this.queue.enqueueGameplayImmediate(
       '/structs.structs.MsgStructBuildCancel',
       {structId},
       options,
@@ -1326,14 +1460,15 @@ export class SigningClientManager {
 
   /**
    * @param {string} providerId
-   * @param {number} duration
-   * @param {number} capacity
+   * @param {string|number} duration
+   * @param {string|number} capacity
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgAgreementOpen(providerId, duration, capacity, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgAgreementOpen',
-      {providerId, duration, capacity},
+      {providerId, duration, capacity, ownerId: options.ownerId ?? ''},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1354,7 +1489,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} agreementId
-   * @param {number} capacityIncrease
+   * @param {string|number} capacityIncrease
    * @param {object} [options]
    */
   async queueMsgAgreementCapacityIncrease(agreementId, capacityIncrease, options = {}) {
@@ -1368,7 +1503,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} agreementId
-   * @param {number} capacityDecrease
+   * @param {string|number} capacityDecrease
    * @param {object} [options]
    */
   async queueMsgAgreementCapacityDecrease(agreementId, capacityDecrease, options = {}) {
@@ -1382,7 +1517,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} agreementId
-   * @param {number} durationIncrease
+   * @param {string|number} durationIncrease
    * @param {object} [options]
    */
   async queueMsgAgreementDurationIncrease(agreementId, durationIncrease, options = {}) {
@@ -1400,11 +1535,12 @@ export class SigningClientManager {
    * @param {string} accessPolicy
    * @param {string} providerCancellationPenalty
    * @param {string} consumerCancellationPenalty
-   * @param {number} capacityMinimum
-   * @param {number} capacityMaximum
-   * @param {number} durationMinimum
-   * @param {number} durationMaximum
+   * @param {string|number} capacityMinimum
+   * @param {string|number} capacityMaximum
+   * @param {string|number} durationMinimum
+   * @param {string|number} durationMaximum
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgProviderCreate(substationId, rate, accessPolicy, providerCancellationPenalty, consumerCancellationPenalty, capacityMinimum, capacityMaximum, durationMinimum, durationMaximum, options = {}) {
     const id = this.queue.enqueueImmediate(
@@ -1419,6 +1555,7 @@ export class SigningClientManager {
         capacityMaximum,
         durationMinimum,
         durationMaximum,
+        ownerId: options.ownerId ?? '',
       },
       options,
     );
@@ -1441,7 +1578,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} providerId
-   * @param {number} newMinimumCapacity
+   * @param {string|number} newMinimumCapacity
    * @param {object} [options]
    */
   async queueMsgProviderUpdateCapacityMinimum(providerId, newMinimumCapacity, options = {}) {
@@ -1455,7 +1592,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} providerId
-   * @param {number} newMaximumCapacity
+   * @param {string|number} newMaximumCapacity
    * @param {object} [options]
    */
   async queueMsgProviderUpdateCapacityMaximum(providerId, newMaximumCapacity, options = {}) {
@@ -1469,7 +1606,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} providerId
-   * @param {number} newMinimumDuration
+   * @param {string|number} newMinimumDuration
    * @param {object} [options]
    */
   async queueMsgProviderUpdateDurationMinimum(providerId, newMinimumDuration, options = {}) {
@@ -1483,7 +1620,7 @@ export class SigningClientManager {
 
   /**
    * @param {string} providerId
-   * @param {number} newMaximumDuration
+   * @param {string|number} newMaximumDuration
    * @param {object} [options]
    */
   async queueMsgProviderUpdateDurationMaximum(providerId, newMaximumDuration, options = {}) {
@@ -1527,11 +1664,12 @@ export class SigningClientManager {
    * @param {string} validatorAddress
    * @param {{denom: string, amount: string}} amount
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgReactorInfuse(delegatorAddress, validatorAddress, amount, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgReactorInfuse',
-      {delegatorAddress, validatorAddress, amount},
+      {delegatorAddress, validatorAddress, amount, ownerId: options.ownerId ?? ''},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1543,11 +1681,12 @@ export class SigningClientManager {
    * @param {string} validatorDstAddress
    * @param {{denom: string, amount: string}} amount
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgReactorBeginMigration(delegatorAddress, validatorSrcAddress, validatorDstAddress, amount, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgReactorBeginMigration',
-      {delegatorAddress, validatorSrcAddress, validatorDstAddress, amount},
+      {delegatorAddress, validatorSrcAddress, validatorDstAddress, amount, ownerId: options.ownerId ?? ''},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1558,11 +1697,12 @@ export class SigningClientManager {
    * @param {string} validatorAddress
    * @param {{denom: string, amount: string}} amount
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgReactorDefuse(delegatorAddress, validatorAddress, amount, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgReactorDefuse',
-      {delegatorAddress, validatorAddress, amount},
+      {delegatorAddress, validatorAddress, amount, ownerId: options.ownerId ?? ''},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1572,13 +1712,14 @@ export class SigningClientManager {
    * @param {string} delegatorAddress
    * @param {string} validatorAddress
    * @param {{denom: string, amount: string}} amount
-   * @param {number} creationHeight
+   * @param {string|number} creationHeight
    * @param {object} [options]
+   * @param {string} [options.ownerId] Explicit v0.22 vault owner; empty preserves the retained-address/default selector.
    */
   async queueMsgReactorCancelDefusion(delegatorAddress, validatorAddress, amount, creationHeight, options = {}) {
     const id = this.queue.enqueueImmediate(
       '/structs.structs.MsgReactorCancelDefusion',
-      {delegatorAddress, validatorAddress, amount, creationHeight},
+      {delegatorAddress, validatorAddress, amount, creationHeight, ownerId: options.ownerId ?? ''},
       options,
     );
     return this.queue.whenSettled(id);
@@ -1617,7 +1758,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructActivate(structId, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructActivate',
       {structId},
       chargeCost,
@@ -1631,16 +1772,19 @@ export class SigningClientManager {
   }
 
   /**
+   * Enqueue is synchronous: the build control must not show a pending slot if
+   * persistence or submission recovery refuses it. Settlement remains a Promise.
+   *
    * @param {string} playerId
-   * @param {number} structTypeId
+   * @param {string|number} structTypeId
    * @param {string} operatingAmbit
-   * @param {number} slot
+   * @param {string|number} slot
    * @param {number} chargeCost
    * @param {object} [options]
    */
-  async queueMsgStructBuildInitiate(playerId, structTypeId, operatingAmbit, slot, chargeCost, options = {}) {
+  queueMsgStructBuildInitiate(playerId, structTypeId, operatingAmbit, slot, chargeCost, options = {}) {
     const operatingAmbitIndex = AMBIT_ENUM[operatingAmbit.toUpperCase()];
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructBuildInitiate',
       {playerId, structTypeId, operatingAmbit: operatingAmbitIndex, slot},
       chargeCost,
@@ -1660,7 +1804,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructDefenseSet(defenderStructId, protectedStructId, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructDefenseSet',
       {defenderStructId, protectedStructId},
       chargeCost,
@@ -1679,7 +1823,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructDefenseClear(defenderStructId, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructDefenseClear',
       {defenderStructId},
       chargeCost,
@@ -1696,14 +1840,14 @@ export class SigningClientManager {
    * @param {string} structId
    * @param {string} locationType
    * @param {string} ambit
-   * @param {number} slot
+   * @param {string|number} slot
    * @param {number} chargeCost
    * @param {object} [options]
    */
   async queueMsgStructMove(structId, locationType, ambit, slot, chargeCost, options = {}) {
     const locationTypeIndex = LOCATION_TYPE_INDEX[locationType.toLowerCase()];
     const ambitNumber = AMBIT_ENUM[ambit.toUpperCase()];
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructMove',
       {structId, locationType: locationTypeIndex, ambit: ambitNumber, slot},
       chargeCost,
@@ -1724,7 +1868,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructAttack(operatingStructId, targetStructId, weaponSystem, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructAttack',
       {operatingStructId, targetStructId, weaponSystem},
       chargeCost,
@@ -1743,7 +1887,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructStealthActivate(structId, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructStealthActivate',
       {structId},
       chargeCost,
@@ -1762,7 +1906,7 @@ export class SigningClientManager {
    * @param {object} [options]
    */
   async queueMsgStructStealthDeactivate(structId, chargeCost, options = {}) {
-    const id = this.queue.enqueueAction(
+    const id = this.queue.enqueueGameplayAction(
       '/structs.structs.MsgStructStealthDeactivate',
       {structId},
       chargeCost,

@@ -1,16 +1,17 @@
 const webpack = require('webpack');
 const path = require('path');
+const AssetManifestPlugin = require('./webpack/AssetManifestPlugin.cjs');
 
 module.exports = {
   entry: {
     index: './js/index.js',
     test: './js/tests/test.js',
-    "workers/TaskWorker": "./js/workers/TaskWorker.js",
   },
   output: {
-    filename: '[name].js',
+    filename: '[name].[contenthash].js',
+    chunkFilename: '[name].[contenthash].js',
     path: path.resolve(__dirname, 'public/js'),
-    sourceMapFilename: "[name].js.map",
+    sourceMapFilename: "[file].map",
   },
   devtool: "source-map",
   experiments: {
@@ -41,6 +42,7 @@ module.exports = {
     ]
   },
   plugins: [
+    new AssetManifestPlugin(),
     // @cosmjs/utils and cosmjs-types use Buffer as a global. Nothing else in the
     // graph needs a Node global: the handful of `typeof process` reads are Node
     // detection, which must stay false here.

@@ -42,7 +42,10 @@ abstract class ApiManagerTestCase extends KernelTestCase
 
                 return $rows;
             });
-        $connection->method('fetchAssociative')->willReturn(['source_height' => 1]);
+        $connection->method('fetchAssociative')->willReturn([
+            'source_height' => 1,
+            'meta' => json_encode(['height' => '1', 'data_ready' => true]),
+        ]);
 
         return $connection;
     }

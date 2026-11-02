@@ -1,78 +1,79 @@
 import {TASK} from "../constants/TaskConstants";
 import {TASK_STATUS} from "../constants/TaskStatus";
 import {TaskStateFactory} from "../factories/TaskStateFactory";
-import { sha256 } from "js-sha256";
+import {sha256} from "js-sha256";
 
 let state = null;
-
+let revision = 0;
+let scheduled = false;
+const batchChannel = new MessageChannel();
+batchChannel.port1.onmessage = work;
+let sessionIterations = 0;
 const taskStateFactory = new TaskStateFactory();
 
-onmessage =  async function(process_request) {
-    state = taskStateFactory.make(process_request.data[0]);
-
-    /*
-        If the state is starting, then start the task in a waiting state.
-        Otherwise, if it's been passed as "Running" already, then force it
-        to begin hashing even if difficulty is too high.
-     */
-    if (state.status === TASK_STATUS.STARTING){
-        state.setStatus(TASK_STATUS.WAITING);
-        postMessage([state]);
-    }
-    console.log('Start Process Request ' + state.getPID());
-    await work();
+function publish() {
+    postMessage({version: TASK.WORKER_VERSION, revision, state});
 }
 
-async function work() {
-    let difficulty = state.getCurrentDifficulty();
-
-    if (state.status === TASK_STATUS.WAITING){
-        while (difficulty > TASK.DIFFICULTY_START) {
-            console.log('Web Worker chilling because difficulty of task is too high: ' + difficulty + ' > ' + TASK.DIFFICULTY_START);
-            await new Promise(r => setTimeout(r, TASK.DIFFICULTY_START_SLEEP_DELAY));
-            difficulty = state.getCurrentDifficulty();
-        }
-        state.setStatus(TASK_STATUS.RUNNING);
-        postMessage([state]);
+onmessage = function(process_request) {
+    const request = process_request.data;
+    if (request?.version !== TASK.WORKER_VERSION || !Number.isSafeInteger(request.revision)
+        || request.revision <= revision) return;
+    if (request.kind === 'start' && state === null) {
+        state = taskStateFactory.make(request.state);
+        if (state.status === TASK_STATUS.STARTING) state.setStatus(TASK_STATUS.WAITING);
+    } else if (request.kind === 'update' && state?.isSameWork(request.state)) {
+        state.updateRules(request.state);
+        // A candidate found under an older rule remains useful, but must pass
+        // the current rule before it can complete this task.
+        if (state.isCompleted() && !state.checkResultHashDifficulty()) state.setStatus(TASK_STATUS.WAITING);
+    } else {
+        return;
     }
+    revision = request.revision;
+    publish();
+    schedule();
+};
 
-    let sessionIterations = 1;
-    while (true) {
+function schedule() {
+    if (!scheduled && !state.isCompleted()) {
+        scheduled = true;
+        // A posted task yields for rule updates without nested-timer clamping.
+        batchChannel.port2.postMessage(null);
+    }
+}
+
+function work() {
+    scheduled = false;
+    const difficulty = state.getCurrentDifficulty();
+    if (state.result_exists && state.checkResultHashDifficulty()) {
+        state.setPreviousResult(difficulty);
+        publish();
+        return;
+    }
+    // Only a received chain height/rule update wakes a waiting worker. Wall
+    // time is useful for UI estimates, never for making a proof eligible.
+    if (state.isWaiting()) {
+        if (difficulty > TASK.DIFFICULTY_START) return;
+        state.setStatus(TASK_STATUS.RUNNING);
+        publish();
+    }
+    if (!state.isRunning()) return;
+    const difficultyPrefix = '0'.repeat(difficulty);
+
+    // Yield after bounded work so height, rule and cancellation messages can
+    // be processed even while the current difficulty is too high to solve.
+    for (let i = 0; i < TASK.HASH_BATCH_SIZE; i++) {
         const nonce = state.getNextNonce();
         const message = state.getMessage(nonce);
         const hash = sha256(message);
-
-        if (difficultyCheck(hash, difficulty)){
+        state.iterations_since_last_start = ++sessionIterations;
+        if (hash.startsWith(difficultyPrefix)) {
             state.setResult(nonce, message, hash, difficulty);
-            postMessage([state]);
-            break;
+            publish();
+            return;
         }
-
-        if (state.iterations % TASK.CHECKPOINT_COMMIT === 0) {
-            state.iterations_since_last_start = sessionIterations;
-            postMessage([state]);
-        }
-
-        if (state.iterations % TASK.DIFFICULTY_RECALCULATE === 0) {
-            difficulty = state.getCurrentDifficulty();
-
-            // Check to see if a previous hash result is now relevant again
-            if (state.result_exists && state.result_difficulty >= difficulty) {
-                state.setPreviousResult(difficulty);
-                postMessage([state]);
-                break;
-            }
-        }
-        sessionIterations++;
+        if (state.iterations % TASK.CHECKPOINT_COMMIT === 0) publish();
     }
-}
-
-function difficultyCheck(hash, difficulty) {
-    //console.log('dif' + difficulty + ' hash ' + hash)
-    for (let position = 1; position <= difficulty; position++) {
-        if (hash[position - 1] !== "0") {
-            return false;
-        }
-    }
-    return true;
+    schedule();
 }

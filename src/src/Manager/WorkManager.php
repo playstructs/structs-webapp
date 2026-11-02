@@ -44,7 +44,9 @@ class WorkManager
     public function getAllWorkByPlayerId(string $player_id): Response
     {
         $query = '
-            SELECT vw.*
+            SELECT vw.object_id, vw.player_id, vw.target_id, vw.category,
+                   vw.block_start::text AS block_start, vw.difficulty_target::text AS difficulty_target,
+                   vw.location_type, vw.location_id, vw.planet_id
             FROM view.work vw
             WHERE vw.player_id = :player_id
             ORDER BY vw.block_start ASC;
@@ -53,12 +55,13 @@ class WorkManager
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
         $requiredFields = [ApiParameters::PLAYER_ID];
 
-        return $this->queryAll(
+        return $this->queryAllStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
-            $requiredFields
+            $requiredFields,
+            'work'
         );
     }
 
@@ -72,7 +75,8 @@ class WorkManager
         $offset = ($page - 1) * $limit;
 
         $query = "
-            SELECT vw.object_id, vw.player_id, vw.target_id, vw.category, vw.block_start, vw.difficulty_target
+            SELECT vw.object_id, vw.player_id, vw.target_id, vw.category,
+                   vw.block_start::text AS block_start, vw.difficulty_target::text AS difficulty_target
             FROM view.work vw
             INNER JOIN structs.player p ON p.id = vw.player_id
             WHERE p.guild_id = :guild_id
@@ -86,12 +90,13 @@ class WorkManager
         ];
         $requiredFields = [ApiParameters::GUILD_ID, ApiParameters::PAGE];
 
-        return $this->queryAll(
+        return $this->queryAllStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
-            $requiredFields
+            $requiredFields,
+            'work'
         );
     }
 
@@ -105,7 +110,8 @@ class WorkManager
         $offset = ($page - 1) * $limit;
 
         $query = "
-            SELECT object_id, player_id, target_id, category, block_start, difficulty_target
+            SELECT object_id, player_id, target_id, category,
+                   block_start::text AS block_start, difficulty_target::text AS difficulty_target
             FROM view.work
             LIMIT $limit
             OFFSET $offset;
@@ -114,12 +120,13 @@ class WorkManager
         $requestParams = [ApiParameters::PAGE => (string) $page];
         $requiredFields = [ApiParameters::PAGE];
 
-        return $this->queryAll(
+        return $this->queryAllStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
-            $requiredFields
+            $requiredFields,
+            'work'
         );
     }
 
@@ -128,12 +135,13 @@ class WorkManager
      */
     public function countWork(): Response
     {
-        return $this->queryOne(
+        return $this->queryOneStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             'SELECT count(*) AS count FROM view.work',
             [],
-            []
+            [],
+            'work'
         );
     }
 }

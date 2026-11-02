@@ -3,6 +3,7 @@ export class AddPendingAddressRequestDTO {
     this.player_id = null;
     this.guild_id = null;
     this.code = null;
+    this.activation_id = null;
     this.address = null;
     this.signature = null;
     this.pubkey = null;

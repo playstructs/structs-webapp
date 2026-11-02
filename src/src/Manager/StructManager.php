@@ -14,6 +14,29 @@ class StructManager
 {
     use ApiSqlQueryTrait;
 
+    /**
+     * Lateral subquery that totals a struct's generator infusions. positions_ready
+     * is false when any infusion row is incomplete or outside exact integer range.
+     */
+    private const string GENERATOR_TOTALS = '
+              SELECT
+                COALESCE(sum(i.fuel_p), 0) AS fuel_p,
+                COALESCE(sum(i.power_p), 0) AS power_p,
+                COALESCE(bool_and(
+                  i.destination_type IS NOT NULL AND i.destination_type = \'struct\'
+                  AND i.fuel_p IS NOT NULL AND i.power_p IS NOT NULL AND i.ratio_p IS NOT NULL
+                  AND i.commission IS NOT NULL AND i.generator_disabled IS NOT NULL
+                  AND i.fuel_p BETWEEN 0 AND 18446744073709551615 AND mod(i.fuel_p, 1) = 0
+                  AND i.power_p BETWEEN 0 AND 18446744073709551615 AND mod(i.power_p, 1) = 0
+                  AND i.ratio_p BETWEEN 0 AND 18446744073709551615 AND mod(i.ratio_p, 1) = 0
+                  AND i.commission BETWEEN 0 AND 1
+                  AND i.fuel_p * i.ratio_p <= 18446744073709551615
+                  AND i.power_p = CASE WHEN i.generator_disabled THEN 0 ELSE i.fuel_p * i.ratio_p END
+                ), TRUE) AS positions_ready
+              FROM structs.infusion i
+              WHERE i.destination_id = s.id
+    ';
+
     public EntityManagerInterface $entityManager;
 
     public ValidatorInterface $validator;
@@ -72,10 +95,14 @@ class StructManager
               CASE
                 WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN UNIT_LEGACY_FORMAT(COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0), \'ualpha\')
                 ELSE 0
-              END AS fuel
+              END AS fuel,
+              totals.positions_ready AS generator_positions_ready,
+              CASE WHEN totals.positions_ready THEN totals.fuel_p::text END AS generator_fuel_p,
+              CASE WHEN totals.positions_ready THEN totals.power_p::text END AS generator_power_p
             FROM struct s
             INNER JOIN struct_type st
               ON s.type = st.id
+            CROSS JOIN LATERAL (' . self::GENERATOR_TOTALS . ') totals
             LEFT JOIN struct_attribute sa_health
               ON s.id = sa_health.object_id
               AND sa_health.attribute_type = \'health\'
@@ -112,12 +139,13 @@ class StructManager
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
         $requiredFields = [ApiParameters::PLAYER_ID];
 
-        return $this->queryAll(
+        return $this->queryAllStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
-            $requiredFields
+            $requiredFields,
+            'inventory'
         );
     }
 
@@ -158,10 +186,14 @@ class StructManager
               CASE
                 WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN UNIT_LEGACY_FORMAT(COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0), \'ualpha\')
                 ELSE 0
-              END AS fuel
+              END AS fuel,
+              totals.positions_ready AS generator_positions_ready,
+              CASE WHEN totals.positions_ready THEN totals.fuel_p::text END AS generator_fuel_p,
+              CASE WHEN totals.positions_ready THEN totals.power_p::text END AS generator_power_p
             FROM struct s
             INNER JOIN struct_type st
               ON s.type = st.id    
+            CROSS JOIN LATERAL (' . self::GENERATOR_TOTALS . ') totals
             LEFT JOIN struct_attribute sa_health
               ON s.id = sa_health.object_id
               AND sa_health.attribute_type = \'health\'
@@ -198,12 +230,63 @@ class StructManager
         $requestParams = [ApiParameters::STRUCT_ID => $struct_id];
         $requiredFields = [ApiParameters::STRUCT_ID];
 
-        return $this->queryOne(
+        return $this->queryOneStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
-            $requiredFields
+            $requiredFields,
+            'inventory'
+        );
+    }
+
+    /**
+     * Returns a generator's exact applied totals and one funding address's position,
+     * both from the same indexed snapshot. The address only selects which position
+     * to read; callers must still check on chain that it may spend.
+     *
+     * @param string $struct_id
+     * @param string|null $address
+     * @return Response
+     * @throws Exception
+     */
+    public function getGeneratorSnapshot(string $struct_id, ?string $address): Response
+    {
+        $query = '
+            SELECT
+              s.id AS struct_id,
+              :address::text AS source_address,
+              CASE WHEN totals.positions_ready THEN totals.fuel_p::text END AS fuel_p,
+              CASE WHEN totals.positions_ready THEN totals.power_p::text END AS power_p,
+              totals.positions_ready,
+              (position.address IS NOT NULL) AS source_exists,
+              position.fuel_p::text AS source_fuel_p,
+              position.power_p::text AS source_power_p,
+              position.ratio_p::text AS source_ratio_p,
+              position.commission::text AS source_commission,
+              position.generator_disabled AS source_generator_disabled,
+              COALESCE(NULLIF(position.owner_id, \'\'), position.player_id) AS source_recorded_owner_id
+            FROM structs.struct s
+            CROSS JOIN LATERAL (' . self::GENERATOR_TOTALS . '
+            ) totals
+            LEFT JOIN structs.infusion position
+              ON position.destination_id = s.id AND position.address = :address
+            WHERE s.id = :struct_id
+        ';
+
+        return $this->queryOneStamped(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            [
+                ApiParameters::STRUCT_ID => $struct_id,
+                ApiParameters::ADDRESS => $address
+            ],
+            [
+                ApiParameters::STRUCT_ID,
+                ApiParameters::ADDRESS
+            ],
+            'inventory'
         );
     }
 
@@ -219,7 +302,7 @@ class StructManager
             ORDER BY id;
         ';
 
-        return $this->queryAll(
+        return $this->queryAllStamped(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,

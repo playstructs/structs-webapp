@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Constant\ApiParameters;
 use App\Dto\ApiResponseContentDto;
 use App\Util\ResponseMetaUtil;
+use App\Util\ConsistentRead;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,12 +31,15 @@ class TimestampController extends AbstractController
     public function getCurrentBlock(EntityManagerInterface $entityManager): Response
     {
         $responseContent = new ApiResponseContentDto();
-        $row = $entityManager->getConnection()->fetchAssociative(
-            'SELECT height, tip_height, lag_blocks, status, updated_at FROM current_block LIMIT 1'
-        );
-        $responseContent->data = $row === false ? null : $row;
-        $responseContent->success = true;
-        ResponseMetaUtil::stampHeight($responseContent, $entityManager);
+        $db = $entityManager->getConnection();
+        ConsistentRead::run($db, function () use ($db, $responseContent): void {
+            $row = $db->fetchAssociative(
+                'SELECT chain AS chain_id, height, tip_height, lag_blocks, status, updated_at FROM structs.current_block LIMIT 1'
+            );
+            $responseContent->data = $row === false ? null : $row;
+            $responseContent->meta = ResponseMetaUtil::snapshotMeta($db);
+            $responseContent->success = true;
+        });
 
         return new JsonResponse($responseContent, Response::HTTP_OK);
     }

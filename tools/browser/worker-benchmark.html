@@ -1,0 +1,45 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Local worker review</title>
+<h1>Local worker review</h1>
+<p>Production hashing code, fixed 524,288 hashes per run, no chain connection or wallet.</p>
+<button id="run">Run benchmark and Web Locks check</button>
+<pre id="result">Ready</pre>
+<script>
+if (!['127.0.0.1', 'localhost.'].includes(location.hostname)) throw new Error('Local fixture only');
+const output = document.getElementById('result');
+const runButton = document.getElementById('run');
+const state = {object_id:'5-1', object_type:'struct', task_type:'BUILD', block_start:'3353000',
+  difficulty_target:'25', block_checkpoint:'3353001', prefix:'5-1BUILD3353000NONCE', postfix:'',
+  nonce_start:0, nonce_current:0, status:'running'};
+async function runWorker(name) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(`review-worker-${name}.js`);
+    const timeout = setTimeout(() => finish(new Error('Benchmark timed out')), 30000);
+    const finish = (error, value) => { clearTimeout(timeout); worker.terminate(); error ? reject(error) : resolve(value); };
+    worker.onerror = event => finish(new Error(event.message));
+    worker.onmessage = event => { if (event.data.benchmark) finish(null, {scheduler:name,...event.data.benchmark}); };
+    worker.postMessage({version:'work-v022-1',revision:1,kind:'start',state});
+  });
+}
+runButton.onclick = async () => {
+  runButton.disabled = true;
+  const result = {secureContext:isSecureContext, webLocks:!!navigator.locks, runs:[]};
+  try {
+    let active = 0, maximum = 0;
+    await Promise.all([1,2].map(() => navigator.locks.request('structs-review-fixture', async () => {
+      maximum = Math.max(maximum, ++active);
+      await new Promise(resolve => setTimeout(resolve, 10));
+      active--;
+    })));
+    result.exclusiveMaximum = maximum;
+    for (const name of ['timer','channel','channel','timer','timer','channel']) {
+      output.textContent = JSON.stringify({...result,running:name},null,2);
+      result.runs.push(await runWorker(name));
+    }
+    result.complete = true;
+  } catch (error) { result.error = error.message; }
+  output.textContent = JSON.stringify(result,null,2);
+  runButton.disabled = false;
+};
+</script>

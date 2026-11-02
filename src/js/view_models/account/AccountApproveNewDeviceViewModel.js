@@ -1,9 +1,10 @@
+import {selectedDevicePermissions} from "../../util/DeviceChangeIntent";
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {UserAgent} from "../../models/UserAgent";
+import {escapeHtml} from "../../util/HtmlEscape";
 import {PlayerAddressPending} from "../../models/PlayerAddressPending";
 import {Blockies} from "../../vendor/Blockies";
-import {PERMISSIONS} from "../../constants/Permissions";
 
 export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
 
@@ -36,17 +37,22 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
     document.getElementById(`${this.approveDeviceBtnId}`).addEventListener(
       'click',
       () => {
-        this.playerAddressPending.permissions = this.permissionManager.getDefaultPlayerPermissions();
-        this.playerAddressPending.permissions |= (document.getElementById(this.manageDevicesCheckboxId).checked
-          ? this.permissionManager.getManageDevicesPermissions()
-          : 0);
-        this.playerAddressPending.permissions |= document.getElementById(this.transferAssetsCheckboxId).checked
-          ? PERMISSIONS.ASSETS_ALL
-          : 0;
+        this.playerAddressPending.permissions = selectedDevicePermissions(String(this.permissionManager.getDefaultPlayerPermissions()),
+          document.getElementById(this.manageDevicesCheckboxId).checked,
+          document.getElementById(this.transferAssetsCheckboxId).checked);
 
         MenuPage.router.goto('Account', 'activatingDevice', this.playerAddressPending);
       }
     );
+    document.getElementById(this.denyDeviceBtnId).addEventListener('click',async()=>{
+      const signal=MenuPage.router.navigationSignal;
+      try {
+        const response=await this.gameState.guildAPI.deleteActivationCode(this.playerAddressPending.code,this.playerAddressPending.activation_id);
+        if (response.success && !signal.aborted) MenuPage.router.goto('Account','deviceActivationCancelled');
+      } catch (error) {
+        if (!signal.aborted) console.debug('[DeviceActivation] denial could not be confirmed:',error);
+      }
+    });
   }
 
   render() {
@@ -68,7 +74,7 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
               <div class="device-index-row-info-list">
                 <div>${location}</div>
                 <div>${userAgent.getBrowser()} Browser</div>
-                <div>${userAgent.getDeviceTypeAndOS()}</div>
+                <div>${escapeHtml(userAgent.getDeviceTypeAndOS())}</div>
               </div>
             </div>
             <div class="account-manage-device-info-icon-group">

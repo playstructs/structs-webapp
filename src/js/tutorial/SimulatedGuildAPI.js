@@ -12,6 +12,7 @@ export class SimulatedGuildAPI extends GuildAPI {
   constructor(world) {
     super();
     this.world = world;
+    this.simulated = true;
   }
 
   cacheItem(key, value) {}

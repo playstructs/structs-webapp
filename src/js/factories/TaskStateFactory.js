@@ -3,6 +3,7 @@ import {AbstractFactory} from "../framework/AbstractFactory";
 import {TASK} from "../constants/TaskConstants";
 import {TASK_TYPES} from "../constants/TaskTypes";
 import {OBJECT_TYPES as OBJECT_TYPE} from "../constants/ObjectTypes";
+import {workUint64} from "../util/WorkDifficulty";
 
 export class TaskStateFactory extends AbstractFactory {
 
@@ -33,8 +34,8 @@ export class TaskStateFactory extends AbstractFactory {
     task_state.object_type = OBJECT_TYPE.FLEET;
     task_state.object_id = fleet_id;
     task_state.target_id = planet_id;
-    task_state.block_start = block_start;
-    task_state.difficulty_target = difficulty_target;
+    task_state.block_start = String(workUint64(block_start));
+    task_state.difficulty_target = String(workUint64(difficulty_target));
 
     task_state.prefix = task_state.object_id + TASK.TARGET_DELIMITER + task_state.target_id + task_state.task_type + task_state.block_start + TASK.NONCE_PREFIX;
     task_state.postfix = '';
@@ -58,8 +59,8 @@ export class TaskStateFactory extends AbstractFactory {
     task_state.task_type = task_type;
     task_state.object_type = OBJECT_TYPE.STRUCT;
     task_state.object_id = struct_id;
-    task_state.block_start = block_start;
-    task_state.difficulty_target = difficulty_target;
+    task_state.block_start = String(workUint64(block_start));
+    task_state.difficulty_target = String(workUint64(difficulty_target));
 
     task_state.prefix = task_state.object_id  + task_state.task_type + task_state.block_start + TASK.NONCE_PREFIX;
     task_state.postfix = '';
@@ -72,16 +73,21 @@ export class TaskStateFactory extends AbstractFactory {
    * @return {TaskState}
    */
   initTaskFromWork(work) {
+    let task;
     switch(work.category) {
       case TASK_TYPES.RAID:
-        return this.initRaidTask(work.object_id, work.target_id, work.block_start, work.difficulty_target);
+        task = this.initRaidTask(work.object_id, work.target_id, work.block_start, work.difficulty_target);
+        break;
       case TASK_TYPES.BUILD:
       case TASK_TYPES.MINE:
       case TASK_TYPES.REFINE:
-        return this.initStructTask(work.object_id, work.category, work.block_start, work.difficulty_target);
+        task = this.initStructTask(work.object_id, work.category, work.block_start, work.difficulty_target);
+        break;
       default:
         throw new Error(`Unknown task type: ${work.category}`);
     }
+    if (work.snapshot_meta?.height != null) task.rules_height = String(workUint64(work.snapshot_meta.height));
+    return task;
   }
 
 

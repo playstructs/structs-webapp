@@ -1,7 +1,19 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 
+const MESSAGE_ID = 'menu-waiting-message';
+
 export class MenuWaitingViewModel extends AbstractViewModel {
+
+  /**
+   * Replaces the message on the waiting page currently shown, if any.
+   *
+   * @param {string} message plain text
+   */
+  static setMessage(message) {
+    const element = document.getElementById(MESSAGE_ID);
+    if (element) element.textContent = message;
+  }
 
   /**
    * @param {MenuWaitingOptions} options
@@ -51,7 +63,7 @@ export class MenuWaitingViewModel extends AbstractViewModel {
       <div class="login-activating-device-layout">
         ${waitingAnimation}
         <div>
-          ${waitingMessage}
+          <span id="${MESSAGE_ID}">${waitingMessage}</span>
           ${(waitingMessage && doNotCloseWarning) ? `<br><br>` : ''}
           ${doNotCloseWarning}
         </div>

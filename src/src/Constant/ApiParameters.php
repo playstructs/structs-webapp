@@ -4,6 +4,8 @@ namespace App\Constant;
 
 class ApiParameters
 {
+    const string ACTIVATION_ID = 'activation_id';
+
     const string ADDRESS = 'address';
 
     const string AFTER_ID = 'after_id';

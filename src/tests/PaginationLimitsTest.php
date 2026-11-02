@@ -10,7 +10,8 @@ class PaginationLimitsTest extends TestCase
         $this->assertSame(100, PaginationLimits::clamp(null));
         $this->assertSame(100, PaginationLimits::clamp(0));
         $this->assertSame(1, PaginationLimits::clamp(1));
-        $this->assertSame(1000, PaginationLimits::clamp(5000));
+        $this->assertSame(5000, PaginationLimits::clamp(5000));
+        $this->assertSame(10000, PaginationLimits::clamp(10001));
         $this->assertSame(50, PaginationLimits::clamp(null, PaginationLimits::LEADERBOARD_DEFAULT));
     }
 
@@ -19,7 +20,7 @@ class PaginationLimitsTest extends TestCase
     {
         $this->assertSame(100, PaginationLimits::clamp(''));
         $this->assertSame(25, PaginationLimits::clamp('25'));
-        $this->assertSame(1000, PaginationLimits::clamp('99999'));
+        $this->assertSame(10000, PaginationLimits::clamp('99999'));
         $this->assertSame(100, PaginationLimits::clamp('-5'));
     }
 }

@@ -265,12 +265,12 @@ export class StructListener extends AbstractGrassListener {
       // status change cancel a targeting mode the player is still in the
       // middle of, which holds no lock until a target is picked.
       if (this.gameState.actionBarLock.isLocked()) {
-        this.gameState.actionBarLock.clear();
+        this.gameState.actionBarLock.clearFromNotification();
       } else if (structDestroyed && this.isActionSourceStruct(messageData.detail.struct_id)) {
         // Nothing holds the lock during target selection, so a destroyed source
         // struct would otherwise leave the player picking a target for a struct
         // that no longer exists and sending an action the chain will reject.
-        this.gameState.actionBarLock.clear();
+        this.gameState.actionBarLock.clearFromNotification();
 
         if (mapId) {
           window.dispatchEvent(new ClearAttackTargetsEvent(mapId));
@@ -421,7 +421,7 @@ export class StructListener extends AbstractGrassListener {
     );
 
     arriveEvent.onAnimationEnd = () => {
-      this.gameState.actionBarLock.clear();
+      this.gameState.actionBarLock.clearFromNotification();
     };
 
     this.gameState.animationEventQueue.enqueue(arriveEvent);
@@ -453,7 +453,7 @@ export class StructListener extends AbstractGrassListener {
         this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.DEFENSE_SET
         && this.gameState.actionBarLock.isLocked()
       ) {
-        this.gameState.actionBarLock.clear();
+        this.gameState.actionBarLock.clearFromNotification();
       }
     });
   }
@@ -484,7 +484,7 @@ export class StructListener extends AbstractGrassListener {
         this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.DEFENSE_CLEAR
         && this.gameState.actionBarLock.isLocked()
       ) {
-        this.gameState.actionBarLock.clear();
+        this.gameState.actionBarLock.clearFromNotification();
       }
     });
   }
@@ -518,12 +518,25 @@ export class StructListener extends AbstractGrassListener {
     for (let i = 0; i < messageData.detail.eventAttackShotDetail.length; i++) {
 
       const eventAttackShotDetail = messageData.detail.eventAttackShotDetail[i];
+      structIdsToRefresh.add(eventAttackShotDetail.targetStructId);
+
+      // Final target health includes rebound from an explosive attacker killed
+      // by this target's counter. The counter happens after the volley, while
+      // the target is still alive. Damage is the net volley total on the final
+      // projectile row; an evaded or blocked volley never damages the target.
+      const targetHealthAfterVolley = eventAttackShotDetail.targetCountered
+        ? Math.max(0, parseInt(eventAttackShotDetail.targetHealthBefore) - (
+          eventAttackShotDetail.evaded || eventAttackShotDetail.evadedByPlanetaryDefenses || eventAttackShotDetail.blocked
+            ? 0 : parseInt(eventAttackShotDetail.damage || 0)
+        ))
+        : parseInt(eventAttackShotDetail.targetHealthAfter);
 
       let defenderCounterDestroyedAttacker = false;
 
       for (let j = 0; j < eventAttackShotDetail.eventAttackDefenderCounterDetail.length; j++) {
 
         const eventAttackDefenderCounterDetail = eventAttackShotDetail.eventAttackDefenderCounterDetail[j];
+        structIdsToRefresh.add(eventAttackDefenderCounterDetail.counterByStructId);
 
         // i. Play counterByStruct attack animation
         this.gameState.animationEventQueue.enqueue(
@@ -602,7 +615,7 @@ export class StructListener extends AbstractGrassListener {
             eventAttackShotDetail.targetStructOperatingAmbit,
             eventAttackShotDetail.targetStructLocationType,
             eventAttackShotDetail.targetHealthBefore,
-            eventAttackShotDetail.targetHealthAfter,
+            eventAttackShotDetail.targetHealthBefore,
             eventAttackShotDetail.evaded,
             eventAttackShotDetail.evadedCause,
             mapId
@@ -677,8 +690,8 @@ export class StructListener extends AbstractGrassListener {
         structIdsToRefresh.add(eventAttackShotDetail.blockedByStructId);
       }
 
-      if (parseInt(eventAttackShotDetail.targetHealthBefore) !== parseInt(eventAttackShotDetail.targetHealthAfter)) {
-        // e. If targetHealthBefore !== targetHealthAfter, play targetStruct receive damage animation
+      if (parseInt(eventAttackShotDetail.targetHealthBefore) !== targetHealthAfterVolley) {
+        // e. Show volley damage before any target counter or rebound.
         this.gameState.animationEventQueue.enqueue(
           this.animationEventFactory.makeReceiveDamageAnimationEvent(
             eventAttackShotDetail.targetStructId,
@@ -689,14 +702,14 @@ export class StructListener extends AbstractGrassListener {
             eventAttackShotDetail.targetStructOperatingAmbit,
             eventAttackShotDetail.targetStructLocationType,
             eventAttackShotDetail.targetHealthBefore,
-            eventAttackShotDetail.targetHealthAfter,
+            targetHealthAfterVolley,
             false,
             '',
             mapId
           )
         );
 
-        if (eventAttackShotDetail.targetDestroyed) {
+        if (eventAttackShotDetail.targetDestroyed && !eventAttackShotDetail.targetCountered) {
           this.gameState.animationEventQueue.enqueue(
             this.animationEventFactory.makeDestroyAnimationEvent(
               eventAttackShotDetail.targetStructId,
@@ -706,22 +719,18 @@ export class StructListener extends AbstractGrassListener {
             )
           );
         }
-
-        structIdsToRefresh.add(eventAttackShotDetail.targetStructId);
       }
 
-      if (!eventAttackShotDetail.targetDestroyed && eventAttackShotDetail.targetCountered) {
-        // f. If targetHealthAfter > 0 and targetCountered, play targetStruct attack animation.
-        //    Thread targetHealthAfter so the still/HUD reflect the post-damage value when this
-        //    animation ends; otherwise the still would fall back to gameState (which may not
-        //    have refreshed yet) and visually flash backward to the pre-damage health.
+      if (eventAttackShotDetail.targetCountered) {
+        // f. A reported counter precedes any rebound damage/destruction. Keep
+        // the animation's health separate from the final indexed game state.
         this.gameState.animationEventQueue.enqueue(
           this.withBadge(
             this.animationEventFactory.makeAttackAnimationEvent(
               eventAttackShotDetail.targetStructId,
               eventAttackShotDetail.targetCounterWeaponSystem,
               mapId,
-              eventAttackShotDetail.targetHealthAfter
+              targetHealthAfterVolley
             ),
             ANIMATION.BADGES.COUNTER_ATTACK
           )
@@ -759,6 +768,36 @@ export class StructListener extends AbstractGrassListener {
             mapId
           )
         );
+      }
+
+      if (eventAttackShotDetail.targetCountered && targetHealthAfterVolley !== parseInt(eventAttackShotDetail.targetHealthAfter)) {
+        this.gameState.animationEventQueue.enqueue(
+          this.animationEventFactory.makeReceiveDamageAnimationEvent(
+            eventAttackShotDetail.targetStructId,
+            messageData.detail.attackerStructType,
+            messageData.detail.attackerStructOperatingAmbit,
+            messageData.detail.weaponSystem,
+            eventAttackShotDetail.targetStructType,
+            eventAttackShotDetail.targetStructOperatingAmbit,
+            eventAttackShotDetail.targetStructLocationType,
+            targetHealthAfterVolley,
+            eventAttackShotDetail.targetHealthAfter,
+            false,
+            '',
+            mapId
+          )
+        );
+
+        if (eventAttackShotDetail.targetDestroyed) {
+          this.gameState.animationEventQueue.enqueue(
+            this.animationEventFactory.makeDestroyAnimationEvent(
+              eventAttackShotDetail.targetStructId,
+              eventAttackShotDetail.targetStructOperatingAmbit,
+              eventAttackShotDetail.targetStructLocationType,
+              mapId
+            )
+          );
+        }
       }
     }
 
@@ -831,7 +870,7 @@ export class StructListener extends AbstractGrassListener {
           || this.gameState.actionBarLock.getCurrentAction() === STRUCT_ACTIONS.ATTACK_SECONDARY_WEAPON)
         && this.gameState.actionBarLock.isLocked()
       ) {
-        this.gameState.actionBarLock.clear();
+        this.gameState.actionBarLock.clearFromNotification();
       }
     });
   }

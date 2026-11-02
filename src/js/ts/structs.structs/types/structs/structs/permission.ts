@@ -11,18 +11,18 @@ export const protobufPackage = "structs.structs";
 
 export interface PermissionRecord {
   permissionId: string;
-  value: number;
+  value: string;
 }
 
 export interface GuildRankPermissionRecord {
   objectId: string;
   guildId: string;
-  permissions: number;
-  rank: number;
+  permissions: string;
+  rank: string;
 }
 
 function createBasePermissionRecord(): PermissionRecord {
-  return { permissionId: "", value: 0 };
+  return { permissionId: "", value: "0" };
 }
 
 export const PermissionRecord: MessageFns<PermissionRecord> = {
@@ -30,7 +30,7 @@ export const PermissionRecord: MessageFns<PermissionRecord> = {
     if (message.permissionId !== "") {
       writer.uint32(10).string(message.permissionId);
     }
-    if (message.value !== 0) {
+    if (message.value !== "0") {
       writer.uint32(16).uint64(message.value);
     }
     return writer;
@@ -56,7 +56,7 @@ export const PermissionRecord: MessageFns<PermissionRecord> = {
             break;
           }
 
-          message.value = longToNumber(reader.uint64());
+          message.value = reader.uint64().toString();
           continue;
         }
       }
@@ -71,7 +71,7 @@ export const PermissionRecord: MessageFns<PermissionRecord> = {
   fromJSON(object: any): PermissionRecord {
     return {
       permissionId: isSet(object.permissionId) ? globalThis.String(object.permissionId) : "",
-      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+      value: isSet(object.value) ? globalThis.String(object.value) : "0",
     };
   },
 
@@ -80,8 +80,8 @@ export const PermissionRecord: MessageFns<PermissionRecord> = {
     if (message.permissionId !== "") {
       obj.permissionId = message.permissionId;
     }
-    if (message.value !== 0) {
-      obj.value = Math.round(message.value);
+    if (message.value !== "0") {
+      obj.value = message.value;
     }
     return obj;
   },
@@ -92,13 +92,13 @@ export const PermissionRecord: MessageFns<PermissionRecord> = {
   fromPartial<I extends Exact<DeepPartial<PermissionRecord>, I>>(object: I): PermissionRecord {
     const message = createBasePermissionRecord();
     message.permissionId = object.permissionId ?? "";
-    message.value = object.value ?? 0;
+    message.value = object.value ?? "0";
     return message;
   },
 };
 
 function createBaseGuildRankPermissionRecord(): GuildRankPermissionRecord {
-  return { objectId: "", guildId: "", permissions: 0, rank: 0 };
+  return { objectId: "", guildId: "", permissions: "0", rank: "0" };
 }
 
 export const GuildRankPermissionRecord: MessageFns<GuildRankPermissionRecord> = {
@@ -109,10 +109,10 @@ export const GuildRankPermissionRecord: MessageFns<GuildRankPermissionRecord> = 
     if (message.guildId !== "") {
       writer.uint32(18).string(message.guildId);
     }
-    if (message.permissions !== 0) {
+    if (message.permissions !== "0") {
       writer.uint32(24).uint64(message.permissions);
     }
-    if (message.rank !== 0) {
+    if (message.rank !== "0") {
       writer.uint32(32).uint64(message.rank);
     }
     return writer;
@@ -146,7 +146,7 @@ export const GuildRankPermissionRecord: MessageFns<GuildRankPermissionRecord> = 
             break;
           }
 
-          message.permissions = longToNumber(reader.uint64());
+          message.permissions = reader.uint64().toString();
           continue;
         }
         case 4: {
@@ -154,7 +154,7 @@ export const GuildRankPermissionRecord: MessageFns<GuildRankPermissionRecord> = 
             break;
           }
 
-          message.rank = longToNumber(reader.uint64());
+          message.rank = reader.uint64().toString();
           continue;
         }
       }
@@ -170,8 +170,8 @@ export const GuildRankPermissionRecord: MessageFns<GuildRankPermissionRecord> = 
     return {
       objectId: isSet(object.objectId) ? globalThis.String(object.objectId) : "",
       guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
-      permissions: isSet(object.permissions) ? globalThis.Number(object.permissions) : 0,
-      rank: isSet(object.rank) ? globalThis.Number(object.rank) : 0,
+      permissions: isSet(object.permissions) ? globalThis.String(object.permissions) : "0",
+      rank: isSet(object.rank) ? globalThis.String(object.rank) : "0",
     };
   },
 
@@ -183,11 +183,11 @@ export const GuildRankPermissionRecord: MessageFns<GuildRankPermissionRecord> = 
     if (message.guildId !== "") {
       obj.guildId = message.guildId;
     }
-    if (message.permissions !== 0) {
-      obj.permissions = Math.round(message.permissions);
+    if (message.permissions !== "0") {
+      obj.permissions = message.permissions;
     }
-    if (message.rank !== 0) {
-      obj.rank = Math.round(message.rank);
+    if (message.rank !== "0") {
+      obj.rank = message.rank;
     }
     return obj;
   },
@@ -199,8 +199,8 @@ export const GuildRankPermissionRecord: MessageFns<GuildRankPermissionRecord> = 
     const message = createBaseGuildRankPermissionRecord();
     message.objectId = object.objectId ?? "";
     message.guildId = object.guildId ?? "";
-    message.permissions = object.permissions ?? 0;
-    message.rank = object.rank ?? 0;
+    message.permissions = object.permissions ?? "0";
+    message.rank = object.rank ?? "0";
     return message;
   },
 };
@@ -216,17 +216,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

@@ -33,6 +33,13 @@ export class SimulatedSigningClientManager extends SigningClientManager {
     // dropped straight away, releasing whatever action the UI was waiting on.
     this.queue.enqueueAction = () => null;
     this.queue.enqueueImmediate = () => null;
+    this.queue.enqueueGameplayAction = () => null;
+    this.queue.enqueueGameplayImmediate = () => null;
+    this.queue.enqueueTransfer = () => null;
+    this.queue.enqueueReactor = () => null;
+    this.queue.enqueueGenerator = () => null;
+    // Simulated play never reads saved signing state.
+    this.queue.savedStateError = () => null;
     this.queue.whenSettled = () => {
       this.gameState.actionBarLock.clear();
       return Promise.resolve({status: TX_STATUS.DROPPED});
