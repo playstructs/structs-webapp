@@ -342,7 +342,7 @@ async function startApplication() {
     if (!loggedIn) throw new AuthenticationError('Saved session was rejected',401);
     startupRecovery.assertCurrent();
     MenuPage.close();
-    if (!returningFromTutorial) {
+    if (!returningFromTutorial && !TutorialMode.offerIfUndecided()) {
       MenuPage.router.restore('Fleet', 'index');
     }
     MenuPage.hideLoadingScreen();

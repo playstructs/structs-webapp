@@ -1,5 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
+import {TutorialMode} from "../../tutorial/TutorialMode";
 
 export class RecoverAccountSuccessViewModel extends AbstractViewModel {
 
@@ -10,7 +11,9 @@ export class RecoverAccountSuccessViewModel extends AbstractViewModel {
 
   initPageCode() {
     document.getElementById(this.playStructsBtnId).addEventListener('click', () => {
-      MenuPage.close();
+      if (!TutorialMode.offerIfUndecided()) {
+        MenuPage.close();
+      }
     });
   }
 

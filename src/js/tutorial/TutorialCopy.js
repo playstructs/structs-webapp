@@ -56,8 +56,7 @@ export const TUTORIAL_COPY = {
   CMD_SHIP_UNPROTECTED: `Your CMD Ship was unprotected, allowing the Raiders to easily Destroy it. Assign ${hl('Defenders')} to protect important Structs.`,
   SELECT_INDICATED_TANK: `First, select the Tank.`,
   DEFEND_SAM_LAUNCHER: `When you have enough Battery Charge, assign the Tank to ${hl('Defend')} your SAM Launcher. You can ${hint('Inspect', 'Press-and-Hold most elements to reveal more information about them.')} an ability to see its Battery Cost.`,
-  // Icons as drawn in the design frame for this line.
-  DEFENDED_AND_DEFENDERS: `Good. Structs with the ${icon('icon-defending')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defended')} icon are ${hl('Defenders')}.`,
+  DEFENDED_AND_DEFENDERS: `Good. Structs with the ${icon('icon-defended')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defending')} icon are ${hl('Defenders')}.`,
   CMD_SHIP_TAKES_TIME: `Your new CMD Ship will take time to arrive. You will need to engage the enemy in the meantime.`,
 
   DESTROY_ENEMY_CMD_SHIP: `Destroying the ${hl('enemy CMD Ship')} will force the raiders to retreat.`,
