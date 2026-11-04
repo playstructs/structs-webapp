@@ -21,6 +21,16 @@ export class TutorialMode {
 
   static EXIT_ABANDONED = 'abandoned';
 
+  /** Finished by a player replaying it from the Account menu. */
+  static EXIT_REPLAYED = 'replayed';
+
+  static REPLAY_KEY = 'tutorialReplay';
+
+  /** These two live in localStorage: they outlast the tab, unlike the flags above. */
+  static STARTED_KEY = 'tutorialStarted';
+
+  static SKIPPED_KEY = 'tutorialSkipped';
+
   static PLAYER_ENERGY_KEY = 'tutorialPlayerEnergy';
 
   /** The player's energy figures; the simulation shows these instead of made-up ones. */
@@ -37,12 +47,58 @@ export class TutorialMode {
     return urlParams.has('tutorial') || sessionStorage.getItem(TutorialMode.ACTIVE_KEY) === '1';
   }
 
-  static launch() {
+  /**
+   * @param {boolean} isReplay whether an existing player is replaying it from the Account menu
+   */
+  static launch(isReplay = false) {
     onboardingTelemetry.flushNow();
     TutorialMode.rememberPlayerEnergy(global.gameState?.keyPlayers?.player?.player);
     sessionStorage.setItem(TutorialMode.ACTIVE_KEY, '1');
     sessionStorage.removeItem(TutorialMode.EXITED_KEY);
+    if (isReplay) {
+      sessionStorage.setItem(TutorialMode.REPLAY_KEY, '1');
+    } else {
+      sessionStorage.removeItem(TutorialMode.REPLAY_KEY);
+    }
     window.location.reload();
+  }
+
+  /**
+   * @return {boolean}
+   */
+  static isReplay() {
+    return sessionStorage.getItem(TutorialMode.REPLAY_KEY) === '1';
+  }
+
+  static markStarted() {
+    localStorage.setItem(TutorialMode.STARTED_KEY, '1');
+  }
+
+  static markSkipped() {
+    localStorage.setItem(TutorialMode.SKIPPED_KEY, '1');
+  }
+
+  /**
+   * @return {boolean} whether this browser has neither started nor skipped the tutorial
+   */
+  static isUndecided() {
+    return localStorage.getItem(TutorialMode.STARTED_KEY) === null
+      && localStorage.getItem(TutorialMode.SKIPPED_KEY) === null;
+  }
+
+  /**
+   * Offers the tutorial to a logged-in player who has neither started nor
+   * skipped it.
+   *
+   * @return {boolean} whether the offer was opened
+   */
+  static offerIfUndecided() {
+    if (!TutorialMode.isUndecided()) {
+      return false;
+    }
+    MenuPage.router.goto('Auth', 'orientationEnd');
+    MenuPage.open();
+    return true;
   }
 
   /**
@@ -62,12 +118,13 @@ export class TutorialMode {
   }
 
   /**
-   * @param {string} how TutorialMode.EXIT_COMPLETED or TutorialMode.EXIT_ABANDONED
+   * @param {string} how one of the TutorialMode.EXIT_ values
    */
   static exit(how) {
     onboardingTelemetry.flushNow();
     sessionStorage.removeItem(TutorialMode.ACTIVE_KEY);
     sessionStorage.removeItem(TutorialMode.PLAYER_ENERGY_KEY);
+    sessionStorage.removeItem(TutorialMode.REPLAY_KEY);
     sessionStorage.setItem(TutorialMode.EXITED_KEY, how);
 
     const url = new URL(window.location.href);
@@ -108,7 +165,7 @@ export class TutorialMode {
    * Whether this page load is the return from the tutorial, and how it was
    * left. Reading it clears it, so only the first boot after the tutorial sees it.
    *
-   * @return {string|null} TutorialMode.EXIT_COMPLETED, TutorialMode.EXIT_ABANDONED or null
+   * @return {string|null} one of the TutorialMode.EXIT_ values, or null
    */
   static consumeExited() {
     const exited = sessionStorage.getItem(TutorialMode.EXITED_KEY);

@@ -30,7 +30,7 @@ export class AccountStartTutorialViewModel extends AbstractViewModel {
 
     view.initPageCode = () => {
       document.getElementById(view.confirmBtn1Id).addEventListener('click', () => {
-        TutorialMode.launch();
+        TutorialMode.launch(true);
       });
       document.getElementById(view.confirmBtn2Id).addEventListener('click', () => {
         MenuPage.router.goto('Account', 'index');
