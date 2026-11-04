@@ -52,6 +52,8 @@ export class TutorialController extends AbstractController {
   }
 
   loading() {
+    TutorialMode.markStarted();
+
     const viewModel = new TutorialStatusViewModel('Loading...', TUTORIAL_COPY.SIMULATION_LOADING);
     viewModel.render();
 
@@ -161,7 +163,13 @@ export class TutorialController extends AbstractController {
       onboardingTelemetry.reached(['tutorial.end.completed', 'tutorial.end.certified'][hrBotTalkingTemplate.dialogueIndex]);
     };
     hrBotTalkingTemplate.actionOnSequenceEnd = () => {
-      MenuPage.router.goto('Tutorial', 'ftlJump');
+      // The FTL jump bridges new players into the game; someone replaying
+      // the tutorial is already there.
+      if (TutorialMode.isReplay()) {
+        TutorialMode.exit(TutorialMode.EXIT_REPLAYED);
+      } else {
+        MenuPage.router.goto('Tutorial', 'ftlJump');
+      }
     };
     hrBotTalkingTemplate.render();
     MenuPage.open();

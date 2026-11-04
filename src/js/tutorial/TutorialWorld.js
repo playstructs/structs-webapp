@@ -39,6 +39,9 @@ export const TUTORIAL_IDS = {
   ENEMY_TANK: '5-90102',
 };
 
+/** The breach time the raid opens with; the Director runs it down from here. */
+export const TUTORIAL_BREACH_TIME = '30m';
+
 /** See TutorialWorld.destroyStruct. */
 const WRECK_SWEEP_DEFERRAL_BLOCKS = 100000;
 
@@ -396,6 +399,7 @@ export class TutorialWorld {
         : '';
       window.dispatchEvent(new ShieldHealthChangedEvent(keyPlayer.playerType));
     };
+    keyPlayer.getProjectedShieldBreachTime = () => this.breachCountdown || TUTORIAL_BREACH_TIME;
 
     this.gameState.currentBlockHeight = this.blockHeight;
     this.gameState.setStructTypes(this.structTypes);

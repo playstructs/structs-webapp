@@ -25,6 +25,7 @@ import {Orientation7ViewModel} from "../view_models/signup/Orientation7ViewModel
 import {Orientation8ViewModel} from "../view_models/signup/Orientation8ViewModel";
 import {OrientationEndViewModel} from "../view_models/signup/OrientationEndViewModel";
 import {TutorialConfirmViewModel} from "../view_models/tutorial/TutorialConfirmViewModel";
+import {TutorialMode} from "../tutorial/TutorialMode";
 import {onboardingTelemetry} from "../telemetry/OnboardingTelemetry";
 import {ActivateDeviceViewModel} from "../view_models/login/ActivateDeviceViewModel";
 import {ActivateDeviceVerifyViewModel} from "../view_models/login/ActivateDeviceVerifyViewModel";
@@ -215,6 +216,7 @@ export class AuthController extends AbstractController {
       'sui-mod-destructive',
       () => {
         onboardingTelemetry.skipped('orientation.tutorial_offer');
+        TutorialMode.markSkipped();
         MenuPage.close();
       },
       () => MenuPage.router.goto('Auth', 'orientationEnd'),

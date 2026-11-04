@@ -11,6 +11,7 @@ import {TargetSelectedIndicatorTest} from "./TargetSelectedIndicatorTest";
 import {DeployCheatsheetTest} from "./DeployCheatsheetTest";
 import {InvalidTargetClickTest} from "./InvalidTargetClickTest";
 import {ManageAlphaInfusedTest} from "./ManageAlphaInfusedTest";
+import {TutorialModeTest} from "./TutorialModeTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -24,5 +25,6 @@ import {ManageAlphaInfusedTest} from "./ManageAlphaInfusedTest";
 (new DeployCheatsheetTest()).run();
 (new InvalidTargetClickTest()).run();
 (new ManageAlphaInfusedTest()).run();
+(new TutorialModeTest()).run();
 
 (new APIReadinessTest()).run();

@@ -1,6 +1,6 @@
 import {TutorialDialogue, TUTORIAL_DIALOGUE_POSITIONS, TUTORIAL_MENU_PORTRAIT_ID} from "./TutorialDialogue";
 import {TutorialPointer, TUTORIAL_POINTER_DIRECTIONS} from "./TutorialPointer";
-import {TUTORIAL_IDS} from "./TutorialWorld";
+import {TUTORIAL_BREACH_TIME, TUTORIAL_IDS} from "./TutorialWorld";
 import {TUTORIAL_COPY} from "./TutorialCopy";
 import {HUDViewModel} from "../view_models/HUDViewModel";
 import {EVENTS} from "../constants/Events";
@@ -522,7 +522,7 @@ export class TutorialDirector {
       await this.pause(600);
       this.world.raiderOpeningStrike();
       await this.waitForCombatToSettle();
-      this.world.setBreachCountdown('30m');
+      this.world.setBreachCountdown(TUTORIAL_BREACH_TIME);
     });
 
     await this.say('tutorial.raid.cmd_ship_destroyed', C.CMD_SHIP_DESTROYED, BOTTOM, this.find(SELECTORS.SHIELD_STATUS), UP);

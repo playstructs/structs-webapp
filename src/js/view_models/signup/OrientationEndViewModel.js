@@ -69,6 +69,9 @@ export class OrientationEndViewModel extends AbstractViewModel {
     </div>
     `);
 
+    // Not every way here leaves the panel showing: the offer also opens at
+    // login, and on Cancel from the skip confirmation.
+    MenuPage.showDialoguePanel();
     MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
     MenuPage.setDialogueScreenContent(
       `Due to increased pirate activity in the frontier regions, SN.CORP recommends all new employees undergo Combat Training.`

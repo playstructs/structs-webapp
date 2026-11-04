@@ -356,7 +356,7 @@ async function startApplication() {
       return;
     }
     MenuPage.close();
-    if (!returningFromTutorial) {
+    if (!returningFromTutorial && !TutorialMode.offerIfUndecided()) {
       MenuPage.router.restore('Fleet', 'index');
     }
     MenuPage.hideLoadingScreen();
