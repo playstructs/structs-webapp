@@ -3,6 +3,7 @@
 namespace App\Manager;
 
 use App\Constant\ApiParameters;
+use App\Constant\PaginationLimits;
 use App\Constant\RegexPattern;
 use App\Dto\ApiResponseContentDto;
 use App\Trait\ApiSqlQueryTrait;
@@ -28,17 +29,35 @@ class OnboardingManager
 {
     use ApiSqlQueryTrait;
 
-    /** First tutorial step; a skipped row here is Skip Tutorial. */
+    /** Where signup finishes and a new player first has an id. */
+    public const string SIGNUP_STEP_KEY = 'signup.employee_record';
+
+    /**
+     * First tutorial step; a skipped row here is Skip Tutorial. After signup it
+     * is only recorded once the player takes the tutorial.
+     */
     public const string OFFER_STEP_KEY = 'orientation.tutorial_offer';
+
+    /** The tutorial has started. First step of a replay. */
+    public const string START_STEP_KEY = 'tutorial.loading';
 
     /**
      * The steps whose reached row may carry a player id: where signup finishes,
      * and the offer, which a later session reaches without passing through signup.
      */
-    public const array PLAYER_STEP_KEYS = ['signup.employee_record', self::OFFER_STEP_KEY];
+    public const array PLAYER_STEP_KEYS = [self::SIGNUP_STEP_KEY, self::OFFER_STEP_KEY];
+
+    /** The same, for a replay, which has no offer. */
+    public const array REPLAY_PLAYER_STEP_KEYS = [self::START_STEP_KEY];
+
+    /** Last step of a replay. */
+    public const string CERTIFIED_STEP_KEY = 'tutorial.end.certified';
 
     /** Last tutorial step, recorded once the player lands in the real game. */
     public const string FTL_STEP_KEY = 'tutorial.end.ftl_jump';
+
+    /** A design's replays, from the Account menu, are recorded as this version of it. */
+    public const string REPLAY_SUFFIX = '-replay';
 
     public const string KIND_REACHED = 'reached';
 
@@ -53,6 +72,79 @@ class OnboardingManager
 
     /** Hours without a new event before a session counts as stopped, when idle_hours is omitted. */
     public const int DEFAULT_IDLE_HOURS = 24;
+
+    /**
+     * Each session with who it belongs to and, if the tutorial started in it,
+     * which of that player's runs it was. Runs are numbered before any filter and
+     * across designs, so a filtered report keeps the same numbers. A session with
+     * no player id, such as one left during signup, belongs to its browser.
+     */
+    private const string SESSION_RUNS = "
+        WITH session_facts AS (
+          SELECT
+            s.session_id,
+            s.browser_id,
+            s.interface_name,
+            s.guild_id,
+            s.content_version,
+            min(p.player_id) AS player_id,
+            coalesce(min(p.player_id), s.browser_id::TEXT) AS person,
+            bool_or(p.step_key = :signup_step_key AND p.kind = :reached) AS signed_up,
+            bool_or(p.step_key = :offer_step_key AND p.kind = :reached) AS offered,
+            bool_or(p.step_key = :offer_step_key AND p.kind = :skipped) AS declined,
+            min(p.recorded_at) FILTER (WHERE p.step_key = :start_step_key AND p.kind = :reached) AS started_at,
+            bool_or(p.kind = :reached AND (
+              p.step_key = :ftl_step_key
+              OR (p.step_key = :certified_step_key AND s.content_version LIKE '%" . self::REPLAY_SUFFIX . "')
+            )) AS completed,
+            count(*) FILTER (WHERE p.kind = :reached AND p.step_key LIKE 'tutorial.%') AS steps_reached,
+            max(p.recorded_at) AS last_event_at
+          FROM onboarding_session s
+          INNER JOIN onboarding_progress p ON p.session_id = s.session_id
+          GROUP BY s.session_id
+        ),
+        runs AS (
+          SELECT
+            f.*,
+            f.started_at IS NOT NULL AS started,
+            f.last_event_at < now() - make_interval(hours => CAST(:idle_hours AS INTEGER)) AS idle,
+            f.player_id IS NULL OR bool_or(f.signed_up) OVER (PARTITION BY f.person) AS new_player,
+            CASE WHEN f.started_at IS NOT NULL THEN row_number() OVER person_runs END AS run_number,
+            CASE WHEN f.started_at IS NOT NULL THEN lag(f.started_at) OVER person_runs END AS previous_run_at
+          FROM session_facts f
+          WINDOW person_runs AS (PARTITION BY f.person ORDER BY f.started_at NULLS LAST, f.session_id)
+        )
+    ";
+
+    /** The filters every report takes, on a row of runs named r. */
+    private const string REPORT_FILTERS = "
+        AND (CAST(:interface_name AS VARCHAR) IS NULL OR r.interface_name = :interface_name)
+        AND (CAST(:guild_id AS VARCHAR) IS NULL OR r.guild_id = :guild_id)
+        AND (CAST(:player_type AS VARCHAR) IS NULL OR r.new_player = (CAST(:player_type AS VARCHAR) = 'new'))
+    ";
+
+    /** first keeps a player's first run and any offer not taken; repeat keeps the runs after it. */
+    private const string RUN_FILTER = "
+        AND (
+          CAST(:run AS VARCHAR) IS NULL
+          OR (CAST(:run AS VARCHAR) = 'first' AND coalesce(r.run_number, 1) = 1)
+          OR (CAST(:run AS VARCHAR) = 'repeat' AND r.run_number > 1)
+        )
+    ";
+
+    /** A design and its replays: one tutorial, however the player reached it. */
+    private const string TUTORIAL_VERSIONS = 'r.content_version IN (:content_version, :replay_version)';
+
+    /** One outcome from the completed, started, declined and idle columns of a session or player. */
+    private const string OUTCOME = "
+        CASE
+          WHEN completed THEN 'completed'
+          WHEN declined AND NOT started THEN 'declined'
+          WHEN NOT idle THEN 'in_progress'
+          WHEN started THEN 'left_during_tutorial'
+          ELSE 'left_at_offer'
+        END
+    ";
 
     public EntityManagerInterface $entityManager;
 
@@ -112,15 +204,16 @@ class OnboardingManager
         string $phase,
         ?string $interface_name,
         ?string $guild_id,
-        ?string $idle_hours
+        ?string $idle_hours,
+        ?string $run = null,
+        ?string $player_type = null
     ): Response {
-        $query = '
-            WITH sessions AS (
-              SELECT s.session_id
-              FROM onboarding_session s
-              WHERE s.content_version = :content_version
-                AND (CAST(:interface_name AS VARCHAR) IS NULL OR s.interface_name = :interface_name)
-                AND (CAST(:guild_id AS VARCHAR) IS NULL OR s.guild_id = :guild_id)
+        $query = self::SESSION_RUNS . ',
+            sessions AS (
+              SELECT r.session_id
+              FROM runs r
+              WHERE r.content_version = :content_version
+              ' . self::REPORT_FILTERS . self::RUN_FILTER . '
             ),
             idle AS (
               SELECT p.session_id
@@ -191,13 +284,16 @@ class OnboardingManager
             ApiParameters::INTERFACE_NAME => $interface_name,
             ApiParameters::GUILD_ID => $guild_id,
             ApiParameters::IDLE_HOURS => $idle_hours,
+            ApiParameters::RUN => $run,
+            ApiParameters::PLAYER_TYPE => $player_type,
         ], [ApiParameters::CONTENT_VERSION, ApiParameters::PHASE], true);
     }
 
     /**
-     * Tutorial outcome among sessions that reached the tutorial offer:
-     * completed (landed in the game after the FTL jump), declined (Skip
-     * Tutorial), left (idle without either), and in progress (the rest).
+     * Tutorial outcome per session, among sessions that reached the offer or
+     * started the tutorial: completed (landed in the game after the FTL jump, or
+     * finished a replay), declined (Skip Tutorial), left at the offer or during
+     * the tutorial (idle without either), and in progress (the rest).
      *
      * @throws Exception
      */
@@ -205,40 +301,26 @@ class OnboardingManager
         string $content_version,
         ?string $interface_name,
         ?string $guild_id,
-        ?string $idle_hours
+        ?string $idle_hours,
+        ?string $run = null,
+        ?string $player_type = null
     ): Response {
-        $query = '
-            WITH offered AS (
-              SELECT
-                s.session_id,
-                EXISTS (
-                  SELECT 1 FROM onboarding_progress p
-                  WHERE p.session_id = s.session_id
-                    AND p.step_key = :ftl_step_key AND p.kind = :reached
-                ) AS completed,
-                EXISTS (
-                  SELECT 1 FROM onboarding_progress p
-                  WHERE p.session_id = s.session_id
-                    AND p.step_key = :offer_step_key AND p.kind = :skipped
-                ) AS declined,
-                (
-                  SELECT max(p.recorded_at) FROM onboarding_progress p WHERE p.session_id = s.session_id
-                ) < now() - make_interval(hours => CAST(:idle_hours AS INTEGER)) AS idle
-              FROM onboarding_session s
-              INNER JOIN onboarding_progress o
-                ON o.session_id = s.session_id
-                AND o.step_key = :offer_step_key
-                AND o.kind = :reached
-              WHERE s.content_version = :content_version
-                AND (CAST(:interface_name AS VARCHAR) IS NULL OR s.interface_name = :interface_name)
-                AND (CAST(:guild_id AS VARCHAR) IS NULL OR s.guild_id = :guild_id)
+        $query = self::SESSION_RUNS . ',
+            offered AS (
+              SELECT r.started, ' . self::OUTCOME . ' AS outcome
+              FROM runs r
+              WHERE (r.offered OR r.started)
+                AND r.content_version = :content_version
+              ' . self::REPORT_FILTERS . self::RUN_FILTER . '
             )
             SELECT
               count(*) AS offered,
-              count(*) FILTER (WHERE completed) AS completed,
-              count(*) FILTER (WHERE declined AND NOT completed) AS declined,
-              count(*) FILTER (WHERE NOT completed AND NOT declined AND idle) AS left_during_tutorial,
-              count(*) FILTER (WHERE NOT completed AND NOT declined AND NOT idle) AS in_progress
+              count(*) FILTER (WHERE started) AS started,
+              count(*) FILTER (WHERE outcome = \'completed\') AS completed,
+              count(*) FILTER (WHERE outcome = \'declined\') AS declined,
+              count(*) FILTER (WHERE outcome = \'left_at_offer\') AS left_at_offer,
+              count(*) FILTER (WHERE outcome = \'left_during_tutorial\') AS left_during_tutorial,
+              count(*) FILTER (WHERE outcome = \'in_progress\') AS in_progress
             FROM offered
         ';
 
@@ -247,14 +329,252 @@ class OnboardingManager
             ApiParameters::INTERFACE_NAME => $interface_name,
             ApiParameters::GUILD_ID => $guild_id,
             ApiParameters::IDLE_HOURS => $idle_hours,
+            ApiParameters::RUN => $run,
+            ApiParameters::PLAYER_TYPE => $player_type,
         ], [ApiParameters::CONTENT_VERSION], false);
+    }
+
+    /**
+     * The tutorial by unique player, however many sessions each took and whether
+     * they came through the offer or the Account menu. A player's outcome is the
+     * best of their sessions, so one who left and came back to finish is completed.
+     *
+     * @throws Exception
+     */
+    public function getTutorialPlayers(
+        string $content_version,
+        ?string $interface_name,
+        ?string $guild_id,
+        ?string $idle_hours,
+        ?string $run = null,
+        ?string $player_type = null
+    ): Response {
+        $query = self::SESSION_RUNS . ',
+            players AS (
+              SELECT
+                r.person,
+                bool_or(r.new_player) AS new_player,
+                bool_or(r.completed) AS completed,
+                bool_or(r.started) AS started,
+                bool_or(r.declined) AS declined,
+                bool_and(r.idle) AS idle,
+                count(*) FILTER (WHERE r.started) AS runs
+              FROM runs r
+              WHERE (r.offered OR r.started)
+                AND ' . self::TUTORIAL_VERSIONS . self::REPORT_FILTERS . self::RUN_FILTER . '
+              GROUP BY r.person
+            ),
+            outcomes AS (
+              SELECT p.new_player, p.started, p.runs, ' . self::OUTCOME . ' AS outcome
+              FROM players p
+            )
+            SELECT
+              count(*) AS players,
+              count(*) FILTER (WHERE new_player) AS new_players,
+              count(*) FILTER (WHERE NOT new_player) AS existing_players,
+              count(*) FILTER (WHERE started) AS started,
+              count(*) FILTER (WHERE outcome = \'completed\') AS completed,
+              count(*) FILTER (WHERE outcome = \'declined\') AS declined,
+              count(*) FILTER (WHERE outcome = \'left_at_offer\') AS left_at_offer,
+              count(*) FILTER (WHERE outcome = \'left_during_tutorial\') AS left_during_tutorial,
+              count(*) FILTER (WHERE outcome = \'in_progress\') AS in_progress,
+              count(*) FILTER (WHERE runs > 1) AS revisited
+            FROM outcomes
+        ';
+
+        return $this->queryFiltered($query, [
+            ApiParameters::CONTENT_VERSION => $content_version,
+            ApiParameters::INTERFACE_NAME => $interface_name,
+            ApiParameters::GUILD_ID => $guild_id,
+            ApiParameters::IDLE_HOURS => $idle_hours,
+            ApiParameters::RUN => $run,
+            ApiParameters::PLAYER_TYPE => $player_type,
+        ], [ApiParameters::CONTENT_VERSION], false);
+    }
+
+    /**
+     * How far unique players got: per tutorial step, how many got at least that
+     * far in any session, how many got no further, and that share of everyone
+     * counted. Finishing a replay counts as reaching the last step.
+     *
+     * @throws Exception
+     */
+    public function getTutorialPlayerSteps(
+        string $content_version,
+        ?string $interface_name,
+        ?string $guild_id,
+        ?string $run = null,
+        ?string $player_type = null
+    ): Response {
+        $query = self::SESSION_RUNS . ',
+            steps AS (
+              SELECT os.step_order, os.step_key
+              FROM onboarding_step os
+              WHERE os.content_version = :content_version
+                AND os.phase = \'tutorial\'
+            ),
+            furthest AS (
+              SELECT
+                r.person,
+                CASE WHEN bool_or(r.completed) THEN (SELECT max(st.step_order) FROM steps st)
+                  ELSE max(st.step_order)
+                END AS step_order
+              FROM runs r
+              INNER JOIN onboarding_progress p ON p.session_id = r.session_id AND p.kind = :reached
+              INNER JOIN steps st ON st.step_key = p.step_key
+              WHERE ' . self::TUTORIAL_VERSIONS . self::REPORT_FILTERS . self::RUN_FILTER . '
+              GROUP BY r.person
+            )
+            SELECT
+              st.step_order,
+              st.step_key,
+              count(f.person) FILTER (WHERE f.step_order >= st.step_order) AS reached,
+              count(f.person) FILTER (WHERE f.step_order = st.step_order) AS furthest,
+              round(
+                count(f.person) FILTER (WHERE f.step_order >= st.step_order)::NUMERIC / NULLIF(count(f.person), 0),
+                4
+              ) AS retained_rate
+            FROM steps st
+            LEFT JOIN furthest f ON TRUE
+            GROUP BY st.step_order, st.step_key
+            ORDER BY st.step_order
+        ';
+
+        return $this->queryFiltered($query, [
+            ApiParameters::CONTENT_VERSION => $content_version,
+            ApiParameters::INTERFACE_NAME => $interface_name,
+            ApiParameters::GUILD_ID => $guild_id,
+            ApiParameters::RUN => $run,
+            ApiParameters::PLAYER_TYPE => $player_type,
+        ], [ApiParameters::CONTENT_VERSION], true);
+    }
+
+    /**
+     * Players' runs side by side: one row per run number, so first runs can be
+     * compared with second ones and so on. Times are medians.
+     *
+     * @throws Exception
+     */
+    public function getTutorialRunComparison(
+        string $content_version,
+        ?string $interface_name,
+        ?string $guild_id,
+        ?string $idle_hours,
+        ?string $player_type = null
+    ): Response {
+        $query = self::SESSION_RUNS . ',
+            compared AS (
+              SELECT
+                r.run_number,
+                r.completed,
+                r.steps_reached,
+                EXTRACT(EPOCH FROM r.last_event_at - r.started_at) / 60 AS minutes,
+                EXTRACT(EPOCH FROM r.started_at - r.previous_run_at) / 3600 AS hours_since_previous_run,
+                ' . self::OUTCOME . ' AS outcome
+              FROM runs r
+              WHERE r.started
+                AND ' . self::TUTORIAL_VERSIONS . self::REPORT_FILTERS . '
+            )
+            SELECT
+              run_number,
+              count(*) AS runs,
+              count(*) FILTER (WHERE outcome = \'completed\') AS completed,
+              count(*) FILTER (WHERE outcome = \'left_during_tutorial\') AS left_during_tutorial,
+              count(*) FILTER (WHERE outcome = \'in_progress\') AS in_progress,
+              round(count(*) FILTER (WHERE outcome = \'completed\')::NUMERIC / count(*), 4) AS completion_rate,
+              percentile_cont(0.5) WITHIN GROUP (ORDER BY steps_reached) AS median_steps_reached,
+              round((percentile_cont(0.5) WITHIN GROUP (ORDER BY minutes) FILTER (WHERE completed))::NUMERIC, 1)
+                AS median_minutes_to_complete,
+              round((percentile_cont(0.5) WITHIN GROUP (ORDER BY hours_since_previous_run))::NUMERIC, 1)
+                AS median_hours_since_previous_run
+            FROM compared
+            GROUP BY run_number
+            ORDER BY run_number
+        ';
+
+        return $this->queryFiltered($query, [
+            ApiParameters::CONTENT_VERSION => $content_version,
+            ApiParameters::INTERFACE_NAME => $interface_name,
+            ApiParameters::GUILD_ID => $guild_id,
+            ApiParameters::IDLE_HOURS => $idle_hours,
+            ApiParameters::PLAYER_TYPE => $player_type,
+        ], [ApiParameters::CONTENT_VERSION], true);
+    }
+
+    /**
+     * Every tutorial run, newest first: when each player came back and how far
+     * that run got. With player_id it is one player's history; with run=repeat,
+     * the revisits.
+     *
+     * @throws Exception
+     */
+    public function getTutorialRuns(
+        string $content_version,
+        ?string $interface_name,
+        ?string $guild_id,
+        ?string $idle_hours,
+        ?string $run,
+        ?string $player_type,
+        ?string $player_id,
+        int $page
+    ): Response {
+        $limit = PaginationLimits::DEFAULT;
+        $offset = (max(1, $page) - 1) * $limit;
+
+        $query = self::SESSION_RUNS . '
+            SELECT
+              r.session_id,
+              r.content_version,
+              r.interface_name,
+              r.player_id,
+              r.new_player,
+              r.run_number,
+              r.started_at,
+              r.last_event_at,
+              r.previous_run_at,
+              round((EXTRACT(EPOCH FROM r.started_at - r.previous_run_at) / 3600)::NUMERIC, 1) AS hours_since_previous_run,
+              round((EXTRACT(EPOCH FROM r.last_event_at - r.started_at) / 60)::NUMERIC, 1) AS minutes,
+              r.steps_reached,
+              last_step.step_key AS furthest_step_key,
+              ' . self::OUTCOME . ' AS outcome
+            FROM runs r
+            LEFT JOIN LATERAL (
+              SELECT os.step_key
+              FROM onboarding_progress p
+              INNER JOIN onboarding_step os
+                ON os.content_version = r.content_version
+                AND os.step_key = p.step_key
+              WHERE p.session_id = r.session_id
+                AND p.kind = :reached
+                AND os.phase = \'tutorial\'
+              ORDER BY os.step_order DESC
+              LIMIT 1
+            ) last_step ON TRUE
+            WHERE r.started
+              AND ' . self::TUTORIAL_VERSIONS . self::REPORT_FILTERS . self::RUN_FILTER . '
+              AND (CAST(:player_id AS VARCHAR) IS NULL OR r.player_id = :player_id)
+            ORDER BY r.started_at DESC, r.session_id
+            LIMIT ' . $limit . '
+            OFFSET :offset
+        ';
+
+        return $this->queryFiltered($query, [
+            ApiParameters::CONTENT_VERSION => $content_version,
+            ApiParameters::INTERFACE_NAME => $interface_name,
+            ApiParameters::GUILD_ID => $guild_id,
+            ApiParameters::IDLE_HOURS => $idle_hours,
+            ApiParameters::RUN => $run,
+            ApiParameters::PLAYER_TYPE => $player_type,
+            ApiParameters::PLAYER_ID => $player_id,
+            ApiParameters::OFFSET => $offset,
+        ], [ApiParameters::CONTENT_VERSION], true);
     }
 
     /**
      * One player's onboarding: every event of each session linked to them, in
      * order. That is the session in which their signup finished, and any later
-     * session in which they were offered the tutorial. Players who signed up
-     * before this telemetry, or elsewhere, may have none.
+     * tutorial run. Runs repeat steps, so read it by session_id. Players who
+     * signed up before this telemetry, or elsewhere, may have none.
      *
      * @throws Exception
      */
@@ -315,8 +635,12 @@ class OnboardingManager
         $queryParams = $params + [
             'reached' => self::KIND_REACHED,
             'skipped' => self::KIND_SKIPPED,
+            'signup_step_key' => self::SIGNUP_STEP_KEY,
             'offer_step_key' => self::OFFER_STEP_KEY,
+            'start_step_key' => self::START_STEP_KEY,
+            'certified_step_key' => self::CERTIFIED_STEP_KEY,
             'ftl_step_key' => self::FTL_STEP_KEY,
+            'replay_version' => $params[ApiParameters::CONTENT_VERSION] . self::REPLAY_SUFFIX,
         ];
         $queryParams[ApiParameters::IDLE_HOURS] = (int) ($params[ApiParameters::IDLE_HOURS] ?? self::DEFAULT_IDLE_HOURS);
 
@@ -449,17 +773,23 @@ class OnboardingManager
             return $errors;
         }
 
+        $contentVersion = $content[ApiParameters::CONTENT_VERSION] ?? null;
+        $playerStepKeys = is_string($contentVersion) && str_ends_with($contentVersion, self::REPLAY_SUFFIX)
+            ? self::REPLAY_PLAYER_STEP_KEYS
+            : self::PLAYER_STEP_KEYS;
+
         foreach ($events as $index => $event) {
-            $errors += $this->validateEvent($event, $index);
+            $errors += $this->validateEvent($event, $index, $playerStepKeys);
         }
 
         return $errors;
     }
 
     /**
+     * @param string[] $playerStepKeys the steps of this session that may carry a player id
      * @return array<string, string>
      */
-    private function validateEvent(mixed $event, int $index): array
+    private function validateEvent(mixed $event, int $index, array $playerStepKeys): array
     {
         $prefix = ApiParameters::EVENTS . ".$index";
 
@@ -481,8 +811,8 @@ class OnboardingManager
         }
 
         if ($playerId !== null) {
-            if (!in_array($stepKey, self::PLAYER_STEP_KEYS, true) || $kind !== self::KIND_REACHED) {
-                $errors["$prefix.player_id"] = "$prefix.player_id is only accepted on the reached " . implode(' or ', self::PLAYER_STEP_KEYS) . ' event';
+            if (!in_array($stepKey, $playerStepKeys, true) || $kind !== self::KIND_REACHED) {
+                $errors["$prefix.player_id"] = "$prefix.player_id is only accepted on the reached " . implode(' or ', $playerStepKeys) . ' event';
             } elseif (!$this->matches($playerId, RegexPattern::ID, self::MAX_NAME_LENGTH)) {
                 $errors["$prefix.player_id"] = "$prefix.player_id is not a valid player id";
             }

@@ -18,6 +18,12 @@ export const ONBOARDING_INTERFACE_NAME = 'structs-webapp';
  */
 export const ONBOARDING_CONTENT_VERSION = 'tutorial-4';
 
+/**
+ * Runs started from the Account menu, which have no offer or FTL jump. Has its
+ * own catalog, and is bumped with ONBOARDING_CONTENT_VERSION.
+ */
+export const ONBOARDING_REPLAY_CONTENT_VERSION = 'tutorial-4-replay';
+
 export const ONBOARDING_STEP_KINDS = {
   REACHED: 'reached',
   SKIPPED: 'skipped',
@@ -26,11 +32,18 @@ export const ONBOARDING_STEP_KINDS = {
 /** The step at which a new player first has an id. */
 export const ONBOARDING_PLAYER_STEP_KEY = 'signup.employee_record';
 
+const OFFER_STEP_KEY = 'orientation.tutorial_offer';
+
+const TUTORIAL_START_STEP_KEY = 'tutorial.loading';
+
 /**
- * The steps whose reached event carries the player id. The offer is here for
- * sessions that start after signup. Must match OnboardingManager::PLAYER_STEP_KEYS.
+ * The steps whose reached event carries the player id, by content version: where
+ * each kind of session first knows its player. Must match OnboardingManager.
  */
-const PLAYER_STEP_KEYS = [ONBOARDING_PLAYER_STEP_KEY, 'orientation.tutorial_offer'];
+const PLAYER_STEP_KEYS = {
+  [ONBOARDING_CONTENT_VERSION]: [ONBOARDING_PLAYER_STEP_KEY, OFFER_STEP_KEY],
+  [ONBOARDING_REPLAY_CONTENT_VERSION]: [TUTORIAL_START_STEP_KEY],
+};
 
 const ENDPOINT = '/api/onboarding/events';
 
@@ -46,6 +59,7 @@ const RETRY_DELAY_MS = 15000;
 const STORAGE_KEYS = {
   BROWSER_ID: 'onboardingBrowserId',
   SESSION_ID: 'onboardingSessionId',
+  CONTENT_VERSION: 'onboardingContentVersion',
   QUEUE: 'onboardingQueue',
   RECORDED: 'onboardingRecorded',
 };
@@ -63,15 +77,12 @@ const NAVIGATION_STEP_KEYS = {
   'Auth.signupRecoveryKeyFaq': 'signup.recovery_key_faq',
   'Auth.signupRecoveryKeyConfirmation': 'signup.recovery_key_confirm',
   'Auth.signupSuccess': 'signup.submit',
-  'Auth.orientationEnd': 'orientation.tutorial_offer',
-  'Tutorial.loading': 'tutorial.loading',
+  'Auth.orientationEnd': OFFER_STEP_KEY,
+  'Tutorial.loading': TUTORIAL_START_STEP_KEY,
 };
 
-/**
- * Pages that start an onboarding session: signup, and the tutorial offer, which
- * a logged-in player can reach in a later visit or another tab.
- */
-const SESSION_START_PAGES = ['Auth.signupConnectingToCorporate1', 'Auth.orientationEnd'];
+/** Signup starts a session on its first page; a later run starts one in startTutorialRun(). */
+const SESSION_START_PAGE = 'Auth.signupConnectingToCorporate1';
 
 /**
  * @return {string}
@@ -157,12 +168,22 @@ export class OnboardingTelemetry {
   }
 
   /**
+   * @return {string} the tutorial design this tab's session is recorded under
+   */
+  getContentVersion() {
+    return readStorage(sessionStorage, STORAGE_KEYS.CONTENT_VERSION) || ONBOARDING_CONTENT_VERSION;
+  }
+
+  /**
    * Starts this tab's onboarding session, once. A new tab or a later visit
    * starts a new one; the browser id ties them together.
+   *
+   * @param {string} contentVersion
    */
-  startSession() {
+  startSession(contentVersion = ONBOARDING_CONTENT_VERSION) {
     if (!this.getSessionId()) {
       writeStorage(sessionStorage, STORAGE_KEYS.SESSION_ID, createUuid());
+      writeStorage(sessionStorage, STORAGE_KEYS.CONTENT_VERSION, contentVersion);
     }
   }
 
@@ -177,6 +198,42 @@ export class OnboardingTelemetry {
   }
 
   /**
+   * Records that the player chose to take the tutorial. A signup session carries
+   * on into its run. Any other run gets a session of its own, started here and
+   * not when the offer opened, so an offer that is only looked at or declined
+   * after signup leaves no record.
+   *
+   * @param {string|null} playerId the logged-in player
+   * @param {boolean} isReplay whether it was started from the Account menu
+   */
+  startTutorialRun(playerId, isReplay = false) {
+    if (isReplay) {
+      this.endSession();
+      this.startSession(ONBOARDING_REPLAY_CONTENT_VERSION);
+      this.reached(TUTORIAL_START_STEP_KEY, playerId);
+      return;
+    }
+
+    if (
+      this.hasRecorded(TUTORIAL_START_STEP_KEY, ONBOARDING_STEP_KINDS.REACHED)
+      || this.hasRecorded(OFFER_STEP_KEY, ONBOARDING_STEP_KINDS.SKIPPED)
+    ) {
+      this.endSession();
+    }
+    this.startSession();
+    this.reached(OFFER_STEP_KEY, playerId);
+  }
+
+  /**
+   * @param {string} stepKey
+   * @param {string} kind
+   * @return {boolean} whether this tab's session has recorded the event
+   */
+  hasRecorded(stepKey, kind) {
+    return this.readList(STORAGE_KEYS.RECORDED).includes(`${stepKey}|${kind}`);
+  }
+
+  /**
    * Records the onboarding step for a menu page, if it is one.
    *
    * @param {string} controllerName
@@ -185,7 +242,7 @@ export class OnboardingTelemetry {
    */
   recordNavigation(controllerName, pageName, playerId = null) {
     const page = `${controllerName}.${pageName}`;
-    if (SESSION_START_PAGES.includes(page)) {
+    if (page === SESSION_START_PAGE) {
       this.startSession();
     }
     const stepKey = NAVIGATION_STEP_KEYS[page];
@@ -196,7 +253,7 @@ export class OnboardingTelemetry {
 
   /**
    * @param {string} stepKey
-   * @param {string|null} playerId sent only on PLAYER_STEP_KEYS
+   * @param {string|null} playerId sent only on the session's PLAYER_STEP_KEYS
    */
   reached(stepKey, playerId = null) {
     this.record(stepKey, ONBOARDING_STEP_KINDS.REACHED, playerId);
@@ -210,9 +267,9 @@ export class OnboardingTelemetry {
   }
 
   /**
-   * Queues an event. Without a session (neither signup nor the tutorial offer
-   * has been reached in this tab) nothing is recorded. Each step and kind is recorded once per session, so
-   * page restores and back navigation do not resend.
+   * Queues an event. Without a session (no signup or tutorial run has started
+   * in this tab) nothing is recorded. Each step and kind is recorded once per
+   * session, so page restores and back navigation do not resend.
    *
    * @param {string} stepKey
    * @param {string} kind
@@ -223,16 +280,16 @@ export class OnboardingTelemetry {
       return;
     }
 
-    const recorded = this.readList(STORAGE_KEYS.RECORDED);
-    const recordedKey = `${stepKey}|${kind}`;
-    if (recorded.includes(recordedKey)) {
+    if (this.hasRecorded(stepKey, kind)) {
       return;
     }
-    recorded.push(recordedKey);
+    const recorded = this.readList(STORAGE_KEYS.RECORDED);
+    recorded.push(`${stepKey}|${kind}`);
     writeStorage(sessionStorage, STORAGE_KEYS.RECORDED, JSON.stringify(recorded));
 
     const event = {id: createUuid(), step_key: stepKey, kind};
-    if (playerId && PLAYER_STEP_KEYS.includes(stepKey) && kind === ONBOARDING_STEP_KINDS.REACHED) {
+    const playerStepKeys = PLAYER_STEP_KEYS[this.getContentVersion()];
+    if (playerId && playerStepKeys.includes(stepKey) && kind === ONBOARDING_STEP_KINDS.REACHED) {
       event.player_id = playerId;
     }
 
@@ -331,7 +388,7 @@ export class OnboardingTelemetry {
       session_id: this.getSessionId(),
       browser_id: this.getBrowserId(),
       interface_name: ONBOARDING_INTERFACE_NAME,
-      content_version: ONBOARDING_CONTENT_VERSION,
+      content_version: this.getContentVersion(),
       events: batch.map(({step_key, kind, player_id}) => (
         player_id ? {step_key, kind, player_id} : {step_key, kind}
       )),
