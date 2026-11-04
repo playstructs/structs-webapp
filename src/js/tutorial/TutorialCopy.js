@@ -53,7 +53,7 @@ export const TUTORIAL_COPY = {
   DEPLOY_MENU_HINT: `<p>Press a Struct to Deploy it.</p><p>Press-and-Hold to Inspect it.</p>`,
   BATTERY_DEPLETES: `Good. Note that using abilities depletes the ${hl('Battery')}. The Battery will ${hl('Recharge')} automatically.`,
 
-  CMD_SHIP_UNPROTECTED: `Your CMD Ship was unprotected, allowing the Raiders to easily Destroy it. Assign ${hl('Defenders')} to protect important Structs.`,
+  CMD_SHIP_UNPROTECTED: `Your CMD Ship was unprotected, allowing the Raiders to easily destroy it. Assign ${hl('Defenders')} to protect important Structs.`,
   SELECT_INDICATED_TANK: `First, select the Tank.`,
   DEFEND_SAM_LAUNCHER: `When you have enough Battery Charge, assign the Tank to ${hl('Defend')} your SAM Launcher. You can ${hint('Inspect', 'Press-and-Hold most elements to reveal more information about them.')} an ability to see its Battery Cost.`,
   DEFENDED_AND_DEFENDERS: `Good. Structs with the ${icon('icon-defended')} icon are ${hl('Defended')}. Structs with the ${icon('icon-defending')} icon are ${hl('Defenders')}.`,
