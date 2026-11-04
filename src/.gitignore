@@ -23,11 +23,9 @@ phpunit.xml
 /config/oidc/
 ###< app/oidc ###
 
-# Unversioned bundles from webpack configs before hashed output. Nothing loads
-# them; the page reads public/js/manifest.json.
-/public/js/index.js
-/public/js/index.js.map
-/public/js/test.js
-/public/js/test.js.map
-/public/js/workers/TaskWorker.js
-/public/js/workers/TaskWorker.js.map
+# Webpack output. The image builds it; a mounted checkout needs `npm run build`.
+/public/js/index.*
+/public/js/test.*
+/public/js/vendors-*
+/public/js/manifest.json
+/public/js/workers/

@@ -74,7 +74,8 @@ class OnboardingController extends AbstractController
     }
 
     /**
-     * Optional query params: interface_name, guild_id, idle_hours (default 24).
+     * Optional query params: interface_name, guild_id, idle_hours (default 24),
+     * run (first, repeat), player_type (new, existing).
      *
      * @throws Exception
      */
@@ -91,12 +92,15 @@ class OnboardingController extends AbstractController
             $phase,
             $request->query->get('interface_name'),
             $request->query->get('guild_id'),
-            $request->query->get('idle_hours')
+            $request->query->get('idle_hours'),
+            $request->query->get('run'),
+            $request->query->get('player_type')
         );
     }
 
     /**
-     * Optional query params: interface_name, guild_id, idle_hours (default 24).
+     * Optional query params: interface_name, guild_id, idle_hours (default 24),
+     * run (first, repeat), player_type (new, existing).
      *
      * @throws Exception
      */
@@ -111,7 +115,102 @@ class OnboardingController extends AbstractController
             $content_version,
             $request->query->get('interface_name'),
             $request->query->get('guild_id'),
-            $request->query->get('idle_hours')
+            $request->query->get('idle_hours'),
+            $request->query->get('run'),
+            $request->query->get('player_type')
+        );
+    }
+
+    /**
+     * Unique players, counting a design's first runs and replays together.
+     * Optional query params: interface_name, guild_id, idle_hours (default 24),
+     * run (first, repeat), player_type (new, existing).
+     *
+     * @throws Exception
+     */
+    #[Route('/api/onboarding/tutorial/players/{content_version}', name: 'api_onboarding_tutorial_players', methods: ['GET'])]
+    public function getTutorialPlayers(
+        Request $request,
+        string $content_version,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return (new OnboardingManager($entityManager, $validator))->getTutorialPlayers(
+            $content_version,
+            $request->query->get('interface_name'),
+            $request->query->get('guild_id'),
+            $request->query->get('idle_hours'),
+            $request->query->get('run'),
+            $request->query->get('player_type')
+        );
+    }
+
+    /**
+     * Optional query params: interface_name, guild_id, run (first, repeat),
+     * player_type (new, existing).
+     *
+     * @throws Exception
+     */
+    #[Route('/api/onboarding/tutorial/players/{content_version}/steps', name: 'api_onboarding_tutorial_player_steps', methods: ['GET'])]
+    public function getTutorialPlayerSteps(
+        Request $request,
+        string $content_version,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return (new OnboardingManager($entityManager, $validator))->getTutorialPlayerSteps(
+            $content_version,
+            $request->query->get('interface_name'),
+            $request->query->get('guild_id'),
+            $request->query->get('run'),
+            $request->query->get('player_type')
+        );
+    }
+
+    /**
+     * Optional query params: interface_name, guild_id, idle_hours (default 24),
+     * player_type (new, existing).
+     *
+     * @throws Exception
+     */
+    #[Route('/api/onboarding/tutorial/runs/{content_version}/comparison', name: 'api_onboarding_tutorial_run_comparison', methods: ['GET'])]
+    public function getTutorialRunComparison(
+        Request $request,
+        string $content_version,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return (new OnboardingManager($entityManager, $validator))->getTutorialRunComparison(
+            $content_version,
+            $request->query->get('interface_name'),
+            $request->query->get('guild_id'),
+            $request->query->get('idle_hours'),
+            $request->query->get('player_type')
+        );
+    }
+
+    /**
+     * Optional query params: interface_name, guild_id, idle_hours (default 24),
+     * run (first, repeat), player_type (new, existing), player_id, page (default 1).
+     *
+     * @throws Exception
+     */
+    #[Route('/api/onboarding/tutorial/runs/{content_version}', name: 'api_onboarding_tutorial_runs', methods: ['GET'])]
+    public function getTutorialRuns(
+        Request $request,
+        string $content_version,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        return (new OnboardingManager($entityManager, $validator))->getTutorialRuns(
+            $content_version,
+            $request->query->get('interface_name'),
+            $request->query->get('guild_id'),
+            $request->query->get('idle_hours'),
+            $request->query->get('run'),
+            $request->query->get('player_type'),
+            $request->query->get('player_id'),
+            $request->query->getInt('page', 1)
         );
     }
 

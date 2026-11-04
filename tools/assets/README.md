@@ -8,8 +8,9 @@ the main page through that manifest and refuses a missing entry/build.
 Deploy the generated manifest, bundles, worker chunks and source maps with the
 matching PHP/templates. Prepare and validate the complete release directory
 before switching the served application. Retain the previous release's hashed
-chunks while its pages may still be open; webpack deliberately does not clean
-old outputs. Do not overwrite a hashed file with different bytes. Clear/warm
+chunks while its pages may still be open; production builds deliberately do not
+clean old outputs, though development builds (`npm run dev`, `npm test`) do. Do
+not overwrite a hashed file with different bytes. Clear/warm
 the Symfony cache when switching configuration/templates as usual.
 
 A new page resolves the current bundle and that bundle references its matching

@@ -196,6 +196,10 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $player_id = null;
 
+    /** new: this telemetry saw the player sign up. existing: it did not. */
+    #[Assert\Choice(choices: ['new', 'existing'])]
+    public ?string $player_type = null;
+
     #[Assert\Regex(RegexPattern::ADDRESS)]
     public ?string $primary_address = null;
 
@@ -218,6 +222,10 @@ class ApiRequestParamsDto
         'attacker', 'target', 'owner', 'planet_owner', 'defender', 'protected', 'fleet_owner',
     ])]
     public ?string $role = null;
+
+    /** first: a player's first tutorial run. repeat: the runs after it. */
+    #[Assert\Choice(choices: ['first', 'repeat'])]
+    public ?string $run = null;
 
     /** Mini game score; typed mixed so 1.5, "7" or true are rejected rather than coerced to a numeric string. */
     #[Assert\Sequentially([

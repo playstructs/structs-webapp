@@ -2,6 +2,10 @@ const webpack = require('webpack');
 const path = require('path');
 const AssetManifestPlugin = require('./webpack/AssetManifestPlugin.cjs');
 
+// Every rebuild gets a new hash, so development builds clear their predecessors.
+// Production builds never do: open pages still need the previous release's files.
+const isDevelopmentBuild = process.argv.includes('--mode=development');
+
 module.exports = {
   entry: {
     index: './js/index.js',
@@ -12,6 +16,8 @@ module.exports = {
     chunkFilename: '[name].[contenthash].js',
     path: path.resolve(__dirname, 'public/js'),
     sourceMapFilename: "[file].map",
+    // public/js also holds hand-written scripts, which aren't build output.
+    clean: isDevelopmentBuild && {keep: /^(main|plugins)\.js$|^vendor\//},
   },
   devtool: "source-map",
   experiments: {

@@ -114,6 +114,8 @@ class ApiParameters
 
     const string PLAYER_ID = 'player_id';
 
+    const string PLAYER_TYPE = 'player_type';
+
     const string PRIMARY_ADDRESS = 'primary_address';
 
     const string PRIMARY_REACTOR_ID = 'primary_reactor_id';
@@ -125,6 +127,8 @@ class ApiParameters
     const string PUBKEY = 'pubkey';
 
     const string ROLE = 'role';
+
+    const string RUN = 'run';
 
     const string Q = 'q';
 
