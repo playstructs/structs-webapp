@@ -1,9 +1,11 @@
 import {DTest, DTestSuite} from "../framework/DTestFramework";
 import {TutorialMode} from "../tutorial/TutorialMode";
+import {onboardingTelemetry} from "../telemetry/OnboardingTelemetry";
 
 /**
  * Covers what TutorialMode remembers: whether the player should still be
- * offered the tutorial, and whether a run is a replay from the Account menu.
+ * offered the tutorial, whether a run is a replay from the Account menu, and
+ * which runs telemetry records.
  */
 export class TutorialModeTest extends DTestSuite {
 
@@ -56,5 +58,32 @@ export class TutorialModeTest extends DTestSuite {
     TutorialMode.launch(true);
     TutorialMode.launch();
     this.assertEquals(TutorialMode.isReplay(), false);
+  });
+
+  laterOfferStartsTelemetrySessionTest = new DTest('laterOfferStartsTelemetrySessionTest', function() {
+    TutorialModeTest.givenFreshBrowser();
+    this.assertEquals(onboardingTelemetry.getSessionId(), null);
+
+    onboardingTelemetry.recordNavigation('Auth', 'orientationEnd');
+    this.assertEquals(onboardingTelemetry.getSessionId() !== null, true);
+    this.assertEquals(sessionStorage.getItem('onboardingRecorded'), '["orientation.tutorial_offer|reached"]');
+
+    // The launch reloads the page; the run carries on in the same session.
+    const sessionId = onboardingTelemetry.getSessionId();
+    TutorialMode.launch();
+    this.assertEquals(onboardingTelemetry.getSessionId(), sessionId);
+
+    onboardingTelemetry.endSession();
+  });
+
+  replayIsNotRecordedTest = new DTest('replayIsNotRecordedTest', function() {
+    TutorialModeTest.givenFreshBrowser();
+    onboardingTelemetry.startSession();
+
+    TutorialMode.launch(true);
+    onboardingTelemetry.recordNavigation('Tutorial', 'loading');
+
+    this.assertEquals(onboardingTelemetry.getSessionId(), null);
+    this.assertEquals(sessionStorage.getItem('onboardingRecorded'), null);
   });
 }

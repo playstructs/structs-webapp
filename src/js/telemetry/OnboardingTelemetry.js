@@ -61,8 +61,11 @@ const NAVIGATION_STEP_KEYS = {
   'Tutorial.loading': 'tutorial.loading',
 };
 
-/** The page that starts signup, and so the onboarding session. */
-const SESSION_START_PAGE = 'Auth.signupConnectingToCorporate1';
+/**
+ * Pages that start an onboarding session: signup, and the tutorial offer, which
+ * a logged-in player can reach in a later visit or another tab.
+ */
+const SESSION_START_PAGES = ['Auth.signupConnectingToCorporate1', 'Auth.orientationEnd'];
 
 /**
  * @return {string}
@@ -107,6 +110,18 @@ function writeStorage(storage, key, value) {
   }
 }
 
+/**
+ * @param {Storage} storage
+ * @param {string} key
+ */
+function removeStorage(storage, key) {
+  try {
+    storage.removeItem(key);
+  } catch (error) {
+    // Telemetry is best effort.
+  }
+}
+
 export class OnboardingTelemetry {
 
   constructor() {
@@ -129,7 +144,7 @@ export class OnboardingTelemetry {
   }
 
   /**
-   * @return {string|null} this tab's onboarding session, if signup has started in it
+   * @return {string|null} this tab's onboarding session, if one has started
    */
   getSessionId() {
     return readStorage(sessionStorage, STORAGE_KEYS.SESSION_ID);
@@ -146,6 +161,16 @@ export class OnboardingTelemetry {
   }
 
   /**
+   * Sends what is queued, then stops recording in this tab.
+   */
+  endSession() {
+    this.flushNow();
+    Object.values(STORAGE_KEYS)
+      .filter(key => key !== STORAGE_KEYS.BROWSER_ID)
+      .forEach(key => removeStorage(sessionStorage, key));
+  }
+
+  /**
    * Records the onboarding step for a menu page, if it is one.
    *
    * @param {string} controllerName
@@ -153,7 +178,7 @@ export class OnboardingTelemetry {
    */
   recordNavigation(controllerName, pageName) {
     const page = `${controllerName}.${pageName}`;
-    if (page === SESSION_START_PAGE) {
+    if (SESSION_START_PAGES.includes(page)) {
       this.startSession();
     }
     const stepKey = NAVIGATION_STEP_KEYS[page];
@@ -178,8 +203,8 @@ export class OnboardingTelemetry {
   }
 
   /**
-   * Queues an event. Without a session (signup never started in this tab)
-   * nothing is recorded. Each step and kind is recorded once per session, so
+   * Queues an event. Without a session (neither signup nor the tutorial offer
+   * has been reached in this tab) nothing is recorded. Each step and kind is recorded once per session, so
    * page restores and back navigation do not resend.
    *
    * @param {string} stepKey

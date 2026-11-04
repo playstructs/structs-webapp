@@ -56,6 +56,8 @@ export class TutorialMode {
     sessionStorage.setItem(TutorialMode.ACTIVE_KEY, '1');
     sessionStorage.removeItem(TutorialMode.EXITED_KEY);
     if (isReplay) {
+      // The onboarding funnel measures first runs, not returning players.
+      onboardingTelemetry.endSession();
       sessionStorage.setItem(TutorialMode.REPLAY_KEY, '1');
     } else {
       sessionStorage.removeItem(TutorialMode.REPLAY_KEY);
