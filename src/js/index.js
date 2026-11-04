@@ -207,7 +207,11 @@ gameState.previewMap = new MapComponent(
 
 MenuPage.gameState = gameState;
 MenuPage.mapManager = mapManager;
-MenuPage.router.onNavigate = (controllerName, pageName) => onboardingTelemetry.recordNavigation(controllerName, pageName);
+MenuPage.router.onNavigate = (controllerName, pageName) => onboardingTelemetry.recordNavigation(
+  controllerName,
+  pageName,
+  gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+);
 
 MenuPage.router.registerController(authController);
 MenuPage.router.registerController(accountController);

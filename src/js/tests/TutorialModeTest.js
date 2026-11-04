@@ -64,9 +64,15 @@ export class TutorialModeTest extends DTestSuite {
     TutorialModeTest.givenFreshBrowser();
     this.assertEquals(onboardingTelemetry.getSessionId(), null);
 
-    onboardingTelemetry.recordNavigation('Auth', 'orientationEnd');
+    onboardingTelemetry.recordNavigation('Auth', 'orientationEnd', '1-101');
     this.assertEquals(onboardingTelemetry.getSessionId() !== null, true);
     this.assertEquals(sessionStorage.getItem('onboardingRecorded'), '["orientation.tutorial_offer|reached"]');
+
+    // The offer links the session to the player; later steps don't repeat the id.
+    onboardingTelemetry.recordNavigation('Tutorial', 'loading', '1-101');
+    const queued = JSON.parse(sessionStorage.getItem('onboardingQueue'));
+    this.assertEquals(queued[0].player_id, '1-101');
+    this.assertEquals(queued[1].player_id, undefined);
 
     // The launch reloads the page; the run carries on in the same session.
     const sessionId = onboardingTelemetry.getSessionId();

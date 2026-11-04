@@ -28,11 +28,14 @@ class OnboardingManager
 {
     use ApiSqlQueryTrait;
 
-    /** The only step whose reached row may carry a player id. */
-    public const string PLAYER_STEP_KEY = 'signup.employee_record';
-
     /** First tutorial step; a skipped row here is Skip Tutorial. */
     public const string OFFER_STEP_KEY = 'orientation.tutorial_offer';
+
+    /**
+     * The steps whose reached row may carry a player id: where signup finishes,
+     * and the offer, which a later session reaches without passing through signup.
+     */
+    public const array PLAYER_STEP_KEYS = ['signup.employee_record', self::OFFER_STEP_KEY];
 
     /** Last tutorial step, recorded once the player lands in the real game. */
     public const string FTL_STEP_KEY = 'tutorial.end.ftl_jump';
@@ -248,9 +251,10 @@ class OnboardingManager
     }
 
     /**
-     * One player's onboarding: every event of the session in which their
-     * signup finished, in order. Players who signed up before this telemetry,
-     * or elsewhere, have none.
+     * One player's onboarding: every event of each session linked to them, in
+     * order. That is the session in which their signup finished, and any later
+     * session in which they were offered the tutorial. Players who signed up
+     * before this telemetry, or elsewhere, may have none.
      *
      * @throws Exception
      */
@@ -266,13 +270,14 @@ class OnboardingManager
               p.step_key,
               p.kind,
               p.recorded_at
-            FROM onboarding_progress pp
-            INNER JOIN onboarding_session s ON s.session_id = pp.session_id
+            FROM onboarding_session s
             INNER JOIN onboarding_progress p ON p.session_id = s.session_id
             LEFT JOIN onboarding_step os
               ON os.content_version = s.content_version
               AND os.step_key = p.step_key
-            WHERE pp.player_id = :player_id
+            WHERE s.session_id IN (
+              SELECT pp.session_id FROM onboarding_progress pp WHERE pp.player_id = :player_id
+            )
             ORDER BY p.recorded_at, os.phase, os.step_order, p.kind
         ';
 
@@ -476,8 +481,8 @@ class OnboardingManager
         }
 
         if ($playerId !== null) {
-            if ($stepKey !== self::PLAYER_STEP_KEY || $kind !== self::KIND_REACHED) {
-                $errors["$prefix.player_id"] = "$prefix.player_id is only accepted on the reached " . self::PLAYER_STEP_KEY . ' event';
+            if (!in_array($stepKey, self::PLAYER_STEP_KEYS, true) || $kind !== self::KIND_REACHED) {
+                $errors["$prefix.player_id"] = "$prefix.player_id is only accepted on the reached " . implode(' or ', self::PLAYER_STEP_KEYS) . ' event';
             } elseif (!$this->matches($playerId, RegexPattern::ID, self::MAX_NAME_LENGTH)) {
                 $errors["$prefix.player_id"] = "$prefix.player_id is not a valid player id";
             }

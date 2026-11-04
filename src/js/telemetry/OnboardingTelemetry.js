@@ -23,8 +23,14 @@ export const ONBOARDING_STEP_KINDS = {
   SKIPPED: 'skipped',
 };
 
-/** The only step whose reached event carries the player id. */
+/** The step at which a new player first has an id. */
 export const ONBOARDING_PLAYER_STEP_KEY = 'signup.employee_record';
+
+/**
+ * The steps whose reached event carries the player id. The offer is here for
+ * sessions that start after signup. Must match OnboardingManager::PLAYER_STEP_KEYS.
+ */
+const PLAYER_STEP_KEYS = [ONBOARDING_PLAYER_STEP_KEY, 'orientation.tutorial_offer'];
 
 const ENDPOINT = '/api/onboarding/events';
 
@@ -175,21 +181,22 @@ export class OnboardingTelemetry {
    *
    * @param {string} controllerName
    * @param {string} pageName
+   * @param {string|null} playerId the logged-in player, if any
    */
-  recordNavigation(controllerName, pageName) {
+  recordNavigation(controllerName, pageName, playerId = null) {
     const page = `${controllerName}.${pageName}`;
     if (SESSION_START_PAGES.includes(page)) {
       this.startSession();
     }
     const stepKey = NAVIGATION_STEP_KEYS[page];
     if (stepKey) {
-      this.reached(stepKey);
+      this.reached(stepKey, playerId);
     }
   }
 
   /**
    * @param {string} stepKey
-   * @param {string|null} playerId only for ONBOARDING_PLAYER_STEP_KEY
+   * @param {string|null} playerId sent only on PLAYER_STEP_KEYS
    */
   reached(stepKey, playerId = null) {
     this.record(stepKey, ONBOARDING_STEP_KINDS.REACHED, playerId);
@@ -225,7 +232,7 @@ export class OnboardingTelemetry {
     writeStorage(sessionStorage, STORAGE_KEYS.RECORDED, JSON.stringify(recorded));
 
     const event = {id: createUuid(), step_key: stepKey, kind};
-    if (playerId && stepKey === ONBOARDING_PLAYER_STEP_KEY && kind === ONBOARDING_STEP_KINDS.REACHED) {
+    if (playerId && PLAYER_STEP_KEYS.includes(stepKey) && kind === ONBOARDING_STEP_KINDS.REACHED) {
       event.player_id = playerId;
     }
 

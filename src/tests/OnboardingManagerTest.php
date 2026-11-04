@@ -94,17 +94,28 @@ class OnboardingManagerTest extends ApiManagerTestCase
         $this->assertSame('skipped', $statements[2]['params']['kind']);
     }
 
-    public function testPlayerIdIsAcceptedOnTheEmployeeRecordReachedEvent(): void
+    /**
+     * @dataProvider playerStepProvider
+     */
+    public function testPlayerIdIsAcceptedOnThePlayerSteps(string $stepKey): void
     {
         $statements = null;
         $manager = new OnboardingManager($this->entityManager($this->recordingConnection($statements)), $this->validator());
 
         $response = $manager->recordEvents($this->request($this->body([
-            ['step_key' => 'signup.employee_record', 'kind' => 'reached', 'player_id' => '1-101'],
+            ['step_key' => $stepKey, 'kind' => 'reached', 'player_id' => '1-101'],
         ])));
 
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $this->assertSame('1-101', $statements[1]['params']['player_id']);
+    }
+
+    public static function playerStepProvider(): array
+    {
+        return [
+            'signup finished' => ['signup.employee_record'],
+            'tutorial offer' => ['orientation.tutorial_offer'],
+        ];
     }
 
     /**
@@ -125,6 +136,7 @@ class OnboardingManagerTest extends ApiManagerTestCase
         return [
             'other step' => [['step_key' => 'signup.submit', 'kind' => 'reached', 'player_id' => '1-101']],
             'skipped kind' => [['step_key' => 'signup.employee_record', 'kind' => 'skipped', 'player_id' => '1-101']],
+            'skipped offer' => [['step_key' => 'orientation.tutorial_offer', 'kind' => 'skipped', 'player_id' => '1-101']],
             'malformed id' => [['step_key' => 'signup.employee_record', 'kind' => 'reached', 'player_id' => "1-101'; --"]],
         ];
     }
@@ -249,7 +261,7 @@ class OnboardingManagerTest extends ApiManagerTestCase
         $this->assertStringContainsString('AS left_during_tutorial', $sql);
     }
 
-    public function testPlayerOnboardingFindsTheSessionThroughTheSignupRow(): void
+    public function testPlayerOnboardingFindsEachLinkedSessionOnce(): void
     {
         $sql = null;
         $params = null;
@@ -258,6 +270,8 @@ class OnboardingManagerTest extends ApiManagerTestCase
         $response = $manager->getPlayerOnboarding('1-101');
 
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        // A subquery, not a join: a session can have two rows carrying the player id.
+        $this->assertStringContainsString('WHERE s.session_id IN (', $sql);
         $this->assertStringContainsString('WHERE pp.player_id = :player_id', $sql);
         $this->assertSame(['player_id' => '1-101'], $params);
     }
