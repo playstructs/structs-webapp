@@ -55,6 +55,10 @@ class ApiRoutingTest extends KernelTestCase
             ['/api/onboarding/catalog/tutorial-4', 'api_onboarding_catalog'],
             ['/api/onboarding/funnel/tutorial-4/signup', 'api_onboarding_funnel'],
             ['/api/onboarding/tutorial/outcome/tutorial-4', 'api_onboarding_tutorial_outcome'],
+            ['/api/onboarding/tutorial/players/tutorial-4', 'api_onboarding_tutorial_players'],
+            ['/api/onboarding/tutorial/players/tutorial-4/steps', 'api_onboarding_tutorial_player_steps'],
+            ['/api/onboarding/tutorial/runs/tutorial-4', 'api_onboarding_tutorial_runs'],
+            ['/api/onboarding/tutorial/runs/tutorial-4/comparison', 'api_onboarding_tutorial_run_comparison'],
             ['/api/onboarding/player/1-101', 'api_onboarding_player'],
         ];
     }

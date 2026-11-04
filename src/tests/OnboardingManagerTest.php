@@ -94,17 +94,64 @@ class OnboardingManagerTest extends ApiManagerTestCase
         $this->assertSame('skipped', $statements[2]['params']['kind']);
     }
 
-    public function testPlayerIdIsAcceptedOnTheEmployeeRecordReachedEvent(): void
+    /**
+     * @dataProvider playerStepProvider
+     */
+    public function testPlayerIdIsAcceptedOnThePlayerSteps(string $stepKey): void
     {
         $statements = null;
         $manager = new OnboardingManager($this->entityManager($this->recordingConnection($statements)), $this->validator());
 
         $response = $manager->recordEvents($this->request($this->body([
-            ['step_key' => 'signup.employee_record', 'kind' => 'reached', 'player_id' => '1-101'],
+            ['step_key' => $stepKey, 'kind' => 'reached', 'player_id' => '1-101'],
         ])));
 
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $this->assertSame('1-101', $statements[1]['params']['player_id']);
+    }
+
+    public static function playerStepProvider(): array
+    {
+        return [
+            'signup finished' => ['signup.employee_record'],
+            'tutorial offer' => ['orientation.tutorial_offer'],
+        ];
+    }
+
+    public function testReplaySessionsCarryThePlayerOnLoading(): void
+    {
+        $statements = null;
+        $manager = new OnboardingManager($this->entityManager($this->recordingConnection($statements)), $this->validator());
+
+        $response = $manager->recordEvents($this->request(['content_version' => 'tutorial-4-replay'] + $this->body([
+            ['step_key' => 'tutorial.loading', 'kind' => 'reached', 'player_id' => '1-101'],
+        ])));
+
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame('1-101', $statements[1]['params']['player_id']);
+    }
+
+    /**
+     * @dataProvider wrongVersionPlayerStepProvider
+     */
+    public function testPlayerStepsBelongToTheirContentVersion(string $contentVersion, string $stepKey): void
+    {
+        $manager = new OnboardingManager($this->entityManager($this->silentConnection()), $this->validator());
+
+        $response = $manager->recordEvents($this->request(['content_version' => $contentVersion] + $this->body([
+            ['step_key' => $stepKey, 'kind' => 'reached', 'player_id' => '1-101'],
+        ])));
+
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
+        $this->assertArrayHasKey('events.0.player_id', json_decode($response->getContent(), true)['errors']);
+    }
+
+    public static function wrongVersionPlayerStepProvider(): array
+    {
+        return [
+            'loading outside a replay' => ['tutorial-4', 'tutorial.loading'],
+            'offer in a replay' => ['tutorial-4-replay', 'orientation.tutorial_offer'],
+        ];
     }
 
     /**
@@ -125,6 +172,7 @@ class OnboardingManagerTest extends ApiManagerTestCase
         return [
             'other step' => [['step_key' => 'signup.submit', 'kind' => 'reached', 'player_id' => '1-101']],
             'skipped kind' => [['step_key' => 'signup.employee_record', 'kind' => 'skipped', 'player_id' => '1-101']],
+            'skipped offer' => [['step_key' => 'orientation.tutorial_offer', 'kind' => 'skipped', 'player_id' => '1-101']],
             'malformed id' => [['step_key' => 'signup.employee_record', 'kind' => 'reached', 'player_id' => "1-101'; --"]],
         ];
     }
@@ -191,31 +239,35 @@ class OnboardingManagerTest extends ApiManagerTestCase
         $params = null;
         $manager = new OnboardingManager($this->entityManager($this->readingConnection($sql, $params)), $this->validator());
 
-        $response = $manager->getFunnel('tutorial-4', 'signup', 'structs-webapp', null, null);
+        $response = $manager->getFunnel('tutorial-4', 'signup', 'structs-webapp', null, null, 'first', 'new');
 
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $this->assertStringContainsString('nxt.previous_step_key = os.step_key', $sql);
-        $this->assertSame([
-            'content_version' => 'tutorial-4',
-            'phase' => 'signup',
-            'interface_name' => 'structs-webapp',
-            'guild_id' => null,
-            'idle_hours' => OnboardingManager::DEFAULT_IDLE_HOURS,
-            'reached' => 'reached',
-            'skipped' => 'skipped',
-        ], $params);
+        $this->assertSame('tutorial-4', $params['content_version']);
+        $this->assertSame('signup', $params['phase']);
+        $this->assertSame('structs-webapp', $params['interface_name']);
+        $this->assertNull($params['guild_id']);
+        $this->assertSame(OnboardingManager::DEFAULT_IDLE_HOURS, $params['idle_hours']);
+        $this->assertSame('first', $params['run']);
+        $this->assertSame('new', $params['player_type']);
+        $this->assertArrayNotHasKey('replay_version', $params);
     }
 
     /**
      * @dataProvider invalidFunnelProvider
      */
-    public function testFunnelRejectsInvalidFilters(string $phase, ?string $idleHours, string $errorField): void
-    {
+    public function testFunnelRejectsInvalidFilters(
+        string $phase,
+        ?string $idleHours,
+        string $errorField,
+        ?string $run = null,
+        ?string $playerType = null
+    ): void {
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->never())->method('fetchAllAssociative');
         $manager = new OnboardingManager($this->entityManager($connection), $this->validator());
 
-        $response = $manager->getFunnel('tutorial-4', $phase, null, null, $idleHours);
+        $response = $manager->getFunnel('tutorial-4', $phase, null, null, $idleHours, $run, $playerType);
 
         $this->assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
         $this->assertStringContainsString($errorField, json_encode(json_decode($response->getContent(), true)['errors']));
@@ -227,6 +279,8 @@ class OnboardingManagerTest extends ApiManagerTestCase
             'unknown phase' => ['orientation', null, 'phase'],
             'idle hours not a number' => ['signup', 'soon', 'idle_hours'],
             'idle hours out of range' => ['signup', '9999', 'idle_hours'],
+            'unknown run' => ['tutorial', null, 'run', 'second'],
+            'unknown player type' => ['tutorial', null, 'player_type', null, 'veteran'],
         ];
     }
 
@@ -247,9 +301,40 @@ class OnboardingManagerTest extends ApiManagerTestCase
         $this->assertSame(48, $params['idle_hours']);
         $this->assertSame('0-1', $params['guild_id']);
         $this->assertStringContainsString('AS left_during_tutorial', $sql);
+        $this->assertStringContainsString('AS left_at_offer', $sql);
     }
 
-    public function testPlayerOnboardingFindsTheSessionThroughTheSignupRow(): void
+    public function testPlayerReportsCountADesignAndItsReplays(): void
+    {
+        $sql = null;
+        $params = null;
+        $manager = new OnboardingManager(
+            $this->entityManager($this->readingConnection($sql, $params, 'fetchAssociative')),
+            $this->validator()
+        );
+
+        $response = $manager->getTutorialPlayers('tutorial-4', null, null, null);
+
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame('tutorial-4-replay', $params['replay_version']);
+        $this->assertStringContainsString('GROUP BY r.person', $sql);
+    }
+
+    public function testTutorialRunsPagesAndFiltersToOnePlayer(): void
+    {
+        $sql = null;
+        $params = null;
+        $manager = new OnboardingManager($this->entityManager($this->readingConnection($sql, $params)), $this->validator());
+
+        $response = $manager->getTutorialRuns('tutorial-4', null, null, null, 'repeat', null, '1-101', 3);
+
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame('1-101', $params['player_id']);
+        $this->assertSame('repeat', $params['run']);
+        $this->assertSame(200, $params['offset']);
+    }
+
+    public function testPlayerOnboardingFindsEachLinkedSessionOnce(): void
     {
         $sql = null;
         $params = null;
@@ -258,6 +343,8 @@ class OnboardingManagerTest extends ApiManagerTestCase
         $response = $manager->getPlayerOnboarding('1-101');
 
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        // A subquery, not a join: a session can have two rows carrying the player id.
+        $this->assertStringContainsString('WHERE s.session_id IN (', $sql);
         $this->assertStringContainsString('WHERE pp.player_id = :player_id', $sql);
         $this->assertSame(['player_id' => '1-101'], $params);
     }

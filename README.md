@@ -17,9 +17,9 @@ In the distant future the species of the galaxy are embroiled in a race for Alph
 
 ### 3. Run the container
 
-The image builds its JavaScript and asset manifest. The development Compose
-configuration mounts `./src` over the image, so that mounted directory also
-needs `npm ci` and `npm run build` (from `src/`) before serving it. Use
+The image builds its JavaScript and asset manifest, which are not committed. The
+development Compose configuration mounts `./src` over the image, so that mounted
+directory also needs `npm ci` and `npm run build` (from `src/`) before serving it. Use
 `npm run dev` for subsequent local development. For an existing deployment,
 prepare the complete release before switching the served directory; see
 [asset deployment](tools/assets/README.md).

@@ -51,6 +51,8 @@ export class TutorialMode {
    * @param {boolean} isReplay whether an existing player is replaying it from the Account menu
    */
   static launch(isReplay = false) {
+    // Before the reload: the simulation doesn't know the real player.
+    onboardingTelemetry.startTutorialRun(global.gameState?.keyPlayers?.player?.id, isReplay);
     onboardingTelemetry.flushNow();
     TutorialMode.rememberPlayerEnergy(global.gameState?.keyPlayers?.player?.player);
     sessionStorage.setItem(TutorialMode.ACTIVE_KEY, '1');
