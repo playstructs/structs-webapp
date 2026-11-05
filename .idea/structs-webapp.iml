@@ -140,6 +140,8 @@
       <excludeFolder url="file://$MODULE_DIR$/src/var" />
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/polyfill-php84" />
       <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/polyfill-php85" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/lock" />
+      <excludeFolder url="file://$MODULE_DIR$/src/vendor/symfony/rate-limiter" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
