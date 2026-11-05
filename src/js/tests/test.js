@@ -12,6 +12,7 @@ import {DeployCheatsheetTest} from "./DeployCheatsheetTest";
 import {InvalidTargetClickTest} from "./InvalidTargetClickTest";
 import {ManageAlphaInfusedTest} from "./ManageAlphaInfusedTest";
 import {TutorialModeTest} from "./TutorialModeTest";
+import {ReactionBadgeTest} from "./ReactionBadgeTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -26,5 +27,6 @@ import {TutorialModeTest} from "./TutorialModeTest";
 (new InvalidTargetClickTest()).run();
 (new ManageAlphaInfusedTest()).run();
 (new TutorialModeTest()).run();
+(new ReactionBadgeTest()).run();
 
 (new APIReadinessTest()).run();

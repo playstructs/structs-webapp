@@ -547,6 +547,20 @@ a.sui-text-secondary:hover {
   gap: 4px;
 }
 
+/*
+ * Reaction badge (counter-attack, defender counter, block): the 16px icon at 2x,
+ * where the status icons sit. The rest of the HUD tile is hidden while the struct
+ * animates, so the badge opts back into visibility.
+ */
+.map-struct-hud-reaction-badge {
+  position: absolute;
+  bottom: 0;
+  width: 32px;
+  height: 32px;
+  visibility: visible !important;
+  image-rendering: pixelated;
+}
+
 .struct-health-bar {
   display: flex;
   width: 100%;

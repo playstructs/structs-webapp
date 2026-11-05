@@ -458,6 +458,98 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
   }
 
   /**
+   * @param {string} structId
+   * @return {HTMLElement|null}
+   */
+  getHUDTileByStructId(structId) {
+    return document.querySelector(`#${this.mapId} .${this.tileClass}[data-struct-id="${structId}"]`);
+  }
+
+  /**
+   * Hide the tile's HUD (health bar and status icons) while the struct animates.
+   * If the animation is a reaction to an attack (a counter-attack, a defender's
+   * counter or a block), show its reaction badge in place of the status icons.
+   *
+   * @param {HTMLElement} tileElement
+   * @param {AnimationEvent} animationEvent
+   */
+  showAnimationState(tileElement, animationEvent) {
+    tileElement.classList.add('invisible');
+    this.removeReactionBadge(tileElement);
+
+    const badge = animationEvent.options ? animationEvent.options.badge : null;
+    if (badge) {
+      const badgeElm = document.createElement('img');
+      badgeElm.className = 'map-struct-hud-reaction-badge';
+      badgeElm.src = `/img/sui/icon/${badge}.png`;
+      badgeElm.alt = '';
+      tileElement.appendChild(badgeElm);
+    }
+  }
+
+  /**
+   * @param {HTMLElement} tileElement
+   */
+  removeReactionBadge(tileElement) {
+    tileElement.querySelectorAll('.map-struct-hud-reaction-badge').forEach(elm => elm.remove());
+  }
+
+  /**
+   * @param {AnimationEvent} event
+   */
+  handleAnimation(event) {
+    if (event.mapId && event.mapId !== this.mapId) {
+      return;
+    }
+    const tile = this.getHUDTileByStructId(event.structId);
+    if (tile) {
+      this.showAnimationState(tile, event);
+    }
+  }
+
+  /**
+   * @param {AnimationEndEvent} event
+   */
+  handleAnimationEnd(event) {
+    if (event.mapId && event.mapId !== this.mapId) {
+      return;
+    }
+    const tile = this.getHUDTileByStructId(event.structId);
+    if (!tile) {
+      return;
+    }
+
+    // When the animation carries a partial health value (e.g. from a multi-source
+    // attack sequence), re-render the HUD content at that health before revealing
+    // it. Without this, gameState already holds the final post-attack health, so
+    // the HUD would jump to the final state after the first counter animation.
+    if (event.healthAfter !== null && event.healthAfter !== undefined) {
+      const struct = this.structManager.getStructById(event.structId);
+      if (struct) {
+        this.renderStructHUD(tile, struct, event.healthAfter);
+      }
+    }
+
+    this.removeReactionBadge(tile);
+
+    // The queue starts the next animation before this listener runs, so if
+    // that animation is for the same struct, keep the HUD hidden for it.
+    const nextEvent = this.gameState.animationEventQueue
+      ? this.gameState.animationEventQueue.currentEvent
+      : null;
+    if (
+      nextEvent
+      && nextEvent.structId === event.structId
+      && (!nextEvent.mapId || nextEvent.mapId === this.mapId)
+    ) {
+      this.showAnimationState(tile, nextEvent);
+      return;
+    }
+
+    tile.classList.remove('invisible');
+  }
+
+  /**
    * Initialize page code: set up event listeners for future expansion
    */
   initPageCode() {
@@ -543,36 +635,7 @@ export class MapStructHUDLayerComponent extends GenericMapLayerComponent {
     });
 
     // Hide the HUD while animations are playing for the tile and show HUD after they're finished
-    this.addWindowEventListener(EVENTS.ANIMATION, (event) => {
-      if (event.mapId && event.mapId !== this.mapId) {
-        return;
-      }
-      const tile = document.querySelector(`#${this.mapId} .map-struct-hud-layer-tile[data-struct-id="${event.structId}"]`);
-      if (tile) {
-        tile.classList.add('invisible');
-      }
-    });
-    this.addWindowEventListener(EVENTS.ANIMATION_END, (event) => {
-      if (event.mapId && event.mapId !== this.mapId) {
-        return;
-      }
-      const tile = document.querySelector(`#${this.mapId} .map-struct-hud-layer-tile[data-struct-id="${event.structId}"]`);
-      if (!tile) {
-        return;
-      }
-
-      // When the animation carries a partial health value (e.g. from a multi-source
-      // attack sequence), re-render the HUD content at that health before revealing
-      // it. Without this, gameState already holds the final post-attack health, so
-      // the HUD would jump to the final state after the first counter animation.
-      if (event.healthAfter !== null && event.healthAfter !== undefined) {
-        const struct = this.structManager.getStructById(event.structId);
-        if (struct) {
-          this.renderStructHUD(tile, struct, event.healthAfter);
-        }
-      }
-
-      tile.classList.remove('invisible');
-    });
+    this.addWindowEventListener(EVENTS.ANIMATION, (event) => this.handleAnimation(event));
+    this.addWindowEventListener(EVENTS.ANIMATION_END, (event) => this.handleAnimationEnd(event));
   }
 }
