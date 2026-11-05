@@ -4,6 +4,7 @@ import {SUI} from "../sui/SUI";
 import {EnergyUsageComponent} from "../view_models/components/EnergyUsageComponent";
 import {AlphaOwnedComponent} from "../view_models/components/AlphaOwnedComponent";
 import {MENU_PAGE_ROUTER_MODES} from "../constants/MenuPageRouterModes";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class MenuPage {
 
@@ -295,7 +296,13 @@ export class MenuPage {
   ) {
 
     MenuPage.setNavItems(MenuPage.menuNavItems, activeNavItemId);
-    MenuPage.enableCloseBtn();
+
+    // Before login (e.g. Activate Device) there's no game behind the menu to close to.
+    if (MenuPage.gameState?.keyPlayers[PLAYER_TYPES.PLAYER]?.player) {
+      MenuPage.enableCloseBtn();
+    } else {
+      MenuPage.disableCloseBtn();
+    }
 
     let headerResourcesHTML = useCustomResources ? customResourcesHTML : '';
     let energyUsageComponent;
