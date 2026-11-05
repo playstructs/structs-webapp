@@ -73,8 +73,9 @@ export class StructListener extends AbstractGrassListener {
   }
 
   /**
-   * Marks an animation as a counter-attack or a block; the off-screen
-   * picture-in-picture shows the badge under the struct.
+   * Marks an animation as a reaction (counter-attack, defender counter or
+   * block); the struct's map tile and the off-screen picture-in-picture show
+   * the badge under the struct while it plays.
    *
    * @param {AnimationEvent|null} animationEvent
    * @param {string} badge one of ANIMATION.BADGES
@@ -546,7 +547,7 @@ export class StructListener extends AbstractGrassListener {
               eventAttackDefenderCounterDetail.counterByStructWeaponSystem,
               mapId
             ),
-            ANIMATION.BADGES.COUNTER_ATTACK
+            ANIMATION.BADGES.DEFENDER_COUNTER
           )
         );
 
@@ -822,7 +823,7 @@ export class StructListener extends AbstractGrassListener {
               STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON,
               mapId
             ),
-            ANIMATION.BADGES.COUNTER_ATTACK
+            ANIMATION.BADGES.DEFENDER_COUNTER
           )
         );
 
