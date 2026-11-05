@@ -694,10 +694,16 @@ body.is-map-panning * {
   right: 26px;
 }
 
+/*
+ * The z-index keeps the terrain tile inside the mask's stacking context.
+ * Without it iOS Safari paints the area the mask clips away black on the
+ * enemy-side bubble.
+ */
 .map-pip-mask {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 0;
   display: flex;
   box-sizing: border-box;
   width: 118px;
