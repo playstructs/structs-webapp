@@ -13,6 +13,7 @@ export class StructFactory extends AbstractFactory {
     Object.assign(struct, obj);
     struct.defending_struct_ids = JSON.parse(obj.defending_struct_ids);
     struct.fuel = parseInt(obj.fuel || 0);
+    struct.health = parseInt(obj.health || 0);
     struct.generator_power = null;
     if (Object.prototype.hasOwnProperty.call(obj,'generator_positions_ready')) {
       struct.generator_snapshot_meta = meta;
