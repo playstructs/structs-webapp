@@ -1,0 +1,6 @@
+framework:
+    assets:
+        packages:
+            webpack:
+                json_manifest_path: '%kernel.project_dir%/public/js/manifest.json'
+                strict_mode: true

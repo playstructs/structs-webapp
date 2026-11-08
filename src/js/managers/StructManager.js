@@ -7,6 +7,8 @@ import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
 import {HUDViewModel} from "../view_models/HUDViewModel";
 import {RefreshActionBarEvent} from "../events/RefreshActionBarEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {Player} from "../models/Player";
+import {legacyToBase, toBase} from "../util/Units";
 import {STRUCT_ACTIONS} from "../constants/StructConstants";
 import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {RenderStructEvent} from "../events/RenderStructEvent";
@@ -51,6 +53,58 @@ export class StructManager {
   isStructOnPlanet(struct, planetId, fleet = null) {
     return (struct.location_type === 'planet' && struct.location_id === planetId)
       || (struct.location_type === 'fleet' && fleet?.location_id === planetId);
+  }
+
+  /**
+   * @param {string|null} planetId
+   * @return {boolean}
+   */
+  isPlanetRaided(planetId) {
+    if (!planetId) {
+      return false;
+    }
+    return Object.values(this.gameState.keyPlayers).some(keyPlayer =>
+      keyPlayer.planetRaidInfo.planet_id === planetId
+      && keyPlayer.planetRaidInfo.isRaidActive()
+    );
+  }
+
+  /**
+   * The chain refuses mining and refining while a raider is on the planet, so
+   * a standing extractor or refinery there sits idle until the raid ends.
+   *
+   * @param {Struct} struct
+   * @return {boolean}
+   */
+  isOreWorkHaltedByRaid(struct) {
+    if (!struct || struct.isDestroyed() || !struct.isBuilt() || struct.location_type !== 'planet') {
+      return false;
+    }
+
+    const structType = this.gameState.structTypes.getStructTypeById(struct.type);
+    if (!structType || (!structType.hasPlanetaryMining() && !structType.hasPlanetaryRefinery())) {
+      return false;
+    }
+
+    return this.isPlanetRaided(struct.location_id);
+  }
+
+  /**
+   * Whether the struct is a planetary struct left behind on a planet its owner
+   * has since moved away from.
+   *
+   * @param {Struct} struct
+   * @return {boolean}
+   */
+  isAbandonedPlanetaryStruct(struct) {
+    if (struct.location_type !== 'planet') {
+      return false;
+    }
+
+    const owner = Object.values(this.gameState.keyPlayers).find(keyPlayer => keyPlayer.id === struct.owner);
+    const ownerPlanetId = owner?.player?.planet_id;
+
+    return !!ownerPlanetId && struct.location_id !== ownerPlanetId;
   }
 
   /**
@@ -166,11 +220,8 @@ export class StructManager {
     if (!player) {
       return 0n;
     }
-    const load = player.load_p ?? 0n;
-    const structsLoad = player.structs_load_p ?? 0n;
-    const capacity = player.capacity_p ?? 0n;
-    const connectionCapacity = player.connection_capacity_p ?? 0n;
-    return (capacity + connectionCapacity) - (load + structsLoad);
+    const {load, capacity} = Player.energyMilliwatts(player);
+    return capacity - load;
   }
 
   /**
@@ -179,10 +230,8 @@ export class StructManager {
    */
   getDeploymentBlockerInsufficientEnergySupply(structType) {
     const energySupply = this.getEnergySupply();
-    const buildDraw = structType.build_draw_p
-      ?? (structType.build_draw != null ? BigInt(structType.build_draw) * 1000n : 0n);
-    const passiveDraw = structType.passive_draw_p
-      ?? (structType.passive_draw != null ? BigInt(structType.passive_draw) * 1000n : 0n);
+    const buildDraw = toBase(structType.build_draw_p) ?? legacyToBase(structType.build_draw, 3) ?? 0n;
+    const passiveDraw = toBase(structType.passive_draw_p) ?? legacyToBase(structType.passive_draw, 3) ?? 0n;
     // Chain rejects equality: available must be strictly greater than draw.
     return (energySupply <= buildDraw || energySupply <= passiveDraw)
       ? 'Insufficient energy supply'
@@ -278,11 +327,9 @@ export class StructManager {
     }
 
     this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.BUILD_CANCEL);
-    this.gameState.actionBarLock.lock();
-
-    this.signingClientManager.queueMsgStructBuildCancel(
-      struct.id
-    ).then();
+    return this.gameState.actionBarLock.run(() =>
+      this.signingClientManager.queueMsgStructBuildCancel(struct.id)
+    );
   }
 
   /**
@@ -406,6 +453,14 @@ export class StructManager {
     const wasOnline = oldStruct ? oldStruct.isOnline() : null;
 
     const struct = await this.guildAPI.getStruct(structId);
+
+    // Departing a planet abandons its planetary structs, and their status
+    // changes can still be arriving after the owner has reached a new planet.
+    if (this.isAbandonedPlanetaryStruct(struct)) {
+      this.gameState.removeStruct(struct.id);
+      return null;
+    }
+
     this.gameState.setStruct(struct);
 
     const tileType = this.getTileTypeFromStruct(struct);

@@ -1,5 +1,6 @@
 import {AbstractController} from "../framework/AbstractController";
 import {IndexView} from "../view_models/IndexViewModel";
+import {IntroductionViewModel} from "../view_models/signup/IntroductionViewModel";
 import {ConnectingToCorp1ViewModel} from "../view_models/signup/ConnectingToCorp1ViewModel";
 import {ConnectingToCorp2ViewModel} from "../view_models/signup/ConnectingToCorp2ViewModel";
 import {IncomingCall1ViewModel} from "../view_models/signup/IncomingCall1ViewModel";
@@ -23,6 +24,9 @@ import {Orientation6ViewModel} from "../view_models/signup/Orientation6ViewModel
 import {Orientation7ViewModel} from "../view_models/signup/Orientation7ViewModel";
 import {Orientation8ViewModel} from "../view_models/signup/Orientation8ViewModel";
 import {OrientationEndViewModel} from "../view_models/signup/OrientationEndViewModel";
+import {TutorialConfirmViewModel} from "../view_models/tutorial/TutorialConfirmViewModel";
+import {TutorialMode} from "../tutorial/TutorialMode";
+import {onboardingTelemetry} from "../telemetry/OnboardingTelemetry";
 import {ActivateDeviceViewModel} from "../view_models/login/ActivateDeviceViewModel";
 import {ActivateDeviceVerifyViewModel} from "../view_models/login/ActivateDeviceVerifyViewModel";
 import {ActivationCodeInfoDTO} from "../dtos/ActivationCodeInfoDTO";
@@ -63,6 +67,22 @@ export class AuthController extends AbstractController {
 
   index() {
     const viewModel = new IndexView();
+    viewModel.render();
+  }
+
+  /**
+   * The opening crawl, played over the title screen once per browser session.
+   */
+  introduction() {
+    if (sessionStorage.getItem('introductionSeen')) {
+      this.index();
+      return;
+    }
+    sessionStorage.setItem('introductionSeen', '1');
+
+    this.index();
+
+    const viewModel = new IntroductionViewModel(() => {});
     viewModel.render();
   }
 
@@ -188,6 +208,23 @@ export class AuthController extends AbstractController {
     viewModel.render();
   }
 
+  skipTutorialConfirm() {
+    const viewModel = new TutorialConfirmViewModel(
+      'Skip Tutorial?',
+      'Are you sure you want to skip the tutorial? You can revisit the tutorial later from the menu.',
+      'Skip Tutorial',
+      'sui-mod-destructive',
+      () => {
+        onboardingTelemetry.skipped('orientation.tutorial_offer');
+        TutorialMode.markSkipped();
+        MenuPage.close();
+      },
+      () => MenuPage.router.goto('Auth', 'orientationEnd'),
+      false
+    );
+    viewModel.render();
+  }
+
   loginActivateDevice() {
     const viewModel = new ActivateDeviceViewModel(this.guildAPI);
     viewModel.render();
@@ -215,7 +252,8 @@ export class AuthController extends AbstractController {
   loginActivateDeviceWaitingForApproval(activationCodeInfoDTO = null) {
     const viewModel = new ActivateDeviceWaitingForApprovalViewModel(
       this.gameState,
-      activationCodeInfoDTO
+      activationCodeInfoDTO,
+      this.authManager
     );
     viewModel.render();
   }
@@ -255,7 +293,7 @@ export class AuthController extends AbstractController {
   /**
    * @param {object} options
    */
-  logout(options) {
+  logout(options = {}) {
 
     const addressToRevoke = options.hasOwnProperty('address') ? options.address : null;
 
@@ -266,7 +304,16 @@ export class AuthController extends AbstractController {
     MenuPage.router.goto('Generic', 'menuWaiting', menuWaitingOptions);
 
     if (addressToRevoke) {
-      this.authManager.revokeAddress(addressToRevoke).then();
+      const signal=MenuPage.router.navigationSignal;
+      const isCurrentDevice=addressToRevoke === this.gameState.signingAccount.address;
+      this.authManager.revokeAddress(addressToRevoke,signal).then(success=>{
+        if (!signal.aborted && (!success || !isCurrentDevice)) MenuPage.router.goto('Account','devices');
+      }).catch(error=>{
+        if (!signal.aborted) {
+          console.debug('[DeviceRevocation] revocation unavailable:',error);
+          MenuPage.router.goto('Account','devices');
+        }
+      });
     } else {
       this.authManager.logout();
     }

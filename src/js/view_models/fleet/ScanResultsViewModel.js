@@ -46,9 +46,9 @@ export class ScanResultsViewModel extends AbstractViewModel {
           planetRaid => {
             MenuPage.router.goto('Fleet', 'preview', {
               planet_id: player.planet_id,
-              planet_undiscovered_ore: player.undiscovered_ore_p ?? 0n,
+              planet_undiscovered_ore: player.undiscovered_ore_p ?? '0',
               defender_id: player.id,
-              defender_ore: player.ore_p ?? 0n,
+              defender_ore: player.ore_p ?? '0',
               attacker_id: planetRaid.isRaidActive() ? planetRaid.fleet_owner : null
             });
           }

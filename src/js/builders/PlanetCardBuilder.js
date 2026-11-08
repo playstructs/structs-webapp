@@ -6,7 +6,7 @@ import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {ClearTileSelectionEvent} from "../events/ClearTileSelectionEvent";
-import {fmt} from "../util/Units";
+import {fmt, toBase} from "../util/Units";
 
 export class PlanetCardBuilder {
 
@@ -168,12 +168,14 @@ export class PlanetCardBuilder {
       this.showAlphaBaseMap();
     }
 
-    alphaBaseCard.hasSecondaryBtn = true;
-    alphaBaseCard.secondaryBtnLabel = 'Depart';
-    alphaBaseCard.secondaryBtnHandler = () => {
-      MenuPage.router.goto('Fleet', 'index', {
-        planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_DEPART
-      });
+    if (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].isCommandStructOnPlanet()) {
+      alphaBaseCard.hasSecondaryBtn = true;
+      alphaBaseCard.secondaryBtnLabel = 'Depart';
+      alphaBaseCard.secondaryBtnHandler = () => {
+        MenuPage.router.goto('Fleet', 'index', {
+          planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_DEPART
+        });
+      }
     }
   }
 
@@ -423,7 +425,7 @@ export class PlanetCardBuilder {
 
       type = selectedType;
 
-    } else if (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore_p === 0n) {
+    } else if (toBase(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore_p) === 0n) {
 
       type = PLANET_CARD_TYPES.ALPHA_BASE_COMPLETED;
 
@@ -476,6 +478,18 @@ export class PlanetCardBuilder {
       // above have ruled one out by the time a missing command ship matters.
       type = PLANET_CARD_TYPES.RAID_NO_COMMAND_STRUCT;
 
+    }
+
+    // The raid status can be known before the enemy's planet and player finish
+    // loading (e.g. a GRASS message re-renders the fleet index mid-login).
+    if (
+      type === PLANET_CARD_TYPES.RAID_ACTIVE
+      && (
+        !this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planet
+        || !this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].player
+      )
+    ) {
+      type = PLANET_CARD_TYPES.RAID_LOADING;
     }
 
     return type;

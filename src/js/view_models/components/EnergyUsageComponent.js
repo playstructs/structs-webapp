@@ -2,6 +2,7 @@ import {AbstractViewModelComponent} from "../../framework/AbstractViewModelCompo
 import {EVENTS} from "../../constants/Events";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {fmtSet} from "../../util/Units";
+import {Player} from "../../models/Player";
 
 export class EnergyUsageComponent extends AbstractViewModelComponent {
 
@@ -23,9 +24,8 @@ export class EnergyUsageComponent extends AbstractViewModelComponent {
       return '—/—';
     }
 
-    const totalLoad = (player.load_p ?? 0n) + (player.structs_load_p ?? 0n);
-    const totalCapacity = (player.capacity_p ?? 0n) + (player.connection_capacity_p ?? 0n);
-    const [loadStr, capStr] = fmtSet([totalLoad, totalCapacity], 'mw');
+    const {load, capacity} = Player.energyMilliwatts(player);
+    const [loadStr, capStr] = fmtSet([load, capacity], 'mw');
 
     return `${loadStr}/${capStr}`;
   }

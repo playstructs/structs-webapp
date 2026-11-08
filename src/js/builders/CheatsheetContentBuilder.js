@@ -755,6 +755,15 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     let html = '';
 
     switch (dataset.suiCheatsheet) {
+      // Opening the deploy menu is free; only the Struct chosen from it costs battery.
+      case 'deploy':
+        html = this.renderer.renderContentHTML(
+          'Deploy',
+          null,
+          null,
+          `Choose a Struct to deploy.`
+        );
+        break;
       case 'energy-supply-insufficient':
         html = this.renderer.renderContentHTML(
           'Energy Supply',
@@ -847,6 +856,14 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           null,
           null,
           `Consume Alpha Matter to generate Energy.`
+        );
+        break;
+      case 'icon-attention-12':
+        html = this.renderer.renderContentHTML(
+          'Raiders Detected',
+          null,
+          null,
+          `Ore cannot be mined or refined while enemy forces are present.`
         );
         break;
       case 'icon-refine':

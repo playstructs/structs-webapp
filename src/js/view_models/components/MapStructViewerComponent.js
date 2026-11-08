@@ -139,7 +139,7 @@ export class MapStructViewerComponent {
       const struct = this.structManager.getStructById(this.structId);
       const activeLoopAnimation = this.lottieCustomPlayer.getAnimation(ANIMATION.NAMES.ACTIVE_LOOP);
 
-      if (struct && struct.isOnline()) {
+      if (struct && struct.isOnline() && !this.structManager.isOreWorkHaltedByRaid(struct)) {
         structStillContainer.classList.add('invisible');
         this.lottieCustomPlayer.play(ANIMATION.NAMES.ACTIVE_LOOP);
       } else {

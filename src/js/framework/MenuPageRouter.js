@@ -21,6 +21,14 @@ export class MenuPageRouter {
      * whether the user has since navigated away.
      */
     this.navigationId = 0;
+    this.navigationController = new AbortController();
+
+    /**
+     * Called with (controllerName, pageName) on every navigation, before the page renders.
+     *
+     * @type {function(string, string): void}
+     */
+    this.onNavigate = () => {};
 
     /**
      * Pages that depend on in-flight async work or function-valued options
@@ -44,7 +52,13 @@ export class MenuPageRouter {
     this.controllers.set(controller.name, controller);
   }
 
-  goto(controllerName, pageName, options = {}) {
+  get navigationSignal() {
+    return this.navigationController.signal;
+  }
+
+  goto(controllerName, pageName, options = {}, {replace = false} = {}) {
+    this.navigationController.abort();
+    this.navigationController = new AbortController();
     this.navigationId++;
 
     if (this.mode !== MENU_PAGE_ROUTER_MODES.PREVIEW) {
@@ -53,9 +67,11 @@ export class MenuPageRouter {
         && this.currentPage === pageName
         && stringifyWithBigInt(this.currentOptions) === stringifyWithBigInt(options)
       )) {
-        this.lastController = this.currentController;
-        this.lastPage = this.currentPage;
-        this.lastOptions = this.currentOptions;
+        if (!replace) {
+          this.lastController = this.currentController;
+          this.lastPage = this.currentPage;
+          this.lastOptions = this.currentOptions;
+        }
 
         this.currentController = controllerName;
         this.currentPage = pageName;
@@ -73,6 +89,8 @@ export class MenuPageRouter {
         options: options
       }));
     }
+
+    this.onNavigate(controllerName, pageName);
 
     this.controllers.get(controllerName)[pageName](options);
   }

@@ -1,6 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {ConfirmTemplate} from "../templates/ConfirmTemplate";
+import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 
 export class LogoutPermissionsWarningViewModel extends AbstractViewModel {
 
@@ -12,6 +13,7 @@ export class LogoutPermissionsWarningViewModel extends AbstractViewModel {
     super();
     this.gameState = gameState;
     this.playerAddress = playerAddress;
+    this.isPrimaryDevice = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.primary_address === playerAddress.address;
   }
 
   render() {

@@ -1,6 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {fmt} from "../../util/Units";
+import {fmt, toBase} from "../../util/Units";
 import {PfpViewerComponent} from "../components/PfpViewerComponent";
 
 export class AccountRecipientViewModel extends AbstractViewModel {
@@ -74,7 +74,8 @@ export class AccountRecipientViewModel extends AbstractViewModel {
    * @return {string}
    */
   renderAlphaHTML(playerSearchResultDTO) {
-    if (!playerSearchResultDTO.alpha_p) {
+    // alpha_p is a decimal string: hide unknown and exactly zero.
+    if (!toBase(playerSearchResultDTO.alpha_p)) {
       return '';
     }
 

@@ -14,7 +14,7 @@ class SignatureValidationManager
 
     public HttpClientInterface $httpClient;
 
-    public function __construct(HttpClientInterface $httpClient) {
+    public function __construct(HttpClientInterface $httpClient, private string $baseUrl = 'http://structsd:1317') {
         $this->httpClient = $httpClient;
     }
 
@@ -26,13 +26,27 @@ class SignatureValidationManager
      */
     public function validate(string $address, string $pubkey, string $signature, string $message):bool {
 
+        $path = implode('/', array_map('rawurlencode', [$address, $pubkey, $signature, $message]));
         $response = $this->httpClient->request(
             'GET',
-            "http://structsd:1317/structs/validate_signature/{$address}/{$pubkey}/{$signature}/{$message}"
+            rtrim($this->baseUrl, '/') . "/structs/validate_signature/{$path}",
+            ['timeout' => 2.0, 'max_duration' => 3.0, 'max_redirects' => 0,
+                'on_progress' => static function (int $downloaded): void {
+                    if ($downloaded > 1048576) {
+                        throw new \UnexpectedValueException('Signature validation response is too large');
+                    }
+                }]
         );
-        $responseContent = json_decode($response->getContent(), true);
-
-        return $responseContent['valid'] === true;
+        try {
+            $body = $response->getContent();
+            if (strlen($body) > 1048576) {
+                throw new \UnexpectedValueException('Signature validation response is too large');
+            }
+            $responseContent = json_decode($body, true, 64, JSON_THROW_ON_ERROR);
+            return ($responseContent['valid'] ?? null) === true;
+        } finally {
+            $response->cancel();
+        }
     }
 
     public function buildGuildMembershipJoinProxyMessage(string $guildId, string $address, int $nonce):string {
@@ -43,11 +57,8 @@ class SignatureValidationManager
         return "LOGIN_GUILD{$guildId}ADDRESS{$address}DATETIME{$timestamp}";
     }
 
-    public function buildAddressRegisterMessage(string $playerId, string $address):string {
-        return "PLAYER{$playerId}ADDRESS{$address}";
-    }
-
     public function isMessageTimeValid(string $messageTimestamp): bool {
-        return (time() - intval($messageTimestamp)) < self::MSG_EXPIRY_TIME;
+        return preg_match('/^(0|[1-9][0-9]{0,18})$/D', $messageTimestamp) === 1
+            && abs(time() - intval($messageTimestamp)) < self::MSG_EXPIRY_TIME;
     }
 }

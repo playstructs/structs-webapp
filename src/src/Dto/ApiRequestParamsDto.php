@@ -8,6 +8,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class ApiRequestParamsDto
 {
+    #[Assert\Uuid]
+    public ?string $activation_id = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $after_id = null;
 
@@ -29,6 +32,14 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::CODE)]
     public ?string $code = null;
 
+    /** Onboarding tutorial design, e.g. tutorial-4. */
+    #[Assert\Sequentially([
+        new Assert\Type('string'),
+        new Assert\Length(min: 1, max: 64),
+        new Assert\Regex(RegexPattern::SLUG),
+    ])]
+    public mixed $content_version = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $controller = null;
 
@@ -44,7 +55,8 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ADDRESS)]
     public ?string $delegator_address = null;
 
-    #[Assert\Regex(RegexPattern::SLUG)]
+    #[Assert\Regex(RegexPattern::DENOM)]
+    #[Assert\NotBlank(allowNull: true)]
     public ?string $denom = null;
 
     #[Assert\Regex(RegexPattern::ID)]
@@ -62,8 +74,23 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $fleet_id = null;
 
+    /** Mini game name; typed mixed so a non-string JSON value fails validation instead of being coerced. */
+    #[Assert\Sequentially([
+        new Assert\Type('string'),
+        new Assert\Length(min: 1, max: 64),
+        new Assert\Regex(RegexPattern::SLUG),
+    ])]
+    public mixed $game_name = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $guild_id = null;
+
+    /** Hours without a new onboarding event before a session counts as stopped. */
+    #[Assert\Sequentially([
+        new Assert\Regex(RegexPattern::INT),
+        new Assert\Range(min: 1, max: 720),
+    ])]
+    public ?string $idle_hours = null;
 
     #[Assert\Regex(RegexPattern::IDS)]
     public ?string $ids = null;
@@ -73,6 +100,14 @@ class ApiRequestParamsDto
 
     #[Assert\Choice(choices: ['0', '1'])]
     public ?string $include_total = null;
+
+    /** Mini game interface name; typed mixed so a non-string JSON value fails validation instead of being coerced. */
+    #[Assert\Sequentially([
+        new Assert\Type('string'),
+        new Assert\Length(min: 1, max: 64),
+        new Assert\Regex(RegexPattern::SLUG),
+    ])]
+    public mixed $interface_name = null;
 
     #[Assert\Regex(RegexPattern::INET)]
     public ?string $ip = null;
@@ -140,11 +175,18 @@ class ApiRequestParamsDto
     #[Assert\Json]
     public ?string $pfp_client_render_attributes = null;
 
+    #[Assert\Choice(choices: ['signup', 'tutorial'])]
+    public ?string $phase = null;
+
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $planet_id = null;
 
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $player_id = null;
+
+    /** new: this telemetry saw the player sign up. existing: it did not. */
+    #[Assert\Choice(choices: ['new', 'existing'])]
+    public ?string $player_type = null;
 
     #[Assert\Regex(RegexPattern::ADDRESS)]
     public ?string $primary_address = null;
@@ -168,6 +210,17 @@ class ApiRequestParamsDto
         'attacker', 'target', 'owner', 'planet_owner', 'defender', 'protected', 'fleet_owner',
     ])]
     public ?string $role = null;
+
+    /** first: a player's first tutorial run. repeat: the runs after it. */
+    #[Assert\Choice(choices: ['first', 'repeat'])]
+    public ?string $run = null;
+
+    /** Mini game score; typed mixed so 1.5, "7" or true are rejected rather than coerced to a numeric string. */
+    #[Assert\Sequentially([
+        new Assert\Type('integer'),
+        new Assert\Range(min: 0, max: 1000000),
+    ])]
+    public mixed $score = null;
 
     #[Assert\Regex(RegexPattern::SEARCH_STRING)]
     public ?string $search_string = null;

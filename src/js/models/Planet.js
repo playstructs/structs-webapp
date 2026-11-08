@@ -12,7 +12,7 @@ export class Planet {
     this.water_slots = null;
     this.name = null;
     this.undiscovered_ore = null;
-    /** @type {bigint|null} grams */
+    /** @type {string|null} exact decimal grams */
     this.undiscovered_ore_p = null;
 
     // TODO: Temporary, for map testing until ornament system chain side is built

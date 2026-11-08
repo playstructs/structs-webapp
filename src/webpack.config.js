@@ -1,16 +1,23 @@
 const webpack = require('webpack');
 const path = require('path');
+const AssetManifestPlugin = require('./webpack/AssetManifestPlugin.cjs');
+
+// Every rebuild gets a new hash, so development builds clear their predecessors.
+// Production builds never do: open pages still need the previous release's files.
+const isDevelopmentBuild = process.argv.includes('--mode=development');
 
 module.exports = {
   entry: {
     index: './js/index.js',
     test: './js/tests/test.js',
-    "workers/TaskWorker": "./js/workers/TaskWorker.js",
   },
   output: {
-    filename: '[name].js',
+    filename: '[name].[contenthash].js',
+    chunkFilename: '[name].[contenthash].js',
     path: path.resolve(__dirname, 'public/js'),
-    sourceMapFilename: "[name].js.map",
+    sourceMapFilename: "[file].map",
+    // public/js also holds hand-written scripts, which aren't build output.
+    clean: isDevelopmentBuild && {keep: /^(main|plugins)\.js$|^vendor\//},
   },
   devtool: "source-map",
   experiments: {
@@ -41,6 +48,7 @@ module.exports = {
     ]
   },
   plugins: [
+    new AssetManifestPlugin(),
     // @cosmjs/utils and cosmjs-types use Buffer as a global. Nothing else in the
     // graph needs a Node global: the handful of `typeof process` reads are Node
     // detection, which must stay false here.

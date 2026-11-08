@@ -4,6 +4,7 @@ import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {PfpViewerComponent} from "../components/PfpViewerComponent";
 import {fmt, fmtSet} from "../../util/Units";
+import {Player} from "../../models/Player";
 
 export class AccountProfileViewModel extends AbstractViewModel {
 
@@ -116,9 +117,8 @@ export class AccountProfileViewModel extends AbstractViewModel {
   }
 
   getEnergyUsage() {
-    const totalLoad = this.player.load_p + this.player.structs_load_p;
-    const totalCapacity = this.player.capacity_p + this.player.connection_capacity_p;
-    const [loadStr, capStr] = fmtSet([totalLoad, totalCapacity], 'mw');
+    const {load, capacity} = Player.energyMilliwatts(this.player);
+    const [loadStr, capStr] = fmtSet([load, capacity], 'mw');
 
     return `${loadStr}/${capStr}`;
   }

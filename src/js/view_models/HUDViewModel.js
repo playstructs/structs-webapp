@@ -174,6 +174,13 @@ export class HUDViewModel extends AbstractViewModel {
       }
     });
 
+    // A raid starting or ending halts or resumes extractors and refineries.
+    window.addEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, () => {
+      if (!HUDViewModel.gameState.actionBarLock.getCurrentAction()) {
+        HUDViewModel.refreshActionBar();
+      }
+    });
+
     // Listen for REFRESH_ACTION_BAR events (when a struct arrives at a position)
     window.addEventListener(EVENTS.REFRESH_ACTION_BAR_IF_SELECTED, (event) => {
       HUDViewModel.refreshActionBarIfSelected(
@@ -235,7 +242,8 @@ export class HUDViewModel extends AbstractViewModel {
     // landed on chain. A transaction that never lands produces no such frame, so
     // without this the executing progress bar runs until the player clicks away.
     window.addEventListener(EVENTS.SIGNING_TRANSACTION_SETTLED, (event) => {
-      if (event.status === TX_STATUS.SUCCEEDED || !HUDViewModel.gameState.actionBarLock.isLocked()) {
+      if (event.status === TX_STATUS.SUCCEEDED || !HUDViewModel.gameState.actionBarLock.isLocked()
+          || HUDViewModel.gameState.actionBarLock.completionManaged) {
         return;
       }
 

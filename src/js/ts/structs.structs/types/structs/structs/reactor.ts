@@ -16,14 +16,7 @@ export interface Reactor {
   defaultCommission: string;
   rawAddress: Uint8Array;
   owner: string;
-  /**
-   * guildCharterEligibleHeight is the block from which this reactor may found
-   * one guild without solving the charter proof-of-work. Stored as a height
-   * rather than derived from an age so that lowering the param cannot
-   * retroactively unlock a wave of existing reactors, and so the check is one
-   * comparison with no subtraction to underflow.
-   */
-  guildCharterEligibleHeight: number;
+  guildCharterEligibleHeight: string;
 }
 
 function createBaseReactor(): Reactor {
@@ -34,7 +27,7 @@ function createBaseReactor(): Reactor {
     defaultCommission: "",
     rawAddress: new Uint8Array(0),
     owner: "",
-    guildCharterEligibleHeight: 0,
+    guildCharterEligibleHeight: "0",
   };
 }
 
@@ -58,7 +51,7 @@ export const Reactor: MessageFns<Reactor> = {
     if (message.owner !== "") {
       writer.uint32(50).string(message.owner);
     }
-    if (message.guildCharterEligibleHeight !== 0) {
+    if (message.guildCharterEligibleHeight !== "0") {
       writer.uint32(56).uint64(message.guildCharterEligibleHeight);
     }
     return writer;
@@ -124,7 +117,7 @@ export const Reactor: MessageFns<Reactor> = {
             break;
           }
 
-          message.guildCharterEligibleHeight = longToNumber(reader.uint64());
+          message.guildCharterEligibleHeight = reader.uint64().toString();
           continue;
         }
       }
@@ -145,8 +138,8 @@ export const Reactor: MessageFns<Reactor> = {
       rawAddress: isSet(object.rawAddress) ? bytesFromBase64(object.rawAddress) : new Uint8Array(0),
       owner: isSet(object.owner) ? globalThis.String(object.owner) : "",
       guildCharterEligibleHeight: isSet(object.guildCharterEligibleHeight)
-        ? globalThis.Number(object.guildCharterEligibleHeight)
-        : 0,
+        ? globalThis.String(object.guildCharterEligibleHeight)
+        : "0",
     };
   },
 
@@ -170,8 +163,8 @@ export const Reactor: MessageFns<Reactor> = {
     if (message.owner !== "") {
       obj.owner = message.owner;
     }
-    if (message.guildCharterEligibleHeight !== 0) {
-      obj.guildCharterEligibleHeight = Math.round(message.guildCharterEligibleHeight);
+    if (message.guildCharterEligibleHeight !== "0") {
+      obj.guildCharterEligibleHeight = message.guildCharterEligibleHeight;
     }
     return obj;
   },
@@ -187,7 +180,7 @@ export const Reactor: MessageFns<Reactor> = {
     message.defaultCommission = object.defaultCommission ?? "";
     message.rawAddress = object.rawAddress ?? new Uint8Array(0);
     message.owner = object.owner ?? "";
-    message.guildCharterEligibleHeight = object.guildCharterEligibleHeight ?? 0;
+    message.guildCharterEligibleHeight = object.guildCharterEligibleHeight ?? "0";
     return message;
   },
 };
@@ -228,17 +221,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

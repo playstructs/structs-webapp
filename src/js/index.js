@@ -36,6 +36,16 @@ import {DialogueKeyboardControls} from "./framework/DialogueKeyboardControls";
 import {MapPanController} from "./framework/MapPanController";
 import {AnimationEventQueue} from "./data_structures/AnimationEventQueue";
 import {LOG_LEVEL, RESUME_CHECK_INTERVAL_MS} from "./constants/GrassConstants";
+import {TutorialMode} from "./tutorial/TutorialMode";
+import {TutorialWorld} from "./tutorial/TutorialWorld";
+import {SimulatedGuildAPI} from "./tutorial/SimulatedGuildAPI";
+import {SimulatedSigningClientManager} from "./tutorial/SimulatedSigningClientManager";
+import {SimulatedTaskManager} from "./tutorial/SimulatedTaskManager";
+import {TutorialController} from "./controllers/TutorialController";
+import {onboardingTelemetry} from "./telemetry/OnboardingTelemetry";
+import {StartupRecovery, startupReads} from "./managers/StartupRecovery";
+import {AuthenticationError} from "./errors/AuthenticationError";
+import {DeviceRegistrationStore} from "./managers/DeviceRegistrationStore";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -72,10 +82,16 @@ if (!precisionMigrate) {
   keysToRemove.forEach((key) => localStorage.removeItem(key));
 }
 
+// The tutorial boots the same app against an in-memory simulation instead of
+// the player's account: no network, no transactions, no saved state.
+const tutorialMode = TutorialMode.isActive();
+const tutorialWorld = tutorialMode ? new TutorialWorld() : null;
+
 const gameState = new GameState();
+gameState.persistenceEnabled = !tutorialMode;
 global.gameState = gameState;
 
-const guildAPI = new GuildAPI();
+const guildAPI = tutorialMode ? new SimulatedGuildAPI(tutorialWorld) : new GuildAPI();
 global.guildAPI = guildAPI;
 gameState.guildAPI = guildAPI;
 
@@ -95,7 +111,9 @@ const blockGrassManager = new GrassManager(
   gameState
 );
 
-const signingClientManager = new SigningClientManager(gameState);
+const signingClientManager = tutorialMode
+  ? new SimulatedSigningClientManager(gameState, tutorialWorld)
+  : new SigningClientManager(gameState);
 global.signingClientManager = signingClientManager;
 
 const structManager = new StructManager(gameState, guildAPI, signingClientManager);
@@ -114,7 +132,9 @@ const raidManager = new RaidManager(gameState, guildAPI, grassManager, mapManage
 
 const taskStateFactory = new TaskStateFactory();
 
-const taskManager = new TaskManager(gameState, guildAPI, signingClientManager, taskStateFactory);
+const taskManager = tutorialMode
+  ? new SimulatedTaskManager(gameState, guildAPI, signingClientManager, taskStateFactory)
+  : new TaskManager(gameState, guildAPI, signingClientManager, taskStateFactory);
 global.taskManager = taskManager;
 
 const destroyedStructManager = new DestroyedStructManager(gameState, structManager);
@@ -217,6 +237,12 @@ gameState.previewMap = new MapComponent(
 
 MenuPage.gameState = gameState;
 MenuPage.mapManager = mapManager;
+MenuPage.router.onNavigate = (controllerName, pageName) => onboardingTelemetry.recordNavigation(
+  controllerName,
+  pageName,
+  gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
+);
+
 MenuPage.router.registerController(authController);
 MenuPage.router.registerController(accountController);
 MenuPage.router.registerController(genericController);
@@ -232,9 +258,11 @@ DialogueKeyboardControls.initListeners();
 
 new MapPanController().init();
 
-grassManager.init();
-blockGrassManager.registerListener(blockListener);
-blockGrassManager.init();
+if (!tutorialMode) {
+  grassManager.init();
+  blockGrassManager.registerListener(blockListener);
+  blockGrassManager.init();
+}
 
 // A backgrounded or slept page can come back with WebSockets that report a
 // healthy readyState but carry no traffic, which no close event announces.
@@ -248,54 +276,136 @@ const onResume = (forceResumeCheck = true) => {
   signingClientManager.resumeCheck(forceResumeCheck).then();
 };
 
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    onResume();
-  }
-});
-window.addEventListener('pageshow', (event) => {
-  if (event.persisted) {
-    onResume();
-  }
-});
-
-// Wrapped so the event object cannot land in the force parameter.
-window.addEventListener('online', () => onResume());
-window.addEventListener('focus', () => onResume());
-
-// The events above only fire when the user comes back, but a socket can go
-// quiet while the tab is right in front of them, and no event announces that.
-// The signing probe rides along throttled, which also covers the case where
-// grass was stale at resume and its own check had to be deferred.
-setInterval(() => {
-  onResume(false);
-}, RESUME_CHECK_INTERVAL_MS);
-
-const hudContainer = document.getElementById(HUDViewModel.containerId);
-
-await gameState.load();
-gameState.settings = await guildAPI.getSettings();
-gameState.thisGuild = await guildAPI.getThisGuild();
-
-HUDViewModel.init(gameState, signingClientManager, structManager, taskManager, alphaManager, grassManager);
-hudContainer.innerHTML = HUDViewModel.render();
-HUDViewModel.initPageCode();
-
-MenuPage.sui.autoInitAll();
-
-if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
-  MenuPage.router.goto('Auth', 'index');
-
-  MenuPage.hideLoadingScreen();
-} else {
-  authManager.login(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id).then(() => {
-    return playerAddressManager.addPlayerAddressMeta().then(() => {
-      MenuPage.close();
-      MenuPage.router.restore('Fleet', 'index');
-      MenuPage.hideLoadingScreen();
-    });
+if (!tutorialMode) {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      onResume();
+    }
   });
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      onResume();
+    }
+  });
+
+  // Wrapped so the event object cannot land in the force parameter.
+  window.addEventListener('online', () => onResume());
+  window.addEventListener('focus', () => onResume());
+
+  // The events above only fire when the user comes back, but a socket can go
+  // quiet while the tab is right in front of them, and no event announces that.
+  // The signing probe rides along throttled, which also covers the case where
+  // grass was stale at resume and its own check had to be deferred.
+  setInterval(() => {
+    onResume(false);
+  }, RESUME_CHECK_INTERVAL_MS);
 }
 
-// Start the hashing engine after a delay
-new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(() => window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
+const hudContainer = document.getElementById(HUDViewModel.containerId);
+const startupRecovery = tutorialMode ? null : new StartupRecovery(
+  () => gameState.persistenceEnabled && gameState.isSessionCurrent()
+);
+
+/**
+ * Load the saved session and guild configuration, then open the first page.
+ */
+async function startApplication() {
+  if (!tutorialMode) {
+    await gameState.load();
+    DeviceRegistrationStore.expireRecovery()
+      .catch(error => console.debug('[DeviceRecovery] expired keys could not be removed:', error));
+  }
+  const loadConfiguration = () => startupReads([() => guildAPI.getSettings(), () => guildAPI.getThisGuild()]);
+  [gameState.settings, gameState.thisGuild] = startupRecovery
+    ? await startupRecovery.run(loadConfiguration, {retryAuthentication: true})
+    : await loadConfiguration();
+
+  HUDViewModel.init(gameState, signingClientManager, structManager, taskManager, alphaManager, grassManager);
+  if (tutorialMode) {
+    // In the simulation the portrait opens Combat Training's own menu.
+    HUDViewModel.bottomLeftActionBar.profileClickHandler = () => TutorialMode.openMenu();
+  }
+  hudContainer.innerHTML = HUDViewModel.render();
+  HUDViewModel.initPageCode();
+
+  MenuPage.sui.autoInitAll();
+
+  if (tutorialMode) {
+    const tutorialController = new TutorialController(
+      gameState,
+      tutorialWorld,
+      signingClientManager,
+      guildAPI,
+      structManager,
+      mapManager,
+      destroyedStructManager
+    );
+    MenuPage.router.registerController(tutorialController);
+
+    // Tutorial pages are never restored after a reload.
+    MenuPage.router.enablePreviewMode();
+    MenuPage.router.goto('Tutorial', 'loading');
+
+    MenuPage.hideLoadingScreen();
+  } else if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
+    TutorialMode.consumeExited();
+    // The opening crawl (Auth/introduction) is shelved for now.
+    try {
+      if (!await authManager.restoreDeviceActivation()) MenuPage.router.goto('Auth', 'index');
+    } catch (error) {
+      console.debug('[DeviceActivation] saved activation unavailable:', error);
+      MenuPage.router.goto('Auth', 'index');
+    }
+
+    MenuPage.hideLoadingScreen();
+  } else {
+    const tutorialExit = TutorialMode.consumeExited();
+    const returningFromTutorial = tutorialExit !== null;
+    const savedAddress = gameState.signingAccount?.address;
+    const savedPlayerId = gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const current = startupRecovery.current;
+    startupRecovery.current = () => current()
+      && gameState.signingAccount?.address === savedAddress
+      && gameState.keyPlayers[PLAYER_TYPES.PLAYER].id === savedPlayerId;
+
+    const loggedIn = await authManager.login(
+      savedPlayerId,
+      startupRecovery.signal,
+      operation => startupRecovery.run(operation)
+    );
+    if (!loggedIn) throw new AuthenticationError('Saved session was rejected',401);
+    startupRecovery.assertCurrent();
+    MenuPage.close();
+    if (!returningFromTutorial && !TutorialMode.offerIfUndecided()) {
+      MenuPage.router.restore('Fleet', 'index');
+    }
+    MenuPage.hideLoadingScreen();
+    if (returningFromTutorial) {
+      TutorialMode.frameHomeAfterReturn(gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
+      // The FTL jump counts as finished once the player is in the real game.
+      if (tutorialExit === TutorialMode.EXIT_COMPLETED) {
+        onboardingTelemetry.reached('tutorial.end.ftl_jump');
+      }
+    }
+  }
+
+  if (!tutorialMode) {
+    // Start the hashing engine after a delay
+    new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(() => window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
+  }
+}
+
+startApplication().catch(error => {
+  if (startupRecovery?.signal.aborted || (!tutorialMode && !gameState.isSessionCurrent())) return;
+  console.warn('[Startup] session could not be restored:', error);
+  // Stop partial runtime work, retaining the saved key and signed journal. A
+  // rejected API login is not authoritative evidence of native revocation.
+  signingClientManager.stopForLogout?.();
+  authManager.sessionAuthority?.stop();
+  authManager.workRefresh?.stop();
+  gameState.alphaRefresh?.stop();
+  taskManager.closeSession?.();
+  MenuPage.router.goto('Auth', 'index');
+  MenuPage.open();
+  MenuPage.hideLoadingScreen();
+}).finally(() => startupRecovery?.finish());

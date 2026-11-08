@@ -4,6 +4,8 @@ namespace App\Constant;
 
 class ApiParameters
 {
+    const string ACTIVATION_ID = 'activation_id';
+
     const string ADDRESS = 'address';
 
     const string AFTER_ID = 'after_id';
@@ -12,11 +14,15 @@ class ApiParameters
 
     const string ATTRIBUTE_TYPE = 'attribute_type';
 
+    const string BROWSER_ID = 'browser_id';
+
     const string BUCKET = 'bucket';
 
     const string CATEGORY = 'category';
 
     const string CODE = 'code';
+
+    const string CONTENT_VERSION = 'content_version';
 
     const string CONTROLLER = 'controller';
 
@@ -36,17 +42,25 @@ class ApiParameters
 
     const string ENTRY_SUBSTATION_ID = 'entry_substation_id';
 
+    const string EVENTS = 'events';
+
     const string FLEET_AWAY_ONLY = 'fleet_away_only';
 
     const string FLEET_ID = 'fleet_id';
 
+    const string GAME_NAME = 'game_name';
+
     const string GUILD_ID = 'guild_id';
+
+    const string IDLE_HOURS = 'idle_hours';
 
     const string IDS = 'ids';
 
     const string INCLUDE_META = 'include_meta';
 
     const string INCLUDE_TOTAL = 'include_total';
+
+    const string INTERFACE_NAME = 'interface_name';
 
     const string IP = 'ip';
 
@@ -90,9 +104,13 @@ class ApiParameters
 
     const string PFP_CLIENT_RENDER_ATTRIBUTES = 'pfp_client_render_attributes';
 
+    const string PHASE = 'phase';
+
     const string PLANET_ID = 'planet_id';
 
     const string PLAYER_ID = 'player_id';
+
+    const string PLAYER_TYPE = 'player_type';
 
     const string PRIMARY_ADDRESS = 'primary_address';
 
@@ -106,9 +124,15 @@ class ApiParameters
 
     const string ROLE = 'role';
 
+    const string RUN = 'run';
+
     const string Q = 'q';
 
+    const string SCORE = 'score';
+
     const string SEARCH_STRING = 'search_string';
+
+    const string SESSION_ID = 'session_id';
 
     const string SIGNATURE = 'signature';
 
@@ -121,6 +145,8 @@ class ApiParameters
     const string START_TIME = 'start_time';
 
     const string STATUS = 'status';
+
+    const string STEP_KEY = 'step_key';
 
     const string STRUCT_ID = 'struct_id';
 

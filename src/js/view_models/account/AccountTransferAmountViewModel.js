@@ -1,21 +1,24 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
-import {parse, baseToDisplayDecimal} from "../../util/Units";
+import {transferLimit} from "../../util/TransferLimit";
+import {pollUntil} from "../../util/PollUntil";
 
 export class AccountTransferAmountViewModel extends AbstractViewModel {
 
   /**
    * @param {GameState} gameState
+   * @param {GuildAPI} guildAPI
    */
-  constructor(gameState) {
+  constructor(gameState, guildAPI) {
     super();
     this.gameState = gameState;
+    this.guildAPI = guildAPI;
     this.amountInputId = 'transferAmountInput';
     this.nextBtnId = 'transferAmountNextBtn';
-    this.gameState.setTransferAmount('0');
-    this.maxAlpha = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.alpha_p ?? 0n;
-    this.maxDisplay = baseToDisplayDecimal(this.maxAlpha);
+    this.gameState.setTransferAmount(0);
+    this.maxTransfer = 0;
+    this.fundsReady = false;
   }
 
   initPageCode() {
@@ -27,10 +30,11 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
 
     const inputStepperChangeHandler = () => {
       const nextBtn = document.getElementById(this.nextBtnId);
-      const text = document.getElementById(this.amountInputId).value;
-      const amount = parse(text, 'ualpha');
-      
-      if (amount && amount > 0n && amount <= this.maxAlpha) {
+      if (
+        this.fundsReady
+        && /^[1-9][0-9]?$/.test(document.getElementById(this.amountInputId).value)
+        && document.getElementById(this.amountInputId).value <= this.maxTransfer
+      ) {
         nextBtn.disabled = false;
         nextBtn.classList.add('sui-mod-primary');
         nextBtn.classList.remove('sui-mod-disabled');
@@ -46,14 +50,36 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
     amountInput.addEventListener('input', inputStepperChangeHandler);
 
     document.getElementById(this.nextBtnId).addEventListener('click', () => {
-      const text = document.getElementById(this.amountInputId).value;
-      const amount = parse(text, 'ualpha');
-      
-      if (amount && amount > 0n && amount <= this.maxAlpha) {
-        this.gameState.setTransferAmount(amount.toString());
-        MenuPage.router.goto('Account', 'recipientSearch');
-      }
-    })
+      if (!this.fundsReady || !/^[1-9][0-9]?$/.test(amountInput.value) || Number(amountInput.value) > this.maxTransfer) return;
+      this.gameState.setTransferAmount(parseInt(document.getElementById(this.amountInputId).value));
+      MenuPage.router.goto('Account', 'recipientSearch');
+    });
+
+    amountInput.disabled = true;
+    decreaseBtn.disabled = true;
+    increaseBtn.disabled = true;
+    const signal = MenuPage.router.navigationSignal;
+    const ownerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    this.loadLimit(ownerId, signal).then(maxTransfer => {
+      if (signal.aborted || this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id !== ownerId) return;
+      this.maxTransfer = maxTransfer;
+      this.fundsReady = true;
+      amountInput.max = this.maxTransfer;
+      amountInput.disabled = false;
+      decreaseBtn.disabled = Number(amountInput.value) <= 0;
+      increaseBtn.disabled = Number(amountInput.value) >= this.maxTransfer;
+      inputStepperChangeHandler();
+    }).catch(error => {
+      if (!signal.aborted) console.debug('[AccountTransferAmount] funds unavailable:', error);
+    });
+  }
+
+  async loadLimit(ownerId, signal) {
+    return pollUntil(async () => {
+      const player = await this.guildAPI.getPlayer(ownerId, {signal, timeoutMs: 16000});
+      signal.throwIfAborted();
+      return transferLimit(player, ownerId, this.gameState.currentBlockHeight);
+    }, signal, {label: '[AccountTransferAmount] funds unavailable:'});
   }
 
   render () {
@@ -77,9 +103,8 @@ export class AccountTransferAmountViewModel extends AbstractViewModel {
               name="${this.amountInputId}"
               type="number"
               step="1"
-              data-decimals="6"
               min="0"
-              max="${this.maxDisplay}"
+              max="${this.maxTransfer}"
               value="0"
             >
             <button class="sui-screen-btn sui-mod-secondary">

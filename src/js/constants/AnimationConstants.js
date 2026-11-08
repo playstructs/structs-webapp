@@ -90,6 +90,18 @@ export const
       GATLING: 'GATLING',
       MISSILE: 'MISSILE',
       TORPEDO: 'TORPEDO',
+    },
+    /**
+     * Reaction icons (in /img/sui/icon) shown under a struct while it reacts to an
+     * attack, on its map tile and in the off-screen picture-in-picture.
+     */
+    BADGES: {
+      /** The targeted struct fires back. */
+      COUNTER_ATTACK: 'icon-counter-attack',
+      /** A defender (or a planetary defense cannon) fires back. */
+      DEFENDER_COUNTER: 'icon-defender-counter',
+      /** A defender takes the hit for the struct it protects. */
+      BLOCK: 'icon-defender-block',
     }
   }
 ;

@@ -1,8 +1,10 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {fmtWithExact} from "../../util/Units";
+import {fmtWithExact, legacyToBase} from "../../util/Units";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
-import {TransferSentListener} from "../../grass_listeners/TransferSentListener";
+import {MenuWaitingViewModel} from "../generic/MenuWaitingViewModel";
+import {TX_STATUS} from "../../models/SigningTransaction";
+import {waitForTransferSource} from "../../util/TransferCompletion";
 
 export class AccountConfirmTransfer extends AbstractViewModel {
 
@@ -10,58 +12,82 @@ export class AccountConfirmTransfer extends AbstractViewModel {
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    * @param {AlphaManager} alphaManager
-   * @param {GrassManager} grassManager
    * @param {PlayerSearchResultDTO|object} playerSearchResultDTO
    */
   constructor(
     gameState,
     guildAPI,
     alphaManager,
-    grassManager,
     playerSearchResultDTO
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.alphaManager = alphaManager;
-    this.grassManager = grassManager;
     this.playerSearchResultDTO = playerSearchResultDTO;
     this.cancelBtnId = 'confirm-transfer-cancel-btn';
     this.transferBtnId = 'confirm-transfer-transfer-btn';
+    this.transferring = false;
   }
 
   initPageCode() {
     document.getElementById(this.cancelBtnId).addEventListener('click', () => {
       MenuPage.router.goto('Account', 'index');
     });
-    document.getElementById(this.transferBtnId).addEventListener('click', () => {
-      const options = new MenuWaitingOptions();
-      options.headerBtnLabel = 'Transferring...';
-      options.waitingAnimation = 'ALPHA_TRANSFER';
-      options.hasDoNotCloseMessage = false;
+    document.getElementById(this.transferBtnId).addEventListener('click', () => this.transfer());
+  }
 
-      MenuPage.router.goto('Generic', 'menuWaiting', options);
+  async transfer() {
+    if (this.transferring) return;
+    this.transferring = true;
+    const recipient = {...this.playerSearchResultDTO};
+    const amount = this.gameState.transferAmount;
+    const account = this.gameState.signingAccount.address;
+    const options = new MenuWaitingOptions();
+    options.headerBtnLabel = 'Transferring...';
+    options.waitingAnimation = 'ALPHA_TRANSFER';
+    options.hasDoNotCloseMessage = false;
+    // Leaving only stops this screen's wait; the queued transfer carries on.
+    options.waitingMessage = 'The transfer continues if you leave this screen.';
+    options.headerBtnShowBackIcon = true;
+    options.headerBtnHandler = () => MenuPage.router.goto('Account', 'transfers');
+    MenuPage.router.goto('Generic', 'menuWaiting', options, {replace: true});
+    const signal = MenuPage.router.navigationSignal;
+    const active = () => !signal.aborted && this.gameState.signingAccount?.address === account;
+    const returnToConfirmation = () => {
+      if (!active()) return;
+      this.gameState.setTransferAmount(amount);
+      MenuPage.router.goto('Account', 'confirmTransfer', recipient, {replace: true});
+    };
 
-      this.grassManager.registerListener(new TransferSentListener(
-        this.gameState,
-        this.gameState.signingAccount.address,
-        this.playerSearchResultDTO.primary_address || this.playerSearchResultDTO.address,
-        this.gameState.transferAmount
-      ));
-
-      this.alphaManager.transferAlpha(
-        this.playerSearchResultDTO.primary_address || this.playerSearchResultDTO.address,
-        this.gameState.transferAmount
-      ).then((result) => {
-        if (!this.alphaManager.isSettledSuccess(result)) {
-          console.error('Transfer failed or settlement unsuccessful');
-          MenuPage.router.goto('Account', 'confirmTransfer', this.playerSearchResultDTO);
-        }
-      }).catch((error) => {
-        console.error('Transfer error:', error);
-        MenuPage.router.goto('Account', 'confirmTransfer', this.playerSearchResultDTO);
-      });
-    });
+    let tx;
+    try {
+      tx = await this.alphaManager.transferAlpha(recipient.address, amount, recipient.id ?? null, signal);
+    } catch (error) {
+      // Enqueue failures are unsent; an uncertain broadcast never rejects this waiter.
+      if (active()) {
+        console.warn('[AccountConfirmTransfer] transfer unavailable:', error);
+        returnToConfirmation();
+      }
+      return;
+    }
+    if (!active()) return;
+    if (tx.status === TX_STATUS.DROPPED || tx.status === TX_STATUS.CANCELLED) {
+      returnToConfirmation();
+      return;
+    }
+    if (tx.status !== TX_STATUS.SUCCEEDED) return;
+    try {
+      const row = await waitForTransferSource(this.guildAPI, tx, signal);
+      if (active()) MenuPage.router.goto('Account', 'transaction', {
+        txId: row.id, comingFromPage: 1, hasBackToAccountBtn: true
+      }, {replace: true});
+    } catch (error) {
+      // A committed transfer must never return to a screen offering to send it again.
+      if (!active()) return;
+      console.warn('[AccountConfirmTransfer] completion needs matching evidence:', error);
+      MenuWaitingViewModel.setMessage('Confirmed on chain. Your transfer history has not caught up yet; check it again shortly.');
+    }
   }
 
   /**
@@ -83,7 +109,8 @@ export class AccountConfirmTransfer extends AbstractViewModel {
   }
 
   render () {
-    const amount = fmtWithExact(this.gameState.transferAmount, 'ualpha');
+    // transferAmount is whole Alpha; show it on the ualpha ladder.
+    const amount = fmtWithExact(legacyToBase(this.gameState.transferAmount, 6), 'ualpha');
 
     MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 

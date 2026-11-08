@@ -10,13 +10,13 @@ export class PlayerSearchResultDTO {
     this.tag = null;
     this.fleet_status = null;
     this.alpha = null;
-    /** @type {bigint|null} ualpha */
+    /** @type {string|null} exact decimal ualpha */
     this.alpha_p = null;
     this.undiscovered_ore = null;
-    /** @type {bigint|null} grams */
+    /** @type {string|null} exact decimal grams */
     this.undiscovered_ore_p = null;
     this.ore = null;
-    /** @type {bigint|null} grams */
+    /** @type {string|null} exact decimal grams */
     this.ore_p = null;
     this.planet_id = null;
     this.under_attack = null;

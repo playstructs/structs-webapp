@@ -3,9 +3,11 @@
 namespace App\Controller;
 
 use App\Manager\PlayerManager;
+use App\Manager\VaultFundsManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -75,9 +77,10 @@ class PlayerController extends AbstractController
     public function getPlayer(
         string $player_id,
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        VaultFundsManager $vaultFunds
     ): Response {
-        $playerManager = new PlayerManager($entityManager, $validator);
+        $playerManager = new PlayerManager($entityManager, $validator, $vaultFunds);
         return $playerManager->getPlayer($player_id);
     }
 
@@ -181,5 +184,60 @@ class PlayerController extends AbstractController
     ): Response {
         $playerManager = new PlayerManager($entityManager, $validator);
         return $playerManager->getPlayerRaidsLaunched($player_id);
+    }
+
+    /**
+     * @param string $player_id
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/player/{player_id}/raid/won', name: 'api_get_player_raids_won', methods: ['GET'])]
+    public function getPlayerRaidsWon(
+        string $player_id,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerManager = new PlayerManager($entityManager, $validator);
+        return $playerManager->getPlayerRaidsWon($player_id);
+    }
+
+    /**
+     * @param Request $request
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @param Security $security
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/player/mini-game/progress', name: 'api_set_player_mini_game_progress', methods: ['PUT'])]
+    public function setPlayerMiniGameProgress(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator,
+        Security $security
+    ): Response {
+        $playerManager = new PlayerManager($entityManager, $validator);
+        return $playerManager->setPlayerMiniGameProgress($request, $security);
+    }
+
+    /**
+     * @param string $player_id
+     * @param string $interface_name
+     * @param EntityManagerInterface $entityManager
+     * @param ValidatorInterface $validator
+     * @return Response
+     * @throws Exception
+     */
+    #[Route('/api/player/{player_id}/mini-game/{interface_name}', name: 'api_get_player_mini_game_progress', methods: ['GET'])]
+    public function getPlayerMiniGameProgress(
+        string $player_id,
+        string $interface_name,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator
+    ): Response {
+        $playerManager = new PlayerManager($entityManager, $validator);
+        return $playerManager->getPlayerMiniGameProgress($player_id, $interface_name);
     }
 }

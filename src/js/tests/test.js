@@ -1,13 +1,38 @@
+import {APIReadinessTest} from "./APIReadinessTest";
 import {PermissionManagerTest} from "./PermissionManagerTest";
 import {TaskManagerOreTest} from "./TaskManagerOreTest";
 import {ShieldStatusTest} from "./ShieldStatusTest";
+import {AbandonedPlanetaryStructTest} from "./AbandonedPlanetaryStructTest";
+import {ActionBarOreCountTest} from "./ActionBarOreCountTest";
+import {RaidedOreStructTest} from "./RaidedOreStructTest";
+import {DeployOffcanvasChargeTest} from "./DeployOffcanvasChargeTest";
+import {TargetSelectedIndicatorTest} from "./TargetSelectedIndicatorTest";
+import {DeployCheatsheetTest} from "./DeployCheatsheetTest";
+import {InvalidTargetClickTest} from "./InvalidTargetClickTest";
+import {ManageAlphaInfusedTest} from "./ManageAlphaInfusedTest";
+import {TutorialModeTest} from "./TutorialModeTest";
+import {ReactionBadgeTest} from "./ReactionBadgeTest";
 import {UnitsTest} from "./UnitsTest";
 import {AlphaManagerTest} from "./AlphaManagerTest";
 import {BigIntJsonTest} from "./BigIntJsonTest";
+import {ExactFieldStorageTest} from "./ExactFieldStorageTest";
 
 (new PermissionManagerTest()).run();
 (new TaskManagerOreTest()).run();
 (new ShieldStatusTest()).run();
+(new AbandonedPlanetaryStructTest()).run();
+(new ActionBarOreCountTest()).run();
+(new RaidedOreStructTest()).run();
+(new DeployOffcanvasChargeTest()).run();
+(new TargetSelectedIndicatorTest()).run();
+(new DeployCheatsheetTest()).run();
+(new InvalidTargetClickTest()).run();
+(new ManageAlphaInfusedTest()).run();
+(new TutorialModeTest()).run();
+(new ReactionBadgeTest()).run();
+
+(new APIReadinessTest()).run();
 (new UnitsTest()).run();
 (new AlphaManagerTest()).run();
 (new BigIntJsonTest()).run();
+(new ExactFieldStorageTest()).run();

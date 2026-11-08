@@ -5,13 +5,18 @@ import {StructType} from "./StructType";
 export class StructTypeCollection {
   constructor() {
     this.structTypes = [];
+    this.snapshot_meta = null;
   }
 
   /**
    * @param {StructType[]} structTypes
    */
   setStructTypes(structTypes) {
-    this.structTypes = structTypes;
+    // Existing cards may retain the type object; update that object in place
+    // once the whole new catalog has been validated by GameState.
+    const previous=new Map(this.structTypes.map(type=>[type.id,type]));
+    this.structTypes=structTypes.map(type=>previous.has(type.id) ? Object.assign(previous.get(type.id),type) : type);
+    this.snapshot_meta=structTypes.snapshot_meta ?? null;
   }
 
   /**

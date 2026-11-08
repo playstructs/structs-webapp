@@ -4,6 +4,7 @@ import {USERNAME_PATTERN} from "../../constants/RegexPattern";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {PfpViewerComponent} from "../components/PfpViewerComponent";
 import {PfpClientRenderAttributes} from "../../models/PfpClientRenderAttributes";
+import {onboardingTelemetry} from "../../telemetry/OnboardingTelemetry";
 
 export class SetUsernameViewModel extends AbstractViewModel {
 
@@ -98,6 +99,7 @@ export class SetUsernameViewModel extends AbstractViewModel {
   }
 
   renderSuccessfulSubmission() {
+    onboardingTelemetry.reached('signup.profile_confirmed');
     const regeneratePfpBtn = document.getElementById(this.regeneratePfpBtnId);
     regeneratePfpBtn.classList.add('hidden');
     regeneratePfpBtn.disabled = true;

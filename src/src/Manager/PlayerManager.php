@@ -6,11 +6,14 @@ use App\Constant\ApiParameters;
 use App\Constant\PaginationLimits;
 use App\Constant\RegexPattern;
 use App\Dto\ApiResponseContentDto;
+use App\Entity\Player;
 use App\Trait\ApiSqlQueryTrait;
 use App\Util\ConstraintViolationUtil;
+use App\Util\ConsistentRead;
 use App\Util\ResponseMetaUtil;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,12 +34,16 @@ class PlayerManager
 
     public ApiRequestParsingManager $apiRequestParsingManager;
 
+    private VaultFundsManager $vaultFunds;
+
     public function __construct(
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        ?VaultFundsManager $vaultFunds = null
     ) {
         $this->entityManager = $entityManager;
         $this->validator = $validator;
+        $this->vaultFunds = $vaultFunds ?? new VaultFundsManager();
         $this->constraintViolationUtil = new ConstraintViolationUtil();
         $this->apiRequestParsingManager = new ApiRequestParsingManager(
             $this->validator,
@@ -55,6 +62,22 @@ class PlayerManager
             SELECT
               p.id,
               p.primary_address,
+              v.address AS _vault_address,
+              v.account_created AS _vault_account_created,
+              COALESCE(vi.balance, 0)::text AS _vault_balance_p,
+              COALESCE((
+                SELECT jsonb_agg(candidate)
+                FROM (
+                  SELECT a.address, count(*) OVER ()::text AS candidate_count
+                  FROM structs.player_address a
+                  JOIN structs.api_inventory funds ON funds.owner_type = \'address\'
+                    AND funds.owner_id = a.address AND funds.denom = \'ualpha\'
+                  WHERE a.player_id = p.id AND a.status = \'approved\'
+                    AND a.address IS DISTINCT FROM v.address AND funds.balance > 0
+                  ORDER BY funds.balance DESC, a.address COLLATE "C"
+                  LIMIT 16
+                ) candidate
+              ), \'[]\'::jsonb) AS _retained_funding_sources,
               p.guild_id,
               p.substation_id,
               p.planet_id,
@@ -148,6 +171,9 @@ class PlayerManager
                 AND g.attribute_type=\'connectionCapacity\'
               ), 0)::text as connection_capacity_p
             FROM player p
+            LEFT JOIN structs.vault v ON v.owner_id = p.id
+            LEFT JOIN structs.api_inventory vi ON vi.owner_type = \'address\'
+              AND vi.owner_id = v.address AND vi.denom = \'ualpha\'
             LEFT JOIN guild gu
               ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
@@ -159,13 +185,23 @@ class PlayerManager
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
         $requiredFields = [ApiParameters::PLAYER_ID];
 
-        return $this->queryOne(
+        [$responseContent, $status] = $this->runQuery(
             $this->entityManager,
             $this->apiRequestParsingManager,
             $query,
             $requestParams,
-            $requiredFields
+            $requiredFields,
+            false,
+            'inventory',
+            true
         );
+        // The SQL snapshot is closed before any narrowly scoped chain fallback.
+        // Every fallback query must prove that same indexed height.
+        if ($responseContent->success && is_array($responseContent->data)) {
+            $this->vaultFunds->apply($responseContent->data, $responseContent->meta);
+        }
+
+        return new JsonResponse($responseContent, $status);
     }
 
     /**
@@ -439,6 +475,9 @@ class PlayerManager
               p.id,
               pa.address,
               p.primary_address,
+              v.address AS _vault_address,
+              v.account_created AS _vault_account_created,
+              COALESCE(vi.balance, 0)::text AS _vault_balance_p,
               p.username,
               p.pfp,
               p.pfp_client_render_attributes,
@@ -447,8 +486,11 @@ class PlayerManager
               COALESCE(UNIT_LEGACY_FORMAT(api.balance, 'ualpha'), 0) as alpha,
               COALESCE(api.balance, 0)::text as alpha_p
             FROM player_address pa
-            LEFT JOIN player p
+            INNER JOIN player p
               ON p.id = pa.player_id
+            LEFT JOIN structs.vault v ON v.owner_id = p.id
+            LEFT JOIN structs.api_inventory vi ON vi.owner_type = 'address'
+              AND vi.owner_id = v.address AND vi.denom = 'ualpha'
             LEFT JOIN guild gu
               ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
@@ -465,6 +507,9 @@ class PlayerManager
               p.id,
               p.primary_address AS address,
               p.primary_address,
+              v.address AS _vault_address,
+              v.account_created AS _vault_account_created,
+              COALESCE(vi.balance, 0)::text AS _vault_balance_p,
               p.username,
               p.pfp,
               p.pfp_client_render_attributes,
@@ -473,6 +518,9 @@ class PlayerManager
               COALESCE(UNIT_LEGACY_FORMAT(api.balance, 'ualpha'), 0) as alpha,
               COALESCE(api.balance, 0)::text as alpha_p
             FROM player p
+            LEFT JOIN structs.vault v ON v.owner_id = p.id
+            LEFT JOIN structs.api_inventory vi ON vi.owner_type = 'address'
+              AND vi.owner_id = v.address AND vi.denom = 'ualpha'
             LEFT JOIN guild gu
               ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
@@ -488,10 +536,19 @@ class PlayerManager
         ";
 
         $db = $this->entityManager->getConnection();
-        $result = $db->fetchAllAssociative($query, $queryParams);
-
-        $responseContent->data = $result;
-        $responseContent->success = true;
+        ConsistentRead::run($db, function () use ($db, $query, $queryParams, $responseContent): void {
+            $responseContent->data = $db->fetchAllAssociative($query, $queryParams);
+            $responseContent->meta = ResponseMetaUtil::snapshotMeta($db, 'inventory');
+            $responseContent->success = true;
+        });
+        // Search is a bounded indexed list, not one RPC fan-out per result.
+        // Resolve uncertain spendability only when an individual is requested.
+        $indexedFunds = new VaultFundsManager();
+        foreach ($responseContent->data as &$player) {
+            $meta = $responseContent->meta;
+            $indexedFunds->apply($player, $meta);
+        }
+        unset($player);
 
         return new JsonResponse($responseContent, Response::HTTP_OK);
     }
@@ -597,6 +654,41 @@ class PlayerManager
             WHERE pa.category = 'raid_status'
             AND pa.detail->>'status' = 'initiated'
             AND f.owner = :player_id
+        ";
+
+        $requestParams = [ApiParameters::PLAYER_ID => $player_id];
+        $requiredFields = [ApiParameters::PLAYER_ID];
+
+        return $this->queryOne(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+
+    /**
+     * Raids won: raids the player's fleet completed (raidSuccessful), plus raids
+     * on the player's planet that ended with the attacker defeated. A win counts
+     * whether or not any ore changed hands.
+     *
+     * @throws Exception
+     */
+    public function getPlayerRaidsWon(string $player_id): Response
+    {
+        $query = "
+            SELECT count(1)
+            FROM planet_activity pa
+            LEFT JOIN fleet f
+                ON f.id = pa.detail->>'fleet_id'
+            LEFT JOIN planet p
+                ON p.id = pa.planet_id
+            WHERE pa.category = 'raid_status'
+            AND (
+                (pa.detail->>'status' = 'raidSuccessful' AND f.owner = :player_id)
+                OR (pa.detail->>'status' = 'attackerDefeated' AND p.owner = :player_id)
+            )
         ";
 
         $requestParams = [ApiParameters::PLAYER_ID => $player_id];
@@ -723,5 +815,97 @@ class PlayerManager
             LIMIT {$pageLimit}
         ";
         return $this->queryAllStamped($this->entityManager, $this->apiRequestParsingManager, $sql, [], []);
+    }
+
+    /**
+     * Best scores the player has stored for each mini game on one interface.
+     *
+     * @throws Exception
+     */
+    public function getPlayerMiniGameProgress(string $player_id, string $interface_name): Response
+    {
+        $query = '
+            SELECT
+              mgp.game_name,
+              mgp.score,
+              mgp.updated_at
+            FROM mini_game_progress mgp
+            WHERE mgp.player_id = :player_id
+            AND mgp.interface_name = :interface_name
+            ORDER BY mgp.game_name
+        ';
+
+        $requestParams = [
+            ApiParameters::PLAYER_ID => $player_id,
+            ApiParameters::INTERFACE_NAME => $interface_name,
+        ];
+        $requiredFields = [ApiParameters::PLAYER_ID, ApiParameters::INTERFACE_NAME];
+
+        return $this->queryAll(
+            $this->entityManager,
+            $this->apiRequestParsingManager,
+            $query,
+            $requestParams,
+            $requiredFields
+        );
+    }
+
+    /**
+     * Records a mini game score for the logged-in player, keeping the best one.
+     * updated_at only moves when the score improves, so it dates the best score.
+     * The player is always the session's, never one named in the body.
+     *
+     * @throws Exception
+     */
+    public function setPlayerMiniGameProgress(Request $request, Security $security): Response
+    {
+        /** @var Player $player */
+        $player = $security->getUser();
+        $player_id = $player->getId();
+
+        $responseContent = new ApiResponseContentDto();
+
+        $parsedRequest = $this->apiRequestParsingManager->parseJsonRequest(
+            $request,
+            [
+                ApiParameters::INTERFACE_NAME,
+                ApiParameters::GAME_NAME,
+                ApiParameters::SCORE,
+            ]
+        );
+
+        $responseContent->errors = $parsedRequest->errors;
+
+        if (count($responseContent->errors) > 0) {
+            return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
+        }
+
+        $query = '
+            INSERT INTO mini_game_progress (player_id, interface_name, game_name, score)
+            VALUES (:player_id, :interface_name, :game_name, :score)
+            ON CONFLICT (player_id, interface_name, game_name) DO UPDATE
+            SET score = GREATEST(mini_game_progress.score, EXCLUDED.score),
+                updated_at = CASE
+                    WHEN EXCLUDED.score > mini_game_progress.score THEN now()
+                    ELSE mini_game_progress.updated_at
+                END
+            RETURNING interface_name, game_name, score, created_at, updated_at
+        ';
+
+        $db = $this->entityManager->getConnection();
+        $row = $db->fetchAssociative($query, [
+            'player_id' => $player_id,
+            'interface_name' => $parsedRequest->params->interface_name,
+            'game_name' => $parsedRequest->params->game_name,
+            'score' => $parsedRequest->params->score,
+        ]);
+
+        $responseContent->data = $row === false ? null : $row;
+        $responseContent->success = $row !== false;
+
+        return new JsonResponse(
+            $responseContent,
+            $responseContent->success ? Response::HTTP_OK : Response::HTTP_INTERNAL_SERVER_ERROR
+        );
     }
 }

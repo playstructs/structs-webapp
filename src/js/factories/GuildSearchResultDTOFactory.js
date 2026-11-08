@@ -1,7 +1,7 @@
 import {AbstractFactory} from "../framework/AbstractFactory";
 import {GuildSearchResultDTO} from "../dtos/GuildSearchResultDTO";
 import {HTTP_PROTOCOL_PATTERN} from "../constants/RegexPattern";
-import {legacyToBase, toBase} from "../util/Units";
+import {legacyToBase, toBase, toExact} from "../util/Units";
 
 export class GuildSearchResultDTOFactory extends AbstractFactory {
   /**
@@ -15,9 +15,9 @@ export class GuildSearchResultDTOFactory extends AbstractFactory {
       guild.logo = `//${guild.logo}`;
     }
 
-    guild.alpha_p = toBase(obj.alpha_p) ?? legacyToBase(obj.alpha, 6);
+    guild.alpha_p = toExact(toBase(obj.alpha_p) ?? legacyToBase(obj.alpha, 6));
     if (guild.alpha_p != null) {
-      guild.alpha = Number(guild.alpha_p / 1000000n);
+      guild.alpha = Number(BigInt(guild.alpha_p) / 1000000n);
     }
 
     return guild;

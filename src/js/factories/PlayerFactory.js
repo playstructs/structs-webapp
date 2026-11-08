@@ -1,37 +1,48 @@
 import {Player} from "../models/Player";
 import {PfpClientRenderAttributes} from "../models/PfpClientRenderAttributes";
-import {legacyToBase, toBase} from "../util/Units";
+import {toBase} from "../util/Units";
+
+/**
+ * Exact base units as a canonical decimal string, or null. Strings survive
+ * JSON and structuredClone, and are what the exact funds/reactor code expects.
+ *
+ * @param {...*} candidates first valid integer wins
+ * @return {string|null}
+ */
+function exactString(...candidates) {
+  for (const candidate of candidates) {
+    const n = toBase(candidate);
+    if (n !== null) {
+      return n.toString();
+    }
+  }
+  return null;
+}
 
 export class PlayerFactory {
 
-  make(obj) {
+  make(obj, meta = null) {
     const player = new Player();
     Object.assign(player, obj);
+    player.snapshot_meta = meta;
     player.pfp_client_render_attributes = PfpClientRenderAttributes.fromJson(player.pfp_client_render_attributes);
 
-    // Alpha: prefer alpha_p (ualpha); legacy alpha is floored grams.
-    player.alpha_p = toBase(obj.alpha_p) ?? legacyToBase(obj.alpha, 6);
-    if (player.alpha_p != null) {
-      player.alpha = Number(player.alpha_p / 1000000n);
-    }
+    // Alpha: the display value and its exact ualpha are owned by the funds
+    // snapshot (see PlayerFunds / KeyPlayer.setFunds). Keep the row's alpha_p
+    // as the legacy-protocol source.
+    player.alpha_p = exactString(obj.alpha_p);
 
     // Energy: REST grid vals and *_p are already milliwatts. Do not ÷1000.
-    // (If only a display-watt field existed, legacyToBase(x, 3) would apply.)
-    player.load_p = toBase(obj.load_p) ?? toBase(obj.load);
-    player.structs_load_p = toBase(obj.structs_load_p) ?? toBase(obj.structs_load);
-    player.capacity_p = toBase(obj.capacity_p) ?? toBase(obj.capacity);
-    player.connection_capacity_p = toBase(obj.connection_capacity_p) ?? toBase(obj.connection_capacity);
+    // Ore: exponent 0 — grams.
+    for (const field of ['load', 'structs_load', 'capacity', 'connection_capacity', 'ore']) {
+      player[`${field}_p`] = exactString(obj[`${field}_p`], obj[field]);
+    }
 
-    player.load = player.load_p != null ? Number(player.load_p / 1000n) : null;
-    player.structs_load = player.structs_load_p != null ? Number(player.structs_load_p / 1000n) : null;
-    player.capacity = player.capacity_p != null ? Number(player.capacity_p / 1000n) : null;
-    player.connection_capacity = player.connection_capacity_p != null
-      ? Number(player.connection_capacity_p / 1000n)
-      : null;
-
-    // Ore: exponent 0 — value and value_p are identical grams.
-    player.ore_p = toBase(obj.ore_p) ?? toBase(obj.ore);
-    player.ore = player.ore_p != null ? Number(player.ore_p) : null;
+    for (const field of ['load', 'structs_load', 'capacity', 'connection_capacity']) {
+      const p = player[`${field}_p`];
+      player[field] = p !== null ? Number(BigInt(p) / 1000n) : null;
+    }
+    player.ore = player.ore_p !== null ? Number(player.ore_p) : null;
 
     return player;
   }

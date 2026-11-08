@@ -465,6 +465,10 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
     const horizontalPos = this.terrainAmbitHelper.colIndexToHorizontalPos(tilePos.colIndex);
     const terrainTileHTML = this.terrainAmbitHelper.renderTile(ambit, verticalPos, horizontalPos);
     const markerHTML = this.mapTileMarkers.getCellMarker(ambit, tilePos.rowIndex, tilePos.colIndex) || '';
+    // Counter-attacks and blocks are labelled, since the PIP shows one struct
+    // without the attacker that explains why it is firing or taking damage.
+    const badge = animationEvent.options?.badge;
+    const badgeHTML = badge ? `<img class="map-pip-badge" src="/img/sui/icon/${badge}.png" alt="">` : '';
 
     container.innerHTML = `
       <div class="map-pip-focus"></div>
@@ -476,6 +480,7 @@ export class MapPictureInPictureComponent extends AbstractViewModelComponent {
       <div class="map-pip-caret-container">
         <div class="map-pip-caret"></div>
       </div>
+      ${badgeHTML}
     `;
     container.classList.remove('mod-side-left', 'mod-side-right');
     container.classList.add(side === 'right' ? 'mod-side-right' : 'mod-side-left');

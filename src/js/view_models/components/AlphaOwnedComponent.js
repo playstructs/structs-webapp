@@ -14,11 +14,9 @@ export class AlphaOwnedComponent extends AbstractViewModelComponent {
   }
 
   getAlphaOwned() {
-    const player = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player;
-    if (!player) {
-      return '—';
-    }
-    return fmt(player.alpha_p, 'ualpha');
+    const alphaP = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player?.alpha_p;
+    // Unknown funds render empty, never as zero.
+    return alphaP === null || alphaP === undefined ? '' : fmt(alphaP, 'ualpha');
   }
 
   alphaOwnedHandler(event) {

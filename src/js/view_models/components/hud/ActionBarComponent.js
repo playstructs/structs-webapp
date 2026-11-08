@@ -13,7 +13,7 @@ import {ClearDefendTargetsEvent} from "../../../events/ClearDefendTargetsEvent";
 import {ShowAttackTargetsEvent} from "../../../events/ShowAttackTargetsEvent";
 import {ClearAttackTargetsEvent} from "../../../events/ClearAttackTargetsEvent";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
-import {fmtDurationMs, fmt} from "../../../util/Units";
+import {fmtDurationMs, fmt, toBase} from "../../../util/Units";
 import {ShowStructStillEvent} from "../../../events/ShowStructStillEvent";
 import {ConsumeAlphaOffcanvas} from "../offcanvas/ConsumeAlphaOffcanvas";
 import {PfpViewerComponent} from "../PfpViewerComponent";
@@ -184,31 +184,60 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       }
     });
 
-    const undiscoveredOreContainer = document.getElementById(this.undiscoveredOreContainerId);
-    if (undiscoveredOreContainer) {
-      // Set initial value
-      if (this.gameState.keyPlayers[this.playerType].planet) {
-        undiscoveredOreContainer.innerHTML = fmt(this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore_p, 'ore');
+    // The ore counts only exist while an extractor or refinery is selected, and
+    // every selection draws them afresh, so they are looked up as they change.
+    window.addEventListener(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, (event) => {
+      if (event.playerType === this.playerType) {
+        this.updatePropertyIconValue(
+          this.undiscoveredOreContainerId,
+          'undiscoveredOre',
+          this.oreBase(this.gameState.keyPlayers[this.playerType].planet, 'undiscovered_ore')
+        );
       }
-      window.addEventListener(EVENTS.UNDISCOVERED_ORE_COUNT_CHANGED, (event) => {
-        if (event.playerType === this.playerType) {
-          undiscoveredOreContainer.innerHTML = fmt(this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore_p, 'ore');
-        }
-      });
+    });
+
+    window.addEventListener(EVENTS.ORE_COUNT_CHANGED, (event) => {
+      if (event.playerType === this.playerType) {
+        this.updatePropertyIconValue(
+          this.oreReadyContainerId,
+          'oreReady',
+          this.oreBase(this.gameState.keyPlayers[this.playerType].player, 'ore')
+        );
+      }
+    });
+  }
+
+  /**
+   * Update a property icon's value without re-rendering the entire action bar.
+   *
+   * @param {string} valueContainerId
+   * @param {string} datasetKey The icon's data attribute its cheatsheet reads the value from.
+   * @param {string|null} value exact grams of ore (base units)
+   */
+  updatePropertyIconValue(valueContainerId, datasetKey, value) {
+    const valueContainer = document.getElementById(valueContainerId);
+    if (!valueContainer) {
+      return;
     }
 
-    const oreReadyContainer = document.getElementById(this.oreReadyContainerId);
-    if (oreReadyContainer) {
-      // Set initial value
-      if (this.gameState.keyPlayers[this.playerType].player) {
-        oreReadyContainer.innerHTML = fmt(this.gameState.keyPlayers[this.playerType].player.ore_p, 'ore');
-      }
-      window.addEventListener(EVENTS.ORE_COUNT_CHANGED, (event) => {
-        if (event.playerType === this.playerType) {
-          oreReadyContainer.innerHTML = fmt(this.gameState.keyPlayers[this.playerType].player.ore_p, 'ore');
-        }
-      });
+    valueContainer.innerHTML = fmt(value, 'ore');
+
+    const icon = valueContainer.closest('[data-sui-cheatsheet]');
+    if (icon) {
+      icon.dataset[datasetKey] = value;
     }
+  }
+
+  /**
+   * Exact grams of ore on a player or planet, preferring the *_p field.
+   *
+   * @param {object|null} holder
+   * @param {string} field 'ore' or 'undiscovered_ore'
+   * @return {string|null}
+   */
+  oreBase(holder, field) {
+    const exact = toBase(holder?.[`${field}_p`]) ?? toBase(holder?.[field]);
+    return exact !== null ? exact.toString() : null;
   }
 
   /**
@@ -543,6 +572,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             id="${deployBtnId}"
             href="javascript: void(0)"
             class="sui-panel-btn ${btnTypeClass}"
+            title="Deploy"
+            data-sui-cheatsheet="deploy"
           >
             <i class="sui-icon-md icon-deploy"></i>
           </a>
@@ -698,21 +729,25 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     if (this.isActionAvailable(struct, 0, true, false)) {
       // Turn off: deactivate the struct
       this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEACTIVATE);
-      this.gameState.actionBarLock.lock();
-      this.signingClientManager.queueMsgStructDeactivate(struct.id).then(() => {
-        struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
-        this.showStructActionBar(struct);
-        window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
-      });
+      this.gameState.actionBarLock.run(
+        () => this.signingClientManager.queueMsgStructDeactivate(struct.id),
+        () => {
+          struct.removeStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
+          this.showStructActionBar(struct);
+          window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
+        }
+      );
     } else if (this.isActionAvailable(struct, structType.activate_charge, false, false)){
       // Turn on: activate the struct
       this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.ACTIVATE);
-      this.gameState.actionBarLock.lock();
-      this.signingClientManager.queueMsgStructActivate(struct.id, structType.activate_charge).then(() => {
-        struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
-        this.showStructActionBar(struct);
-        window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
-      });
+      this.gameState.actionBarLock.run(
+        () => this.signingClientManager.queueMsgStructActivate(struct.id, structType.activate_charge),
+        () => {
+          struct.addStatusFlag(STRUCT_STATUS_FLAGS.ONLINE);
+          this.showStructActionBar(struct);
+          window.dispatchEvent(new ShowStructStillEvent(this.gameState.getActiveMapId(), struct.id));
+        }
+      );
     }
   }
 
@@ -821,6 +856,17 @@ export class ActionBarComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * @return {string}
+   */
+  buildRaidedPropertyIcon() {
+    return `
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-attention-12">
+        <i class="sui-icon-md icon-attention-12"></i>
+      </a>
+    `;
+  }
+
+  /**
    * @param {Struct} struct
    * @param {StructType} structType
    * @return {string[]}
@@ -833,12 +879,14 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${(this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore_p ?? 0n).toString()}">
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${this.oreBase(this.gameState.keyPlayers[this.playerType].planet, 'undiscovered_ore') ?? ''}">
         <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value sui-quantity">${fmt(this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore_p, 'ore')}</span>
       </a> 
     `);
 
-    if (struct.isOnline()) {
+    if (this.structManager.isOreWorkHaltedByRaid(struct)) {
+      icons.push(this.buildRaidedPropertyIcon());
+    } else if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
       const estFormatted = fmtDurationMs(estInMS);
 
@@ -865,12 +913,14 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${(this.gameState.keyPlayers[this.playerType].player.ore_p ?? 0n).toString()}">
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${this.oreBase(this.gameState.keyPlayers[this.playerType].player, 'ore') ?? ''}">
         <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value sui-quantity">${fmt(this.gameState.keyPlayers[this.playerType].player.ore_p, 'ore')}</span>
       </a> 
     `);
 
-    if (struct.isOnline()) {
+    if (this.structManager.isOreWorkHaltedByRaid(struct)) {
+      icons.push(this.buildRaidedPropertyIcon());
+    } else if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
       const estFormatted = fmtDurationMs(estInMS);
 
@@ -897,13 +947,16 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     if (struct.isOnline()) {
-      const fuelP = struct.fuel_p ?? 0n;
-      const rate = structType.generating_rate_p ?? 0n;
-      const icon = fuelP === 0n ? 'icon-attention' : 'icon-refine';
-      const powerP = struct.generator_capacity_p ?? (fuelP * rate);
+      // null fuel means the generator's positions are not known yet: never show 0.
+      const fuelP = toBase(struct.fuel_p);
+      const rate = toBase(structType.generating_rate_p) ?? 0n;
+      const icon = fuelP === null || fuelP === 0n ? 'icon-attention' : 'icon-refine';
+      const powerP = toBase(struct.generator_power_p)
+        ?? toBase(struct.generator_capacity_p)
+        ?? (fuelP !== null ? fuelP * rate : null);
       icons.push(`
-        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${fuelP.toString()}" data-energy="${powerP.toString()}">
-          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value sui-quantity">${fmt(fuelP, 'ualpha')}</span>
+        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${fuelP ?? ''}" data-energy="${powerP ?? ''}">
+          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value sui-quantity">${fuelP === null ? '' : fmt(fuelP, 'ualpha')}</span>
         </a> 
       `);
     }
@@ -1278,28 +1331,30 @@ export class ActionBarComponent extends AbstractViewModelComponent {
 
           if (struct.isHidden()) {
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_DEACTIVATE);
-            this.gameState.actionBarLock.lock();
-
             // Deactivate stealth mode
-            this.signingClientManager.queueMsgStructStealthDeactivate(struct.id, structType.stealth_activate_charge).then(() => {
-              struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
-              // Update button to default state
-              btn.setAttribute('data-active-defense', '0');
-              btn.classList.remove('sui-mod-active-defense');
-              btn.classList.add('sui-mod-default');
-            });
+            this.gameState.actionBarLock.run(
+              () => this.signingClientManager.queueMsgStructStealthDeactivate(struct.id, structType.stealth_activate_charge),
+              () => {
+                struct.removeStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
+                // Update button to default state
+                btn.setAttribute('data-active-defense', '0');
+                btn.classList.remove('sui-mod-active-defense');
+                btn.classList.add('sui-mod-default');
+              }
+            );
           } else {
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.STEALTH_ACTIVATE);
-            this.gameState.actionBarLock.lock();
-
             // Activate stealth mode
-            this.signingClientManager.queueMsgStructStealthActivate(struct.id, structType.stealth_activate_charge).then(() => {
-              struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
-              // Update button to active state
-              btn.setAttribute('data-active-defense', '1');
-              btn.classList.remove('sui-mod-default');
-              btn.classList.add('sui-mod-active-defense');
-            });
+            this.gameState.actionBarLock.run(
+              () => this.signingClientManager.queueMsgStructStealthActivate(struct.id, structType.stealth_activate_charge),
+              () => {
+                struct.addStatusFlag(STRUCT_STATUS_FLAGS.HIDDEN);
+                // Update button to active state
+                btn.setAttribute('data-active-defense', '1');
+                btn.classList.remove('sui-mod-default');
+                btn.classList.add('sui-mod-active-defense');
+              }
+            );
           }
         });
       }
@@ -1427,15 +1482,15 @@ export class ActionBarComponent extends AbstractViewModelComponent {
             // Struct is currently defending another struct - clicking clears the defense
             this.gameState.actionBarLock.setCurrentAction(STRUCT_ACTIONS.DEFENSE_CLEAR);
             this.gameState.actionBarLock.setActionSourceStruct(struct);
-            this.gameState.actionBarLock.lock();
-
-            // Update button to default state while processing
-            btn.setAttribute('data-active-defense', '0');
-            btn.classList.remove('sui-mod-active-defense');
-            btn.classList.add('sui-mod-default');
-
             // Send defense clear message to chain
-            await this.signingClientManager.queueMsgStructDefenseClear(struct.id, structType.defend_change_charge);
+            await this.gameState.actionBarLock.run(
+              () => this.signingClientManager.queueMsgStructDefenseClear(struct.id, structType.defend_change_charge),
+              () => {
+                btn.setAttribute('data-active-defense', '0');
+                btn.classList.remove('sui-mod-active-defense');
+                btn.classList.add('sui-mod-default');
+              }
+            );
 
           } else if (currentAction === STRUCT_ACTIONS.DEFENSE_SET) {
             // Already in defense selection mode - cancel it
@@ -1512,7 +1567,6 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         const offcanvas = new ConsumeAlphaOffcanvas(
           this.gameState,
           this.alphaManager,
-          this.grassManager,
           struct,
           structType
         );

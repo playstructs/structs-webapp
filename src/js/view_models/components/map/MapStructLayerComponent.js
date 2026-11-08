@@ -411,5 +411,19 @@ export class MapStructLayerComponent extends GenericMapLayerComponent {
         this.mapStructViewers[event.structId].showStructStill();
       }
     })
+
+    // Extractors and refineries stop their active loop while their planet is
+    // raided. Structs mid-animation are skipped since showStructStill() runs
+    // again when their animation completes.
+    this.addWindowEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, () => {
+      Object.values(this.mapStructViewers).forEach(viewer => {
+        if (
+          (viewer.structType.hasPlanetaryMining() || viewer.structType.hasPlanetaryRefinery())
+          && !this.gameState.animationEventQueue?.isStructAnimating(viewer.structId)
+        ) {
+          viewer.showStructStill();
+        }
+      });
+    });
   }
 }

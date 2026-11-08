@@ -6,14 +6,15 @@ use App\Dto\ApiResponseContentDto;
 use App\Factory\PlayerPendingFactory;
 use App\Manager\AuthManager;
 use App\Manager\SignatureValidationManager;
+use App\Security\BearerTokenManager;
 use Doctrine\ORM\EntityManagerInterface;
-use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
@@ -78,21 +79,60 @@ class AuthController extends AbstractController
     }
 
     /**
-     * @param Security $security
-     * @return Response
+     * Token login (REQ-AUTH-1): the body is the same signed request as /api/auth/login; the answer is
+     * a bearer token for the Authorization header instead of a session cookie.
+     *
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
      */
-    #[Route('/api/auth/logout', name: 'api_logout', methods: ['GET'])]
+    #[Route('/api/auth/token', name: 'api_token', methods: ['POST'])]
+    public function token(
+        Request $request,
+        ValidatorInterface $validator,
+        EntityManagerInterface $entityManager,
+        HttpClientInterface $client,
+        BearerTokenManager $tokens
+    ): Response {
+        $authManager = new AuthManager(
+            $validator,
+            $entityManager,
+            new SignatureValidationManager($client)
+        );
+        return $authManager->token($request, $tokens);
+    }
+
+    /**
+     * Ends the session, and revokes the bearer token if the request carries one.
+     * POST only: with SameSite=Lax session cookies, a cross-site page cannot log
+     * the player out with an image or link.
+     */
+    #[Route('/api/auth/logout', name: 'api_logout', methods: ['POST'])]
     public function logout(
-        Security $security
+        TokenStorageInterface $tokenStorage,
+        Request $request,
+        BearerTokenManager $tokens
     ): Response
     {
         $responseContent = new ApiResponseContentDto();
         $responseContent->success = true;
 
-        try {
-            $security->logout(false);
-        } catch (Exception $e) {
-            $responseContent->errors[] = $e->getMessage();
+        $bearer = BearerTokenManager::fromHeader($request->headers->get('Authorization'));
+        if ($bearer !== null) {
+            $tokens->revoke($bearer);
+        }
+
+        // This endpoint is deliberately outside the authenticated firewall, so
+        // Security::logout() has no loaded user. Invalidate the session that
+        // carries both our player/guild claims and Symfony's saved token.
+        $tokenStorage->setToken(null);
+        if ($request->hasSession()) {
+            $session = $request->getSession();
+            // The public firewall leaves native sessions lazy. Load the cookie's
+            // session before clearing it; invalidating an unopened one is a no-op.
+            $session->start();
+            $session->invalidate();
         }
 
         return new JsonResponse(

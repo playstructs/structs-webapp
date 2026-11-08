@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Manager\InfusionManager;
+use App\Manager\ReactorVaultManager;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,9 +24,10 @@ class InfusionController extends AbstractController
     public function getInfusionByPlayerId(
         string $player_id,
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        ReactorVaultManager $vaultPositions
     ): Response {
-        $infusionManager = new InfusionManager($entityManager, $validator);
+        $infusionManager = new InfusionManager($entityManager, $validator, $vaultPositions);
         return $infusionManager->getInfusionByPlayerId($player_id);
     }
 }

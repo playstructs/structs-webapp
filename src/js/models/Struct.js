@@ -47,10 +47,10 @@ export class Struct {
     /** @type {number|null} amount of alpha infused in the struct (legacy display grams) */
     this.fuel = null;
 
-    /** @type {bigint|null} ualpha infused in the struct */
+    /** @type {string|null} exact decimal ualpha infused in the struct */
     this.fuel_p = null;
 
-    /** @type {bigint|null} milliwatts of generator capacity */
+    /** @type {string|null} exact decimal milliwatts of generator capacity */
     this.generator_capacity_p = null;
   }
 

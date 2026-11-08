@@ -17,6 +17,7 @@ import {AccountRecipientSearchViewModel} from "../view_models/account/AccountRec
 import {AccountRecipientSearchResults} from "../view_models/account/AccountRecipientSearchResults";
 import {AccountRecipientViewModel} from "../view_models/account/AccountRecipientViewModel";
 import {AccountConfirmTransfer} from "../view_models/account/AccountConfirmTransfer";
+import {AccountStartTutorialViewModel} from "../view_models/account/AccountStartTutorialViewModel";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class AccountController extends AbstractController {
@@ -50,6 +51,11 @@ export class AccountController extends AbstractController {
 
   index() {
     const viewModel = new AccountIndexViewModel(this.gameState, this.guildAPI, this.authManager);
+    viewModel.render();
+  }
+
+  startTutorial() {
+    const viewModel = new AccountStartTutorialViewModel();
     viewModel.render();
   }
 
@@ -125,7 +131,8 @@ export class AccountController extends AbstractController {
       this.gameState,
       this.guildAPI,
       this.permissionManager,
-      deviceAddress
+      deviceAddress,
+      this.authManager
     );
     viewModel.render();
   }
@@ -173,7 +180,7 @@ export class AccountController extends AbstractController {
   }
 
   transferAmount() {
-    const viewModel = new AccountTransferAmountViewModel(this.gameState);
+    const viewModel = new AccountTransferAmountViewModel(this.gameState, this.guildAPI);
     viewModel.render();
   }
 
@@ -206,7 +213,6 @@ export class AccountController extends AbstractController {
       this.gameState,
       this.guildAPI,
       this.alphaManager,
-      this.grassManager,
       options
     );
     viewModel.render();

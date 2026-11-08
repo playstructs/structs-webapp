@@ -2,14 +2,17 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {SystemModal} from "../templates/partials/SystemModal";
-import {AlphaInfusedChangeListener} from "../../grass_listeners/AlphaInfusedChangeListener";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
+import {MenuWaitingViewModel} from "../generic/MenuWaitingViewModel";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
-import {
-  fmt,
-  mulRational,
-  parseDecimalRational,
-} from "../../util/Units";
+import {TX_STATUS} from "../../models/SigningTransaction";
+import {CHAIN} from "../../constants/ChainConstants";
+import {EVENTS} from "../../constants/Events";
+import {protocolAtHeight, maxQueryHeight} from "../../util/ChainProtocol";
+import {reactorPreview, reactorPreviewMilliwatts} from "../../util/ReactorState";
+import {fmt} from "../../util/Units";
+import {waitForReactorRefresh} from "../../util/ReactorCompletion";
+import {pollUntil} from "../../util/PollUntil";
 
 const GRAM = 1000000n;
 
@@ -18,31 +21,30 @@ export class ManageAlphaViewModel extends AbstractViewModel {
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
-   * @param {GrassManager} grassManager
    * @param {AlphaManager} alphaManager
    * @param {Infusion|object} infusion
    */
   constructor(
     gameState,
     guildAPI,
-    grassManager,
     alphaManager,
     infusion
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
-    this.grassManager = grassManager;
     this.alphaManager = alphaManager;
     this.infusion = infusion;
     this.genericResourceComponent = new GenericResourceComponent(gameState);
     this.systemModal = new SystemModal();
 
-    this.fuelP = infusion.fuel_p ?? 0n;
-    this.alphaToInfuse = this.fuelP;
-    this.joinInfusionMinimum = infusion.join_infusion_minimum_p
-      ?? this.gameState.thisGuild.join_infusion_minimum_p
-      ?? 0n;
+    this.infusedAlpha = null;
+    this.alphaToInfuse = null;
+    this.joinInfusionMinimum = '';
+    this.state = null;
+    this.ready = false;
+    this.loading = false;
+    this.transferring = false;
 
     this.addBtnId = 'manage-alpha-add';
     this.subtractBtnId = 'manage-alpha-subtract';
@@ -58,24 +60,111 @@ export class ManageAlphaViewModel extends AbstractViewModel {
   }
 
   /**
-   * Player's personal capacity from target fuel: ratio × fuel × (1 − commission).
-   * @return {bigint} milliwatts
+   * @return {string} the expected energy at the current target, or '' when it cannot be previewed
    */
   calculateEnergy() {
-    const ratio = this.infusion.ratio_p
-      ?? (this.gameState.thisGuild.reactor_ratio != null
-        ? BigInt(Math.round(Number(this.gameState.thisGuild.reactor_ratio)))
-        : 1n);
-    const power = ratio * this.alphaToInfuse;
-    const commission = parseDecimalRational(
-      this.infusion.commission ?? this.gameState.thisGuild.default_commission ?? '0'
-    ) ?? {num: 0n, den: 1n};
-    const keep = {num: commission.den - commission.num, den: commission.den};
-    return mulRational(power, keep);
+    try {
+      return this.state ? fmt(reactorPreviewMilliwatts(this.state, this.alphaToInfuse), 'mw') : '';
+    } catch {
+      return '';
+    }
   }
 
-  walletAlphaP() {
-    return this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player?.alpha_p ?? 0n;
+  /**
+   * Exact ualpha the reactor would hold at a whole-Alpha target. Targets step
+   * in whole Alpha from the current (possibly fractional) infusion.
+   *
+   * @param {bigint|null} target in Alpha
+   * @return {bigint|null}
+   */
+  targetFuel(target) {
+    if (!this.state || target === null || target === undefined) return null;
+    return this.state.fuel + (target - this.state.initialAlpha) * GRAM;
+  }
+
+  /**
+   * @param {bigint|null} target in Alpha
+   * @return {string}
+   */
+  targetDisplay(target) {
+    const fuel = this.targetFuel(target);
+    return fuel === null ? '' : fmt(fuel, 'ualpha');
+  }
+
+  /**
+   * The most alpha the player can have infused: what is already in the
+   * reactor plus what is in their wallet.
+   *
+   * @return {bigint|null}
+   */
+  getMaxAlphaToInfuse() {
+    return this.state?.maxAlpha ?? null;
+  }
+
+  /**
+   * Whether the reactor can be moved to the target, given the loaded state
+   * and the protocol at the current block.
+   *
+   * @param {bigint} target in Alpha
+   * @return {boolean}
+   */
+  canTarget(target) {
+    try {
+      if (
+        !this.ready
+        || this.transferring
+        || this.signal?.aborted
+        || this.state.protocol !== protocolAtHeight(
+          CHAIN.ID,
+          maxQueryHeight(this.state.height, this.gameState.currentBlockHeight || this.state.height)
+        )
+        || target > this.state.maxAlpha
+      ) {
+        return false;
+      }
+      reactorPreview(this.state, target);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * @param {bigint} target in Alpha
+   * @return {boolean} whether the target keeps the infusion at or above the guild minimum
+   */
+  targetMeetsMinimum(target) {
+    return this.state && this.targetFuel(target) >= this.state.minimum;
+  }
+
+  /**
+   * Load the reactor state, retrying until it is available or the page is left.
+   */
+  async loadState() {
+    if (this.loading) return;
+    this.loading = true;
+    const signal = this.signal;
+    const ownerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const ownerChanged = () => ownerId !== this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    try {
+      await pollUntil(async () => {
+        if (ownerChanged()) return null;
+        const infusion = await this.guildAPI.getInfusionByPlayerId(ownerId, {signal, timeoutMs: 5000});
+        const state = await this.alphaManager.getReactorState(infusion, signal);
+        signal.throwIfAborted();
+        if (ownerChanged()) return null;
+        this.infusion = infusion;
+        this.state = state;
+        this.infusedAlpha = state.initialAlpha;
+        this.alphaToInfuse = state.initialAlpha;
+        this.joinInfusionMinimum = fmt(state.minimum, 'ualpha');
+        this.ready = true;
+        this.postToggleRender();
+        return true;
+      }, signal, {label: '[ManageAlpha] reactor state unavailable:'});
+    } finally {
+      this.loading = false;
+    }
   }
 
   postToggleRender() {
@@ -86,12 +175,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     const errorElm = document.querySelector('.manage-alpha-error');
     const ctaBtns = document.querySelector('.manage-alpha-cta-btns');
 
-    const neededFromWallet = this.alphaToInfuse > this.fuelP
-      ? this.alphaToInfuse - this.fuelP
-      : 0n;
-
-    // Add enabled while one more gram from the wallet still fits.
-    if ((neededFromWallet + GRAM) <= this.walletAlphaP()) {
+    if (this.alphaToInfuse !== null && this.canTarget(this.alphaToInfuse + 1n)) {
       addBtn.classList.remove('sui-mod-disabled');
       addBtn.disabled = false;
     } else {
@@ -99,7 +183,11 @@ export class ManageAlphaViewModel extends AbstractViewModel {
       addBtn.disabled = true;
     }
 
-    if (this.alphaToInfuse > this.joinInfusionMinimum) {
+    if (
+      this.alphaToInfuse !== null
+      && this.canTarget(this.alphaToInfuse - 1n)
+      && this.targetMeetsMinimum(this.alphaToInfuse - 1n)
+    ) {
       subtractBtn.classList.remove('sui-mod-disabled');
       subtractBtn.disabled = false;
     } else {
@@ -108,69 +196,109 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     }
 
     if (
-      this.alphaToInfuse !== this.fuelP
-      && this.alphaToInfuse >= this.joinInfusionMinimum
+      this.alphaToInfuse !== this.infusedAlpha
+      && this.canTarget(this.alphaToInfuse)
+      && this.targetMeetsMinimum(this.alphaToInfuse)
     ) {
       ctaBtns.classList.remove('hidden');
     } else {
       ctaBtns.classList.add('hidden');
     }
 
-    if (this.alphaToInfuse < this.joinInfusionMinimum) {
+    if (
+      this.ready
+      && this.targetFuel(this.alphaToInfuse) <= this.state.minimum
+    ) {
       errorElm.classList.remove('hidden');
     } else {
       errorElm.classList.add('hidden');
     }
 
-    alphaInfusedValue.innerText = fmt(this.alphaToInfuse, 'ualpha');
-    energyValue.innerHTML = fmt(this.calculateEnergy(), 'mw');
+    document.querySelector('.manage-alpha-error span').innerText = `The Guild Minimum is ${this.joinInfusionMinimum}.`;
+    alphaInfusedValue.innerText = this.targetDisplay(this.alphaToInfuse);
+    energyValue.innerHTML = `${this.calculateEnergy()}`;
   }
 
-  async infuse() {
-    const alphaDiff = this.alphaToInfuse - this.fuelP;
-    if (alphaDiff <= 0n) {
+  /**
+   * Queue the infusion or defusion for the chosen target, then wait for the
+   * indexer to show it before returning to the reactor page.
+   */
+  async save() {
+    if (
+      !this.canTarget(this.alphaToInfuse)
+      || !this.targetMeetsMinimum(this.alphaToInfuse)
+      || this.alphaToInfuse === this.infusedAlpha
+    ) {
       return;
     }
-    this.grassManager.registerListener(new AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'infused'));
+    this.transferring = true;
+    const state = this.state;
+    const delta = this.alphaToInfuse - this.infusedAlpha;
+    const direction = delta > 0n ? 'infuse' : 'defuse';
+    const amount = delta > 0n ? delta : -delta;
+    const account = this.gameState.signingAccount.address;
+    const options = new MenuWaitingOptions();
+    options.navItemId = MenuPage.navItemGuildId;
+    options.hasDoNotCloseMessage = false;
+    options.headerBtnLabel = direction === 'infuse' ? 'Infusing...' : 'Defusing...';
+    options.waitingAnimation = direction === 'infuse' ? 'INFUSE' : 'DEFUSE';
+    // Leaving only stops this screen's wait; the queued change carries on.
+    options.waitingMessage = 'The change continues if you leave this screen.';
+    options.headerBtnShowBackIcon = true;
+    options.headerBtnHandler = () => MenuPage.router.goto('Guild', 'reactor');
+    MenuPage.router.goto('Generic', 'menuWaiting', options, {replace: true});
+    const signal = MenuPage.router.navigationSignal;
+    const active = () => !signal.aborted
+      && account === this.gameState.signingAccount?.address
+      && state.ownerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const returnToManage = () => {
+      if (active()) MenuPage.router.goto('Guild', 'manageAlpha', this.infusion, {replace: true});
+    };
+    let tx;
     try {
-      const tx = await this.alphaManager.infuse(alphaDiff);
-      if (!this.alphaManager.isSettledSuccess(tx)) {
-        console.error('Infuse failed', tx?.error);
-        MenuPage.router.goto('Guild', 'manageAlpha');
+      tx = await this.alphaManager[direction](amount, state, signal);
+    } catch (error) {
+      if (active()) {
+        console.warn('[ManageAlpha] reactor change unavailable:', error);
+        returnToManage();
       }
-    } catch (err) {
-      console.error('Infuse error', err);
-      MenuPage.router.goto('Guild', 'manageAlpha');
-    }
-  }
-
-  async defuse() {
-    const alphaDiff = this.fuelP - this.alphaToInfuse;
-    if (alphaDiff <= 0n) {
       return;
     }
-    this.grassManager.registerListener(new AlphaInfusedChangeListener(this.gameState, this.guildAPI, 'defusion_started'));
+    if (!active()) return;
+    if (tx.status === TX_STATUS.DROPPED || tx.status === TX_STATUS.CANCELLED) {
+      returnToManage();
+      return;
+    }
+    if (tx.status !== TX_STATUS.SUCCEEDED) return;
     try {
-      const tx = await this.alphaManager.defuse(alphaDiff);
-      if (!this.alphaManager.isSettledSuccess(tx)) {
-        console.error('Defuse failed', tx?.error);
-        MenuPage.router.goto('Guild', 'manageAlpha');
+      const refreshed = await waitForReactorRefresh(this.guildAPI, tx, signal, () => this.gameState.currentBlockHeight);
+      if (!active()) return;
+      const keyPlayer = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER];
+      const currentHeight = keyPlayer.player?.snapshot_meta?.height;
+      if (!currentHeight || BigInt(refreshed.player.snapshot_meta.height) >= BigInt(currentHeight)) {
+        keyPlayer.setPlayer(refreshed.player, this.gameState.currentBlockHeight);
       }
-    } catch (err) {
-      console.error('Defuse error', err);
-      MenuPage.router.goto('Guild', 'manageAlpha');
+      MenuPage.router.goto('Guild', 'reactor', {}, {replace: true});
+    } catch (error) {
+      if (!active()) return;
+      console.warn('[ManageAlpha] committed change needs indexed evidence:', error);
+      MenuWaitingViewModel.setMessage('Confirmed on chain. The reactor display has not caught up yet; check it again shortly.');
     }
   }
 
   initPageCode() {
     this.systemModal.init();
+    this.signal = MenuPage.router.navigationSignal;
 
     document.getElementById(this.subtractBtnId).addEventListener('click', (event) => {
       event.preventDefault();
 
-      if (this.alphaToInfuse > this.joinInfusionMinimum) {
-        const next = this.alphaToInfuse - GRAM;
-        this.alphaToInfuse = next < this.joinInfusionMinimum ? this.joinInfusionMinimum : next;
+      if (
+        this.alphaToInfuse !== null
+        && this.canTarget(this.alphaToInfuse - 1n)
+        && this.targetMeetsMinimum(this.alphaToInfuse - 1n)
+      ) {
+        this.alphaToInfuse--;
       }
 
       this.postToggleRender();
@@ -179,8 +307,8 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     document.getElementById(this.addBtnId).addEventListener('click', (event) => {
       event.preventDefault();
 
-      if ((this.alphaToInfuse - this.fuelP + GRAM) <= this.walletAlphaP()) {
-        this.alphaToInfuse += GRAM;
+      if (this.alphaToInfuse !== null && this.canTarget(this.alphaToInfuse + 1n)) {
+        this.alphaToInfuse++;
       }
 
       this.postToggleRender();
@@ -190,11 +318,15 @@ export class ManageAlphaViewModel extends AbstractViewModel {
       MenuPage.router.goto('Guild', 'reactor');
     });
     document.getElementById(this.saveChangesBtnId).addEventListener('click', () => {
-      if (this.alphaToInfuse === this.fuelP) {
+      if (
+        !this.canTarget(this.alphaToInfuse)
+        || !this.targetMeetsMinimum(this.alphaToInfuse)
+        || this.alphaToInfuse === this.infusedAlpha
+      ) {
         return;
       }
 
-      document.getElementById(this.systemModal.messageId).innerHTML = (this.alphaToInfuse > this.fuelP)
+      document.getElementById(this.systemModal.messageId).innerHTML = (this.alphaToInfuse > this.infusedAlpha)
         ? this.infusionWarning
         : this.defusionWarning;
 
@@ -202,32 +334,30 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     });
 
     this.postToggleRender();
+    const refresh = () => this.loadState().catch(error => {
+      if (!this.signal.aborted) console.debug('[ManageAlpha] refresh unavailable:', error);
+    });
+    window.addEventListener(EVENTS.BLOCK_HEIGHT_CHANGED, () => {
+      if (
+        this.ready
+        && this.state.protocol !== protocolAtHeight(
+          CHAIN.ID,
+          maxQueryHeight(this.state.height, this.gameState.currentBlockHeight || this.state.height)
+        )
+      ) {
+        this.ready = false;
+        this.systemModal.hide();
+        this.postToggleRender();
+        refresh();
+      }
+    }, {signal: this.signal});
+    refresh();
   }
 
   render () {
 
     this.systemModal.iconClasses = `sui-icon-alpha-matter`;
-    this.systemModal.confirmBtnHandler = () => {
-      const options = new MenuWaitingOptions();
-      options.navItemId = MenuPage.navItemGuildId;
-      options.hasDoNotCloseMessage = false;
-
-      if (this.alphaToInfuse > this.fuelP) {
-        this.infuse();
-
-        options.headerBtnLabel = 'Infusing...';
-        options.waitingAnimation = 'INFUSE';
-      } else if (this.alphaToInfuse < this.fuelP) {
-        this.defuse();
-
-        options.headerBtnLabel = 'Defusing...';
-        options.waitingAnimation = 'DEFUSE';
-      } else {
-        return;
-      }
-
-      MenuPage.router.goto('Generic', 'menuWaiting', options);
-    };
+    this.systemModal.confirmBtnHandler = () => this.save();
     const modalHTML = this.systemModal.render();
 
     MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
@@ -255,7 +385,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
               this.alphaInfusedId,
               'sui-icon-alpha-matter',
               'Alpha to infuse',
-              fmt(this.fuelP, 'ualpha')
+              this.targetDisplay(this.alphaToInfuse)
             )
           }
           ${
@@ -263,14 +393,14 @@ export class ManageAlphaViewModel extends AbstractViewModel {
               this.energyId,
               'sui-icon-energy',
               'Expected energy supply',
-              fmt(this.calculateEnergy(), 'mw')
+              this.calculateEnergy()
             )
           }
         </div>
         
         <div class="manage-alpha-error">
           <i class="sui-icon sui-icon-md icon-alert sui-text-warning"></i>
-          <span>The Guild Minimum is ${fmt(this.joinInfusionMinimum, 'ualpha')}.</span>
+          <span>The Guild Minimum is ${this.joinInfusionMinimum}.</span>
         </div>
         
         <div class="manage-alpha-cta-btns hidden">

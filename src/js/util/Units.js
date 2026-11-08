@@ -64,6 +64,20 @@ export function toBase(v) {
 }
 
 /**
+ * Exact integer base units as a canonical decimal string, or null. This is the
+ * storage form for every model/DTO *_p field: it survives JSON, localStorage
+ * and structuredClone, and it is what the exact funds/reactor code accepts.
+ * Convert back with toBase() before doing arithmetic.
+ *
+ * @param {bigint|string|number|null|undefined} v
+ * @return {string|null}
+ */
+export function toExact(v) {
+  const n = toBase(v);
+  return n === null ? null : n.toString();
+}
+
+/**
  * @param {bigint} abs
  * @param {Array<[number, bigint, string]>} ladder
  * @return {[number, bigint, string]}

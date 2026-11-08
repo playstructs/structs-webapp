@@ -1,6 +1,6 @@
 import {Transaction} from "../models/Transaction";
 import {AbstractFactory} from "../framework/AbstractFactory";
-import {legacyToBase, toBase} from "../util/Units";
+import {legacyToBase, toBase, toExact} from "../util/Units";
 
 export class TransactionFactory extends AbstractFactory {
 
@@ -14,7 +14,7 @@ export class TransactionFactory extends AbstractFactory {
 
     const amountP = toBase(obj.amount_p);
     if (amountP != null) {
-      transaction.amount_p = amountP;
+      transaction.amount_p = toExact(amountP);
       transaction.precise = true;
     } else {
       // Legacy display amount: scale by denom when known. Default ualpha (×1e6).
@@ -27,7 +27,7 @@ export class TransactionFactory extends AbstractFactory {
       } else if (denom.startsWith('uguild') || denom.startsWith('guild')) {
         exponent = 6;
       }
-      transaction.amount_p = legacyToBase(obj.amount, exponent);
+      transaction.amount_p = toExact(legacyToBase(obj.amount, exponent));
       transaction.precise = false;
     }
 

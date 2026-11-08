@@ -44,11 +44,13 @@ export class RecoverAccountStartViewModel extends AbstractViewModel {
 
       MenuPage.router.goto('Generic', 'menuWaiting', waitingOptions);
 
-      // On success the listener registered inside loginWithMnemonic completes the
-      // login and navigates once the new device address is approved on-chain.
-      this.authManager.loginWithMnemonic(recoveryKeyInput.value).then((success) => {
-        if (!success) {
-          MenuPage.router.goto('Auth', 'loginRecoverAccountFail');
+      const signal=MenuPage.router.navigationSignal;
+      this.authManager.loginWithMnemonic(recoveryKeyInput.value,signal).then(success=>{
+        if (!signal.aborted) MenuPage.router.goto('Auth',success ? 'loginRecoverAccountSuccess' : 'loginRecoverAccountFail');
+      }).catch(error=>{
+        if (!signal.aborted) {
+          console.debug('[AccountRecovery] recovery unavailable:',error);
+          MenuPage.router.goto('Auth','loginRecoverAccountFail');
         }
       });
     };

@@ -16,3 +16,10 @@ phpunit.xml
 
 .DS_Store
 /node_modules/
+
+# Webpack output. The image builds it; a mounted checkout needs `npm run build`.
+/public/js/index.*
+/public/js/test.*
+/public/js/vendors-*
+/public/js/manifest.json
+/public/js/workers/

@@ -1,4 +1,4 @@
-import {legacyToBase} from "../util/Units";
+import {legacyToBase, toBase} from "../util/Units";
 
 export class Player {
   constructor() {
@@ -14,22 +14,22 @@ export class Player {
     this.guild_name = null;
     this.tag = null;
     this.alpha = null;
-    /** @type {bigint|null} ualpha */
+    /** @type {string|null} exact decimal, ualpha */
     this.alpha_p = null;
     this.ore = null;
-    /** @type {bigint|null} grams */
+    /** @type {string|null} exact decimal, grams */
     this.ore_p = null;
     this.load = null;
-    /** @type {bigint|null} milliwatts */
+    /** @type {string|null} exact decimal, milliwatts */
     this.load_p = null;
     this.structs_load = null;
-    /** @type {bigint|null} milliwatts */
+    /** @type {string|null} exact decimal, milliwatts */
     this.structs_load_p = null;
     this.capacity = null;
-    /** @type {bigint|null} milliwatts */
+    /** @type {string|null} exact decimal, milliwatts */
     this.capacity_p = null;
     this.connection_capacity = null;
-    /** @type {bigint|null} milliwatts */
+    /** @type {string|null} exact decimal, milliwatts */
     this.connection_capacity_p = null;
   }
 
@@ -48,20 +48,25 @@ export class Player {
   }
 
   /**
+   * Total load and capacity in exact milliwatts. Works on Player instances and
+   * on plain player rows; prefers *_p fields (mW) over legacy watt fields.
+   *
+   * @param {object|null} player
+   * @return {{load: bigint, capacity: bigint}}
+   */
+  static energyMilliwatts(player) {
+    const mw = (field) => toBase(player?.[`${field}_p`]) ?? legacyToBase(player?.[field], 3) ?? 0n;
+    return {
+      load: mw('load') + mw('structs_load'),
+      capacity: mw('capacity') + mw('connection_capacity'),
+    };
+  }
+
+  /**
    * @return {boolean}
    */
   isOverloaded() {
-    // Prefer *_p (mW). Legacy load/capacity fields are watts.
-    const load = this.load_p ?? legacyToBase(this.load, 3) ?? 0n;
-    const structsLoad = this.structs_load_p ?? legacyToBase(this.structs_load, 3) ?? 0n;
-    const capacity = this.capacity_p ?? legacyToBase(this.capacity, 3) ?? 0n;
-    const connectionCapacity = this.connection_capacity_p
-      ?? legacyToBase(this.connection_capacity, 3)
-      ?? 0n;
-
-    const totalLoad = load + structsLoad;
-    const totalCapacity = capacity + connectionCapacity;
-
-    return totalLoad > totalCapacity;
+    const {load, capacity} = Player.energyMilliwatts(this);
+    return load > capacity;
   }
 }
