@@ -4,6 +4,8 @@ export class GuildSearchResultDTO {
     this.name = null;
     this.logo = null;
     this.alpha = null;
+    /** @type {string|null} exact decimal ualpha (reactor fuel aggregate) */
+    this.alpha_p = null;
     this.members = null;
   }
 }

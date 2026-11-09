@@ -1,6 +1,7 @@
 import {NotificationDialogueSequence} from "../../../framework/NotificationDialogueSequence";
 import {NotificationDialogueSequenceStep} from "../../../framework/NotificationDialogueSequenceStep";
 import {VictoryBannerViewModel} from "../../banners/VictoryBannerViewModel";
+import {fmt} from "../../../util/Units";
 
 export class AttackerVictoryDialogueSequence extends NotificationDialogueSequence {
   constructor(alphaOreRecovered) {
@@ -18,7 +19,7 @@ export class AttackerVictoryDialogueSequence extends NotificationDialogueSequenc
       ),
       new NotificationDialogueSequenceStep(
         '<i class="sui-icon-md icon-success sui-text-primary"></i>',
-        `You recovered <strong class="sui-text-primary">${this.alphaOreRecovered} Alpha Ore</strong> from the enemy base.`,
+        `You recovered <strong class="sui-text-primary">${fmt(this.alphaOreRecovered, 'ore')} Alpha Ore</strong> from the enemy base.`,
       ),
       new NotificationDialogueSequenceStep(
         '<i class="sui-icon-md icon-success sui-text-primary"></i>',

@@ -162,13 +162,13 @@ export function reactorState(indexed, context) {
  * @param {bigint} targetAlpha
  * @return {bigint}
  */
-export function reactorPreview(state, targetAlpha) {
+export function reactorPreviewMilliwatts(state, targetAlpha) {
   if (typeof targetAlpha !== 'bigint' || targetAlpha < 0n) {
     throw new Error('Invalid reactor target');
   }
   const delta = (targetAlpha - state.initialAlpha) * ALPHA;
   if (!delta) {
-    return state.ownerPower / 1000n;
+    return state.ownerPower;
   }
   if (state.fuel + delta < 0n) {
     throw new Error('Reactor target exceeds the bonded balance');
@@ -204,5 +204,16 @@ export function reactorPreview(state, targetAlpha) {
       throw new Error('Eligible reactor positions cannot cover the withdrawal');
     }
   }
-  return power / 1000n;
+  return power;
+}
+
+/**
+ * The owner's expected power at the target, in whole watts (truncated).
+ *
+ * @param {object} state
+ * @param {bigint} targetAlpha
+ * @return {bigint}
+ */
+export function reactorPreview(state, targetAlpha) {
+  return reactorPreviewMilliwatts(state, targetAlpha) / 1000n;
 }

@@ -56,6 +56,10 @@ class VaultFundsManager
         }
 
         $player['alpha'] = null;
+        // alpha_p (exact ualpha) always describes the same funds as alpha.
+        if (array_key_exists('alpha_p', $player)) {
+            $player['alpha_p'] = null;
+        }
 
         if (
             ($meta['protocol'] ?? null) !== ChainProtocol::CURRENT
@@ -129,6 +133,9 @@ class VaultFundsManager
             $player['vault_address'] = $address;
             $player['spendable_alpha_p'] = $spendable;
             $player['alpha'] = ExactAmount::alphaDisplay($spendable);
+            if (array_key_exists('alpha_p', $player)) {
+                $player['alpha_p'] = $spendable;
+            }
             $player['funds_meta'] = [
                 'height' => $height,
                 'ready' => true,

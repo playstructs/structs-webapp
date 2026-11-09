@@ -35,11 +35,19 @@ export function generatorState(indexed, context) {
   return state;
 }
 
-/** Only the selected position is re-priced; untouched positions keep applied power. */
-export function generatorPreview(state, alpha) {
+/**
+ * Projected generator power in exact milliwatts. Only the selected position is
+ * re-priced; untouched positions keep applied power.
+ */
+export function generatorPreviewMilliwatts(state, alpha) {
   if (typeof alpha !== 'bigint' || alpha < 0n) throw new Error('Invalid generator amount');
-  if (!alpha) return state.power / 1000n;
+  if (!alpha) return state.power;
   if (alpha > BigInt(state.maxAlpha)) throw new Error('Generator amount exceeds available funds or native range');
   const fuel = state.sourceFuel + alpha * ALPHA;
-  return (state.power - state.sourcePower + fuel * state.rate) / 1000n;
+  return state.power - state.sourcePower + fuel * state.rate;
+}
+
+/** Projected generator power in whole watts (truncated). */
+export function generatorPreview(state, alpha) {
+  return generatorPreviewMilliwatts(state, alpha) / 1000n;
 }

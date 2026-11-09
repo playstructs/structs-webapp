@@ -1,7 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
-import {NumberFormatter} from "../../util/NumberFormatter";
 import {SystemModal} from "../templates/partials/SystemModal";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
 import {MenuWaitingViewModel} from "../generic/MenuWaitingViewModel";
@@ -10,9 +9,12 @@ import {TX_STATUS} from "../../models/SigningTransaction";
 import {CHAIN} from "../../constants/ChainConstants";
 import {EVENTS} from "../../constants/Events";
 import {protocolAtHeight, maxQueryHeight} from "../../util/ChainProtocol";
-import {reactorPreview, alphaDecimal} from "../../util/ReactorState";
+import {reactorPreview, reactorPreviewMilliwatts} from "../../util/ReactorState";
+import {fmt} from "../../util/Units";
 import {waitForReactorRefresh} from "../../util/ReactorCompletion";
 import {pollUntil} from "../../util/PollUntil";
+
+const GRAM = 1000000n;
 
 export class ManageAlphaViewModel extends AbstractViewModel {
 
@@ -34,7 +36,6 @@ export class ManageAlphaViewModel extends AbstractViewModel {
     this.alphaManager = alphaManager;
     this.infusion = infusion;
     this.genericResourceComponent = new GenericResourceComponent(gameState);
-    this.numberFormatter = new NumberFormatter();
     this.systemModal = new SystemModal();
 
     this.infusedAlpha = null;
@@ -63,10 +64,31 @@ export class ManageAlphaViewModel extends AbstractViewModel {
    */
   calculateEnergy() {
     try {
-      return this.state ? this.numberFormatter.formatExact(reactorPreview(this.state, this.alphaToInfuse)) : '';
+      return this.state ? fmt(reactorPreviewMilliwatts(this.state, this.alphaToInfuse), 'mw') : '';
     } catch {
       return '';
     }
+  }
+
+  /**
+   * Exact ualpha the reactor would hold at a whole-Alpha target. Targets step
+   * in whole Alpha from the current (possibly fractional) infusion.
+   *
+   * @param {bigint|null} target in Alpha
+   * @return {bigint|null}
+   */
+  targetFuel(target) {
+    if (!this.state || target === null || target === undefined) return null;
+    return this.state.fuel + (target - this.state.initialAlpha) * GRAM;
+  }
+
+  /**
+   * @param {bigint|null} target in Alpha
+   * @return {string}
+   */
+  targetDisplay(target) {
+    const fuel = this.targetFuel(target);
+    return fuel === null ? '' : fmt(fuel, 'ualpha');
   }
 
   /**
@@ -112,7 +134,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
    * @return {boolean} whether the target keeps the infusion at or above the guild minimum
    */
   targetMeetsMinimum(target) {
-    return this.state && this.state.fuel + (target - this.state.initialAlpha) * 1000000n >= this.state.minimum;
+    return this.state && this.targetFuel(target) >= this.state.minimum;
   }
 
   /**
@@ -135,7 +157,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
         this.state = state;
         this.infusedAlpha = state.initialAlpha;
         this.alphaToInfuse = state.initialAlpha;
-        this.joinInfusionMinimum = alphaDecimal(state.minimum);
+        this.joinInfusionMinimum = fmt(state.minimum, 'ualpha');
         this.ready = true;
         this.postToggleRender();
         return true;
@@ -185,15 +207,15 @@ export class ManageAlphaViewModel extends AbstractViewModel {
 
     if (
       this.ready
-      && this.state.fuel + (this.alphaToInfuse - this.state.initialAlpha) * 1000000n <= this.state.minimum
+      && this.targetFuel(this.alphaToInfuse) <= this.state.minimum
     ) {
       errorElm.classList.remove('hidden');
     } else {
       errorElm.classList.add('hidden');
     }
 
-    document.querySelector('.manage-alpha-error span').innerText = `The Guild Minimum is ${this.joinInfusionMinimum} Alpha Matter.`;
-    alphaInfusedValue.innerText = this.alphaToInfuse?.toString() ?? '';
+    document.querySelector('.manage-alpha-error span').innerText = `The Guild Minimum is ${this.joinInfusionMinimum}.`;
+    alphaInfusedValue.innerText = this.targetDisplay(this.alphaToInfuse);
     energyValue.innerHTML = `${this.calculateEnergy()}`;
   }
 
@@ -363,7 +385,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
               this.alphaInfusedId,
               'sui-icon-alpha-matter',
               'Alpha to infuse',
-              this.alphaToInfuse?.toString() ?? ''
+              this.targetDisplay(this.alphaToInfuse)
             )
           }
           ${
@@ -378,7 +400,7 @@ export class ManageAlphaViewModel extends AbstractViewModel {
         
         <div class="manage-alpha-error">
           <i class="sui-icon sui-icon-md icon-alert sui-text-warning"></i>
-          <span>The Guild Minimum is ${this.joinInfusionMinimum} Alpha Matter.</span>
+          <span>The Guild Minimum is ${this.joinInfusionMinimum}.</span>
         </div>
         
         <div class="manage-alpha-cta-btns hidden">

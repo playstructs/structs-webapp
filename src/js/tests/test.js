@@ -1,5 +1,4 @@
 import {APIReadinessTest} from "./APIReadinessTest";
-import {NumberFormatterTest} from './NumberFormatterTest';
 import {PermissionManagerTest} from "./PermissionManagerTest";
 import {TaskManagerOreTest} from "./TaskManagerOreTest";
 import {ShieldStatusTest} from "./ShieldStatusTest";
@@ -13,8 +12,11 @@ import {InvalidTargetClickTest} from "./InvalidTargetClickTest";
 import {ManageAlphaInfusedTest} from "./ManageAlphaInfusedTest";
 import {TutorialModeTest} from "./TutorialModeTest";
 import {ReactionBadgeTest} from "./ReactionBadgeTest";
+import {UnitsTest} from "./UnitsTest";
+import {AlphaManagerTest} from "./AlphaManagerTest";
+import {BigIntJsonTest} from "./BigIntJsonTest";
+import {ExactFieldStorageTest} from "./ExactFieldStorageTest";
 
-(new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
 (new TaskManagerOreTest()).run();
 (new ShieldStatusTest()).run();
@@ -30,3 +32,7 @@ import {ReactionBadgeTest} from "./ReactionBadgeTest";
 (new ReactionBadgeTest()).run();
 
 (new APIReadinessTest()).run();
+(new UnitsTest()).run();
+(new AlphaManagerTest()).run();
+(new BigIntJsonTest()).run();
+(new ExactFieldStorageTest()).run();

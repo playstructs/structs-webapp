@@ -1,6 +1,8 @@
 import {AbstractViewModelComponent} from "../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../constants/Events";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {fmtSet} from "../../util/Units";
+import {Player} from "../../models/Player";
 
 export class EnergyUsageComponent extends AbstractViewModelComponent {
 
@@ -17,17 +19,15 @@ export class EnergyUsageComponent extends AbstractViewModelComponent {
   }
 
   getEnergyUsage() {
-    const load = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.load : 0;
-    const structsLoad = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.structs_load : 0;
-    const capacity = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.capacity : 0;
-    const connectionCapacity = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.connection_capacity : 0;
+    const player = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player;
+    if (!player) {
+      return '—/—';
+    }
 
-    let totalLoad = load + structsLoad;
-    let totalCapacity = capacity + connectionCapacity;
-    totalLoad = this.numberFormatter.format(totalLoad);
-    totalCapacity = this.numberFormatter.format(totalCapacity);
+    const {load, capacity} = Player.energyMilliwatts(player);
+    const [loadStr, capStr] = fmtSet([load, capacity], 'mw');
 
-    return `${totalLoad}/${totalCapacity}`;
+    return `${loadStr}/${capStr}`;
   }
 
   /**

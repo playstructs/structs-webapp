@@ -1,6 +1,7 @@
 import {AbstractViewModelComponent} from "../../framework/AbstractViewModelComponent";
 import {EVENTS} from "../../constants/Events";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {fmt} from "../../util/Units";
 
 export class AlphaOwnedComponent extends AbstractViewModelComponent {
 
@@ -13,8 +14,9 @@ export class AlphaOwnedComponent extends AbstractViewModelComponent {
   }
 
   getAlphaOwned() {
-    const alpha = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player?.alpha;
-    return alpha === null || alpha === undefined ? '' : this.numberFormatter.formatExact(alpha);
+    const alphaP = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player?.alpha_p;
+    // Unknown funds render empty, never as zero.
+    return alphaP === null || alphaP === undefined ? '' : fmt(alphaP, 'ualpha');
   }
 
   alphaOwnedHandler(event) {
@@ -50,7 +52,7 @@ export class AlphaOwnedComponent extends AbstractViewModelComponent {
         data-sui-tooltip="Alpha Matter"
         data-sui-mod-placement="bottom"
       >
-        <span class="${this.alphaOwnedClass}"></span>
+        <span class="${this.alphaOwnedClass} sui-quantity"></span>
         <i class="sui-icon sui-icon-alpha-matter"></i>
       </a>
     `;

@@ -1,7 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
-import {NumberFormatter} from "../../util/NumberFormatter";
+import {fmt, fmtPercent} from "../../util/Units";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {CHAIN} from "../../constants/ChainConstants";
 import {exactQueryHeight, maxQueryHeight, validateSigningSnapshot} from "../../util/ChainProtocol";
@@ -28,7 +28,6 @@ export class ReactorViewModel extends AbstractViewModel {
     this.ownerId = this.gameState.keyPlayers?.[PLAYER_TYPES.PLAYER]?.id;
     this.account = this.gameState.signingAccount?.address;
     this.genericResourceComponent = new GenericResourceComponent(gameState);
-    this.numberFormatter = new NumberFormatter();
 
     this.guildMinimumId = 'guild-profile-guild-minimum';
     this.commissionId = 'guild-profile-commission';
@@ -88,11 +87,11 @@ export class ReactorViewModel extends AbstractViewModel {
 
   updateValues() {
     for (const [id, value] of [
-      [this.alphaInfusedId, this.rawDisplay('fuel_p', 1000000n)],
-      [this.defusingId, this.rawDisplay('defusing_p', 1000000n)],
-      [this.totalSupplyId, this.rawDisplay('power_p', 1000n)],
+      [this.alphaInfusedId, this.rawDisplay('fuel_p', 'ualpha')],
+      [this.defusingId, this.rawDisplay('defusing_p', 'ualpha')],
+      [this.totalSupplyId, this.rawDisplay('power_p', 'mw')],
       [this.commissionId, this.commissionDisplay()],
-      [this.guildMinimumId, this.rawDisplay('join_infusion_minimum_p', 1000000n)],
+      [this.guildMinimumId, this.rawDisplay('join_infusion_minimum_p', 'ualpha')],
     ]) {
       document.getElementById(`${id}-value`).textContent = value;
     }
@@ -198,15 +197,26 @@ export class ReactorViewModel extends AbstractViewModel {
   }
 
   /**
-   * @param {string} field a base-denom infusion field
-   * @param {bigint} scale divisor to display units
    * @return {string}
    */
-  rawDisplay(field, scale) {
+  renderReactorRatioLabel() {
+    const ratio = this.infusion?.ratio_p ?? this.guild?.reactor_ratio;
+    if (ratio === null || ratio === undefined || ratio === '') {
+      return '—';
+    }
+    return `${ratio}KW / g`;
+  }
+
+  /**
+   * @param {string} field a base-denom infusion field
+   * @param {'ualpha'|'mw'} kind Units ladder for that field
+   * @return {string} '' when the amount is unknown, never zero
+   */
+  rawDisplay(field, kind) {
     const value = this.infusion[field];
     return value === null || value === undefined
       ? ''
-      : this.numberFormatter.formatExact(exactAlphaAmount(value) / scale);
+      : fmt(exactAlphaAmount(value), kind);
   }
 
   /**
@@ -214,7 +224,8 @@ export class ReactorViewModel extends AbstractViewModel {
    */
   commissionDisplay() {
     const commission = this.infusion.preview_commission ?? this.guild.default_commission;
-    return `${commissionAtoms(commission) * 100n / 1000000000000000000n}%`;
+    commissionAtoms(commission); // validates an exact 0–1 decimal
+    return fmtPercent(commission);
   }
 
   render () {
@@ -249,7 +260,7 @@ export class ReactorViewModel extends AbstractViewModel {
                           this.alphaInfusedId,
                           'sui-icon-alpha-matter',
                           'Alpha infused with the guild',
-                          this.rawDisplay('fuel_p', 1000000n)
+                          this.rawDisplay('fuel_p', 'ualpha')
                         )
                       }
                     </div>
@@ -273,7 +284,7 @@ export class ReactorViewModel extends AbstractViewModel {
                           this.defusingId,
                           'sui-icon-inert-alpha',
                           'Alpha removed from the reactor that must cooldown before reuse',
-                          this.rawDisplay('defusing_p', 1000000n)
+                          this.rawDisplay('defusing_p', 'ualpha')
                         )
                       }
                     </div>
@@ -294,7 +305,7 @@ export class ReactorViewModel extends AbstractViewModel {
                           this.totalSupplyId,
                           'sui-icon-energy',
                           'Expected supply of power',
-                          this.rawDisplay('power_p', 1000n)
+                          this.rawDisplay('power_p', 'mw')
                         )
                       }
                     </div>
@@ -336,7 +347,7 @@ export class ReactorViewModel extends AbstractViewModel {
                       this.guildMinimumId,
                       'sui-icon-alpha-matter',
                       'Minimum alpha required to join guild',
-                      this.rawDisplay('join_infusion_minimum_p', 1000000n)
+                      this.rawDisplay('join_infusion_minimum_p', 'ualpha')
                     )
                   }
                 </div>
@@ -354,8 +365,7 @@ export class ReactorViewModel extends AbstractViewModel {
                   </a>
                 </div>
                 <div>
-                  ${this.numberFormatter.format(this.guild.reactor_ratio)} <i class="sui-icon sui-icon-md sui-icon-energy"></i> /
-                  1 <i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>
+                  ${this.renderReactorRatioLabel()}
                 </div>
               </div>
               <div class="sui-data-card-row">

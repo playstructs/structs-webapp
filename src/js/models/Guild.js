@@ -3,6 +3,8 @@ export class Guild {
     this.id = null;
     this.endpoint = null;
     this.join_infusion_minimum = null;
+    /** @type {string|null} exact decimal ualpha */
+    this.join_infusion_minimum_p = null;
     this.join_infusion_minimum_bypass_by_request = null;
     this.join_infusion_minimum_bypass_by_invite = null;
     this.primary_reactor_id = null;

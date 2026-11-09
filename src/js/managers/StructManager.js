@@ -7,6 +7,8 @@ import {UpdateTileStructIdEvent} from "../events/UpdateTileStructIdEvent";
 import {HUDViewModel} from "../view_models/HUDViewModel";
 import {RefreshActionBarEvent} from "../events/RefreshActionBarEvent";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
+import {Player} from "../models/Player";
+import {legacyToBase, toBase} from "../util/Units";
 import {STRUCT_ACTIONS} from "../constants/StructConstants";
 import {RefreshActionBarIfSelectedEvent} from "../events/RefreshActionBarIfSelectedEvent";
 import {RenderStructEvent} from "../events/RenderStructEvent";
@@ -210,13 +212,16 @@ export class StructManager {
   }
 
   /**
-   * @return {number}
+   * Available energy in milliwatts (BigInt).
+   * @return {bigint}
    */
   getEnergySupply() {
-    let totalLoad = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.load + this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.structs_load;
-    let totalCapacity = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.capacity + this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.connection_capacity;
-
-    return totalCapacity - totalLoad;
+    const player = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player;
+    if (!player) {
+      return 0n;
+    }
+    const {load, capacity} = Player.energyMilliwatts(player);
+    return capacity - load;
   }
 
   /**
@@ -225,7 +230,10 @@ export class StructManager {
    */
   getDeploymentBlockerInsufficientEnergySupply(structType) {
     const energySupply = this.getEnergySupply();
-    return (energySupply < structType.build_draw || energySupply < structType.passive_draw)
+    const buildDraw = toBase(structType.build_draw_p) ?? legacyToBase(structType.build_draw, 3) ?? 0n;
+    const passiveDraw = toBase(structType.passive_draw_p) ?? legacyToBase(structType.passive_draw, 3) ?? 0n;
+    // Chain rejects equality: available must be strictly greater than draw.
+    return (energySupply <= buildDraw || energySupply <= passiveDraw)
       ? 'Insufficient energy supply'
       : '';
   }

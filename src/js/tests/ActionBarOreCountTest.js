@@ -87,8 +87,9 @@ export class ActionBarOreCountTest extends DTestSuite {
 
     keyPlayer.setOre(1);
 
-    this.assertEquals(`${valueContainer.innerHTML}`, '1');
-    // The cheatsheet reads the count off the icon rather than the value shown.
+    // The value shown is on the ore unit ladder (grams).
+    this.assertEquals(`${valueContainer.innerHTML}`, '1g');
+    // The cheatsheet reads the exact base-unit count off the icon rather than the value shown.
     this.assertEquals(`${icon.dataset.oreReady}`, '1');
   });
 
@@ -103,7 +104,7 @@ export class ActionBarOreCountTest extends DTestSuite {
 
     keyPlayer.setPlanet({undiscovered_ore: 9});
 
-    this.assertEquals(`${valueContainer.innerHTML}`, '9');
+    this.assertEquals(`${valueContainer.innerHTML}`, '9g');
     this.assertEquals(`${icon.dataset.undiscoveredOre}`, '9');
   });
 

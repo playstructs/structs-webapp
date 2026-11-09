@@ -2,6 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {ConfirmTemplate} from "../templates/ConfirmTemplate";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {fmt, legacyToBase} from "../../util/Units";
 
 export class LogoutAssetsWarningViewModel extends AbstractViewModel {
 
@@ -14,6 +15,15 @@ export class LogoutAssetsWarningViewModel extends AbstractViewModel {
     this.gameState = gameState;
     this.playerAddress = playerAddress;
     this.isPrimaryDevice = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.primary_address === this.playerAddress.address;
+  }
+
+  /**
+   * @return {string}
+   */
+  formatAlpha() {
+    const alphaP = this.playerAddress.alpha_p
+      ?? legacyToBase(this.playerAddress.alpha, 6);
+    return fmt(alphaP, 'ualpha');
   }
 
   render() {
@@ -40,7 +50,7 @@ export class LogoutAssetsWarningViewModel extends AbstractViewModel {
         class="sui-resource"
         data-sui-tooltip="Alpha Matter"
       >
-        <span>${this.playerAddress.alpha}x</span>
+        <span>${this.formatAlpha()}</span>
         <i class="sui-icon sui-icon-alpha-matter"></i>
       </a>
     `;

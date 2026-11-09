@@ -8,7 +8,10 @@ export class Transaction {
     this.counterparty_player_id = null;
     this.counterparty_username = null;
     this.amount = null;
+    /** @type {string|null} exact decimal base units */
     this.amount_p = null;
+    /** @type {boolean} false when amount_p was derived from a legacy display value */
+    this.precise = true;
     this.block_height = null;
     this.action = null;
     this.direction = null;

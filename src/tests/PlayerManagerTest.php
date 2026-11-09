@@ -69,6 +69,32 @@ class PlayerManagerTest extends ApiManagerTestCase
         $this->assertStringNotContainsString('seized', $captured);
     }
 
+
+    /** Precision amounts leave getPlayer as text so JSON keeps full integer scale. */
+    public function testGetPlayerSelectsPrecisionTextFields(): void
+    {
+        $captured = null;
+        $connection = $this->createMock(Connection::class);
+        $connection->method('fetchAssociative')
+            ->willReturnCallback(function (string $sql) use (&$captured) {
+                if (str_contains($sql, 'api_readiness')) {
+                    return ['meta' => json_encode(['protocol' => 'v0.21.0', 'data_ready' => true])];
+                }
+                $captured = $sql;
+
+                return ['id' => '1-1', 'alpha' => '0'];
+            });
+
+        (new PlayerManager($this->entityManager($connection), $this->validator()))
+            ->getPlayer('1-1');
+
+        $this->assertStringContainsString('structs.api_inventory', $captured);
+        $this->assertStringContainsString("denom = 'ualpha'", $captured);
+        foreach (['alpha_p', 'ore_p', 'load_p', 'structs_load_p', 'capacity_p', 'connection_capacity_p'] as $field) {
+            $this->assertMatchesRegularExpression('/::text\s+as\s+' . preg_quote($field, '/') . '\b/i', $captured);
+        }
+    }
+
     /**
      * Mini game progress is read per player and per interface.
      */

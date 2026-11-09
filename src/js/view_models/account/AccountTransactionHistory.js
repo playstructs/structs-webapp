@@ -1,6 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {NumberFormatter} from "../../util/NumberFormatter";
+import {fmtDelta, approxMarkup} from "../../util/Units";
 import {Pagination} from "../templates/partials/Pagination";
 import {PAGINATION_LIMITS} from "../../constants/PaginationLimits";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
@@ -20,7 +20,6 @@ export class AccountTransactionHistory extends AbstractViewModel {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
-    this.numberFormatter = new NumberFormatter();
     this.page = page;
     this.playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
     // this.playerId = '1-1';
@@ -49,7 +48,7 @@ export class AccountTransactionHistory extends AbstractViewModel {
   renderTransactionHTML(transaction) {
 
     const iconClass = transaction.action === 'sent' ? 'icon-outgoing' : 'icon-incoming';
-    const amount = this.numberFormatter.format(transaction.amount);
+    const amount = approxMarkup(fmtDelta(transaction.amount_p, 'ualpha'), transaction.precise !== false);
     const btnId = `transaction-${transaction.id}`;
 
     return `

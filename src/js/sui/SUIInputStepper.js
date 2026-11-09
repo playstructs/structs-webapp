@@ -4,24 +4,50 @@ export class SUIInputStepper extends SUIFeature {
 
   /**
    * Ensure that the number is a number between the min or max value or the empty string.
+   * Honors data-decimals attribute for fractional input.
    *
    * @param {string|number} value
    * @param {number} min
    * @param {number} max
+   * @param {number} decimals
    * @return {number|string}
    */
-  filterNumberInput(value, min, max) {
-    let cleanValue = `${value}`.replace(/^[^0-9]*$/, '');
-
-    if (cleanValue === '') {
-      return cleanValue;
+  filterNumberInput(value, min, max, decimals = 0) {
+    const str = String(value).trim();
+    
+    if (str === '' || str === '-') {
+      return str;
     }
 
-    cleanValue = parseInt(cleanValue);
-    cleanValue = Math.max(cleanValue, min);
-    cleanValue = Math.min(cleanValue, max);
-
-    return cleanValue;
+    if (decimals > 0) {
+      // Allow decimal point and up to N decimal places
+      const regex = new RegExp(`^-?\\d*(\\.\\d{0,${decimals}})?$`);
+      if (!regex.test(str)) {
+        // Strip invalid characters
+        const match = str.match(new RegExp(`^(-?\\d*(?:\\.\\d{0,${decimals}})?)`));
+        return match ? match[1] : '';
+      }
+      const num = parseFloat(str);
+      if (isNaN(num)) {
+        return '';
+      }
+      if (num < min) return String(min);
+      if (num > max) return String(max);
+      return str;
+    } else {
+      // Integer only
+      let cleanValue = str.replace(/[^0-9-]/g, '');
+      if (cleanValue === '' || cleanValue === '-') {
+        return '';
+      }
+      let num = parseInt(cleanValue, 10);
+      if (isNaN(num)) {
+        return '';
+      }
+      num = Math.max(num, min);
+      num = Math.min(num, max);
+      return String(num);
+    }
   }
 
   /**
@@ -56,7 +82,8 @@ export class SUIInputStepper extends SUIFeature {
       });
 
       inputStepper.addEventListener('input', function() {
-        inputStepper.value = this.filterNumberInput(inputStepper.value, inputStepper.min, inputStepper.max);
+        const decimals = parseInt(inputStepper.dataset.decimals || '0', 10);
+        inputStepper.value = this.filterNumberInput(inputStepper.value, inputStepper.min, inputStepper.max, decimals);
         enableDisableButtons();
       }.bind(this));
 

@@ -109,6 +109,9 @@ class RetainedFundsManager
                 bcadd($player['spendable_alpha_p'], $total, 0)
             );
             $player['alpha'] = ExactAmount::alphaDisplay($player['available_alpha_p']);
+            if (array_key_exists('alpha_p', $player)) {
+                $player['alpha_p'] = $player['available_alpha_p'];
+            }
             $player['retained_alpha_p'] = $total;
             $player['retained_sources'] = $sources;
             $player['retained_funds_meta'] = [

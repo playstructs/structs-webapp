@@ -96,6 +96,10 @@ class StructManager
                 WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN UNIT_LEGACY_FORMAT(COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0), \'ualpha\')
                 ELSE 0
               END AS fuel,
+              (CASE
+                WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0)
+                ELSE 0
+              END)::text AS fuel_p,
               totals.positions_ready AS generator_positions_ready,
               CASE WHEN totals.positions_ready THEN totals.fuel_p::text END AS generator_fuel_p,
               CASE WHEN totals.positions_ready THEN totals.power_p::text END AS generator_power_p
@@ -187,6 +191,10 @@ class StructManager
                 WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN UNIT_LEGACY_FORMAT(COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0), \'ualpha\')
                 ELSE 0
               END AS fuel,
+              (CASE
+                WHEN COALESCE(st.power_generation, \'noPowerGeneration\') <> \'noPowerGeneration\' THEN COALESCE((SELECT val FROM grid WHERE attribute_type = \'fuel\' AND object_id = s.id), 0)
+                ELSE 0
+              END)::text AS fuel_p,
               totals.positions_ready AS generator_positions_ready,
               CASE WHEN totals.positions_ready THEN totals.fuel_p::text END AS generator_fuel_p,
               CASE WHEN totals.positions_ready THEN totals.power_p::text END AS generator_power_p

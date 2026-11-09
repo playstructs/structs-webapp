@@ -13,7 +13,7 @@ import {ClearDefendTargetsEvent} from "../../../events/ClearDefendTargetsEvent";
 import {ShowAttackTargetsEvent} from "../../../events/ShowAttackTargetsEvent";
 import {ClearAttackTargetsEvent} from "../../../events/ClearAttackTargetsEvent";
 import {TASK_TYPES} from "../../../constants/TaskTypes";
-import {NumberFormatter} from "../../../util/NumberFormatter";
+import {fmtDurationMs, fmt, toBase} from "../../../util/Units";
 import {ShowStructStillEvent} from "../../../events/ShowStructStillEvent";
 import {ConsumeAlphaOffcanvas} from "../offcanvas/ConsumeAlphaOffcanvas";
 import {PfpViewerComponent} from "../PfpViewerComponent";
@@ -50,7 +50,6 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     this.taskManager = taskManager;
     this.alphaManager = alphaManager;
     this.grassManager = grassManager;
-    this.numberFormatter = new NumberFormatter();
 
     /* Style */
     this.themeClass = `sui-theme-${this.playerType === PLAYER_TYPES.PLAYER ? 'player' : 'enemy'}`;
@@ -180,7 +179,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         this.updateProgressBar(event.state.getPercentCompleteEstimate());
       } else if (event.state.task_type === TASK_TYPES.MINE || event.state.task_type === TASK_TYPES.REFINE) {
         const estInMS = event.state.getTimeRemainingEstimate();
-        const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
+        const estFormatted = fmtDurationMs(estInMS);
         this.updateInProgressValue(estFormatted);
       }
     });
@@ -192,7 +191,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         this.updatePropertyIconValue(
           this.undiscoveredOreContainerId,
           'undiscoveredOre',
-          this.gameState.keyPlayers[this.playerType].planet?.undiscovered_ore
+          this.oreBase(this.gameState.keyPlayers[this.playerType].planet, 'undiscovered_ore')
         );
       }
     });
@@ -202,7 +201,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
         this.updatePropertyIconValue(
           this.oreReadyContainerId,
           'oreReady',
-          this.gameState.keyPlayers[this.playerType].player?.ore
+          this.oreBase(this.gameState.keyPlayers[this.playerType].player, 'ore')
         );
       }
     });
@@ -213,7 +212,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    *
    * @param {string} valueContainerId
    * @param {string} datasetKey The icon's data attribute its cheatsheet reads the value from.
-   * @param {number|string} value
+   * @param {string|null} value exact grams of ore (base units)
    */
   updatePropertyIconValue(valueContainerId, datasetKey, value) {
     const valueContainer = document.getElementById(valueContainerId);
@@ -221,12 +220,24 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       return;
     }
 
-    valueContainer.innerHTML = value;
+    valueContainer.innerHTML = fmt(value, 'ore');
 
     const icon = valueContainer.closest('[data-sui-cheatsheet]');
     if (icon) {
       icon.dataset[datasetKey] = value;
     }
+  }
+
+  /**
+   * Exact grams of ore on a player or planet, preferring the *_p field.
+   *
+   * @param {object|null} holder
+   * @param {string} field 'ore' or 'undiscovered_ore'
+   * @return {string|null}
+   */
+  oreBase(holder, field) {
+    const exact = toBase(holder?.[`${field}_p`]) ?? toBase(holder?.[field]);
+    return exact !== null ? exact.toString() : null;
   }
 
   /**
@@ -868,8 +879,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore}">
-        <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value">${this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore}</span>
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-undiscovered-ore" data-undiscovered-ore="${this.oreBase(this.gameState.keyPlayers[this.playerType].planet, 'undiscovered_ore') ?? ''}">
+        <i class="sui-icon-md icon-undiscovered-ore"></i><span id="${this.undiscoveredOreContainerId}" class="sui-icon-value sui-quantity">${fmt(this.gameState.keyPlayers[this.playerType].planet.undiscovered_ore_p, 'ore')}</span>
       </a> 
     `);
 
@@ -877,7 +888,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       icons.push(this.buildRaidedPropertyIcon());
     } else if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
-      const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
+      const estFormatted = fmtDurationMs(estInMS);
 
       icons.push(`
         <a href="javascript: void(0)" data-sui-cheatsheet="extractor-active" data-est-time="${estFormatted}">
@@ -902,8 +913,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     icons.push(`
-      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${this.gameState.keyPlayers[this.playerType].player.ore}">
-        <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value">${this.gameState.keyPlayers[this.playerType].player.ore}</span>
+      <a href="javascript: void(0)" data-sui-cheatsheet="icon-ore-ready" data-ore-ready="${this.oreBase(this.gameState.keyPlayers[this.playerType].player, 'ore') ?? ''}">
+        <i class="sui-icon-md icon-ore-ready"></i><span id="${this.oreReadyContainerId}" class="sui-icon-value sui-quantity">${fmt(this.gameState.keyPlayers[this.playerType].player.ore_p, 'ore')}</span>
       </a> 
     `);
 
@@ -911,7 +922,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       icons.push(this.buildRaidedPropertyIcon());
     } else if (struct.isOnline()) {
       const estInMS = this.taskManager.getProcessTimeRemainingEstimate(this.getSelectedStructId());
-      const estFormatted = this.numberFormatter.formatMilliseconds(estInMS);
+      const estFormatted = fmtDurationMs(estInMS);
 
       icons.push(`
         <a href="javascript: void(0)" data-sui-cheatsheet="refinery-active" data-est-time="${estFormatted}">
@@ -936,10 +947,16 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const icons = [];
 
     if (struct.isOnline()) {
-      const icon = struct.fuel < 1 ? 'icon-attention' : 'icon-refine';
+      // null fuel means the generator's positions are not known yet: never show 0.
+      const fuelP = toBase(struct.fuel_p);
+      const rate = toBase(structType.generating_rate_p) ?? 0n;
+      const icon = fuelP === null || fuelP === 0n ? 'icon-attention' : 'icon-refine';
+      const powerP = toBase(struct.generator_power_p)
+        ?? toBase(struct.generator_capacity_p)
+        ?? (fuelP !== null ? fuelP * rate : null);
       icons.push(`
-        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${struct.fuel ?? ''}" data-energy="${struct.generator_power ?? ''}">
-          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value">${struct.fuel ?? ''}</span>
+        <a href="javascript: void(0)" data-sui-cheatsheet="${icon}" data-fuel="${fuelP ?? ''}" data-energy="${powerP ?? ''}">
+          <i class="sui-icon-md ${icon}"></i><span class="sui-icon-value sui-quantity">${fuelP === null ? '' : fmt(fuelP, 'ualpha')}</span>
         </a> 
       `);
     }

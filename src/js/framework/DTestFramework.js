@@ -13,21 +13,37 @@ export class DTest {
     this.provider = provider;
   }
 
+  /**
+   * JSON.stringify throws on BigInt; fall back to String for failure messages.
+   * @param {*} v
+   * @return {string}
+   */
+  static safeRepr(v) {
+    if (typeof v === 'bigint') {
+      return `${v}n`;
+    }
+    try {
+      return JSON.stringify(v);
+    } catch (err) {
+      return String(v);
+    }
+  }
+
   assertEquals(a, b) {
     if (a !== b) {
-      throw new DTestAssertError(`${JSON.stringify(a)} is not equal to ${JSON.stringify(b)}`);
+      throw new DTestAssertError(`${DTest.safeRepr(a)} is not equal to ${DTest.safeRepr(b)}`);
     }
     this.numAssertions++;
   }
 
   assertArrayEquals(a, b) {
     if (a.length !== b.length) {
-      throw new DTestAssertError(`${JSON.stringify(a)} is not equal to ${JSON.stringify(b)}`);
+      throw new DTestAssertError(`${DTest.safeRepr(a)} is not equal to ${DTest.safeRepr(b)}`);
     }
 
     for (let i = 0; i < a.length; i++) {
       if (a[i] !== b[i]) {
-        throw new DTestAssertError(`${JSON.stringify(a)} is not equal to ${JSON.stringify(b)}`);
+        throw new DTestAssertError(`${DTest.safeRepr(a)} is not equal to ${DTest.safeRepr(b)}`);
       }
     }
 
@@ -37,7 +53,7 @@ export class DTest {
   assertSetEquality(a, b) {
     if (!(a.every(element => b.includes(element)) && b.every(element => a.includes(element)))
         || a.length !== b.length) {
-      throw new DTestAssertError(`${JSON.stringify(a)} is not equal to ${JSON.stringify(b)}`);
+      throw new DTestAssertError(`${DTest.safeRepr(a)} is not equal to ${DTest.safeRepr(b)}`);
     }
 
     this.numAssertions++;

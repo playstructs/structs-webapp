@@ -1,6 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {fmt, fmtCount} from "../../util/Units";
 
 export class GuildIndexViewModel extends AbstractViewModel {
 
@@ -47,9 +48,9 @@ export class GuildIndexViewModel extends AbstractViewModel {
       memberCountPromise,
       guildCountPromise
     ]).then((responseValues) => {
-      const alphaInfused = responseValues[0].fuel;
-      const memberCount = responseValues[1];
-      const guildCount = responseValues[2];
+      const alphaInfused = fmt(responseValues[0].fuel_p, 'ualpha');
+      const memberCount = fmtCount(responseValues[1]);
+      const guildCount = fmtCount(responseValues[2]);
 
       MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
 

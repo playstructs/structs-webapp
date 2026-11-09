@@ -130,6 +130,8 @@ class ResolveManager
 
         // Mirrors structs.unit_legacy_format / structs.unit_display_format so clients
         // format from this response instead of hardcoding the conversion table.
+        // min_digits is the digit-count threshold of the raw integer that selects
+        // each rung (irregular vs exponent: Kg is exp 9 but 10 digits).
         $units = [
             [
                 'denom' => 'ualpha',
@@ -137,11 +139,11 @@ class ResolveManager
                 'exponent' => 6,
                 'quantity' => 'mass',
                 'scale' => [
-                    ['exponent' => 0, 'symbol' => 'ug'],
-                    ['exponent' => 3, 'symbol' => 'mg'],
-                    ['exponent' => 6, 'symbol' => 'g'],
-                    ['exponent' => 9, 'symbol' => 'Kg'],
-                    ['exponent' => 18, 'symbol' => 'Tg'],
+                    ['exponent' => 0, 'symbol' => 'μg', 'min_digits' => 0, 'aliases' => ['ug']],
+                    ['exponent' => 3, 'symbol' => 'mg', 'min_digits' => 3],
+                    ['exponent' => 6, 'symbol' => 'g', 'min_digits' => 6],
+                    ['exponent' => 9, 'symbol' => 'Kg', 'min_digits' => 10],
+                    ['exponent' => 18, 'symbol' => 'Tg', 'min_digits' => 16],
                 ],
             ],
             [
@@ -150,7 +152,24 @@ class ResolveManager
                 'exponent' => 0,
                 'quantity' => 'mass',
                 'scale' => [
-                    ['exponent' => 0, 'symbol' => 'g'],
+                    ['exponent' => 0, 'symbol' => 'g', 'min_digits' => 0],
+                    ['exponent' => 3, 'symbol' => 'Kg', 'min_digits' => 4],
+                    ['exponent' => 12, 'symbol' => 'Tg', 'min_digits' => 12],
+                ],
+            ],
+            [
+                'denom' => 'milliwatt',
+                'display' => 'watt',
+                'exponent' => 3,
+                'quantity' => 'energy',
+                'scale' => [
+                    ['exponent' => 0, 'symbol' => 'mW', 'min_digits' => 0],
+                    ['exponent' => 3, 'symbol' => 'W', 'min_digits' => 3],
+                    ['exponent' => 6, 'symbol' => 'KW', 'min_digits' => 6],
+                    ['exponent' => 9, 'symbol' => 'MW', 'min_digits' => 10],
+                    // Client-corrected TW rung (÷10^15). The SQL UNIT_DISPLAY_FORMAT
+                    // still uses ÷10^18; that will be fixed separately.
+                    ['exponent' => 15, 'symbol' => 'TW', 'min_digits' => 16],
                 ],
             ],
         ];
@@ -191,6 +210,13 @@ class ResolveManager
                     'display' => 'watt',
                     'exponent' => 3,
                     'connection_capacity_is_player_share' => true,
+                    'scale' => [
+                        ['exponent' => 0, 'symbol' => 'mW', 'min_digits' => 0],
+                        ['exponent' => 3, 'symbol' => 'W', 'min_digits' => 3],
+                        ['exponent' => 6, 'symbol' => 'KW', 'min_digits' => 6],
+                        ['exponent' => 9, 'symbol' => 'MW', 'min_digits' => 10],
+                        ['exponent' => 15, 'symbol' => 'TW', 'min_digits' => 16],
+                    ],
                 ],
             ],
             // Fields suffixed `_p` carry the base denomination at full precision;

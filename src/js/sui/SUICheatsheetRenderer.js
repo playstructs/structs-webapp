@@ -1,10 +1,9 @@
-import {NumberFormatter} from "../util/NumberFormatter";
 import {ChargeCalculator} from "../util/ChargeCalculator";
+import {fmt} from "../util/Units";
 
 export class SUICheatsheetRenderer {
 
   constructor() {
-    this.numberFormatter = new NumberFormatter();
     this.chargeCalculator = new ChargeCalculator();
   }
 
@@ -35,16 +34,17 @@ export class SUICheatsheetRenderer {
   }
 
   /**
-   * @param {number|null} energyCost
+   * @param {bigint|string|number|null} energyCost
    * @return {string}
    */
   renderEnergyCostHTML(energyCost = null) {
-    if (energyCost === null) {
+    if (energyCost === null || energyCost === undefined) {
       return '';
     }
+    const formatted = fmt(energyCost, 'mw');
     return `
       <div class="sui-cheatsheet-cost">
-        ${this.numberFormatter.format(energyCost)} <i class="sui-icon sui-icon-energy"></i>
+        ${formatted} <i class="sui-icon sui-icon-energy"></i>
       </div>
     `;
   }
@@ -52,7 +52,7 @@ export class SUICheatsheetRenderer {
   /**
    * @param {string} titleText
    * @param {number|null} batteryCost
-   * @param {number|null} energyCost
+   * @param {bigint|string|number|null} energyCost
    * @return {string}
    */
   renderTitleHTML(
@@ -119,7 +119,7 @@ export class SUICheatsheetRenderer {
   /**
    * @param {string} titleText
    * @param {number|null} batteryCost
-   * @param {number|null} energyCost
+   * @param {bigint|string|number|null} energyCost
    * @param {string|null} descriptionText
    * @param {string|null} contextualMessageText
    * @param {string|null} propertySectionHTML

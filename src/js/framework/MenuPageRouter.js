@@ -1,4 +1,5 @@
 import {MENU_PAGE_ROUTER_MODES} from "../constants/MenuPageRouterModes";
+import {parseWithBigInt, stringifyWithBigInt} from "../util/BigIntJson";
 
 export class MenuPageRouter {
   constructor() {
@@ -64,7 +65,7 @@ export class MenuPageRouter {
       if (!(
         this.currentController === controllerName
         && this.currentPage === pageName
-        && JSON.stringify(this.currentOptions) === JSON.stringify(options)
+        && stringifyWithBigInt(this.currentOptions) === stringifyWithBigInt(options)
       )) {
         if (!replace) {
           this.lastController = this.currentController;
@@ -77,12 +78,12 @@ export class MenuPageRouter {
         this.currentOptions = options;
       }
 
-      localStorage.setItem("lastMenuPage", JSON.stringify({
+      localStorage.setItem("lastMenuPage", stringifyWithBigInt({
         controller: this.lastController,
         page: this.lastPage,
         options: this.lastOptions
       }))
-      localStorage.setItem("currentMenuPage", JSON.stringify({
+      localStorage.setItem("currentMenuPage", stringifyWithBigInt({
         controller: controllerName,
         page: pageName,
         options: options
@@ -99,8 +100,8 @@ export class MenuPageRouter {
   }
 
   restore(defaultController, defaultPage, defaultOptions = {}) {
-    const lastMenuPage = JSON.parse(localStorage.getItem("lastMenuPage"));
-    const currentMenuPage = JSON.parse(localStorage.getItem("currentMenuPage"));
+    const lastMenuPage = parseWithBigInt(localStorage.getItem("lastMenuPage"));
+    const currentMenuPage = parseWithBigInt(localStorage.getItem("currentMenuPage"));
 
     if (!currentMenuPage || !lastMenuPage || !this.isRestorable(currentMenuPage)) {
       this.goto(defaultController, defaultPage, defaultOptions);

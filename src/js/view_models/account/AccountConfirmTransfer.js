@@ -1,6 +1,6 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
-import {NumberFormatter} from "../../util/NumberFormatter";
+import {fmtWithExact, legacyToBase} from "../../util/Units";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
 import {MenuWaitingViewModel} from "../generic/MenuWaitingViewModel";
 import {TX_STATUS} from "../../models/SigningTransaction";
@@ -25,7 +25,6 @@ export class AccountConfirmTransfer extends AbstractViewModel {
     this.guildAPI = guildAPI;
     this.alphaManager = alphaManager;
     this.playerSearchResultDTO = playerSearchResultDTO;
-    this.numberFormatter = new NumberFormatter();
     this.cancelBtnId = 'confirm-transfer-cancel-btn';
     this.transferBtnId = 'confirm-transfer-transfer-btn';
     this.transferring = false;
@@ -110,7 +109,8 @@ export class AccountConfirmTransfer extends AbstractViewModel {
   }
 
   render () {
-    const amount = this.numberFormatter.format(this.gameState.transferAmount);
+    // transferAmount is whole Alpha; show it on the ualpha ladder.
+    const amount = fmtWithExact(legacyToBase(this.gameState.transferAmount, 6), 'ualpha');
 
     MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
@@ -129,7 +129,7 @@ export class AccountConfirmTransfer extends AbstractViewModel {
               <div>Amount</div>
               <div>
                 <div class="sui-resource">
-                  <span>${amount}</span>
+                  <span class="sui-quantity">${amount}</span>
                   <i class="sui-icon sui-icon-alpha-matter"></i>
                 </div>
               </div>

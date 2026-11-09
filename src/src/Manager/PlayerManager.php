@@ -104,11 +104,24 @@ class PlayerManager
                 AND vpi.denom=\'alpha\'
               ), 0) as alpha,
               COALESCE((
+                SELECT SUM(api.balance)
+                FROM structs.api_inventory api
+                WHERE api.owner_type = \'player\'
+                AND api.owner_id = p.id
+                AND api.denom = \'ualpha\'
+              ), 0)::text as alpha_p,
+              COALESCE((
                 SELECT g.val 
                 FROM grid g
                 WHERE g.object_id=p.id
                 AND g.attribute_type=\'ore\'
               ), 0) as ore,
+              COALESCE((
+                SELECT g.val
+                FROM grid g
+                WHERE g.object_id=p.id
+                AND g.attribute_type=\'ore\'
+              ), 0)::text as ore_p,
               COALESCE((
                 SELECT g.val
                 FROM grid g
@@ -119,8 +132,20 @@ class PlayerManager
                 SELECT g.val
                 FROM grid g
                 WHERE g.object_id=p.id
+                AND g.attribute_type=\'load\'
+              ), 0)::text as load_p,
+              COALESCE((
+                SELECT g.val
+                FROM grid g
+                WHERE g.object_id=p.id
                 AND g.attribute_type=\'structsLoad\'
               ), 0) as structs_load,
+              COALESCE((
+                SELECT g.val
+                FROM grid g
+                WHERE g.object_id=p.id
+                AND g.attribute_type=\'structsLoad\'
+              ), 0)::text as structs_load_p,
               COALESCE((
                 SELECT g.val
                 FROM grid g
@@ -130,9 +155,21 @@ class PlayerManager
               COALESCE((
                 SELECT g.val
                 FROM grid g
+                WHERE g.object_id=p.id
+                AND g.attribute_type=\'capacity\'
+              ), 0)::text as capacity_p,
+              COALESCE((
+                SELECT g.val
+                FROM grid g
                 WHERE g.object_id=p.substation_id
                 AND g.attribute_type=\'connectionCapacity\'
-              ), 0) as connection_capacity
+              ), 0) as connection_capacity,
+              COALESCE((
+                SELECT g.val
+                FROM grid g
+                WHERE g.object_id=p.substation_id
+                AND g.attribute_type=\'connectionCapacity\'
+              ), 0)::text as connection_capacity_p
             FROM player p
             LEFT JOIN structs.vault v ON v.owner_id = p.id
             LEFT JOIN structs.api_inventory vi ON vi.owner_type = \'address\'
@@ -283,7 +320,9 @@ class PlayerManager
               gm.tag,
               f.status AS fleet_status,
               COALESCE(planet_ore.val, 0) AS undiscovered_ore,
+              COALESCE(planet_ore.val, 0)::text AS undiscovered_ore_p,
               COALESCE(player_ore.val, 0) AS ore,
+              COALESCE(player_ore.val, 0)::text AS ore_p,
               (
                 EXISTS (
                     SELECT 1
@@ -328,7 +367,9 @@ class PlayerManager
               gm.tag,
               f.status,
               undiscovered_ore,
-              ore
+              undiscovered_ore_p,
+              ore,
+              ore_p
             LIMIT $limit
             OFFSET $offset;
         ";
@@ -433,6 +474,7 @@ class PlayerManager
             SELECT
               p.id,
               pa.address,
+              p.primary_address,
               v.address AS _vault_address,
               v.account_created AS _vault_account_created,
               COALESCE(vi.balance, 0)::text AS _vault_balance_p,
@@ -441,7 +483,8 @@ class PlayerManager
               p.pfp_client_render_attributes,
               COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
-              COALESCE(vpi.balance, 0) as alpha
+              COALESCE(UNIT_LEGACY_FORMAT(api.balance, 'ualpha'), 0) as alpha,
+              COALESCE(api.balance, 0)::text as alpha_p
             FROM player_address pa
             INNER JOIN player p
               ON p.id = pa.player_id
@@ -452,9 +495,10 @@ class PlayerManager
               ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
               ON gu.id = gm.id
-            LEFT JOIN view.player_inventory vpi
-              ON p.id = vpi.player_id
-              AND vpi.denom = 'alpha'
+            LEFT JOIN structs.api_inventory api
+              ON api.owner_type = 'player'
+              AND api.owner_id = p.id
+              AND api.denom = 'ualpha'
             WHERE pa.status = 'approved'
               AND pa.address ILIKE :like_search_string
               $queryGuildIdFilter
@@ -462,6 +506,7 @@ class PlayerManager
             SELECT
               p.id,
               p.primary_address AS address,
+              p.primary_address,
               v.address AS _vault_address,
               v.account_created AS _vault_account_created,
               COALESCE(vi.balance, 0)::text AS _vault_balance_p,
@@ -470,7 +515,8 @@ class PlayerManager
               p.pfp_client_render_attributes,
               COALESCE(NULLIF(gu.name, ''), gm.name) AS guild_name,
               gm.tag,
-              COALESCE(vpi.balance, 0) as alpha
+              COALESCE(UNIT_LEGACY_FORMAT(api.balance, 'ualpha'), 0) as alpha,
+              COALESCE(api.balance, 0)::text as alpha_p
             FROM player p
             LEFT JOIN structs.vault v ON v.owner_id = p.id
             LEFT JOIN structs.api_inventory vi ON vi.owner_type = 'address'
@@ -479,9 +525,10 @@ class PlayerManager
               ON p.guild_id = gu.id
             LEFT JOIN guild_meta gm
               ON gu.id = gm.id
-            LEFT JOIN view.player_inventory vpi
-              ON p.id = vpi.player_id
-              AND vpi.denom = 'alpha'
+            LEFT JOIN structs.api_inventory api
+              ON api.owner_type = 'player'
+              AND api.owner_id = p.id
+              AND api.denom = 'ualpha'
             WHERE p.id ILIKE :like_search_string
               OR p.username ILIKE :like_search_string
               $queryGuildIdFilter

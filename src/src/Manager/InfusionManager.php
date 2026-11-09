@@ -42,6 +42,11 @@ class InfusionManager
     }
 
     /**
+     * Floored display fields stay for existing clients. `_p` columns are raw
+     * precision values cast to text. Commission_p is the unscaled 0–1 rate.
+     * No defusion end-height column is available on infusion (defusion table
+     * only exposes completed_at/created_at).
+     *
      * @param string $player_id
      * @return Response
      * @throws Exception
@@ -63,7 +68,9 @@ class InfusionManager
               floor(COALESCE(i.defusing, 0)) AS defusing,
               floor(COALESCE(i.power, 0)) AS power,
               floor(COALESCE(i.ratio, 0) * 100) AS ratio,
+              COALESCE(i.ratio_p, 0)::text AS ratio_p,
               floor(COALESCE(i.commission, 0) * 100) AS commission,
+              COALESCE(i.commission, 0)::text AS commission_p,
               i.created_at,
               i.updated_at,
               g.join_infusion_minimum

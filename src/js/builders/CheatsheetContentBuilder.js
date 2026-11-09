@@ -6,8 +6,8 @@ import {
 } from "../constants/StructConstants";
 import {AMBIT_ORDER} from "../constants/Ambits";
 import {StructType} from "../models/StructType";
-import {NumberFormatter} from "../util/NumberFormatter";
 import {DifficultyEstimator} from "../util/DifficultyEstimator";
+import {fmtDurationMs, fmt} from "../util/Units";
 
 export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
 
@@ -17,7 +17,6 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
   constructor(gameState) {
     super();
     this.gameState = gameState;
-    this.numberFormatter = new NumberFormatter();
     this.difficultyEstimator = new DifficultyEstimator();
   }
 
@@ -202,7 +201,6 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     }
 
     const iconClass = STRUCT_EQUIPMENT_ICON_MAP[structType.ore_reserve_defenses];
-    const planetaryShieldContribution = this.numberFormatter.format(structType.planetary_shield_contribution);
 
     return `
       <div class="sui-cheatsheet-property">
@@ -211,7 +209,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
         </div>
         <div class="sui-cheatsheet-property-info">
           <div>${structType.ore_reserve_defenses_label}</div>
-          <div>+${planetaryShieldContribution} Planetary Defense</div>
+          <div>+${structType.planetary_shield_contribution} Planetary Defense</div>
         </div>
       </div>
     `;
@@ -227,6 +225,8 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     }
 
     const iconClass = STRUCT_EQUIPMENT_ICON_MAP[structType.power_generation];
+    // generating_rate_p is mW/ualpha, which is the same numeric value as KW/g.
+    const rate = structType.generating_rate_p != null ? structType.generating_rate_p.toString() : '0';
 
     return `
       <div class="sui-cheatsheet-property">
@@ -242,7 +242,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           <i class="sui-icon sui-icon-md ${iconClass}"></i>
         </div>
         <div class="sui-cheatsheet-property-info">
-          <div>+${structType.generating_rate} KW Per Alpha</div>
+          <div>+${rate}KW / g</div>
         </div>
       </div>
     `;
@@ -259,7 +259,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
 
     const difficultyTarget = parseInt(structType.build_difficulty);
     const estInMS = this.difficultyEstimator.getTimeRemainingEstimate(difficultyTarget, 1, 1);
-    const estimatedBuildTime = this.numberFormatter.formatMilliseconds(estInMS);
+    const estimatedBuildTime = fmtDurationMs(estInMS);
 
     return `
       <div class="sui-cheatsheet-property">
@@ -315,7 +315,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     return this.renderer.renderContentHTML(
       `${structType.default_cosmetic_model_number} ${structType.class}`,
       structType.build_charge,
-      structType.build_draw,
+      structType.build_draw_p ?? structType.passive_draw_p,
       STRUCT_DESCRIPTIONS[structType.type],
       dataset.contextualMsg ? dataset.contextualMsg : '',
       propertiesHTML || null
@@ -464,7 +464,6 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
     }
 
     const iconClass = STRUCT_EQUIPMENT_ICON_MAP[structType.ore_reserve_defenses];
-    const planetaryShieldContribution = this.numberFormatter.format(structType.planetary_shield_contribution);
 
     return `
       <div class="sui-cheatsheet-property">
@@ -473,7 +472,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
         </div>
         <div class="sui-cheatsheet-property-info">
           <div>${structType.ore_reserve_defenses_label}</div>
-          <div>+${planetaryShieldContribution} Planetary Defense</div>
+          <div>+${structType.planetary_shield_contribution} Planetary Defense</div>
         </div>
       </div>
     `;
@@ -608,11 +607,12 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
    * @return {string}
    */
   renderUndiscoveredOre(dataset) {
+    const oreFormatted = fmt(dataset.undiscoveredOre, 'ore');
     return this.renderer.renderContentHTML(
       'Undiscovered Ore',
       null,
       null,
-      `${dataset.undiscoveredOre} Ore remains to be mined.`
+      `${oreFormatted} Ore remains to be mined.`
     );
   }
 
@@ -645,11 +645,12 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
    * @return {string}
    */
   renderOreReady(dataset) {
+    const oreFormatted = fmt(dataset.oreReady, 'ore');
     return this.renderer.renderContentHTML(
       'Ore Ready',
       null,
       null,
-      `${dataset.oreReady} Ore remains to be refined.`
+      `${oreFormatted} Ore remains to be refined.`
     );
   }
 
@@ -682,13 +683,15 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
    * @return {string}
    */
   renderPowerGeneration(dataset) {
+    const fuelFormatted = fmt(dataset.fuel, 'ualpha');
+    const energyFormatted = fmt(dataset.energy, 'mw');
     return this.renderer.renderContentHTML(
       'Power Generation',
       null,
       null,
       `
-        Alpha Matter: ${dataset.fuel}<br>
-        Power Generation: ${this.numberFormatter.format(dataset.energy)}
+        Alpha Matter: ${fuelFormatted}<br>
+        Power Generation: ${energyFormatted}
       `
     );
   }

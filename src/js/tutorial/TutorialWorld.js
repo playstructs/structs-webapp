@@ -17,6 +17,7 @@ import {ShieldHealthChangedEvent} from "../events/ShieldHealthChangedEvent";
 import {ChargeLevelChangedEvent} from "../events/ChargeLevelChangedEvent";
 import {PfpViewerComponent} from "../view_models/components/PfpViewerComponent";
 import {TutorialMode} from "./TutorialMode";
+import {legacyToBase, toExact} from "../util/Units";
 
 const BUILT_ONLINE = STRUCT_STATUS_FLAGS.MATERIALIZED | STRUCT_STATUS_FLAGS.BUILT | STRUCT_STATUS_FLAGS.ONLINE;
 
@@ -68,6 +69,24 @@ class TutorialPlayer extends Player {
     return false;
   }
 }
+
+/**
+ * The simulated figures are written in display units (whole Alpha, grams of
+ * ore, watts). Fill the exact *_p fields the HUD renders from, as the real
+ * factories do for API rows.
+ *
+ * @param {object} holder a player, planet or struct
+ * @param {Object<string, number>} fields display field → base-unit exponent
+ * @return {object} holder
+ */
+function withExactUnits(holder, fields) {
+  for (const [field, exponent] of Object.entries(fields)) {
+    holder[`${field}_p`] = toExact(legacyToBase(holder[field], exponent));
+  }
+  return holder;
+}
+
+const PLAYER_UNIT_EXPONENTS = {alpha: 6, ore: 0, load: 3, structs_load: 3, capacity: 3, connection_capacity: 3};
 
 /**
  * In-memory stand-in for the chain and the Guild API during the tutorial.
@@ -140,7 +159,7 @@ export class TutorialWorld {
   }
 
   buildPlayers() {
-    this.player = Object.assign(new TutorialPlayer(), {
+    this.player = withExactUnits(Object.assign(new TutorialPlayer(), {
       id: TUTORIAL_IDS.PLAYER,
       primary_address: 'structs1tutorial',
       planet_id: TUTORIAL_IDS.PLANET,
@@ -156,9 +175,9 @@ export class TutorialWorld {
       capacity: 7000,
       connection_capacity: 0,
       ...TutorialMode.getPlayerEnergy(),
-    });
+    }), PLAYER_UNIT_EXPONENTS);
 
-    this.raider = Object.assign(new TutorialPlayer(), {
+    this.raider = withExactUnits(Object.assign(new TutorialPlayer(), {
       id: TUTORIAL_IDS.RAIDER,
       primary_address: 'structs1raider',
       planet_id: TUTORIAL_IDS.RAIDER_PLANET,
@@ -170,9 +189,9 @@ export class TutorialWorld {
       structs_load: 0,
       capacity: 50,
       connection_capacity: 0,
-    });
+    }), PLAYER_UNIT_EXPONENTS);
 
-    this.planet = Object.assign(new Planet(), {
+    this.planet = withExactUnits(Object.assign(new Planet(), {
       id: TUTORIAL_IDS.PLANET,
       owner: TUTORIAL_IDS.PLAYER,
       space_slots: 4,
@@ -181,7 +200,7 @@ export class TutorialWorld {
       water_slots: 4,
       name: 'Training Grounds',
       undiscovered_ore: 12,
-    });
+    }), {undiscovered_ore: 0});
 
     this.playerFleet = Object.assign(new Fleet(), {
       id: TUTORIAL_IDS.PLAYER_FLEET,
@@ -225,7 +244,7 @@ export class TutorialWorld {
       ? TUTORIAL_IDS.PLANET
       : (owner === TUTORIAL_IDS.PLAYER ? TUTORIAL_IDS.PLAYER_FLEET : TUTORIAL_IDS.RAIDER_FLEET);
 
-    return Object.assign(new Struct(), {
+    return withExactUnits(Object.assign(new Struct(), {
       id,
       index: parseInt(id.split('-')[1]),
       type: structType.id,
@@ -241,7 +260,7 @@ export class TutorialWorld {
       defending_struct_ids: [],
       destroyed_block: null,
       fuel: 0,
-    });
+    }), {fuel: 6});
   }
 
   buildStructs() {

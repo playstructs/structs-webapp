@@ -2,14 +2,14 @@ import {AbstractViewModelComponent} from "../../../framework/AbstractViewModelCo
 import {MenuPage} from "../../../framework/MenuPage";
 import {PLAYER_TYPES} from "../../../constants/PlayerTypes";
 import {GenericResourceComponent} from "../GenericResourceComponent";
-import {NumberFormatter} from "../../../util/NumberFormatter";
 import {Struct} from "../../../models/Struct";
 import {StructType} from "../../../models/StructType";
 import {STRUCT_ACTIONS} from "../../../constants/StructConstants";
 import {EVENTS} from "../../../constants/Events";
 import {CHAIN} from "../../../constants/ChainConstants";
 import {TX_STATUS} from "../../../models/SigningTransaction";
-import {generatorPreview} from "../../../util/GeneratorState";
+import {generatorPreview, generatorPreviewMilliwatts} from "../../../util/GeneratorState";
+import {fmt} from "../../../util/Units";
 import {waitForGeneratorRefresh} from "../../../util/GeneratorCompletion";
 import {maxQueryHeight, protocolAtHeight} from "../../../util/ChainProtocol";
 
@@ -45,7 +45,6 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
     this.timer = null;
 
     this.genericResourceComponent = new GenericResourceComponent(gameState);
-    this.numberFormatter = new NumberFormatter();
   }
 
   initPageCode() {
@@ -145,7 +144,7 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
     let power = '';
     if (this.state && amount !== null) {
       try {
-        power = this.numberFormatter.formatExact(generatorPreview(this.state, amount).toString());
+        power = fmt(generatorPreviewMilliwatts(this.state, amount), 'mw');
         valid = amount > 0n;
       } catch {
         /* Keep the user's amount intact when it is no longer affordable. */
@@ -305,6 +304,7 @@ export class ConsumeAlphaOffcanvas extends AbstractViewModelComponent {
       ) {
         current.generator_fuel_p = result.data.fuel_p;
         current.generator_power_p = result.data.power_p;
+        current.fuel_p = result.data.fuel_p;
         current.generator_positions_ready = true;
         current.generator_snapshot_meta = result.meta;
         current.fuel = (BigInt(result.data.fuel_p) / 1000000n).toString();
