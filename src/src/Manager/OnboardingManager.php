@@ -80,7 +80,17 @@ class OnboardingManager
      * no player id, such as one left during signup, belongs to its browser.
      */
     private const string SESSION_RUNS = "
-        WITH session_facts AS (
+        WITH excluded_players AS (
+          SELECT player_id FROM onboarding_telemetry_exclusion
+          UNION
+          SELECT p.id
+          FROM player p
+          WHERE EXISTS (
+            SELECT 1 FROM onboarding_telemetry_username_exclusion e
+            WHERE p.username ~ e.username_regex
+          )
+        ),
+        session_facts AS (
           SELECT
             s.session_id,
             s.browser_id,
@@ -118,6 +128,15 @@ class OnboardingManager
 
     /** The filters every report takes, on a row of runs named r. */
     private const string REPORT_FILTERS = "
+        AND (
+          CAST(:include_excluded AS INTEGER) = 1
+          OR NOT EXISTS (
+            SELECT 1
+            FROM onboarding_progress ep
+            INNER JOIN excluded_players e ON e.player_id = ep.player_id
+            WHERE ep.session_id = r.session_id
+          )
+        )
         AND (CAST(:interface_name AS VARCHAR) IS NULL OR r.interface_name = :interface_name)
         AND (CAST(:guild_id AS VARCHAR) IS NULL OR r.guild_id = :guild_id)
         AND (CAST(:player_type AS VARCHAR) IS NULL OR r.new_player = (CAST(:player_type AS VARCHAR) = 'new'))
@@ -206,7 +225,8 @@ class OnboardingManager
         ?string $guild_id,
         ?string $idle_hours,
         ?string $run = null,
-        ?string $player_type = null
+        ?string $player_type = null,
+        ?string $include_excluded = null
     ): Response {
         $query = self::SESSION_RUNS . ',
             sessions AS (
@@ -286,6 +306,7 @@ class OnboardingManager
             ApiParameters::IDLE_HOURS => $idle_hours,
             ApiParameters::RUN => $run,
             ApiParameters::PLAYER_TYPE => $player_type,
+            ApiParameters::INCLUDE_EXCLUDED => $include_excluded,
         ], [ApiParameters::CONTENT_VERSION, ApiParameters::PHASE], true);
     }
 
@@ -303,7 +324,8 @@ class OnboardingManager
         ?string $guild_id,
         ?string $idle_hours,
         ?string $run = null,
-        ?string $player_type = null
+        ?string $player_type = null,
+        ?string $include_excluded = null
     ): Response {
         $query = self::SESSION_RUNS . ',
             offered AS (
@@ -331,6 +353,7 @@ class OnboardingManager
             ApiParameters::IDLE_HOURS => $idle_hours,
             ApiParameters::RUN => $run,
             ApiParameters::PLAYER_TYPE => $player_type,
+            ApiParameters::INCLUDE_EXCLUDED => $include_excluded,
         ], [ApiParameters::CONTENT_VERSION], false);
     }
 
@@ -347,7 +370,8 @@ class OnboardingManager
         ?string $guild_id,
         ?string $idle_hours,
         ?string $run = null,
-        ?string $player_type = null
+        ?string $player_type = null,
+        ?string $include_excluded = null
     ): Response {
         $query = self::SESSION_RUNS . ',
             players AS (
@@ -389,6 +413,7 @@ class OnboardingManager
             ApiParameters::IDLE_HOURS => $idle_hours,
             ApiParameters::RUN => $run,
             ApiParameters::PLAYER_TYPE => $player_type,
+            ApiParameters::INCLUDE_EXCLUDED => $include_excluded,
         ], [ApiParameters::CONTENT_VERSION], false);
     }
 
@@ -404,7 +429,8 @@ class OnboardingManager
         ?string $interface_name,
         ?string $guild_id,
         ?string $run = null,
-        ?string $player_type = null
+        ?string $player_type = null,
+        ?string $include_excluded = null
     ): Response {
         $query = self::SESSION_RUNS . ',
             steps AS (
@@ -446,6 +472,7 @@ class OnboardingManager
             ApiParameters::GUILD_ID => $guild_id,
             ApiParameters::RUN => $run,
             ApiParameters::PLAYER_TYPE => $player_type,
+            ApiParameters::INCLUDE_EXCLUDED => $include_excluded,
         ], [ApiParameters::CONTENT_VERSION], true);
     }
 
@@ -460,7 +487,8 @@ class OnboardingManager
         ?string $interface_name,
         ?string $guild_id,
         ?string $idle_hours,
-        ?string $player_type = null
+        ?string $player_type = null,
+        ?string $include_excluded = null
     ): Response {
         $query = self::SESSION_RUNS . ',
             compared AS (
@@ -498,6 +526,7 @@ class OnboardingManager
             ApiParameters::GUILD_ID => $guild_id,
             ApiParameters::IDLE_HOURS => $idle_hours,
             ApiParameters::PLAYER_TYPE => $player_type,
+            ApiParameters::INCLUDE_EXCLUDED => $include_excluded,
         ], [ApiParameters::CONTENT_VERSION], true);
     }
 
@@ -516,7 +545,8 @@ class OnboardingManager
         ?string $run,
         ?string $player_type,
         ?string $player_id,
-        int $page
+        int $page,
+        ?string $include_excluded = null
     ): Response {
         $limit = PaginationLimits::DEFAULT;
         $offset = (max(1, $page) - 1) * $limit;
@@ -565,6 +595,7 @@ class OnboardingManager
             ApiParameters::IDLE_HOURS => $idle_hours,
             ApiParameters::RUN => $run,
             ApiParameters::PLAYER_TYPE => $player_type,
+            ApiParameters::INCLUDE_EXCLUDED => $include_excluded,
             ApiParameters::PLAYER_ID => $player_id,
             ApiParameters::OFFSET => $offset,
         ], [ApiParameters::CONTENT_VERSION], true);
@@ -643,6 +674,8 @@ class OnboardingManager
             'replay_version' => $params[ApiParameters::CONTENT_VERSION] . self::REPLAY_SUFFIX,
         ];
         $queryParams[ApiParameters::IDLE_HOURS] = (int) ($params[ApiParameters::IDLE_HOURS] ?? self::DEFAULT_IDLE_HOURS);
+
+        $queryParams[ApiParameters::INCLUDE_EXCLUDED] = (int) ($params[ApiParameters::INCLUDE_EXCLUDED] ?? 0);
 
         // Bind only what the query names.
         $queryParams = array_filter(

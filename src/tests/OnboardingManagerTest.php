@@ -233,6 +233,16 @@ class OnboardingManagerTest extends ApiManagerTestCase
         return $connection;
     }
 
+    public function testRejectsInvalidExclusionOption(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())->method('fetchAllAssociative');
+        $manager = new OnboardingManager($this->entityManager($connection), $this->validator());
+        $response = $manager->getFunnel('tutorial-4', 'signup', null, null, null, null, null, 'yes');
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $response->getStatusCode());
+        $this->assertStringContainsString('include_excluded', $response->getContent());
+    }
+
     public function testFunnelBindsFiltersAndDefaultsTheIdleWindow(): void
     {
         $sql = null;
@@ -250,6 +260,7 @@ class OnboardingManagerTest extends ApiManagerTestCase
         $this->assertSame(OnboardingManager::DEFAULT_IDLE_HOURS, $params['idle_hours']);
         $this->assertSame('first', $params['run']);
         $this->assertSame('new', $params['player_type']);
+        $this->assertSame(0, $params['include_excluded']);
         $this->assertArrayNotHasKey('replay_version', $params);
     }
 
