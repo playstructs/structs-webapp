@@ -110,6 +110,8 @@ class ApiParameters
 
     const string PLAYER_ID = 'player_id';
 
+    const string INCLUDE_EXCLUDED = 'include_excluded';
+
     const string PLAYER_TYPE = 'player_type';
 
     const string PRIMARY_ADDRESS = 'primary_address';

@@ -244,5 +244,64 @@ class OnboardingReportsDatabaseTest extends ApiManagerTestCase
             'left_during_tutorial' => 1,
             'in_progress' => 0,
         ], $this->data($manager->getTutorialOutcomes(self::REPLAY, self::INTERFACE, null, null)));
+
+        // Exclusions apply retroactively to every linked session, including
+        // anonymous signup events in that session, but not unlinked sessions.
+        $reports = function (?string $include = null) use ($manager): array {
+            return [
+                $this->data($manager->getFunnel(self::VERSION, 'signup', self::INTERFACE, null, null, null, null, $include)),
+                $this->data($manager->getTutorialOutcomes(self::VERSION, self::INTERFACE, null, null, null, null, $include)),
+                $this->data($manager->getTutorialPlayers(self::VERSION, self::INTERFACE, null, null, null, null, $include)),
+                $this->data($manager->getTutorialPlayerSteps(self::VERSION, self::INTERFACE, null, null, null, $include)),
+                $this->data($manager->getTutorialRunComparison(self::VERSION, self::INTERFACE, null, null, null, $include)),
+                $this->data($manager->getTutorialRuns(self::VERSION, self::INTERFACE, null, null, null, null, null, 1, $include)),
+            ];
+        };
+        $baseline = $reports();
+        $db->executeStatement('RESET ROLE');
+        $db->executeStatement("INSERT INTO structs.onboarding_telemetry_exclusion (player_id) VALUES ('1-990001')");
+        $db->executeStatement('SET LOCAL ROLE structs_webapp');
+        $filtered = $reports();
+        $this->assertSame($baseline, $reports('1'));
+        $this->assertSame($filtered, $reports('0'));
+        $this->assertSame(1, array_column($filtered[0], 'reached', 'step_key')['signup.connecting']);
+        $this->assertSame(4, $filtered[1]['offered']);
+        $this->assertSame(5, $filtered[2]['players']);
+        $this->assertSame(0, $filtered[2]['revisited']);
+        $this->assertSame(2, array_column($filtered[3], 'reached', 'step_key')[self::FTL]);
+        $this->assertSame([4], array_column($filtered[4], 'runs'));
+        $this->assertCount(4, $filtered[5]);
+        $this->assertNotEmpty($this->data($manager->getPlayerOnboarding('1-990001')));
+        $db->executeStatement('RESET ROLE');
+        $db->executeStatement("DELETE FROM structs.onboarding_telemetry_exclusion WHERE player_id = '1-990001'");
+        $db->executeStatement('SET LOCAL ROLE structs_webapp');
+        $this->assertSame($baseline, $reports());
+
+        // The seeded username rule matches optional hyphen/seconds variants,
+        // and must not match lowercase or a substring of a larger username.
+        $db->executeStatement('RESET ROLE');
+        $db->executeStatement("INSERT INTO structs.player (id, username) VALUES
+            ('1-990001', 'T261110-123456'),
+            ('1-990002', 'T2611101234'),
+            ('1-990003', 'prefixT261110-1234'),
+            ('1-990004', 'T261110-1234suffix'),
+            ('1-990005', 't261110-1234'),
+            ('1-990006', NULL)");
+        $db->executeStatement('SET LOCAL ROLE structs_webapp');
+        $regexFiltered = $reports();
+        $this->assertSame($baseline, $reports('1'));
+        $this->assertSame(4, $regexFiltered[2]['players']);
+        $this->assertSame(0, $regexFiltered[2]['declined']);
+        $this->assertCount(4, $regexFiltered[5]);
+        // An explicit exclusion overlapping a regex does not double count.
+        $db->executeStatement('RESET ROLE');
+        $db->executeStatement("INSERT INTO structs.onboarding_telemetry_exclusion (player_id) VALUES ('1-990001')");
+        $db->executeStatement('SET LOCAL ROLE structs_webapp');
+        $this->assertSame($regexFiltered, $reports());
+        // Renames stop matching dynamically, while explicit IDs stay excluded.
+        $db->executeStatement('RESET ROLE');
+        $db->executeStatement("UPDATE structs.player SET username = 'Renamed' WHERE id IN ('1-990001', '1-990002')");
+        $db->executeStatement('SET LOCAL ROLE structs_webapp');
+        $this->assertSame($filtered, $reports());
     }
 }
