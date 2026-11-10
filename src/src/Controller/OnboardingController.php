@@ -74,6 +74,7 @@ class OnboardingController extends AbstractController
     }
 
     /**
+     * include_excluded=1 includes SQL-managed telemetry exclusions (default 0).
      * Optional query params: interface_name, guild_id, idle_hours (default 24),
      * run (first, repeat), player_type (new, existing).
      *
@@ -94,11 +95,13 @@ class OnboardingController extends AbstractController
             $request->query->get('guild_id'),
             $request->query->get('idle_hours'),
             $request->query->get('run'),
-            $request->query->get('player_type')
+            $request->query->get('player_type'),
+            $request->query->get('include_excluded')
         );
     }
 
     /**
+     * include_excluded=1 includes SQL-managed telemetry exclusions (default 0).
      * Optional query params: interface_name, guild_id, idle_hours (default 24),
      * run (first, repeat), player_type (new, existing).
      *
@@ -117,12 +120,14 @@ class OnboardingController extends AbstractController
             $request->query->get('guild_id'),
             $request->query->get('idle_hours'),
             $request->query->get('run'),
-            $request->query->get('player_type')
+            $request->query->get('player_type'),
+            $request->query->get('include_excluded')
         );
     }
 
     /**
      * Unique players, counting a design's first runs and replays together.
+     * include_excluded=1 includes SQL-managed telemetry exclusions (default 0).
      * Optional query params: interface_name, guild_id, idle_hours (default 24),
      * run (first, repeat), player_type (new, existing).
      *
@@ -141,11 +146,13 @@ class OnboardingController extends AbstractController
             $request->query->get('guild_id'),
             $request->query->get('idle_hours'),
             $request->query->get('run'),
-            $request->query->get('player_type')
+            $request->query->get('player_type'),
+            $request->query->get('include_excluded')
         );
     }
 
     /**
+     * include_excluded=1 includes SQL-managed telemetry exclusions (default 0).
      * Optional query params: interface_name, guild_id, run (first, repeat),
      * player_type (new, existing).
      *
@@ -163,11 +170,13 @@ class OnboardingController extends AbstractController
             $request->query->get('interface_name'),
             $request->query->get('guild_id'),
             $request->query->get('run'),
-            $request->query->get('player_type')
+            $request->query->get('player_type'),
+            $request->query->get('include_excluded')
         );
     }
 
     /**
+     * include_excluded=1 includes SQL-managed telemetry exclusions (default 0).
      * Optional query params: interface_name, guild_id, idle_hours (default 24),
      * player_type (new, existing).
      *
@@ -185,11 +194,13 @@ class OnboardingController extends AbstractController
             $request->query->get('interface_name'),
             $request->query->get('guild_id'),
             $request->query->get('idle_hours'),
-            $request->query->get('player_type')
+            $request->query->get('player_type'),
+            $request->query->get('include_excluded')
         );
     }
 
     /**
+     * include_excluded=1 includes SQL-managed telemetry exclusions (default 0).
      * Optional query params: interface_name, guild_id, idle_hours (default 24),
      * run (first, repeat), player_type (new, existing), player_id, page (default 1).
      *
@@ -210,7 +221,8 @@ class OnboardingController extends AbstractController
             $request->query->get('run'),
             $request->query->get('player_type'),
             $request->query->get('player_id'),
-            $request->query->getInt('page', 1)
+            $request->query->getInt('page', 1),
+            $request->query->get('include_excluded')
         );
     }
 

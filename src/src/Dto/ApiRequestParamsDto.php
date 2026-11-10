@@ -188,6 +188,9 @@ class ApiRequestParamsDto
     #[Assert\Choice(choices: ['new', 'existing'])]
     public ?string $player_type = null;
 
+    #[Assert\Choice(choices: ['0', '1'])]
+    public ?string $include_excluded = null;
+
     #[Assert\Regex(RegexPattern::ADDRESS)]
     public ?string $primary_address = null;
 
