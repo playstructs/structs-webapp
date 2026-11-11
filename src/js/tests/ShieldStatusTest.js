@@ -241,6 +241,67 @@ export class ShieldStatusTest extends DTestSuite {
     this.assertEquals(ShieldStatusTest.shownStatus(elements, elementId), 'shield-secure');
   });
 
+  // A raid alone isn't a breach: while the command ship holds station the
+  // shield is secure, so there's no countdown to show. It used to show "0s".
+  breachCountdownOnlyShowsWhenBreachedTest = new DTest('breachCountdownOnlyShowsWhenBreachedTest', function(params) {
+    const planetOwner = ShieldStatusTest.makePlanetOwner(
+      params.playerType,
+      params.commandShipOnStation,
+      params.commandShipAlive ?? true,
+      params.raidStatus
+    );
+    planetOwner.planetShieldInfo.planetary_shield = 100;
+    planetOwner.planetShieldInfo.block_start_raid = 1;
+
+    planetOwner.setPlanetShieldHealth(10);
+
+    this.assertEquals(planetOwner.getPlanetShieldHealth() !== '', params.expectCountdown);
+  }, function() {
+    return [
+      {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: true, raidStatus: RAID_STATUS.SHIELDS_VULNERABLE, expectCountdown: false},
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: true, raidStatus: RAID_STATUS.ONGOING, expectCountdown: false},
+      {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: false, raidStatus: RAID_STATUS.SHIELDS_VULNERABLE, expectCountdown: true},
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: false, raidStatus: RAID_STATUS.ONGOING, expectCountdown: true},
+      {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: false, raidStatus: null, expectCountdown: false},
+      // A destroyed command ship breaches the shield even while its fleet is on station.
+      {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: true, commandShipAlive: false, raidStatus: RAID_STATUS.SHIELDS_VULNERABLE, expectCountdown: true},
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: true, commandShipAlive: false, raidStatus: RAID_STATUS.ONGOING, expectCountdown: true}
+    ];
+  });
+
+  // A countdown already on screen must go as soon as the command ship is back
+  // on station, without waiting for the next block to recompute it.
+  returningCommandShipClearsTheBreachCountdownTest = new DTest('returningCommandShipClearsTheBreachCountdownTest', function() {
+    const elementId = `${PLAYER_TYPES.RAID_ENEMY}-hud-shield-status`;
+    const raidEnemy = ShieldStatusTest.makePlanetOwner(PLAYER_TYPES.RAID_ENEMY, false, true, RAID_STATUS.ONGOING);
+    const {elements} = ShieldStatusTest.givenRenderedComponent(raidEnemy);
+    elements[`${elementId}-value`].innerText = '42s';
+
+    raidEnemy.setFleet(ShieldStatusTest.makeFleet(true));
+
+    this.assertEquals(elements[`${elementId}-value`].innerText, '');
+  });
+
+  // Rebuilding a destroyed command ship secures the shield again, so the
+  // countdown has to go as soon as the new struct is adopted by the fleet.
+  rebuiltCommandShipClearsTheBreachCountdownTest = new DTest('rebuiltCommandShipClearsTheBreachCountdownTest', function() {
+    const elementId = `${PLAYER_TYPES.PLAYER}-hud-shield-status`;
+    const player = ShieldStatusTest.makePlanetOwner(PLAYER_TYPES.PLAYER, true, false, RAID_STATUS.SHIELDS_VULNERABLE);
+    const {elements} = ShieldStatusTest.givenRenderedComponent(player);
+    elements[`${elementId}-value`].innerText = '42s';
+
+    this.assertEquals(ShieldStatusTest.shownStatus(elements, elementId), 'shield-breached');
+
+    const rebuilt = new Struct();
+    rebuilt.id = '5-2';
+    rebuilt.status = STRUCT_STATUS_FLAGS.BUILT;
+    player.fleet.command_struct = rebuilt.id;
+    player.setStruct(rebuilt);
+
+    this.assertEquals(ShieldStatusTest.shownStatus(elements, elementId), 'shield-secure');
+    this.assertEquals(elements[`${elementId}-value`].innerText, '');
+  });
+
   // The raid map's defender is a different key player, so a fleet change on one
   // planet must not redraw the other.
   aFleetChangeOnlyRedrawsItsOwnPlanetTest = new DTest('aFleetChangeOnlyRedrawsItsOwnPlanetTest', function() {

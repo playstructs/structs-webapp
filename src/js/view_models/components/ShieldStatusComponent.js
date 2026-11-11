@@ -128,7 +128,9 @@ export class ShieldStatusComponent extends AbstractViewModelComponent {
     // info, which can load/change independently of the status.
     elm.dataset.projectedBreachTime = planetOwner?.getProjectedShieldBreachTime() ?? 'N/A';
 
-    this.renderShieldStatusValue();
+    // Drop any breach countdown left over from before the command ship came
+    // back on station; it only belongs beside a breached shield.
+    this.renderShieldStatusValue(status === 'breached' ? null : '');
   }
 
   /**
