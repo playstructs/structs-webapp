@@ -79,3 +79,39 @@ these budgets across this container's PHP workers. A 429 includes `Retry-After` 
 before multi-replica/public deployment; these application limits are not edge DoS
 protection. The HTTP runner checks both Apache and the control proxy, including
 untrusted forwarded-IP headers. No public production origin has been accepted yet.
+
+## Influence reads
+
+The influence HTTP regression requires the fixture schema through
+`influence-single-sector-20261111`. The same PHP and catalog HTTP runners now
+cover contest standings, paged scores and inclusive block-height history. See
+[the influence API contract](influence-api.md). The focused PHP run is:
+
+```bash
+STRUCTS_INTEGRATION_PG=YOUR_DISPOSABLE_FIXTURE \
+STRUCTS_PHP_TEST_IMAGE=structs/structs-webapp:latest \
+node tools/api/php-integration.cjs --filter 'Influence|ApiRouting'
+```
+
+The fixture must accept the disposable PHP/Apache containers' connections and
+have run its schema migrations; merely starting a current structs-pg image does
+not itself initialize its Sqitch schema. Keep those test-only connection settings
+isolated from the live guild database.
+
+The follow-up [grass assessment](influence-grass-assessment.md) specifies
+self-contained influence updates and delivery changes needed to avoid API
+refetches; those publisher/listener changes are not implemented by this API branch.
+
+Influence grass now has an opt-in client consumer in
+`src/js/framework/InfluenceStream.js`. Instantiate `InfluenceStream(connection,
+exactSubject, {store, onUpdate, onError})` and call `start()`; call `stop()` when
+the view closes. It bootstraps/replays over NATS, assembles complete verified
+payloads, and updates an `InfluenceStore` without a GuildAPI dependency. Share a
+store across the exact scopes a view needs. `historyReady` is false while a
+replacement graph is being assembled; `history` contains sparse component deltas.
+The complete schema/relay contract is in the sibling
+`structs-pg/docs/influence-grass-20261111.md`. No influence UI is added here.
+
+Run `node tools/api/influence-stream.test.mjs` to test multipart ordering,
+duplicates/gaps, guild removals and history/generation replacement with HTTP
+requests forbidden.

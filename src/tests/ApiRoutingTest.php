@@ -37,6 +37,17 @@ class ApiRoutingTest extends KernelTestCase
     public static function literalRouteProvider(): array
     {
         return [
+            ['/api/influence/contests', 'api_influence_contests'],
+            ['/api/influence/contests/page/2', 'api_influence_contests_page'],
+            ['/api/influence/contests/1', 'api_influence_contest'],
+            ['/api/influence/contests/1/standings', 'api_influence_standings'],
+            ['/api/influence/contests/1/guilds/0-1', 'api_influence_guild'],
+            ['/api/influence/contests/1/players', 'api_influence_players'],
+            ['/api/influence/contests/1/players/page/2', 'api_influence_players_page'],
+            ['/api/influence/contests/1/players/1-1', 'api_influence_player'],
+            ['/api/influence/contests/1/history', 'api_influence_history'],
+            ['/api/influence/contests/1/guilds/0-1/history', 'api_influence_guild_history'],
+            ['/api/influence/contests/1/players/1-1/history', 'api_influence_player_history'],
             ['/api/leaderboard/player', 'api_leaderboard'],
             ['/api/player/count', 'api_count_players'],
             ['/api/player/1-101', 'api_get_player'],
@@ -90,6 +101,22 @@ class ApiRoutingTest extends KernelTestCase
         $router->getContext()->setMethod('GET');
         $this->expectException(MethodNotAllowedException::class);
         $router->match('/api/onboarding/events');
+    }
+
+    public function testInfluenceIsReadOnlyAndProtected(): void
+    {
+        $router = $this->router();
+        $router->getContext()->setMethod('POST');
+        try {
+            $router->match('/api/influence/contests/1/history');
+            $this->fail('Influence writes must not resolve');
+        } catch (MethodNotAllowedException $expected) {
+            $this->assertContains('GET', $expected->getAllowedMethods());
+        }
+        foreach (['/api/influence/contests', '/api/influence/contests/1/players/1-1/history'] as $path) {
+            $response = self::$kernel->handle(\Symfony\Component\HttpFoundation\Request::create($path));
+            $this->assertSame(401, $response->getStatusCode());
+        }
     }
 
     /** A cross-site image or link must not be able to end a session. */

@@ -280,13 +280,14 @@ class OnboardingReportsDatabaseTest extends ApiManagerTestCase
         // The seeded username rule matches optional hyphen/seconds variants,
         // and must not match lowercase or a substring of a larger username.
         $db->executeStatement('RESET ROLE');
-        $db->executeStatement("INSERT INTO structs.player (id, username) VALUES
-            ('1-990001', 'T261110-123456'),
-            ('1-990002', 'T2611101234'),
-            ('1-990003', 'prefixT261110-1234'),
-            ('1-990004', 'T261110-1234suffix'),
-            ('1-990005', 't261110-1234'),
-            ('1-990006', NULL)");
+        // The real player cascade also creates the primary player_address row.
+        $db->executeStatement("INSERT INTO structs.player (id, username, primary_address) VALUES
+            ('1-990001', 'T261110-123456', 'onboarding-fixture-990001'),
+            ('1-990002', 'T2611101234', 'onboarding-fixture-990002'),
+            ('1-990003', 'prefixT261110-1234', 'onboarding-fixture-990003'),
+            ('1-990004', 'T261110-1234suffix', 'onboarding-fixture-990004'),
+            ('1-990005', 't261110-1234', 'onboarding-fixture-990005'),
+            ('1-990006', NULL, 'onboarding-fixture-990006')");
         $db->executeStatement('SET LOCAL ROLE structs_webapp');
         $regexFiltered = $reports();
         $this->assertSame($baseline, $reports('1'));
