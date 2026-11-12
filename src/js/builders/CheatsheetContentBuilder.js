@@ -8,6 +8,7 @@ import {AMBIT_ORDER} from "../constants/Ambits";
 import {StructType} from "../models/StructType";
 import {NumberFormatter} from "../util/NumberFormatter";
 import {DifficultyEstimator} from "../util/DifficultyEstimator";
+import {PLAYER_TYPES} from "../constants/PlayerTypes";
 
 export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
 
@@ -745,6 +746,23 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
   }
 
   /**
+   * The HUD readout rounds to fit (1k/1k), so spell out the exact figures.
+   *
+   * @return {string}
+   */
+  energySupplyDetailHTML() {
+    const player = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER]?.player;
+    if (!player) return '';
+    const load = player.getTotalLoad();
+    const capacity = player.getTotalCapacity();
+    const headroom = capacity - load;
+    const balance = headroom >= 0
+      ? `${this.numberFormatter.formatGrouped(headroom)} available.`
+      : `${this.numberFormatter.formatGrouped(-headroom)} over.`;
+    return `<br>Using ${this.numberFormatter.formatGrouped(load)} of ${this.numberFormatter.formatGrouped(capacity)} Energy. ${balance}`;
+  }
+
+  /**
    * @param {object} dataset triggering element's data attributes
    * @return {string}
    */
@@ -766,7 +784,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           'Energy Supply',
           null,
           null,
-          `Insufficient Energy. Deactivate Structs to reduce Energy draw.`
+          `Insufficient Energy. Deactivate Structs to reduce Energy draw.${this.energySupplyDetailHTML()}`
         );
         break;
       case 'energy-supply-sufficient':
@@ -774,7 +792,7 @@ export class CheatsheetContentBuilder extends SUICheatsheetContentBuilder {
           'Energy Supply',
           null,
           null,
-          `Energy Supply normal.`
+          `Energy Supply normal.${this.energySupplyDetailHTML()}`
         );
         break;
       case 'icon-beacon':

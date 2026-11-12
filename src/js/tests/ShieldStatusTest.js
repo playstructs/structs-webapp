@@ -253,4 +253,68 @@ export class ShieldStatusTest extends DTestSuite {
 
     this.assertEquals(ShieldStatusTest.shownStatus(elements, elementId), 'shield-secure');
   });
+
+  // The readout text, which used to keep whatever countdown it last showed and
+  // so read "0s" beside a Secure icon once the defender's command ship was home.
+  shownReadoutMatchesTheShieldTest = new DTest('shownReadoutMatchesTheShieldTest', function(params) {
+    const planetOwner = ShieldStatusTest.makePlanetOwner(
+      params.playerType,
+      params.commandShipOnStation,
+      true,
+      params.raidStatus
+    );
+    planetOwner.planetShieldHealth = params.countdown;
+    planetOwner.getProjectedShieldBreachTime = () => '17m';
+
+    const elementId = `${params.playerType}-readout-test`;
+    const elements = ShieldStatusTest.givenDocument(elementId);
+    const gameState = {keyPlayers: {[params.playerType]: planetOwner}};
+    new ShieldStatusComponent(gameState, params.playerType, elementId, params.showTextStatus).initPageCode();
+
+    this.assertEquals(elements[`${elementId}-value`].innerText, params.expected);
+  }, function() {
+    return [
+      // Raid HUD: the defender's command ship is home, so a stale countdown is ignored.
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: true, raidStatus: RAID_STATUS.ONGOING, countdown: '0s', showTextStatus: true, expected: 'Secure'},
+      // Raid HUD: the command ship is away, so the running countdown shows.
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: false, raidStatus: RAID_STATUS.ONGOING, countdown: '12m', showTextStatus: true, expected: '12m'},
+      // Raid HUD: away, but no countdown yet, so the full breach time.
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: false, raidStatus: RAID_STATUS.ONGOING, countdown: '', showTextStatus: true, expected: '17m'},
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: false, raidStatus: null, countdown: '', showTextStatus: true, expected: '17m'},
+      // Own HUD: blank unless breached.
+      {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: true, raidStatus: RAID_STATUS.ONGOING, countdown: '0s', showTextStatus: false, expected: ''},
+      {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: false, raidStatus: RAID_STATUS.SHIELDS_VULNERABLE, countdown: '5m', showTextStatus: false, expected: '5m'},
+      {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: false, raidStatus: null, countdown: '', showTextStatus: false, expected: ''},
+      // Own planet card.
+      {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: true, raidStatus: null, countdown: '', showTextStatus: true, expected: 'Secure'},
+      {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: false, raidStatus: null, countdown: '', showTextStatus: true, expected: 'Vulnerable'},
+    ];
+  });
+
+  // The readout follows the fleet without waiting for a new block.
+  readoutFollowsTheDefendersCommandShipTest = new DTest('readoutFollowsTheDefendersCommandShipTest', function() {
+    const elementId = `${PLAYER_TYPES.RAID_ENEMY}-readout-fleet-test`;
+    const raidEnemy = ShieldStatusTest.makePlanetOwner(PLAYER_TYPES.RAID_ENEMY, false, true, RAID_STATUS.ONGOING);
+    raidEnemy.planetShieldHealth = '9m';
+    const elements = ShieldStatusTest.givenDocument(elementId);
+    new ShieldStatusComponent({keyPlayers: {[PLAYER_TYPES.RAID_ENEMY]: raidEnemy}}, PLAYER_TYPES.RAID_ENEMY, elementId, true).initPageCode();
+
+    this.assertEquals(elements[`${elementId}-value`].innerText, '9m');
+
+    raidEnemy.setFleet(ShieldStatusTest.makeFleet(true));
+
+    this.assertEquals(elements[`${elementId}-value`].innerText, 'Secure');
+  });
+
+  // No countdown is worked out for a shield that is not breached.
+  noCountdownWhileTheShieldHoldsTest = new DTest('noCountdownWhileTheShieldHoldsTest', function() {
+    const raidEnemy = ShieldStatusTest.makePlanetOwner(PLAYER_TYPES.RAID_ENEMY, true, true, RAID_STATUS.ONGOING);
+    raidEnemy.planetShieldInfo = {planetary_shield: 1000, block_start_raid: 1};
+    raidEnemy.setPlanetShieldHealth(5000);
+    this.assertEquals(raidEnemy.getPlanetShieldHealth(), '');
+
+    raidEnemy.setFleet(ShieldStatusTest.makeFleet(false));
+    raidEnemy.setPlanetShieldHealth(5000);
+    this.assertEquals(raidEnemy.getPlanetShieldHealth() !== '', true);
+  });
 }

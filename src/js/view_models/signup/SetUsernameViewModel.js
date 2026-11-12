@@ -5,6 +5,7 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {PfpViewerComponent} from "../components/PfpViewerComponent";
 import {PfpClientRenderAttributes} from "../../models/PfpClientRenderAttributes";
 import {onboardingTelemetry} from "../../telemetry/OnboardingTelemetry";
+import {bindSubmitButtonToInput} from "../../util/SubmitButtonToggle";
 
 export class SetUsernameViewModel extends AbstractViewModel {
 
@@ -59,19 +60,7 @@ export class SetUsernameViewModel extends AbstractViewModel {
     this.initPfp();
 
     const usernameInput = document.getElementById('username-input');
-    usernameInput.addEventListener('keyup', () => {
-      const submitBtn = document.getElementById('submit-btn');
-
-      if (usernameInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('sui-mod-disabled');
-        submitBtn.classList.add('sui-mod-primary');
-      } else if (usernameInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
-        submitBtn.disabled = true;
-        submitBtn.classList.remove('sui-mod-primary');
-        submitBtn.classList.add('sui-mod-disabled');
-      }
-    });
+    bindSubmitButtonToInput(usernameInput, () => document.getElementById('submit-btn'));
 
     const submitBtnHandler = () => {
       const usernameInput = document.getElementById('username-input');
