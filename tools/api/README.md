@@ -102,16 +102,33 @@ The follow-up [grass assessment](influence-grass-assessment.md) specifies
 self-contained influence updates and delivery changes needed to avoid API
 refetches; those publisher/listener changes are not implemented by this API branch.
 
-Influence grass now has an opt-in client consumer in
+Influence grass has an opt-in subscription-only consumer in
 `src/js/framework/InfluenceStream.js`. Instantiate `InfluenceStream(connection,
-exactSubject, {store, onUpdate, onError})` and call `start()`; call `stop()` when
-the view closes. It bootstraps/replays over NATS, assembles complete verified
-payloads, and updates an `InfluenceStore` without a GuildAPI dependency. Share a
-store across the exact scopes a view needs. `historyReady` is false while a
-replacement graph is being assembled; `history` contains sparse component deltas.
-The complete schema/relay contract is in the sibling
-`structs-pg/docs/influence-grass-20261111.md`. No influence UI is added here.
+exactSubject, {loadSnapshot, store, onSnapshot, onUpdate, onError})` and call
+`start()`; call `stop()` when the view closes. `loadSnapshot` is required and uses
+the API for initial loading, reconnects, detected gaps, or incomplete/corrupt
+multipart frames. Healthy events update the store without additional API calls.
+The consumer never publishes a NATS message or subscribes to reply inboxes.
 
-Run `node tools/api/influence-stream.test.mjs` to test multipart ordering,
-duplicates/gaps, guild removals and history/generation replacement with HTTP
-requests forbidden.
+The loader receives `{subject, reason, signal}` and returns
+`{build_id, height, context, data, players?, history?}`. Use exact strings from API
+metadata. Adapt current API data to the selected scope (for example, scores use
+`data: {standings: response.data}`). Supply roster rows if maintaining a guild
+roster. Optional history retains the API's `{opening, samples}` response object;
+all contributing reads must have the same build and projected height, and the
+history range must end at that height. Retry if those snapshots disagree.
+
+The subscriber confirms its subscription before loading, then ignores queued
+frames at/below the API snapshot height in the same build and rejects older
+builds. Subsequent complete frames must form a contiguous scope sequence.
+`historyBase` holds optional API history; `history` holds later sparse grass
+deltas. A pushed replacement resets both and waits for its terminal history
+segment. `historyReady` remains false for current-state-only loads until history
+is explicitly loaded or a complete replacement arrives. No influence UI is added.
+
+The authoritative event/deployment contract is in the sibling
+`structs-pg/docs/influence-grass-20261111.md`. Run
+`node tools/api/influence-stream.test.mjs` for multipart validation, duplicates,
+guild changes, generation replacement and API handoff/reconnect/gap tests with
+NATS publishing forbidden. The database/NATS integration fixture also enforces
+publish-denied client credentials and subscription-denied relay credentials.

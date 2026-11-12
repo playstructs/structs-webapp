@@ -38,8 +38,7 @@ const conflicting = parts(base);
 await assembler.accept(conflicting[0]);await assert.rejects(assembler.accept({...conflicting[1],sha256:'f'.repeat(64)}),/Conflicting/);
 console.log('PASS: exact cursors, multipart ordering/digests, atomic application, duplicates/gaps, membership removal, history completion and generation replacement; zero HTTP calls');
 
-// Exercise the subscriber's replay paging/live buffering/reconnect path with a
-// deterministic NATS transport. There is deliberately no HTTP client available.
+// NATS is subscription-only; API bootstrap/resync is provided by the view.
 const {InfluenceStream} = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 class Queue {
  constructor() { this.items=[]; this.wait=null; this.closed=false; }
@@ -49,38 +48,56 @@ class Queue {
  async *[Symbol.asyncIterator]() { while (!this.closed) { if (this.items.length) yield this.items.shift(); else await new Promise(resolve=>this.wait=resolve); } }
 }
 const subscriptions = new Map(), status = new Queue();
-let replayFrames = [base,history], broadcast = true, requests = 0;
+let flushed=false, releaseInitial;
 const connection = {
- subscribe(name) { const q=new Queue(); subscriptions.set(name,q); return q; },
+ subscribe(name) { assert.equal(name,subject); const q=new Queue(); subscriptions.set(name,q); return q; },
  status() { return status; },
- publish(name,bytes,{reply}) {
-  assert.equal(name,'structs.influence.replay.test.1.guild.0-1');requests++;
-  const request=JSON.parse(new TextDecoder().decode(bytes));
-  const through=request.through_frame_id ?? replayFrames.at(-1).frame_id;
-  const frames=replayFrames.filter(f=>BigInt(f.frame_id)>BigInt(request.after_frame_id) && BigInt(f.frame_id)<=BigInt(through));
-  let after=request.after_frame_id, index=request.part_index, sent=0;
-  for (const frame of frames) {
-   const packets=parts(frame);
-   while(index<packets.length && sent<2) {
-    const packet=packets[index++]; subscriptions.get(reply).push({json:()=>packet});sent++;
-   }
-   if(index<packets.length)break;
-   after=frame.frame_id;index=0;
-   if(sent===2)break;
-  }
-  const end={category:'influence_replay_end',subject,after_frame_id:after,through_frame_id:through,part_index:index,done:after===through};
-  subscriptions.get(reply).push({json:()=>end});
-  if(broadcast) {broadcast=false; for(const packet of parts(moved)) subscriptions.get(subject).push({json:()=>packet});}
- }
+ async flush() { flushed=true; },
+ publish() { throw new Error('NATS clients cannot publish'); },
+ request() { throw new Error('NATS clients cannot request'); }
 };
-const streamedStore=new InfluenceStore(), errors=[];
-const stream=new InfluenceStream(connection,subject,{store:streamedStore,onError:error=>errors.push(error)});
-await stream.start();
-for(let i=0;i<20 && streamedStore.cursor(subject)!==moved.frame_id;i++) await new Promise(resolve=>setImmediate(resolve));
-assert.equal(streamedStore.cursor(subject),moved.frame_id);assert.equal(streamedStore.scopes.get(subject).players.size,0);
-assert.ok(requests>1);assert.deepEqual(errors,[]);
-const recovered={...moved,frame_id:'9007199254740996',previous_frame_id:moved.frame_id,height:'11'};
-replayFrames=[base,history,moved,recovered];status.push({type:'reconnect'});
-for(let i=0;i<20 && streamedStore.cursor(subject)!==recovered.frame_id;i++) await new Promise(resolve=>setImmediate(resolve));
-assert.equal(streamedStore.cursor(subject),recovered.frame_id);assert.deepEqual(errors,[]);stream.stop();
-console.log('PASS: subscriber paged replay, buffered live delivery and reconnect recovery over NATS only');
+const streamedStore=new InfluenceStore(), errors=[], loads=[];
+const snapshot=(height='10')=>({build_id:'1',height,context:{},data:{guild_id:'0-1',sectors:[]},players:base.data.players,
+ history:{opening:[],samples:[{height,points:'300'}]}});
+const stream=new InfluenceStream(connection,subject,{
+ store:streamedStore,onError:error=>errors.push(error),
+ async loadSnapshot({subject:scope,reason}) {
+  assert.equal(scope,subject);assert.equal(flushed,true);loads.push(reason);
+  if(reason==='initial') await new Promise(resolve=>releaseInitial=resolve);
+  return snapshot(reason==='initial'?'10':reason==='reconnect'?'15':'18');
+ }
+});
+const emit=frame=>{for(const packet of parts(frame)) subscriptions.get(subject).push({json:()=>packet});};
+const tick=()=>new Promise(resolve=>setImmediate(resolve));
+const initial=stream.start();while(!releaseInitial)await tick();
+// Old publisher backlog is already covered by the API snapshot. The next block
+// can have an unseen predecessor within that baseline and must apply once.
+emit(base);
+const liveMoved={...moved,height:'11'};emit(liveMoved);
+releaseInitial();await initial;
+for(let i=0;i<20 && streamedStore.cursor(subject)!==moved.frame_id;i++)await tick();
+assert.equal(streamedStore.cursor(subject),moved.frame_id);
+assert.equal(streamedStore.scopes.get(subject).players.size,0);
+assert.deepEqual(loads,['initial']);assert.deepEqual(errors,[]);
+assert.deepEqual(streamedStore.scopes.get(subject).historyBase,snapshot().history);
+const next={...liveMoved,frame_id:'9007199254740996',previous_frame_id:liveMoved.frame_id,height:'12'};emit(next);
+for(let i=0;i<20 && streamedStore.cursor(subject)!==next.frame_id;i++)await tick();
+assert.deepEqual(loads,['initial']); // healthy events trigger no API requests
+status.push({type:'reconnect'});
+for(let i=0;i<20 && streamedStore.scopes.get(subject).height!=='15';i++)await tick();
+assert.deepEqual(loads,['initial','reconnect']);
+emit({...next,height:'14',frame_id:'9007199254740999'});
+const resumed={...next,height:'16',frame_id:'9007199254741000',previous_frame_id:'9007199254740999'};emit(resumed);
+for(let i=0;i<20 && streamedStore.cursor(subject)!==resumed.frame_id;i++)await tick();
+assert.equal(streamedStore.scopes.get(subject).height,'16');assert.equal(loads.length,2);
+emit({...resumed,height:'18',frame_id:'9007199254741002',previous_frame_id:'9007199254741001'});
+for(let i=0;i<20 && streamedStore.scopes.get(subject).height!=='18';i++)await tick();
+assert.deepEqual(loads,['initial','reconnect','gap_or_invalid_frame']);assert.match(errors[0].message,/gap/);
+emit({...replacement,frame_id:'9007199254741100',height:'8'});
+for(let i=0;i<20 && streamedStore.scopes.get(subject).buildId!=='2';i++)await tick();
+assert.equal(streamedStore.scopes.get(subject).buildId,'2');
+emit({...resumed,height:'20',frame_id:'9007199254742000'});await tick();await stream.queue;
+assert.equal(streamedStore.scopes.get(subject).buildId,'2');assert.equal(loads.length,3);
+assert.throws(()=>streamedStore.seed(subject,snapshot('25')),/Stale/);
+stream.stop();
+console.log('PASS: read-only NATS, API bootstrap/reconnect/gap recovery, buffered-update handoff, stale generation rejection; no API calls for healthy live updates');

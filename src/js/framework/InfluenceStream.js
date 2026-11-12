@@ -49,19 +49,41 @@ export class InfluenceAssembler {
 export class InfluenceStore {
   constructor() { this.scopes = new Map(); }
   cursor(subject) { return this.scopes.get(subject)?.frameId ?? '0'; }
+  seed(subject, snapshot) {
+    if (!decimal(snapshot.build_id) || !decimal(snapshot.height) || !snapshot.data) throw new Error('Invalid influence API snapshot');
+    const old = this.scopes.get(subject);
+    if (old && (BigInt(snapshot.build_id) < BigInt(old.buildId)
+      || (snapshot.build_id === old.buildId && BigInt(snapshot.height) < BigInt(old.height)))) throw new Error('Stale influence API snapshot');
+    this.scopes.set(subject, {
+      frameId: '0', buildId: snapshot.build_id, height: snapshot.height,
+      apiHeight: snapshot.height, awaitingFirstFrame: true,
+      category: `influence_${subject.split('.')[4]}`, context: snapshot.context, data: snapshot.data,
+      historyBase: snapshot.history ?? null, history: new Map(), historyReady: !!snapshot.history,
+      historyReplacementPending: false,
+      players: new Map((snapshot.players ?? []).map(row => [row.player_id, row])),
+    });
+  }
   apply(frame) {
     if (frame.contract !== CONTRACT || !decimal(frame.frame_id) || !decimal(frame.previous_frame_id)
       || !['patch', 'replace'].includes(frame.mode)) throw new Error('Invalid influence envelope');
+    if (!decimal(frame.build_id) || !decimal(frame.height)) throw new Error('Invalid influence position');
     const old = this.scopes.get(frame.subject);
+    if (old && BigInt(frame.build_id) < BigInt(old.buildId)) return false;
+    if (old && frame.build_id === old.buildId && old.apiHeight !== undefined && BigInt(frame.height) <= BigInt(old.apiHeight)) return false;
     if (old && BigInt(frame.frame_id) <= BigInt(old.frameId)) return false;
-    if (frame.mode !== 'replace' && frame.previous_frame_id !== (old?.frameId ?? '0')) throw new Error('Influence frame gap');
+    if (frame.mode !== 'replace' && !old?.awaitingFirstFrame && frame.previous_frame_id !== (old?.frameId ?? '0')) throw new Error('Influence frame gap');
     if (old && old.buildId !== frame.build_id && frame.mode !== 'replace') throw new Error('Influence generation gap');
     const replace = frame.mode === 'replace';
     const next = {
       frameId: frame.frame_id, buildId: frame.build_id, height: frame.height,
       context: frame.context, category: frame.category === 'influence_history' ? old?.category : frame.category,
       data: frame.category === 'influence_history' ? old?.data : frame.data,
-      historyReady: frame.data.history?.complete ?? old?.historyReady ?? true,
+      apiHeight: replace ? undefined : old?.apiHeight, awaitingFirstFrame: false,
+      historyBase: replace ? null : old?.historyBase ?? null,
+      historyReady: replace || frame.category === 'influence_history'
+        ? frame.data.history?.complete ?? true : old?.historyReady ?? true,
+      historyReplacementPending: replace || frame.category === 'influence_history'
+        ? frame.data.history?.complete === false : old?.historyReplacementPending ?? false,
       history: replace ? new Map() : new Map(old?.history),
       players: frame.data.reset_roster ? new Map() : new Map(old?.players),
     };
@@ -76,23 +98,25 @@ export class InfluenceStore {
 }
 
 /**
- * One exact scope per subscriber. Initial subscription and every reconnect replay
- * over NATS, with live frames buffered during catch-up. No GuildAPI/fetch calls.
- * Call stop() when the view no longer needs this scope. onUpdate receives the
- * complete envelope plus updated scope state; onError reports connection errors.
+ * Subscription-only client. loadSnapshot performs API bootstrap/recovery;
+ * ordinary complete grass updates never call it. Subscribe and flush before
+ * loading, then discard buffered frames covered by the API build/height.
  */
 export class InfluenceStream {
-  constructor(connection, subject, {store = new InfluenceStore(), onUpdate = () => {}, onError = console.warn} = {}) {
+  constructor(connection, subject, {loadSnapshot, store = new InfluenceStore(), onSnapshot = () => {}, onUpdate = () => {}, onError = console.warn} = {}) {
     if (!/^structs\.influence\.[a-zA-Z0-9_-]+\.[1-9][0-9]*\.(contest|scores|(?:guild|player|planet)\.[a-zA-Z0-9_-]+)$/.test(subject)) throw new Error('Invalid influence scope');
-    this.connection = connection; this.subject = subject; this.store = store;
-    this.onUpdate = onUpdate; this.onError = onError; this.assembler = new InfluenceAssembler();
-    this.queue = Promise.resolve(); this.stopped = true;
+    if (typeof loadSnapshot !== 'function') throw new Error('Influence API snapshot loader required');
+    this.connection = connection; this.subject = subject; this.store = store; this.loadSnapshot = loadSnapshot;
+    this.onSnapshot = onSnapshot; this.onUpdate = onUpdate; this.onError = onError; this.assembler = new InfluenceAssembler();
+    this.queue = Promise.resolve(); this.stopped = true; this.lastReceivedAt = 0;
   }
   enqueue(work) {
     this.queue = this.queue.then(() => this.stopped ? undefined : work()).catch(error => { this.onError(error); });
     return this.queue;
   }
   async accept(part) {
+    if (part.subject !== this.subject) throw new Error('Wrong influence scope');
+    this.lastReceivedAt = Date.now();
     const frame = await this.assembler.accept(part);
     if (frame && this.store.apply(frame)) this.onUpdate(frame, this.store.scopes.get(frame.subject));
   }
@@ -100,9 +124,11 @@ export class InfluenceStream {
     if (!this.stopped) return this.queue;
     this.stopped = false;
     this.subscription = this.connection.subscribe(this.subject);
-    this.enqueue(() => this.recover());
+    this.enqueue(async () => { await this.connection.flush(); await this.recover('initial'); });
     this.assemblyTimer = setInterval(() => {
-      if (this.assembler.pending.size) this.enqueue(() => this.recover());
+      if (Date.now() - this.lastReceivedAt >= 15000 && (this.assembler.pending.size || this.store.scopes.get(this.subject)?.historyReplacementPending)) {
+        this.resync('incomplete_frame');
+      }
     }, 15000);
     this.consume().catch(this.onError);
     this.watchStatus().catch(this.onError);
@@ -112,7 +138,7 @@ export class InfluenceStream {
     for await (const message of this.subscription) {
       this.enqueue(async () => {
         try { await this.accept(message.json()); }
-        catch (error) { await this.recover(); }
+        catch (error) { this.onError(error); await this.recover('gap_or_invalid_frame'); }
       });
     }
   }
@@ -120,47 +146,32 @@ export class InfluenceStream {
     this.status = this.connection.status();
     for await (const status of this.status) {
       if (this.stopped) break;
-      if (status.type === 'reconnect') this.enqueue(() => this.recover());
+      if (status.type === 'reconnect') this.resync('reconnect');
     }
   }
-  async recover() {
+  resync(reason = 'explicit') { return this.enqueue(() => this.recover(reason)); }
+  async recover(reason) {
     let delay = 1000;
     while (!this.stopped) {
       this.assembler.clear();
-      try { await this.replay(); return; }
-      catch (error) {
+      this.abortLoad = new AbortController();
+      try {
+        const snapshot = await this.loadSnapshot({subject: this.subject, reason, signal: this.abortLoad.signal});
+        if (this.stopped || this.abortLoad.signal.aborted) return;
+        this.store.seed(this.subject, snapshot);
+        this.lastReceivedAt = Date.now();
+        this.onSnapshot(this.store.scopes.get(this.subject));
+        return;
+      } catch (error) {
+        if (this.stopped) return;
         this.onError(error);
         await new Promise(resolve => { this.retryWake = resolve; this.retryTimer = setTimeout(resolve, delay); });
         delay = Math.min(delay * 2, 30000);
       }
     }
   }
-  async replay() {
-    let cursor = {after_frame_id: this.store.cursor(this.subject), part_index: 0};
-    const replaySubject = this.subject.replace('structs.influence.', 'structs.influence.replay.');
-    do {
-      const inbox = `_INBOX.influence.${crypto.randomUUID().replaceAll('-', '')}`;
-      const replies = this.connection.subscribe(inbox);
-      let ended = false;
-      const timeout = setTimeout(() => replies.unsubscribe(), 10000);
-      try {
-        this.connection.publish(replaySubject, new TextEncoder().encode(JSON.stringify(cursor)), {reply: inbox});
-        for await (const message of replies) {
-          const packet = message.json();
-          if (packet.category === 'influence_replay_end') {
-            if (packet.error) throw new Error(packet.error);
-            if (packet.subject !== this.subject || !decimal(packet.after_frame_id) || !decimal(packet.through_frame_id)) throw new Error('Invalid replay end');
-            cursor = {after_frame_id: packet.after_frame_id, through_frame_id: packet.through_frame_id, part_index: packet.part_index};
-            ended = true;
-            if (packet.done) return;
-            break;
-          }
-          if (packet.subject !== this.subject) throw new Error('Wrong replay scope');
-          await this.accept(packet);
-        }
-      } finally { clearTimeout(timeout); replies.unsubscribe(); }
-      if (!ended) throw new Error('Influence replay timed out');
-    } while (!this.stopped);
+  stop() {
+    this.stopped = true; this.abortLoad?.abort(); clearInterval(this.assemblyTimer); clearTimeout(this.retryTimer);
+    this.retryWake?.(); this.subscription?.unsubscribe(); this.status?.stop?.(); this.assembler.clear();
   }
-  stop() { this.stopped = true; clearInterval(this.assemblyTimer); clearTimeout(this.retryTimer); this.retryWake?.(); this.subscription?.unsubscribe(); this.status?.stop?.(); this.assembler.clear(); }
 }
