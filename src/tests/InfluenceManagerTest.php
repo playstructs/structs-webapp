@@ -31,6 +31,18 @@ class InfluenceManagerTest extends TestCase
             ['players', ['1', ['limit' => '1.5']]],
             ['players', ['1', ['after_id' => '1-2'], '2']],
             ['players', ['1', ['include_total' => 'true']]],
+            ['planet', ['1', '1-1']],
+            ['planet', ['1', '2-0']],
+            ['planet', ['1', '2-18446744073709551616']],
+            ['planet', ['1', '2-1', ['sector' => '127']]],
+            ['planets', ['1', []]],
+            ['planets', ['1', ['planet_ids' => '']]],
+            ['planets', ['1', ['planet_ids' => ['2-1', '2-2']]]],
+            ['planets', ['1', ['planet_ids' => '2-1, 2-2']]],
+            ['planets', ['1', ['planet_ids' => '2-1,']]],
+            ['planets', ['1', ['planet_ids' => "2-1'); DROP TABLE planet;--"]]],
+            ['planets', ['1', ['planet_ids' => implode(',', array_fill(0, 101, '2-1'))]]],
+            ['planets', ['1', ['planet_ids' => '2-1', 'limit' => '1']]],
             ['contests', [['chain_id' => "x';--"]]],
             ['contests', [[], '999999999999999999999999']],
             ['history', ['1', 'contest', null, []]],
@@ -41,6 +53,13 @@ class InfluenceManagerTest extends TestCase
             ['history', ['1', 'player', '1-1', ['start_height' => '1', 'end_height' => '2', 'group_by' => 'guild']]],
             ['history', ['1', 'guild', '0-1', ['start_height' => '1', 'end_height' => '2', 'limit' => '10']]],
         ];
+    }
+
+    public function testPlanetBatchPreservesOrderAndAcceptsUint64Ids(): void
+    {
+        $this->assertSame(['2-2', '2-1', '2-18446744073709551615'],
+            InfluenceParameters::planetIds('2-2,2-1,2-2,2-18446744073709551615'));
+        $this->assertCount(100, InfluenceParameters::planetIds(implode(',', array_map(fn ($i) => '2-' . $i, range(1, 100)))));
     }
 
     public function testPagingMatchesCatalogLimitsAndChecksOverflow(): void

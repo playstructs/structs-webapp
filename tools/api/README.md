@@ -83,8 +83,9 @@ untrusted forwarded-IP headers. No public production origin has been accepted ye
 ## Influence reads
 
 The influence HTTP regression requires the fixture schema through
-`influence-single-sector-20261111`. The same PHP and catalog HTTP runners now
-cover contest standings, paged scores and inclusive block-height history. See
+`influence-single-sector-20261111`; PHP grass-payload parity checks also require
+`influence-grass-20261111`. The PHP and catalog HTTP runners cover contest standings,
+paged scores, single/batch planet snapshots and inclusive block-height history. See
 [the influence API contract](influence-api.md). The focused PHP run is:
 
 ```bash
@@ -98,9 +99,8 @@ have run its schema migrations; merely starting a current structs-pg image does
 not itself initialize its Sqitch schema. Keep those test-only connection settings
 isolated from the live guild database.
 
-The follow-up [grass assessment](influence-grass-assessment.md) specifies
-self-contained influence updates and delivery changes needed to avoid API
-refetches; those publisher/listener changes are not implemented by this API branch.
+The [grass assessment](influence-grass-assessment.md) describes the related schema,
+sync-state and relay changes that publish complete influence updates.
 
 Influence grass has an opt-in subscription-only consumer in
 `src/js/framework/InfluenceStream.js`. Instantiate `InfluenceStream(connection,

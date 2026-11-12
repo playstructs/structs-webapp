@@ -12,6 +12,7 @@ final class InfluenceParameters
     public const MAX_RANGE = 1000000;
     public const MAX_SAMPLES = 1000;
     public const MAX_ROWS = 10000;
+    public const MAX_PLANETS = 100;
 
     public static function only(array $query, array $allowed): void
     {
@@ -36,12 +37,25 @@ final class InfluenceParameters
 
     public static function objectId(mixed $value, string $kind): string
     {
-        $prefix = $kind === 'guild' ? '0' : '1';
+        $prefix = match ($kind) { 'guild' => '0', 'player' => '1', 'planet' => '2' };
         if (!is_string($value) || !preg_match('/\A' . $prefix . '-([1-9][0-9]{0,19})\z/', $value, $m)
             || (strlen($m[1]) === 20 && strcmp($m[1], '18446744073709551615') > 0)) {
             throw new BadRequestHttpException("Invalid {$kind}_id");
         }
         return $value;
+    }
+
+    /** Bounded scalar list, preserving first occurrence order for batch lookups. */
+    public static function planetIds(mixed $value): array
+    {
+        if (!is_string($value) || $value === '' || strlen($value) > self::MAX_PLANETS * 23) {
+            throw new BadRequestHttpException('planet_ids must contain 1 to 100 comma-separated planet IDs');
+        }
+        $ids = explode(',', $value);
+        if (count($ids) > self::MAX_PLANETS) {
+            throw new BadRequestHttpException('planet_ids must contain at most 100 IDs');
+        }
+        return array_values(array_unique(array_map(fn ($id) => self::objectId($id, 'planet'), $ids)));
     }
 
     public static function sector(array $query): ?int

@@ -138,6 +138,40 @@ SQL, $this->scoreParams($c) + ['player' => $player, 'sectors' => json_encode($c[
         });
     }
 
+    public function planets(string $contest, array $query = []): Response
+    {
+        return $this->respond(function ($body) use ($contest, $query): void {
+            P::only($query, ['planet_ids']); $cid = P::integer($contest, 'contest_id', 1);
+            $ids = P::planetIds($query['planet_ids'] ?? null);
+            $this->planetSnapshots($body, $cid, $ids, false);
+        });
+    }
+
+    public function planet(string $contest, string $planet, array $query = []): Response
+    {
+        return $this->respond(function ($body) use ($contest, $planet, $query): void {
+            P::only($query, []); $cid = P::integer($contest, 'contest_id', 1);
+            $this->planetSnapshots($body, $cid, [P::objectId($planet, 'planet')], true);
+        });
+    }
+
+    private function planetSnapshots(ApiResponseContentDto $body, int $cid, array $ids, bool $single): void
+    {
+        $this->snapshot(function () use ($body, $cid, $ids, $single): void {
+            $c = $this->context($cid, $body);
+            $rows = $this->db->fetchAllAssociative(InfluenceQuery::PLANETS,
+                ['build' => $c['build_id'], 'planets' => json_encode($ids, JSON_THROW_ON_ERROR)]);
+            $data = [];
+            foreach ($rows as $row) {
+                if (!self::boolean($row['within_budget'])) {
+                    throw new HttpException(422, 'Planet coverage exceeds 10000 guild entries; request fewer planets');
+                }
+                $data[] = json_decode($row['planet'], true, 512, JSON_THROW_ON_ERROR);
+            }
+            $body->data = $single ? $data[0] : $data;
+        });
+    }
+
     public function history(string $contest, string $kind, ?string $id, array $query): Response
     {
         return $this->respond(function ($body) use ($contest, $kind, $id, $query): void {
@@ -323,7 +357,7 @@ SQL, $this->scoreParams($c) + ['player' => $player, 'sectors' => json_encode($c[
             $status = 503;
             $body->data = null; $body->total = null;
             $body->errors = ['influence_unavailable' => $error->getSQLState() === '57014'
-                ? 'History read exceeded its query budget; narrow the range or scope' : 'Influence schema is not available'];
+                ? 'Influence read exceeded its query budget; narrow the range or scope' : 'Influence schema is not available'];
         }
         return new JsonResponse($body, $status, ['Cache-Control' => 'private, no-store']);
     }

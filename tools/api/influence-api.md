@@ -19,6 +19,8 @@ schema or sync-state deployment is required for these endpoints.
 | `/contests/{contest_id}/guilds/{guild_id}` | Guild totals and sector breakdown | `sector` |
 | `/contests/{contest_id}/players` or `/contests/{contest_id}/players/page/{page}` | Paged personal scores, including zero-score players | `guild_id`, `sector`, `limit`, `after_id`, `include_total` |
 | `/contests/{contest_id}/players/{player_id}` | Personal totals, guild at the projected height, sector breakdown | `sector` |
+| `/contests/{contest_id}/planets/{planet_id}` | Planet's current guild coverage, maintained claim and last successful raid | None |
+| `/contests/{contest_id}/planets` | Same snapshots for up to 100 requested planets in one read | `planet_ids` (required, comma-separated) |
 | `/contests/{contest_id}/history` | Contest-wide history | `start_height`, `end_height`, `bucket_blocks`, `group_by`, `sector` |
 | `/contests/{contest_id}/guilds/{guild_id}/history` | One guild's history | Same history parameters |
 | `/contests/{contest_id}/players/{player_id}/history` | One player's personal history | Same history parameters |
@@ -77,8 +79,100 @@ All parameters must be scalar, and unsupported parameters are rejected rather
 than silently ignored. IDs and block parameters are validated before SQL and
 bound as parameters. Decimal/exponent/negative values and integer overflow are
 rejected. Heights are bounded at PHP_INT_MAX minus 1,000,000, leaving arithmetic
-headroom for bucket boundaries. Guild/player IDs use their correct `0-`/`1-`
+headroom for bucket boundaries. Guild/player/planet IDs use their correct `0-`/`1-`/`2-`
 prefix and an unsigned 64-bit index.
+
+## Planet lookups and choosing targets
+
+Use the batch lookup to decorate a page of raid results or attack candidates:
+
+```text
+GET /api/influence/contests/1/planets?planet_ids=2-41,2-42,2-43
+GET /api/influence/contests/1/planets/2-41
+```
+
+The single route returns an object; the batch returns an array in requested order.
+`planet_ids` accepts 1–100 comma-separated IDs (no spaces or array parameters).
+Duplicates are removed, preserving the first occurrence; the 100-input limit
+applies before deduplication. This is a bounded lookup, not a scan of all planets:
+there is no paging, count query, sector filter or implicit default planet list.
+Every planet in a batch shares one published build and height.
+
+Each object has exactly the same shape as `influence_planet` grass data:
+
+```json
+{
+  "planet_id": "2-41",
+  "exists": true,
+  "sector": 127,
+  "holder": "1-12",
+  "holder_guild_id": "0-2",
+  "latest_raid": {
+    "raid_id": "8765",
+    "height": "3550000",
+    "attacker": "1-12",
+    "defender": "1-80",
+    "attacker_guild": "0-1",
+    "defender_guild": "0-3",
+    "source_sector": 127
+  },
+  "guild_coverage": [
+    {"guild_id": "0-1", "supporter_count": "2"},
+    {"guild_id": "0-2", "supporter_count": "1"}
+  ]
+}
+```
+
+- `guild_coverage` lists guilds **currently credited** with the unique-planet
+  bonus, ordered by guild ID. `supporter_count` is the number of their current
+  members with an eligible win on that planet in this contest, not the number
+  of raids or multiples of the awarded bonus. If the viewer's guild is listed,
+  another win adds no unique-planet guild bonus. This list changes when players
+  transfer guilds; it is not a list of historical raid-time guilds.
+- `holder` is the player holding the maintained-influence claim; `holder_guild_id`
+  is that player's guild at the projected height. This is contest influence,
+  not the planet's on-chain owner. A null holder means no maintained claim;
+  a non-null holder with null guild means a guildless player, crediting no guild.
+  A guild already in `guild_coverage` may still gain maintained points by winning
+  the claim from another holder. Even if it already holds the claim, another
+  member winning can change who carries those points on a later guild transfer.
+- `latest_raid` is the last successful raid processed within the contest,
+  including successes that clear a claim under the contest rules. Its guilds
+  are immutable event-time attribution and may differ from `holder_guild_id`.
+  Failed raids are not influence facts and are not returned here. Same-block
+  outcomes follow canonical event order, not just height or insertion ID.
+- `sector` is the scoring sector (0 in `single_sector` mode); `source_sector`
+  is the defending planet's sector recorded at the last raid.
+- `exists=false` means **no processed successful raid on this planet in this
+  contest at the snapshot height**. It does not assert whether the planet exists
+  on-chain. The object still includes its requested ID, with null sector,
+  holder, holder guild and latest raid, and an empty coverage list. This also
+  lets clients clear local contest state after a rebuild. Valid but unseen IDs
+  therefore return 200; invalid IDs return 400 and missing contests return 404.
+
+Use `meta.win_points` and `meta.claim_points` rather than hard-coding weights.
+For an eligible win, a guild absent from coverage would gain the unique bonus;
+a guild not currently holding the claim could also gain the maintained bonus.
+These snapshots are scoring facts, not an attack-eligibility guarantee: use the
+usual planet/player state to check current ownership, guild, raidability and
+defenses. Scheduled or finished contests cannot award new points. Results freeze
+at contest end, including guild membership, and never incorporate later raids.
+
+The API reads indexed current projections plus the latest raid by primary key;
+it does not transfer or rescan full raid history. Responses are capped at 10,000
+guild coverage entries across the batch; overflow returns 422, never a truncated
+list that could incorrectly imply an unearned bonus. No new schema, projector
+or grass changes are required. Read-only SQL uses existing webapp SELECT grants.
+
+For streaming, subscribe to
+`structs.influence.<chain_id>.<contest_id>.planet.<planet_id>` before fetching
+the snapshot, buffer events during the read, then apply newer events using
+the existing build/height rules. A batch response can seed each planet subject
+with `{build_id: meta.build_id, height: meta.height, data: planet}`. If the stream
+adapter needs context, map the response's contest bounds and metadata into its
+context shape as for other influence APIs. Each grass planet payload replaces
+the whole planet object, including the entire coverage list. Healthy delivery
+requires no subsequent API lookup; reconnects and gaps can reload a batch.
 
 ## History and graphs
 
@@ -167,13 +261,14 @@ edge/tail deltas, without overlap. A missing, stale-generation or ahead-of-build
 refresh marker authorizes neither rollups nor checkpoints. Correctness does not
 require the refresh job, though regular refresh reduces long-range query cost.
 
-There is no player-delta hypertable in the current schema. Personal history uses
+Personal history currently uses
 indexed first wins, seeks opening claims per won planet, then reads successful
 raids on those planets within the requested range in canonical event order.
 It handles repeated wins, same-block changes, ineligible-success claim clearing,
 and later guild moves without scanning unrelated players' raid history. A very
 active player with many attacked planets can still require substantial work;
-monitor these reads before deciding whether to add a maintained personal ledger.
+monitor these reads before moving the API onto the personal-delta hypertable
+added by the later `influence-grass-20261111` migration.
 
 Each SQL statement is capped at five seconds. Validation errors return 400,
 missing contests/participants 404, uncovered ranges or oversized result sets 422,
@@ -187,8 +282,11 @@ unchanged; these routes are not added to the public guild-read matcher.
 `InfluenceDatabaseTest` uses real projector facts and non-superuser webapp reads
 on a marked disposable database: transfers, overlap, claims, personal/guild
 non-additivity, frozen finals, paging, rollups/checkpoints versus raw edges,
-rebuilds, ties, empty/scheduled contests and exact large values. It also exercises
-10,005 members with 20,000 unrelated raid facts. The catalog HTTP runner checks
+rebuilds, ties, empty/scheduled contests and exact large values. Planet checks cover
+batch order, unraided planets, guild coverage transfers, claim clearing, guildless
+holders, frozen finals, coverage limits and exact grass-payload parity. It also
+exercises 10,005 members and 100-planet batches with 20,000 unrelated raid facts.
+The catalog HTTP runner checks
 the endpoints through both Apache and the control proxy with authentication.
 
 See `tools/api/README.md` for disposable fixture setup and full-suite commands.

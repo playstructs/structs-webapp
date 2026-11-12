@@ -45,6 +45,8 @@ class ApiRoutingTest extends KernelTestCase
             ['/api/influence/contests/1/players', 'api_influence_players'],
             ['/api/influence/contests/1/players/page/2', 'api_influence_players_page'],
             ['/api/influence/contests/1/players/1-1', 'api_influence_player'],
+            ['/api/influence/contests/1/planets', 'api_influence_planets'],
+            ['/api/influence/contests/1/planets/2-1', 'api_influence_planet'],
             ['/api/influence/contests/1/history', 'api_influence_history'],
             ['/api/influence/contests/1/guilds/0-1/history', 'api_influence_guild_history'],
             ['/api/influence/contests/1/players/1-1/history', 'api_influence_player_history'],
@@ -113,7 +115,8 @@ class ApiRoutingTest extends KernelTestCase
         } catch (MethodNotAllowedException $expected) {
             $this->assertContains('GET', $expected->getAllowedMethods());
         }
-        foreach (['/api/influence/contests', '/api/influence/contests/1/players/1-1/history'] as $path) {
+        foreach (['/api/influence/contests', '/api/influence/contests/1/players/1-1/history',
+            '/api/influence/contests/1/planets', '/api/influence/contests/1/planets/2-1'] as $path) {
             $response = self::$kernel->handle(\Symfony\Component\HttpFoundation\Request::create($path));
             $this->assertSame(401, $response->getStatusCode());
         }

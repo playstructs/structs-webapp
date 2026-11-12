@@ -92,6 +92,7 @@ async function ready(base) {
                 '/api/influence/contests/page/1?chain_id=influence-http&limit=1',
                 influence, influence + '/standings?sector=0', influence + '/guilds/0-990970',
                 influence + '/players/page/1?limit=1&include_total=1', influence + '/players/1-990970',
+                influence + '/planets/2-990970', influence + '/planets?planet_ids=2-990970,2-999999',
                 ...['/history?group_by=guild_sector', '/guilds/0-990970/history?group_by=sector',
                     '/players/1-990970/history?group_by=sector'].map(p => influence + p + '&start_height=1000&end_height=1002&bucket_blocks=1'),
             ];
@@ -109,11 +110,28 @@ async function ready(base) {
                 if (route.includes('/history?')) {
                     assert.ok(body.data.samples.some(row => row.points === '300' && row.height === '1002'));
                 }
+                if (route.includes('/planets')) {
+                    const planet = Array.isArray(body.data) ? body.data[0] : body.data;
+                    assert.equal(planet.planet_id, '2-990970');
+                    assert.equal(planet.exists, true);
+                    assert.equal(planet.sector, 0);
+                    assert.equal(planet.holder, '1-990970');
+                    assert.equal(planet.holder_guild_id, '0-990970');
+                    assert.equal(planet.latest_raid.height, '1000');
+                    assert.deepEqual(planet.guild_coverage, [{guild_id:'0-990970', supporter_count:'1'}]);
+                    if (Array.isArray(body.data)) {
+                        assert.equal(body.data.length, 2);
+                        assert.equal(body.data[1].planet_id, '2-999999');
+                        assert.equal(body.data[1].exists, false);
+                        assert.deepEqual(body.data[1].guild_coverage, []);
+                    }
+                }
                 assert.match(response.headers.get('cache-control'), /no-store/);
                 checks += 2;
             }
             for (const [suffix, expected] of [['/standings?sector[]=0',400], ['/players/1-990970?sector=44',400],
-                ['/history?start_height=1002&end_height=1003',422], ['/players/1-999999',404]]) {
+                ['/history?start_height=1002&end_height=1003',422], ['/players/1-999999',404],
+                ['/planets',400], ['/planets?planet_ids[]=2-990970',400], ['/planets/1-990970',400]]) {
                 const response = await request(base, influence + suffix);
                 assert.equal(response.status, expected, surface + ' influence validation');
                 assert.equal((await response.json()).success, false);

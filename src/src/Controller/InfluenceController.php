@@ -49,6 +49,18 @@ class InfluenceController extends AbstractController
         return $manager->player($contest_id, $player_id, $request->query->all());
     }
 
+    #[Route('/contests/{contest_id}/planets', name: 'planets', requirements: ['contest_id' => '\d+'])]
+    public function planets(string $contest_id, Request $request, InfluenceManager $manager): Response
+    {
+        return $manager->planets($contest_id, $request->query->all());
+    }
+
+    #[Route('/contests/{contest_id}/planets/{planet_id}', name: 'planet', requirements: ['contest_id' => '\d+'])]
+    public function planet(string $contest_id, string $planet_id, Request $request, InfluenceManager $manager): Response
+    {
+        return $manager->planet($contest_id, $planet_id, $request->query->all());
+    }
+
     #[Route('/contests/{contest_id}/history', name: 'history', requirements: ['contest_id' => '\d+'])]
     public function history(string $contest_id, Request $request, InfluenceManager $manager): Response
     {

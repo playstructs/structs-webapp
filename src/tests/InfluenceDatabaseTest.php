@@ -160,6 +160,109 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
         } finally { $db->rollBack(); $db->close(); }
     }
 
+    public function testPlanetSnapshotsFollowTransfersClaimsAndContestBounds(): void
+    {
+        $db = $this->database();
+        try {
+            foreach (['planet_sectors', 'single_sector'] as $mode) {
+                // Earlier raids exist, but this new contest starts after them.
+                [, , $chain] = $this->fixture($db, $mode, true);
+                $cid = (string) $db->fetchOne('SELECT structs.influence_create_contest(:chain,1001,1005,1,:mode)', ['chain' => $chain, 'mode' => $mode]);
+                $api = new InfluenceManager($db);
+                $this->restrict($db);
+                $this->assertFalse($this->body($api->planet($cid, '2-1'))['data']['exists']);
+                $db->executeStatement('RESET ROLE');
+                $this->block($db, $chain, 1001, [['raid','1-1','0-1','2-1',127], ['raid','1-2','0-1','2-1',127]]);
+                $this->restrict($db);
+                $single = $this->body($api->planet($cid, '2-1'));
+                $p = $single['data'];
+                $this->assertTrue($p['exists']);
+                $this->assertSame($mode === 'single_sector' ? 0 : 127, $p['sector']);
+                $this->assertSame(127, $p['latest_raid']['source_sector']);
+                $this->assertSame('1-2', $p['holder'], 'Last event in the same block wins the claim');
+                $this->assertSame('0-1', $p['holder_guild_id']);
+                $this->assertSame('1-2', $p['latest_raid']['attacker']);
+                $this->assertSame('1001', $p['latest_raid']['height']);
+                $this->assertSame([['guild_id' => '0-1', 'supporter_count' => '2']], $p['guild_coverage']);
+                $batch = $this->body($api->planets($cid, ['planet_ids' => '2-999,2-1,2-999']));
+                $this->assertSame(['2-999','2-1'], array_column($batch['data'], 'planet_id'));
+                $this->assertSame($single['meta'], $batch['meta']);
+                $this->assertSame($p, $batch['data'][1]);
+                $empty = $batch['data'][0];
+                $this->assertFalse($empty['exists']);
+                foreach (['sector','holder','holder_guild_id','latest_raid'] as $key) $this->assertNull($empty[$key]);
+                $this->assertSame([], $empty['guild_coverage']);
+                $hundred = $this->body($api->planets($cid, ['planet_ids' => implode(',', array_map(fn ($i) => '2-' . $i, range(1, 100)))]));
+                $this->assertCount(100, $hundred['data']);
+                $this->body($api->planet('999999', '2-1'), 404);
+                $this->body($api->planets('999999', ['planet_ids' => '2-1']), 404);
+
+                $db->executeStatement('RESET ROLE');
+                $this->block($db, $chain, 1002, [['member','1-2','0-2']]);
+                $this->restrict($db);
+                $p = $this->body($api->planet($cid, '2-1'))['data'];
+                $this->assertSame('0-2', $p['holder_guild_id']);
+                $this->assertSame('0-1', $p['latest_raid']['attacker_guild'], 'Raid-time guild is immutable');
+                $this->assertSame([['guild_id'=>'0-1','supporter_count'=>'1'], ['guild_id'=>'0-2','supporter_count'=>'1']], $p['guild_coverage']);
+                $db->executeStatement('RESET ROLE');
+                $this->block($db, $chain, 1003, [['member','1-1','0-2']]);
+                $this->restrict($db);
+                $p = $this->body($api->planet($cid, '2-1'))['data'];
+                $this->assertSame([['guild_id'=>'0-2','supporter_count'=>'2']], $p['guild_coverage'], 'Old guild loses credit after its last supporter leaves');
+
+                $db->executeStatement('RESET ROLE');
+                $this->block($db, $chain, 1004, [['raid','1-4','0-3','2-1',127]]);
+                $this->restrict($db);
+                $cleared = $this->body($api->planet($cid, '2-1'))['data'];
+                $this->assertTrue($cleared['exists']);
+                $this->assertNull($cleared['holder']); $this->assertNull($cleared['holder_guild_id']);
+                $this->assertSame('1-4', $cleared['latest_raid']['attacker']);
+                $this->assertSame($p['guild_coverage'], $cleared['guild_coverage'], 'Ineligible success clears only the maintained claim');
+
+                $db->executeStatement('RESET ROLE');
+                $this->block($db, $chain, 1005, [['raid','1-3','0-2','2-1',127], ['member','1-3',null]]);
+                $this->restrict($db);
+                $final = $this->body($api->planet($cid, '2-1'));
+                $this->assertSame('final', $final['meta']['status']);
+                $this->assertSame('1-3', $final['data']['holder']);
+                $this->assertNull($final['data']['holder_guild_id'], 'Guildless holder contributes to no guild');
+                $this->assertSame([['guild_id'=>'0-2','supporter_count'=>'2']], $final['data']['guild_coverage']);
+                $db->executeStatement('RESET ROLE');
+                $this->block($db, $chain, 1006, [['member','1-3','0-1'], ['raid','1-4','0-3','2-1',127]]);
+                $this->restrict($db);
+                $after = $this->body($api->planet($cid, '2-1'));
+                $this->assertSame($final['data'], $after['data']);
+                $this->assertSame('1005', $after['meta']['height']);
+                $this->assertSame('1006', $after['meta']['source_height']);
+                $db->executeStatement('RESET ROLE');
+                $db->fetchOne('SELECT structs.influence_rebuild(:c)', ['c' => $cid]);
+                $this->restrict($db);
+                $rebuilt = $this->body($api->planet($cid, '2-1'));
+                $this->assertNotSame($final['meta']['build_id'], $rebuilt['meta']['build_id']);
+                $this->assertSame($final['data'], $rebuilt['data']);
+                $db->executeStatement('RESET ROLE');
+            }
+        } finally { $db->rollBack(); $db->close(); }
+    }
+
+    public function testPlanetCoverageBudgetNeverReturnsPartialGuildLists(): void
+    {
+        $db = $this->database();
+        try {
+            [$cid, $bid] = $this->fixture($db, 'single_sector', true);
+            $db->executeStatement("INSERT INTO structs.influence_guild_planet_win
+                SELECT :b,'0-'||(200000+g),'2-1',1 FROM generate_series(1,10000) g", ['b'=>$bid]);
+            $this->restrict($db); $api = new InfluenceManager($db);
+            $overflow = $this->body($api->planets($cid, ['planet_ids'=>'2-999,2-1']), 422);
+            $this->assertNull($overflow['data']);
+            $this->body($api->planet($cid, '2-1'), 422);
+            $db->executeStatement('RESET ROLE');
+            $db->executeStatement("DELETE FROM structs.influence_guild_planet_win WHERE build_id=:b AND guild='0-210000'", ['b'=>$bid]);
+            $this->restrict($db);
+            $this->assertCount(10000, $this->body($api->planet($cid, '2-1'))['data']['guild_coverage']);
+        } finally { $db->rollBack(); $db->close(); }
+    }
+
     public function testVerifiedRollupsPartialEdgesAndCheckpointOpeningMatchRaw(): void
     {
         $db = $this->database();
@@ -232,7 +335,10 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
                 WHERE chain_id=:chain AND height=2000 AND event_index>0', ['b' => $bid, 'chain' => $chain]);
             $db->executeStatement('INSERT INTO structs.influence_planet_claim SELECT :b,planet,sector,chain_id,raid_id,NULL
                 FROM structs.influence_raid WHERE chain_id=:chain AND height=2000 AND event_index>0', ['b' => $bid, 'chain' => $chain]);
-            foreach (['influence_raid','influence_member','influence_player_planet_win','influence_contest_planet'] as $table) {
+            $db->executeStatement("INSERT INTO structs.influence_guild_planet_win SELECT :b,'0-3',planet,1
+                FROM structs.influence_raid WHERE chain_id=:chain AND height=2000 AND event_index>0", ['b' => $bid, 'chain' => $chain]);
+            foreach (['influence_raid','influence_member','influence_player_planet_win','influence_contest_planet',
+                'influence_planet_claim','influence_guild_planet_win'] as $table) {
                 $db->executeStatement('ANALYZE structs.' . $table);
             }
             $this->restrict($db); $api = new InfluenceManager($db);
@@ -262,7 +368,20 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
             $walk($plan[0]['Plan']);
             $this->assertLessThan(100, $scanned, 'Personal history must not scan 20000 unrelated raid facts');
 
-            fwrite(STDERR, sprintf("\nInfluence scale: 10005 players, 20007 raid facts; player page %.1f ms, personal history %.1f ms\n", $pageMs, $historyMs));
+            $ids = array_merge(['2-1'], array_map(fn ($i) => '2-' . $i, range(200101, 200199)));
+            $start = microtime(true);
+            $planets = $this->body($api->planets($cid, ['planet_ids'=>implode(',', $ids)]));
+            $planetsMs = (microtime(true) - $start) * 1000;
+            $this->assertCount(100, $planets['data']);
+            $this->assertSame($ids, array_column($planets['data'], 'planet_id'));
+            $this->assertSame([['guild_id'=>'0-2','supporter_count'=>'3']], $planets['data'][0]['guild_coverage']);
+            $this->assertLessThan(5000, $planetsMs);
+            $plan = json_decode($db->fetchOne('EXPLAIN (ANALYZE, FORMAT JSON) ' . InfluenceQuery::PLANETS,
+                ['build'=>$bid,'planets'=>json_encode($ids)]), true);
+            $scanned = 0; $walk($plan[0]['Plan']);
+            $this->assertLessThan(200, $scanned, 'Planet snapshots must seek latest raids without scanning unrelated raid history');
+
+            fwrite(STDERR, sprintf("\nInfluence scale: 10005 players, 20007 raid facts; player page %.1f ms, personal history %.1f ms, 100 planets %.1f ms\n", $pageMs, $historyMs, $planetsMs));
         } finally { $db->rollBack(); $db->close(); }
     }
 
@@ -286,6 +405,11 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
                 $this->assertSame($canonical($standing['data']), $canonical($scores['data']['standings']));
                 $this->assertSame($standing['meta']['sectors'], $scores['context']['sectors']);
                 $this->assertSame($standing['meta']['status'], $scores['context']['status']);
+                foreach (['2-1', '2-2', '2-3'] as $planet) {
+                    $frame = array_values(array_filter($frames, fn ($f) => $f['category'] === 'influence_planet' && $f['data']['planet_id'] === $planet))[0];
+                    $data = $this->body($api->planet($cid, $planet))['data'];
+                    $this->assertSame($canonical($frame['data']), $canonical($data));
+                }
                 foreach (['1-1', '1-2', '1-3', '1-4', '1-5'] as $player) {
                     $frame = array_values(array_filter($frames, fn ($f) => $f['category'] === 'influence_player' && $f['data']['player_id'] === $player))[0];
                     $data = $this->body($api->player($cid, $player))['data'];
@@ -325,6 +449,8 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
             $db->executeStatement("UPDATE structs.influence_projection_build SET state='invalid' WHERE build_id=:b", ['b' => $bid]);
             $r = $this->body($api->standings($cid), 503);
             $this->assertFalse($r['meta']['data_ready']);
+            $this->body($api->planet($cid, '2-1'), 503);
+            $this->body($api->planets($cid, ['planet_ids' => '2-1']), 503);
         } finally { $db->rollBack(); $db->close(); }
     }
 }

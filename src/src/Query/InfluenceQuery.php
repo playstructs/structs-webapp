@@ -69,6 +69,34 @@ FROM selected m LEFT JOIN wins w USING(player) LEFT JOIN claims c USING(player) 
 SQL;
     }
 
+    /** Same payload as influence_grass_planet, using only the webapp's SELECT grants.
+     * Bounded index lookups: no raid-history scan and no per-planet API/DB round trips.
+     * Guard the aggregate before producing JSON; never return truncated coverage.
+     */
+    public const PLANETS = <<<'SQL'
+WITH selected AS MATERIALIZED (
+ SELECT value AS planet,ordinality FROM jsonb_array_elements_text(CAST(:planets AS jsonb)) WITH ORDINALITY
+), coverage AS MATERIALIZED (
+ SELECT s.planet,w.guild,w.supporter_count FROM selected s CROSS JOIN LATERAL (
+  SELECT guild,supporter_count FROM structs.influence_guild_planet_win
+  WHERE build_id=:build AND planet=s.planet LIMIT 10001
+ ) w LIMIT 10001
+), budget AS (SELECT count(*)<=10000 AS within_budget FROM coverage)
+SELECT budget.within_budget,CASE WHEN budget.within_budget THEN jsonb_build_object(
+ 'planet_id',s.planet,'exists',c.planet IS NOT NULL,'sector',c.sector,'holder',c.holder,
+ 'holder_guild_id',m.guild,'latest_raid',CASE WHEN r.raid_id IS NULL THEN NULL ELSE jsonb_build_object(
+ 'raid_id',r.raid_id::text,'height',r.height::text,'attacker',r.attacker,'defender',r.defender,
+ 'attacker_guild',r.attacker_guild,'defender_guild',r.defender_guild,'source_sector',r.sector) END,
+ 'guild_coverage',coalesce((SELECT jsonb_agg(jsonb_build_object(
+  'guild_id',guild,'supporter_count',supporter_count::text) ORDER BY guild)
+  FROM coverage WHERE planet=s.planet),'[]'::jsonb)) END::text AS planet
+FROM selected s CROSS JOIN budget
+LEFT JOIN structs.influence_planet_claim c ON c.build_id=:build AND c.planet=s.planet
+LEFT JOIN structs.influence_member m ON m.build_id=:build AND m.player=c.holder
+LEFT JOIN structs.influence_raid r ON r.raid_id=c.latest_raid_id
+ORDER BY s.ordinality
+SQL;
+
     /** Only complete, verified 1000-height buckets can replace raw history. */
     public const GUILD_HISTORY = <<<'SQL'
 WITH subjects AS MATERIALIZED (
