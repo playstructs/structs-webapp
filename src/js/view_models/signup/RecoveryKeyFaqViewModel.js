@@ -35,7 +35,7 @@ export class RecoveryKeyFaqViewModel extends AbstractViewModel {
       <div class="recovery-key-faq-layout">
         <div class="recovery-key-faq-question-group">
           <div class="sui-text-secondary">What is a Recovery Key?</div>
-          <div>Your recovery key is the 12-word secrect code that was given to you created your account.</div>
+          <div>Your recovery key is the 12-word secret code that was given to you when you created your account.</div>
         </div>
         <div class="recovery-key-faq-question-group">
           <div class="sui-text-secondary">Why do I need my Recovery Key?</div>

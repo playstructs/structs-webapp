@@ -13,6 +13,9 @@ import {InvalidTargetClickTest} from "./InvalidTargetClickTest";
 import {ManageAlphaInfusedTest} from "./ManageAlphaInfusedTest";
 import {TutorialModeTest} from "./TutorialModeTest";
 import {ReactionBadgeTest} from "./ReactionBadgeTest";
+import {DeviceLogoutRouteTest} from "./DeviceLogoutRouteTest";
+import {RecoveryKeyTest} from "./RecoveryKeyTest";
+import {GrantableDevicePermissionsTest} from "./GrantableDevicePermissionsTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -28,5 +31,8 @@ import {ReactionBadgeTest} from "./ReactionBadgeTest";
 (new ManageAlphaInfusedTest()).run();
 (new TutorialModeTest()).run();
 (new ReactionBadgeTest()).run();
+(new DeviceLogoutRouteTest()).run();
+(new RecoveryKeyTest()).run();
+(new GrantableDevicePermissionsTest()).run();
 
 (new APIReadinessTest()).run();

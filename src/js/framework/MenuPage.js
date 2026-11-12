@@ -295,12 +295,13 @@ export class MenuPage {
     initCustomPageTemplateCode = () => {}
   ) {
 
-    MenuPage.setNavItems(MenuPage.menuNavItems, activeNavItemId);
-
-    // Before login (e.g. Activate Device) there's no game behind the menu to close to.
+    // Before login (e.g. Activate Device, Recover Account) there's no game behind
+    // the menu: no tabs to open and nothing to close to.
     if (MenuPage.gameState?.keyPlayers[PLAYER_TYPES.PLAYER]?.player) {
+      MenuPage.setNavItems(MenuPage.menuNavItems, activeNavItemId);
       MenuPage.enableCloseBtn();
     } else {
+      MenuPage.setNavItems([new NavItemDTO('nav-item-structs', 'Structs')], 'nav-item-structs');
       MenuPage.disableCloseBtn();
     }
 

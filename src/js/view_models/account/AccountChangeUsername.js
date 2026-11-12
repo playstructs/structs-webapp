@@ -2,6 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {USERNAME_PATTERN} from "../../constants/RegexPattern";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {bindSubmitButtonToInput} from "../../util/SubmitButtonToggle";
 
 export class AccountChangeUsername extends AbstractViewModel {
 
@@ -35,19 +36,7 @@ export class AccountChangeUsername extends AbstractViewModel {
     }
 
     const usernameInput = document.getElementById(this.changeUsernameInputId);
-    usernameInput.addEventListener('keyup', () => {
-      const submitBtn = document.getElementById(this.changeUsernameBtnId);
-
-      if (usernameInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('sui-mod-disabled');
-        submitBtn.classList.add('sui-mod-primary');
-      } else if (usernameInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
-        submitBtn.disabled = true;
-        submitBtn.classList.remove('sui-mod-primary');
-        submitBtn.classList.add('sui-mod-disabled');
-      }
-    });
+    bindSubmitButtonToInput(usernameInput, () => document.getElementById(this.changeUsernameBtnId));
 
     const submitBtnHandler = () => {
       document.getElementById(this.changeUsernameErrorId).classList.remove('sui-mod-show');

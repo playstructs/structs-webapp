@@ -19,7 +19,7 @@ export class Orientation6ViewModel extends AbstractViewModel {
         id="dialogueStructsHint" 
         class="sui-mod-secondary"
         href="javascript: void(0)" 
-        data-sui-tooltip="A civilization of  machines, discovered approximately 1200 years ago."
+        data-sui-tooltip="A civilization of machines, discovered approximately 1200 years ago."
       >Structs.</a>`,
 
       `Structs are not officially recognized as sentient lifeforms by the Alpha Star Council, granting them sole access to Alpha-laced worlds.`,

@@ -22,11 +22,16 @@ export class AccountActivatingDeviceViewModel extends AbstractViewModel {
   initPageCode() {
     const signal=MenuPage.router.navigationSignal;
     this.authManager.activateDevice(this.playerAddressPending,signal).then(success=>{
-      if (!signal.aborted) MenuPage.router.goto('Account',success ? 'deviceActivationComplete' : 'deviceActivationCancelled');
+      if (signal.aborted) return;
+      if (success) {
+        MenuPage.router.goto('Account','deviceActivationComplete');
+      } else {
+        MenuPage.router.goto('Account','deviceActivationCancelled',{failed: true});
+      }
     }).catch(error=>{
       if (!signal.aborted) {
         console.debug('[DeviceActivation] approval unavailable:',error);
-        MenuPage.router.goto('Account','deviceActivationCancelled');
+        MenuPage.router.goto('Account','deviceActivationCancelled',{failed: true});
       }
     });
   }

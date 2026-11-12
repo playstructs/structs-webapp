@@ -2,6 +2,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {ConfirmTemplate} from "../templates/ConfirmTemplate";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {logoutWording} from "./LogoutWording";
 
 export class LogoutPermissionsWarningViewModel extends AbstractViewModel {
 
@@ -17,41 +18,40 @@ export class LogoutPermissionsWarningViewModel extends AbstractViewModel {
   }
 
   render() {
+    const wording = logoutWording(this.gameState, this.playerAddress);
     const view = new ConfirmTemplate();
 
-    view.headerBtnLabel = 'Manage Device';
+    view.headerBtnLabel = wording.headerBtnLabel;
 
     view.messageHeaderColorClass = 'sui-mod-warning';
     view.messageHeaderIconClass = 'icon-alert';
     view.messageHeaderText = 'IMPORTANT';
     view.messageBody1HTML = `
-      This is the only device with Manage Device permissions active. If these permissions are removed, you will be unable to activate new devices without using your
-      <a 
-        id="recovery-key-hint" 
+      This is the only device that can manage your devices. ${wording.ifLoggedOut}, you will be unable to activate new devices without using your
+      <a
+        id="recovery-key-hint"
         class="sui-mod-secondary"
-        href="javascript: void(0)" 
-        data-sui-tooltip="The Primary Account Address is the master address associated with your account, rather than a specific device."
+        href="javascript: void(0)"
+        data-sui-tooltip="The words you saved when you created your account."
       >Recovery Key.</a>
     `;
 
     view.confirmBtn1Enabled = true;
-    view.confirmBtn1Label = 'Save Changes';
+    view.confirmBtn1Label = wording.stayLabel;
     view.confirmBtn1ColorClass = 'sui-mod-primary';
 
     view.confirmBtn2Enabled = true;
-    view.confirmBtn2Label = 'Cancel';
+    view.confirmBtn2Label = wording.logoutLabel;
     view.confirmBtn2ColorClass = 'sui-mod-destructive';
 
     view.initPageCode = () => {
-      document.getElementById(view.confirmBtn1Id).addEventListener('click', () => {
+      document.getElementById(view.confirmBtn1Id).addEventListener('click', wording.stay);
+      document.getElementById(view.confirmBtn2Id).addEventListener('click', () => {
         if (this.isPrimaryDevice) {
           MenuPage.router.goto('Auth', 'logout');
         } else {
           MenuPage.router.goto('Auth', 'logout', this.playerAddress);
         }
-      });
-      document.getElementById(view.confirmBtn2Id).addEventListener('click', () => {
-        MenuPage.router.back();
       });
     };
 
