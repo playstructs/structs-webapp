@@ -255,20 +255,22 @@ Block heights, IDs, counts, points, ranks and deltas are exact decimal strings;
 small sectors and paging fields remain JSON integers.
 
 Current guild scores read maintained aggregates. Player pages count wins only
-for selected page members. Guild history starts from a verified checkpoint when
-available and combines whole 1,000-height continuous-aggregate buckets with raw
-edge/tail deltas, without overlap. A missing, stale-generation or ahead-of-build
-refresh marker authorizes neither rollups nor checkpoints. Correctness does not
-require the refresh job, though regular refresh reduces long-range query cost.
+for selected page members.
 
-Personal history currently uses
-indexed first wins, seeks opening claims per won planet, then reads successful
-raids on those planets within the requested range in canonical event order.
-It handles repeated wins, same-block changes, ineligible-success claim clearing,
-and later guild moves without scanning unrelated players' raid history. A very
-active player with many attacked planets can still require substantial work;
-monitor these reads before moving the API onto the personal-delta hypertable
-added by the later `influence-grass-20261111` migration.
+Guild history is one pass over the `influence_score_change` height hypertable,
+grouped in SQL by the requested labels, so its work scales with the score changes
+in range rather than with guilds x buckets. Whole 1,000-height
+continuous-aggregate buckets replace raw deltas only where each bucket falls inside
+a single output bin: always for the opening balance before `start_height`, and for
+the charted range too when `start_height` and `bucket_blocks` are both multiples
+of 1,000. A missing, stale-generation or ahead-of-build refresh marker authorizes
+no rollups. Checkpoints are not read. Correctness does not require the refresh
+job, though regular refresh reduces long-range query cost.
+
+Personal history reads the per-block personal deltas that the projector maintains
+in the `influence_player_score_change` hypertable (one index range for one player).
+It needs SELECT on that table, granted to `structs_webapp` by structs-pg
+`influence-player-history-read-20261111`; deploy that migration before this API.
 
 Each SQL statement is capped at five seconds. Validation errors return 400,
 missing contests/participants 404, uncovered ranges or oversized result sets 422,

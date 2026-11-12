@@ -208,11 +208,24 @@ SQL, $this->scoreParams($c) + ['player' => $player, 'sectors' => json_encode($c[
                     $groups[json_encode($labels)] = $labels;
                 }
                 if (count($groups) * (count($bins) + 1) > P::MAX_ROWS) throw new HttpException(422, 'History exceeds 10000 rows; narrow the scope or increase bucket_blocks');
-                $params = ['build' => $c['build_id'], 'sector' => $sector, 'contest_start' => $c['start_height'], 'start' => $start];
+                $params = [
+                    'build' => $c['build_id'],
+                    'sector' => $sector,
+                    'contest_start' => $c['start_height'],
+                    'start' => $start,
+                    'end' => $end,
+                    'bucket' => $bucket,
+                ];
                 if ($kind === 'player') {
-                    $rows = $this->db->fetchAllAssociative(InfluenceQuery::PLAYER_HISTORY, $params + ['chain' => $c['chain_id'], 'player' => $id, 'end' => $end, 'bucket' => $bucket]);
+                    $rows = $this->db->fetchAllAssociative(InfluenceQuery::PLAYER_HISTORY, $params + ['player' => $id]);
                 } else {
-                    $rows = $this->db->fetchAllAssociative(InfluenceQuery::GUILD_HISTORY, $params + ['guild' => $kind === 'guild' ? $id : null, 'marker' => $c['complete_before_height'], 'bins' => json_encode($bins)]);
+                    [$rollLo, $rollHi] = $this->rollupSpan($c, $start, $end, $bucket);
+                    $rows = $this->db->fetchAllAssociative(InfluenceQuery::GUILD_HISTORY, $params + [
+                        'guild' => $kind === 'guild' ? $id : null,
+                        'by_guild' => $kind === 'guild' || in_array($group, ['guild', 'guild_sector'], true) ? 'true' : 'false',
+                        'roll_lo' => $rollLo,
+                        'roll_hi' => $rollHi,
+                    ]);
                 }
                 $body->data = $this->chart($rows, $groups, $bins, $c, $kind, $id, $group, $sector);
                 $body->meta += ['score_kind' => $kind === 'player' ? 'personal' : 'guild', 'additive_to_guild' => $kind !== 'player',
@@ -221,6 +234,26 @@ SQL, $this->scoreParams($c) + ['player' => $player, 'sectors' => json_encode($c[
                     'range_semantics' => 'inclusive_contest_balances', 'rollup_complete_before_height' => $kind === 'player' ? null : $c['complete_before_height']];
             });
         });
+    }
+
+    /**
+     * Half-open [lo, hi) span of verified 1000-height rollup buckets that each fall
+     * inside one bin. Buckets wholly before start always belong to the opening
+     * balance; buckets after it only align with bins when start and bucket_blocks
+     * are both multiples of 1000. An empty span is [end+1, end+1].
+     *
+     * @return array{int, int}
+     */
+    private function rollupSpan(array $c, int $start, int $end, int $bucket): array
+    {
+        $lo = intdiv((int) $c['start_height'] + 999, 1000) * 1000;
+        $aligned = $start % 1000 === 0 && $bucket % 1000 === 0;
+        $hi = min(
+            (int) $c['complete_before_height'],
+            $aligned ? intdiv($end + 1, 1000) * 1000 : intdiv($start, 1000) * 1000
+        );
+
+        return $lo < $hi ? [$lo, $hi] : [$end + 1, $end + 1];
     }
 
     private function chart(array $rows, array $groups, array $bins, array $c, string $kind, ?string $id, string $group, ?int $sector): array

@@ -263,7 +263,7 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
         } finally { $db->rollBack(); $db->close(); }
     }
 
-    public function testVerifiedRollupsPartialEdgesAndCheckpointOpeningMatchRaw(): void
+    public function testVerifiedRollupsAndPartialEdgesMatchRawAndCheckpointsAreIgnored(): void
     {
         $db = $this->database();
         try {
@@ -282,7 +282,7 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
             $db->executeStatement('INSERT INTO structs.influence_checkpoint SELECT :b,1999,guild,sector,sum(unique_delta),sum(claim_delta)
                 FROM structs.influence_score_change_1000 WHERE build_id=:b AND bucket<2000 GROUP BY guild,sector', ['b' => $bid]);
             foreach ($queries as $i => $q) $this->assertSame($raw[$i], $this->body($api->history($cid, 'contest', null, $q))['data']);
-            // A marker from another build must not authorize either rollups or checkpoints.
+            // A marker from another build must not authorize rollups; checkpoints are never read.
             $db->executeStatement('UPDATE structs.influence_rollup_coverage SET refreshed_revision=-1 WHERE build_id=:b', ['b' => $bid]);
             $db->executeStatement('UPDATE structs.influence_checkpoint SET unique_planets=999999 WHERE build_id=:b', ['b' => $bid]);
             foreach ($queries as $i => $q) $this->assertSame($raw[$i], $this->body($api->history($cid, 'contest', null, $q))['data']);
@@ -355,18 +355,21 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
             $this->assertSame('400', $p['data']['samples'][array_key_last($p['data']['samples'])]['points']);
             $this->assertLessThan(5000, $historyMs); $this->assertLessThan(5000, $pageMs);
             $plan = json_decode($db->fetchOne('EXPLAIN (ANALYZE, FORMAT JSON) ' . InfluenceQuery::PLAYER_HISTORY,
-                ['build' => $bid, 'chain' => $chain, 'player' => '1-2', 'sector' => null,
+                ['build' => $bid, 'player' => '1-2', 'sector' => null,
                  'contest_start' => 1000, 'start' => 1001, 'end' => 2505, 'bucket' => 100]), true);
-            $scanned = 0;
+            // Rows read per relation; hypertable chunks report their own chunk names.
+            $scanned = [];
             $walk = function (array $node) use (&$walk, &$scanned): void {
-                if (($node['Relation Name'] ?? '') === 'influence_raid') {
-                    $scanned += (($node['Actual Rows'] ?? 0) + ($node['Rows Removed by Filter'] ?? 0)
+                if (isset($node['Relation Name'])) {
+                    $scanned[$node['Relation Name']] = ($scanned[$node['Relation Name']] ?? 0)
+                        + (($node['Actual Rows'] ?? 0) + ($node['Rows Removed by Filter'] ?? 0)
                         + ($node['Rows Removed by Index Recheck'] ?? 0)) * ($node['Actual Loops'] ?? 0);
                 }
                 foreach ($node['Plans'] ?? [] as $child) $walk($child);
             };
             $walk($plan[0]['Plan']);
-            $this->assertLessThan(100, $scanned, 'Personal history must not scan 20000 unrelated raid facts');
+            $this->assertArrayNotHasKey('influence_raid', $scanned, 'Personal history reads maintained deltas, not raid facts');
+            $this->assertLessThan(100, array_sum($scanned), 'Personal history must read only this player\'s deltas');
 
             $ids = array_merge(['2-1'], array_map(fn ($i) => '2-' . $i, range(200101, 200199)));
             $start = microtime(true);
@@ -378,8 +381,8 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
             $this->assertLessThan(5000, $planetsMs);
             $plan = json_decode($db->fetchOne('EXPLAIN (ANALYZE, FORMAT JSON) ' . InfluenceQuery::PLANETS,
                 ['build'=>$bid,'planets'=>json_encode($ids)]), true);
-            $scanned = 0; $walk($plan[0]['Plan']);
-            $this->assertLessThan(200, $scanned, 'Planet snapshots must seek latest raids without scanning unrelated raid history');
+            $scanned = []; $walk($plan[0]['Plan']);
+            $this->assertLessThan(200, $scanned['influence_raid'] ?? 0, 'Planet snapshots must seek latest raids without scanning unrelated raid history');
 
             fwrite(STDERR, sprintf("\nInfluence scale: 10005 players, 20007 raid facts; player page %.1f ms, personal history %.1f ms, 100 planets %.1f ms\n", $pageMs, $historyMs, $planetsMs));
         } finally { $db->rollBack(); $db->close(); }
