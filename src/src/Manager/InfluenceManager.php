@@ -219,13 +219,28 @@ SQL, $this->scoreParams($c) + ['player' => $player, 'sectors' => json_encode($c[
                 if ($kind === 'player') {
                     $rows = $this->db->fetchAllAssociative(InfluenceQuery::PLAYER_HISTORY, $params + ['player' => $id]);
                 } else {
-                    [$rollLo, $rollHi] = $this->rollupSpan($c, $start, $end, $bucket);
-                    $rows = $this->db->fetchAllAssociative(InfluenceQuery::GUILD_HISTORY, $params + [
+                    $params += [
                         'guild' => $kind === 'guild' ? $id : null,
                         'by_guild' => $kind === 'guild' || in_array($group, ['guild', 'guild_sector'], true) ? 'true' : 'false',
-                        'roll_lo' => $rollLo,
-                        'roll_hi' => $rollHi,
-                    ]);
+                    ];
+                    $marker = intdiv((int) $c['complete_before_height'], 1000) * 1000;
+                    if ($marker <= (int) $c['start_height']) {
+                        // No verified materialization: one scan also supplies the opening balance.
+                        $rows = $this->db->fetchAllAssociative(InfluenceQuery::GUILD_HISTORY_RAW, $params);
+                    } else {
+                        $bases = $this->db->fetchAllAssociative(InfluenceQuery::GUILD_HISTORY_BASES, [
+                            'build' => $c['build_id'], 'contest_start' => $c['start_height'], 'start' => $start,
+                            'marker' => $marker, 'guild' => $params['guild'], 'sector' => $sector,
+                        ]);
+                        $openingLo = $start;
+                        foreach ($bases as $base) $openingLo = min($openingLo, (int) $base['lo']);
+                        [$raw, $rollLo, $rollHi] = $this->guildHistoryRanges($bins, $marker);
+                        $rows = $this->db->fetchAllAssociative(InfluenceQuery::GUILD_HISTORY, $params + [
+                            'marker' => $marker, 'raw_ranges' => json_encode($raw, JSON_THROW_ON_ERROR),
+                            'roll_lo' => $rollLo, 'roll_hi' => $rollHi,
+                            'opening_bases' => json_encode($bases, JSON_THROW_ON_ERROR), 'opening_lo' => $openingLo,
+                        ]);
+                    }
                 }
                 $body->data = $this->chart($rows, $groups, $bins, $c, $kind, $id, $group, $sector);
                 $body->meta += ['score_kind' => $kind === 'player' ? 'personal' : 'guild', 'additive_to_guild' => $kind !== 'player',
@@ -237,23 +252,30 @@ SQL, $this->scoreParams($c) + ['player' => $player, 'sectors' => json_encode($c[
     }
 
     /**
-     * Half-open [lo, hi) span of verified 1000-height rollup buckets that each fall
-     * inside one bin. Buckets wholly before start always belong to the opening
-     * balance; buckets after it only align with bins when start and bucket_blocks
-     * are both multiples of 1000. An empty span is [end+1, end+1].
+     * Split chart bins into whole verified 1000-height buckets and raw edges.
+     * Merge adjacent raw edges, including all fine bins when no rollup fits.
+     * SQL reads rollups once and filters out buckets crossing a chart boundary.
      *
-     * @return array{int, int}
+     * @return array{array, int, int}
      */
-    private function rollupSpan(array $c, int $start, int $end, int $bucket): array
+    private function guildHistoryRanges(array $bins, int $marker): array
     {
-        $lo = intdiv((int) $c['start_height'] + 999, 1000) * 1000;
-        $aligned = $start % 1000 === 0 && $bucket % 1000 === 0;
-        $hi = min(
-            (int) $c['complete_before_height'],
-            $aligned ? intdiv($end + 1, 1000) * 1000 : intdiv($start, 1000) * 1000
-        );
-
-        return $lo < $hi ? [$lo, $hi] : [$end + 1, $end + 1];
+        $raw = []; $rollLo = null; $rollHi = 0;
+        $append = static function (int $lo, int $hi) use (&$raw): void {
+            if ($lo > $hi) return;
+            $last = array_key_last($raw);
+            if ($last !== null && $raw[$last]['hi'] + 1 === $lo) $raw[$last]['hi'] = $hi;
+            else $raw[] = ['lo' => $lo, 'hi' => $hi];
+        };
+        foreach ($bins as $bin) {
+            $lo = intdiv($bin['lo'] + 999, 1000) * 1000;
+            $hi = min($marker, intdiv($bin['hi'] + 1, 1000) * 1000);
+            if ($lo < $hi) {
+                $rollLo ??= $lo; $rollHi = $hi;
+                $append($bin['lo'], $lo - 1); $append($hi, $bin['hi']);
+            } else $append($bin['lo'], $bin['hi']);
+        }
+        return [$raw, $rollLo ?? 0, $rollHi];
     }
 
     private function chart(array $rows, array $groups, array $bins, array $c, string $kind, ?string $id, string $group, ?int $sector): array

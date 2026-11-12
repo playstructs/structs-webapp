@@ -97,30 +97,83 @@ LEFT JOIN structs.influence_raid r ON r.raid_id=c.latest_raid_id
 ORDER BY s.ordinality
 SQL;
 
+    /** Missing/stale coverage: one raw scan, including the opening balance. */
+    public const GUILD_HISTORY_RAW = <<<'SQL'
+SELECT CASE WHEN CAST(:by_guild AS boolean) THEN guild END AS guild_id,sector,
+ CASE WHEN height<CAST(:start AS bigint) THEN -1
+  ELSE ((height-CAST(:start AS bigint))/CAST(:bucket AS bigint))::int END AS bin,
+ sum(unique_delta)::text AS unique_delta,sum(claim_delta)::text AS claim_delta
+FROM structs.influence_score_change
+WHERE build_id=:build AND height BETWEEN CAST(:contest_start AS bigint) AND CAST(:end AS bigint)
+AND (CAST(:guild AS text) IS NULL OR guild=:guild) AND (CAST(:sector AS smallint) IS NULL OR sector=:sector)
+GROUP BY 1,2,3
+SQL;
+
+    /** One batched checkpoint lookup supplies a constant lower bound for chunk pruning. */
+    public const GUILD_HISTORY_BASES = <<<'SQL'
+ SELECT s.guild,s.sector,(coalesce(cp.height,CAST(:contest_start AS bigint)-1)+1)::text AS lo,
+ coalesce(cp.unique_planets,0)::text AS u,coalesce(cp.held_planets,0)::text AS c
+ FROM structs.influence_guild_sector s LEFT JOIN LATERAL (
+  SELECT height,unique_planets,held_planets FROM structs.influence_checkpoint
+  WHERE build_id=:build AND guild=s.guild AND sector=s.sector
+  AND height<CAST(:start AS bigint) AND height<CAST(:marker AS bigint)
+  AND height>=CAST(:contest_start AS bigint)-1 ORDER BY height DESC LIMIT 1
+ ) cp ON true
+ WHERE s.build_id=:build AND (CAST(:guild AS text) IS NULL OR s.guild=:guild)
+ AND (CAST(:sector AS smallint) IS NULL OR s.sector=:sector)
+SQL;
+
     /**
-     * One pass over the height hypertable, grouped in SQL by the requested labels.
-     * Raw deltas cover [contest_start, roll_lo) and [roll_hi, end]; verified
-     * 1000-height rollups cover [roll_lo, roll_hi). The caller opens a rollup span
-     * only where each bucket falls inside a single bin, so every source row lands
-     * in exactly one bin. Bin -1 is the opening balance at start-1.
+     * Opening checkpoints and their tails share the caller's repeatable snapshot.
+     * Chart reads are shared across guilds: one rollup scan plus merged raw edges,
+     * never a separate query for every guild x sector x chart bin.
      */
     public const GUILD_HISTORY = <<<'SQL'
+WITH opening_ranges AS MATERIALIZED (
+ SELECT *,((lo+999)/1000)*1000 AS roll_lo,
+ least((CAST(:start AS bigint)/1000)*1000,CAST(:marker AS bigint)) AS roll_hi
+ FROM jsonb_to_recordset(CAST(:opening_bases AS jsonb)) AS bases(guild text,sector smallint,lo bigint,u numeric,c numeric)
+), opening AS (
+ SELECT o.guild,o.sector,CAST(:start AS bigint)-1 AS h,o.u+coalesce(d.u,0) AS u,o.c+coalesce(d.c,0) AS c
+ FROM opening_ranges o LEFT JOIN LATERAL (
+  SELECT sum(u) u,sum(c) c FROM (
+   SELECT unique_delta u,claim_delta c FROM structs.influence_score_change
+   WHERE build_id=:build AND guild=o.guild AND sector=o.sector AND height>=o.lo
+   AND height>=CAST(:opening_lo AS bigint) AND height<CAST(:start AS bigint)
+   AND height<=CASE WHEN o.roll_lo<o.roll_hi THEN least(CAST(:start AS bigint)-1,o.roll_lo-1) ELSE CAST(:start AS bigint)-1 END
+   UNION ALL
+   SELECT unique_delta,claim_delta FROM structs.influence_score_change_1000
+   WHERE o.roll_lo<o.roll_hi AND build_id=:build AND guild=o.guild AND sector=o.sector
+   AND bucket>=o.roll_lo AND bucket<o.roll_hi
+   UNION ALL
+   SELECT unique_delta,claim_delta FROM structs.influence_score_change
+   WHERE o.roll_lo<o.roll_hi AND build_id=:build AND guild=o.guild AND sector=o.sector
+   AND height>=CAST(:opening_lo AS bigint)
+   AND height>=o.roll_hi AND height<CAST(:start AS bigint)
+  ) parts
+ ) d ON true
+)
 SELECT CASE WHEN CAST(:by_guild AS boolean) THEN guild END AS guild_id,sector,
  CASE WHEN h<CAST(:start AS bigint) THEN -1
   ELSE ((h-CAST(:start AS bigint))/CAST(:bucket AS bigint))::int END AS bin,
  sum(u)::text AS unique_delta,sum(c)::text AS claim_delta
 FROM (
- SELECT guild,sector,height AS h,unique_delta AS u,claim_delta AS c FROM structs.influence_score_change
- WHERE build_id=:build AND height BETWEEN CAST(:contest_start AS bigint) AND CAST(:roll_lo AS bigint)-1
- AND (CAST(:guild AS text) IS NULL OR guild=:guild) AND (CAST(:sector AS smallint) IS NULL OR sector=:sector)
+ SELECT guild,sector,h,u,c FROM opening
  UNION ALL
  SELECT guild,sector,bucket,unique_delta,claim_delta FROM structs.influence_score_change_1000
  WHERE build_id=:build AND bucket>=CAST(:roll_lo AS bigint) AND bucket<CAST(:roll_hi AS bigint)
+ AND (bucket-CAST(:start AS bigint))/CAST(:bucket AS bigint)=(bucket+999-CAST(:start AS bigint))/CAST(:bucket AS bigint)
  AND (CAST(:guild AS text) IS NULL OR guild=:guild) AND (CAST(:sector AS smallint) IS NULL OR sector=:sector)
  UNION ALL
- SELECT guild,sector,height,unique_delta,claim_delta FROM structs.influence_score_change
- WHERE build_id=:build AND height BETWEEN CAST(:roll_hi AS bigint) AND CAST(:end AS bigint)
- AND (CAST(:guild AS text) IS NULL OR guild=:guild) AND (CAST(:sector AS smallint) IS NULL OR sector=:sector)
+ SELECT d.guild,d.sector,d.height,d.unique_delta,d.claim_delta
+ FROM jsonb_to_recordset(CAST(:raw_ranges AS jsonb)) AS edges(lo bigint,hi bigint)
+ CROSS JOIN LATERAL (
+  SELECT guild,sector,height,unique_delta,claim_delta FROM structs.influence_score_change
+  WHERE build_id=:build AND height BETWEEN CAST(:start AS bigint) AND CAST(:end AS bigint)
+  AND height BETWEEN edges.lo AND edges.hi
+  AND (CAST(:guild AS text) IS NULL OR guild=:guild) AND (CAST(:sector AS smallint) IS NULL OR sector=:sector)
+  OFFSET 0
+ ) d
 ) d
 GROUP BY 1,2,3
 SQL;

@@ -263,7 +263,7 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
         } finally { $db->rollBack(); $db->close(); }
     }
 
-    public function testVerifiedRollupsAndPartialEdgesMatchRawAndCheckpointsAreIgnored(): void
+    public function testVerifiedRollupsAndCheckpointsMatchRawAndStaleCoverageIsIgnored(): void
     {
         $db = $this->database();
         try {
@@ -282,7 +282,7 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
             $db->executeStatement('INSERT INTO structs.influence_checkpoint SELECT :b,1999,guild,sector,sum(unique_delta),sum(claim_delta)
                 FROM structs.influence_score_change_1000 WHERE build_id=:b AND bucket<2000 GROUP BY guild,sector', ['b' => $bid]);
             foreach ($queries as $i => $q) $this->assertSame($raw[$i], $this->body($api->history($cid, 'contest', null, $q))['data']);
-            // A marker from another build must not authorize rollups; checkpoints are never read.
+            // A marker from another build must authorize neither rollups nor checkpoints.
             $db->executeStatement('UPDATE structs.influence_rollup_coverage SET refreshed_revision=-1 WHERE build_id=:b', ['b' => $bid]);
             $db->executeStatement('UPDATE structs.influence_checkpoint SET unique_planets=999999 WHERE build_id=:b', ['b' => $bid]);
             foreach ($queries as $i => $q) $this->assertSame($raw[$i], $this->body($api->history($cid, 'contest', null, $q))['data']);
@@ -291,6 +291,68 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
         } finally {
             if ($db->isTransactionActive()) $db->rollBack();
             $db->close(); // Committed synthetic history belongs only to the runner's disposable database.
+        }
+    }
+
+    public function testGuildHistoryUnalignedBinsAndMixedCheckpointsMatchRaw(): void
+    {
+        $db = $this->database();
+        try {
+            [, , $chain] = $this->fixture($db, 'planet_sectors', true);
+            $cid = (string) $db->fetchOne("SELECT structs.influence_create_contest(:chain,1000,15123,1,'planet_sectors')", ['chain'=>$chain]);
+            $bid = (string) $db->fetchOne('SELECT build_id FROM structs.influence_published_build WHERE contest_id=:c', ['c'=>$cid]);
+            // Dense synthetic ledger isolates query boundaries from raid-projector tests.
+            $db->executeStatement("INSERT INTO structs.influence_score_change
+                SELECT :b,1001+(t-1)*10,2,0,(g-1)*3+s.i,0,0,'0-'||g,s.sector,
+                 CASE WHEN t%10 IN(0,1) THEN 1 WHEN t%10=2 THEN -1 ELSE 0 END,
+                 CASE WHEN t%2=1 THEN 1 ELSE -1 END,'history-query-test','2026-11-11T00:00:00Z'
+                FROM generate_series(1,1113) t CROSS JOIN generate_series(1,6) g
+                CROSS JOIN (VALUES(0,44),(1,127),(2,999)) s(i,sector)", ['b'=>$bid]);
+            $db->executeStatement('INSERT INTO structs.influence_guild_sector
+                SELECT build_id,guild,sector,sum(unique_delta),sum(claim_delta) FROM structs.influence_score_change
+                WHERE build_id=:b GROUP BY 1,2,3 ON CONFLICT(build_id,guild,sector) DO UPDATE
+                SET unique_planets=EXCLUDED.unique_planets,held_planets=EXCLUDED.held_planets', ['b'=>$bid]);
+            $db->executeStatement('UPDATE structs.influence_projection_build SET projected_height=12123 WHERE build_id=:b', ['b'=>$bid]);
+            $db->executeStatement('UPDATE structs.influence_source_cursor SET height=12123 WHERE chain_id=:chain', ['chain'=>$chain]);
+            $db->commit();
+            $api = new InfluenceManager($db);
+            $cases = [
+                ['contest',null,['start_height'=>'1003','end_height'=>'12095','bucket_blocks'=>'2000','group_by'=>'guild_sector']],
+                ['contest',null,['start_height'=>'1017','end_height'=>'12011','bucket_blocks'=>'1234','group_by'=>'sector']],
+                ['contest',null,['start_height'=>'1000','end_height'=>'11999','bucket_blocks'=>'1000','group_by'=>'guild']],
+                ['contest',null,['start_height'=>'12120','end_height'=>'12123','bucket_blocks'=>'1']],
+                ['guild','0-1',['start_height'=>'5003','end_height'=>'10003','bucket_blocks'=>'10000','sector'=>'127']],
+                ['guild','0-6',['start_height'=>'1001','end_height'=>'1009','bucket_blocks'=>'1','group_by'=>'sector']],
+                ['contest',null,['start_height'=>'1003','end_height'=>'6000','bucket_blocks'=>'3000','group_by'=>'guild_sector']],
+                ['contest',null,['start_height'=>'6000','end_height'=>'12000','bucket_blocks'=>'250','group_by'=>'total']],
+            ];
+            $read = fn ($case) => $this->body($api->history($cid, ...$case))['data'];
+            $raw = array_map($read, $cases);
+            $db->executeStatement("CALL structs.refresh_continuous_aggregate('structs.influence_score_change_1000',0::bigint,6000::bigint)");
+            $db->executeStatement('INSERT INTO structs.influence_rollup_coverage VALUES(:b,6000,:b)', ['b'=>$bid]);
+            // Different checkpoint heights, plus an absent checkpoint for one guild.
+            $db->executeStatement("INSERT INTO structs.influence_checkpoint
+                SELECT :b,h,guild,sector,sum(unique_delta),sum(claim_delta)
+                FROM structs.influence_score_change CROSS JOIN (VALUES(3999::bigint),(5999::bigint)) t(h)
+                WHERE build_id=:b AND height<=h AND guild<>'0-6' AND (h=3999 OR guild IN('0-1','0-2'))
+                GROUP BY h,guild,sector", ['b'=>$bid]);
+            foreach ($cases as $i=>$case) $this->assertSame($raw[$i], $read($case));
+            // A partially aligned marker must never include an incomplete rollup bucket.
+            $db->executeStatement('UPDATE structs.influence_rollup_coverage SET complete_before_height=6007 WHERE build_id=:b', ['b'=>$bid]);
+            foreach ($cases as $i=>$case) $this->assertSame($raw[$i], $read($case));
+            $db->executeStatement("CALL structs.refresh_continuous_aggregate('structs.influence_score_change_1000',6000::bigint,10000::bigint)");
+            $db->executeStatement('UPDATE structs.influence_rollup_coverage SET complete_before_height=10000 WHERE build_id=:b', ['b'=>$bid]);
+            foreach ($cases as $i=>$case) $this->assertSame($raw[$i], $read($case));
+            $db->executeStatement('UPDATE structs.influence_checkpoint SET unique_planets=999999 WHERE build_id=:b', ['b'=>$bid]);
+            foreach (['refreshed_revision=-1','refreshed_revision=build_id,complete_before_height=20000'] as $invalid) {
+                $db->executeStatement('UPDATE structs.influence_rollup_coverage SET '.$invalid.' WHERE build_id=:b', ['b'=>$bid]);
+                foreach ($cases as $i=>$case) $this->assertSame($raw[$i], $read($case));
+            }
+            $db->executeStatement('DELETE FROM structs.influence_rollup_coverage WHERE build_id=:b', ['b'=>$bid]);
+            foreach ($cases as $i=>$case) $this->assertSame($raw[$i], $read($case));
+        } finally {
+            if ($db->isTransactionActive()) $db->rollBack();
+            $db->close();
         }
     }
 

@@ -82,9 +82,10 @@ untrusted forwarded-IP headers. No public production origin has been accepted ye
 
 ## Influence reads
 
-The influence HTTP regression requires the fixture schema through
-`influence-single-sector-20261111`; PHP grass-payload parity checks also require
-`influence-grass-20261111`. The PHP and catalog HTTP runners cover contest standings,
+The influence API and both regression runners require the fixture schema through
+`influence-player-history-read-20261111`, including the personal-history backfill
+in `influence-grass-20261111`. Deploy that schema and its paired sync-state writer
+before the API. The PHP and catalog HTTP runners cover contest standings,
 paged scores, single/batch planet snapshots and inclusive block-height history. See
 [the influence API contract](influence-api.md). The focused PHP run is:
 
@@ -93,6 +94,11 @@ STRUCTS_INTEGRATION_PG=YOUR_DISPOSABLE_FIXTURE \
 STRUCTS_PHP_TEST_IMAGE=structs/structs-webapp:latest \
 node tools/api/php-integration.cjs --filter 'Influence|ApiRouting'
 ```
+
+The optional [guild-history benchmark](influence-history-benchmark.md) compares
+the previous readers and current implementation on a two-million-block contest
+with 3.6 million score changes. It validates balances against raw ledger sums and
+records timings and query plans using its own disposable database clone.
 
 The fixture must accept the disposable PHP/Apache containers' connections and
 have run its schema migrations; merely starting a current structs-pg image does

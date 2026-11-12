@@ -6,8 +6,11 @@ standard `success`, `errors`, `data`, optional `total`, and `meta` envelope and
 `Cache-Control: private, no-store`. These endpoints do not create contests,
 rebuild projections, refresh aggregates, or modify scoring data.
 
-Requires structs-pg through `influence-single-sector-20261111`. No additional
-schema or sync-state deployment is required for these endpoints.
+Requires structs-pg through `influence-player-history-read-20261111`, including
+the `influence-grass-20261111` personal-delta backfill and the webapp SELECT grant.
+Deploy those migrations and the paired influence grass sync-state writer before
+this API version. No further schema or writer changes are needed for the history
+query optimizations or planet lookups.
 
 ## Routes
 
@@ -257,15 +260,21 @@ small sectors and paging fields remain JSON integers.
 Current guild scores read maintained aggregates. Player pages count wins only
 for selected page members.
 
-Guild history is one pass over the `influence_score_change` height hypertable,
-grouped in SQL by the requested labels, so its work scales with the score changes
-in range rather than with guilds x buckets. Whole 1,000-height
-continuous-aggregate buckets replace raw deltas only where each bucket falls inside
-a single output bin: always for the opening balance before `start_height`, and for
-the charted range too when `start_height` and `bucket_blocks` are both multiples
-of 1,000. A missing, stale-generation or ahead-of-build refresh marker authorizes
-no rollups. Checkpoints are not read. Correctness does not require the refresh
-job, though regular refresh reduces long-range query cost.
+Guild history starts its opening balance from the latest verified checkpoint for
+each guild/sector, then reads only the remaining opening deltas. The chart uses
+one shared rollup scan and merged raw edge ranges across guilds, avoiding reads
+for every guild × sector × chart bin. Whole 1,000-height continuous-aggregate
+buckets are used whenever they fit entirely inside an output bin, including
+unaligned starts and bucket sizes. Raw edges and the unrefreshed tail fill the
+gaps without overlapping the rollups. Adjacent raw ranges are merged, so fine
+chart bins do not cause separate database seeks.
+
+A missing, stale-generation or ahead-of-build refresh marker authorizes neither
+rollups nor checkpoints. In that case one raw scan from contest start supplies
+both opening and chart balances. Correctness does not require maintenance, but
+keeping the existing rollups/checkpoints refreshed is needed to bound the work
+for short queries late in a long contest. The requested range limit bounds the
+chart, not the pre-range history needed to calculate its opening balance.
 
 Personal history reads the per-block personal deltas that the projector maintains
 in the `influence_player_score_change` hypertable (one index range for one player).
@@ -290,6 +299,9 @@ holders, frozen finals, coverage limits and exact grass-payload parity. It also
 exercises 10,005 members and 100-planet batches with 20,000 unrelated raid facts.
 The catalog HTTP runner checks
 the endpoints through both Apache and the control proxy with authentication.
+
+The [guild-history benchmark](influence-history-benchmark.md) records long-contest
+performance, including short ranges near the end and unaligned chart buckets.
 
 See `tools/api/README.md` for disposable fixture setup and full-suite commands.
 No influence gameplay fixtures are inserted into the running guild database.
