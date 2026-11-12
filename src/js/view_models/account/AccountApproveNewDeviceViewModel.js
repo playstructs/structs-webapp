@@ -1,4 +1,4 @@
-import {selectedDevicePermissions} from "../../util/DeviceChangeIntent";
+import {grantableDevicePermissions, selectedDevicePermissions} from "../../util/DeviceChangeIntent";
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {UserAgent} from "../../models/UserAgent";
@@ -28,6 +28,8 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
     this.approveDeviceBtnId = 'approveDeviceBtn';
     this.denyDeviceBtnId = 'denyDeviceBtn';
     this.newDeviceBlockieId = 'newDeviceBlockie';
+    // Until this device's own permissions are known, offer nothing beyond the defaults.
+    this.grantable = {manageDevices: false, transferAssets: false};
   }
 
   initPageCode() {
@@ -38,8 +40,8 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
       'click',
       () => {
         this.playerAddressPending.permissions = selectedDevicePermissions(String(this.permissionManager.getDefaultPlayerPermissions()),
-          document.getElementById(this.manageDevicesCheckboxId).checked,
-          document.getElementById(this.transferAssetsCheckboxId).checked);
+          this.grantable.manageDevices && document.getElementById(this.manageDevicesCheckboxId).checked,
+          this.grantable.transferAssets && document.getElementById(this.transferAssetsCheckboxId).checked);
 
         MenuPage.router.goto('Account', 'activatingDevice', this.playerAddressPending);
       }
@@ -56,6 +58,21 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
   }
 
   render() {
+    const signal = MenuPage.router.navigationSignal;
+    this.gameState.guildAPI.getPlayerAddress(this.gameState.signingAccount.address, {signal}).then(approver => {
+      if (signal.aborted) return;
+      if (approver?.address === this.gameState.signingAccount.address) {
+        this.grantable = grantableDevicePermissions(approver.permissions);
+      }
+      this.renderPage();
+    }).catch(error => {
+      if (signal.aborted) return;
+      console.debug('[DeviceActivation] approver permissions unavailable:', error);
+      this.renderPage();
+    });
+  }
+
+  renderPage() {
     const userAgent = new UserAgent(this.playerAddressPending.user_agent);
     const location = this.playerAddressPending.ip; // TODO: When geoip data is added, use that field if set
 
@@ -95,6 +112,7 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
               class="sui-checkbox" 
               name="${this.manageDevicesCheckboxId}" 
               id="${this.manageDevicesCheckboxId}"
+              ${this.grantable.manageDevices ? '' : 'disabled'}
             >
             <span class="sui-checkbox-display"></span>
             <label for="${this.manageDevicesCheckboxId}">Manage Devices</label>
@@ -105,10 +123,13 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
               class="sui-checkbox" 
               name="${this.transferAssetsCheckboxId}"
               id="${this.transferAssetsCheckboxId}"
+              ${this.grantable.transferAssets ? '' : 'disabled'}
             >
             <span class="sui-checkbox-display"></span>
             <label for="${this.transferAssetsCheckboxId}">Transfer Assets</label>
           </div>
+          ${this.grantable.manageDevices && this.grantable.transferAssets ? '' : `
+          <div class="sui-text-ticker sui-text-hint">This device can only grant permissions it has itself.</div>`}
         </div>
         
         <div class="account-new-device-confirm-section">

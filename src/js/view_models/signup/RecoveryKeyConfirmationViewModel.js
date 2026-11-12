@@ -1,6 +1,8 @@
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {PageHeader} from "../templates/partials/PageHeader";
 import {MenuPage} from "../../framework/MenuPage";
+import {normalizeRecoveryKey} from "../../util/RecoveryKey";
+import {bindSubmitButtonToInput} from "../../util/SubmitButtonToggle";
 
 export class RecoveryKeyConfirmationViewModel extends AbstractViewModel {
   /**
@@ -18,23 +20,11 @@ export class RecoveryKeyConfirmationViewModel extends AbstractViewModel {
 
   initPageCode() {
     const recoveryKeyInput = document.getElementById('recovery-key-input');
-    recoveryKeyInput.addEventListener('keyup', () => {
-      const submitBtn = document.getElementById('submit-btn');
-
-      if (recoveryKeyInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('sui-mod-disabled');
-        submitBtn.classList.add('sui-mod-primary');
-      } else if (recoveryKeyInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
-        submitBtn.disabled = true;
-        submitBtn.classList.remove('sui-mod-primary');
-        submitBtn.classList.add('sui-mod-disabled');
-      }
-    });
+    bindSubmitButtonToInput(recoveryKeyInput, () => document.getElementById('submit-btn'));
 
     const submitBtnHandler = () => {
       const recoveryKeyInput = document.getElementById('recovery-key-input');
-      recoveryKeyInput.value = recoveryKeyInput.value.replace(/\s\s+/g, ' ');
+      recoveryKeyInput.value = normalizeRecoveryKey(recoveryKeyInput.value);
 
       if (recoveryKeyInput.value !== this.gameState.mnemonic) {
 

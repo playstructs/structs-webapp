@@ -15,5 +15,8 @@ export class PlayerAddress {
     this.alpha = null;
 
     this.isOnlyManagingDevice = false;
+
+    // Which page started a logout of this device (see LOGOUT_FROM); picks the warnings' wording.
+    this.logoutFrom = null;
   }
 }

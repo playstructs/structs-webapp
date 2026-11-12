@@ -29,6 +29,22 @@ export function selectedDevicePermissions(current, manageDevices, transferAssets
 }
 
 /**
+ * Which device permission groups an approving device may hand out: the chain
+ * only registers a new address whose permissions the approver already holds.
+ *
+ * @param {string|number|null} approverPermissions
+ * @return {{manageDevices: boolean, transferAssets: boolean}}
+ */
+export function grantableDevicePermissions(approverPermissions) {
+  const held = approverPermissions === null || approverPermissions === undefined ? 0n : uint64(String(approverPermissions));
+  const hasAll = (mask) => (held & BigInt(mask)) === BigInt(mask);
+  return {
+    manageDevices: hasAll(PERMISSIONS.ADMIN | PERMISSIONS.UPDATE | PERMISSIONS.DELETE),
+    transferAssets: hasAll(PERMISSIONS.ASSETS_ALL),
+  };
+}
+
+/**
  * @param {object} value
  * @return {Readonly<object>}
  */

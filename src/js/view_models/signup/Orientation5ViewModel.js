@@ -62,7 +62,7 @@ export class Orientation5ViewModel extends AbstractViewModel {
         href="javascript: void(0)" 
         data-sui-tooltip="A governmental body comprised of the major space-faring races within known space."
       >Alpha Star Council</a>
-      banned sentient lifeforms from operating Alpha  mining colonies.`
+      banned sentient lifeforms from operating Alpha mining colonies.`
     );
     MenuPage.dialogueBtnAHandler = () => {
       MenuPage.router.goto('Auth', 'orientation6');
