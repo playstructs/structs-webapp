@@ -109,11 +109,13 @@ export class AccountDeviceViewModel extends AbstractViewModel {
             isOnlyManagingDevice: this.playerAddressDetails.isOnlyManagingDevice,
             alpha: this.playerAddressDetails.alpha,
           });
-          if (route.withAddress) {
-            this.playerAddressDetails.logoutFrom = LOGOUT_FROM.MANAGE_DEVICE;
-            MenuPage.router.goto('Auth', route.action, this.playerAddressDetails);
+          this.playerAddressDetails.logoutFrom = LOGOUT_FROM.MANAGE_DEVICE;
+          if (route.action === 'logout') {
+            // Nothing to warn about, so confirm before anything is revoked.
+            this.playerAddressDetails.logoutWithAddress = route.withAddress;
+            MenuPage.router.goto('Auth', 'logoutDeviceConfirm', this.playerAddressDetails);
           } else {
-            MenuPage.router.goto('Auth', route.action);
+            MenuPage.router.goto('Auth', route.action, this.playerAddressDetails);
           }
       });
     }

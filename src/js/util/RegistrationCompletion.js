@@ -97,6 +97,37 @@ export function registrationAssociation(response, expected) {
 export class RegistrationConsentUnavailable extends Error {}
 
 /**
+ * The activation request this device was waiting on no longer exists: the
+ * logged-in device denied it, its approval failed, or it expired.
+ */
+export class RegistrationRequestWithdrawn extends Error {}
+
+// A withdrawn request must be seen this many polls in a row, so a registration
+// whose pending row was removed moments before its association is indexed is
+// not mistaken for a denial.
+const WITHDRAWN_CONFIRMATIONS = 2;
+// Nothing announces a deleted request, so keep polling at least this often.
+const WITHDRAWN_MAX_DELAY_MS = 10000;
+
+/**
+ * True when the pending request is gone and nothing shows this address was
+ * registered. Indexing a registration also removes its pending row, and its
+ * association can stay unconfirmed for a while (e.g. while the guild signer is
+ * not ready), so an indexed or on-chain registration never counts as withdrawn.
+ *
+ * @param {object} response
+ * @param {object} expected
+ * @return {boolean}
+ */
+export function requestWasWithdrawn(response, expected) {
+  const data = response?.data;
+  // Only an explicit false counts: a server that does not report it never ends the wait.
+  return data?.pending === false
+    && !data.indexed
+    && data.chain?.registered_player_id !== expected.playerId;
+}
+
+/**
  * @param {object} response
  * @param {object} expected
  * @return {boolean}
@@ -131,13 +162,17 @@ function consentWasConsumed(response, expected) {
  * @param {object} expected
  * @param {AbortSignal} signal
  * @param {GrassManager} grassManager
+ * @param {object} [options]
+ * @param {boolean} [options.endWhenRequestWithdrawn] for a device waiting on its own pending
+ *   activation request: stop with RegistrationRequestWithdrawn once that request is gone
  * @return {Promise<object>}
  */
-export async function waitForRegistration(guildAPI, expected, signal, grassManager) {
+export async function waitForRegistration(guildAPI, expected, signal, grassManager, {endWhenRequestWithdrawn = false} = {}) {
   const refresh = new RegistrationRefreshListener(grassManager, message =>
     message.category === 'player_address'
     && message.address === expected.address
     && message.subject === `structs.player.${expected.guildId}.${expected.playerId}`);
+  let withdrawnReads = 0;
   try {
     return await pollUntil(async () => {
       const response = await guildAPI.getRegistrationStatus(expected.playerId, expected.address, {signal, timeoutMs: 16000});
@@ -146,10 +181,22 @@ export async function waitForRegistration(guildAPI, expected, signal, grassManag
       if (consentWasConsumed(response, expected)) {
         throw new RegistrationConsentUnavailable('Device registration consent is no longer usable');
       }
+      if (endWhenRequestWithdrawn && requestWasWithdrawn(response, expected)) {
+        withdrawnReads++;
+        if (withdrawnReads >= WITHDRAWN_CONFIRMATIONS) {
+          throw new RegistrationRequestWithdrawn('Device activation request is no longer pending');
+        }
+      } else {
+        withdrawnReads = 0;
+      }
     }, signal, {
       label: '[RegistrationCompletion] current association unavailable:',
-      wait: (delay, waitSignal) => refresh.wait(delay, waitSignal),
-      isFinal: error => error instanceof RegistrationConsentUnavailable,
+      wait: (delay, waitSignal) => refresh.wait(
+        endWhenRequestWithdrawn ? Math.min(delay, WITHDRAWN_MAX_DELAY_MS) : delay,
+        waitSignal
+      ),
+      isFinal: error => error instanceof RegistrationConsentUnavailable
+        || error instanceof RegistrationRequestWithdrawn,
     });
   } finally {
     refresh.close();

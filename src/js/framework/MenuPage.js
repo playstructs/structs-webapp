@@ -390,6 +390,20 @@ export class MenuPage {
     document.getElementById(this.pageTemplateContentId).innerHTML = content;
   }
 
+  /**
+   * Scroll the page template back to the top. The scrolling container outlives
+   * page renders, so a freshly rendered page otherwise keeps the old position.
+   */
+  static scrollPageTemplateToTop() {
+    let el = document.getElementById(this.pageTemplateContentId);
+    while (el) {
+      if (el.scrollTop > 0) {
+        el.scrollTop = 0;
+      }
+      el = el.parentElement;
+    }
+  }
+
   static useTransparentBackground() {
     document.getElementById(this.screenBodyId).classList.add('hidden-background');
     document.getElementById(this.panelChunkId).classList.add('hidden-background');

@@ -16,6 +16,7 @@ import {ReactionBadgeTest} from "./ReactionBadgeTest";
 import {DeviceLogoutRouteTest} from "./DeviceLogoutRouteTest";
 import {RecoveryKeyTest} from "./RecoveryKeyTest";
 import {GrantableDevicePermissionsTest} from "./GrantableDevicePermissionsTest";
+import {RegistrationRequestWithdrawnTest} from "./RegistrationRequestWithdrawnTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -34,5 +35,6 @@ import {GrantableDevicePermissionsTest} from "./GrantableDevicePermissionsTest";
 (new DeviceLogoutRouteTest()).run();
 (new RecoveryKeyTest()).run();
 (new GrantableDevicePermissionsTest()).run();
+(new RegistrationRequestWithdrawnTest()).run();
 
 (new APIReadinessTest()).run();
