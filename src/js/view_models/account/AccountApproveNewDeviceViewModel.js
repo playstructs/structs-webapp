@@ -12,15 +12,18 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
    * @param {GameState} gameState
    * @param {PermissionManager} permissionManager
    * @param {PlayerAddressPending} playerAddressPending
+   * @param {AuthManager} authManager
    */
   constructor(
     gameState,
     permissionManager,
-    playerAddressPending
+    playerAddressPending,
+    authManager
   ) {
     super();
     this.gameState = gameState;
     this.permissionManager = permissionManager;
+    this.authManager = authManager;
     this.playerAddressPending = playerAddressPending;
     this.blockies = new Blockies();
     this.manageDevicesCheckboxId = 'manageDevicesCheckbox';
@@ -49,7 +52,7 @@ export class AccountApproveNewDeviceViewModel extends AbstractViewModel {
     document.getElementById(this.denyDeviceBtnId).addEventListener('click',async()=>{
       const signal=MenuPage.router.navigationSignal;
       try {
-        const response=await this.gameState.guildAPI.deleteActivationCode(this.playerAddressPending.code,this.playerAddressPending.activation_id);
+        const response=await this.authManager.denyActivationRequest(this.playerAddressPending);
         if (response.success && !signal.aborted) MenuPage.router.goto('Account','deviceActivationCancelled');
       } catch (error) {
         if (!signal.aborted) console.debug('[DeviceActivation] denial could not be confirmed:',error);

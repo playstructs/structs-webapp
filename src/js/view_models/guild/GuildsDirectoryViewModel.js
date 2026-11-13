@@ -130,7 +130,7 @@ export class GuildsDirectoryViewModel extends AbstractViewModel {
 
       MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
 
-      MenuPage.setPageTemplateHeaderBtn("Guild's Directory", true, () => {
+      MenuPage.setPageTemplateHeaderBtn('Guilds Directory', true, () => {
         MenuPage.router.goto('Guild', 'index');
       });
 

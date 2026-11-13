@@ -61,8 +61,11 @@ export class FleetController extends AbstractController {
     viewModel.render();
   }
 
-  scan() {
-    const viewModel = new ScanViewModel(this.gameState, this.guildAPI);
+  /**
+   * @param {RaidSearchRequestDTO|object|null} options the search to restore, if any
+   */
+  scan(options = null) {
+    const viewModel = new ScanViewModel(this.gameState, this.guildAPI, options);
     viewModel.render();
   }
 

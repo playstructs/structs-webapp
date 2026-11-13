@@ -3,8 +3,12 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 
 export class ActivateDeviceCancelledViewModel extends AbstractViewModel {
 
-  constructor() {
+  /**
+   * @param {boolean} withdrawn the logged-in device denied the request or could not approve it
+   */
+  constructor(withdrawn = false) {
     super();
+    this.withdrawn = withdrawn;
     this.tryAgainBtnId = 'try-again-btn';
     this.logInWithRecoveryKeyBtnId = 'log-in-with-recovery-key-btn';
   }
@@ -31,6 +35,9 @@ export class ActivateDeviceCancelledViewModel extends AbstractViewModel {
             <i class="sui-icon sui-icon-md icon-alert"></i>
             Activation Cancelled
           </div>
+          ${this.withdrawn
+            ? '<div>Your logged-in device denied this request, or could not approve it.</div>'
+            : ''}
           <div>This device has not been logged in.</div>
         </div>        
         

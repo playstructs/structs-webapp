@@ -97,7 +97,8 @@ export class AccountController extends AbstractController {
     const viewModel = new AccountApproveNewDeviceViewModel(
       this.gameState,
       this.permissionManager,
-      playerAddressPending
+      playerAddressPending,
+      this.authManager
     );
     viewModel.render();
   }

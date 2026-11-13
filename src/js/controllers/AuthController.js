@@ -41,6 +41,7 @@ import {RecoverAccountSuccessViewModel} from "../view_models/login/RecoverAccoun
 import {RecoverAccountFailViewModel} from "../view_models/login/RecoverAccountFailViewModel";
 import {LogoutPermissionsWarningViewModel} from "../view_models/logout/LogoutPermissionsWarningViewModel";
 import {LogoutAssetsWarningViewModel} from "../view_models/logout/LogoutAssetsWarningViewModel";
+import {LogoutDeviceConfirmViewModel} from "../view_models/logout/LogoutDeviceConfirmViewModel";
 import {MenuPage} from "../framework/MenuPage";
 import {MenuWaitingOptions} from "../options/MenuWaitingOptions";
 
@@ -241,8 +242,11 @@ export class AuthController extends AbstractController {
     viewModel.render();
   }
 
-  loginActivateDeviceCancelled() {
-    const viewModel = new ActivateDeviceCancelledViewModel();
+  /**
+   * @param {{withdrawn?: boolean}} options
+   */
+  loginActivateDeviceCancelled(options = {}) {
+    const viewModel = new ActivateDeviceCancelledViewModel(!!options?.withdrawn);
     viewModel.render();
   }
 
@@ -317,6 +321,14 @@ export class AuthController extends AbstractController {
     } else {
       this.authManager.logout();
     }
+  }
+
+  /**
+   * @param {PlayerAddress} playerAddress
+   */
+  logoutDeviceConfirm(playerAddress) {
+    const viewModel = new LogoutDeviceConfirmViewModel(this.gameState, playerAddress);
+    viewModel.render();
   }
 
   /**

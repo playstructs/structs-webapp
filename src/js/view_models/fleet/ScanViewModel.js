@@ -9,14 +9,17 @@ export class ScanViewModel extends AbstractViewModel {
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
+   * @param {RaidSearchRequestDTO|object|null} previousSearch the search to restore, e.g. when returning from results
    */
   constructor(
     gameState,
-    guildAPI
+    guildAPI,
+    previousSearch = null
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
+    this.previousSearch = previousSearch;
 
     this.minVulnerableOreId = 'minVulnerableOre';
     this.guildFilterSelectId = 'guildFilterSelect';
@@ -54,10 +57,8 @@ export class ScanViewModel extends AbstractViewModel {
     bindSubmitButtonToInput(playerSearchInput, () => document.getElementById(this.playerSearchBtnId));
 
     // Search By Player Submission
-    document.getElementById(this.playerSearchBtnId).addEventListener('click', () => {
+    const playerSearchHandler = () => {
       document.getElementById(this.playerSearchErrorId).classList.remove('sui-mod-show');
-
-      const playerSearchInput = document.getElementById(this.playerSearchInputId);
 
       if (!SEARCH_STRING_PATTERN.test(playerSearchInput.value)) {
         document.getElementById(this.playerSearchErrorId).classList.add('sui-mod-show');
@@ -67,7 +68,37 @@ export class ScanViewModel extends AbstractViewModel {
 
         MenuPage.router.goto('Fleet', 'scanResults', raidSearchRequest);
       }
+    };
+
+    document.getElementById(this.playerSearchBtnId).addEventListener('click', playerSearchHandler);
+    playerSearchInput.addEventListener('keyup', (e) => {
+      // Mirror the button: it is disabled while the field is empty.
+      if (e.key === 'Enter' && playerSearchInput.value.length > 0) {
+        playerSearchHandler();
+      }
     });
+  }
+
+  /**
+   * Put the previous search back into the form so Back from the results keeps it.
+   */
+  restorePreviousSearch() {
+    const search = this.previousSearch;
+    if (!search) return;
+
+    if (search.search_string) {
+      document.getElementById(this.playerSearchInputId).value = search.search_string;
+      return;
+    }
+
+    if (search.min_ore !== undefined && search.min_ore !== null) {
+      document.getElementById(this.minVulnerableOreId).value = search.min_ore;
+    }
+    if (search.guild_id) {
+      document.getElementById(this.guildFilterSelectId).value = search.guild_id;
+    }
+    document.getElementById(this.fleetStatusId).checked = !!search.fleet_away_only;
+    document.getElementById(this.notUnderAttackId).checked = !!search.not_under_attack;
   }
 
   render() {
@@ -210,6 +241,7 @@ export class ScanViewModel extends AbstractViewModel {
 
       MenuPage.hideAndClearDialoguePanel();
 
+      this.restorePreviousSearch();
       this.initPageCode();
 
     });

@@ -6,7 +6,12 @@ import {readDeviceContext, readDeviceAuthority} from "./DeviceChangePreparation"
 import {PERMISSIONS} from "../constants/Permissions";
 import {deviceChangeCommit, waitForDeviceChange} from "../util/DeviceChangeCompletion";
 import {DeviceRegistrationStore} from "./DeviceRegistrationStore";
-import {registrationAssociation, registrationCommit, waitForRegistration} from "../util/RegistrationCompletion";
+import {
+  registrationAssociation,
+  registrationCommit,
+  RegistrationRequestWithdrawn,
+  waitForRegistration
+} from "../util/RegistrationCompletion";
 import {registrationIntent} from "../util/RegistrationIntent";
 import {pendingRegistrationProof} from "../util/RegistrationProof";
 import {PlayerCreatedListener} from "../grass_listeners/PlayerCreatedListener";
@@ -776,12 +781,18 @@ export class AuthManager {
     }
     const {account} = await this.savedDevice(store);
     if (this.gameState.signingAccount.address !== account.address) throw new Error('Activation device changed');
-    return waitForRegistration(this.guildAPI, {
-      playerId: info.player_id,
-      address: record.address,
-      guildId: this.gameState.thisGuild.id,
-      proof: record.proof,
-    }, signal, this.grassManager);
+    try {
+      return await waitForRegistration(this.guildAPI, {
+        playerId: info.player_id,
+        address: record.address,
+        guildId: this.gameState.thisGuild.id,
+        proof: record.proof,
+      }, signal, this.grassManager, {endWhenRequestWithdrawn: true});
+    } catch (error) {
+      // The request is gone, so a reload must not resume waiting on it.
+      if (error instanceof RegistrationRequestWithdrawn) store.clearActive();
+      throw error;
+    }
   }
 
   /**
@@ -805,6 +816,30 @@ export class AuthManager {
    */
   activationCodeStorageKey() {
     return `deviceActivationCode:${this.gameState.thisGuild.id}:${this.gameState.signingAccount.address}`;
+  }
+
+  /**
+   * Drop this device's saved copy of an activation code that no longer exists,
+   * so Activate New Device offers a fresh one.
+   *
+   * @param {object} chosen
+   */
+  forgetActivationCode(chosen) {
+    const saved = this.savedActivationCode();
+    if (saved?.activation_id === chosen.activation_id) localStorage.removeItem(this.activationCodeStorageKey());
+  }
+
+  /**
+   * Deny an activation request. Deleting the code removes its pending request,
+   * which the waiting device watches for.
+   *
+   * @param {object} chosen
+   * @return {Promise<object>} the guild's response
+   */
+  async denyActivationRequest(chosen) {
+    const response = await this.guildAPI.deleteActivationCode(chosen.code, chosen.activation_id);
+    if (response.success) this.forgetActivationCode(chosen);
+    return response;
   }
 
   /**
@@ -935,7 +970,12 @@ export class AuthManager {
     }
     const settled = await this.signingClientManager.queue.whenSettled(tx.id, signal);
     signal.throwIfAborted();
-    if (settled.status !== TX_STATUS.SUCCEEDED) return false;
+    if (settled.status !== TX_STATUS.SUCCEEDED) {
+      // Dropped and cancelled are terminal, so this approval can never land.
+      // Withdraw the request so the waiting device is told instead of waiting on.
+      await this.withdrawActivationRequest(chosen);
+      return false;
+    }
     await waitForRegistration(
       this.guildAPI,
       {...registrationCommit(settled), guildId: this.gameState.thisGuild.id},
@@ -950,10 +990,26 @@ export class AuthManager {
     } catch (error) {
       console.debug('[DeviceActivation] activation cleanup deferred:', error);
     }
-    const saved = this.savedActivationCode();
-    if (saved?.activation_id === chosen.activation_id) localStorage.removeItem(this.activationCodeStorageKey());
+    this.forgetActivationCode(chosen);
     this.guildAPI.getPlayerAddressCount(playerId, true).catch(() => {});
     return true;
+  }
+
+  /**
+   * End an activation request whose approval definitively failed. Deleting the
+   * code removes its pending request, which the waiting device watches for.
+   *
+   * @param {object} chosen
+   * @return {Promise<void>}
+   */
+  async withdrawActivationRequest(chosen) {
+    try {
+      await this.guildAPI.deleteActivationCode(chosen.code, chosen.activation_id);
+    } catch (error) {
+      console.debug('[DeviceActivation] failed request could not be withdrawn:', error);
+      return;
+    }
+    this.forgetActivationCode(chosen);
   }
 
 }
