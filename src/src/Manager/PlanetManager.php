@@ -47,6 +47,7 @@ class PlanetManager
         $query = '
             SELECT 
               p.id,
+              p.sector,
               p.owner,
               p.map,
               p.space_slots,
