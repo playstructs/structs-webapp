@@ -237,7 +237,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
               </div>
               <div class="sui-data-card-row">
                 <div>
-                  Alpha Efficiency
+                  Reactor Efficiency
                   <a 
                     id="alpha-efficiency-tip"
                     class="sui-text-secondary"

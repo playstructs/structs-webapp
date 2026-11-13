@@ -168,7 +168,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
       MenuPage.enablePageTemplate(MenuPage.navItemFleetId);
 
       MenuPage.setPageTemplateHeaderBtn('Scan Results', true, () => {
-        MenuPage.router.goto('Fleet', 'scan');
+        MenuPage.router.goto('Fleet', 'scan', this.raidSearchRequest);
       });
 
       const playersListHTML = players.reduce((html, player) => {
@@ -190,6 +190,8 @@ export class ScanResultsViewModel extends AbstractViewModel {
   
         </div>
       `);
+
+      MenuPage.scrollPageTemplateToTop();
 
       MenuPage.hideAndClearDialoguePanel();
 
