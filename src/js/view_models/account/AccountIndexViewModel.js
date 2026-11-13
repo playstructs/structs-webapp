@@ -56,9 +56,9 @@ export class AccountIndexViewModel extends AbstractViewModel {
         await navigator.clipboard.writeText(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
       }
     }.bind(this));
-    document.getElementById(this.logoutBtnId).addEventListener('click', function () {
-      this.authManager.logout();
-    }.bind(this));
+    document.getElementById(this.logoutBtnId).addEventListener('click', () => {
+      MenuPage.router.goto('Account', 'logoutConfirm');
+    });
     document.getElementById(this.profileBtnId).addEventListener('click', () => {
       MenuPage.router.goto('Account', 'profile');
     });

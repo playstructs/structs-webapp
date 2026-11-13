@@ -329,6 +329,10 @@ class PlayerManager
               f.status,
               undiscovered_ore,
               ore
+            ORDER BY
+              ore DESC,
+              LENGTH(p.id) ASC,
+              p.id ASC
             LIMIT $limit
             OFFSET $offset;
         ";

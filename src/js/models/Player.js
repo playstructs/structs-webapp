@@ -36,15 +36,21 @@ export class Player {
   /**
    * @return {boolean}
    */
+  /**
+   * @return {number} Energy drawn by the player and their Structs
+   */
+  getTotalLoad() {
+    return (this.load ?? 0) + (this.structs_load ?? 0);
+  }
+
+  /**
+   * @return {number} Energy available from the player's own and connected capacity
+   */
+  getTotalCapacity() {
+    return (this.capacity ?? 0) + (this.connection_capacity ?? 0);
+  }
+
   isOverloaded() {
-    const load = this.load ?? 0;
-    const structsLoad = this.structs_load ?? 0;
-    const capacity = this.capacity ?? 0;
-    const connectionCapacity = this.connection_capacity ?? 0;
-
-    let totalLoad = load + structsLoad;
-    let totalCapacity = capacity + connectionCapacity;
-
-    return totalLoad > totalCapacity;
+    return this.getTotalLoad() > this.getTotalCapacity();
   }
 }

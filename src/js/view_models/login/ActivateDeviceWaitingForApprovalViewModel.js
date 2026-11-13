@@ -1,6 +1,7 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {Blockies} from "../../vendor/Blockies";
+import {RegistrationRequestWithdrawn} from "../../util/RegistrationCompletion";
 
 export class ActivateDeviceWaitingForApprovalViewModel extends AbstractViewModel {
 
@@ -25,7 +26,9 @@ export class ActivateDeviceWaitingForApprovalViewModel extends AbstractViewModel
     }).catch(error=>{
       if (!signal.aborted) {
         console.debug('[DeviceActivation] association unavailable:',error);
-        MenuPage.router.goto('Auth','loginActivateDeviceCancelled');
+        MenuPage.router.goto('Auth','loginActivateDeviceCancelled',{
+          withdrawn: error instanceof RegistrationRequestWithdrawn
+        });
       }
     });
     document.getElementById(this.blockieWrapperId).append(

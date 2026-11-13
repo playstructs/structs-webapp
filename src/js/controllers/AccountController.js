@@ -1,5 +1,6 @@
 import {AbstractController} from "../framework/AbstractController";
 import {AccountIndexViewModel} from "../view_models/account/AccountIndexViewModel";
+import {AccountLogoutConfirmViewModel} from "../view_models/account/AccountLogoutConfirmViewModel";
 import {AccountProfileViewModel} from "../view_models/account/AccountProfileViewModel";
 import {AccountDevicesViewModel} from "../view_models/account/AccountDevicesViewModel";
 import {AccountNewDeviceCodeViewModel} from "../view_models/account/AccountNewDeviceCodeViewModel";
@@ -96,7 +97,8 @@ export class AccountController extends AbstractController {
     const viewModel = new AccountApproveNewDeviceViewModel(
       this.gameState,
       this.permissionManager,
-      playerAddressPending
+      playerAddressPending,
+      this.authManager
     );
     viewModel.render();
   }
@@ -118,8 +120,21 @@ export class AccountController extends AbstractController {
     viewModel.render();
   }
 
-  deviceActivationCancelled() {
-    const viewModel = new AccountDeviceActivationCancelled();
+  /**
+   * @param {object} options
+   * @param {boolean} [options.failed]
+   */
+  deviceActivationCancelled(options = {}) {
+    const viewModel = new AccountDeviceActivationCancelled(options?.failed === true);
+    viewModel.render();
+  }
+
+  logoutConfirm() {
+    const viewModel = new AccountLogoutConfirmViewModel(
+      this.gameState,
+      this.guildAPI,
+      this.permissionManager
+    );
     viewModel.render();
   }
 

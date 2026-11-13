@@ -6,6 +6,8 @@ import {PERMISSIONS} from "../../constants/Permissions";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {selectedDevicePermissions} from "../../util/DeviceChangeIntent";
 import {MenuWaitingOptions} from "../../options/MenuWaitingOptions";
+import {deviceLogoutRoute} from "../../util/DeviceLogoutRoute";
+import {LOGOUT_FROM} from "../logout/LogoutWording";
 
 export class AccountDeviceViewModel extends AbstractViewModel {
 
@@ -38,12 +40,14 @@ export class AccountDeviceViewModel extends AbstractViewModel {
     this.isPrimaryDevice = (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.primary_address === this.deviceAddress.address);
     this.isCurrentDevice = (this.gameState.signingAccount.address === this.deviceAddress.address);
     this.canEditPermissions = true;
+    // False where nothing can change: no Manage Devices here, or the primary device.
+    this.permissionsEditable = true;
     this.canRevokeCurrentDevice = false;
     this.saving = false;
   }
 
   initPageCode() {
-    if (this.canEditPermissions) {
+    if (this.permissionsEditable) {
       document.getElementById(`${this.cancelDeviceChangesBtnId}`).addEventListener(
         'click',
         () => {
@@ -77,12 +81,16 @@ export class AccountDeviceViewModel extends AbstractViewModel {
             signal
           ).then(success => {
             if (!signal.aborted) {
-              MenuPage.router.goto('Account', success ? 'devices' : 'manageDevice', this.deviceAddress);
+              if (success) {
+                MenuPage.router.goto('Account', 'devices');
+              } else {
+                MenuPage.router.goto('Account', 'manageDevice', {...this.deviceAddress, saveFailed: true});
+              }
             }
           }).catch(error => {
             if (!signal.aborted) {
               console.debug('[DevicePermissions] change unavailable:', error);
-              MenuPage.router.goto('Account', 'manageDevice', this.deviceAddress);
+              MenuPage.router.goto('Account', 'manageDevice', {...this.deviceAddress, saveFailed: true});
             }
           });
         }
@@ -94,20 +102,20 @@ export class AccountDeviceViewModel extends AbstractViewModel {
       logoutBtn.addEventListener(
         'click',
         () => {
-          if (this.isCurrentDevice && !this.canRevokeCurrentDevice) {
-            MenuPage.router.goto('Auth', 'logout');
-          } else if (
-            !this.isPrimaryDevice
-            && this.playerAddressDetails.alpha
-            && BigInt(this.playerAddressDetails.alpha) > 0n
-          ) {
-            MenuPage.router.goto('Auth', 'logoutAssetsWarning', this.playerAddressDetails);
-          } else if (this.playerAddressDetails.isOnlyManagingDevice) {
-            MenuPage.router.goto('Auth', 'logoutPermissionsWarning', this.playerAddressDetails);
-          } else if (this.isPrimaryDevice) {
-            MenuPage.router.goto('Auth', 'logout');
+          const route = deviceLogoutRoute({
+            isCurrentDevice: this.isCurrentDevice,
+            isPrimaryDevice: this.isPrimaryDevice,
+            canRevokeCurrentDevice: this.canRevokeCurrentDevice,
+            isOnlyManagingDevice: this.playerAddressDetails.isOnlyManagingDevice,
+            alpha: this.playerAddressDetails.alpha,
+          });
+          this.playerAddressDetails.logoutFrom = LOGOUT_FROM.MANAGE_DEVICE;
+          if (route.action === 'logout') {
+            // Nothing to warn about, so confirm before anything is revoked.
+            this.playerAddressDetails.logoutWithAddress = route.withAddress;
+            MenuPage.router.goto('Auth', 'logoutDeviceConfirm', this.playerAddressDetails);
           } else {
-            MenuPage.router.goto('Auth', 'logout', this.playerAddressDetails);
+            MenuPage.router.goto('Auth', route.action, this.playerAddressDetails);
           }
       });
     }
@@ -119,8 +127,14 @@ export class AccountDeviceViewModel extends AbstractViewModel {
     const fetchCurrentDevice = this.isCurrentDevice
       ? fetchTargetDevice
       : this.guildAPI.getPlayerAddress(this.gameState.signingAccount.address, {signal});
+    // Counted here rather than trusted from the device list, which may be stale.
+    const fetchDevices = this.guildAPI.getPlayerAddressList(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id, {signal})
+      .catch(error => {
+        console.debug('[DevicePermissions] device list unavailable:', error);
+        return null;
+      });
 
-    Promise.all([fetchTargetDevice, fetchCurrentDevice]).then(([playerAddress, currentDevicePlayerAddress]) => {
+    Promise.all([fetchTargetDevice, fetchCurrentDevice, fetchDevices]).then(([playerAddress, currentDevicePlayerAddress, devices]) => {
       if (signal.aborted) return;
       if (
         playerAddress?.address !== this.deviceAddress.address
@@ -130,7 +144,11 @@ export class AccountDeviceViewModel extends AbstractViewModel {
         return;
       }
       this.playerAddressDetails = playerAddress;
-      this.playerAddressDetails.isOnlyManagingDevice = this.deviceAddress.isOnlyManagingDevice;
+      const manageDevices = BigInt(this.permissionManager.getManageDevicesPermissions());
+      const canManage = (permissions) => (BigInt(permissions ?? 0) & manageDevices) === manageDevices;
+      this.playerAddressDetails.isOnlyManagingDevice = devices
+        ? canManage(playerAddress.permissions) && devices.filter(device => canManage(device.permissions)).length <= 1
+        : this.deviceAddress.isOnlyManagingDevice === true;
 
       const currentDevicePermissions = BigInt(currentDevicePlayerAddress.permissions);
       this.canRevokeCurrentDevice = (currentDevicePermissions & BigInt(PERMISSIONS.DELETE)) !== 0n;
@@ -168,7 +186,14 @@ export class AccountDeviceViewModel extends AbstractViewModel {
         === BigInt(this.permissionManager.getManageDevicesPermissions());
       const isCheckedTransferAssets =
         (BigInt(playerAddress.permissions) & BigInt(PERMISSIONS.ASSETS_ALL)) === BigInt(PERMISSIONS.ASSETS_ALL);
-      const checkboxDisabledAttr = this.canEditPermissions ? '' : 'disabled';
+      // The signer refuses any change that leaves the primary device without full access.
+      this.permissionsEditable = this.canEditPermissions && !this.isPrimaryDevice;
+      const checkboxDisabledAttr = this.permissionsEditable ? '' : 'disabled';
+      // Removing it from the last device that has it would leave nothing able to manage devices.
+      const lockManageDevices = !this.isPrimaryDevice
+        && isCheckedManageDevices
+        && this.playerAddressDetails.isOnlyManagingDevice;
+      const manageDevicesDisabledAttr = lockManageDevices ? 'disabled' : checkboxDisabledAttr;
 
       MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
@@ -208,7 +233,7 @@ export class AccountDeviceViewModel extends AbstractViewModel {
                 name="${this.manageDevicesCheckboxId}" 
                 id="${this.manageDevicesCheckboxId}"
                 ${isCheckedManageDevices ? 'checked' : ''}
-                ${checkboxDisabledAttr}
+                ${manageDevicesDisabledAttr}
               >
               <span class="sui-checkbox-display"></span>
               <label for="${this.manageDevicesCheckboxId}">
@@ -223,6 +248,11 @@ export class AccountDeviceViewModel extends AbstractViewModel {
                 </a>
               </label>
             </div>
+            ${lockManageDevices ? `
+            <div class="sui-text-ticker sui-text-hint">
+              This is the only device that can manage devices, so it must keep this permission.
+              Give Manage Devices to another device first.
+            </div>` : ''}
             <div class="sui-checkbox-container">
               <input 
                 type="checkbox" 
@@ -245,9 +275,16 @@ export class AccountDeviceViewModel extends AbstractViewModel {
                 </a>
               </label>
             </div>
+            ${this.isPrimaryDevice ? `
+            <div class="sui-text-ticker sui-text-hint">
+              The primary device always keeps full access, so its permissions cannot be changed.
+            </div>` : ''}
           </div>
           
-          ${this.canEditPermissions ? `
+          ${this.deviceAddress.saveFailed ? `
+          <div class="sui-text-warning">Your changes were not saved. Please try again.</div>` : ''}
+
+          ${this.permissionsEditable ? `
           <div class="account-new-device-confirm-section">
             <a 
               href="javascript: void(0)" 

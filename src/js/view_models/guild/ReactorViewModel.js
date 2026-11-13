@@ -224,7 +224,7 @@ export class ReactorViewModel extends AbstractViewModel {
 
       MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
 
-      MenuPage.setPageTemplateHeaderBtn('Guild Reactor', true, () => {
+      MenuPage.setPageTemplateHeaderBtn('Alpha Reactor', true, () => {
         MenuPage.router.goto('Guild', 'index');
       });
 

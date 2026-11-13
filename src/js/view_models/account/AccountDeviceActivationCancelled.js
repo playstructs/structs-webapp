@@ -3,8 +3,12 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 
 export class AccountDeviceActivationCancelled extends AbstractViewModel {
 
-  constructor() {
+  /**
+   * @param {boolean} failed true when the approval was refused or could not finish, rather than denied
+   */
+  constructor(failed = false) {
     super();
+    this.failed = failed;
     this.returnToAccountBtnId = 'return-to-account-btn';
   }
 
@@ -25,9 +29,11 @@ export class AccountDeviceActivationCancelled extends AbstractViewModel {
         <div class="device-activation-cancelled-text-container">
           <div class="sui-text-destructive">
             <i class="sui-icon sui-icon-md icon-alert"></i>
-            Activation Cancelled
+            ${this.failed ? 'Activation Failed' : 'Activation Cancelled'}
           </div>
-          <div>This device has not been activated.</div>
+          <div>${this.failed
+            ? 'The approval did not go through, so the new device has not been activated. Nothing on your account has changed.'
+            : 'The new device has not been activated.'}</div>
         </div>
         
         <div class="device-activation-btn-container">

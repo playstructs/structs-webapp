@@ -71,7 +71,7 @@ export class RecoveryKeyCreationViewModel extends AbstractViewModel {
 
     const pageHeader = new PageHeader();
     pageHeader.pageLabel = pageLabel;
-    pageHeader.showBackButton = true;
+    pageHeader.showBackButton = showBackButton;
     pageHeader.backButtonHandler = backButtonHandler;
 
     MenuPage.hideAndClearNav();

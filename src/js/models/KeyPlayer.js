@@ -343,8 +343,8 @@ export class KeyPlayer {
    * @param {number} currentBlockHeight
    */
   setPlanetShieldHealth(currentBlockHeight) {
-    // The countdown only means something once the shield is actually breached:
-    // a raid is underway AND the command ship is off station or destroyed.
+    // A countdown only means something once the shield is actually breached: a
+    // command ship on station keeps it secure however long the raid has run.
     if (
       this.arePlanetaryDefensesBreached()
       && currentBlockHeight

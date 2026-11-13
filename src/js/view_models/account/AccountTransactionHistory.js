@@ -139,6 +139,8 @@ export class AccountTransactionHistory extends AbstractViewModel {
           </div>
         `);
 
+        MenuPage.scrollPageTemplateToTop();
+
         MenuPage.hideAndClearDialoguePanel();
 
         this.initPageCode();

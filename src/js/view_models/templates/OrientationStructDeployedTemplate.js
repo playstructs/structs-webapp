@@ -87,12 +87,12 @@ export class OrientationStructDeployedTemplate {
 
     MenuPage.setDialogueIndicatorContent(`<div id="hrbot-talking-small"></div>`);
     MenuPage.setDialogueScreenContent(
-      `For this reason, Alpha mining operations are now conducted by a race of advanced machines knowns as
+      `For this reason, Alpha mining operations are now conducted by a race of advanced machines known as
       <a 
         id="dialogueStructsHint" 
         class="sui-mod-secondary"
         href="javascript: void(0)" 
-        data-sui-tooltip="A civilization of  machines, discovered approximately 1200 years ago."
+        data-sui-tooltip="A civilization of machines, discovered approximately 1200 years ago."
       >Structs.</a>`
     );
     MenuPage.dialogueBtnAHandler = () => {

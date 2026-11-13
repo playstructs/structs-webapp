@@ -17,16 +17,11 @@ export class EnergyUsageComponent extends AbstractViewModelComponent {
   }
 
   getEnergyUsage() {
-    const load = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.load : 0;
-    const structsLoad = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.structs_load : 0;
-    const capacity = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.capacity : 0;
-    const connectionCapacity = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player ? this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player.connection_capacity : 0;
+    const player = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player;
+    const totalLoad = this.numberFormatter.format(player ? player.getTotalLoad() : 0);
+    const totalCapacity = this.numberFormatter.format(player ? player.getTotalCapacity() : 0);
 
-    let totalLoad = load + structsLoad;
-    let totalCapacity = capacity + connectionCapacity;
-    totalLoad = this.numberFormatter.format(totalLoad);
-    totalCapacity = this.numberFormatter.format(totalCapacity);
-
+    // Rounded to fit; the cheatsheet shows the exact figures.
     return `${totalLoad}/${totalCapacity}`;
   }
 

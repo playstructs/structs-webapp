@@ -3,6 +3,7 @@ import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {SEARCH_STRING_PATTERN} from "../../constants/RegexPattern";
 import {TransferSearchRequestDTO} from "../../dtos/TransferSearchRequestDTO";
+import {bindSubmitButtonToInput} from "../../util/SubmitButtonToggle";
 
 export class AccountRecipientSearchViewModel extends AbstractViewModel {
 
@@ -25,19 +26,7 @@ export class AccountRecipientSearchViewModel extends AbstractViewModel {
 
   initPageCode() {
     const playerSearchInput = document.getElementById(this.playerSearchInputId);
-    playerSearchInput.addEventListener('keyup', () => {
-      const submitBtn = document.getElementById(this.playerSearchBtnId);
-
-      if (playerSearchInput.value.length > 0 && submitBtn.classList.contains('sui-mod-disabled')) {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('sui-mod-disabled');
-        submitBtn.classList.add('sui-mod-primary');
-      } else if (playerSearchInput.value.length === 0 && submitBtn.classList.contains('sui-mod-primary')) {
-        submitBtn.disabled = true;
-        submitBtn.classList.remove('sui-mod-primary');
-        submitBtn.classList.add('sui-mod-disabled');
-      }
-    });
+    bindSubmitButtonToInput(playerSearchInput, () => document.getElementById(this.playerSearchBtnId));
 
     const submitBtnHandler = () => {
       document.getElementById(this.playerSearchErrorId).classList.remove('sui-mod-show');

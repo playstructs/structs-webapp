@@ -332,7 +332,7 @@ class PlayerAddressManager
         $content = new ApiResponseContentDto();
 
         try {
-            [$row, $meta] = ConsistentRead::run($db, fn () => [
+            [$row, $pending, $meta] = ConsistentRead::run($db, fn () => [
                 $db->fetchAssociative(
                     $withPermissions
                         ? "
@@ -352,6 +352,17 @@ class PlayerAddressManager
                           WHERE address=:address
                         ',
                     ['address' => $address]
+                ),
+                // A denied, withdrawn or expired activation request leaves no
+                // pending row; the waiting device uses this to stop waiting.
+                (bool) $db->fetchOne(
+                    'SELECT EXISTS (
+                       SELECT 1
+                       FROM player_address_pending
+                       WHERE address = :address
+                         AND player_id = :player_id
+                     )',
+                    ['address' => $address, 'player_id' => $playerId]
                 ),
                 ResponseMetaUtil::snapshotMeta($db),
             ]);
@@ -379,7 +390,7 @@ class PlayerAddressManager
                 );
             }
 
-            $content->data = ['indexed' => $row ?: null, 'chain' => $context];
+            $content->data = ['indexed' => $row ?: null, 'chain' => $context, 'pending' => $pending];
             $content->meta = $meta;
             $content->success = true;
 

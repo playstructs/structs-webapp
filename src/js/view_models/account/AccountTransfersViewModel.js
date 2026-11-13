@@ -21,7 +21,7 @@ export class AccountTransfersViewModel extends AbstractViewModel {
   render () {
     MenuPage.enablePageTemplate(MenuPage.navItemAccountId);
 
-    MenuPage.setPageTemplateHeaderBtn('Account', true, () => {
+    MenuPage.setPageTemplateHeaderBtn('Transfers', true, () => {
       MenuPage.router.goto('Account', 'index');
     });
 

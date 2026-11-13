@@ -35,6 +35,16 @@ export class NumberFormatter {
     return intString.substring(0, remainderDigits) + unit;
   }
 
+  /**
+   * Every digit, grouped by thousands (1,075), for places with room to be exact.
+   *
+   * @param {number} number
+   * @return {string}
+   */
+  formatGrouped(number) {
+    return Math.trunc(Number(number) || 0).toLocaleString('en-US');
+  }
+
   /** Format exact whole units with the same truncating display suffixes. */
   formatExact(value) {
     const digits = String(value);

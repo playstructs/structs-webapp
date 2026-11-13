@@ -295,12 +295,13 @@ export class MenuPage {
     initCustomPageTemplateCode = () => {}
   ) {
 
-    MenuPage.setNavItems(MenuPage.menuNavItems, activeNavItemId);
-
-    // Before login (e.g. Activate Device) there's no game behind the menu to close to.
+    // Before login (e.g. Activate Device, Recover Account) there's no game behind
+    // the menu: no tabs to open and nothing to close to.
     if (MenuPage.gameState?.keyPlayers[PLAYER_TYPES.PLAYER]?.player) {
+      MenuPage.setNavItems(MenuPage.menuNavItems, activeNavItemId);
       MenuPage.enableCloseBtn();
     } else {
+      MenuPage.setNavItems([new NavItemDTO('nav-item-structs', 'Structs')], 'nav-item-structs');
       MenuPage.disableCloseBtn();
     }
 
@@ -387,6 +388,20 @@ export class MenuPage {
 
   static setPageTemplateContent(content) {
     document.getElementById(this.pageTemplateContentId).innerHTML = content;
+  }
+
+  /**
+   * Scroll the page template back to the top. The scrolling container outlives
+   * page renders, so a freshly rendered page otherwise keeps the old position.
+   */
+  static scrollPageTemplateToTop() {
+    let el = document.getElementById(this.pageTemplateContentId);
+    while (el) {
+      if (el.scrollTop > 0) {
+        el.scrollTop = 0;
+      }
+      el = el.parentElement;
+    }
   }
 
   static useTransparentBackground() {

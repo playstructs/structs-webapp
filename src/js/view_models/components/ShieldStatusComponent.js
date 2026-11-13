@@ -36,7 +36,6 @@ export class ShieldStatusComponent extends AbstractViewModelComponent {
       if (event.playerType !== this.planetOwnerPlayerType) {
         return;
       }
-      this.renderShieldStatusValue(this.gameState.keyPlayers[event.playerType].planetShieldHealth);
       this.renderShieldStatusIcon();
     };
 
@@ -128,39 +127,52 @@ export class ShieldStatusComponent extends AbstractViewModelComponent {
     // info, which can load/change independently of the status.
     elm.dataset.projectedBreachTime = planetOwner?.getProjectedShieldBreachTime() ?? 'N/A';
 
-    // Drop any breach countdown left over from before the command ship came
-    // back on station; it only belongs beside a breached shield.
-    this.renderShieldStatusValue(status === 'breached' ? null : '');
+    this.renderShieldStatusValue();
   }
 
   /**
-   * @param {string|null} health
+   * What the readout says, worked out from the planet owner's current state
+   * every time, so it can never disagree with the status icon beside it.
+   *
+   * @return {{text: string, warning: boolean}}
    */
-  renderShieldStatusValue(health = null) {
+  getShieldReadout() {
+    const planetOwner = this.gameState.keyPlayers[this.planetOwnerPlayerType];
+
+    if (!planetOwner || planetOwner.arePlanetaryDefensesSecure()) {
+      return {text: planetOwner && this.showTextStatus ? 'Secure' : '', warning: false};
+    }
+
+    const countdown = planetOwner.arePlanetaryDefensesBreached() ? planetOwner.getPlanetShieldHealth() : '';
+    if (countdown) {
+      return {text: countdown, warning: true};
+    }
+
+    if (!this.showTextStatus) {
+      return {text: '', warning: true};
+    }
+
+    // An enemy planet is a raid target, so how long its shield would hold is the
+    // useful figure; the player's own planet just reports that it is exposed.
+    return planetOwner.isRaidDependent()
+      ? {text: planetOwner.getProjectedShieldBreachTime(), warning: true}
+      : {text: 'Vulnerable', warning: false};
+  }
+
+  renderShieldStatusValue() {
     const valueElm = document.getElementById(this.elementValueContainerId);
 
     if (!valueElm) {
       return;
     }
 
-    const planetOwner = this.gameState.keyPlayers[this.planetOwnerPlayerType];
+    const readout = this.getShieldReadout();
 
-    if (health === null) {
-      health = valueElm.innerText;
-    }
-
-    if (planetOwner && ['', 'Vulnerable', 'Secure'].includes(health) && this.showTextStatus) {
-      if (planetOwner.arePlanetaryDefensesVulnerable()) {
-        health = 'Vulnerable';
-      } else {
-        health = 'Secure';
-      }
-
-      valueElm.classList.remove('sui-text-warning');
-      valueElm.innerText = health;
-    } else {
+    if (readout.warning) {
       valueElm.classList.add('sui-text-warning');
-      valueElm.innerText = health;
+    } else {
+      valueElm.classList.remove('sui-text-warning');
     }
+    valueElm.innerText = readout.text;
   }
 }

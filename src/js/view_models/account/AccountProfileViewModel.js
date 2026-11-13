@@ -140,7 +140,7 @@ export class AccountProfileViewModel extends AbstractViewModel {
     } else {
       MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
 
-      MenuPage.setPageTemplateHeaderBtn('Guild Profile', true, () => {
+      MenuPage.setPageTemplateHeaderBtn('Player Profile', true, () => {
         MenuPage.router.back();
       });
     }
