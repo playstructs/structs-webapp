@@ -79,3 +79,62 @@ these budgets across this container's PHP workers. A 429 includes `Retry-After` 
 before multi-replica/public deployment; these application limits are not edge DoS
 protection. The HTTP runner checks both Apache and the control proxy, including
 untrusted forwarded-IP headers. No public production origin has been accepted yet.
+
+## Influence reads
+
+The influence API and both regression runners require the fixture schema through
+`influence-player-history-read-20261111`, including the personal-history backfill
+in `influence-grass-20261111`. Deploy that schema and its paired sync-state writer
+before the API. The PHP and catalog HTTP runners cover contest standings,
+paged scores, single/batch planet snapshots and inclusive block-height history. See
+[the influence API contract](influence-api.md). The focused PHP run is:
+
+```bash
+STRUCTS_INTEGRATION_PG=YOUR_DISPOSABLE_FIXTURE \
+STRUCTS_PHP_TEST_IMAGE=structs/structs-webapp:latest \
+node tools/api/php-integration.cjs --filter 'Influence|ApiRouting'
+```
+
+The optional [guild-history benchmark](influence-history-benchmark.md) compares
+the previous readers and current implementation on a two-million-block contest
+with 3.6 million score changes. It validates balances against raw ledger sums and
+records timings and query plans using its own disposable database clone.
+
+The fixture must accept the disposable PHP/Apache containers' connections and
+have run its schema migrations; merely starting a current structs-pg image does
+not itself initialize its Sqitch schema. Keep those test-only connection settings
+isolated from the live guild database.
+
+The [grass assessment](influence-grass-assessment.md) describes the related schema,
+sync-state and relay changes that publish complete influence updates.
+
+Influence grass has an opt-in subscription-only consumer in
+`src/js/framework/InfluenceStream.js`. Instantiate `InfluenceStream(connection,
+exactSubject, {loadSnapshot, store, onSnapshot, onUpdate, onError})` and call
+`start()`; call `stop()` when the view closes. `loadSnapshot` is required and uses
+the API for initial loading, reconnects, detected gaps, or incomplete/corrupt
+multipart frames. Healthy events update the store without additional API calls.
+The consumer never publishes a NATS message or subscribes to reply inboxes.
+
+The loader receives `{subject, reason, signal}` and returns
+`{build_id, height, context, data, players?, history?}`. Use exact strings from API
+metadata. Adapt current API data to the selected scope (for example, scores use
+`data: {standings: response.data}`). Supply roster rows if maintaining a guild
+roster. Optional history retains the API's `{opening, samples}` response object;
+all contributing reads must have the same build and projected height, and the
+history range must end at that height. Retry if those snapshots disagree.
+
+The subscriber confirms its subscription before loading, then ignores queued
+frames at/below the API snapshot height in the same build and rejects older
+builds. Subsequent complete frames must form a contiguous scope sequence.
+`historyBase` holds optional API history; `history` holds later sparse grass
+deltas. A pushed replacement resets both and waits for its terminal history
+segment. `historyReady` remains false for current-state-only loads until history
+is explicitly loaded or a complete replacement arrives. No influence UI is added.
+
+The authoritative event/deployment contract is in the sibling
+`structs-pg/docs/influence-grass-20261111.md`. Run
+`node tools/api/influence-stream.test.mjs` for multipart validation, duplicates,
+guild changes, generation replacement and API handoff/reconnect/gap tests with
+NATS publishing forbidden. The database/NATS integration fixture also enforces
+publish-denied client credentials and subscription-denied relay credentials.

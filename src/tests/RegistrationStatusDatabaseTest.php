@@ -54,6 +54,11 @@ class RegistrationStatusDatabaseTest extends ApiManagerTestCase
                 VALUES('structstestnet-111',3353011,3353012,'current')"
             );
             ReadinessFixture::economyCoverage($db);
+            // A fresh Sqitch fixture has no indexed inventory authority yet.
+            $db->executeStatement("INSERT INTO structs.api_refresh_state(model,source_height,source_time,inventory_authority)
+                SELECT 'inventory',last_height,last_block_time,'current-claims-v1' FROM sync_state.sync_cursor
+                WHERE chain_id='structstestnet-111' ON CONFLICT(model) DO UPDATE SET
+                source_height=EXCLUDED.source_height,source_time=EXCLUDED.source_time,inventory_authority=EXCLUDED.inventory_authority");
             $db->executeStatement('SET LOCAL ROLE structs_webapp');
 
             // The native proof context and the indexed row are reported side by side.
