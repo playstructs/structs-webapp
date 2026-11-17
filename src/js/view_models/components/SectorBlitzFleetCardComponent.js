@@ -47,7 +47,7 @@ export class SectorBlitzFleetCardComponent {
     }
 
     return `
-      <div id="${this.containerId}" class="sui-data-card sector-blitz-fleet-card">
+      <div id="${this.containerId}" class="sui-data-card sector-blitz-fleet-card${this.isResults ? ' sector-blitz-fleet-card-results' : ''}">
         ${this.renderHeaderHTML()}
         <div class="sector-blitz-fleet-card-body">
           <div class="sector-blitz-fleet-card-loading">

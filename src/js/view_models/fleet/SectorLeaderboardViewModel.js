@@ -277,7 +277,7 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
     const places = {'1': 'Tied First', '2': 'Second Place', '3': 'Third Place', '4': 'Fourth Place'};
     return rows.map(row => `
       <div class="sector-blitz-podium-place">
-        <div class="sui-text-header">${places[row.rank] ?? SectorBlitzFormat.rank(row.rank)}</div>
+        <div class="sui-text-header sui-text-hint">${places[row.rank] ?? SectorBlitzFormat.rank(row.rank)}</div>
         <div class="sui-text-header sector-blitz-podium-name">${nameFn(row)}</div>
       </div>
     `).join('');
@@ -296,8 +296,10 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
     const guildsHTML = topGuild
       ? `
         <div class="sector-blitz-podium">
-          <div class="sui-text-header">Top Guild</div>
-          <div class="sui-text-display sui-text-secondary">${guildName(topGuild)}</div>
+          <div class="sector-blitz-podium-leader">
+            <div class="sui-text-header sui-text-hint">Top Guild</div>
+            <div class="sui-text-display sui-text-secondary">${guildName(topGuild)}</div>
+          </div>
           <div class="sector-blitz-podium-places">${this.renderPlaceNames(otherGuilds, guildName)}</div>
         </div>
       `
@@ -305,15 +307,17 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
     const playersHTML = topPlayer
       ? `
         <div class="sector-blitz-podium">
-          <div class="sui-text-header">Top Player</div>
-          <div class="sui-text-display">${playerName(topPlayer)}</div>
+          <div class="sector-blitz-podium-leader">
+            <div class="sui-text-header sui-text-hint">Top Player</div>
+            <div class="sui-text-display">${playerName(topPlayer)}</div>
+          </div>
           <div class="sector-blitz-podium-places">${this.renderPlaceNames(otherPlayers, playerName)}</div>
         </div>
       `
       : '';
 
     return `
-      <div class="sui-data-card sector-blitz-fleet-card">
+      <div class="sui-data-card sector-blitz-fleet-card sector-blitz-fleet-card-results">
         <div class="sector-blitz-fleet-card-header">
           <div class="sector-blitz-title">
             <i class="sui-icon sui-icon-md icon-guild sui-text-primary"></i>
@@ -385,12 +389,12 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
 
           <div class="sui-data-card">
             <div class="sui-data-card-header sui-text-header">Guild Leaderboard</div>
-            <div class="sui-data-card-body">${this.renderGuildRowsHTML()}</div>
+            <div class="sui-data-card-body sector-blitz-leaderboard-body">${this.renderGuildRowsHTML()}</div>
           </div>
 
           <div class="sui-data-card">
             <div class="sui-data-card-header sui-text-header">Player Leaderboard</div>
-            <div class="sui-data-card-body">${this.renderPlayerRowsHTML()}</div>
+            <div class="sui-data-card-body sector-blitz-leaderboard-body">${this.renderPlayerRowsHTML()}</div>
           </div>
 
         </div>
