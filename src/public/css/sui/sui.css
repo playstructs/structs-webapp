@@ -292,6 +292,10 @@ a.sui-mod-disabled:visited {
   color: var(--text-warning);
 }
 
+.sui-text-neutral-primary {
+  color: var(--text-neutral-primary);
+}
+
 .sui-text-hint {
   color: var(--text-hint);
 }
