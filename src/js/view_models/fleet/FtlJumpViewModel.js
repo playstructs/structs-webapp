@@ -7,7 +7,7 @@ const FTL_JUMP_TIMEOUT_MS = 90 * 1000;
 
 /**
  * "FTL Jump in Progress." shown between Launch Fleet and the raid starting, whether or not
- * a contest is running. The raid's INITIATED status moves the menu on to the Fleet page.
+ * a contest is running. The raid's INITIATED status closes it and shows the raid map.
  */
 export class FtlJumpViewModel extends TutorialStatusViewModel {
 
@@ -32,6 +32,13 @@ export class FtlJumpViewModel extends TutorialStatusViewModel {
    */
   static isShowing() {
     return MenuPage.router.currentController === 'Fleet' && MenuPage.router.currentPage === 'ftlJump';
+  }
+
+  /**
+   * The raid has started: stop waiting for it.
+   */
+  static finish() {
+    clearTimeout(FtlJumpViewModel.timeout);
   }
 
   /**
