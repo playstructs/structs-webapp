@@ -843,14 +843,10 @@ export class GuildAPI {
    * @return {Promise<PlayerSearchResultDTO[]>}
    */
   async raidSearch(raidSearchRequestDTO) {
-    const searchStringParam = raidSearchRequestDTO.search_string ? `search_string=${raidSearchRequestDTO.search_string}` : '';
-    const guildIdParam = raidSearchRequestDTO.guild_id ? `&guild_id=${raidSearchRequestDTO.guild_id}` : '';
-    const minOreParam = `&min_ore=${raidSearchRequestDTO.min_ore}`;
-    const fleetAwayOnlyParam = `&fleet_away_only=${raidSearchRequestDTO.fleet_away_only ? 1 : 0}`;
-    const notUnderAttackParam = `&not_under_attack=${raidSearchRequestDTO.not_under_attack ? 1 : 0}`;
-    const pageParam = `&page=${raidSearchRequestDTO.page}`;
+    const params = this.buildRaidSearchParams(raidSearchRequestDTO);
+    params.set('page', `${raidSearchRequestDTO.page}`);
 
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/raid/search?${searchStringParam}${guildIdParam}${minOreParam}${fleetAwayOnlyParam}${notUnderAttackParam}${pageParam}`);
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/raid/search?${params.toString()}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
     return this.playerSearchResultDTOFactory.parseList(response.data);
@@ -861,20 +857,38 @@ export class GuildAPI {
    * @return {Promise<number>}
    */
   async raidSearchCount(raidSearchRequestDTO) {
-    const count_only = `count_only=1`;
-    const searchStringParam = raidSearchRequestDTO.search_string ? `&search_string=${raidSearchRequestDTO.search_string}` : '';
-    const guildIdParam = raidSearchRequestDTO.guild_id ? `&guild_id=${raidSearchRequestDTO.guild_id}` : '';
-    const minOreParam = `&min_ore=${raidSearchRequestDTO.min_ore}`;
-    const fleetAwayOnlyParam = `&fleet_away_only=${raidSearchRequestDTO.fleet_away_only ? 1 : 0}`;
-    const notUnderAttackParam = `&not_under_attack=${raidSearchRequestDTO.not_under_attack ? 1 : 0}`;
+    const params = this.buildRaidSearchParams(raidSearchRequestDTO);
+    params.set('count_only', '1');
 
-    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/raid/search?${count_only}${searchStringParam}${guildIdParam}${minOreParam}${fleetAwayOnlyParam}${notUnderAttackParam}`);
+    const jsonResponse = await this.ajax.get(`${this.apiUrl}/player/raid/search?${params.toString()}`);
     const response = this.guildAPIResponseFactory.make(jsonResponse);
     this.handleResponseFailure(response);
 
     return (response.data.hasOwnProperty('length') && response.data.length === 1 && response.data[0].hasOwnProperty('count'))
       ? parseInt(response.data[0].count)
       : 0;
+  }
+
+  /**
+   * @param {RaidSearchRequestDTO} raidSearchRequestDTO
+   * @return {URLSearchParams}
+   */
+  buildRaidSearchParams(raidSearchRequestDTO) {
+    const params = new URLSearchParams();
+    if (raidSearchRequestDTO.search_string) params.set('search_string', raidSearchRequestDTO.search_string);
+    if (raidSearchRequestDTO.guild_id) params.set('guild_id', raidSearchRequestDTO.guild_id);
+    params.set('min_ore', `${raidSearchRequestDTO.min_ore ?? 0}`);
+    params.set('fleet_away_only', raidSearchRequestDTO.fleet_away_only ? '1' : '0');
+    params.set('not_under_attack', raidSearchRequestDTO.not_under_attack ? '1' : '0');
+    if (raidSearchRequestDTO.rival_guilds_only) params.set('rival_guilds_only', '1');
+    if (raidSearchRequestDTO.contest_id) {
+      params.set('contest_id', `${raidSearchRequestDTO.contest_id}`);
+      if (raidSearchRequestDTO.undefeated) params.set('undefeated', '1');
+    }
+    if (raidSearchRequestDTO.sector !== null && raidSearchRequestDTO.sector !== undefined) {
+      params.set('sector', `${raidSearchRequestDTO.sector}`);
+    }
+    return params;
   }
 
   /**

@@ -2595,14 +2595,16 @@ only screen and (min-height: 2048px) {
  * The HR bot's frames are 64x64 with the head in the middle; the design shows
  * them at 1:1, cropped by the 40px portrait screen, rather than shrunk to fit.
  */
-.tutorial-dialogue-portrait {
+.tutorial-dialogue-portrait,
+.sector-blitz-hrbot {
   position: relative;
   width: 40px;
   height: 40px;
   overflow: hidden;
 }
 
-.tutorial-dialogue-portrait svg {
+.tutorial-dialogue-portrait svg,
+.sector-blitz-hrbot svg {
   position: absolute;
   top: -8px;
   left: -12px;
@@ -2748,3 +2750,393 @@ body.tutorial-active #action-bar-alpha-base-enemy {
 }
 
 /* Introduction End */
+
+/* ---- Sector Blitz Start ---- */
+
+.sector-blitz-colour-first { background: var(--accent-primary); }
+.sector-blitz-colour-second { background: var(--struct-health-bar-health); }
+.sector-blitz-colour-third { background: var(--accent-destructive); }
+.sector-blitz-colour-other { background: #7A5B5E; }
+
+i.sui-icon.sector-blitz-influence-icon {
+  width: var(--icon-md);
+  height: var(--icon-md);
+  background-image: url("/img/sector-blitz/influence-point.png");
+  image-rendering: pixelated;
+}
+
+.sector-blitz-layout .sui-data-card,
+.sector-blitz-fleet-card {
+  width: 100%;
+}
+
+.sector-blitz-fleet-card {
+  border: 1px solid var(--border);
+}
+
+.sector-blitz-fleet-card-header {
+  display: flex;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  align-self: stretch;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.sector-blitz-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  text-align: left;
+}
+
+.sector-blitz-fleet-card-rules-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.sector-blitz-fleet-card-body {
+  display: flex;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  flex-direction: column;
+  align-self: stretch;
+  gap: var(--spacing-lg);
+}
+
+.sector-blitz-fleet-card-loading {
+  display: flex;
+  justify-content: center;
+}
+
+.sector-blitz-sector-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.sector-blitz-sector-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sector-blitz-sector-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Anchors otherwise take the body font. */
+a.sector-blitz-sector-link,
+a.sector-blitz-fleet-card-rules-btn span {
+  font-family: 'ExtremeHazard', sans-serif;
+  font-size: 8px;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+a.sector-blitz-fleet-card-rules-btn,
+a.sector-blitz-fleet-card-rules-btn:link,
+a.sector-blitz-fleet-card-rules-btn:visited,
+a.sector-blitz-fleet-card-rules-btn span {
+  color: var(--accent-secondary);
+  text-decoration: none;
+}
+
+a.sector-blitz-fleet-card-rules-btn:hover,
+a.sector-blitz-fleet-card-rules-btn:active {
+  text-decoration: none;
+}
+
+.sector-blitz-bar {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+}
+
+.sector-blitz-bar-segment {
+  flex-basis: 0;
+  height: 100%;
+}
+
+.sector-blitz-bar-empty {
+  background: var(--border);
+}
+
+.sector-blitz-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-sm) var(--spacing-lg);
+}
+
+.sector-blitz-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sector-blitz-legend-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+}
+
+.sector-blitz-results-winner,
+.sector-blitz-podium {
+  display: flex;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  flex-direction: column;
+  align-self: stretch;
+  gap: var(--spacing-sm);
+  text-align: left;
+}
+
+.sector-blitz-podium + .sector-blitz-podium {
+  border-top: 1px solid var(--border);
+}
+
+.sector-blitz-results-sectors,
+.sector-blitz-podium-places {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md) var(--spacing-xxl);
+}
+
+.sector-blitz-results-sectors {
+  padding: 0 var(--spacing-xl) var(--spacing-lg);
+}
+
+.sector-blitz-results-sector,
+.sector-blitz-podium-place {
+  display: flex;
+  min-width: 140px;
+  flex: 1 0 0;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  text-align: left;
+}
+
+.sector-blitz-podium-name {
+  color: var(--text-body);
+}
+
+.sector-blitz-empty {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+}
+
+.sector-blitz-event-rules.profile-layout {
+  gap: var(--spacing-xxxl);
+}
+
+.sector-blitz-rules.sui-data-card-body {
+  padding: var(--spacing-xl);
+  gap: var(--spacing-xxl);
+}
+
+.sector-blitz-event-rules .sui-data-card-row > :first-child {
+  color: var(--text-hint);
+}
+
+i.sui-icon.sector-blitz-influence-icon-inline {
+  width: 12px;
+  height: 12px;
+  margin: 0 var(--spacing-sm);
+  vertical-align: middle;
+}
+
+.sector-blitz-rules p {
+  margin: 0;
+  text-align: left;
+}
+
+.sector-blitz-rules-list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  list-style: none;
+  text-align: left;
+}
+
+.sector-blitz-rules-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+}
+
+.sector-blitz-points {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sector-blitz-rank {
+  min-width: 48px;
+  text-align: left;
+}
+
+.sector-blitz-guild-placeholder {
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  box-sizing: border-box;
+}
+
+img.sector-blitz-guild-logo {
+  object-fit: cover;
+}
+
+.scan-filters-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md) var(--spacing-xxl);
+}
+
+/* Sector Map */
+
+.sector-map-layout {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  height: 296px;
+  flex: 1 1 100%;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sector-map-viewport {
+  /* Out of flow, so the wide map can't stretch the menu page; it pans inside instead. */
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  cursor: grab;
+  touch-action: pan-x pan-y;
+  scrollbar-width: none;
+}
+
+.sector-map-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.sector-map-viewport.sui-mod-dragging {
+  cursor: grabbing;
+}
+
+.sector-map {
+  position: relative;
+  width: 1200px;
+  height: 800px;
+}
+
+.sector-map-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  user-select: none;
+  pointer-events: none;
+}
+
+.sector-map-marker {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  transform: translate(-32px, -50%);
+}
+
+.sector-map-marker-label-left {
+  flex-direction: row-reverse;
+  transform: translate(calc(-100% + 32px), -50%);
+}
+
+.sector-map-marker-light {
+  position: relative;
+  display: flex;
+  width: 64px;
+  height: 64px;
+  align-items: center;
+  justify-content: center;
+}
+
+.sector-map-marker-light img {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+}
+
+.sector-map-marker-corners {
+  position: absolute;
+  display: none;
+  top: 50%;
+  left: 50%;
+  width: 128px;
+  height: 128px;
+  background: url("/img/focus/focus-friendly.png") no-repeat center;
+  image-rendering: pixelated;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.sector-map-marker.sui-mod-selected .sector-map-marker-corners {
+  display: block;
+}
+
+.sector-map-marker-label {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 2px solid var(--border);
+  background: var(--surface-default);
+  color: var(--text-body);
+  white-space: nowrap;
+}
+
+.sector-map-marker.sui-mod-selected .sector-map-marker-label {
+  border-color: var(--accent-primary-active);
+  background: var(--accent-primary-active);
+  color: var(--text-player-inverted);
+}
+
+.sector-map-bar {
+  position: absolute;
+  display: flex;
+  right: var(--spacing-xl);
+  bottom: var(--spacing-xl);
+  left: var(--spacing-xl);
+  align-items: stretch;
+  gap: var(--spacing-xl);
+}
+
+.sector-map-bar-info {
+  display: flex;
+  min-width: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border);
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--spacing-md);
+  background: var(--surface-default);
+  text-align: left;
+}
+
+.sector-map-bar-tip {
+  margin-left: auto;
+}
+
+/* ---- Sector Blitz End ---- */
+
+.sector-blitz-layout .sui-data-card-body > .sui-result-table {
+  width: 100%;
+}
+
+.sector-blitz-layout .sui-data-card-body > .sui-pagination {
+  align-self: center;
+}

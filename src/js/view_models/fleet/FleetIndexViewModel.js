@@ -4,6 +4,7 @@ import {RaidStatusUtil} from "../../util/RaidStatusUtil";
 import {PlanetCardBuilder} from "../../builders/PlanetCardBuilder";
 import {EVENTS} from "../../constants/Events";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {SectorBlitzFleetCardComponent} from "../components/SectorBlitzFleetCardComponent";
 
 export class FleetIndexViewModel extends AbstractViewModel {
 
@@ -13,6 +14,13 @@ export class FleetIndexViewModel extends AbstractViewModel {
    * @type {function|null}
    */
   static raidStatusChangedHandler = null;
+
+  /**
+   * Re-renders the page when a Sector Blitz contest starts or its results begin/end.
+   *
+   * @type {function|null}
+   */
+  static sectorBlitzPhaseChangedHandler = null;
 
   /**
    * @param {GameState} gameState
@@ -25,6 +33,8 @@ export class FleetIndexViewModel extends AbstractViewModel {
    * @param {StructManager} structManager
    * @param {string|null} planetCardType
    * @param {string|null} raidCardType
+   * @param {InfluenceAPI|null} influenceAPI
+   * @param {SectorBlitzManager|null} sectorBlitzManager
    */
   constructor(
     gameState,
@@ -36,7 +46,9 @@ export class FleetIndexViewModel extends AbstractViewModel {
     raidManager,
     structManager,
     planetCardType = null,
-    raidCardType= null
+    raidCardType= null,
+    influenceAPI = null,
+    sectorBlitzManager = null
   ) {
     super();
     this.gameState = gameState;
@@ -48,6 +60,10 @@ export class FleetIndexViewModel extends AbstractViewModel {
     this.structManager = structManager;
     this.planetCardType = planetCardType;
     this.raidCardType = raidCardType;
+    this.sectorBlitzManager = sectorBlitzManager;
+    this.sectorBlitzCard = sectorBlitzManager
+      ? new SectorBlitzFleetCardComponent(sectorBlitzManager, influenceAPI)
+      : null;
 
     this.raidStatusUtil = new RaidStatusUtil();
     this.raidCardContainerId = 'raid-card-container';
@@ -60,7 +76,8 @@ export class FleetIndexViewModel extends AbstractViewModel {
       planetManager,
       mapManager,
       raidManager,
-      structManager
+      structManager,
+      sectorBlitzManager
     );
     this.alphaBaseCard = this.planetCardBuilder.build(false, this.planetCardType);
     this.raidCard = this.planetCardBuilder.build(true, this.raidCardType);
@@ -84,6 +101,23 @@ export class FleetIndexViewModel extends AbstractViewModel {
     };
 
     window.addEventListener(EVENTS.PLANET_RAID_STATUS_CHANGED, FleetIndexViewModel.raidStatusChangedHandler);
+
+    this.sectorBlitzCard?.initPageCode();
+
+    window.removeEventListener(EVENTS.SECTOR_BLITZ_PHASE_CHANGED, FleetIndexViewModel.sectorBlitzPhaseChangedHandler);
+    FleetIndexViewModel.sectorBlitzPhaseChangedHandler = () => {
+      window.removeEventListener(EVENTS.SECTOR_BLITZ_PHASE_CHANGED, FleetIndexViewModel.sectorBlitzPhaseChangedHandler);
+      if (document.getElementById(this.raidCardContainerId)) {
+        MenuPage.router.goto('Fleet', 'index', {
+          planetCardType: this.planetCardType,
+          raidCardType: this.raidCardType
+        }, {replace: true});
+      }
+    };
+    window.addEventListener(EVENTS.SECTOR_BLITZ_PHASE_CHANGED, FleetIndexViewModel.sectorBlitzPhaseChangedHandler);
+
+    // Picks up a contest that started (or was configured) since the last check; a change re-renders this page.
+    this.sectorBlitzManager?.refresh().catch(() => {});
   }
 
   renderRaidLogBtnHTML() {
@@ -114,7 +148,9 @@ export class FleetIndexViewModel extends AbstractViewModel {
 
     MenuPage.setPageTemplateContent(`
       <div class="fleet-index-layout">
-        
+
+        ${this.sectorBlitzCard?.renderHTML() ?? ''}
+
         <div class="fleet-index-cards">
         
           <div class="fleet-card-wrapper">

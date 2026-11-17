@@ -82,28 +82,64 @@ class InfluenceManager
         });
     }
 
+    /**
+     * Personal scores ranked by points (exact ties share a rank). Ranks are contest-wide
+     * for the requested sector; guild_id and scored_only only narrow the page.
+     */
     public function players(string $contest, array $query = [], string $page = '1'): Response
     {
         return $this->respond(function ($body) use ($contest, $query, $page): void {
-            P::only($query, ['limit', 'after_id', 'include_total', 'guild_id', 'sector']);
+            P::only($query, ['limit', 'include_total', 'guild_id', 'sector', 'scored_only']);
             $cid = P::integer($contest, 'contest_id', 1); $sector = P::sector($query);
             [$page, $limit, $offset, $total] = P::page($query, $page);
             $guild = isset($query['guild_id']) ? P::objectId($query['guild_id'], 'guild') : null;
-            $after = isset($query['after_id']) ? P::objectId($query['after_id'], 'player') : null;
-            $this->snapshot(function () use ($body, $cid, $sector, $guild, $after, $page, $limit, $offset, $total): void {
+            $scoredOnly = P::flag($query, 'scored_only');
+            $this->snapshot(function () use ($body, $cid, $sector, $guild, $scoredOnly, $page, $limit, $offset, $total): void {
                 $c = $this->context($cid, $body); $this->validateSector($c, $sector);
                 $params = $this->scoreParams($c) + ['sector' => $sector]; $filter = '';
-                if ($guild !== null) { $this->requireGuild($c, $guild); $filter .= ' AND guild=:guild'; $params['guild'] = $guild; }
-                if ($after !== null) { $filter .= ' AND player>:after'; $params['after'] = $after; }
+                if ($guild !== null) { $this->requireGuild($c, $guild); $filter .= ' AND r.guild=:guild'; $params['guild'] = $guild; }
+                if ($scoredOnly) $filter .= ' AND r.pts>0';
                 $rows = $this->db->fetchAllAssociative(InfluenceQuery::players($filter, $limit + 1, $offset), $params);
+                foreach ($rows as &$r) $r['profile'] = json_decode($r['profile'], true, 512, JSON_THROW_ON_ERROR); unset($r);
                 $body->meta += $this->paging($rows, $page, $limit, 'player_id');
-                $body->meta += ['score_kind' => 'personal', 'additive_to_guild' => false, 'sector' => $sector];
+                unset($body->meta['next_after_id']);
+                $body->meta += ['score_kind' => 'personal', 'additive_to_guild' => false, 'sector' => $sector, 'order' => 'points'];
                 $body->data = $rows;
-                if ($total) {
-                    $cp = ['build' => $c['build_id']]; if ($guild !== null) $cp['guild'] = $guild;
-                    if ($after !== null) $cp['after'] = $after;
-                    $body->total = (string) $this->db->fetchOne('SELECT count(*) FROM structs.influence_member WHERE build_id=:build' . $filter, $cp);
+                if ($total) $body->total = (string) $this->db->fetchOne(InfluenceQuery::countPlayers($filter), $params);
+            });
+        });
+    }
+
+    /**
+     * Guild leaderboard. With a sector: ranked by that sector's points, then overall points.
+     * Without: ranked by sectors controlled, then overall points (the Sector Blitz result).
+     * Exact ties share a rank. Built from the complete standings scoreboard.
+     */
+    public function guildRanks(string $contest, array $query = [], string $page = '1'): Response
+    {
+        return $this->respond(function ($body) use ($contest, $query, $page): void {
+            P::only($query, ['limit', 'include_total', 'sector', 'scored_only']);
+            $cid = P::integer($contest, 'contest_id', 1); $sector = P::sector($query);
+            [$page, $limit, $offset, $total] = P::page($query, $page);
+            $scoredOnly = P::flag($query, 'scored_only');
+            $this->snapshot(function () use ($body, $cid, $sector, $scoredOnly, $page, $limit, $offset, $total): void {
+                $c = $this->context($cid, $body); $this->validateSector($c, $sector);
+                $ranked = $this->rankGuilds($this->standingsRows($c), $c, $sector);
+                if ($scoredOnly) $ranked = array_values(array_filter($ranked, fn ($r) => bccomp($r['points'], '0', 0) > 0));
+                $rows = array_slice($ranked, $offset, $limit + 1);
+                $body->meta += $this->paging($rows, $page, $limit, 'guild_id');
+                unset($body->meta['next_after_id']);
+                $body->meta += ['score_kind' => 'guild', 'sector' => $sector,
+                    'order' => $sector === null ? 'sectors_controlled' : 'points'];
+                $profiles = [];
+                if ($rows) {
+                    foreach ($this->db->fetchAllAssociative(InfluenceQuery::GUILD_PROFILES, ['guilds' => json_encode(array_column($rows, 'guild_id'))]) as $p) {
+                        $profiles[$p['guild_id']] = ['name' => $p['name'], 'tag' => $p['tag'], 'logo' => $p['logo']];
+                    }
                 }
+                foreach ($rows as &$r) $r['profile'] = $profiles[$r['guild_id']] ?? ['name' => null, 'tag' => null, 'logo' => null]; unset($r);
+                $body->data = $rows;
+                if ($total) $body->total = (string) count($ranked);
             });
         });
     }
@@ -130,9 +166,11 @@ ORDER BY sector
 SQL, $this->scoreParams($c) + ['player' => $player, 'sectors' => json_encode($c['sectors'])]);
                 foreach ($rows as &$r) $r['sector'] = (int) $r['sector']; unset($r);
                 $selected = array_values(array_filter($rows, fn ($r) => $sector === null || $r['sector'] === $sector));
+                $rank = $this->db->fetchOne(InfluenceQuery::PLAYER_RANKS . 'SELECT rnk::text FROM ranked WHERE player=:player',
+                    $this->scoreParams($c) + ['sector' => $sector, 'player' => $player]);
                 $body->data = ['player_id' => $player, 'guild_id' => $member['guild'], 'sector' => $sector]
                     + $this->sumScores($selected, $c)
-                    + ['overall_points' => $this->sumScores($rows, $c)['points'], 'sectors' => $selected];
+                    + ['overall_points' => $this->sumScores($rows, $c)['points'], 'rank' => $rank === false ? null : $rank, 'sectors' => $selected];
                 $body->meta += ['score_kind' => 'personal', 'additive_to_guild' => false];
             });
         });
@@ -346,6 +384,55 @@ SQL, $this->scoreParams($c) + ['player' => $player, 'sectors' => json_encode($c[
         foreach ($rows as &$r) {
             $r['sector'] = (int) $r['sector']; $r['tied_for_lead'] = self::boolean($r['tied_for_lead']); $r['is_winner'] = self::boolean($r['is_winner']);
         }
+        return $rows;
+    }
+
+    /**
+     * Competition ranking ("1, 1, 3") over standings rows. Per-sector rows keep the
+     * standings tiebreaker (overall points); the overall table counts sectors led.
+     */
+    private function rankGuilds(array $standings, array $c, ?int $sector): array
+    {
+        $scoring = array_values(array_filter($c['sectors'], fn ($s) => $s !== 0 || $c['scoring_mode'] === 'single_sector'));
+        $controlled = [];
+        foreach ($standings as $r) {
+            if ($r['sector_rank'] === '1' && bccomp($r['points'], '0', 0) > 0 && in_array($r['sector'], $scoring, true)) {
+                $controlled[$r['guild_id']][] = $r['sector'];
+            }
+        }
+        if ($sector !== null) {
+            $rows = [];
+            foreach ($standings as $r) {
+                if ($r['sector'] !== $sector) continue;
+                $rows[] = ['guild_id' => $r['guild_id'], 'sector' => $sector, 'unique_planets' => $r['unique_planets'],
+                    'held_planets' => $r['held_planets'], 'points' => $r['points'], 'overall_points' => $r['overall_points'],
+                    'sectors_controlled' => count($controlled[$r['guild_id']] ?? []), 'controlled_sectors' => $controlled[$r['guild_id']] ?? []];
+            }
+            $key = fn ($r) => [$r['points'], $r['overall_points']];
+        } else {
+            $byGuild = [];
+            foreach ($standings as $r) {
+                $g = $r['guild_id'];
+                $byGuild[$g] ??= ['guild_id' => $g, 'sector' => null, 'unique_planets' => '0', 'held_planets' => '0',
+                    'points' => $r['overall_points'], 'overall_points' => $r['overall_points'],
+                    'sectors_controlled' => count($controlled[$g] ?? []), 'controlled_sectors' => $controlled[$g] ?? []];
+                $byGuild[$g]['unique_planets'] = bcadd($byGuild[$g]['unique_planets'], $r['unique_planets'], 0);
+                $byGuild[$g]['held_planets'] = bcadd($byGuild[$g]['held_planets'], $r['held_planets'], 0);
+            }
+            $rows = array_values($byGuild);
+            $key = fn ($r) => [(string) $r['sectors_controlled'], $r['overall_points']];
+        }
+        usort($rows, function ($a, $b) use ($key): int {
+            [$a1, $a2] = $key($a); [$b1, $b2] = $key($b);
+            return bccomp($b1, $a1, 0) ?: (bccomp($b2, $a2, 0) ?: strnatcmp($a['guild_id'], $b['guild_id']));
+        });
+        $prev = null;
+        foreach ($rows as $i => &$r) {
+            $k = $key($r);
+            $r['rank'] = ($prev !== null && $prev[0] === $k) ? $prev[1] : (string) ($i + 1);
+            $prev = [$k, $r['rank']];
+        }
+        unset($r);
         return $rows;
     }
 

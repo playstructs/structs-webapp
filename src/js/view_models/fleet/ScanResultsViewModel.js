@@ -5,6 +5,10 @@ import {Pagination} from "../templates/partials/Pagination";
 import {PAGINATION_LIMITS} from "../../constants/PaginationLimits";
 import {PlanetRaidFactory} from "../../factories/PlanetRaidFactory";
 import {PfpViewerComponent} from "../components/PfpViewerComponent";
+import {FEATURE_FLAGS} from "../../constants/FeatureFlags";
+import {SECTOR_BLITZ} from "../../constants/SectorBlitzConstants";
+import {RaidTarget} from "../../util/RaidTarget";
+import {SectorBlitzFormat} from "../../util/SectorBlitzFormat";
 
 export class ScanResultsViewModel extends AbstractViewModel {
 
@@ -42,18 +46,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
   initPageCode() {
     this.players.forEach((player) => {
       document.getElementById(`scan-${player.id}`).addEventListener('click', () => {
-
-        this.guildAPI.getActivePlanetRaidByPlanetId(player.planet_id).then(
-          planetRaid => {
-            MenuPage.router.goto('Fleet', 'preview', {
-              planet_id: player.planet_id,
-              planet_undiscovered_ore: player.undiscovered_ore ? player.undiscovered_ore : 0,
-              defender_id: player.id,
-              defender_ore: player.ore ? player.ore : 0,
-              attacker_id: planetRaid.isRaidActive() ? planetRaid.fleet_owner : null
-            });
-          }
-        );
+        RaidTarget.preview(this.guildAPI, player);
       });
     })
   }
@@ -82,13 +75,7 @@ export class ScanResultsViewModel extends AbstractViewModel {
     let username = playerSearchResultDTO.username
       ? playerSearchResultDTO.username
       : `PID #${playerSearchResultDTO.id}`;
-    let fleetBadge = `<span class="sui-badge sui-mod-warning">On Station</span>`;
-
-    if (Number(playerSearchResultDTO.under_attack) === 1) {
-      fleetBadge = `<span class="sui-badge sui-mod-destructive">Under Attack</span>`;
-    } else if (playerSearchResultDTO.fleet_status === 'away') {
-      fleetBadge = `<span class="sui-badge sui-mod-default">Fleet Away</span>`;
-    }
+    const fleetBadge = RaidTarget.statusBadgeHTML(playerSearchResultDTO);
 
     return `
       <div class="sui-result-row-player-info">
@@ -98,6 +85,52 @@ export class ScanResultsViewModel extends AbstractViewModel {
         </div>
       </div>
     `;
+  }
+
+  /**
+   * Sector Blitz searches show the influence points a win would earn instead of undiscovered ore.
+   *
+   * @param {PlayerSearchResultDTO} playerSearchResultDTO
+   * @return {string}
+   */
+  renderResourcesHTML(playerSearchResultDTO) {
+    const ore = `
+            <div class="sui-resource">
+              <span>${this.numberFormatter.format(playerSearchResultDTO.ore)}</span>
+              <i class="sui-icon sui-icon-alpha-ore"></i>
+            </div>
+    `;
+
+    if (
+      FEATURE_FLAGS.SECTOR_BLITZ
+      && this.raidSearchRequest.contest_id
+      && playerSearchResultDTO.influence_points !== null
+      && playerSearchResultDTO.influence_points !== undefined
+    ) {
+      return `
+            ${ore}
+            <a class="sui-resource" href="javascript: void(0)" data-sui-tooltip="Influence Points">
+              <span>+${SectorBlitzFormat.points(playerSearchResultDTO.influence_points)}</span>
+              ${SECTOR_BLITZ.INFLUENCE_ICON_HTML}
+            </a>
+      `;
+    }
+
+    return `
+            <div class="sui-resource">
+              <span>${this.numberFormatter.format(playerSearchResultDTO.undiscovered_ore)}</span>
+              <i class="sui-icon sui-icon-undiscovered-ore"></i>
+            </div>
+            ${ore}
+    `;
+  }
+
+  /**
+   * @param {PlayerSearchResultDTO} playerSearchResultDTO
+   * @return {string}
+   */
+  renderButtonLabel(playerSearchResultDTO) {
+    return FEATURE_FLAGS.SECTOR_BLITZ ? RaidTarget.buttonLabel(playerSearchResultDTO) : 'View';
   }
 
   /**
@@ -118,20 +151,13 @@ export class ScanResultsViewModel extends AbstractViewModel {
         </div>
         <div class="sui-result-row-right-section">
           <div class="sui-result-row-resources">
-            <div class="sui-resource">
-              <span>${this.numberFormatter.format(playerSearchResultDTO.undiscovered_ore)}</span>
-              <i class="sui-icon sui-icon-undiscovered-ore"></i>
-            </div>
-            <div class="sui-resource">
-              <span>${this.numberFormatter.format(playerSearchResultDTO.ore)}</span>
-              <i class="sui-icon sui-icon-alpha-ore"></i>
-            </div>
+            ${this.renderResourcesHTML(playerSearchResultDTO)}
           </div>
           <a
             id="${btnId}"
             href="javascript:void(0)"
             class="sui-screen-btn sui-mod-secondary"
-          >View</a>
+          >${this.renderButtonLabel(playerSearchResultDTO)}</a>
         </div>
       </div>
     `;

@@ -56,6 +56,8 @@ export class TutorialStatusViewModel extends AbstractViewModel {
     ]);
     MenuPage.disableCloseBtn();
     MenuPage.showNav();
+    // The page before (e.g. Raid Preview) may have made the menu see-through to show its map.
+    MenuPage.useOpaqueBackground();
 
     MenuPage.setBodyContent(`
     <div class="full-screen-content-container">

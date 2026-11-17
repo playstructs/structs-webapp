@@ -3,6 +3,10 @@ import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {SEARCH_STRING_PATTERN} from "../../constants/RegexPattern";
 import {RaidSearchRequestDTO} from "../../dtos/RaidSearchRequestDTO";
 import {bindSubmitButtonToInput} from "../../util/SubmitButtonToggle";
+import {SECTOR_BLITZ} from "../../constants/SectorBlitzConstants";
+
+/** Guild select value for the contest default: every guild except the player's own. */
+const RIVAL_GUILDS_ONLY = 'rival';
 
 export class ScanViewModel extends AbstractViewModel {
 
@@ -10,21 +14,32 @@ export class ScanViewModel extends AbstractViewModel {
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    * @param {RaidSearchRequestDTO|object|null} previousSearch the search to restore, e.g. when returning from results
+   * @param {SectorBlitzManager|null} sectorBlitzManager
    */
   constructor(
     gameState,
     guildAPI,
-    previousSearch = null
+    previousSearch = null,
+    sectorBlitzManager = null
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.previousSearch = previousSearch;
+    this.sectorBlitzManager = sectorBlitzManager;
+
+    /** The Sector Blitz variant, while a contest is running. */
+    this.isContest = false;
+    /** The contest the form was drawn for; submit checks it is still the running one. */
+    this.contestId = null;
+    /** Chosen on the Sector Map; applied to searches but not shown in the form. */
+    this.sector = previousSearch?.sector ?? null;
 
     this.minVulnerableOreId = 'minVulnerableOre';
     this.guildFilterSelectId = 'guildFilterSelect';
     this.fleetStatusId = 'fleetStatusCheckbox';
     this.notUnderAttackId = 'notUnderAttackCheckbox';
+    this.undefeatedId = 'undefeatedCheckbox';
     this.searchByStatusBtnId = 'searchByStatusBtn';
     this.playerSearchInputId = 'playerSearch';
     this.playerSearchBtnId = 'playerSearchBtn';
@@ -38,16 +53,45 @@ export class ScanViewModel extends AbstractViewModel {
       : Math.max(minOre, 0);
   }
 
+  /**
+   * The contest can start, end or change while the form is open. Submitting then would
+   * send a search the form no longer matches, so redraw the form for the current state.
+   *
+   * @return {boolean} true when the form was out of date and is being redrawn
+   */
+  redrawIfContestChanged() {
+    const currentContestId = this.sectorBlitzManager?.isActive()
+      ? this.sectorBlitzManager.contest.contest_id
+      : null;
+    if (currentContestId === this.contestId) {
+      return false;
+    }
+    MenuPage.router.goto('Fleet', 'scan', {sector: this.sector}, {replace: true});
+    return true;
+  }
+
   initPageCode() {
     MenuPage.sui.inputStepper.autoInitAll();
 
     // Search By Status Submission
     document.getElementById(this.searchByStatusBtnId).addEventListener('click', () => {
+      if (this.redrawIfContestChanged()) return;
+
       const raidSearchRequest = new RaidSearchRequestDTO();
+      const guildFilter = document.getElementById(this.guildFilterSelectId).value;
       raidSearchRequest.min_ore = this.getMinOre();
-      raidSearchRequest.guild_id = document.getElementById(this.guildFilterSelectId).value;
       raidSearchRequest.fleet_away_only = document.getElementById(this.fleetStatusId).checked;
-      raidSearchRequest.not_under_attack = document.getElementById(this.notUnderAttackId).checked;
+
+      if (this.isContest) {
+        raidSearchRequest.contest_id = this.contestId;
+        raidSearchRequest.rival_guilds_only = guildFilter === RIVAL_GUILDS_ONLY;
+        raidSearchRequest.guild_id = guildFilter === RIVAL_GUILDS_ONLY ? null : guildFilter;
+        raidSearchRequest.undefeated = document.getElementById(this.undefeatedId).checked;
+        raidSearchRequest.sector = this.sector;
+      } else {
+        raidSearchRequest.guild_id = guildFilter;
+        raidSearchRequest.not_under_attack = document.getElementById(this.notUnderAttackId).checked;
+      }
 
       MenuPage.router.goto('Fleet', 'scanResults', raidSearchRequest);
     });
@@ -63,8 +107,15 @@ export class ScanViewModel extends AbstractViewModel {
       if (!SEARCH_STRING_PATTERN.test(playerSearchInput.value)) {
         document.getElementById(this.playerSearchErrorId).classList.add('sui-mod-show');
       } else {
+        if (this.redrawIfContestChanged()) return;
+
         const raidSearchRequest = new RaidSearchRequestDTO();
         raidSearchRequest.search_string = playerSearchInput.value;
+        if (this.isContest) {
+          raidSearchRequest.contest_id = this.contestId;
+          // Keep the hidden sector so Back from the results returns to the same Scan.
+          raidSearchRequest.sector = this.sector;
+        }
 
         MenuPage.router.goto('Fleet', 'scanResults', raidSearchRequest);
       }
@@ -96,13 +147,126 @@ export class ScanViewModel extends AbstractViewModel {
     }
     if (search.guild_id) {
       document.getElementById(this.guildFilterSelectId).value = search.guild_id;
+    } else if (this.isContest && search.contest_id && !search.rival_guilds_only) {
+      document.getElementById(this.guildFilterSelectId).value = '';
     }
     document.getElementById(this.fleetStatusId).checked = !!search.fleet_away_only;
-    document.getElementById(this.notUnderAttackId).checked = !!search.not_under_attack;
+    if (this.isContest) {
+      document.getElementById(this.undefeatedId).checked = !!search.undefeated;
+    } else {
+      document.getElementById(this.notUnderAttackId).checked = !!search.not_under_attack;
+    }
+  }
+
+  /**
+   * @return {Promise<boolean>} whether the Sector Blitz variant applies
+   */
+  async resolveContest() {
+    if (!this.sectorBlitzManager) return false;
+    await this.sectorBlitzManager.refresh();
+    return this.sectorBlitzManager.isActive();
+  }
+
+  /**
+   * @param {string} guildFilterOptions
+   * @return {string}
+   */
+  renderGuildSelectHTML(guildFilterOptions) {
+    const label = this.isContest ? 'Guild' : 'Filter By Guild';
+    const defaultOptions = this.isContest
+      ? `<option value="${RIVAL_GUILDS_ONLY}">Rival Guilds Only</option><option value="">All Guilds</option>`
+      : `<option value="">Any Guild</option>`;
+
+    return `
+              <label class="sui-input-text" for="${this.guildFilterSelectId}">
+                <span>${label}</span>
+                <select
+                  id="${this.guildFilterSelectId}"
+                  name="${this.guildFilterSelectId}"
+                >
+                  ${defaultOptions}
+                  ${guildFilterOptions}
+                </select>
+              </label>
+    `;
+  }
+
+  /**
+   * @param {string} id
+   * @param {string} label
+   * @param {string} tip
+   * @return {string}
+   */
+  renderCheckboxHTML(id, label, tip = '') {
+    const tipHTML = tip
+      ? `&nbsp;<a class="sui-text-secondary" href="javascript: void(0)" data-sui-tooltip="${tip}"><i class="sui-icon icon-tip"></i></a>`
+      : '';
+
+    return `
+                <div class="sui-checkbox-container">
+                  <input
+                    type="checkbox"
+                    class="sui-checkbox"
+                    name="${id}"
+                    id="${id}"
+                  >
+                  <span class="sui-checkbox-display"></span>
+                  <label for="${id}">${label}</label>${tipHTML}
+                </div>
+    `;
+  }
+
+  /**
+   * @return {string}
+   */
+  renderStatusFiltersHTML() {
+    if (this.isContest) {
+      return `
+              <label class="sui-input-text">
+                <span>Filters</span>
+                <div class="scan-filters-inline">
+                  ${this.renderCheckboxHTML(this.fleetStatusId, 'Fleet Away')}
+                  ${this.renderCheckboxHTML(
+                    this.undefeatedId,
+                    'Undefeated',
+                    `Planets that have not yet been Raided by your Guild in ${SECTOR_BLITZ.NAME}.`
+                  )}
+                </div>
+              </label>
+      `;
+    }
+
+    return `
+              <label class="sui-input-text">
+                <span>Fleet Status</span>
+                ${this.renderCheckboxHTML(this.fleetStatusId, 'Fleet Away')}
+              </label>
+              
+              <label class="sui-input-text">
+                <span>Raid Status</span>
+                ${this.renderCheckboxHTML(this.notUnderAttackId, 'Not Under Attack')}
+              </label>
+    `;
   }
 
   render() {
-    this.guildAPI.getGuildFilterList().then(guilds => {
+    // Waiting on the contest list can take a network call; drop this render if the player
+    // has moved on by then (including the Fleet page re-rendering itself on a phase change).
+    const navigationId = MenuPage.router.navigationId;
+
+    Promise.all([
+      this.guildAPI.getGuildFilterList(),
+      this.resolveContest().catch(() => false)
+    ]).then(([guilds, isContest]) => {
+      if (navigationId !== MenuPage.router.navigationId) {
+        return;
+      }
+
+      this.isContest = isContest;
+      this.contestId = isContest ? this.sectorBlitzManager.contest.contest_id : null;
+      if (!this.isContest) {
+        this.sector = null;
+      }
 
       const guildFilterOptions = guilds.reduce((options, guild) =>
           options + `<option value="${guild.id}">${guild.name ? guild.name : guild.id}</option>`
@@ -114,7 +278,11 @@ export class ScanViewModel extends AbstractViewModel {
         'Scan',
         true,
         () => {
-          MenuPage.router.goto('Fleet', 'index');
+          if (this.isContest) {
+            MenuPage.router.goto('Fleet', 'sectorMap', {sector: this.sector});
+          } else {
+            MenuPage.router.goto('Fleet', 'index');
+          }
         });
 
       MenuPage.setPageTemplateContent(`
@@ -157,44 +325,9 @@ export class ScanViewModel extends AbstractViewModel {
                 </div>
               </label>
             
-              <label class="sui-input-text" for="${this.guildFilterSelectId}">
-                <span>Filter By Guild</span>
-                <select
-                  id="${this.guildFilterSelectId}"
-                  name="${this.guildFilterSelectId}"
-                >
-                  <option value="">Any Guild</option>
-                  ${guildFilterOptions}
-                </select>
-              </label>
+              ${this.renderGuildSelectHTML(guildFilterOptions)}
               
-              <label class="sui-input-text">
-                <span>Fleet Status</span>
-                <div class="sui-checkbox-container">
-                  <input
-                    type="checkbox"
-                    class="sui-checkbox"
-                    name="${this.fleetStatusId}"
-                    id="${this.fleetStatusId}"
-                  >
-                  <span class="sui-checkbox-display"></span>
-                  <label for="${this.fleetStatusId}">Fleet Away</label>
-                </div>
-              </label>
-              
-              <label class="sui-input-text">
-                <span>Raid Status</span>
-                <div class="sui-checkbox-container">
-                  <input
-                    type="checkbox"
-                    class="sui-checkbox"
-                    name="${this.notUnderAttackId}"
-                    id="${this.notUnderAttackId}"
-                  >
-                  <span class="sui-checkbox-display"></span>
-                  <label for="${this.notUnderAttackId}">Not Under Attack</label>
-                </div>
-              </label>
+              ${this.renderStatusFiltersHTML()}
               
               <button 
                 id="${this.searchByStatusBtnId}" 

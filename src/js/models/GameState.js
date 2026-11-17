@@ -36,6 +36,13 @@ export class GameState {
     this.transferAmount = 0;
 
     /**
+     * Sector Blitz contest ids whose alert sequences this player has already seen, by alert type.
+     *
+     * @type {{start: string[], results: string[]}}
+     */
+    this.sectorBlitzAlertsSeen = {start: [], results: []};
+
+    /**
      * Turned off for simulated sessions (the tutorial) so they never
      * overwrite the player's saved game state.
      *
@@ -161,7 +168,8 @@ export class GameState {
       planetRaiderChargeLevel: this.keyPlayers[PLAYER_TYPES.PLANET_RAIDER].chargeLevel,
       raidEnemyChargeLevel: this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].chargeLevel,
       transferAmount: this.transferAmount,
-      activeMapContainerId: this.activeMapContainerId
+      activeMapContainerId: this.activeMapContainerId,
+      sectorBlitzAlertsSeen: this.sectorBlitzAlertsSeen
     }));
   }
 
@@ -187,6 +195,10 @@ export class GameState {
     this.keyPlayers[PLAYER_TYPES.RAID_ENEMY].chargeLevel = gameStateParsed.raidEnemyChargeLevel;
     this.transferAmount = gameStateParsed.transferAmount;
     this.activeMapContainerId = gameStateParsed.activeMapContainerId;
+    this.sectorBlitzAlertsSeen = {
+      start: gameStateParsed.sectorBlitzAlertsSeen?.start ?? [],
+      results: gameStateParsed.sectorBlitzAlertsSeen?.results ?? [],
+    };
 
     if (this.mnemonic) {
       // Properties to re-instantiate
@@ -200,6 +212,26 @@ export class GameState {
       this.wallet = wallet;
       this.signingAccount = accounts[0];
     }
+  }
+
+  /**
+   * @param {string} alertType see SECTOR_BLITZ_ALERTS
+   * @param {string} contestId
+   * @return {boolean}
+   */
+  hasSeenSectorBlitzAlert(alertType, contestId) {
+    return (this.sectorBlitzAlertsSeen[alertType] ?? []).includes(`${contestId}`);
+  }
+
+  /**
+   * @param {string} alertType see SECTOR_BLITZ_ALERTS
+   * @param {string} contestId
+   */
+  markSectorBlitzAlertSeen(alertType, contestId) {
+    if (!this.hasSeenSectorBlitzAlert(alertType, contestId)) {
+      this.sectorBlitzAlertsSeen[alertType] = [...(this.sectorBlitzAlertsSeen[alertType] ?? []), `${contestId}`];
+    }
+    this.save();
   }
 
   /**

@@ -35,7 +35,7 @@ export class GuildController extends AbstractController {
    * @param {object} options
    */
   profile(options) {
-    const viewModel = new GuildProfileViewModel(this.gameState, this.guildAPI, options.guildId);
+    const viewModel = new GuildProfileViewModel(this.gameState, this.guildAPI, options.guildId, options.navItemId);
     viewModel.render();
   }
 

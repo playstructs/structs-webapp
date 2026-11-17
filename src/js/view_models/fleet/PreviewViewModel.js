@@ -7,6 +7,7 @@ import {MAP_CONTAINER_IDS} from "../../constants/MapConstants";
 import {PlanetRaidFactory} from "../../factories/PlanetRaidFactory";
 import {GenericResourceComponent} from "../components/GenericResourceComponent";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
+import {FtlJumpViewModel} from "./FtlJumpViewModel";
 
 export class PreviewViewModel extends AbstractViewModel {
 
@@ -83,10 +84,15 @@ export class PreviewViewModel extends AbstractViewModel {
 
       this.gameState.setRaidPlanetRaidInfo(planetRaid);
 
-      MenuPage.router.goto('Fleet', 'index');
+      // The raid's INITIATED status (RaidStatusListener) moves on from this screen to the Fleet page.
+      MenuPage.router.goto('Fleet', 'ftlJump');
 
       this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager, this.mapManager));
-      this.fleetManager.moveFleet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id).then();
+      this.fleetManager.moveFleet(this.gameState.keyPlayers[PLAYER_TYPES.RAID_ENEMY].planetRaidInfo.planet_id)
+        .catch(error => {
+          console.warn('[FTL Jump] fleet move failed:', error);
+          FtlJumpViewModel.abandon();
+        });
     });
   }
 
