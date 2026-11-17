@@ -70,8 +70,25 @@ export class ScanViewModel extends AbstractViewModel {
     return true;
   }
 
+  /**
+   * The filter groups are wrapped in a <label> for the SUI styling, and a label with no
+   * "for" toggles the first checkbox inside it. Only let clicks on a checkbox or its own
+   * label text through, so clicking elsewhere in the box doesn't toggle Fleet Away.
+   */
+  initCheckboxGroups() {
+    document.querySelectorAll('.scan-layout label.sui-input-text').forEach(group => {
+      if (!group.querySelector('.sui-checkbox')) return;
+      group.addEventListener('click', event => {
+        if (event.target.tagName !== 'INPUT' && event.target.closest('label') === group) {
+          event.preventDefault();
+        }
+      });
+    });
+  }
+
   initPageCode() {
     MenuPage.sui.inputStepper.autoInitAll();
+    this.initCheckboxGroups();
 
     // Search By Status Submission
     document.getElementById(this.searchByStatusBtnId).addEventListener('click', () => {
