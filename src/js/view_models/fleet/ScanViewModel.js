@@ -30,6 +30,8 @@ export class ScanViewModel extends AbstractViewModel {
 
     /** The Sector Blitz variant, while a contest is running. */
     this.isContest = false;
+    /** The contest the form was drawn for; submit checks it is still the running one. */
+    this.contestId = null;
     /** Chosen on the Sector Map; applied to searches but not shown in the form. */
     this.sector = previousSearch?.sector ?? null;
 
@@ -51,18 +53,37 @@ export class ScanViewModel extends AbstractViewModel {
       : Math.max(minOre, 0);
   }
 
+  /**
+   * The contest can start, end or change while the form is open. Submitting then would
+   * send a search the form no longer matches, so redraw the form for the current state.
+   *
+   * @return {boolean} true when the form was out of date and is being redrawn
+   */
+  redrawIfContestChanged() {
+    const currentContestId = this.sectorBlitzManager?.isActive()
+      ? this.sectorBlitzManager.contest.contest_id
+      : null;
+    if (currentContestId === this.contestId) {
+      return false;
+    }
+    MenuPage.router.goto('Fleet', 'scan', {sector: this.sector}, {replace: true});
+    return true;
+  }
+
   initPageCode() {
     MenuPage.sui.inputStepper.autoInitAll();
 
     // Search By Status Submission
     document.getElementById(this.searchByStatusBtnId).addEventListener('click', () => {
+      if (this.redrawIfContestChanged()) return;
+
       const raidSearchRequest = new RaidSearchRequestDTO();
       const guildFilter = document.getElementById(this.guildFilterSelectId).value;
       raidSearchRequest.min_ore = this.getMinOre();
       raidSearchRequest.fleet_away_only = document.getElementById(this.fleetStatusId).checked;
 
       if (this.isContest) {
-        raidSearchRequest.contest_id = this.sectorBlitzManager.contest.contest_id;
+        raidSearchRequest.contest_id = this.contestId;
         raidSearchRequest.rival_guilds_only = guildFilter === RIVAL_GUILDS_ONLY;
         raidSearchRequest.guild_id = guildFilter === RIVAL_GUILDS_ONLY ? null : guildFilter;
         raidSearchRequest.undefeated = document.getElementById(this.undefeatedId).checked;
@@ -86,10 +107,12 @@ export class ScanViewModel extends AbstractViewModel {
       if (!SEARCH_STRING_PATTERN.test(playerSearchInput.value)) {
         document.getElementById(this.playerSearchErrorId).classList.add('sui-mod-show');
       } else {
+        if (this.redrawIfContestChanged()) return;
+
         const raidSearchRequest = new RaidSearchRequestDTO();
         raidSearchRequest.search_string = playerSearchInput.value;
         if (this.isContest) {
-          raidSearchRequest.contest_id = this.sectorBlitzManager.contest.contest_id;
+          raidSearchRequest.contest_id = this.contestId;
           // Keep the hidden sector so Back from the results returns to the same Scan.
           raidSearchRequest.sector = this.sector;
         }
@@ -227,11 +250,20 @@ export class ScanViewModel extends AbstractViewModel {
   }
 
   render() {
+    // Waiting on the contest list can take a network call; drop this render if the player
+    // has moved on by then (including the Fleet page re-rendering itself on a phase change).
+    const navigationId = MenuPage.router.navigationId;
+
     Promise.all([
       this.guildAPI.getGuildFilterList(),
       this.resolveContest().catch(() => false)
     ]).then(([guilds, isContest]) => {
+      if (navigationId !== MenuPage.router.navigationId) {
+        return;
+      }
+
       this.isContest = isContest;
+      this.contestId = isContest ? this.sectorBlitzManager.contest.contest_id : null;
       if (!this.isContest) {
         this.sector = null;
       }
