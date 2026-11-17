@@ -78,7 +78,7 @@ export class SectorMapViewModel extends AbstractViewModel {
     if (this.selectedSector === null) {
       return `
         <div class="sector-map-bar-info">
-          <i class="sui-icon sui-icon-md icon-move sui-text-secondary"></i>
+          <i class="sui-icon sui-icon-md icon-scroll sui-text-secondary"></i>
           <span class="sui-text-header">Select Sector</span>
           <a class="sui-text-secondary sector-map-bar-tip" href="javascript: void(0)" data-sui-tooltip="Scroll, Click-and-Drag or swipe to navigate the map." data-sui-mod-placement="top">
             <i class="sui-icon icon-tip"></i>
