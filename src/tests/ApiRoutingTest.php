@@ -41,6 +41,8 @@ class ApiRoutingTest extends KernelTestCase
             ['/api/influence/contests/page/2', 'api_influence_contests_page'],
             ['/api/influence/contests/1', 'api_influence_contest'],
             ['/api/influence/contests/1/standings', 'api_influence_standings'],
+            ['/api/influence/contests/1/guilds', 'api_influence_guilds'],
+            ['/api/influence/contests/1/guilds/page/2', 'api_influence_guilds_page'],
             ['/api/influence/contests/1/guilds/0-1', 'api_influence_guild'],
             ['/api/influence/contests/1/players', 'api_influence_players'],
             ['/api/influence/contests/1/players/page/2', 'api_influence_players_page'],

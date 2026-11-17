@@ -30,6 +30,13 @@ class InfluenceController extends AbstractController
         return $manager->standings($contest_id, $request->query->all());
     }
 
+    #[Route('/contests/{contest_id}/guilds', name: 'guilds', requirements: ['contest_id' => '\d+'], defaults: ['page' => '1'])]
+    #[Route('/contests/{contest_id}/guilds/page/{page}', name: 'guilds_page', requirements: ['contest_id' => '\d+', 'page' => '\d+'])]
+    public function guilds(string $contest_id, Request $request, InfluenceManager $manager, string $page): Response
+    {
+        return $manager->guildRanks($contest_id, $request->query->all(), $page);
+    }
+
     #[Route('/contests/{contest_id}/guilds/{guild_id}', name: 'guild', requirements: ['contest_id' => '\d+'])]
     public function guild(string $contest_id, string $guild_id, Request $request, InfluenceManager $manager): Response
     {

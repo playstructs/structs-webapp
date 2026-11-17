@@ -45,6 +45,9 @@ import {onboardingTelemetry} from "./telemetry/OnboardingTelemetry";
 import {StartupRecovery, startupReads} from "./managers/StartupRecovery";
 import {AuthenticationError} from "./errors/AuthenticationError";
 import {DeviceRegistrationStore} from "./managers/DeviceRegistrationStore";
+import {InfluenceAPI} from "./api/InfluenceAPI";
+import {SectorBlitzManager} from "./managers/SectorBlitzManager";
+import {SectorBlitzAlertManager} from "./managers/SectorBlitzAlertManager";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -142,6 +145,11 @@ const fleetManager = new FleetManager(gameState, signingClientManager);
 
 const blockListener = new BlockListener(gameState);
 
+// Sector Blitz contests. Both stay dormant when FEATURE_FLAGS.SECTOR_BLITZ is off.
+const influenceAPI = new InfluenceAPI(guildAPI);
+const sectorBlitzManager = new SectorBlitzManager(gameState, influenceAPI, grassManager);
+const sectorBlitzAlertManager = new SectorBlitzAlertManager(gameState, sectorBlitzManager, influenceAPI);
+
 const authController = new AuthController(
   gameState,
   guildAPI,
@@ -174,7 +182,9 @@ const fleetController = new FleetController(
   raidManager,
   planetManager,
   mapManager,
-  structManager
+  structManager,
+  influenceAPI,
+  sectorBlitzManager
 );
 
 gameState.alphaBaseMap = new MapComponent(
@@ -360,6 +370,9 @@ async function startApplication() {
   }
 
   if (!tutorialMode) {
+    sectorBlitzManager.init();
+    sectorBlitzAlertManager.init();
+
     // Start the hashing engine after a delay
     new Promise(resolve => setTimeout(resolve, TASK.START_DELAY)).then(() => window.dispatchEvent(new CustomEvent(EVENTS.TASK_CMD_MANAGER_RESUME)));
   }

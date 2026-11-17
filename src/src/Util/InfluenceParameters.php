@@ -68,6 +68,15 @@ final class InfluenceParameters
         return $sector;
     }
 
+    public static function flag(array $query, string $name): bool
+    {
+        $value = $query[$name] ?? '0';
+        if (!in_array((string) $value, ['0', '1'], true)) {
+            throw new BadRequestHttpException("{$name} must be 0 or 1");
+        }
+        return (string) $value === '1';
+    }
+
     public static function page(array $query, string $page): array
     {
         $number = self::integer($page, 'page', 1, 1000000);

@@ -9,16 +9,19 @@ export class GuildProfileViewModel extends AbstractViewModel {
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
    * @param {string} guildId
+   * @param {string|null} navItemId the tab to highlight, e.g. Fleet when opened from a Sector Leaderboard
    */
   constructor(
     gameState,
     guildAPI,
-    guildId
+    guildId,
+    navItemId = null
   ) {
     super();
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.guildId = guildId;
+    this.navItemId = navItemId;
     this.genericResourceComponent = new GenericResourceComponent(gameState);
     this.numberFormatter = new NumberFormatter();
 
@@ -145,7 +148,7 @@ export class GuildProfileViewModel extends AbstractViewModel {
   render () {
     this.fetchPageData().then(() => {
 
-      MenuPage.enablePageTemplate(MenuPage.navItemGuildId);
+      MenuPage.enablePageTemplate(this.navItemId ?? MenuPage.navItemGuildId);
 
       MenuPage.setPageTemplateHeaderBtn('Guild Profile', true, () => {
         MenuPage.router.back();

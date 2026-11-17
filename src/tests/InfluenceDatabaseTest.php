@@ -133,14 +133,33 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
             [$cid, $bid, $chain] = $this->fixture($db, 'single_sector', true);
             $this->restrict($db); $api = new InfluenceManager($db);
             $page = $this->body($api->players($cid, ['limit' => '2', 'include_total' => '1']));
-            $this->assertSame(['1-1','1-2'], array_column($page['data'], 'player_id'));
+            $this->assertCount(2, $page['data']);
             $this->assertSame('5', $page['total']); $this->assertTrue($page['meta']['has_more']);
             $next = $this->body($api->players($cid, ['limit' => '2'], '2'));
-            $cursor = $this->body($api->players($cid, ['limit' => '2', 'after_id' => $page['meta']['next_after_id']]));
-            $this->assertSame($next['data'], $cursor['data']);
             $last = $this->body($api->players($cid, ['limit' => '2'], '3'));
-            $this->assertSame(['1-5'], array_column($last['data'], 'player_id'));
+            $this->assertCount(1, $last['data']);
             $this->assertFalse($last['meta']['has_more']);
+            $all = array_merge($page['data'], $next['data'], $last['data']);
+            $ids = array_column($all, 'player_id'); sort($ids);
+            $this->assertSame(['1-1','1-2','1-3','1-4','1-5'], $ids, 'Points-ordered pages are disjoint and complete');
+            $points = array_column($all, 'points');
+            $sorted = $points; usort($sorted, fn ($a, $b) => bccomp($b, $a, 0));
+            $this->assertSame($sorted, $points, 'Players are ordered by points, highest first');
+            foreach ($all as $i => $row) {
+                $better = count(array_filter($all, fn ($o) => bccomp($o['points'], $row['points'], 0) > 0));
+                $this->assertSame((string) ($better + 1), $row['rank'], 'Exact ties share a competition rank');
+                $this->assertArrayHasKey('username', $row['profile']);
+            }
+            $scored = $this->body($api->players($cid, ['scored_only' => '1', 'include_total' => '1']));
+            $this->assertSame((string) count(array_filter($points, fn ($p) => $p !== '0')), $scored['total']);
+            $me = $this->body($api->player($cid, $all[0]['player_id']));
+            $this->assertSame('1', $me['data']['rank']);
+            $guilds = $this->body($api->guildRanks($cid, ['include_total' => '1']));
+            $this->assertSame(['1','1'], array_slice(array_column($guilds['data'], 'rank'), 0, 2), 'Tied sector leaders share first place');
+            $this->assertSame([1,1], array_slice(array_column($guilds['data'], 'sectors_controlled'), 0, 2));
+            $this->assertArrayHasKey('name', $guilds['data'][0]['profile']);
+            $sectorGuilds = $this->body($api->guildRanks($cid, ['sector' => '0', 'scored_only' => '1', 'include_total' => '1']));
+            $this->assertSame('2', $sectorGuilds['total']);
             $filtered = $this->body($api->players($cid, ['guild_id' => '0-2', 'sector' => '0', 'include_total' => '1']));
             $this->assertSame('1', $filtered['total']);
             $this->assertSame('300', $filtered['data'][0]['points']);
@@ -408,8 +427,8 @@ class InfluenceDatabaseTest extends ApiManagerTestCase
             $page = $this->body($api->players($cid, ['guild_id' => '0-3', 'limit' => '25', 'include_total' => '1']));
             $pageMs = (microtime(true) - $start) * 1000;
             $this->assertCount(25, $page['data']); $this->assertSame('10001', $page['total']);
-            $next = $this->body($api->players($cid, ['guild_id' => '0-3', 'limit' => '25', 'include_total' => '1', 'after_id' => $page['meta']['next_after_id']]));
-            $this->assertSame('9976', $next['total']);
+            $next = $this->body($api->players($cid, ['guild_id' => '0-3', 'limit' => '25', 'include_total' => '1'], '2'));
+            $this->assertSame('10001', $next['total']);
             $this->assertEmpty(array_intersect(array_column($page['data'], 'player_id'), array_column($next['data'], 'player_id')));
             $start = microtime(true);
             $p = $this->body($api->history($cid, 'player', '1-2', ['start_height' => '1001', 'end_height' => '2505', 'bucket_blocks' => '100']));

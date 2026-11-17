@@ -24,6 +24,8 @@ class ApiParameters
 
     const string CONTENT_VERSION = 'content_version';
 
+    const string CONTEST_ID = 'contest_id';
+
     const string CONTROLLER = 'controller';
 
     const string COUNT_ONLY = 'count_only';
@@ -126,6 +128,8 @@ class ApiParameters
 
     const string ROLE = 'role';
 
+    const string RIVAL_GUILDS_ONLY = 'rival_guilds_only';
+
     const string RUN = 'run';
 
     const string Q = 'q';
@@ -133,6 +137,8 @@ class ApiParameters
     const string SCORE = 'score';
 
     const string SEARCH_STRING = 'search_string';
+
+    const string SECTOR = 'sector';
 
     const string SESSION_ID = 'session_id';
 
@@ -155,6 +161,8 @@ class ApiParameters
     const string SUBSTATION_ID = 'substation_id';
 
     const string TX_ID = 'tx_id';
+
+    const string UNDEFEATED = 'undefeated';
 
     const string UNIX_TIMESTAMP = 'unix_timestamp';
 

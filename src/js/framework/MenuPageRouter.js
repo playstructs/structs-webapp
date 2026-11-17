@@ -34,7 +34,8 @@ export class MenuPageRouter {
      * (which JSON serialization drops), so they cannot be restored after a reload.
      */
     this.nonRestorablePages = new Set([
-      'Generic.menuWaiting'
+      'Generic.menuWaiting',
+      'Fleet.ftlJump'
     ]);
   }
 
