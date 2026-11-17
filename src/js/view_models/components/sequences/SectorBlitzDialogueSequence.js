@@ -8,7 +8,7 @@ const INDICATOR_ID = 'sector-blitz-hrbot';
  * @param {string} text
  * @return {string}
  */
-const highlight = text => `<span class="sui-text-warning">${text}</span>`;
+const highlight = text => `<span class="sui-text-neutral-primary">${text}</span>`;
 
 /**
  * HR Bot briefings for Sector Blitz: the start alert and the results report.

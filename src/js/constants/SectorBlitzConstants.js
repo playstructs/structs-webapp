@@ -57,7 +57,7 @@ export const SECTOR_BLITZ = Object.freeze({
   INFLUENCE_ICON_HTML: '<i class="sui-icon sector-blitz-influence-icon"></i>',
 });
 
-/** Bar and legend colour classes by overall guild position (1st, 2nd, 3rd, everyone else). */
+/** Bar colour classes by overall guild position (1st, 2nd, 3rd, everyone else). */
 export const SECTOR_BLITZ_GUILD_COLOURS = Object.freeze([
   'sector-blitz-colour-first',
   'sector-blitz-colour-second',
@@ -65,6 +65,16 @@ export const SECTOR_BLITZ_GUILD_COLOURS = Object.freeze([
 ]);
 
 export const SECTOR_BLITZ_OTHER_COLOUR = 'sector-blitz-colour-other';
+
+/** Legend icons, matching SECTOR_BLITZ_GUILD_COLOURS (green, yellow, red). */
+export const SECTOR_BLITZ_LEGEND_ICONS = Object.freeze([
+  'sui-icon-player-indicator',
+  'sui-icon-neutral-indicator',
+  'sui-icon-enemy-indicator',
+]);
+
+/** Legend icon for everyone else (plum), matching SECTOR_BLITZ_OTHER_COLOUR. */
+export const SECTOR_BLITZ_OTHER_LEGEND_ICON = 'sui-icon-other-indicator';
 
 export const SECTOR_BLITZ_ALERTS = Object.freeze({
   START: 'start',

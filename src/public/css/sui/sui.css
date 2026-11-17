@@ -292,6 +292,10 @@ a.sui-mod-disabled:visited {
   color: var(--text-warning);
 }
 
+.sui-text-neutral-primary {
+  color: var(--text-neutral-primary);
+}
+
 .sui-text-hint {
   color: var(--text-hint);
 }
@@ -543,6 +547,20 @@ i.sui-icon-player-indicator {
   height: var(--icon-xs);
 
   background-image: url("/img/sui/icon/icon-player-indicator.png");
+}
+
+i.sui-icon-neutral-indicator {
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+
+  background-image: url("/img/sui/icon/icon-neutral-indicator.png");
+}
+
+i.sui-icon-other-indicator {
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+
+  background-image: url("/img/sui/icon/icon-other-indicator.png");
 }
 
 i.sui-icon-players {
