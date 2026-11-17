@@ -4,6 +4,8 @@ import {
   SECTOR_BLITZ,
   SECTOR_BLITZ_GUILD_COLOURS,
   SECTOR_BLITZ_OTHER_COLOUR,
+  SECTOR_BLITZ_LEGEND_ICONS,
+  SECTOR_BLITZ_OTHER_LEGEND_ICON,
   SECTORS
 } from "../../constants/SectorBlitzConstants";
 import {SectorBlitzFormat} from "../../util/SectorBlitzFormat";
@@ -250,12 +252,12 @@ export class SectorBlitzFleetCardComponent {
         <div class="sector-blitz-legend">
           ${topGuilds.map((guildId, i) => `
             <span class="sector-blitz-legend-item sui-text-header">
-              <span class="sector-blitz-legend-dot ${SECTOR_BLITZ_GUILD_COLOURS[i]}"></span>
+              <i class="${SECTOR_BLITZ_LEGEND_ICONS[i]}"></i>
               ${SectorBlitzFormat.guildName(profiles.get(guildId), guildId)}
             </span>
           `).join('')}
           <span class="sector-blitz-legend-item sui-text-header">
-            <span class="sector-blitz-legend-dot ${SECTOR_BLITZ_OTHER_COLOUR}"></span>
+            <i class="${SECTOR_BLITZ_OTHER_LEGEND_ICON}"></i>
             Other
           </span>
         </div>

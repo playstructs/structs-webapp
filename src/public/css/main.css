@@ -2753,10 +2753,11 @@ body.tutorial-active #action-bar-alpha-base-enemy {
 
 /* ---- Sector Blitz Start ---- */
 
-.sector-blitz-colour-first { background: var(--accent-primary); }
-.sector-blitz-colour-second { background: var(--struct-health-bar-health); }
-.sector-blitz-colour-third { background: var(--accent-destructive); }
-.sector-blitz-colour-other { background: #7A5B5E; }
+/* Each colour has a darker shade for the bar segments' bottom edge (from the Figma palette). */
+.sector-blitz-colour-first { --sector-blitz-shade: #2A9D9B; background: var(--accent-primary); }
+.sector-blitz-colour-second { --sector-blitz-shade: #EFB719; background: #F4CD5E; }
+.sector-blitz-colour-third { --sector-blitz-shade: #E64D40; background: var(--accent-destructive); }
+.sector-blitz-colour-other { --sector-blitz-shade: #694C5A; background: #876C74; }
 
 i.sui-icon.sector-blitz-influence-icon {
   width: var(--icon-md);
@@ -2860,6 +2861,7 @@ a.sector-blitz-fleet-card-rules-btn:active {
 .sector-blitz-bar-segment {
   flex-basis: 0;
   height: 100%;
+  box-shadow: inset 0 -3px 0 0 var(--sector-blitz-shade);
 }
 
 .sector-blitz-bar-empty {
@@ -2877,12 +2879,6 @@ a.sector-blitz-fleet-card-rules-btn:active {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-sm);
-}
-
-.sector-blitz-legend-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
 }
 
 .sector-blitz-podium {
