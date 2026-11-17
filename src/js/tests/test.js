@@ -17,6 +17,7 @@ import {DeviceLogoutRouteTest} from "./DeviceLogoutRouteTest";
 import {RecoveryKeyTest} from "./RecoveryKeyTest";
 import {GrantableDevicePermissionsTest} from "./GrantableDevicePermissionsTest";
 import {RegistrationRequestWithdrawnTest} from "./RegistrationRequestWithdrawnTest";
+import {SectorBlitzTest} from "./SectorBlitzTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -36,5 +37,6 @@ import {RegistrationRequestWithdrawnTest} from "./RegistrationRequestWithdrawnTe
 (new RecoveryKeyTest()).run();
 (new GrantableDevicePermissionsTest()).run();
 (new RegistrationRequestWithdrawnTest()).run();
+(new SectorBlitzTest()).run();
 
 (new APIReadinessTest()).run();

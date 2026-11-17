@@ -4,6 +4,10 @@ import {ScanViewModel} from "../view_models/fleet/ScanViewModel";
 import {ScanResultsViewModel} from "../view_models/fleet/ScanResultsViewModel";
 import {MapManager} from "../managers/MapMananger";
 import {PreviewViewModel} from "../view_models/fleet/PreviewViewModel";
+import {EventRulesViewModel} from "../view_models/fleet/EventRulesViewModel";
+import {SectorLeaderboardViewModel} from "../view_models/fleet/SectorLeaderboardViewModel";
+import {SectorMapViewModel} from "../view_models/fleet/SectorMapViewModel";
+import {FtlJumpViewModel} from "../view_models/fleet/FtlJumpViewModel";
 
 
 export class FleetController extends AbstractController {
@@ -17,6 +21,8 @@ export class FleetController extends AbstractController {
    * @param {PlanetManager} planetManager
    * @param {MapManager} mapManager
    * @param {StructManager} structManager
+   * @param {InfluenceAPI} influenceAPI
+   * @param {SectorBlitzManager} sectorBlitzManager
    */
   constructor(
     gameState,
@@ -26,7 +32,9 @@ export class FleetController extends AbstractController {
     raidManager,
     planetManager,
     mapManager,
-    structManager
+    structManager,
+    influenceAPI,
+    sectorBlitzManager
   ) {
     super('Fleet', gameState);
     this.guildAPI = guildAPI;
@@ -36,6 +44,8 @@ export class FleetController extends AbstractController {
     this.planetManager = planetManager;
     this.mapManager = mapManager;
     this.structManager = structManager;
+    this.influenceAPI = influenceAPI;
+    this.sectorBlitzManager = sectorBlitzManager;
   }
 
   /**
@@ -56,7 +66,9 @@ export class FleetController extends AbstractController {
       this.raidManager,
       this.structManager,
       planetCardType,
-      raidCardType
+      raidCardType,
+      this.influenceAPI,
+      this.sectorBlitzManager
     );
     viewModel.render();
   }
@@ -65,7 +77,7 @@ export class FleetController extends AbstractController {
    * @param {RaidSearchRequestDTO|object|null} options the search to restore, if any
    */
   scan(options = null) {
-    const viewModel = new ScanViewModel(this.gameState, this.guildAPI, options);
+    const viewModel = new ScanViewModel(this.gameState, this.guildAPI, options, this.sectorBlitzManager);
     viewModel.render();
   }
 
@@ -102,6 +114,41 @@ export class FleetController extends AbstractController {
       options.defender_ore,
       options.attacker_id
     );
+    viewModel.render();
+  }
+
+  eventRules() {
+    const viewModel = new EventRulesViewModel(this.gameState, this.sectorBlitzManager);
+    viewModel.render();
+  }
+
+  /**
+   * @param {object} options {sector, guildPage, playerPage}
+   */
+  sectorLeaderboard(options = {}) {
+    const viewModel = new SectorLeaderboardViewModel(
+      this.gameState,
+      this.guildAPI,
+      this.influenceAPI,
+      this.sectorBlitzManager,
+      options
+    );
+    viewModel.render();
+  }
+
+  /**
+   * @param {object} options {sector} to preselect
+   */
+  sectorMap(options = {}) {
+    const viewModel = new SectorMapViewModel(this.gameState, this.influenceAPI, this.sectorBlitzManager, options);
+    viewModel.render();
+  }
+
+  /**
+   * Shown while a launched fleet makes its FTL jump to the raid target.
+   */
+  ftlJump() {
+    const viewModel = new FtlJumpViewModel(this.gameState);
     viewModel.render();
   }
 }

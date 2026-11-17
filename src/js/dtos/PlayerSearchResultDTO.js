@@ -13,5 +13,7 @@ export class PlayerSearchResultDTO {
     this.ore = null;
     this.planet_id = null;
     this.under_attack = null;
+    /** Sector Blitz: points a successful raid would earn now, when searching with a contest. */
+    this.influence_points = null;
   }
 }

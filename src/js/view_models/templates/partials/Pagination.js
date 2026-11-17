@@ -9,7 +9,8 @@ export class Pagination {
     idPrefix,
     targetController,
     targetAction,
-    options = {}
+    options = {},
+    pageParam = 'page'
   ) {
     this.currentPage = currentPage;
     this.resultsPerPage = resultsPerPage;
@@ -20,24 +21,26 @@ export class Pagination {
     this.targetAction = targetAction;
     this.pageBtns = [];
     this.options = options;
+    // Lets a page hold more than one paginated list, each with its own page option.
+    this.pageParam = pageParam;
   }
 
   init() {
     if (this.currentPage > 1) {
       document.getElementById(`${this.idPrefix}-pagi-prev-btn`).addEventListener('click', () => {
-        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, page: this.currentPage - 1});
+        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, [this.pageParam]: this.currentPage - 1});
       });
     }
 
     if (this.currentPage < this.totalPages) {
       document.getElementById(`${this.idPrefix}-pagi-next-btn`).addEventListener('click', () => {
-        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, page: this.currentPage + 1});
+        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, [this.pageParam]: this.currentPage + 1});
       });
     }
 
     this.pageBtns.forEach((pageBtnNumber) => {
       document.getElementById(`${this.idPrefix}-pagi-${pageBtnNumber}-btn`).addEventListener('click', () => {
-        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, page: pageBtnNumber});
+        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, [this.pageParam]: pageBtnNumber});
       });
     });
   }

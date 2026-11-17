@@ -19,9 +19,10 @@ query optimizations or planet lookups.
 | `/contests` or `/contests/page/{page}` | Contest configuration and availability | `chain_id`, `limit`, `after_id`, `include_total` |
 | `/contests/{contest_id}` | Rules, bounds, mode and published progress | None |
 | `/contests/{contest_id}/standings` | Guild standings in each scoring sector | `sector` |
+| `/contests/{contest_id}/guilds` or `/contests/{contest_id}/guilds/page/{page}` | Ranked guild leaderboard with display profiles | `sector`, `scored_only`, `limit`, `include_total` |
 | `/contests/{contest_id}/guilds/{guild_id}` | Guild totals and sector breakdown | `sector` |
-| `/contests/{contest_id}/players` or `/contests/{contest_id}/players/page/{page}` | Paged personal scores, including zero-score players | `guild_id`, `sector`, `limit`, `after_id`, `include_total` |
-| `/contests/{contest_id}/players/{player_id}` | Personal totals, guild at the projected height, sector breakdown | `sector` |
+| `/contests/{contest_id}/players` or `/contests/{contest_id}/players/page/{page}` | Paged personal scores ranked by points, with display profiles | `guild_id`, `sector`, `scored_only`, `limit`, `include_total` |
+| `/contests/{contest_id}/players/{player_id}` | Personal totals, rank, guild at the projected height, sector breakdown | `sector` |
 | `/contests/{contest_id}/planets/{planet_id}` | Planet's current guild coverage, maintained claim and last successful raid | None |
 | `/contests/{contest_id}/planets` | Same snapshots for up to 100 requested planets in one read | `planet_ids` (required, comma-separated) |
 | `/contests/{contest_id}/history` | Contest-wide history | `start_height`, `end_height`, `bucket_blocks`, `group_by`, `sector` |
@@ -61,19 +62,47 @@ historical guild balances; it is not a list of every guild registered on-chain.
 Unknown/nonparticipating guilds and players return 404 rather than invented scores.
 
 The contest status is `scheduled`, `active`, `awaiting_sectors`, `final`, or
-`unavailable`. Player lists are ordered by player ID, not by score. Use standings
-for guild competition rankings.
+`unavailable`.
+
+## Leaderboards (Sector Blitz UI)
+
+Player lists are ordered by points (highest first, then player ID) and each row has
+a `rank`: a competition rank ("1, 1, 3") over **every** member for the requested
+sector (or all sectors), computed before `guild_id`/`scored_only` narrow the page,
+so a filtered page keeps contest-wide positions. `scored_only=1` drops zero-point
+rows. Each row carries a `profile` object read from the live game tables:
+`username`, `pfp_client_render_attributes`, `guild_id`, `tag`, `planet_id`,
+`fleet_status`, `ore`, `undiscovered_ore` and `under_attack`. The single-player
+route adds `rank` for its `sector` (or overall). Because ordering is by score,
+player lists no longer accept `after_id`; use page numbers.
+
+`/guilds` ranks guilds from the complete standings scoreboard. With `sector`, rows
+are ranked by that sector's points, then overall points (the standings
+tiebreaker). Without it, rows are ranked by `sectors_controlled` (sectors where
+the guild has `sector_rank` 1 with positive points; tied leaders each control the
+sector), then overall points: this is the Sector Blitz result. Each row has
+`rank`, `points`, `overall_points`, `unique_planets`, `held_planets`,
+`sectors_controlled`, `controlled_sectors` and a `profile` with `name`, `tag` and
+`logo`. Exact ties share a rank. Paging uses `page`/`limit`; `include_total=1`
+counts the ranked rows after `scored_only`.
+
+The raid search (`/api/player/raid/search`) also accepts `contest_id`,
+`rival_guilds_only`, `undefeated` (requires `contest_id`) and `sector` (a planet's
+current sector). With `contest_id`, each result has `influence_points`: the
+points the searcher's guild (or the searcher, when guildless) would gain from a
+successful raid now, using `win_points` when the guild has not won that planet
+and `claim_points` when it does not hold the planet's maintained claim; members
+of the searcher's own guild score 0.
 
 ## Paging and parameters
 
 Lists reuse the catalog API's `PaginationLimits`: default 100, maximum 10,000;
 `limit=0` or an empty limit selects the default, and oversized integer limits are
 clamped. Pages start at 1 and are bounded at 1,000,000. Contest ordering is numeric
-`contest_id` ascending; player ordering is lexical `player_id` ascending. A page
-selects its members before aggregating their scores.
+`contest_id` ascending; player ordering is by points (see Leaderboards).
 
-`after_id` uses the same ascending ID order and replaces offset paging. It can
-only be combined with page 1. `meta.has_more` and `meta.next_after_id` allow
+`after_id` (contests only) uses the same ascending ID order and replaces offset
+paging. It can only be combined with page 1. `meta.has_more` and `meta.next_after_id` allow
 continued reads without a count query. `include_total=1` adds an exact decimal
 `total`; as with catalog reads, it counts rows matching filters and the cursor,
 before LIMIT/OFFSET. Counts are omitted by default.
@@ -257,8 +286,9 @@ requests are not a persistent multi-request snapshot. A rebuild changes build ID
 Block heights, IDs, counts, points, ranks and deltas are exact decimal strings;
 small sectors and paging fields remain JSON integers.
 
-Current guild scores read maintained aggregates. Player pages count wins only
-for selected page members.
+Current guild scores read maintained aggregates. Ranking players by points needs
+every member's score, so player pages aggregate the build's personal wins and
+claims (one scan of `influence_player_planet_win` for the build) before paging.
 
 Guild history starts its opening balance from the latest verified checkpoint for
 each guild/sector, then reads only the remaining opening deltas. The chart uses

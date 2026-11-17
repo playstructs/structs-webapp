@@ -189,6 +189,10 @@ class PlayerManager
             ApiParameters::SEARCH_STRING => $request->query->get(ApiParameters::SEARCH_STRING),
             ApiParameters::FLEET_AWAY_ONLY => $request->query->get(ApiParameters::FLEET_AWAY_ONLY),
             ApiParameters::NOT_UNDER_ATTACK => $request->query->get(ApiParameters::NOT_UNDER_ATTACK),
+            ApiParameters::RIVAL_GUILDS_ONLY => $request->query->get(ApiParameters::RIVAL_GUILDS_ONLY),
+            ApiParameters::SECTOR => $request->query->get(ApiParameters::SECTOR),
+            ApiParameters::CONTEST_ID => $request->query->get(ApiParameters::CONTEST_ID),
+            ApiParameters::UNDEFEATED => $request->query->get(ApiParameters::UNDEFEATED),
             ApiParameters::COUNT_ONLY => $request->query->get(ApiParameters::COUNT_ONLY),
             ApiParameters::PAGE => $request->query->get(ApiParameters::PAGE),
         ];
@@ -199,6 +203,10 @@ class PlayerManager
             ApiParameters::SEARCH_STRING,
             ApiParameters::FLEET_AWAY_ONLY,
             ApiParameters::NOT_UNDER_ATTACK,
+            ApiParameters::RIVAL_GUILDS_ONLY,
+            ApiParameters::SECTOR,
+            ApiParameters::CONTEST_ID,
+            ApiParameters::UNDEFEATED,
             ApiParameters::COUNT_ONLY,
             ApiParameters::PAGE
         ];
@@ -212,14 +220,19 @@ class PlayerManager
         $responseContent = new ApiResponseContentDto();
         $responseContent->errors = $parsedRequest->errors;
 
+        if (
+            isset($parsedRequest->params->undefeated)
+            && $parsedRequest->params->undefeated === '1'
+            && !isset($parsedRequest->params->contest_id)
+        ) {
+            $responseContent->errors[ApiParameters::UNDEFEATED] = 'undefeated requires contest_id';
+        }
+
         if (count($responseContent->errors) > 0) {
             return new JsonResponse($responseContent, Response::HTTP_BAD_REQUEST);
         }
 
-        $queryGuildIdFilter = '';
-        $queryFleetAwayFilter = '';
-        $queryNotUnderAttackFilter = '';
-        $querySearchFilter = '';
+        $filters = '';
         $limit = PaginationLimits::DEFAULT;
         $page = !empty($parsedRequest->params->page) ? $parsedRequest->params->page : 1;
         $offset = ($page - 1) * $limit;
@@ -233,21 +246,29 @@ class PlayerManager
 
         if (isset($parsedRequest->params->guild_id)) {
             $queryParams['guild_id'] = $parsedRequest->params->guild_id;
-            $queryGuildIdFilter = ' AND p.guild_id = :guild_id ';
+            $filters .= ' AND p.guild_id = :guild_id ';
+        }
+
+        if (
+            isset($parsedRequest->params->rival_guilds_only)
+            && $parsedRequest->params->rival_guilds_only === '1'
+        ) {
+            // Guildless players are rivals of everyone; a guildless searcher has no rivals to exclude.
+            $filters .= ' AND (me.guild_id IS NULL OR p.guild_id IS DISTINCT FROM me.guild_id) ';
         }
 
         if (
             isset($parsedRequest->params->fleet_away_only)
             && $parsedRequest->params->fleet_away_only === '1'
         ) {
-            $queryFleetAwayFilter = ' AND f.status = \'away\' ';
+            $filters .= ' AND f.status = \'away\' ';
         }
 
         if (
             isset($parsedRequest->params->not_under_attack)
             && $parsedRequest->params->not_under_attack === '1'
         ) {
-            $queryNotUnderAttackFilter = "
+            $filters .= "
                 AND NOT EXISTS (
                     SELECT 1
                     FROM planet_raid pr
@@ -257,20 +278,113 @@ class PlayerManager
             ";
         }
 
+        if (isset($parsedRequest->params->sector)) {
+            $queryParams['sector'] = (int) $parsedRequest->params->sector;
+            $filters .= ' AND planet.sector = :sector ';
+        }
+
         if (
             isset($parsedRequest->params->search_string)
             && $parsedRequest->params->search_string !== ''
         ) {
             $queryParams['search_string'] = $parsedRequest->params->search_string;
             $queryParams['like_search_string'] = "%{$parsedRequest->params->search_string}%";
-            $querySearchFilter = "
+            $filters .= "
                 AND (
                     p.id = :search_string
                     OR p.username ILIKE :like_search_string
-                    OR pa.address = :search_string
+                    OR EXISTS (
+                        SELECT 1
+                        FROM player_address pa
+                        WHERE pa.player_id = p.id
+                        AND pa.address = :search_string
+                    )
                 )
             ";
         }
+
+        // Sector Blitz: the searcher's guild (or the searcher, when guildless) is credited
+        // once per planet, and separately for holding the planet's maintained claim.
+        $contestJoin = '';
+        $influencePointsColumn = 'NULL::text AS influence_points';
+        if (isset($parsedRequest->params->contest_id)) {
+            $queryParams['contest_id'] = (int) $parsedRequest->params->contest_id;
+            $contestJoin = "
+            LEFT JOIN (
+              SELECT pb.build_id, r.win_points, r.claim_points
+              FROM structs.influence_published_build pb
+              JOIN structs.influence_contest c ON c.contest_id = pb.contest_id
+              JOIN structs.influence_rule_set r ON r.rule_id = c.rule_id
+              WHERE pb.contest_id = :contest_id
+            ) ctx ON true
+            ";
+            $alreadyWon = "
+              (
+                CASE WHEN me.guild_id IS NOT NULL THEN EXISTS (
+                  SELECT 1 FROM structs.influence_guild_planet_win gw
+                  WHERE gw.build_id = ctx.build_id AND gw.guild = me.guild_id AND gw.planet = p.planet_id
+                ) ELSE EXISTS (
+                  SELECT 1 FROM structs.influence_player_planet_win pw
+                  WHERE pw.build_id = ctx.build_id AND pw.player = me.id AND pw.planet = p.planet_id
+                ) END
+              )
+            ";
+            $alreadyHeld = "
+              EXISTS (
+                SELECT 1
+                FROM structs.influence_planet_claim pc
+                LEFT JOIN structs.influence_member hm
+                  ON hm.build_id = pc.build_id AND hm.player = pc.holder
+                WHERE pc.build_id = ctx.build_id
+                AND pc.planet = p.planet_id
+                AND (pc.holder = me.id OR (me.guild_id IS NOT NULL AND hm.guild = me.guild_id))
+              )
+            ";
+            $influencePointsColumn = "
+              CASE
+                WHEN ctx.build_id IS NULL THEN NULL
+                WHEN me.guild_id IS NOT NULL AND p.guild_id IS NOT DISTINCT FROM me.guild_id THEN 0
+                ELSE (CASE WHEN $alreadyWon THEN 0 ELSE ctx.win_points END)
+                  + (CASE WHEN $alreadyHeld THEN 0 ELSE ctx.claim_points END)
+              END::text AS influence_points
+            ";
+
+            if (
+                isset($parsedRequest->params->undefeated)
+                && $parsedRequest->params->undefeated === '1'
+            ) {
+                $filters .= " AND (ctx.build_id IS NULL OR NOT $alreadyWon) ";
+            }
+        }
+
+        $fromAndWhere = "
+            FROM player p
+            CROSS JOIN (
+              SELECT CAST(:player_id AS text) AS id, (SELECT guild_id FROM player WHERE id = :player_id) AS guild_id
+            ) me
+            INNER JOIN planet
+              ON p.planet_id = planet.id
+            LEFT JOIN fleet f
+              ON p.fleet_id = f.id
+            LEFT JOIN guild gu
+              ON p.guild_id = gu.id
+            LEFT JOIN guild_meta gm
+              ON gu.id = gm.id
+            LEFT JOIN grid AS planet_ore
+              ON planet_ore.object_id = p.planet_id
+              AND planet_ore.attribute_type='ore'
+            LEFT JOIN grid AS player_ore
+              ON player_ore.object_id = p.id
+              AND player_ore.attribute_type='ore'
+            $contestJoin
+            WHERE
+              p.id <> :player_id
+              AND (
+                  player_ore.val >= :min_ore
+                  OR (player_ore.val IS NULL AND 0 = :min_ore)
+              )
+              $filters
+        ";
 
         $query = "
             SELECT
@@ -291,44 +405,9 @@ class PlayerManager
                     WHERE pr.planet_id = p.planet_id
                     AND pr.status IN ('initiated', 'ongoing', 'shieldsVulnerable')
                 )
-              )::int AS under_attack
-            FROM player p
-            INNER JOIN planet
-              ON p.planet_id = planet.id
-            LEFT JOIN player_address pa
-              ON p.id = pa.player_id
-            LEFT JOIN fleet f
-              ON p.fleet_id = f.id
-            LEFT JOIN guild gu
-              ON p.guild_id = gu.id
-            LEFT JOIN guild_meta gm
-              ON gu.id = gm.id
-            LEFT JOIN grid AS planet_ore
-              ON planet_ore.object_id = p.planet_id
-              AND planet_ore.attribute_type='ore'
-            LEFT JOIN grid AS player_ore
-              ON player_ore.object_id = p.id
-              AND player_ore.attribute_type='ore'
-            WHERE
-              p.id <> :player_id
-              AND (
-                  player_ore.val >= :min_ore
-                  OR (player_ore.val IS NULL AND 0 = :min_ore)
-              )
-              $queryGuildIdFilter
-              $queryFleetAwayFilter
-              $queryNotUnderAttackFilter
-              $querySearchFilter
-            GROUP BY
-              p.id,
-              p.username,
-              p.pfp,
-              p.pfp_client_render_attributes,
-              guild_name,
-              gm.tag,
-              f.status,
-              undiscovered_ore,
-              ore
+              )::int AS under_attack,
+              $influencePointsColumn
+            $fromAndWhere
             ORDER BY
               ore DESC,
               LENGTH(p.id) ASC,
@@ -338,43 +417,7 @@ class PlayerManager
         ";
 
         if ($parsedRequest->params->count_only) {
-            $query = "
-                SELECT COUNT(1)
-                FROM (
-                    SELECT
-                      p.id
-                    FROM player p
-                    INNER JOIN planet
-                      ON p.planet_id = planet.id
-                    LEFT JOIN player_address pa
-                      ON p.id = pa.player_id
-                    LEFT JOIN fleet f
-                      ON p.fleet_id = f.id
-                    LEFT JOIN guild gu
-                      ON p.guild_id = gu.id
-                    LEFT JOIN guild_meta gm
-                      ON gu.id = gm.id
-                    LEFT JOIN grid AS planet_ore
-                      ON planet_ore.object_id = p.planet_id
-                      AND planet_ore.attribute_type='ore'
-                    LEFT JOIN grid AS player_ore
-                      ON player_ore.object_id = p.id
-                      AND player_ore.attribute_type='ore'
-                    WHERE
-                      p.id <> :player_id
-                      AND (
-                          player_ore.val >= :min_ore
-                          OR (player_ore.val IS NULL AND 0 = :min_ore)
-                      )
-                      $queryGuildIdFilter
-                      $queryFleetAwayFilter
-                      $queryNotUnderAttackFilter
-                      $querySearchFilter
-                    GROUP BY
-                      p.id
-                ) AS search_results
-                LIMIT 1;
-            ";
+            $query = "SELECT COUNT(1) $fromAndWhere";
         }
 
         $db = $this->entityManager->getConnection();

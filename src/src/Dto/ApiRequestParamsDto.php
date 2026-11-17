@@ -52,6 +52,9 @@ class ApiRequestParamsDto
     #[Assert\Regex(RegexPattern::ID)]
     public ?string $controller = null;
 
+    #[Assert\Regex(RegexPattern::INT)]
+    public ?string $contest_id = null;
+
     #[Assert\Choice(choices: ['0', '1'])]
     public ?string $count_only = null;
 
@@ -226,6 +229,9 @@ class ApiRequestParamsDto
     ])]
     public ?string $role = null;
 
+    #[Assert\Choice(choices: ['0', '1'])]
+    public ?string $rival_guilds_only = null;
+
     /** first: a player's first tutorial run. repeat: the runs after it. */
     #[Assert\Choice(choices: ['first', 'repeat'])]
     public ?string $run = null;
@@ -239,6 +245,9 @@ class ApiRequestParamsDto
 
     #[Assert\Regex(RegexPattern::SEARCH_STRING)]
     public ?string $search_string = null;
+
+    #[Assert\Choice(choices: ['0', '44', '127', '999'])]
+    public ?string $sector = null;
 
     #[Assert\Regex(RegexPattern::SIGNATURE)]
     public ?string $signature = null;
@@ -266,6 +275,9 @@ class ApiRequestParamsDto
 
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $tx_id = null;
+
+    #[Assert\Choice(choices: ['0', '1'])]
+    public ?string $undefeated = null;
 
     #[Assert\Regex(RegexPattern::INT)]
     public ?string $unix_timestamp = null;

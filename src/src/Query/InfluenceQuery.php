@@ -45,29 +45,65 @@ SELECT guild_id,sector,unique_planets::text,held_planets::text,points::text,over
 FROM ranked ORDER BY sector,sector_rank,guild_id LIMIT 10001
 SQL;
 
-    /** Page members BEFORE counting their wins; no all-player score scan or per-player round trips. */
+    /**
+     * Every member's personal score in the requested sector (or all sectors), ranked by
+     * points with shared competition ranks for exact ties. Ranks are computed before the
+     * caller's filters, so a guild-filtered page keeps contest-wide positions.
+     */
+    public const PLAYER_RANKS = <<<'SQL'
+WITH wins AS (
+ SELECT w.player,count(*) AS n FROM structs.influence_player_planet_win w
+ JOIN structs.influence_contest_planet p ON p.build_id=w.build_id AND p.planet=w.planet
+ WHERE w.build_id=:build AND (CAST(:sector AS smallint) IS NULL OR p.sector=:sector) GROUP BY w.player
+), claims AS (
+ SELECT s.player,sum(s.held_planets) AS n FROM structs.influence_player_sector s
+ WHERE s.build_id=:build AND (CAST(:sector AS smallint) IS NULL OR s.sector=:sector) GROUP BY s.player
+), scored AS (
+ SELECT m.player,m.guild,coalesce(w.n,0) AS u,coalesce(c.n,0) AS h,
+ coalesce(w.n,0)::numeric*CAST(:win AS integer)+coalesce(c.n,0)::numeric*CAST(:claim AS integer) AS pts
+ FROM structs.influence_member m LEFT JOIN wins w USING(player) LEFT JOIN claims c USING(player)
+ WHERE m.build_id=:build
+), ranked AS (
+ SELECT *,rank() OVER(ORDER BY pts DESC) AS rnk FROM scored
+)
+SQL;
+
+    /** Ranked page plus the display fields a leaderboard row needs, from the live game tables. */
     public static function players(string $filters, int $limit, int $offset): string
     {
-        return <<<SQL
-WITH selected AS MATERIALIZED (
- SELECT player,guild FROM structs.influence_member WHERE build_id=:build {$filters}
- ORDER BY player LIMIT {$limit} OFFSET {$offset}
-), wins AS (
- SELECT w.player,count(*) AS n FROM selected m
- JOIN structs.influence_player_planet_win w ON w.build_id=:build AND w.player=m.player
- JOIN structs.influence_contest_planet p ON p.build_id=w.build_id AND p.planet=w.planet
- WHERE (CAST(:sector AS smallint) IS NULL OR p.sector=:sector) GROUP BY w.player
-), claims AS (
- SELECT s.player,sum(s.held_planets) AS n FROM selected m
- JOIN structs.influence_player_sector s ON s.build_id=:build AND s.player=m.player
- WHERE (CAST(:sector AS smallint) IS NULL OR s.sector=:sector) GROUP BY s.player
-)
-SELECT m.player AS player_id,m.guild AS guild_id,coalesce(w.n,0)::text AS unique_planets,
- coalesce(c.n,0)::text AS held_planets,
- (coalesce(w.n,0)::numeric*CAST(:win AS integer)+coalesce(c.n,0)::numeric*CAST(:claim AS integer))::text AS points
-FROM selected m LEFT JOIN wins w USING(player) LEFT JOIN claims c USING(player) ORDER BY m.player
+        return self::PLAYER_RANKS . <<<SQL
+SELECT r.player AS player_id,r.guild AS guild_id,r.u::text AS unique_planets,r.h::text AS held_planets,
+ r.pts::text AS points,r.rnk::text AS rank,
+ jsonb_build_object(
+  'username',pl.username,'pfp_client_render_attributes',pl.pfp_client_render_attributes,
+  'guild_id',pl.guild_id,'tag',gm.tag,'planet_id',pl.planet_id,'fleet_status',f.status,
+  'ore',coalesce(po.val,0)::text,'undiscovered_ore',coalesce(uo.val,0)::text,
+  'under_attack',EXISTS(SELECT 1 FROM structs.planet_raid pr WHERE pr.planet_id=pl.planet_id
+   AND pr.status IN ('initiated','ongoing','shieldsVulnerable'))
+ )::text AS profile
+FROM ranked r
+LEFT JOIN structs.player pl ON pl.id=r.player
+LEFT JOIN structs.guild_meta gm ON gm.id=pl.guild_id
+LEFT JOIN structs.fleet f ON f.id=pl.fleet_id
+LEFT JOIN structs.grid po ON po.object_id=pl.id AND po.attribute_type='ore'
+LEFT JOIN structs.grid uo ON uo.object_id=pl.planet_id AND uo.attribute_type='ore'
+WHERE true {$filters}
+ORDER BY r.pts DESC,length(r.player),r.player LIMIT {$limit} OFFSET {$offset}
 SQL;
     }
+
+    public static function countPlayers(string $filters): string
+    {
+        return self::PLAYER_RANKS . "SELECT count(*) FROM ranked r WHERE true {$filters}";
+    }
+
+    /** Display fields for a bounded list of guilds. */
+    public const GUILD_PROFILES = <<<'SQL'
+SELECT g.value AS guild_id,coalesce(nullif(gu.name,''),gm.name) AS name,gm.tag,gm.logo
+FROM jsonb_array_elements_text(CAST(:guilds AS jsonb)) g
+LEFT JOIN structs.guild gu ON gu.id=g.value
+LEFT JOIN structs.guild_meta gm ON gm.id=g.value
+SQL;
 
     /** Same payload as influence_grass_planet, using only the webapp's SELECT grants.
      * Bounded index lookups: no raid-history scan and no per-planet API/DB round trips.

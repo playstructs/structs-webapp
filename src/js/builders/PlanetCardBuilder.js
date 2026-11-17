@@ -18,6 +18,7 @@ export class PlanetCardBuilder {
    * @param {MapManager} mapManager
    * @param {RaidManager} raidManager
    * @param {StructManager} structManager
+   * @param {SectorBlitzManager|null} sectorBlitzManager
    */
   constructor(
     gameState,
@@ -27,7 +28,8 @@ export class PlanetCardBuilder {
     planetManager,
     mapManager,
     raidManager,
-    structManager
+    structManager,
+    sectorBlitzManager = null
   ) {
     this.gameState = gameState;
     this.guildAPI = guildAPI;
@@ -37,6 +39,7 @@ export class PlanetCardBuilder {
     this.mapManager = mapManager;
     this.raidManager = raidManager;
     this.structManager = structManager;
+    this.sectorBlitzManager = sectorBlitzManager;
   }
 
   /**
@@ -270,7 +273,8 @@ export class PlanetCardBuilder {
     raidCard.hasSecondaryBtn = true;
     raidCard.secondaryBtnLabel = 'Scan';
     raidCard.secondaryBtnHandler = () => {
-      MenuPage.router.goto('Fleet', 'scan');
+      // During Sector Blitz, Scan starts from the Sector Map, which acts as a sector filter.
+      MenuPage.router.goto('Fleet', this.sectorBlitzManager?.isActive() ? 'sectorMap' : 'scan');
     }
   }
 
