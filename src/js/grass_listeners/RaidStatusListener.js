@@ -11,6 +11,8 @@ import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {NotificationDialogueSequenceFactory} from "../factories/NotificationDialogueSequenceFactory";
 import {NOTIFICATION_DIALOGUE_SEQUENCES} from "../constants/NotificationDialogueSequences";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
+import {ClearTileSelectionEvent} from "../events/ClearTileSelectionEvent";
+import {FtlJumpViewModel} from "../view_models/fleet/FtlJumpViewModel";
 
 export class RaidStatusListener extends AbstractGrassListener {
   /**
@@ -51,7 +53,19 @@ export class RaidStatusListener extends AbstractGrassListener {
       this.mapManager.configureRaidMap();
       this.gameState.raidMap.render();
 
+      // The FTL Jump screen lands the player on the planet they are raiding.
+      const fromFtlJump = FtlJumpViewModel.isShowing();
+      FtlJumpViewModel.finish();
+
+      // Leave the Fleet page behind the map, so the menu opens on it rather than the FTL screen.
       MenuPage.router.goto('Fleet', 'index', {'raidCardType': PLANET_CARD_TYPES.RAID_STARTED});
+
+      if (fromFtlJump) {
+        this.gameState.setActiveMapContainerId(MAP_CONTAINER_IDS.RAID);
+        this.mapManager.showMap(MAP_CONTAINER_IDS.RAID);
+        window.dispatchEvent(new ClearTileSelectionEvent());
+        MenuPage.close();
+      }
     });
   }
 

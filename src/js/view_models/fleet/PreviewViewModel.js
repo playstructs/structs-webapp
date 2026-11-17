@@ -84,7 +84,7 @@ export class PreviewViewModel extends AbstractViewModel {
 
       this.gameState.setRaidPlanetRaidInfo(planetRaid);
 
-      // The raid's INITIATED status (RaidStatusListener) moves on from this screen to the Fleet page.
+      // The raid's INITIATED status (RaidStatusListener) closes this screen and shows the raid map.
       MenuPage.router.goto('Fleet', 'ftlJump');
 
       this.grassManager.registerListener(new RaidStatusListener(this.gameState, this.raidManager, this.mapManager));
