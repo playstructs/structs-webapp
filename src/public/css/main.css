@@ -3206,3 +3206,174 @@ img.sector-blitz-guild-logo {
 .sector-blitz-layout .sui-data-card-body > .sui-pagination {
   align-self: center;
 }
+
+/* ---- Public Sector Blitz Leaderboard Start ---- */
+
+/* /sector-blitz: a public page outside the game, so it scrolls like a normal web page. */
+body.public-leaderboard-page {
+  height: auto;
+  min-height: 100%;
+  margin: 0;
+  background: #1b1a2b url(/img/sector-blitz/blur-space-bg.png) center / cover no-repeat fixed;
+}
+
+.public-leaderboard-layout {
+  display: flex;
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 64px var(--spacing-xl) 0;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.public-leaderboard-panel {
+  width: 100%;
+  max-width: 940px;
+}
+
+.public-leaderboard-panel > .sui-panel-chunk {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* The screen fills the panel even while the page is short (e.g. while loading). */
+.public-leaderboard-panel .sui-screen.public-leaderboard-screen {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.public-leaderboard-panel .public-leaderboard-screen > .sui-page-body-screen {
+  display: flex;
+  flex: 1 1 auto;
+}
+
+.public-leaderboard-panel .sui-screen-body {
+  align-self: stretch;
+}
+
+/* The heading sits inside a .sui-nav-btn and takes its font. */
+.public-leaderboard-title {
+  margin: 0;
+  font: inherit;
+}
+
+/* Without a back chevron the title lines up 16px in, as in the design. */
+.sui-nav-btn.public-leaderboard-heading {
+  padding-left: calc(var(--spacing-xl) - var(--spacing-xs));
+}
+
+.public-leaderboard-page h2.sui-data-card-header {
+  margin: 0;
+}
+
+.public-leaderboard-loading {
+  display: flex;
+  padding: var(--spacing-xxxl);
+  justify-content: center;
+}
+
+.sector-blitz-layout.public-leaderboard-content {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--spacing-xl);
+  flex-direction: column;
+  gap: var(--spacing-xxxl);
+}
+
+.public-leaderboard-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-self: stretch;
+  gap: var(--spacing-xxxl);
+}
+
+.sector-blitz-layout .public-leaderboard-top > .sector-blitz-fleet-card {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 400px;
+}
+
+.public-leaderboard-play {
+  display: flex;
+  box-sizing: border-box;
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border);
+  flex: 0 1 288px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+}
+
+.public-leaderboard-play-logo {
+  width: 128px;
+  height: 128px;
+  image-rendering: pixelated;
+}
+
+a.sui-screen-btn.public-leaderboard-play-btn {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 256px;
+  justify-content: center;
+}
+
+/* Current Battles: defender, VS, attacker. Wraps to two lines on narrow screens. */
+.public-battle-row {
+  justify-content: center;
+}
+
+.public-battle-side {
+  display: flex;
+  min-width: 156px;
+  flex: 1 0 0;
+  align-items: center;
+  gap: var(--spacing-xl);
+}
+
+.public-battle-attacker {
+  flex-direction: row-reverse;
+}
+
+.public-battle-info {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.public-battle-attacker .public-battle-info {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.public-battle-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media only screen and (max-width: 600px) {
+  .public-leaderboard-layout {
+    padding: 0;
+  }
+
+  .public-leaderboard-play {
+    flex-basis: 100%;
+  }
+}
+
+/* Very wide screens: double everything, as the game does, once the panel still fits. */
+@media only screen and (min-width: 1912px) {
+  .public-leaderboard-panel {
+    zoom: 2;
+  }
+}
+
+/* ---- Public Sector Blitz Leaderboard End ---- */

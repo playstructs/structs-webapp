@@ -1,0 +1,54 @@
+<!doctype html>
+<html class="no-js" lang="en-us">
+
+    <head>
+        <meta charset="utf-8">
+        <title>Sector Blitz Leaderboard | Structs</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+        <meta name="description" content="Live standings for Sector Blitz, the Structs sector control event.">
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="/css/normalize.css">
+        <link rel="stylesheet" href="/css/structicons.css">
+        <link rel="stylesheet" href="/css/sui/sui.css">
+        <link rel="stylesheet" href="/css/main.css">
+    </head>
+    <body class="public-leaderboard-page">
+
+        <div class="public-leaderboard-layout">
+            <div class="sui-panel sui-theme-player public-leaderboard-panel">
+                <div class="sui-panel-edge-left"></div>
+                <div class="sui-panel-chunk sui-mod-grow sui-mod-shrink">
+                    <div class="sui-screen sui-screen-full-width">
+                        <div class="sui-screen-nav">
+                            <nav class="sui-screen-nav-items">
+                                <a class="sui-screen-nav-item sui-mod-active" href="{{ path('app_sector_blitz') }}">Sector Blitz</a>
+                                <a class="sui-screen-nav-item" href="{{ path('app_game') }}">Play Now</a>
+                            </nav>
+                        </div>
+                    </div>
+                    <div class="sui-screen sui-screen-full-width public-leaderboard-screen">
+                        <div class="sui-page-body-screen">
+                            <main
+                                id="public-leaderboard"
+                                class="sui-page-body-screen-content"
+                                data-sector="{{ sector ?? '' }}"
+                                data-home-url="{{ path('app_sector_blitz') }}"
+                                data-play-url="{{ path('app_game') }}"
+                            >
+                                <div class="public-leaderboard-loading">
+                                    <img src="/img/loading-3-dots.gif" class="loading-3-dots" alt="3 dots loading animation">
+                                </div>
+                            </main>
+                        </div>
+                    </div>
+                </div>
+                <div class="sui-panel-edge-right"></div>
+            </div>
+        </div>
+
+        <script src="{{ asset('js/sectorBlitz.js', 'webpack') }}"></script>
+    </body>
+</html>
