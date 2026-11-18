@@ -30,3 +30,15 @@ framework:
             policy: token_bucket
             limit: 480
             rate: { interval: '1 second', amount: 48 }
+        # Public Sector Blitz leaderboard (/sector-blitz). A viewer makes a few cached reads
+        # every 30-60s, plus one or two for each page or sector they open.
+        sector_blitz_public_client:
+            policy: token_bucket
+            limit: 60
+            rate: { interval: '1 second', amount: 2 }
+        # Database work for leaderboard cache misses, shared by every viewer. When it is spent
+        # the previous copy is served instead.
+        sector_blitz_public_global:
+            policy: token_bucket
+            limit: 60
+            rate: { interval: '1 second', amount: 20 }

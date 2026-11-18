@@ -54,6 +54,10 @@ export const SECTOR_BLITZ = Object.freeze({
   RESULTS_TOP_PLAYERS: 3,
   /** Live updates are coalesced into at most one page refresh per interval. */
   LIVE_REFRESH_THROTTLE_MS: 5000,
+  /** The public leaderboard refreshes 30-60 seconds after each load, at a random point. */
+  PUBLIC_REFRESH_MIN_MS: 30 * 1000,
+  PUBLIC_REFRESH_JITTER_MS: 30 * 1000,
+  PUBLIC_BATTLES_PAGE_SIZE: 5,
   INFLUENCE_ICON_HTML: '<i class="sui-icon sector-blitz-influence-icon"></i>',
 });
 

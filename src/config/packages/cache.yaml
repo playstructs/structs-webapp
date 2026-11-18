@@ -16,6 +16,7 @@ framework:
 
         pools:
             cache.retained_funds: ~
+            cache.sector_blitz: ~
 
         # Namespaced pools use the above "app" backend by default
         #pools:

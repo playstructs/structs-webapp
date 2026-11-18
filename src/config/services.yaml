@@ -31,3 +31,6 @@ services:
     App\Manager\RetainedFundsReadCache:
         arguments:
             $retainedFundsCache: '@cache.retained_funds'
+    App\Manager\SectorBlitzPublicManager:
+        arguments:
+            $sectorBlitzCache: '@cache.sector_blitz'

@@ -1,14 +1,8 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {EVENTS} from "../../constants/Events";
-import {
-  SECTOR_BLITZ,
-  SECTOR_BLITZ_GUILD_COLOURS,
-  SECTOR_BLITZ_OTHER_COLOUR,
-  SECTOR_BLITZ_LEGEND_ICONS,
-  SECTOR_BLITZ_OTHER_LEGEND_ICON,
-  SECTORS
-} from "../../constants/SectorBlitzConstants";
+import {SECTOR_BLITZ} from "../../constants/SectorBlitzConstants";
 import {SectorBlitzFormat} from "../../util/SectorBlitzFormat";
+import {SectorBlitzHTML} from "../sector_blitz/SectorBlitzHTML";
 
 /**
  * The Sector Blitz card at the top of the Fleet Status page: live sector control bars
@@ -163,44 +157,7 @@ export class SectorBlitzFleetCardComponent {
    * @return {string}
    */
   renderSectorLinkHTML(sectorId) {
-    return `
-      <a href="javascript: void(0)" class="sector-blitz-sector-link sui-text-header" data-sector-link="${sectorId}">
-        ${SectorBlitzFormat.sectorLabel(sectorId)}
-        <i class="sui-icon sui-icon-sm icon-chevron-right sui-text-secondary"></i>
-      </a>
-    `;
-  }
-
-  /**
-   * @param {object[]} overall ranked guilds with profiles
-   * @return {Map<string, object>}
-   */
-  profilesById(overall) {
-    return new Map(overall.map(row => [row.guild_id, row.profile]));
-  }
-
-  /**
-   * @param {object[]} rows standings rows for one sector
-   * @return {object[]} the sector's leaders (several when tied), empty if nobody scored
-   */
-  sectorLeaders(rows) {
-    return rows.filter(row => row.sector_rank === '1' && BigInt(row.points) > 0n);
-  }
-
-  /**
-   * @param {object[]} leaders
-   * @param {Map<string, object>} profiles
-   * @param {boolean} useTag
-   * @return {string}
-   */
-  guildNames(leaders, profiles, useTag) {
-    return leaders.map(row => {
-      const profile = profiles.get(row.guild_id);
-      if (useTag && profile?.tag) {
-        return `[${SectorBlitzFormat.escape(profile.tag)}]`;
-      }
-      return SectorBlitzFormat.guildName(profile, row.guild_id);
-    }).join(' / ');
+    return SectorBlitzHTML.sectorLinkHTML(sectorId);
   }
 
   /**
@@ -209,62 +166,8 @@ export class SectorBlitzFleetCardComponent {
    * @return {string}
    */
   renderSectorsHTML(standings, overall) {
-    const profiles = this.profilesById(overall);
-    const topGuilds = overall.slice(0, SECTOR_BLITZ.FLEET_CARD_TOP_GUILDS).map(row => row.guild_id);
-
-    const sectorsHTML = SECTORS.map(sector => {
-      const rows = standings.filter(row => Number(row.sector) === sector.id);
-      const total = rows.reduce((sum, row) => sum + BigInt(row.points), 0n);
-      const leaders = this.sectorLeaders(rows);
-
-      let barHTML = `<div class="sector-blitz-bar sector-blitz-bar-empty"></div>`;
-      if (total > 0n) {
-        const pointsFor = guildId => BigInt(rows.find(row => row.guild_id === guildId)?.points ?? '0');
-        const topPoints = topGuilds.map(pointsFor);
-        const otherPoints = total - topPoints.reduce((sum, points) => sum + points, 0n);
-        const segment = (points, colourClass) => points > 0n
-          ? `<div class="sector-blitz-bar-segment ${colourClass}" style="flex-grow: ${Number((points * 10000n) / total)}"></div>`
-          : '';
-
-        // Everyone else on the left, then 3rd, 2nd and the overall leader on the right.
-        barHTML = `
-          <div class="sector-blitz-bar">
-            ${segment(otherPoints, SECTOR_BLITZ_OTHER_COLOUR)}
-            ${topPoints.map((points, i) => ({points, i})).reverse()
-              .map(({points, i}) => segment(points, SECTOR_BLITZ_GUILD_COLOURS[i])).join('')}
-          </div>
-        `;
-      }
-
-      return `
-        <div class="sector-blitz-sector-row">
-          <div class="sector-blitz-sector-row-header">
-            ${this.renderSectorLinkHTML(sector.id)}
-            <span class="sui-text-header">${leaders.length ? this.guildNames(leaders, profiles, true) : ''}</span>
-          </div>
-          ${barHTML}
-        </div>
-      `;
-    }).join('');
-
-    const legendHTML = topGuilds.length
-      ? `
-        <div class="sector-blitz-legend">
-          ${topGuilds.map((guildId, i) => `
-            <span class="sector-blitz-legend-item sui-text-header">
-              <i class="${SECTOR_BLITZ_LEGEND_ICONS[i]}"></i>
-              ${SectorBlitzFormat.guildName(profiles.get(guildId), guildId)}
-            </span>
-          `).join('')}
-          <span class="sector-blitz-legend-item sui-text-header">
-            <i class="${SECTOR_BLITZ_OTHER_LEGEND_ICON}"></i>
-            Other
-          </span>
-        </div>
-      `
-      : '';
-
-    return `${sectorsHTML}${legendHTML}`;
+    const sectorsHTML = SectorBlitzHTML.sectorsHTML(standings, overall, sectorId => this.renderSectorLinkHTML(sectorId));
+    return `${sectorsHTML}${SectorBlitzHTML.legendHTML(overall)}`;
   }
 
   /**
@@ -273,28 +176,6 @@ export class SectorBlitzFleetCardComponent {
    * @return {string}
    */
   renderResultsHTML(standings, overall) {
-    const profiles = this.profilesById(overall);
-    const winners = overall.filter(row => row.rank === '1' && row.sectors_controlled > 0);
-    const winnerHTML = winners.length
-      ? winners.map(row => SectorBlitzFormat.guildName(row.profile, row.guild_id)).join(' / ')
-      : 'No Winner';
-
-    const sectorsHTML = SECTORS.map(sector => {
-      const leaders = this.sectorLeaders(standings.filter(row => Number(row.sector) === sector.id));
-      return `
-        <div class="sector-blitz-results-sector">
-          ${this.renderSectorLinkHTML(sector.id)}
-          <div class="sui-text-header">${leaders.length ? this.guildNames(leaders, profiles, false) : '&mdash;'}</div>
-        </div>
-      `;
-    }).join('');
-
-    return `
-      <div class="sector-blitz-results-winner">
-        <div class="sui-text-header">Winning Guild</div>
-        <div class="sui-text-display sui-text-secondary">${winnerHTML}</div>
-      </div>
-      <div class="sector-blitz-results-sectors">${sectorsHTML}</div>
-    `;
+    return SectorBlitzHTML.resultsHTML(standings, overall, sectorId => this.renderSectorLinkHTML(sectorId));
   }
 }
