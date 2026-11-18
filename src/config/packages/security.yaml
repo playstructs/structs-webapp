@@ -28,6 +28,10 @@ security:
         api_onboarding_events:
             pattern: ^/api/onboarding/events$
             security: false
+        # The public Sector Blitz leaderboard: cached, rate-limited reads anyone can make.
+        api_public_sector_blitz:
+            pattern: ^/api/public/sector-blitz(?:/|$)
+            security: false
         api:
             pattern: ^/api/
             security: true

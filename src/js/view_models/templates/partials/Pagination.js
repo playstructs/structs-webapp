@@ -25,22 +25,31 @@ export class Pagination {
     this.pageParam = pageParam;
   }
 
+  /**
+   * Show another page. Override to navigate somewhere other than the menu router.
+   *
+   * @param {number} page
+   */
+  goto(page) {
+    MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, [this.pageParam]: page});
+  }
+
   init() {
     if (this.currentPage > 1) {
       document.getElementById(`${this.idPrefix}-pagi-prev-btn`).addEventListener('click', () => {
-        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, [this.pageParam]: this.currentPage - 1});
+        this.goto(this.currentPage - 1);
       });
     }
 
     if (this.currentPage < this.totalPages) {
       document.getElementById(`${this.idPrefix}-pagi-next-btn`).addEventListener('click', () => {
-        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, [this.pageParam]: this.currentPage + 1});
+        this.goto(this.currentPage + 1);
       });
     }
 
     this.pageBtns.forEach((pageBtnNumber) => {
       document.getElementById(`${this.idPrefix}-pagi-${pageBtnNumber}-btn`).addEventListener('click', () => {
-        MenuPage.router.goto(this.targetController, this.targetAction, {...this.options, [this.pageParam]: pageBtnNumber});
+        this.goto(pageBtnNumber);
       });
     });
   }

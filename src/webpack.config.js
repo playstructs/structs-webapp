@@ -9,6 +9,7 @@ const isDevelopmentBuild = process.argv.includes('--mode=development');
 module.exports = {
   entry: {
     index: './js/index.js',
+    sectorBlitz: './js/sector_blitz.js',
     test: './js/tests/test.js',
   },
   output: {

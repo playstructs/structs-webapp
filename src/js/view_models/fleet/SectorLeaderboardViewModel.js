@@ -1,16 +1,15 @@
 import {MenuPage} from "../../framework/MenuPage";
 import {AbstractViewModel} from "../../framework/AbstractViewModel";
 import {Pagination} from "../templates/partials/Pagination";
-import {PfpViewerComponent} from "../components/PfpViewerComponent";
-import {PfpClientRenderAttributes} from "../../models/PfpClientRenderAttributes";
 import {PLAYER_TYPES} from "../../constants/PlayerTypes";
 import {EVENTS} from "../../constants/Events";
 import {SECTOR_BLITZ} from "../../constants/SectorBlitzConstants";
 import {SectorBlitzFormat} from "../../util/SectorBlitzFormat";
 import {RaidTarget} from "../../util/RaidTarget";
 import {SECTOR_BLITZ_TIPS} from "./EventRulesViewModel";
+import {SectorBlitzHTML} from "../sector_blitz/SectorBlitzHTML";
 
-const NO_ACTIVITY_HTML = `<div class="sector-blitz-empty">No Activity in Sector</div>`;
+const NO_ACTIVITY_HTML = SectorBlitzHTML.emptyHTML('No Activity in Sector');
 
 /**
  * One sector's Your Performance, Guild Leaderboard and Player Leaderboard.
@@ -80,14 +79,7 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
    * @return {object} raid target fields
    */
   toTarget(row) {
-    return {
-      id: row.player_id,
-      planet_id: row.profile?.planet_id,
-      undiscovered_ore: row.profile?.undiscovered_ore,
-      ore: row.profile?.ore,
-      under_attack: row.profile?.under_attack,
-      fleet_status: row.profile?.fleet_status,
-    };
+    return SectorBlitzHTML.toTarget(row);
   }
 
   initPageCode() {
@@ -167,62 +159,15 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
     `;
   }
 
-  /**
-   * @param {object|null} profile
-   * @return {string}
-   */
-  renderGuildIconHTML(profile) {
-    if (profile?.logo) {
-      return `
-        <div class="sui-result-row-portrait">
-          <img class="sui-result-row-portrait-image sector-blitz-guild-logo" src="${SectorBlitzFormat.escape(profile.logo)}" alt="">
-        </div>
-      `;
-    }
-    return `
-      <div class="sui-result-row-portrait sector-blitz-guild-placeholder sui-text-secondary">
-        <i class="sui-icon sui-icon-md icon-unknown"></i>
-      </div>
-    `;
-  }
-
-  /**
-   * @param {string} points
-   * @param {string} rank
-   * @return {string}
-   */
-  renderScoreHTML(points, rank) {
-    return `
-      <div class="sui-result-row-resources">
-        <a class="sui-resource" href="javascript: void(0)" data-sui-tooltip="Influence Points">
-          <span>${SectorBlitzFormat.points(points)}</span>
-          ${SECTOR_BLITZ.INFLUENCE_ICON_HTML}
-        </a>
-        <div class="sector-blitz-rank">${SectorBlitzFormat.rank(rank)}</div>
-      </div>
-    `;
-  }
-
   renderGuildRowsHTML() {
     const rows = this.guilds?.data ?? [];
     if (!rows.length) {
       return NO_ACTIVITY_HTML;
     }
 
-    const rowsHTML = rows.map(row => `
-      <div class="sui-result-row">
-        <div class="sui-result-row-left-section">
-          ${this.renderGuildIconHTML(row.profile)}
-          <div class="sui-result-row-player-info">
-            <div class="sui-text-label-block">${SectorBlitzFormat.guildName(row.profile, row.guild_id)}</div>
-          </div>
-        </div>
-        <div class="sui-result-row-right-section">
-          ${this.renderScoreHTML(row.points, row.rank)}
-          <a href="javascript: void(0)" class="sui-screen-btn sui-mod-secondary" data-guild-view="${SectorBlitzFormat.escape(row.guild_id)}">View</a>
-        </div>
-      </div>
-    `).join('');
+    const rowsHTML = rows.map(row => SectorBlitzHTML.guildRowHTML(row,
+      `<a href="javascript: void(0)" class="sui-screen-btn sui-mod-secondary" data-guild-view="${SectorBlitzFormat.escape(row.guild_id)}">View</a>`
+    )).join('');
 
     return `<div class="sui-result-rows sui-result-table">${rowsHTML}</div>${this.guildPagination.render()}`;
   }
@@ -237,99 +182,20 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
 
     const rowsHTML = rows.map(row => {
       const target = this.toTarget(row);
-      const pfpViewer = new PfpViewerComponent(PfpClientRenderAttributes.fromJson(row.profile?.pfp_client_render_attributes ?? null));
       const button = row.player_id === myId || !target.planet_id
         ? ''
         : `<a href="javascript: void(0)" class="sui-screen-btn sui-mod-secondary" data-player-target="${SectorBlitzFormat.escape(row.player_id)}">${RaidTarget.buttonLabel(target)}</a>`;
-
-      return `
-        <div class="sui-result-row">
-          <div class="sui-result-row-left-section">
-            <div class="sui-result-row-portrait">
-              <div class="sui-result-row-portrait-image">${pfpViewer.renderHTML()}</div>
-            </div>
-            <div class="sui-result-row-player-info">
-              <div class="sui-text-label-block">
-                ${SectorBlitzFormat.playerName(row.profile, row.player_id)}<br>
-                ${RaidTarget.statusBadgeHTML(target)}
-              </div>
-            </div>
-          </div>
-          <div class="sui-result-row-right-section">
-            ${this.renderScoreHTML(row.points, row.rank)}
-            ${button}
-          </div>
-        </div>
-      `;
+      return SectorBlitzHTML.playerRowHTML(row, button);
     }).join('');
 
     return `<div class="sui-result-rows sui-result-table">${rowsHTML}</div>${this.playerPagination.render()}`;
-  }
-
-  /**
-   * Places follow the shared ranks, so tied entries get the same label.
-   *
-   * @param {object[]} rows
-   * @param {function(object): string} nameFn
-   * @return {string}
-   */
-  renderPlaceNames(rows, nameFn) {
-    const places = {'1': 'Tied First', '2': 'Second Place', '3': 'Third Place', '4': 'Fourth Place'};
-    return rows.map(row => `
-      <div class="sector-blitz-podium-place">
-        <div class="sui-text-header sui-text-hint">${places[row.rank] ?? SectorBlitzFormat.rank(row.rank)}</div>
-        <div class="sui-text-header sector-blitz-podium-name">${nameFn(row)}</div>
-      </div>
-    `).join('');
   }
 
   renderResultsHTML() {
     if (!this.sectorBlitzManager.isShowingResults()) {
       return '';
     }
-
-    const guildName = row => SectorBlitzFormat.guildName(row.profile, row.guild_id);
-    const playerName = row => SectorBlitzFormat.playerName(row.profile, row.player_id);
-    const [topGuild, ...otherGuilds] = this.podiumGuilds;
-    const [topPlayer, ...otherPlayers] = this.podiumPlayers;
-
-    const guildsHTML = topGuild
-      ? `
-        <div class="sector-blitz-podium">
-          <div class="sector-blitz-podium-leader">
-            <div class="sui-text-header sui-text-hint">Top Guild</div>
-            <div class="sui-text-display sui-text-secondary">${guildName(topGuild)}</div>
-          </div>
-          <div class="sector-blitz-podium-places">${this.renderPlaceNames(otherGuilds, guildName)}</div>
-        </div>
-      `
-      : '';
-    const playersHTML = topPlayer
-      ? `
-        <div class="sector-blitz-podium">
-          <div class="sector-blitz-podium-leader">
-            <div class="sui-text-header sui-text-hint">Top Player</div>
-            <div class="sui-text-display">${playerName(topPlayer)}</div>
-          </div>
-          <div class="sector-blitz-podium-places">${this.renderPlaceNames(otherPlayers, playerName)}</div>
-        </div>
-      `
-      : '';
-
-    return `
-      <div class="sui-data-card sector-blitz-fleet-card sector-blitz-fleet-card-results">
-        <div class="sector-blitz-fleet-card-header">
-          <div class="sector-blitz-title">
-            <i class="sui-icon sui-icon-md icon-guild sui-text-primary"></i>
-            <div class="sector-blitz-title-text">
-              <div class="sui-text-header sui-text-primary">Sector Results</div>
-              <div class="sui-text-header">${SectorBlitzFormat.sectorLabel(this.sector)}</div>
-            </div>
-          </div>
-        </div>
-        ${guildsHTML || playersHTML ? `${guildsHTML}${playersHTML}` : NO_ACTIVITY_HTML}
-      </div>
-    `;
+    return SectorBlitzHTML.sectorResultsCardHTML(this.sector, this.podiumGuilds, this.podiumPlayers);
   }
 
   /**
