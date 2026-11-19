@@ -18,6 +18,7 @@ import {RecoveryKeyTest} from "./RecoveryKeyTest";
 import {GrantableDevicePermissionsTest} from "./GrantableDevicePermissionsTest";
 import {RegistrationRequestWithdrawnTest} from "./RegistrationRequestWithdrawnTest";
 import {SectorBlitzTest} from "./SectorBlitzTest";
+import {MapTileSelectionListenerTest} from "./MapTileSelectionListenerTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -38,5 +39,6 @@ import {SectorBlitzTest} from "./SectorBlitzTest";
 (new GrantableDevicePermissionsTest()).run();
 (new RegistrationRequestWithdrawnTest()).run();
 (new SectorBlitzTest()).run();
+(new MapTileSelectionListenerTest()).run();
 
 (new APIReadinessTest()).run();
