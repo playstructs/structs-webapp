@@ -80,7 +80,33 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     /** @type {Fleet} */
     this.attackerFleet = attackerFleet;
 
+    /**
+     * Window listeners added by initPageCode, so destroy() can remove them.
+     * The map builds a new instance on every render; without this, each old
+     * instance kept listening for the rest of the session.
+     * @type {{event: string, handler: function}[]}
+     */
+    this.windowEventHandlers = [];
+
     TargetSelectedIndicator.preload();
+  }
+
+  /**
+   * @param {string} eventName
+   * @param {function} handler
+   */
+  addWindowEventListenerTracked(eventName, handler) {
+    window.addEventListener(eventName, handler);
+    this.windowEventHandlers.push({event: eventName, handler});
+  }
+
+  /**
+   * Remove the window listeners added by initPageCode. The tile elements and
+   * their click listeners go with the markup the map replaces on render.
+   */
+  destroy() {
+    this.windowEventHandlers.forEach(({event, handler}) => window.removeEventListener(event, handler));
+    this.windowEventHandlers = [];
   }
 
   /**
@@ -815,7 +841,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
     });
 
     // Listen for UPDATE_TILE_STRUCT_ID events
-    window.addEventListener(EVENTS.UPDATE_TILE_STRUCT_ID, (event) => {
+    this.addWindowEventListenerTracked(EVENTS.UPDATE_TILE_STRUCT_ID, (event) => {
       if (event.mapId === this.mapId) {
         this.updateTileStructId(
           event.tileType,
@@ -827,25 +853,25 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       }
     });
 
-    window.addEventListener(EVENTS.CLEAR_TILE_SELECTION, (event) => {
+    this.addWindowEventListenerTracked(EVENTS.CLEAR_TILE_SELECTION, (event) => {
       this.clearFocusCursor(event.clearSelected);
     });
 
     // Listen for SHOW_MOVE_TARGETS events
-    window.addEventListener(EVENTS.SHOW_MOVE_TARGETS, (event) => {
+    this.addWindowEventListenerTracked(EVENTS.SHOW_MOVE_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.showMoveTargets();
       }
     });
 
     // Listen for CLEAR_MOVE_TARGETS events
-    window.addEventListener(EVENTS.CLEAR_MOVE_TARGETS, (event) => {
+    this.addWindowEventListenerTracked(EVENTS.CLEAR_MOVE_TARGETS, (event) => {
       if (event.mapId === this.mapId) {
         this.clearMoveTargets();
       }
     });
 
-    window.addEventListener(EVENTS.ANIMATION, (event) => {
+    this.addWindowEventListenerTracked(EVENTS.ANIMATION, (event) => {
       if (event.mapId === this.mapId) {
         const selector = `.map-tile-selection-tile[data-struct-id="${event.structId}"]`;
         const tileElement = document.getElementById(this.containerId).querySelector(selector);
@@ -855,7 +881,7 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
       }
     });
 
-    window.addEventListener(EVENTS.ANIMATION_END, (event) => {
+    this.addWindowEventListenerTracked(EVENTS.ANIMATION_END, (event) => {
       if (event.mapId === this.mapId) {
         const selector = `.map-tile-selection-tile[data-struct-id="${event.structId}"]`;
         const tileElement = document.getElementById(this.containerId).querySelector(selector);
