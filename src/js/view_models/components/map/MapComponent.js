@@ -315,6 +315,17 @@ export class MapComponent extends AbstractViewModelComponent {
   }
 
   /**
+   * Remove the tile selection layer's window listeners. A new layer is built
+   * on every render, so skipping this left one more set listening each time.
+   */
+  destroyMapTileSelection() {
+    if (this.mapTileSelection) {
+      this.mapTileSelection.destroy();
+      this.mapTileSelection = null;
+    }
+  }
+
+  /**
    * Tear down the PIP component (its window listeners and lottie players) and
    * remove its DOM element. The PIP is rendered at `document.body` level so
    * it is not wiped out by `${this.containerId}.innerHTML = ...` and must be
@@ -370,6 +381,7 @@ export class MapComponent extends AbstractViewModelComponent {
   render() {
     this.destroyMapStructLayer();
     this.destroyMapStructHUDLayer();
+    this.destroyMapTileSelection();
     this.destroyMapPictureInPicture();
 
     document.getElementById(this.containerId).innerHTML = this.renderHTML();
