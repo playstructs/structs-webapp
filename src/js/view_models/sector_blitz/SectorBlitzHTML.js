@@ -132,7 +132,7 @@ export class SectorBlitzHTML {
         <div class="sector-blitz-sector-row">
           <div class="sector-blitz-sector-row-header">
             ${labelFn(sectorId)}
-            <span class="sui-text-header">${leaders.length ? SectorBlitzHTML.guildNames(leaders, profiles, true) : ''}</span>
+            <span class="sui-text-header sui-text-hint">${leaders.length ? SectorBlitzHTML.guildNames(leaders, profiles, true) : ''}</span>
           </div>
           ${SectorBlitzHTML.sectorBarHTML(rows, topGuilds)}
         </div>
