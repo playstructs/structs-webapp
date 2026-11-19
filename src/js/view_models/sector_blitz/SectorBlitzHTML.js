@@ -262,6 +262,53 @@ export class SectorBlitzHTML {
   }
 
   /**
+   * One side of a battle: portrait, tag and name, and a Defender or Attacker badge.
+   * The attacker's side is mirrored, portrait on the right.
+   *
+   * @param {object|null} side {player_id, username, tag, pfp_client_render_attributes}
+   * @param {boolean} isDefender
+   * @return {string}
+   */
+  static combatantHTML(side, isDefender) {
+    const tag = side?.tag ? `<span class="sui-text-secondary">[${SectorBlitzFormat.escape(side.tag)}]</span>` : '';
+    const name = side?.username
+      ? SectorBlitzFormat.escape(side.username)
+      : `PID #${SectorBlitzFormat.escape(side?.player_id ?? '?')}`;
+    const badge = isDefender
+      ? `<span class="sui-badge sui-mod-default">Defender</span>`
+      : `<span class="sui-badge sui-mod-destructive">Attacker</span>`;
+
+    return `
+      <div class="public-battle-side public-battle-${isDefender ? 'defender' : 'attacker'}">
+        ${SectorBlitzHTML.portraitHTML(side?.pfp_client_render_attributes)}
+        <div class="public-battle-info">
+          <div class="sui-text-header public-battle-name">${isDefender ? `${tag} ${name}` : `${name} ${tag}`}</div>
+          ${badge}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * A Current Battles row: defender, VS, attacker, then an optional action (e.g. Spectate).
+   *
+   * @param {object|null} defender see combatantHTML
+   * @param {object|null} attacker see combatantHTML
+   * @param {string} actionHTML
+   * @return {string}
+   */
+  static battleRowHTML(defender, attacker, actionHTML = '') {
+    return `
+      <div class="sui-result-row public-battle-row">
+        ${SectorBlitzHTML.combatantHTML(defender, true)}
+        <div class="sui-text-display public-battle-vs">VS</div>
+        ${SectorBlitzHTML.combatantHTML(attacker, false)}
+        ${actionHTML}
+      </div>
+    `;
+  }
+
+  /**
    * @param {object} row player rank row
    * @return {object} raid target fields
    */

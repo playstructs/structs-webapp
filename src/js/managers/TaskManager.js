@@ -277,6 +277,11 @@ export class TaskManager {
     spawn(task_state) {
         const pid = task_state.getPID();
 
+        // A spectator's browser never does the watched players' work (raid, build, mining).
+        if (this.gameState.spectatorMode) {
+            return pid;
+        }
+
         task_state.setBlockCheckpoint(this.gameState.currentBlockHeight);
 
         if (this.hasSavedSubmission(task_state, pid)) {
@@ -900,6 +905,10 @@ export class TaskManager {
      * @return {Promise<Work[]>}
      */
     fetchWork() {
+        // The watched players' work is not a spectator's to look up or run (see spawn()).
+        if (this.gameState.spectatorMode) {
+            return Promise.resolve([]);
+        }
         if (!this.work_request) {
             const ownerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
             const address = this.gameState.signingAccount?.address;

@@ -8,6 +8,7 @@ import {SigningTransactionSettledEvent} from "../events/SigningTransactionSettle
 import {normalizeMessagePayload} from "../util/MessagePayload";
 import {TransactionJournal} from "./TransactionJournal";
 import {SigningDeferredError} from "./SigningSubmission";
+import {SpectatorActionError} from "../errors/SpectatorActionError";
 import {transferIntent} from "../util/TransferIntent";
 import {reactorIntent} from "../util/ReactorIntent";
 import {registrationIntent} from "../util/RegistrationIntent";
@@ -370,6 +371,11 @@ export class SigningQueueManager {
    * Refuse new intents while a possible send's outcome is still unknown.
    */
   #assertCanEnqueue() {
+    // A spectator watches other players' raids: nothing is ever signed or saved on their behalf.
+    // The UI disables every action first, so reaching this is a bug, reported loudly.
+    if (this.gameState.spectatorMode) {
+      throw new SpectatorActionError('Spectators cannot sign transactions');
+    }
     this.#bindScope();
     if (
       this.suspended

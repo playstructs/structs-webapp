@@ -379,43 +379,13 @@ export class PublicLeaderboardPage {
   }
 
   /**
-   * @param {object} side {player_id, username, tag, pfp_client_render_attributes}
-   * @param {string} role Defender or Attacker
-   * @return {string}
-   */
-  combatantHTML(side, role) {
-    const isDefender = role === 'Defender';
-    const tag = side?.tag ? `<span class="sui-text-secondary">[${SectorBlitzFormat.escape(side.tag)}]</span>` : '';
-    const name = side?.username
-      ? SectorBlitzFormat.escape(side.username)
-      : `PID #${SectorBlitzFormat.escape(side?.player_id ?? '?')}`;
-    const badge = isDefender
-      ? `<span class="sui-badge sui-mod-default">Defender</span>`
-      : `<span class="sui-badge sui-mod-destructive">Attacker</span>`;
-
-    return `
-      <div class="public-battle-side public-battle-${isDefender ? 'defender' : 'attacker'}">
-        ${SectorBlitzHTML.portraitHTML(side?.pfp_client_render_attributes)}
-        <div class="public-battle-info">
-          <div class="sui-text-header public-battle-name">${isDefender ? `${tag} ${name}` : `${name} ${tag}`}</div>
-          ${badge}
-        </div>
-      </div>
-    `;
-  }
-
-  /**
    * @param {object} battle
    * @return {string}
    */
   battleRowHTML(battle) {
-    return `
-      <div class="sui-result-row public-battle-row">
-        ${this.combatantHTML(battle.defender, 'Defender')}
-        <div class="sui-text-display public-battle-vs">VS</div>
-        ${this.combatantHTML(battle.attacker, 'Attacker')}
-      </div>
-    `;
+    const spectateHref = `${this.playUrl}?${new URLSearchParams({spectate: battle.planet_id})}`;
+    return SectorBlitzHTML.battleRowHTML(battle.defender, battle.attacker,
+      `<a href="${SectorBlitzFormat.escape(spectateHref)}" class="sui-screen-btn sui-mod-secondary public-battle-spectate-btn">Spectate</a>`);
   }
 
   /**
