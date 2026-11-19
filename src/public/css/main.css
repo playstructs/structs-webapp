@@ -2996,6 +2996,12 @@ a.sector-blitz-fleet-card-rules-btn:active {
   justify-content: center;
 }
 
+/* Public leaderboard empty states (Figma 13017:244744): a 64px box with hint-coloured text. */
+#public-leaderboard .sector-blitz-leaderboard-body > .sector-blitz-empty {
+  min-height: 62px;
+  color: var(--text-hint);
+}
+
 .sector-blitz-event-rules.profile-layout {
   gap: var(--spacing-xxxl);
 }
