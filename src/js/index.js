@@ -49,6 +49,10 @@ import {DeviceRegistrationStore} from "./managers/DeviceRegistrationStore";
 import {InfluenceAPI} from "./api/InfluenceAPI";
 import {SectorBlitzManager} from "./managers/SectorBlitzManager";
 import {SectorBlitzAlertManager} from "./managers/SectorBlitzAlertManager";
+import {SpectatorMode} from "./spectator/SpectatorMode";
+import {SpectatorGuildAPI} from "./spectator/SpectatorGuildAPI";
+import {SpectatorGrassManager} from "./spectator/SpectatorGrassManager";
+import {SpectatorController} from "./controllers/SpectatorController";
 
 // TODO Remove eventually...
 // Or formalize a migration system (MigrationManager?)
@@ -70,23 +74,36 @@ global.oidcContinueManager = oidcContinueManager;
 const tutorialMode = TutorialMode.isActive();
 const tutorialWorld = tutorialMode ? new TutorialWorld() : null;
 
+// Spectating a Sector Blitz raid boots the same app read-only, with nobody signed in: reads come
+// from the shared public raid snapshot and nothing can be signed or saved.
+const spectatorPlanetId = tutorialMode ? null : SpectatorMode.planetId();
+const spectatorMode = spectatorPlanetId !== null;
+// Neither mode signs in, restores a session, or runs the player's background work.
+const offlineMode = tutorialMode || spectatorMode;
+
 const gameState = new GameState();
-gameState.persistenceEnabled = !tutorialMode;
+gameState.persistenceEnabled = !offlineMode;
+gameState.spectatorMode = spectatorMode;
 global.gameState = gameState;
 
-const guildAPI = tutorialMode ? new SimulatedGuildAPI(tutorialWorld) : new GuildAPI();
+const guildAPI = tutorialMode
+  ? new SimulatedGuildAPI(tutorialWorld)
+  : (spectatorMode ? new SpectatorGuildAPI(spectatorPlanetId) : new GuildAPI());
 global.guildAPI = guildAPI;
 gameState.guildAPI = guildAPI;
 
 const walletManager = new WalletManager();
 global.walletManager = walletManager;
 
-const grassManager = new GrassManager(
-  `ws://${window.location.hostname}:1443`,
-  "structs.>",
-  gameState,
-  LOG_LEVEL.KEY_PLAYER
-);
+const grassManager = spectatorMode
+  // Its subjects are set once the raid's players are known.
+  ? new SpectatorGrassManager(`ws://${window.location.hostname}:1443`, [], gameState)
+  : new GrassManager(
+    `ws://${window.location.hostname}:1443`,
+    "structs.>",
+    gameState,
+    LOG_LEVEL.KEY_PLAYER
+  );
 
 const blockGrassManager = new GrassManager(
   `ws://${window.location.hostname}:1443`,
@@ -94,6 +111,8 @@ const blockGrassManager = new GrassManager(
   gameState
 );
 
+// In spectator mode the real signing client never connects (nobody signs in), and its queue
+// refuses to enqueue anything (see SigningQueueManager).
 const signingClientManager = tutorialMode
   ? new SimulatedSigningClientManager(gameState, tutorialWorld)
   : new SigningClientManager(gameState);
@@ -115,6 +134,7 @@ const raidManager = new RaidManager(gameState, guildAPI, grassManager, mapManage
 
 const taskStateFactory = new TaskStateFactory();
 
+// In spectator mode TaskManager.spawn() starts nothing.
 const taskManager = tutorialMode
   ? new SimulatedTaskManager(gameState, guildAPI, signingClientManager, taskStateFactory)
   : new TaskManager(gameState, guildAPI, signingClientManager, taskStateFactory);
@@ -144,7 +164,9 @@ const authManager = new AuthManager(
   permissionManager
 );
 
-guildAPI.setReauthenticator(() => authManager.reauthenticate());
+if (!spectatorMode) {
+  guildAPI.setReauthenticator(() => authManager.reauthenticate());
+}
 
 const alphaManager = new AlphaManager(gameState, signingClientManager);
 
@@ -224,7 +246,8 @@ gameState.previewMap = new MapComponent(
 
 MenuPage.gameState = gameState;
 MenuPage.mapManager = mapManager;
-MenuPage.router.onNavigate = (controllerName, pageName) => onboardingTelemetry.recordNavigation(
+// A spectator's "player" slot holds the attacker being watched, not the visitor.
+MenuPage.router.onNavigate = spectatorMode ? () => {} : (controllerName, pageName) => onboardingTelemetry.recordNavigation(
   controllerName,
   pageName,
   gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
@@ -246,8 +269,10 @@ DialogueKeyboardControls.initListeners();
 new MapPanController().init();
 
 if (!tutorialMode) {
-  grassManager.init();
   blockGrassManager.registerListener(blockListener);
+}
+if (!offlineMode) {
+  grassManager.init();
   blockGrassManager.init();
 }
 
@@ -289,7 +314,7 @@ if (!tutorialMode) {
 }
 
 const hudContainer = document.getElementById(HUDViewModel.containerId);
-const startupRecovery = tutorialMode ? null : new StartupRecovery(
+const startupRecovery = offlineMode ? null : new StartupRecovery(
   () => gameState.persistenceEnabled && gameState.isSessionCurrent()
 );
 
@@ -297,7 +322,7 @@ const startupRecovery = tutorialMode ? null : new StartupRecovery(
  * Load the saved session and guild configuration, then open the first page.
  */
 async function startApplication() {
-  if (!tutorialMode) {
+  if (!offlineMode) {
     await gameState.load();
     DeviceRegistrationStore.expireRecovery()
       .catch(error => console.debug('[DeviceRecovery] expired keys could not be removed:', error));
@@ -311,6 +336,13 @@ async function startApplication() {
   if (tutorialMode) {
     // In the simulation the portrait opens Combat Training's own menu.
     HUDViewModel.bottomLeftActionBar.profileClickHandler = () => TutorialMode.openMenu();
+  }
+  if (spectatorMode) {
+    // Neither player is the visitor, so neither portrait opens their pages.
+    const openSpectatorMenu = () => MenuPage.router.goto('Spectator', 'menu');
+    HUDViewModel.bottomLeftActionBar.profileClickHandler = openSpectatorMenu;
+    HUDViewModel.bottomRightActionBarRaid.profileClickHandler = openSpectatorMenu;
+    HUDViewModel.bottomRightActionBarAlphaBase.profileClickHandler = openSpectatorMenu;
   }
   hudContainer.innerHTML = HUDViewModel.render();
   HUDViewModel.initPageCode();
@@ -332,6 +364,20 @@ async function startApplication() {
     // Tutorial pages are never restored after a reload.
     MenuPage.router.enablePreviewMode();
     MenuPage.router.goto('Tutorial', 'loading');
+
+    MenuPage.hideLoadingScreen();
+  } else if (spectatorMode) {
+    MenuPage.router.registerController(new SpectatorController(
+      gameState,
+      guildAPI,
+      grassManager,
+      blockGrassManager,
+      raidManager,
+      mapManager,
+      destroyedStructManager
+    ));
+    MenuPage.router.enablePreviewMode();
+    MenuPage.router.goto('Spectator', 'loading');
 
     MenuPage.hideLoadingScreen();
   } else if (!gameState.keyPlayers[PLAYER_TYPES.PLAYER].id) {
@@ -383,7 +429,7 @@ async function startApplication() {
     }
   }
 
-  if (!tutorialMode) {
+  if (!offlineMode) {
     sectorBlitzManager.init();
     sectorBlitzAlertManager.init();
 
@@ -393,6 +439,11 @@ async function startApplication() {
 }
 
 startApplication().catch(error => {
+  if (spectatorMode) {
+    console.warn('[Spectator] the game could not start:', error);
+    MenuPage.hideLoadingScreen();
+    return;
+  }
   if (startupRecovery?.signal.aborted || (!tutorialMode && !gameState.isSessionCurrent())) return;
   console.warn('[Startup] session could not be restored:', error);
   // Stop partial runtime work, retaining the saved key and signed journal. A

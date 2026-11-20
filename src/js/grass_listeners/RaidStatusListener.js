@@ -1,3 +1,4 @@
+import {EVENTS} from "../constants/Events";
 import {AbstractGrassListener} from "../framework/AbstractGrassListener";
 import {RAID_STATUS} from "../constants/RaidStatus";
 import {RaidStatusUtil} from "../util/RaidStatusUtil";
@@ -138,6 +139,13 @@ export class RaidStatusListener extends AbstractGrassListener {
     }
 
     console.log('RAID HAS ENDED HANDLER');
+
+    // A spectator has no fleet to bring home: the spectator view shows the result instead.
+    if (this.gameState.spectatorMode) {
+      this.shouldUnregister = () => true;
+      window.dispatchEvent(new CustomEvent(EVENTS.SPECTATED_RAID_ENDED, {detail: messageData.detail}));
+      return;
+    }
 
     const seizedOre = messageData.detail.seized_ore
       ? messageData.detail.seized_ore

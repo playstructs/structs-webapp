@@ -43,6 +43,12 @@ class SectorBlitzPublicManager
     private const int PODIUM_GUILDS = 4;
     private const int PODIUM_PLAYERS = 3;
 
+    /** How long the chain height used for spectator snapshots is trusted. */
+    private const int HEIGHT_TTL = 1;
+    /** While viewers report a newer block, the chain height is read again at most this often (seconds). */
+    private const float HEIGHT_RECHECK = 0.25;
+    /** How long a snapshot built ahead of the chain height is shared for its block (seconds). */
+    private const float AHEAD_TTL = 1.0;
     /** About one block: how long the current contest and its build are trusted. */
     private const int CURRENT_TTL = 5;
     /** A failed read is retried after this, even if no new build is published. */
@@ -51,6 +57,10 @@ class SectorBlitzPublicManager
     private const int DATA_TTL = 3600;
 
     private const string CACHE_CONTROL = 'public, max-age=5, s-maxage=10, stale-while-revalidate=30';
+    /** Struct types change only with a chain upgrade. */
+    private const string STATIC_CACHE_CONTROL = 'public, max-age=3600, s-maxage=3600';
+    /** A past planet activity row never changes. */
+    private const string IMMUTABLE_CACHE_CONTROL = 'public, max-age=86400, s-maxage=86400, immutable';
 
     public function __construct(
         private readonly Connection $db,
@@ -60,6 +70,7 @@ class SectorBlitzPublicManager
         private readonly RateLimiterFactoryInterface $sectorBlitzPublicClientLimiter,
         private readonly RateLimiterFactoryInterface $sectorBlitzPublicGlobalLimiter,
         private readonly RequestStack $requestStack,
+        private readonly SectorBlitzSpectateReader $spectate,
     ) {
     }
 
@@ -159,6 +170,110 @@ class SectorBlitzPublicManager
     }
 
     /**
+     * Everything a spectator needs to watch one raid in progress, computed once per block for
+     * everyone watching it. Only raids on planets in the scoring sectors, while a contest runs.
+     * When the raid has ended, 'raid' is null.
+     *
+     * @param ?int $minHeight the block of the newest live message the viewer has seen. Its
+     *     changes must be in the answer, even if the chain height read here has not caught up.
+     */
+    public function spectate(string $planetId, ?int $minHeight): Response
+    {
+        return $this->respond(function () use ($planetId, $minHeight): array {
+            $current = $this->current();
+            if ($current['phase'] !== self::PHASE_ACTIVE) {
+                return ['phase' => $current['phase'], 'available' => true, 'height' => $current['contest']['height'] ?? null,
+                    'raid' => null];
+            }
+
+            [$height, $ahead] = $this->spectateHeight($minHeight);
+            $empty = ['phase' => $current['phase'], 'available' => true, 'height' => $height, 'raid' => null];
+            // A copy built ahead of the chain height may hold only part of that block: it is
+            // shared for that block only briefly, then built again.
+            $identity = $ahead
+                ? 'ahead:' . $height . ':' . (microtime(true) + self::AHEAD_TTL)
+                : 'height:' . $height;
+
+            return $this->cached("spectate.{$planetId}", $identity, function () use ($planetId, $empty): array {
+                $raid = $this->spectate->activeRaid($planetId, self::SECTORS);
+
+                return $raid === null ? $empty : array_merge($empty, $this->spectate->snapshot($raid));
+            }, fn (array $cached): bool => self::snapshotServes($cached, $height));
+        });
+    }
+
+    /**
+     * Whether a cached spectator snapshot can answer for this block. A copy built for a newer
+     * block is just as good; one built ahead of the chain for this same block, only until it lapses.
+     */
+    private static function snapshotServes(array $cached, string $height): bool
+    {
+        $cachedHeight = (int) ($cached['data']['height'] ?? 0);
+        if ($cachedHeight !== (int) $height) {
+            return $cachedHeight > (int) $height;
+        }
+        $identity = explode(':', (string) $cached['identity']);
+
+        return $identity[0] !== 'ahead' || (float) ($identity[2] ?? 0) > microtime(true);
+    }
+
+    /**
+     * The block a spectator snapshot is built for, and whether it is ahead of the chain height.
+     * The chain height is read at most once a second, or a few times a second while viewers report
+     * a newer block. A live message can arrive just before the chain height moves on, so a viewer
+     * may be up to one block ahead of it, never more.
+     *
+     * @return array{0: string, 1: bool}
+     * @throws SectorBlitzBusyException when the chain height cannot be read
+     */
+    private function spectateHeight(?int $minHeight): array
+    {
+        $item = $this->sectorBlitzCache->getItem('spectate-height');
+        $cached = $item->isHit() ? $item->get() : null;
+        $height = is_array($cached) ? (string) $cached['height'] : null;
+        $readAt = is_array($cached) ? (float) $cached['read_at'] : 0.0;
+        $behind = $height !== null && $minHeight !== null && $minHeight > (int) $height;
+
+        if ($height === null || ($behind && microtime(true) - $readAt >= self::HEIGHT_RECHECK)) {
+            $height = $this->spectate->currentHeight() ?? $height;
+            if ($height === null) {
+                throw new SectorBlitzBusyException();
+            }
+            $item->set(['height' => $height, 'read_at' => microtime(true)])->expiresAfter(self::HEIGHT_TTL);
+            $this->sectorBlitzCache->save($item);
+        }
+        if ($minHeight !== null && $minHeight > (int) $height) {
+            return [(string) min($minHeight, (int) $height + 1), true];
+        }
+
+        return [$height, false];
+    }
+
+    /** Every struct type, for drawing and describing structs on the spectator map. */
+    public function structTypes(): Response
+    {
+        return $this->respond(fn (): array => $this->cached('struct-types', 'all',
+            fn (): array => ['available' => true, 'data' => $this->spectate->structTypes()]), self::STATIC_CACHE_CONTROL);
+    }
+
+    /**
+     * One planet activity row on a planet in a scoring sector. Live messages over 8 KB arrive as
+     * a key only, and the spectator view resolves them here.
+     */
+    public function planetActivityEvent(string $planetId, string $seq, string $time): Response
+    {
+        return $this->respond(fn (): array => $this->cached('event.' . sha1("{$planetId}.{$seq}.{$time}"), 'final', function () use ($planetId, $seq, $time): array {
+            if (!$this->spectate->inSectors($planetId, self::SECTORS)) {
+                return ['available' => true, 'data' => null];
+            }
+
+            return ['available' => true, 'data' => $this->spectate->planetActivityEvent($planetId, $seq, $time)];
+        // A row not found may just not be readable yet: only a found row is kept.
+        }, fn (array $cached): bool => ($cached['data']['data'] ?? null) !== null),
+            fn (array $data): string => $data['data'] === null ? 'no-store' : self::IMMUTABLE_CACHE_CONTROL);
+    }
+
+    /**
      * @param callable(string, array): Response $fetch
      */
     private function leaderboard(string $kind, ?int $sector, int $page, callable $fetch): array
@@ -223,12 +338,15 @@ class SectorBlitzPublicManager
      * Serve a slot computed for this identity, or compute it once for everyone.
      *
      * @param callable(): array $compute returns the payload; 'available' => false is kept only briefly
+     * @param ?callable(array): bool $isFresh whether a cached entry can be served; by default, only
+     *     one computed for this identity
      */
-    private function cached(string $slot, string $identity, callable $compute): array
+    private function cached(string $slot, string $identity, callable $compute, ?callable $isFresh = null): array
     {
+        $isFresh ??= fn (array $cached): bool => $cached['identity'] === $identity;
         $key = 'slot.' . $slot;
         $cached = $this->get($key);
-        if ($cached !== null && $cached['identity'] === $identity) {
+        if ($cached !== null && $isFresh($cached)) {
             return $cached['data'];
         }
 
@@ -243,7 +361,7 @@ class SectorBlitzPublicManager
 
         try {
             $cached = $this->get($key);
-            if ($cached !== null && $cached['identity'] === $identity) {
+            if ($cached !== null && $isFresh($cached)) {
                 return $cached['data'];
             }
             if (!$this->sectorBlitzPublicGlobalLimiter->create('all')->consume()->isAccepted()) {
@@ -295,8 +413,9 @@ class SectorBlitzPublicManager
 
     /**
      * @param callable(): array $build
+     * @param string|callable(array): string $cacheControl the header, or how to choose it from the data
      */
-    private function respond(callable $build): Response
+    private function respond(callable $build, string|callable $cacheControl = self::CACHE_CONTROL): Response
     {
         self::assertEnabled();
 
@@ -318,6 +437,6 @@ class SectorBlitzPublicManager
         }
 
         return new JsonResponse(['success' => true, 'errors' => [], 'data' => $data], Response::HTTP_OK,
-            ['Cache-Control' => self::CACHE_CONTROL]);
+            ['Cache-Control' => is_string($cacheControl) ? $cacheControl : $cacheControl($data)]);
     }
 }

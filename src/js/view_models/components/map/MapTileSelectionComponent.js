@@ -778,6 +778,11 @@ export class MapTileSelectionComponent extends AbstractViewModelComponent {
    * @param {string} currentAction - One of TARGET_SELECTION_ACTIONS
    */
   async handleTargetSelectionClick(tile, currentAction) {
+    // Spectators can select and inspect tiles, but never pick a target for an action.
+    if (this.gameState.spectatorMode) {
+      return;
+    }
+
     if (currentAction === STRUCT_ACTIONS.MOVE) {
       if (tile.classList.contains('focus-move')) {
         await this.handleMoveTargetClick(tile);

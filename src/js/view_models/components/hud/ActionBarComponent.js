@@ -112,7 +112,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    */
   updateActionButtons(event) {
     if (
-      this.playerType === PLAYER_TYPES.PLAYER
+      !this.gameState.spectatorMode
+      && this.playerType === PLAYER_TYPES.PLAYER
       && event.playerId === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
       && !this.isKeyPlayerOverloaded(PLAYER_TYPES.PLAYER)
       && this.selectedStruct
@@ -537,6 +538,7 @@ export class ActionBarComponent extends AbstractViewModelComponent {
       // TODO 3. The player's command ship is on the alpha base
       if (
         side === 'left'
+        && !this.gameState.spectatorMode
         && this.gameState.activeMapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE
       ) {
         btnTypeClass = 'sui-mod-default';
@@ -619,7 +621,8 @@ export class ActionBarComponent extends AbstractViewModelComponent {
     const cancelBtnId = `${this.playerType}-action-bar-cancel-btn`;
 
     // Only the owning player can cancel a build in progress
-    const isOwnedByPlayer = struct.owner === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
+    const isOwnedByPlayer = !this.gameState.spectatorMode
+      && struct.owner === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
 
     const cancelBtn = isOwnedByPlayer
       ? `
@@ -995,7 +998,9 @@ export class ActionBarComponent extends AbstractViewModelComponent {
    * @return {boolean}
    */
   isActionAvailable(struct, actionCharge = 0, isOnlineAction = true, requiresPower = true) {
-    return (struct.isOnline() === isOnlineAction)
+    // A spectator is watching other players' structs: every action shows, greyed out.
+    return !this.gameState.spectatorMode
+      && (struct.isOnline() === isOnlineAction)
       && !this.gameState.actionBarLock.isLocked()
       && struct.owner === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
       && (!requiresPower || !this.isKeyPlayerOverloaded(PLAYER_TYPES.PLAYER))

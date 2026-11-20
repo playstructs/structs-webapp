@@ -51,4 +51,17 @@ JOIN structs.planet p ON p.id=pr.planet_id
 JOIN structs.fleet f ON f.id=pr.fleet_id
 WHERE pr.status IN ('initiated','ongoing','shieldsVulnerable') AND p.sector IN (44,127,999)
 SQL;
+
+    /** The raid in progress on one planet, only when the planet is in a scoring sector. */
+    public const SPECTATE_RAID = <<<'SQL'
+SELECT pr.planet_id, pr.fleet_id, pr.status::text AS status, pr.updated_at::text AS updated_at,
+ f.owner AS fleet_owner, p.owner AS planet_owner
+FROM structs.planet_raid pr
+JOIN structs.planet p ON p.id=pr.planet_id
+JOIN structs.fleet f ON f.id=pr.fleet_id
+WHERE pr.planet_id=:planet_id AND pr.status IN ('initiated','ongoing','shieldsVulnerable')
+ AND p.sector IN (:sectors)
+ORDER BY pr.updated_at DESC
+LIMIT 1
+SQL;
 }
