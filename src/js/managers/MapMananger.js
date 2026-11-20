@@ -69,7 +69,10 @@ export class MapManager {
       mapContainerId === MAP_CONTAINER_IDS.ALPHA_BASE
       || mapContainerId === MAP_CONTAINER_IDS.RAID
     ) {
-      document.getElementById(HUD_IDS.STATUS_BAR_TOP_LEFT).classList.remove('hidden');
+      // The energy usage bar belongs to the player; a spectator is neither player.
+      if (!this.gameState.spectatorMode) {
+        document.getElementById(HUD_IDS.STATUS_BAR_TOP_LEFT).classList.remove('hidden');
+      }
       document.getElementById(HUD_IDS.ACTION_BAR_PLAYER).classList.remove('hidden');
     }
   }

@@ -19,6 +19,7 @@ import {GrantableDevicePermissionsTest} from "./GrantableDevicePermissionsTest";
 import {RegistrationRequestWithdrawnTest} from "./RegistrationRequestWithdrawnTest";
 import {SectorBlitzTest} from "./SectorBlitzTest";
 import {MapTileSelectionListenerTest} from "./MapTileSelectionListenerTest";
+import {SpectatorGuardTest} from "./SpectatorGuardTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -40,5 +41,6 @@ import {MapTileSelectionListenerTest} from "./MapTileSelectionListenerTest";
 (new RegistrationRequestWithdrawnTest()).run();
 (new SectorBlitzTest()).run();
 (new MapTileSelectionListenerTest()).run();
+(new SpectatorGuardTest()).run();
 
 (new APIReadinessTest()).run();

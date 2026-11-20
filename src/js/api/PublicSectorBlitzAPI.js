@@ -70,4 +70,35 @@ export class PublicSectorBlitzAPI {
   getBattles(page = 1) {
     return this.get('/battles', {page});
   }
+
+  /**
+   * Everything needed to watch one raid in progress, shared by all spectators for each block.
+   * 'raid' is null once the raid is over (or the planet has none).
+   *
+   * @param {string} planetId
+   * @param {number|null} minHeight a live message's block: answer with a snapshot at least this new
+   * @return {Promise<{phase: string, height: ?string, raid: ?object, planet?: object, shield?: object, attacker?: object, defender?: ?object}>}
+   */
+  getSpectate(planetId, minHeight = null) {
+    return this.get(`/spectate/${encodeURIComponent(planetId)}`, {min_height: minHeight});
+  }
+
+  /**
+   * @return {Promise<{data: object[]}>}
+   */
+  getStructTypes() {
+    return this.get('/struct-types');
+  }
+
+  /**
+   * One planet activity row, for a live message that was too large to send in full.
+   *
+   * @param {string} planetId
+   * @param {string} seq
+   * @param {string} time
+   * @return {Promise<{data: ?object}>}
+   */
+  getPlanetActivityEvent(planetId, seq, time) {
+    return this.get(`/spectate/${encodeURIComponent(planetId)}/event/${encodeURIComponent(seq)}`, {time});
+  }
 }
