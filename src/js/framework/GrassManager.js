@@ -37,6 +37,16 @@ export class GrassManager {
   }
 
   /**
+   * The stream of messages to consume on a fresh connection.
+   *
+   * @param {object} nc NATS connection
+   * @return {AsyncIterable<MsgImpl>}
+   */
+  subscribe(nc) {
+    return nc.subscribe(this.subject);
+  }
+
+  /**
    * @param {MsgImpl} message
    * @return {object}
    */
@@ -185,7 +195,7 @@ export class GrassManager {
         this.backoffMs = 1000; // reset backoff on a good connect
         console.info('[GrassManager] connected:', this.subject);
 
-        this.subscription = this.nc.subscribe(this.subject);
+        this.subscription = this.subscribe(this.nc);
         const connection = this.nc;
         window.dispatchEvent(new Event(EVENTS.GRASS_CONNECTED));
         this.observeStatus(this.nc).catch(error=>console.debug('[GrassManager] status stream ended:',error));

@@ -49,6 +49,12 @@ export class GameState {
      * @type {boolean}
      */
     this.persistenceEnabled = true;
+
+    /**
+     * Watching someone else's raid (see SpectatorMode): every action is disabled.
+     * @type {boolean}
+     */
+    this.spectatorMode = false;
     this.sessionBoundary = localStorage.getItem(TransactionJournal.SESSION_CLOSED_KEY);
 
     /* Persistent Data */

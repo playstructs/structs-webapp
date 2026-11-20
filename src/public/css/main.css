@@ -3365,6 +3365,11 @@ a.sui-screen-btn.public-leaderboard-play-btn {
   white-space: nowrap;
 }
 
+.public-battle-spectate-btn {
+  width: 108px;
+  flex: 0 0 auto;
+}
+
 @media only screen and (max-width: 600px) {
   .public-leaderboard-layout {
     padding: 0;
@@ -3383,3 +3388,43 @@ a.sui-screen-btn.public-leaderboard-play-btn {
 }
 
 /* ---- Public Sector Blitz Leaderboard End ---- */
+
+/* ---- Raid Spectator ---- */
+
+/*
+ * On large screens the menu is laid out at half size and scaled up 2x (see Media Queries), which
+ * can leave this screen little height. Nothing in it may shrink; it scrolls instead.
+ */
+/* Centered while it fits; once it doesn't, it starts at the top and scrolls instead of clipping. */
+.sui-page-body-screen-content.justified-centered.spectator-status {
+  justify-content: safe center;
+  overflow-y: auto;
+}
+
+.spectator-status > * {
+  flex-shrink: 0;
+}
+
+.spectator-status-message {
+  max-width: 400px;
+  margin-bottom: 0;
+  text-align: center;
+}
+
+/* Defender, VS, attacker: a Current Battles row (see .public-battle-row). */
+.spectator-matchup {
+  width: 100%;
+  max-width: 640px;
+  margin-bottom: var(--spacing-xl);
+}
+
+/*
+ * The two sides split the row evenly, keeping VS in the middle, while both names fit. When one
+ * doesn't, that side takes the other's spare room; when neither fits, the row wraps instead of
+ * cutting a name short.
+ */
+.spectator-matchup .public-battle-side {
+  min-width: min-content;
+}
+
+/* ---- Raid Spectator End ---- */
