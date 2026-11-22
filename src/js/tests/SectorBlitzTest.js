@@ -4,6 +4,8 @@ import {SectorBlitzManager} from "../managers/SectorBlitzManager";
 import {SECTOR_BLITZ, SECTOR_BLITZ_PHASES} from "../constants/SectorBlitzConstants";
 import {SectorBlitzDialogueSequence} from "../view_models/components/sequences/SectorBlitzDialogueSequence";
 import {RaidTarget} from "../util/RaidTarget";
+import {ScanViewModel} from "../view_models/fleet/ScanViewModel";
+import {GuildAPI} from "../api/GuildAPI";
 
 /**
  * A manager whose phase can be evaluated without the flag, a session or live updates.
@@ -124,6 +126,26 @@ export class SectorBlitzTest extends DTestSuite {
       {target: {planet_id: '2-1', under_attack: '1'}, expected: 'View'},
       {target: {planet_id: '2-1', under_attack: true}, expected: 'View'},
       {target: {planet_id: null, under_attack: false}, expected: 'View'},
+    ];
+  });
+
+  playerSearchCoversEverySectorTest = new DTest('playerSearchCoversEverySectorTest', function(params) {
+    const scan = new ScanViewModel({}, null, {sector: 4});
+    scan.isContest = params.isContest;
+    scan.contestId = params.isContest ? '7' : null;
+
+    const request = scan.buildPlayerSearchRequest('1-61');
+    const query = GuildAPI.prototype.buildRaidSearchParams.call(null, request);
+    this.assertEquals(query.get('search_string'), '1-61');
+    this.assertEquals(query.has('sector'), false);
+    this.assertEquals(query.get('contest_id'), params.expectedContestId);
+
+    // Back from the results still returns to the Scan for the Sector Map's sector.
+    this.assertEquals(new ScanViewModel({}, null, request).sector, params.expectedBackSector);
+  }, function() {
+    return [
+      {isContest: true, expectedContestId: '7', expectedBackSector: 4},
+      {isContest: false, expectedContestId: null, expectedBackSector: null},
     ];
   });
 }

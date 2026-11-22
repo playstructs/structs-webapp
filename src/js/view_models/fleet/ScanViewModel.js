@@ -32,8 +32,11 @@ export class ScanViewModel extends AbstractViewModel {
     this.isContest = false;
     /** The contest the form was drawn for; submit checks it is still the running one. */
     this.contestId = null;
-    /** Chosen on the Sector Map; applied to searches but not shown in the form. */
-    this.sector = previousSearch?.sector ?? null;
+    /**
+     * Chosen on the Sector Map; applied to status searches but not shown in the form.
+     * A player search only carries it as return_sector, so Back still comes here.
+     */
+    this.sector = previousSearch?.sector ?? previousSearch?.return_sector ?? null;
 
     this.minVulnerableOreId = 'minVulnerableOre';
     this.guildFilterSelectId = 'guildFilterSelect';
@@ -126,15 +129,7 @@ export class ScanViewModel extends AbstractViewModel {
       } else {
         if (this.redrawIfContestChanged()) return;
 
-        const raidSearchRequest = new RaidSearchRequestDTO();
-        raidSearchRequest.search_string = playerSearchInput.value;
-        if (this.isContest) {
-          raidSearchRequest.contest_id = this.contestId;
-          // Keep the hidden sector so Back from the results returns to the same Scan.
-          raidSearchRequest.sector = this.sector;
-        }
-
-        MenuPage.router.goto('Fleet', 'scanResults', raidSearchRequest);
+        MenuPage.router.goto('Fleet', 'scanResults', this.buildPlayerSearchRequest(playerSearchInput.value));
       }
     };
 
@@ -145,6 +140,23 @@ export class ScanViewModel extends AbstractViewModel {
         playerSearchHandler();
       }
     });
+  }
+
+  /**
+   * A name, PID or address search covers every sector, so the hidden Sector Map
+   * sector is only remembered as return_sector, for Back from the results.
+   *
+   * @param {string} searchString
+   * @return {RaidSearchRequestDTO}
+   */
+  buildPlayerSearchRequest(searchString) {
+    const raidSearchRequest = new RaidSearchRequestDTO();
+    raidSearchRequest.search_string = searchString;
+    if (this.isContest) {
+      raidSearchRequest.contest_id = this.contestId;
+      raidSearchRequest.return_sector = this.sector;
+    }
+    return raidSearchRequest;
   }
 
   /**
