@@ -105,6 +105,7 @@ class PlayerController extends AbstractController
      * @param Request $request
      * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator
+     * @param Security $security
      * @return Response
      * @throws Exception
      */
@@ -112,10 +113,11 @@ class PlayerController extends AbstractController
     public function raidSearch(
         Request $request,
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        Security $security
     ): Response {
         $playerManager = new PlayerManager($entityManager, $validator);
-        return $playerManager->raidSearch($request);
+        return $playerManager->raidSearch($request, $security);
     }
 
     /**

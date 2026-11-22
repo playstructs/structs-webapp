@@ -168,11 +168,15 @@ class PlayerManager
     }
 
     /**
+     * The searcher is the logged-in player, whether they logged in with the session cookie or with a
+     * bearer token (POST /api/auth/token, used by sites on other domains, which carry no session).
+     *
      * @param Request $request
+     * @param Security $security
      * @return Response
      * @throws Exception
      */
-    public function raidSearch(Request $request): Response
+    public function raidSearch(Request $request, Security $security): Response
     {
         $apiFilterParams = [
             ApiParameters::SEARCH_STRING => RegexPattern::SEARCH_STRING_FILTER
@@ -237,8 +241,9 @@ class PlayerManager
         $page = !empty($parsedRequest->params->page) ? $parsedRequest->params->page : 1;
         $offset = ($page - 1) * $limit;
 
-        $session = $request->getSession();
-        $player_id = $session->get('player_id');
+        /** @var Player $player */
+        $player = $security->getUser();
+        $player_id = $player->getId();
 
         $queryParams = ['player_id' => $player_id];
 

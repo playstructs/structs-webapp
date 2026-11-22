@@ -13,6 +13,8 @@ export class RaidSearchRequestDTO {
     this.contest_id = null;
     /** Sector Blitz: only planets in this sector (chosen on the Sector Map, not shown in the form). */
     this.sector = null;
+    /** Sector Blitz: the Sector Map sector to go back to. Client-only, never sent as a filter. */
+    this.return_sector = null;
     this.page = 1;
   }
 }
