@@ -1,8 +1,10 @@
 <?php
 
+use App\Entity\Player;
 use App\Manager\PlayerManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -53,12 +55,61 @@ class PlayerTest extends KernelTestCase
         $session = new Session(new MockArraySessionStorage());
         $session->set('player_id', '1-218');
         $request->setSession($session);
-        $response = $manager->raidSearch($request);
+        $response = $manager->raidSearch($request, $this->loggedInAs('1-218'));
 
         $responseContent = json_decode($response->getContent(), true);
 
         $this->assertSame($expectedHttpStatusCode, $response->getStatusCode());
         $this->assertSame($expectedErrorCount, count($responseContent['errors']));
+    }
+
+    /**
+     * Sites on other domains log in with a bearer token and send no session cookie, so their requests
+     * carry an empty session. The searcher is still the logged-in player, never left out of the query
+     * (p.id <> NULL would match no one, so every search would come back empty).
+     *
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function testRaidSearchWithBearerTokenAndNoSession(): void
+    {
+        self::bootKernel();
+        $container = static::getContainer();
+
+        $connectionMock = $this->createMock(Connection::class);
+        $connectionMock->expects($this->once())
+            ->method('fetchAllAssociative')
+            ->with($this->anything(), [
+                'player_id' => '1-218',
+                'min_ore' => '0',
+                'search_string' => '1-61',
+                'like_search_string' => '%1-61%',
+            ])
+            ->willReturn([]);
+
+        $entityManagerStub = $this->createStub(EntityManagerInterface::class);
+        $entityManagerStub->method('getConnection')
+            ->willReturn($connectionMock);
+
+        $manager = new PlayerManager(
+            $entityManagerStub,
+            $container->get(ValidatorInterface::class),
+        );
+
+        $request = Request::create('/api/player/raid/search?search_string=1-61');
+        $request->headers->set('Authorization', 'Bearer token');
+        $request->setSession(new Session(new MockArraySessionStorage()));
+        $response = $manager->raidSearch($request, $this->loggedInAs('1-218'));
+
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+    }
+
+    private function loggedInAs(string $playerId): Security
+    {
+        $player = new Player();
+        $player->setId($playerId);
+        $security = $this->createStub(Security::class);
+        $security->method('getUser')->willReturn($player);
+        return $security;
     }
 
     public function raidSearchProvider(): array
