@@ -59,6 +59,7 @@ export const SECTOR_BLITZ = Object.freeze({
   PUBLIC_REFRESH_JITTER_MS: 30 * 1000,
   PUBLIC_BATTLES_PAGE_SIZE: 5,
   INFLUENCE_ICON_HTML: '<i class="sui-icon sector-blitz-influence-icon"></i>',
+  SECTOR_ICON_HTML: '<i class="sui-icon sector-blitz-sector-icon"></i>',
 });
 
 /** Bar colour classes by overall guild position (1st, 2nd, 3rd, everyone else). */
