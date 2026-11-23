@@ -364,7 +364,7 @@ export class PublicLeaderboardPage {
   renderGuildsHTML(guilds, phase) {
     const rows = phase === PHASES.NONE ? {data: [], total: '0'} : guilds;
     return this.listCardHTML('Top Guilds', this.rowsHTML('guilds', rows, SECTOR_BLITZ.LEADERBOARD_PAGE_SIZE,
-      row => SectorBlitzHTML.guildRowHTML(row), 'No Activity'));
+      row => SectorBlitzHTML.publicGuildRowHTML(row), 'No Activity'));
   }
 
   /**
