@@ -241,21 +241,68 @@ export class SectorBlitzHTML {
 
   /**
    * @param {object} row guild rank row
+   * @return {string} the guild's logo and name
+   */
+  static guildInfoHTML(row) {
+    return `
+      <div class="sui-result-row-left-section">
+        ${SectorBlitzHTML.guildIconHTML(row.profile)}
+        <div class="sui-result-row-player-info">
+          <div class="sui-text-label-block">${SectorBlitzFormat.guildName(row.profile, row.guild_id)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {object} row guild rank row
    * @param {string} actionHTML e.g. a View button
    * @return {string}
    */
   static guildRowHTML(row, actionHTML = '') {
     return `
       <div class="sui-result-row">
-        <div class="sui-result-row-left-section">
-          ${SectorBlitzHTML.guildIconHTML(row.profile)}
-          <div class="sui-result-row-player-info">
-            <div class="sui-text-label-block">${SectorBlitzFormat.guildName(row.profile, row.guild_id)}</div>
-          </div>
-        </div>
+        ${SectorBlitzHTML.guildInfoHTML(row)}
         <div class="sui-result-row-right-section">
           ${SectorBlitzHTML.scoreHTML(row.points, row.rank)}
           ${actionHTML}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {string} tooltip
+   * @param {string} value
+   * @param {string} iconHTML
+   * @return {string}
+   */
+  static resourceHTML(tooltip, value, iconHTML = '') {
+    return `
+      <a class="sui-resource" href="javascript: void(0)" data-sui-tooltip="${tooltip}" data-sui-mod-placement="bottom">
+        <span>${value}</span>
+        ${iconHTML}
+      </a>
+    `;
+  }
+
+  /**
+   * A public Top Guilds row: sectors controlled across the whole event, then influence and
+   * position in the listed scope (the event, or one sector).
+   *
+   * @param {object} row guild rank row
+   * @return {string}
+   */
+  static publicGuildRowHTML(row) {
+    return `
+      <div class="sui-result-row">
+        ${SectorBlitzHTML.guildInfoHTML(row)}
+        <div class="sui-result-row-right-section sector-blitz-public-guild-stats">
+          <div class="sui-result-row-resources">
+            ${SectorBlitzHTML.resourceHTML('Sectors Controlled', SectorBlitzFormat.points(row.sectors_controlled), SECTOR_BLITZ.SECTOR_ICON_HTML)}
+            ${SectorBlitzHTML.resourceHTML('Influence Points', SectorBlitzFormat.points(row.points), SECTOR_BLITZ.INFLUENCE_ICON_HTML)}
+            ${SectorBlitzHTML.resourceHTML('Position', SectorBlitzFormat.rank(row.rank))}
+          </div>
         </div>
       </div>
     `;

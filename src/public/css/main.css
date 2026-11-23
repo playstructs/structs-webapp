@@ -2766,6 +2766,13 @@ i.sui-icon.sector-blitz-influence-icon {
   image-rendering: pixelated;
 }
 
+i.sui-icon.sector-blitz-sector-icon {
+  width: var(--icon-md);
+  height: var(--icon-md);
+  background-image: url("/img/sector-blitz/sector-controlled.png");
+  image-rendering: pixelated;
+}
+
 .sector-blitz-layout .sui-data-card,
 .sector-blitz-fleet-card {
   width: 100%;
@@ -3054,6 +3061,11 @@ i.sui-icon.sector-blitz-influence-icon-inline {
   text-align: left;
 }
 
+/* Sectors controlled, influence and position, centred in their half of the row (Figma 13254:157082). */
+.sector-blitz-public-guild-stats {
+  justify-content: center;
+}
+
 .sector-blitz-guild-placeholder {
   align-items: center;
   border: 1px solid var(--border-subtle);
@@ -3272,6 +3284,12 @@ body.public-leaderboard-page {
 
 .public-leaderboard-page h2.sui-data-card-header {
   margin: 0;
+}
+
+/* Compact tip box (Figma I13254:157123;3346:253829), sized to its text so it is centred correctly. */
+.public-leaderboard-page .sui-tooltip {
+  width: max-content;
+  padding: var(--spacing-md);
 }
 
 .public-leaderboard-loading {

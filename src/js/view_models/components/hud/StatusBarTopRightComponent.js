@@ -33,13 +33,14 @@ export class StatusBarTopRightComponent extends AbstractViewModelComponent {
     this.hudOreValueId = `${this.prefix}hud-ore`;
     this.hudOreHintId = `${this.prefix}${this.hudOreValueId}-hint`;
 
-    // The raid target's readout spells out Secure or its breach time; the
-    // player's own HUD only shows a countdown when under attack.
+    // The raid target's readout shows its breach time; the player's own HUD only
+    // shows a countdown when under attack. Both are blank while secure.
     this.shieldStatusComponent = new ShieldStatusComponent(
       this.gameState,
       this.planetOwnerPlayerType,
       this.hudShieldStatusId,
-      this.isRaidPlanet
+      this.isRaidPlanet,
+      false
     );
   }
 

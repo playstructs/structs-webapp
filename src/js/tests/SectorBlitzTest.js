@@ -6,6 +6,7 @@ import {SectorBlitzDialogueSequence} from "../view_models/components/sequences/S
 import {RaidTarget} from "../util/RaidTarget";
 import {ScanViewModel} from "../view_models/fleet/ScanViewModel";
 import {GuildAPI} from "../api/GuildAPI";
+import {SectorBlitzHTML} from "../view_models/sector_blitz/SectorBlitzHTML";
 
 /**
  * A manager whose phase can be evaluated without the flag, a session or live updates.
@@ -126,6 +127,24 @@ export class SectorBlitzTest extends DTestSuite {
       {target: {planet_id: '2-1', under_attack: '1'}, expected: 'View'},
       {target: {planet_id: '2-1', under_attack: true}, expected: 'View'},
       {target: {planet_id: null, under_attack: false}, expected: 'View'},
+    ];
+  });
+
+  publicGuildRowTest = new DTest('publicGuildRowTest', function(params) {
+    const html = SectorBlitzHTML.publicGuildRowHTML({
+      guild_id: '0-1', points: '1100', sectors_controlled: params.sectors, rank: params.rank, profile: params.profile,
+    });
+    const shown = [...html.matchAll(/data-sui-tooltip="([^"]*)"[^>]*>\s*<span>([^<]*)<\/span>/g)].map(match => [match[1], match[2]]);
+    this.assertEquals(JSON.stringify(shown), JSON.stringify([
+      ['Sectors Controlled', params.expectedSectors],
+      ['Influence Points', '1.1k'],
+      ['Position', params.expectedRank],
+    ]));
+  }, function() {
+    return [
+      {sectors: 2, rank: '1', profile: {name: 'SN.Corporation'}, expectedSectors: '2', expectedRank: '#001'},
+      {sectors: 0, rank: '12', profile: {name: 'SN.Corporation'}, expectedSectors: '0', expectedRank: '#012'},
+      {sectors: 0, rank: '1234', profile: null, expectedSectors: '0', expectedRank: '#1234'},
     ];
   });
 

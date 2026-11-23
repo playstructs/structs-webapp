@@ -1,5 +1,6 @@
 import {DTest, DTestSuite} from "../framework/DTestFramework";
 import {ShieldStatusComponent} from "../view_models/components/ShieldStatusComponent";
+import {StatusBarTopRightComponent} from "../view_models/components/hud/StatusBarTopRightComponent";
 import {KeyPlayer} from "../models/KeyPlayer";
 import {Fleet} from "../models/Fleet";
 import {Struct} from "../models/Struct";
@@ -269,25 +270,50 @@ export class ShieldStatusTest extends DTestSuite {
     const elementId = `${params.playerType}-readout-test`;
     const elements = ShieldStatusTest.givenDocument(elementId);
     const gameState = {keyPlayers: {[params.playerType]: planetOwner}};
-    new ShieldStatusComponent(gameState, params.playerType, elementId, params.showTextStatus).initPageCode();
+    new ShieldStatusComponent(gameState, params.playerType, elementId, params.showTextStatus, params.showSecureText).initPageCode();
 
     this.assertEquals(elements[`${elementId}-value`].innerText, params.expected);
   }, function() {
     return [
       // Raid HUD: the defender's command ship is home, so a stale countdown is ignored.
-      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: true, raidStatus: RAID_STATUS.ONGOING, countdown: '0s', showTextStatus: true, expected: 'Secure'},
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: true, raidStatus: RAID_STATUS.ONGOING, countdown: '0s', showTextStatus: true, showSecureText: false, expected: ''},
       // Raid HUD: the command ship is away, so the running countdown shows.
-      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: false, raidStatus: RAID_STATUS.ONGOING, countdown: '12m', showTextStatus: true, expected: '12m'},
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: false, raidStatus: RAID_STATUS.ONGOING, countdown: '12m', showTextStatus: true, showSecureText: false, expected: '12m'},
       // Raid HUD: away, but no countdown yet, so the full breach time.
-      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: false, raidStatus: RAID_STATUS.ONGOING, countdown: '', showTextStatus: true, expected: '17m'},
-      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: false, raidStatus: null, countdown: '', showTextStatus: true, expected: '17m'},
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: false, raidStatus: RAID_STATUS.ONGOING, countdown: '', showTextStatus: true, showSecureText: false, expected: '17m'},
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: false, raidStatus: null, countdown: '', showTextStatus: true, showSecureText: false, expected: '17m'},
       // Own HUD: blank unless breached.
       {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: true, raidStatus: RAID_STATUS.ONGOING, countdown: '0s', showTextStatus: false, expected: ''},
       {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: false, raidStatus: RAID_STATUS.SHIELDS_VULNERABLE, countdown: '5m', showTextStatus: false, expected: '5m'},
       {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: false, raidStatus: null, countdown: '', showTextStatus: false, expected: ''},
-      // Own planet card.
+      // Planet cards spell it out.
+      {playerType: PLAYER_TYPES.RAID_ENEMY, commandShipOnStation: true, raidStatus: RAID_STATUS.ONGOING, countdown: '0s', showTextStatus: true, expected: 'Secure'},
       {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: true, raidStatus: null, countdown: '', showTextStatus: true, expected: 'Secure'},
       {playerType: PLAYER_TYPES.PLAYER, commandShipOnStation: false, raidStatus: null, countdown: '', showTextStatus: true, expected: 'Vulnerable'},
+    ];
+  });
+
+  // The map never says Secure: each HUD shows the time remaining, or nothing.
+  mapHudNeverSaysSecureTest = new DTest('mapHudNeverSaysSecureTest', function(params) {
+    const planetOwner = ShieldStatusTest.makePlanetOwner(params.playerType, true, true, params.raidStatus);
+    planetOwner.planetShieldHealth = '9m';
+    const gameState = {keyPlayers: {[params.playerType]: planetOwner}, activeMapContainerId: ''};
+    const hud = new StatusBarTopRightComponent(gameState, params.isRaidPlanet, 'hud-test', params.playerType);
+    const elements = ShieldStatusTest.givenDocument(hud.hudShieldStatusId);
+    hud.shieldStatusComponent.initPageCode();
+    const valueElm = elements[`${hud.hudShieldStatusId}-value`];
+
+    this.assertEquals(valueElm.innerText, '');
+
+    planetOwner.setFleet(ShieldStatusTest.makeFleet(false));
+    this.assertEquals(valueElm.innerText, '9m');
+
+    planetOwner.setFleet(ShieldStatusTest.makeFleet(true));
+    this.assertEquals(valueElm.innerText, '');
+  }, function() {
+    return [
+      {playerType: PLAYER_TYPES.RAID_ENEMY, isRaidPlanet: true, raidStatus: RAID_STATUS.ONGOING},
+      {playerType: PLAYER_TYPES.PLAYER, isRaidPlanet: false, raidStatus: RAID_STATUS.ONGOING},
     ];
   });
 
