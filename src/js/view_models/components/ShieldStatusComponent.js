@@ -11,11 +11,19 @@ export class ShieldStatusComponent extends AbstractViewModelComponent {
    */
   static registeredListeners = {};
 
+  /**
+   * @param {GameState} gameState
+   * @param {string} planetOwnerPlayerType
+   * @param {string} elementId
+   * @param {boolean} showTextStatus spell out the status while no countdown is running
+   * @param {boolean} showSecureText include the word Secure in that text
+   */
   constructor(
     gameState,
     planetOwnerPlayerType,
     elementId,
-    showTextStatus = false
+    showTextStatus = false,
+    showSecureText = showTextStatus
   ) {
     super(gameState);
     this.planetOwnerPlayerType = planetOwnerPlayerType;
@@ -23,6 +31,7 @@ export class ShieldStatusComponent extends AbstractViewModelComponent {
     this.elementIconWrapperId = `${this.elementId}-icon-wrapper`;
     this.elementValueContainerId = `${this.elementId}-value`;
     this.showTextStatus = showTextStatus;
+    this.showSecureText = showSecureText;
   }
 
   initPageCode() {
@@ -140,7 +149,7 @@ export class ShieldStatusComponent extends AbstractViewModelComponent {
     const planetOwner = this.gameState.keyPlayers[this.planetOwnerPlayerType];
 
     if (!planetOwner || planetOwner.arePlanetaryDefensesSecure()) {
-      return {text: planetOwner && this.showTextStatus ? 'Secure' : '', warning: false};
+      return {text: planetOwner && this.showSecureText ? 'Secure' : '', warning: false};
     }
 
     const countdown = planetOwner.arePlanetaryDefensesBreached() ? planetOwner.getPlanetShieldHealth() : '';
