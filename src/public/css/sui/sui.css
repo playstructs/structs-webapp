@@ -1665,6 +1665,11 @@ a.sui-screen-portrait:hover {
   background: url("/img/sui/panel/panel-chunk-spacer-btn-a.png") bottom 11px center no-repeat;
 }
 
+/* With no button below it, the spacer sits against the bottom of the panel. */
+.sui-panel-chunk-spacer-btn-a:has(+ .sui-panel-btn.hidden) {
+  background-position: bottom center;
+}
+
 .sui-panel-chunk-spacer-btn-b {
   width: 44px;
   flex: 1 0 0;
