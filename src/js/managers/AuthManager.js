@@ -21,6 +21,7 @@ import {PlayerCapacityListener} from "../grass_listeners/PlayerCapacityListener"
 import {PlayerLoadListener} from "../grass_listeners/PlayerLoadListener";
 import {PlayerStructsLoadListener} from "../grass_listeners/PlayerStructsLoadListener";
 import {ConnectionCapacityListener} from "../grass_listeners/ConnectionCapacityListener";
+import {PlayerSubstationListener} from "../grass_listeners/PlayerSubstationListener";
 import {PlayerAlphaListener} from "../grass_listeners/PlayerAlphaListener";
 import {MenuPage} from "../framework/MenuPage";
 import {PlanetManager} from "./PlanetManager";
@@ -268,6 +269,7 @@ export class AuthManager {
       this.grassManager.registerListener(new PlayerStructsLoadListener(this.gameState));
       this.grassManager.registerListener(new PlayerCapacityListener(this.gameState));
       this.grassManager.registerListener(new ConnectionCapacityListener(this.gameState));
+      this.grassManager.registerListener(new PlayerSubstationListener(this.gameState, this.guildAPI));
       this.grassManager.registerListener(new PlayerAddressRevokedListener(
         this.gameState,
         this.guildAPI,

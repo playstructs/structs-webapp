@@ -7,6 +7,14 @@ import {ShieldStatusComponent} from "./ShieldStatusComponent";
 export class PlanetCardComponent extends AbstractViewModelComponent {
 
   /**
+   * Tracks the energy listener of each card, so that the card taking its place,
+   * which reuses the button ids, can remove it.
+   *
+   * @type {Object<string, function>}
+   */
+  static energyUsageHandlers = {};
+
+  /**
    * @param {GameState} gameState
    * @param {string} idPrefix
    * @param {boolean} isRaidCard
@@ -63,11 +71,15 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
     this.primaryBtnId = `${this.idPrefix}-planet-card-primary-btn`;
     this.primaryBtnLabel = "";
     this.primaryBtnHandler = () => {};
+    this.primaryBtnRequiresEnergy = false;
 
     this.hasSecondaryBtn = false;
     this.secondaryBtnId = `${this.idPrefix}-planet-card-secondary-btn`;
     this.secondaryBtnLabel = "";
     this.secondaryBtnHandler = () => {};
+    this.secondaryBtnRequiresEnergy = false;
+
+    this.insufficientEnergyTooltip = '';
   }
 
   initPageCode() {
@@ -80,11 +92,84 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
     }
 
     if (this.hasPrimaryBtn) {
-      document.getElementById(this.primaryBtnId).addEventListener('click', this.primaryBtnHandler.bind(this));
+      this.initBtn(this.primaryBtnId, this.primaryBtnHandler, this.primaryBtnRequiresEnergy);
     }
 
     if (this.hasSecondaryBtn) {
-      document.getElementById(this.secondaryBtnId).addEventListener('click', this.secondaryBtnHandler.bind(this));
+      this.initBtn(this.secondaryBtnId, this.secondaryBtnHandler, this.secondaryBtnRequiresEnergy);
+    }
+
+    this.initEnergyUsageListener();
+  }
+
+  /**
+   * @param {string} btnId
+   * @param {function} handler
+   * @param {boolean} requiresEnergy
+   */
+  initBtn(btnId, handler, requiresEnergy) {
+    document.getElementById(btnId).addEventListener('click', (event) => {
+      if (!this.isBtnDisabled(requiresEnergy)) {
+        handler.call(this, event);
+      }
+    });
+  }
+
+  initEnergyUsageListener() {
+    window.removeEventListener(EVENTS.ENERGY_USAGE_CHANGED, PlanetCardComponent.energyUsageHandlers[this.idPrefix]);
+    delete PlanetCardComponent.energyUsageHandlers[this.idPrefix];
+
+    if (!this.primaryBtnRequiresEnergy && !this.secondaryBtnRequiresEnergy) {
+      return;
+    }
+
+    PlanetCardComponent.energyUsageHandlers[this.idPrefix] = (event) => {
+      if (event.playerType !== PLAYER_TYPES.PLAYER) {
+        return;
+      }
+
+      if (this.primaryBtnRequiresEnergy) {
+        this.updateBtn(this.primaryBtnId, 'sui-mod-primary');
+      }
+
+      if (this.secondaryBtnRequiresEnergy) {
+        this.updateBtn(this.secondaryBtnId, 'sui-mod-secondary');
+      }
+    };
+
+    window.addEventListener(EVENTS.ENERGY_USAGE_CHANGED, PlanetCardComponent.energyUsageHandlers[this.idPrefix]);
+  }
+
+  /**
+   * @param {boolean} requiresEnergy
+   * @return {boolean}
+   */
+  isBtnDisabled(requiresEnergy) {
+    return requiresEnergy && !!this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player?.isOverloaded();
+  }
+
+  /**
+   * Disabled replaces the type class, otherwise its hover colors would still apply.
+   *
+   * @param {string} btnId
+   * @param {string} typeClass
+   */
+  updateBtn(btnId, typeClass) {
+    const btnElm = document.getElementById(btnId);
+
+    if (!btnElm) {
+      return;
+    }
+
+    const isDisabled = this.isBtnDisabled(true);
+
+    btnElm.classList.toggle('sui-mod-disabled', isDisabled);
+    btnElm.classList.toggle(typeClass, !isDisabled);
+
+    if (isDisabled) {
+      btnElm.dataset.suiTooltip = this.insufficientEnergyTooltip;
+    } else {
+      delete btnElm.dataset.suiTooltip;
     }
   }
 
@@ -175,18 +260,37 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
     `;
   }
 
+  /**
+   * @param {string} btnId
+   * @param {string} label
+   * @param {string} typeClass
+   * @param {boolean} requiresEnergy
+   * @return {string}
+   */
+  renderBtnHTML(btnId, label, typeClass, requiresEnergy) {
+    const isDisabled = this.isBtnDisabled(requiresEnergy);
+
+    return `
+      <a
+        href="javascript: void(0)"
+        id="${btnId}"
+        class="sui-screen-btn ${isDisabled ? 'sui-mod-disabled' : typeClass}"
+        ${isDisabled ? `data-sui-tooltip="${this.insufficientEnergyTooltip}"` : ''}
+      >${label}</a>
+    `;
+  }
+
   renderPrimaryBtnHTML() {
     if (!this.hasPrimaryBtn) {
       return '';
     }
 
-    return `
-      <a 
-        href="javascript: void(0)"
-        id="${this.primaryBtnId}"
-        class="sui-screen-btn sui-mod-primary"
-      >${this.primaryBtnLabel}</a>
-    `;
+    return this.renderBtnHTML(
+      this.primaryBtnId,
+      this.primaryBtnLabel,
+      'sui-mod-primary',
+      this.primaryBtnRequiresEnergy
+    );
   }
 
   renderSecondaryBtnHTML() {
@@ -194,13 +298,12 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
       return '';
     }
 
-    return `
-      <a 
-        href="javascript: void(0)"
-        id="${this.secondaryBtnId}" 
-        class="sui-screen-btn sui-mod-secondary"
-      >${this.secondaryBtnLabel}</a>
-    `;
+    return this.renderBtnHTML(
+      this.secondaryBtnId,
+      this.secondaryBtnLabel,
+      'sui-mod-secondary',
+      this.secondaryBtnRequiresEnergy
+    );
   }
 
   renderHTML() {

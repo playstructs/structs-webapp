@@ -72,6 +72,14 @@ export class GrassManager {
 
   /**
    * @param {string} name
+   * @return {AbstractGrassListener|undefined}
+   */
+  getListener(name) {
+    return this.listeners.get(name);
+  }
+
+  /**
+   * @param {string} name
    */
   unregisterListener(name) {
     this.listeners.delete(name);
