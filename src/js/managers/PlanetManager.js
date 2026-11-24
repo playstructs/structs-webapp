@@ -14,11 +14,14 @@ export class PlanetManager {
     this.guildAPI = guildAPI;
   }
 
+  /**
+   * @return {Promise<SigningTransaction|object>} the explore, once settled
+   */
   async findNewPlanet() {
     const playerId = this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id;
     const bannedWords = await this.guildAPI.getBannedWords();
     const name = PlanetNameUtil.generate(5, bannedWords);
 
-    await this.signingClientManager.queueMsgPlanetExplore(playerId, name);
+    return this.signingClientManager.queueMsgPlanetExplore(playerId, name);
   }
 }

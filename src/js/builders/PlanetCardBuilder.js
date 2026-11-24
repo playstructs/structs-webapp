@@ -6,6 +6,7 @@ import {NewPlanetListener} from "../grass_listeners/NewPlanetListener";
 import {MAP_CONTAINER_IDS} from "../constants/MapConstants";
 import {PLAYER_TYPES} from "../constants/PlayerTypes";
 import {ClearTileSelectionEvent} from "../events/ClearTileSelectionEvent";
+import {TX_STATUS} from "../models/SigningTransaction";
 
 export class PlanetCardBuilder {
 
@@ -40,6 +41,8 @@ export class PlanetCardBuilder {
     this.raidManager = raidManager;
     this.structManager = structManager;
     this.sectorBlitzManager = sectorBlitzManager;
+    this.alphaBaseLoadingId = 'alpha-base-planet-card-loading';
+    this.insufficientEnergyTooltip = 'Insufficient Energy. Deactivate Structs to reduce Energy draw.';
   }
 
   /**
@@ -85,7 +88,7 @@ export class PlanetCardBuilder {
 
     alphaBaseCard.hasGeneralMessage = true;
     alphaBaseCard.generalMessageIconClass = 'hidden';
-    alphaBaseCard.generalMessage = `<img src="/img/loading-3-dots.gif" class="loading-3-dots" alt="3 dots loading animation">`;
+    alphaBaseCard.generalMessage = `<img id="${this.alphaBaseLoadingId}" src="/img/loading-3-dots.gif" class="loading-3-dots" alt="3 dots loading animation">`;
   }
 
   /**
@@ -147,7 +150,10 @@ export class PlanetCardBuilder {
   }
 
   buildAlphaBaseCompleted(alphaBaseCard, type) {
-    if (type !== PLANET_CARD_TYPES.ALPHA_BASE_COMPLETED) {
+    if (
+      type !== PLANET_CARD_TYPES.ALPHA_BASE_COMPLETED
+      && type !== PLANET_CARD_TYPES.ALPHA_BASE_DEPART_FAILED
+    ) {
       return;
     }
 
@@ -161,8 +167,12 @@ export class PlanetCardBuilder {
     this.configureAlphaBaseCardCounterUpdateHandlers(alphaBaseCard);
 
     alphaBaseCard.hasAlert = true;
-    alphaBaseCard.alertIconColorClass = 'sui-text-primary';
-    alphaBaseCard.alertMessage = 'All Alpha extracted.';
+    if (type === PLANET_CARD_TYPES.ALPHA_BASE_DEPART_FAILED) {
+      alphaBaseCard.alertMessage = 'Failed to depart.';
+    } else {
+      alphaBaseCard.alertIconColorClass = 'sui-text-primary';
+      alphaBaseCard.alertMessage = 'All Alpha extracted.';
+    }
 
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'Command';
@@ -173,6 +183,8 @@ export class PlanetCardBuilder {
     if (this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].isCommandStructOnPlanet()) {
       alphaBaseCard.hasSecondaryBtn = true;
       alphaBaseCard.secondaryBtnLabel = 'Depart';
+      alphaBaseCard.secondaryBtnRequiresEnergy = true;
+      alphaBaseCard.insufficientEnergyTooltip = this.insufficientEnergyTooltip;
       alphaBaseCard.secondaryBtnHandler = () => {
         MenuPage.router.goto('Fleet', 'index', {
           planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_DEPART
@@ -181,6 +193,49 @@ export class PlanetCardBuilder {
     }
   }
 
+  /**
+   * Settled without a new planet: stop waiting for one and hand the card back.
+   *
+   * @param {NewPlanetListener} newPlanetListener
+   * @param {*} error
+   */
+  departFailed(newPlanetListener, error) {
+    console.warn('[PlanetCardBuilder] explore was not completed:', error);
+
+    if (this.grassManager.getListener(newPlanetListener.name) === newPlanetListener) {
+      this.grassManager.unregisterListener(newPlanetListener.name);
+    }
+
+    // Only take the player back if they are still waiting on this page.
+    if (document.getElementById(this.alphaBaseLoadingId)) {
+      MenuPage.router.goto(
+        'Fleet',
+        'index',
+        {planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_DEPART_FAILED},
+        {replace: true}
+      );
+    }
+  }
+
+  /**
+   * @param {NewPlanetListener} newPlanetListener
+   * @return {Promise<void>}
+   */
+  async depart(newPlanetListener) {
+    try {
+      const transaction = await this.planetManager.findNewPlanet();
+      if (transaction?.status !== TX_STATUS.SUCCEEDED) {
+        this.departFailed(newPlanetListener, transaction?.error);
+      }
+    } catch (error) {
+      this.departFailed(newPlanetListener, error);
+    }
+  }
+
+  /**
+   * @param {PlanetCardComponent} alphaBaseCard
+   * @param {string} type
+   */
   buildAlphaBaseDepart(alphaBaseCard, type) {
     if (type !== PLANET_CARD_TYPES.ALPHA_BASE_DEPART) {
       return;
@@ -197,9 +252,9 @@ export class PlanetCardBuilder {
 
     alphaBaseCard.hasPrimaryBtn = true;
     alphaBaseCard.primaryBtnLabel = 'Confirm';
+    alphaBaseCard.primaryBtnRequiresEnergy = true;
+    alphaBaseCard.insufficientEnergyTooltip = this.insufficientEnergyTooltip;
     alphaBaseCard.primaryBtnHandler = () => {
-      MenuPage.router.goto('Fleet', 'index', {planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_LOADING})
-
       const newPlanetListener = new NewPlanetListener(
         this.gameState,
         this.guildAPI,
@@ -208,7 +263,9 @@ export class PlanetCardBuilder {
 
       this.grassManager.registerListener(newPlanetListener);
 
-      this.planetManager.findNewPlanet().then();
+      MenuPage.router.goto('Fleet', 'index', {planetCardType: PLANET_CARD_TYPES.ALPHA_BASE_LOADING});
+
+      this.depart(newPlanetListener).then();
     }
 
     alphaBaseCard.hasSecondaryBtn = true;
@@ -410,6 +467,22 @@ export class PlanetCardBuilder {
   }
 
   /**
+   * The menu page is restored after a reload with the card it last showed, but
+   * nothing is left waiting for the new planet by then.
+   *
+   * @param {string} type
+   * @return {boolean}
+   */
+  isAlphaBaseCardTypeStale(type) {
+    if (type === PLANET_CARD_TYPES.ALPHA_BASE_LOADING) {
+      return !this.grassManager.getListener(NewPlanetListener.NAME);
+    }
+
+    return type === PLANET_CARD_TYPES.ALPHA_BASE_DEPART_FAILED
+      && this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].planet.undiscovered_ore !== 0;
+  }
+
+  /**
    * @param {string|null} selectedType
    */
   determineAlphaBaseCardType(selectedType = null) {
@@ -419,12 +492,13 @@ export class PlanetCardBuilder {
       PLANET_CARD_TYPES.ALPHA_BASE_ACTIVE,
       PLANET_CARD_TYPES.ALPHA_BASE_COMPLETED,
       PLANET_CARD_TYPES.ALPHA_BASE_DEPART,
+      PLANET_CARD_TYPES.ALPHA_BASE_DEPART_FAILED,
       PLANET_CARD_TYPES.ALPHA_BASE_ARRIVED
     ];
 
     let type = PLANET_CARD_TYPES.ALPHA_BASE_ACTIVE;
 
-    if (selectAlphaBaseTypes.includes(selectedType)) {
+    if (selectAlphaBaseTypes.includes(selectedType) && !this.isAlphaBaseCardTypeStale(selectedType)) {
 
       type = selectedType;
 
