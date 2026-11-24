@@ -6,6 +6,8 @@ import {ClearTileSelectionEvent} from "../events/ClearTileSelectionEvent";
 
 export class NewPlanetListener extends AbstractGrassListener {
 
+  static NAME = 'NEW_PLANET';
+
   /**
    * @param {GameState} gameState
    * @param {GuildAPI} guildAPI
@@ -16,7 +18,7 @@ export class NewPlanetListener extends AbstractGrassListener {
     guildAPI,
     mapManager
   ) {
-    super('NEW_PLANET');
+    super(NewPlanetListener.NAME);
     this.gameState = gameState;
     this.guildAPI = guildAPI;
     this.mapManager = mapManager;
@@ -30,7 +32,8 @@ export class NewPlanetListener extends AbstractGrassListener {
     if (
       this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].player
       && messageData.category === 'player_consensus'
-      && messageData.subject === `structs.player.${this.gameState.thisGuild.id}.${this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id}`
+      // Not matched on the subject, which names the guild the player is in now.
+      && messageData.id === this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id
       && messageData.planet_id
     ) {
       this.shouldUnregister = () => true;

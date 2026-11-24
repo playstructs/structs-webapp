@@ -20,6 +20,7 @@ import {RegistrationRequestWithdrawnTest} from "./RegistrationRequestWithdrawnTe
 import {SectorBlitzTest} from "./SectorBlitzTest";
 import {MapTileSelectionListenerTest} from "./MapTileSelectionListenerTest";
 import {SpectatorGuardTest} from "./SpectatorGuardTest";
+import {PlanetCardDepartTest} from "./PlanetCardDepartTest";
 
 (new NumberFormatterTest()).run();
 (new PermissionManagerTest()).run();
@@ -42,5 +43,6 @@ import {SpectatorGuardTest} from "./SpectatorGuardTest";
 (new SectorBlitzTest()).run();
 (new MapTileSelectionListenerTest()).run();
 (new SpectatorGuardTest()).run();
+(new PlanetCardDepartTest()).run();
 
 (new APIReadinessTest()).run();
