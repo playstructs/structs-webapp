@@ -43,6 +43,7 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
     this.layoutId = 'sector-leaderboard-layout';
 
     this.contest = null;
+    this.contentHTML = null;
     this.me = null;
     this.guilds = null;
     this.players = null;
@@ -89,10 +90,10 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
       });
     });
 
-    const rowsById = new Map((this.players?.data ?? []).map(row => [row.player_id, row]));
     document.querySelectorAll(`#${this.layoutId} [data-player-target]`).forEach(btn => {
       btn.addEventListener('click', () => {
-        const row = rowsById.get(btn.dataset.playerTarget);
+        // Looked up on click: an unchanged page keeps its rows while the data behind them refreshes.
+        const row = (this.players?.data ?? []).find(player => player.player_id === btn.dataset.playerTarget);
         if (row) {
           RaidTarget.preview(this.guildAPI, this.toTarget(row));
         }
@@ -237,13 +238,7 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
         'sector-players', 'Fleet', 'sectorLeaderboard', this.options, 'playerPage'
       );
 
-      MenuPage.enablePageTemplate(MenuPage.navItemFleetId);
-
-      MenuPage.setPageTemplateHeaderBtn(SectorBlitzFormat.sectorLabel(this.sector), true, () => {
-        MenuPage.router.goto('Fleet', 'index');
-      });
-
-      MenuPage.setPageTemplateContent(`
+      const contentHTML = `
         <div id="${this.layoutId}" class="profile-layout sector-blitz-layout">
 
           ${this.renderResultsHTML()}
@@ -264,12 +259,33 @@ export class SectorLeaderboardViewModel extends AbstractViewModel {
           </div>
 
         </div>
-      `);
+      `;
+
+      // A live update arrives for any score in the contest, so this sector is usually unchanged.
+      const isLiveUpdate = !scrollToTop && !!document.getElementById(this.layoutId);
+      if (isLiveUpdate && contentHTML === this.contentHTML) {
+        return;
+      }
+      this.contentHTML = contentHTML;
+
+      if (isLiveUpdate) {
+        MenuPage.keepScroll(() => MenuPage.setPageTemplateContent(contentHTML));
+      } else {
+        MenuPage.enablePageTemplate(MenuPage.navItemFleetId);
+
+        MenuPage.setPageTemplateHeaderBtn(SectorBlitzFormat.sectorLabel(this.sector), true, () => {
+          MenuPage.router.goto('Fleet', 'index');
+        });
+
+        MenuPage.setPageTemplateContent(contentHTML);
+      }
 
       if (scrollToTop) {
         MenuPage.scrollPageTemplateToTop();
       }
-      MenuPage.hideAndClearDialoguePanel();
+      if (!isLiveUpdate) {
+        MenuPage.hideAndClearDialoguePanel();
+      }
 
       this.initPageCode();
       if (this.guilds?.data?.length) this.guildPagination.init();

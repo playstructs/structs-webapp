@@ -306,6 +306,24 @@ export class PlanetCardComponent extends AbstractViewModelComponent {
     );
   }
 
+  /**
+   * Everything the card shows except the values its own listeners keep current, so
+   * two cards with the same key can stand in for each other without a redraw.
+   *
+   * @return {string}
+   */
+  getLayoutKey() {
+    return JSON.stringify([
+      this.isFleetOnPlanet,
+      this.planetName,
+      this.hasStatusGroup,
+      this.hasAlert && [this.alertIconClass, this.alertIconColorClass, this.alertMessage],
+      this.hasGeneralMessage && [this.generalMessageIconClass, this.generalMessage],
+      this.hasPrimaryBtn && [this.primaryBtnLabel, this.primaryBtnRequiresEnergy],
+      this.hasSecondaryBtn && [this.secondaryBtnLabel, this.secondaryBtnRequiresEnergy],
+    ]);
+  }
+
   renderHTML() {
 
     const cardIconClass = this.isRaidCard ? "icon-raid" : "icon-planet";

@@ -404,6 +404,20 @@ export class MenuPage {
     }
   }
 
+  /**
+   * Run a synchronous redraw of the current page without moving the reader.
+   *
+   * @param {function(): void} redraw
+   */
+  static keepScroll(redraw) {
+    const scroller = document.getElementById(MenuPage.screenBodyId);
+    const scrollTop = scroller?.scrollTop ?? 0;
+    redraw();
+    if (scroller && scroller.scrollTop !== scrollTop) {
+      scroller.scrollTop = scrollTop;
+    }
+  }
+
   static useTransparentBackground() {
     document.getElementById(this.screenBodyId).classList.add('hidden-background');
     document.getElementById(this.panelChunkId).classList.add('hidden-background');

@@ -11,6 +11,14 @@ import {SectorBlitzHTML} from "../sector_blitz/SectorBlitzHTML";
 export class SectorBlitzFleetCardComponent {
 
   /**
+   * Survives page renders, so a redrawn Fleet page shows the last scores instead of
+   * collapsing to the loading dots, which would lose the reader's scroll position.
+   *
+   * @type {{key: string, html: string}|null}
+   */
+  static lastBody = null;
+
+  /**
    * Shared across instances so each render replaces the previous listeners.
    * @type {function|null}
    */
@@ -28,6 +36,7 @@ export class SectorBlitzFleetCardComponent {
     this.eventRulesBtnId = 'sector-blitz-event-rules-btn';
     this.contest = sectorBlitzManager.contest;
     this.isResults = sectorBlitzManager.isShowingResults();
+    this.cacheKey = `${this.contest?.contest_id}:${this.isResults}`;
   }
 
   /**
@@ -46,9 +55,11 @@ export class SectorBlitzFleetCardComponent {
       <div id="${this.containerId}" class="sui-data-card sector-blitz-fleet-card${this.isResults ? ' sector-blitz-fleet-card-results' : ''}">
         ${this.renderHeaderHTML()}
         <div class="sector-blitz-fleet-card-body">
-          <div class="sector-blitz-fleet-card-loading">
-            <img src="/img/loading-3-dots.gif" class="loading-3-dots" alt="3 dots loading animation">
-          </div>
+          ${this.lastBodyHTML() ?? `
+            <div class="sector-blitz-fleet-card-loading">
+              <img src="/img/loading-3-dots.gif" class="loading-3-dots" alt="3 dots loading animation">
+            </div>
+          `}
         </div>
       </div>
     `;
@@ -117,12 +128,22 @@ export class SectorBlitzFleetCardComponent {
       window.addEventListener(name, SectorBlitzFleetCardComponent.refreshHandler)
     );
 
+    this.initSectorLinks();
     this.loadAndRender().then();
+  }
+
+  /**
+   * @return {string|null} the last scores shown for this contest phase, if any
+   */
+  lastBodyHTML() {
+    const last = SectorBlitzFleetCardComponent.lastBody;
+    return last?.key === this.cacheKey ? last.html : null;
   }
 
   async loadAndRender() {
     const contestId = this.contest.contest_id;
     let html;
+    let loaded = false;
 
     try {
       const [standings, overall] = await Promise.all([
@@ -132,15 +153,22 @@ export class SectorBlitzFleetCardComponent {
       html = this.isResults
         ? this.renderResultsHTML(standings.data, overall.data)
         : this.renderSectorsHTML(standings.data, overall.data);
+      loaded = true;
     } catch (error) {
       console.debug('[SectorBlitz] fleet card unavailable:', error);
+      // Scores already on screen are better than none.
+      if (this.lastBodyHTML() !== null) return;
       html = `<div class="sector-blitz-empty">Sector data is currently unavailable.</div>`;
     }
 
     const body = document.querySelector(`#${this.containerId} .sector-blitz-fleet-card-body`);
-    if (body) {
+    // Most score updates leave this card as it was. Redrawing it anyway flashes and drops hover.
+    if (body && this.lastBodyHTML() !== html) {
       body.innerHTML = html;
       this.initSectorLinks();
+    }
+    if (body && loaded) {
+      SectorBlitzFleetCardComponent.lastBody = {key: this.cacheKey, html};
     }
   }
 
