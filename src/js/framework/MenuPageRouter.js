@@ -95,6 +95,22 @@ export class MenuPageRouter {
     this.controllers.get(controllerName)[pageName](options);
   }
 
+  /**
+   * Record new options for the page already showing, without rendering it again.
+   *
+   * @param {object} options
+   */
+  replaceOptions(options) {
+    if (this.mode === MENU_PAGE_ROUTER_MODES.PREVIEW) return;
+
+    this.currentOptions = options;
+    localStorage.setItem("currentMenuPage", JSON.stringify({
+      controller: this.currentController,
+      page: this.currentPage,
+      options: options
+    }));
+  }
+
   back() {
     this.goto(this.lastController, this.lastPage, this.lastOptions);
   }
