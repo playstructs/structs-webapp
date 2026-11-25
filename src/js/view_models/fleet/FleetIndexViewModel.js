@@ -66,6 +66,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
       : null;
 
     this.raidStatusUtil = new RaidStatusUtil();
+    this.alphaBaseCardContainerId = 'alpha-base-card-container';
     this.raidCardContainerId = 'raid-card-container';
 
     this.planetCardBuilder = new PlanetCardBuilder(
@@ -96,7 +97,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
       }
 
       if (event.playerType === PLAYER_TYPES.PLAYER || event.playerType === PLAYER_TYPES.RAID_ENEMY) {
-        MenuPage.router.goto('Fleet', 'index');
+        MenuPage.keepScroll(() => this.refreshCards());
       }
     };
 
@@ -108,16 +109,58 @@ export class FleetIndexViewModel extends AbstractViewModel {
     FleetIndexViewModel.sectorBlitzPhaseChangedHandler = () => {
       window.removeEventListener(EVENTS.SECTOR_BLITZ_PHASE_CHANGED, FleetIndexViewModel.sectorBlitzPhaseChangedHandler);
       if (document.getElementById(this.raidCardContainerId)) {
-        MenuPage.router.goto('Fleet', 'index', {
+        MenuPage.keepScroll(() => MenuPage.router.goto('Fleet', 'index', {
           planetCardType: this.planetCardType,
           raidCardType: this.raidCardType
-        }, {replace: true});
+        }, {replace: true}));
       }
     };
     window.addEventListener(EVENTS.SECTOR_BLITZ_PHASE_CHANGED, FleetIndexViewModel.sectorBlitzPhaseChangedHandler);
 
     // Picks up a contest that started (or was configured) since the last check; a change re-renders this page.
     this.sectorBlitzManager?.refresh().catch(() => {});
+  }
+
+  /**
+   * Replace a card only if it would look different. Its counters, shield and buttons
+   * already follow the game state on their own.
+   *
+   * @param {string} containerId
+   * @param {PlanetCardComponent} currentCard
+   * @param {PlanetCardComponent} newCard
+   * @return {PlanetCardComponent} the card now showing
+   */
+  swapCard(containerId, currentCard, newCard) {
+    if (newCard.getLayoutKey() === currentCard.getLayoutKey()) {
+      return currentCard;
+    }
+    document.querySelector(`#${containerId} > .sui-planet-card`).outerHTML = newCard.renderHTML();
+    newCard.initPageCode();
+    return newCard;
+  }
+
+  /**
+   * Bring the cards up to date with the raid status, leaving the rest of the page alone.
+   */
+  refreshCards() {
+    // A new status settles whatever raid step the page was opened on, e.g. a pending retreat.
+    this.raidCardType = null;
+    MenuPage.router.replaceOptions(this.planetCardType ? {planetCardType: this.planetCardType} : {});
+
+    this.alphaBaseCard = this.swapCard(
+      this.alphaBaseCardContainerId,
+      this.alphaBaseCard,
+      this.planetCardBuilder.build(false, this.planetCardType)
+    );
+    this.raidCard = this.swapCard(
+      this.raidCardContainerId,
+      this.raidCard,
+      this.planetCardBuilder.build(true, this.raidCardType)
+    );
+
+    const raidCardContainer = document.getElementById(this.raidCardContainerId);
+    raidCardContainer.querySelector(':scope > .hidden')?.remove();
+    raidCardContainer.insertAdjacentHTML('beforeend', this.renderRaidLogBtnHTML());
   }
 
   renderRaidLogBtnHTML() {
@@ -153,7 +196,7 @@ export class FleetIndexViewModel extends AbstractViewModel {
 
         <div class="fleet-index-cards">
         
-          <div class="fleet-card-wrapper">
+          <div id="${this.alphaBaseCardContainerId}" class="fleet-card-wrapper">
           
             ${this.alphaBaseCard.renderHTML()}
             
